@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Settings;
 
 namespace Granary.Core.ViewModels.Cards;
 
@@ -10,10 +11,20 @@ namespace Granary.Core.ViewModels.Cards;
 /// </summary>
 public static class MediaCardFactory
 {
-    /// <summary>Continue Watching and Next Up rows show backdrop cards with progress, every other row posters (docs/api-contract.md, 7.1).</summary>
-    public static MediaCard ForSection(Section section, CatalogItemBase item, Uri serverBase) =>
-        section.SectionType is SectionTypes.ContinueWatching or SectionTypes.NextUp
-            ? Landscape(item, serverBase)
+    /// <summary>
+    /// Continue Watching and Next Up rows show backdrop cards with progress, every other row posters (docs/api-contract.md,
+    /// 7.1). Only the former blur an unwatched episode's still, as the web's <c>SectionRow</c>.
+    /// </summary>
+    public static MediaCard ForSection(Section section, CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        return ForSection(section.SectionType, item, serverBase, spoilers);
+    }
+
+    /// <inheritdoc cref="ForSection(Section, CatalogItemBase, Uri, EpisodeSpoilers)"/>
+    public static MediaCard ForSection(string? sectionType, CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default) =>
+        sectionType is SectionTypes.ContinueWatching or SectionTypes.NextUp
+            ? Landscape(item, serverBase, spoilers)
             : Poster(item, serverBase);
 
     /// <summary>"Dune" / "2021"; an episode as the web's grid card: "Tracker" / "Safe Harbor" / "S04E01".</summary>
@@ -31,17 +42,29 @@ public static class MediaCardFactory
         }, item);
     }
 
-    /// <summary>"ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row.</summary>
-    public static MediaCard Landscape(CatalogItemBase item, Uri serverBase)
+    /// <summary>
+    /// "ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row. The first episode of
+    /// a season that has just begun says "NEW SEASON" after its time left, and in place of "Next Episode" on a Next Up card,
+    /// as the web's <c>ContinueWatchingCard</c>.
+    /// </summary>
+    public static MediaCard Landscape(CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
+        ArgumentNullException.ThrowIfNull(item);
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
+        bool showsBackdrop = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) is not null;
+        bool premiere = item.Badges.Contains(ItemBadges.SeasonPremiere);
         return Decorate(new MediaCard(item.ContentId, item.Type, isEpisode ? item.SeriesTitle ?? item.Title : item.Title)
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
-            Caption = item.ItemSource == ItemSources.NextUp ? "Next episode" : TimeLeft(item.PositionSeconds, item.DurationSeconds),
+            Caption = item.ItemSource == ItemSources.NextUp
+                ? (premiere ? null : "Next Episode")
+                : TimeLeft(item.PositionSeconds, item.DurationSeconds),
+            CaptionBadge = premiere ? "NEW SEASON" : null,
+            CaptionBadgeName = premiere ? "new season" : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
-            ImageThumbhash = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) is not null ? item.BackdropThumbhash : item.PosterThumbhash,
+            ImageThumbhash = showsBackdrop ? item.BackdropThumbhash : item.PosterThumbhash,
+            BlursImage = spoilers.HidesImage(item, showsBackdrop),
         }, item);
     }
 
@@ -65,23 +88,54 @@ public static class MediaCardFactory
         };
     }
 
-    /// <summary>An episode still: "S03E01 · Chapter 1" with "23 Oct 2026 · 52m".</summary>
-    public static MediaCard Episode(Episode episode, Uri serverBase)
+    /// <summary>
+    /// An episode still: "S03E01 · Chapter 1" with "23 Oct 2026 · 52m" and the overview; an unwatched one's still blurred and
+    /// its overview left out as the profile's <paramref name="spoilers"/> say, as the web's <c>EpisodeCarousel</c>.
+    /// </summary>
+    public static MediaCard Episode(Episode episode, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
+        ArgumentNullException.ThrowIfNull(episode);
         var meta = new[] { FormatDate(episode.AirDate), episode.Runtime > 0 ? $"{episode.Runtime}m" : null }.Where(s => s is not null);
         return new MediaCard(episode.ContentId, CatalogItemTypes.Episode,
             $"S{episode.SeasonNumber:00}E{episode.EpisodeNumber:00} · {episode.Title}")
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = string.Join(" · ", meta) is { Length: > 0 } line ? line : null,
-            Caption = episode.Overview,
+            Caption = spoilers.HidesOverview(episode) ? null : episode.Overview,
             ImageUrl = ArtworkUrl.Resolve(serverBase, episode.StillUrl),
             ImageThumbhash = episode.StillThumbhash,
+            BlursImage = spoilers.HidesImage(episode),
             Overlay = OverlayOf(episode.OverlaySummary) with { Runtime = episode.Runtime > 0 ? episode.Runtime : null },
             Progress = ProgressOf(episode.UserData?.PositionSeconds, episode.UserData?.DurationSeconds, episode.UserData?.Played == true),
             IsWatched = episode.UserData?.Played == true,
             ShowsWatchedMark = true,
             PlayContentId = episode.ContentId,
+        };
+    }
+
+    /// <summary>The <see cref="MediaCard.Type"/> of a box set's card, which opens the box set's page.</summary>
+    public const string BoxSetType = "box_set";
+
+    /// <summary>
+    /// A box set's poster as the web's <c>BoxSetCard</c>: its name over "1 / 3 WATCHED" once one is watched, else its years,
+    /// else its films; the films in the corner and the watched share as its bar. Search can find one collection in two
+    /// libraries, so the card's id names the library too. It offers no play disc, buttons or menu: none of them fit a set.
+    /// </summary>
+    public static MediaCard BoxSet(CatalogBoxSetBase boxSet, Uri serverBase)
+    {
+        ArgumentNullException.ThrowIfNull(boxSet);
+        var poster = ArtworkUrl.Resolve(serverBase, boxSet.PosterUrl);
+        string caption = boxSet.PlayedCount > 0
+            ? string.Create(CultureInfo.InvariantCulture, $"{boxSet.PlayedCount} / {boxSet.MovieCount} watched")
+            : BoxSetText.Years(boxSet) ?? BoxSetText.FilmCount(boxSet.MovieCount);
+        return new MediaCard($"{BoxSetType}:{boxSet.LibraryId}:{boxSet.Id}", BoxSetType, boxSet.Title)
+        {
+            Shape = MediaCardShape.Poster,
+            Subtitle = caption.ToUpperInvariant(),
+            ImageUrl = poster ?? ArtworkUrl.Resolve(serverBase, boxSet.BackdropUrl),
+            ImageThumbhash = poster is not null ? boxSet.PosterThumbhash : boxSet.BackdropThumbhash,
+            Progress = boxSet.PlayedCount > 0 && boxSet.MovieCount > 0 ? Math.Min(1, (double)boxSet.PlayedCount / boxSet.MovieCount) : null,
+            BoxSetFilms = BoxSetText.FilmCount(boxSet.MovieCount),
         };
     }
 
@@ -141,7 +195,7 @@ public static class MediaCardFactory
     private static MediaCard Decorate(MediaCard card, CatalogItemBase item) => card with
     {
         Overlay = OverlayOf(item),
-        StatusBadge = item.Badges.Contains("new") ? "NEW" : null,
+        StatusBadge = item.Badges.Contains(ItemBadges.New) ? "NEW" : null,
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
         // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
         IsWatched = item.UserState?.Played == true,
@@ -195,7 +249,8 @@ public static class MediaCardFactory
 
     // Server dates are ISO strings ("2026-10-23"); shown like the web: "23 Oct 2026".
     private static string? FormatDate(string? isoDate) =>
-        DateOnly.TryParse(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, CultureInfo.InvariantCulture, out var date)
-            ? date.ToString("d MMM yyyy", CultureInfo.InvariantCulture)
-            : null;
+        DateOnly.TryParse(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, CultureInfo.InvariantCulture, out var date) ? FormatDate(date) : null;
+
+    /// <summary>An episode card's date: "23 Oct 2026".</summary>
+    internal static string FormatDate(DateOnly date) => date.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
 }

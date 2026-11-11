@@ -49,6 +49,15 @@ public abstract record CatalogItemBase
 
     public string? BackdropThumbhash { get; init; }
 
+    /// <summary>
+    /// <see cref="PosterUrl"/> is an episode's own still (true) or other artwork, such as the series' standing in (false);
+    /// null when the server does not say, as older ones do (docs/api-contract.md, 7.10).
+    /// </summary>
+    public bool? PosterIsEpisodeStill { get; init; }
+
+    /// <summary>As <see cref="PosterIsEpisodeStill"/>, for <see cref="BackdropUrl"/>.</summary>
+    public bool? BackdropIsEpisodeStill { get; init; }
+
     /// <summary>There is no logo thumbhash.</summary>
     public string? LogoUrl { get; init; }
 
@@ -157,4 +166,17 @@ public static class ItemSources
 {
     public const string InProgress = "in_progress";
     public const string NextUp = "next_up";
+}
+
+/// <summary>Known values of <see cref="CatalogItemBase.Badges"/>; the set is open.</summary>
+public static class ItemBadges
+{
+    /// <summary>A title new to the library.</summary>
+    public const string New = "new";
+
+    /// <summary>
+    /// On a Continue Watching or Next Up episode: the first episode of a season (after the first) that aired in the last
+    /// 14 days (the server's <c>recentSeasonPremiereBadges</c>).
+    /// </summary>
+    public const string SeasonPremiere = "season_premiere";
 }

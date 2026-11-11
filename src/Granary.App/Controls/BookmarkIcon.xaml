@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The web's watchlist icon for a title from TMDB (lucide's Bookmark and BookmarkCheck): a ribbon outline, and once the
-    title is on the watchlist a check in it over a faint red fill. Drawn in the control's Foreground.
+    title is on the watchlist a check in it over a faint fill of the accent. Drawn in the control's Foreground.
 -->
 <UserControl
     x:Class="Granary.App.Controls.BookmarkIcon"

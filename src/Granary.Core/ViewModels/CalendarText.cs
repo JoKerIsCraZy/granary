@@ -30,6 +30,12 @@ internal static class CalendarText
     /// <summary>"Mon".</summary>
     public static string ShortDay(DateOnly day) => day.ToString("ddd", English);
 
+    /// <summary>"Thu, Nov 19".</summary>
+    public static string ShortDate(DateOnly day) => day.ToString("ddd, MMM d", English);
+
+    /// <summary>"November 19".</summary>
+    public static string MonthDay(DateOnly day) => day.ToString("MMMM d", English);
+
     /// <summary>"S2 · E1 - Hello" or "Season 2 · Hello" for an episode, "Movie" for a movie.</summary>
     public static string Subtitle(CalendarEvent airing)
     {

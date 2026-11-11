@@ -1,4 +1,7 @@
+using System.Buffers;
+using System.Collections.Specialized;
 using System.Net;
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -26,7 +29,8 @@ public interface IMediaRoute : IDisposable
 /// <summary>
 /// A stream of <see cref="MediaProxy"/>: the player asks the loopback, the route asks the server, with the headers of
 /// the moment. A token the server refuses is renewed once and the request repeated, so the player never sees an
-/// expiry; a token close to its end is renewed before it is sent.
+/// expiry; a token close to its end is renewed before it is sent. A direct play body the server breaks off goes on from
+/// its next byte (<see cref="UpstreamResume"/>), so the player never sees that either.
 /// </summary>
 internal sealed class MediaRoute : IMediaRoute
 {
@@ -40,12 +44,28 @@ internal sealed class MediaRoute : IMediaRoute
     // mpv opens a few connections at a time (a seek, the next segments); more than this is not a player.
     private const int MaxConcurrentRequests = 16;
 
+    // As Stream.CopyToAsync reads.
+    private const int CopyBufferSize = 81920;
+
+    /// <summary>
+    /// How long a request waits for the server's next bytes (the answer, or more of its body) before it is cut off. The
+    /// server may hold a playlist 30 s and a segment about 12 s, up to 30 s more after a seek restarts the transcode
+    /// (docs/api-contract.md, 9.5: client timeouts above about 45 s); a minute clears that with room to spare. Longer
+    /// is a server gone silent, such as a connection it closed during a pause whose end never arrived: mpv's HTTP reader
+    /// would wait for it for good.
+    /// </summary>
+    internal static readonly TimeSpan UpstreamIdleTimeout = TimeSpan.FromSeconds(60);
+
     // Sent exactly as written: no unescaping (%41 stays %41) and no resolving of dot segments, which IsPlainRelative
     // has already refused. Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2).
     private static readonly UriCreationOptions Verbatim = new() { DangerousDisablePathAndQueryCanonicalization = true };
 
     // Request headers a range or segment request needs; everything else stays with the player.
     private static readonly string[] ForwardedRequestHeaders = ["Range", "If-Range", "If-None-Match", "If-Modified-Since", "Accept", "User-Agent"];
+
+    // A resume asks its own range under its own condition (UpstreamResume); the player's conditions could answer a 304 or
+    // a 412 in the middle of a body.
+    private static readonly string[] ResumedRequestHeaders = ["Accept", "User-Agent"];
 
     // Response headers the player needs; cookies and anything about the upstream connection stay behind.
     // Content-Encoding too: the proxy does not decompress, so mpv must know what it gets.
@@ -60,6 +80,10 @@ internal sealed class MediaRoute : IMediaRoute
     private readonly SemaphoreSlim _renewing = new(1, 1);
     private readonly SemaphoreSlim _requests = new(MaxConcurrentRequests, MaxConcurrentRequests);
     private readonly CancellationTokenSource _closing = new();
+
+    // Per upstream URL, the latest GET's own source (Supersede).
+    private readonly Dictionary<string, CancellationTokenSource> _latest = new(StringComparer.Ordinal);
+    private readonly Lock _gate = new();
     private readonly string _origin;
     private readonly string _pathAndQuery;
     private readonly string _allowedPrefix;
@@ -97,6 +121,9 @@ internal sealed class MediaRoute : IMediaRoute
 
     internal CancellationToken Closing => _closing.Token;
 
+    /// <summary>The requests that hold one of the route's places now.</summary>
+    internal int RequestsUnderway => MaxConcurrentRequests - _requests.CurrentCount;
+
     /// <summary>The upstream URL for <paramref name="pathAndQuery"/> as the player asked it, if the route reaches it.</summary>
     internal Uri? Map(string pathAndQuery)
     {
@@ -118,59 +145,150 @@ internal sealed class MediaRoute : IMediaRoute
             context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
             return;
         }
+        // Only a GET reads a body that a resume may take up again.
+        string? url = context.Request.HttpMethod == "GET" ? upstream.OriginalString : null;
+        var superseded = url is null ? null : Supersede(url);
         try
         {
-            await ForwardOnceAsync(context, upstream, client, logger, token).ConfigureAwait(false);
+            await ForwardOnceAsync(context, upstream, client, logger, superseded?.Token ?? CancellationToken.None, token).ConfigureAwait(false);
         }
         finally
         {
+            if (url is not null)
+            {
+                Retire(url, superseded!);
+            }
             _requests.Release();
         }
     }
 
-    private async Task ForwardOnceAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger, CancellationToken token)
+    // mpv reads a direct play file through one request at a time and cannot say when it left one (a seek): a newer GET of
+    // the same URL says it, and ends the resume of an older one, which would otherwise hold its place up to the resume's
+    // budget. HLS segments have URLs of their own, so segments read side by side are left alone. The sources hold no
+    // timer and are not disposed: a newer request may cancel one at any time.
+    private CancellationTokenSource Supersede(string url)
+    {
+        var mine = new CancellationTokenSource();
+        CancellationTokenSource? older;
+        lock (_gate)
+        {
+            _latest.Remove(url, out older);
+            _latest[url] = mine;
+        }
+        // Not inline: the older request gives up on its own thread, not on this one's way.
+        _ = older?.CancelAsync();
+        return mine;
+    }
+
+    private void Retire(string url, CancellationTokenSource mine)
+    {
+        lock (_gate)
+        {
+            if (_latest.TryGetValue(url, out var latest) && ReferenceEquals(latest, mine))
+            {
+                _latest.Remove(url);
+            }
+        }
+    }
+
+    private async Task ForwardOnceAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger,
+        CancellationToken superseded, CancellationToken token)
     {
         bool head = context.Request.HttpMethod == "HEAD";
+        var player = context.Request.Headers;
+        using var watch = new UpstreamWatch(UpstreamIdleTimeout, _time, token);
+        HttpResponseMessage answer;
+        try
+        {
+            answer = await SendAsync(() => Request(head ? HttpMethod.Head : HttpMethod.Get, upstream, player, ForwardedRequestHeaders),
+                client, logger, watch).ConfigureAwait(false);
+        }
+        catch (MediaAuthorizationException ex)
+        {
+            // No token for now is a busy server, not a refusal; mpv then reports a lost connection, not a 401.
+            logger.LogInformation("No media headers for {Path}: {Failure}", upstream.AbsolutePath, ex.Failure);
+            context.Response.StatusCode = ex.Failure == MediaAuthorizationFailure.Unavailable
+                ? (int)HttpStatusCode.ServiceUnavailable
+                : (int)HttpStatusCode.Unauthorized;
+            return;
+        }
+        using var response = answer;
+        logger.LogDebug("Media {Method} {Path}: {Status}", head ? "HEAD" : "GET", upstream.AbsolutePath, (int)response.StatusCode);
+        // A direct play body the server breaks off goes on from its next byte, asked as the first was.
+        using var resume = head ? null : UpstreamResume.For(response, Resend, superseded, _time, logger);
+        await RelayAsync(response, context.Response, head, watch, resume, token).ConfigureAwait(false);
+
+        Task<HttpResponseMessage> Resend(RangeHeaderValue range, string? condition, CancellationToken limit) => SendAsync(() =>
+        {
+            var request = Request(HttpMethod.Get, upstream, player, ResumedRequestHeaders);
+            request.Headers.Range = range;
+            if (condition is not null)
+            {
+                request.Headers.TryAddWithoutValidation("If-Range", condition);
+            }
+            return request;
+        }, client, logger, watch, limit);
+    }
+
+    /// <summary>
+    /// One request to the server with the headers of the moment, timed whole by the watch: the headers (a token refresh
+    /// among them), then the answer; <paramref name="limit"/> may end it sooner. A refusal renews the headers once and
+    /// repeats the request, so the player never sees an expiry. The answer is the caller's; the request, a GET or HEAD
+    /// without content, holds nothing to free.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> build, HttpMessageInvoker client, ILogger logger, UpstreamWatch watch,
+        CancellationToken limit = default)
+    {
         MediaCredentials? refused = null;
         while (true)
         {
+            var request = build();
             MediaCredentials credentials;
+            HttpResponseMessage answer;
+            var waiting = watch.Arm();
+            var bounded = limit.CanBeCanceled ? CancellationTokenSource.CreateLinkedTokenSource(waiting, limit) : null;
             try
             {
+                var token = bounded?.Token ?? waiting;
                 credentials = await CredentialsAsync(refused, token).ConfigureAwait(false);
-            }
-            catch (MediaAuthorizationException ex)
-            {
-                // No token for now is a busy server, not a refusal; mpv then reports a lost connection, not a 401.
-                logger.LogInformation("No media headers for {Path}: {Failure}", upstream.AbsolutePath, ex.Failure);
-                context.Response.StatusCode = ex.Failure == MediaAuthorizationFailure.Unavailable
-                    ? (int)HttpStatusCode.ServiceUnavailable
-                    : (int)HttpStatusCode.Unauthorized;
-                return;
-            }
-            using var request = new HttpRequestMessage(head ? HttpMethod.Head : HttpMethod.Get, upstream);
-            foreach (string name in ForwardedRequestHeaders)
-            {
-                if (context.Request.Headers[name] is { } value)
+                foreach (var (name, value) in credentials.Headers)
                 {
                     request.Headers.TryAddWithoutValidation(name, value);
                 }
+                answer = await client.SendAsync(request, token).ConfigureAwait(false);
             }
-            foreach (var (name, value) in credentials.Headers)
+            catch (Exception ex) when (watch.IsCutOff)
             {
-                request.Headers.TryAddWithoutValidation(name, value);
+                throw watch.CutOff(ex);
             }
-            using var response = await client.SendAsync(request, token).ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.Unauthorized && refused is null)
+            finally
             {
-                logger.LogInformation("The server refused the media headers for {Path}; renewing them", upstream.AbsolutePath);
+                bounded?.Dispose();
+                watch.Disarm();
+            }
+            if (answer.StatusCode == HttpStatusCode.Unauthorized && refused is null)
+            {
+                logger.LogInformation("The server refused the media headers for {Path}; renewing them", request.RequestUri!.AbsolutePath);
+                answer.Dispose();
                 refused = credentials;
                 continue;
             }
-            logger.LogDebug("Media {Method} {Path}: {Status}", request.Method, upstream.AbsolutePath, (int)response.StatusCode);
-            await RelayAsync(response, context.Response, head, token).ConfigureAwait(false);
-            return;
+            return answer;
         }
+    }
+
+    // A request upstream with those of the player's headers that are named.
+    private static HttpRequestMessage Request(HttpMethod method, Uri upstream, NameValueCollection player, string[] names)
+    {
+        var request = new HttpRequestMessage(method, upstream);
+        foreach (string name in names)
+        {
+            if (player[name] is { } value)
+            {
+                request.Headers.TryAddWithoutValidation(name, value);
+            }
+        }
+        return request;
     }
 
     public void Dispose()
@@ -204,7 +322,8 @@ internal sealed class MediaRoute : IMediaRoute
             if (_current is null || rejected || ending)
             {
                 _renewedAt = _time.GetTimestamp();
-                _current = await _source(rejected, cancellationToken).ConfigureAwait(false);
+                // Bounded by the token also where the source does not watch it.
+                _current = await _source(rejected, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
             }
             return _current;
         }
@@ -214,7 +333,8 @@ internal sealed class MediaRoute : IMediaRoute
         }
     }
 
-    private static async Task RelayAsync(HttpResponseMessage upstream, HttpListenerResponse response, bool head, CancellationToken cancellationToken)
+    private static async Task RelayAsync(HttpResponseMessage upstream, HttpListenerResponse response, bool head, UpstreamWatch watch,
+        UpstreamResume? resume, CancellationToken cancellationToken)
     {
         int status = (int)upstream.StatusCode;
         if (status is >= 300 and < 400 && status != (int)HttpStatusCode.NotModified)
@@ -262,14 +382,88 @@ internal sealed class MediaRoute : IMediaRoute
         {
             try
             {
-                await body.CopyToAsync(response.OutputStream, cancellationToken).ConfigureAwait(false);
+                await CopyAsync(body, response.OutputStream, watch, cancellationToken, resume).ConfigureAwait(false);
             }
             catch
             {
-                // A body that breaks off must not read as complete: the player has to see a lost connection, not an end.
+                // A body that breaks off and cannot be resumed must not read as complete: the player has to see a lost
+                // connection, not an end. curl then asks again from where it was, if the stream can seek; a remux ends,
+                // and the playback reconnects.
                 response.Abort();
                 throw;
             }
         }
     }
+
+    /// <summary>
+    /// Copies the server's <paramref name="body"/> to the <paramref name="player"/>. Only the reads wait on the server and
+    /// are timed; a write waits as long as the player does not read, which a paused player does not. With a
+    /// <paramref name="resume"/>, a body that breaks off, goes silent or ends early goes on from its next byte.
+    /// </summary>
+    internal static async Task CopyAsync(Stream body, Stream player, UpstreamWatch watch, CancellationToken cancellationToken,
+        UpstreamResume? resume = null)
+    {
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(CopyBufferSize);
+        try
+        {
+            while (true)
+            {
+                // With a resume, an answer is read up to the last byte it names, never past it into the player's answer.
+                int room = resume?.Room(buffer.Length) ?? buffer.Length;
+                int read = 0;
+                MediaUpstreamException? failure = null;
+                if (room > 0)
+                {
+                    var waiting = watch.Arm();
+                    try
+                    {
+                        read = await body.ReadAsync(buffer.AsMemory(0, room), waiting).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (watch.IsCutOff)
+                    {
+                        failure = watch.CutOff(ex);
+                    }
+                    catch (Exception ex) when (ex is IOException or HttpRequestException && !cancellationToken.IsCancellationRequested)
+                    {
+                        failure = new MediaUpstreamException($"broke off ({Kind(ex)})", ex);
+                    }
+                    finally
+                    {
+                        watch.Disarm();
+                    }
+                }
+                if (read > 0)
+                {
+                    resume?.Delivered(read);
+                    await player.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+                if (resume is null && failure is not null)
+                {
+                    throw failure;
+                }
+                if (resume is not { Remains: true })
+                {
+                    // The end; with every byte at the player, a break after the last one is the end too.
+                    return;
+                }
+                // A resumed answer may also end before the player's range does, as servers cap their answers: asked again
+                // from there.
+                failure ??= new MediaUpstreamException("ended early");
+                body = await resume.ResumeAsync(failure, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    // What went wrong, never the message: some carry the address.
+    internal static string Kind(Exception ex) => ex switch
+    {
+        HttpIOException io => io.HttpRequestError.ToString(),
+        HttpRequestException request => request.HttpRequestError.ToString(),
+        _ => ex.GetType().Name,
+    };
 }

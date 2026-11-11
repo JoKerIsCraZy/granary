@@ -116,7 +116,7 @@ public sealed partial class AlphabetJumpBar : UserControl
         ShowActive();
     }
 
-    // The current letter is red with dark text: told by more than its colour, it is also announced as current.
+    // The current letter is in the accent with its label: told by more than its colour, it is also announced as current.
     private void ShowActive()
     {
         foreach (var (letter, entry) in _entries)

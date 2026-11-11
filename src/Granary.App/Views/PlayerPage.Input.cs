@@ -14,7 +14,9 @@ using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 
 namespace Granary.App.Views;
 
-// The keyboard map of the web player (docs/api-contract.md, 13.5) and clicks on the picture.
+// The keyboard map of the web player (docs/api-contract.md, 13.5), the chapter keys of Silo's macOS app, and clicks on the
+// picture. A key that belongs to a button Settings → Playback → Player buttons hides does nothing (Allows); F11 is the
+// window's and always works.
 public sealed partial class PlayerPage
 {
     // A second click within this time makes a double click, so the first click's play or pause waits for it.
@@ -67,13 +69,14 @@ public sealed partial class PlayerPage
         }
     }
 
-    // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
+    // Any key shows the controls, not the cursor: only the mouse brings that back. Space is taken here, before a focused
+    // button would press itself with it:
     // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) with
     // focus on the picture shows the controls with focus on Play/Pause, as Silo's TV app reveals them
     // (requestIdleOverlayFocus); there the controls never show without focus, here a pointer shows them too, and an air
     // mouse keeps them up, so OK does it whether they show already or not. A button that shows while they are hidden
     // (the sync notice's ✕, the skip pill) keeps OK. A held OK acts once: its repeats neither press the button it
-    // landed on nor bring the controls back after a skip.
+    // landed on nor bring the controls back after a skip. The chapter keys are taken here too (JumpsChapter).
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _lastInputWasKey = true;
@@ -90,6 +93,11 @@ public sealed partial class PlayerPage
         }
         _controlsShownBeforeKey = _areControlsVisible;
         ShowControls();
+        if (JumpsChapter(e.Key, e.KeyStatus.WasKeyDown))
+        {
+            e.Handled = true;
+            return;
+        }
         bool okOnPicture = e.Key == VirtualKey.Enter && !HasFocusInControls() && !HasShownButtonFocus();
         if (okOnPicture && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
         {
@@ -153,13 +161,22 @@ public sealed partial class PlayerPage
                 TogglePause();
                 break;
             case VirtualKey.F when !isRepeat:
-                ToggleFullScreen();
+                if (Allows(PlayerKey.FullScreen))
+                {
+                    ToggleFullScreen();
+                }
                 break;
             case VirtualKey.P when !isRepeat:
-                SetMiniView(!_modes.IsMiniView);
+                if (Allows(PlayerKey.MiniView))
+                {
+                    SetMiniView(!_modes.IsMiniView);
+                }
                 break;
             case VirtualKey.M when !isRepeat:
-                ViewModel.ToggleMuteCommand.Execute(null);
+                if (Allows(PlayerKey.Mute))
+                {
+                    ViewModel.ToggleMuteCommand.Execute(null);
+                }
                 break;
             case VirtualKey.C when !isRepeat:
                 ViewModel.ToggleSubtitles();
@@ -199,10 +216,10 @@ public sealed partial class PlayerPage
                 break;
             // While the title loads or after it failed there are no controls to show or menus to open: the volume, as before.
             case VirtualKey.Up when IsDocked || !UpDownMovesFocus || !HasTransport:
-                ViewModel.ChangeVolume(VolumeStep);
+                ChangeVolume(VolumeStep);
                 break;
             case VirtualKey.Down when IsDocked || !UpDownMovesFocus || !HasTransport:
-                ViewModel.ChangeVolume(-VolumeStep);
+                ChangeVolume(-VolumeStep);
                 break;
             case VirtualKey.Up:
                 if (!isRepeat)
@@ -235,6 +252,36 @@ public sealed partial class PlayerPage
         return true;
     }
 
+    // Ctrl+Right and Ctrl+Left jump between chapters, as ⌘→ and ⌘← on Silo's macOS app, through the Chapters menu's seek. They
+    // are taken on the way down, before a focused volume slider would set the volume with them, and never skip or move between
+    // the controls. A held key jumps once: each repeat would be another seek, and in a Watch Party another request to the room.
+    // Without chapters, while the title cannot be sought and on the Playing Next screen they pass on.
+    private bool JumpsChapter(VirtualKey key, bool isRepeat)
+    {
+        if (!IsChapterKey(key) || ShowsNextUpScreen || !ViewModel.CanSeek || !ViewModel.HasChapters || !Allows(PlayerKey.Chapters)
+            || !AcceptsShortcut(key))
+        {
+            return false;
+        }
+        if (!isRepeat)
+        {
+            ViewModel.SeekToAdjacentChapter(forward: key == VirtualKey.Right);
+        }
+        return true;
+    }
+
+    // Whether a key of a bar button does what it does: while Settings shows the button; the minimized bar keeps its own
+    // Mute and the volume keys.
+    private bool Allows(PlayerKey key) => ViewModel.Bar.AllowsKey(key, IsDocked);
+
+    private void ChangeVolume(double delta)
+    {
+        if (Allows(PlayerKey.Volume))
+        {
+            ViewModel.ChangeVolume(delta);
+        }
+    }
+
     // A button with focus that is not one of the controls, so shows while they are hidden.
     private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
@@ -243,7 +290,8 @@ public sealed partial class PlayerPage
 
     // Down from the picture opens the menu a viewer most likely wants, as Silo's TV app opens its panel on audio, else
     // subtitles, else video (preferredPlaybackHudTab): here the audio menu when there is a track to choose, else the
-    // subtitles', else the playback settings. Back closes it onto its button, among the shown controls.
+    // subtitles', else the playback settings, of those Settings shows (PlayerBar.MenuOnDown); with none, nothing. Back
+    // closes it onto its button, among the shown controls.
     private void OpenPlaybackMenu()
     {
         if (IsMiniView)
@@ -251,9 +299,16 @@ public sealed partial class PlayerPage
             FocusTransport();
             return;
         }
-        var (button, menu) = ViewModel.CanChooseAudio ? (AudioButton, AudioMenu)
-            : ViewModel.HasSubtitleMenu ? (SubtitleButton, SubtitleMenu)
-            : (SettingsButton, SettingsMenu);
+        if (ViewModel.Bar.MenuOnDown(ViewModel.CanChooseAudio, ViewModel.HasSubtitleMenu) is not { } shown)
+        {
+            return;
+        }
+        var (button, menu) = shown switch
+        {
+            PlayerButton.Audio => (AudioButton, AudioMenu),
+            PlayerButton.Subtitles => (SubtitleButton, SubtitleMenu),
+            _ => (SettingsButton, SettingsMenu),
+        };
         _movesThroughControls = true;
         RestartHideTimer();
         button.Focus(FocusState.Keyboard);
@@ -300,7 +355,7 @@ public sealed partial class PlayerPage
         // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
         // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
         var options = new FindNextElementOptions { SearchRoot = this };
-        if (VolumeSlider.ActualWidth > 0)
+        if (VolumeSlider.Visibility == Visibility.Visible && VolumeSlider.ActualWidth > 0)
         {
             options.ExclusionRect = VolumeSlider.TransformToVisual(null)
                 .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
@@ -312,7 +367,8 @@ public sealed partial class PlayerPage
     // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
     // does as on the web player. Not while paused, where hidden controls would only leave a still picture, so Back closes;
     // a skip pill and the marker editor take Back first (the switch below). A stream reloading for a subtitle just picked
-    // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on.
+    // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on. The
+    // cursor goes with the controls, as when they hide by themselves (SetControlsVisible).
     private bool HidesControls(VirtualKey key, bool isRepeat)
     {
         if (key is not (VirtualKey.GoBack or VirtualKey.Back) || isRepeat || !_controlsShownBeforeKey || IsCompact
@@ -329,17 +385,25 @@ public sealed partial class PlayerPage
     // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).
     private static bool IsBack(VirtualKey key) => key is VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back;
 
-    // Modifier combinations belong to the app (Alt+Left, Ctrl+K); text fields, open menus and the subtitle panels keep
-    // their keys.
-    private bool AcceptsShortcut()
+    // Modifier combinations belong to the app (Alt+Left, Ctrl+K), all but the chapter keys (JumpsChapter, the only caller
+    // that passes a key); text fields, open menus and the subtitle panels keep their keys.
+    private bool AcceptsShortcut(VirtualKey key = VirtualKey.None)
     {
-        if (IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
-            || IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows))
+        if (HasModifier() && !IsChapterKey(key))
         {
             return false;
         }
         return FocusManager.GetFocusedElement(XamlRoot) is not (TextBox or PasswordBox or RichEditBox) && !HasOpenMenu() && !IsPanelOpen;
     }
+
+    // Ctrl+Left and Ctrl+Right with no other modifier: Ctrl takes the place of the Mac's ⌘.
+    private static bool IsChapterKey(VirtualKey key) =>
+        (key is VirtualKey.Left or VirtualKey.Right) && IsDown(VirtualKey.Control)
+        && !IsDown(VirtualKey.Menu) && !IsDown(VirtualKey.Shift) && !IsDown(VirtualKey.LeftWindows) && !IsDown(VirtualKey.RightWindows);
+
+    private static bool HasModifier() =>
+        IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
+        || IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows);
 
     private static bool IsDown(VirtualKey key) =>
         InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
@@ -377,6 +441,9 @@ public sealed partial class PlayerPage
             TogglePause();
         }
         _clickToggled = false;
-        ToggleFullScreen();
+        if (Allows(PlayerKey.FullScreen))
+        {
+            ToggleFullScreen();
+        }
     }
 }

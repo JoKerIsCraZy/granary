@@ -16,6 +16,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     public string? Tagline { get; init; }
 
+    /// <summary>Who recommended <see cref="CatalogItemBase.AdvisoryAge"/>: <c>commonsense</c> or <c>mdblist</c>.</summary>
+    public string? AdvisorySource { get; init; }
+
     public IReadOnlyList<string> Countries { get; init => field = value ?? []; } = [];
 
     public string? FirstAirDate { get; init; }
@@ -36,6 +39,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     public WatchRollup? UserData { get; init; }
 
+    /// <summary>The profile's own stars for the title, 1 to 5; absent when it has not rated it.</summary>
+    public int? UserRating { get; init; }
+
     /// <summary>The season of <see cref="CatalogItemBase.PlayContentId"/> when that is an episode.</summary>
     public int? PlaySeasonNumber { get; init; }
 
@@ -47,6 +53,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     /// <summary>Local extras (behind the scenes, featurettes, …).</summary>
     public IReadOnlyList<ItemExtra> Extras { get; init => field = value ?? []; } = [];
+
+    /// <summary>The theme music the page plays; absent when the server's lookup failed or it predates themes.</summary>
+    public ThemeSongSet? Themes { get; init; }
 
     /// <summary>The subtitle language the profile's preferences resolve to for this item; empty when the preference is None.</summary>
     public string? EffectiveSubtitleLanguage { get; init; }
@@ -87,6 +96,13 @@ public sealed record RatingsCapability
 }
 
 public sealed record RatingsCapabilitySource(string Source, string Name);
+
+/// <summary>The body of <c>PUT /api/v2/ratings/{item_id}</c>: the profile's whole stars for the title.</summary>
+public sealed record RatingSet(int Rating)
+{
+    public const int Min = 1;
+    public const int Max = 5;
+}
 
 public sealed record CastCredit(string Name, string Character, int Order, string? PersonId, string? PhotoUrl, string? PhotoThumbhash);
 
@@ -152,6 +168,14 @@ public sealed record FileVersion
 
     /// <summary>This file's part within its presentation, counted from 0.</summary>
     public int PresentationPartIndex { get; init; }
+
+    /// <summary>
+    /// The episodes a multi-episode file holds, first and last (S01E05-E06: 5 and 6); absent for a file of one episode. Such
+    /// a file is linked to its first episode only.
+    /// </summary>
+    public int? MultiEpisodeStart { get; init; }
+
+    public int? MultiEpisodeEnd { get; init; }
 
     /// <summary>
     /// The audio track the profile's preferences pick, as an ordinal into <see cref="AudioTracks"/>; what playback starts

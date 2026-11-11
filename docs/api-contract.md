@@ -537,7 +537,28 @@ Signing out keeps the entry but drops its tokens and profile; removing a server 
 over its theme (`web/src/lib/accentColor.ts`): only `#rgb` or `#rrggbb` counts (the admin's setting is free text,
 `branding.accent_color`); it recolours the primary actions, the focus ring and the selection, and labels on it turn
 white when white contrasts more than the dark label `#141417`. Granary reads it for the active server
-(`ServerAccent`) and keeps its own red when there is none or the read fails.
+(`ServerAccent`) and paints it as the web does (`AccentPalette`, `AccentPainter`).
+
+- **Without an accent** (none set, anything but hex, a server never read, no server at all as on the sign-in pages)
+  Granary uses what the web uses then: Cinema Dark's own primary `#e8e8ec` with the dark label `#141417`
+  (`web/src/app.css`, `[data-theme="midnight-cinema"]`). A server that sets `#ef4444` gets exactly that red. Only what
+  the web paints with `primary`, `ring` and `sidebar-primary` follows the accent; what it paints with `destructive`
+  (`#ef4444`: errors, delete and end actions) stays red in Granary too (`SiloDestructiveBrush`). Hover is the accent at
+  90 % over the page, as the web's `hover:bg-primary/90`, press at 80 %.
+- **Remembered per server.** As Android and Apple keep each server's last branding (`ServerBrandingCache`), Granary keeps
+  what the server last answered with its entry in `servers.json`: `"branding": { "accent": "#rrggbb" or "none",
+  "wordmark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
+  answers, and it stays while the read fails. A read that answers differently replaces it. Only a server never read, or
+  one without an accent, shows the light default. A file from before has no `branding`; its servers are read as never
+  read.
+  When an address answers as another server when it is added again, its branding goes and it is read again at once; an
+  answer of the server before is not saved for it.
+- **A failed read** (no network yet after a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute,
+  then every 5 minutes; at once when the session signs in or becomes ready; and 2 s after the network changes
+  (`ILocalNetwork`), which starts the waits over. An answer ends the retries, also one without an accent, and so does
+  another server becoming active, which starts afresh. A streak of failures is logged once, with the status or the kind
+  of failure only.
+- **The wordmark** is shown only from the server itself, the remembered one too: anywhere else is not its wordmark.
 
 ### 6.6 Settings the client reads
 
@@ -565,12 +586,17 @@ Profile and device settings live on the server (manifest
 | `playback.intro_skip_mode` | profile, profile_device | `ask` | [11.2](#112-intro-skip-mode) |
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
-| `player.subtitle_sync_ms`, `player.audio_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.audio_sync_ms` | profile_device only | `0` (−5000 to 5000 ms) | this device's audio delay, positive for later sound (mpv's `audio-delay`, as Android's `DelayAudioProcessor` pads the start with silence); read at each start in a batch of its own, so a server that refuses the key (`422`) keeps the other playback settings and has no audio delay (no Sound in Settings, no row in the player); edited under Settings → Playback → Sound and in the player's settings menu, saved once it settles, bound to the profile it was made for |
 | `player.sleep_timer_default_minutes` | profile_device only (a `profile` write is refused) | `30` (0 to 240; 0 none) | the duration the sleep timer's menu opens on; read in a batch of its own, a started duration saved back |
-| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
+| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind ([10.5](#105-resume); 0 to 30 s, Granary's default 0), auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
+| `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
+| `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
+| `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
+| `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
 
 #### 6.6.1 Card badges
 
@@ -615,6 +641,60 @@ shared with the other desktop clients), so a browser and Granary each keep their
   Wide (16:9) row cards are 260 px, 315 from `sm`, at every size. `title` drops the details under the title (year, episode
   title and code, time left), `artwork` the whole caption.
 
+#### 6.6.3 Episode spoilers
+
+The web's Title Pages › Spoilers and the apps' spoiler switches (`web/src/lib/episodeSpoilers.ts`,
+`hooks/useEpisodeSpoilerPrefs.ts`; Apple's `EpisodeSpoilerPreferences.swift`), manifest revision 17, catalog-api.md "Episode
+spoiler protection". The server never changes catalog answers for them: the client hides.
+
+- `catalog.hide_unwatched_episode_images` blurs the still of an episode the profile has not started,
+  `catalog.hide_unwatched_episode_overviews` leaves out its description. Both are booleans at `profile` scope only
+  (`PUT …?scope=profile`), default `false`; anything but `true` reads as off. They are read together, at start, with every
+  server or profile, and when the settings page opens; until a profile's are read nothing is hidden, never the previous
+  profile's choice. A change shows at once and saves in order; a refused one, or one made as the session ends, goes back to
+  what was saved.
+- A server whose effective read refuses the keys (`422`) predates them: nothing is hidden and the switches are not offered.
+- Unwatched: `user_data` missing, or `played` false, `is_in_progress` not true and no positive `position_seconds`. Cards of
+  Continue Watching and Next Up carry `user_state.played` and `position_seconds` instead.
+- Only the episode's own still is blurred. `still_is_episode_still` on episode rows, `poster_is_episode_still` and
+  `backdrop_is_episode_still` on cards and details say whether the picture is the episode's still (`true`) or other
+  artwork, such as the series' standing in (`false`), for the picture actually shown; absent means unknown, an older server,
+  and is treated as a still. `GET /api/v2/images/capabilities` reports `episode_still_provenance: true`.
+- Titles stay; movies, series and seasons are never hidden.
+
+#### 6.6.4 Title pages
+
+The rest of the web's Title Pages (`web/src/pages/settings/TitlePagesSettings.tsx`). `TitlePageSettings` reads them in one
+batch, at start, with every server or profile, and when the settings page opens; until a profile's are read every one is at
+its default, never the previous profile's. A change shows at once and saves in order; a refused one goes back. A key the
+server's contract does not know (`422`, then read one by one, `ProfileSettings`) offers no switch and stays at its default.
+Every write and clear of a change goes out as the server and profile it was made for (`SettingsApi.SetValueAsProfileAsync`,
+`ClearValueAsProfileAsync`, `SiloHttp.SendAsProfileAsync`), also the second of two: should the profile change between
+them, the next one is refused unsent and the change counts as not saved, so it never writes or clears the next profile's
+value.
+
+- `catalog.show_advisory_age` (revision 10, `profile` only, default `false`): a movie's or series' page names its
+  `advisory_age` beside the rating ([7.6](#76-item-detail-get-apiv2catalogitemsid)), as the web's `useShowAdvisoryAge` and
+  `MetadataBadges`. It only shows the age; the profile's `max_advisory_age` limit is the server's.
+- `ui.title_art` (revision 16, default `true`, `admin_default`): a title's page names it with its `logo_url` rather than its
+  name in text. Its resolution order is `profile`, then `profile_device`, then the default: a profile value is "Apply to all
+  devices" and wins on every device (the manifest's notes, the web's `useTitleArtSetting`). Anything but `false` reads as on;
+  a server without the key, or a failed first read, shows logos. Until the profile's value is read, a page with a logo holds
+  its title, neither logo nor text, for 1.5 s at most; then the logo shows until the answer comes. Writes:
+  - Show title art: `PUT …?scope=profile_device`, or `…?scope=profile` while the source is `profile`.
+  - Apply to all devices on: `PUT …?scope=profile` with the current value. Off: `PUT …?scope=profile_device` with the
+    current value, then `DELETE …?scope=profile` (refused unsent once another profile acts), so this PC keeps its look and the
+    others go back to their own or the default.
+  - Use server default (shown while the source is not `default`): `DELETE …?scope=profile_device`, and `…?scope=profile`
+    while that is the source, then read the effective value again; a `404` means there was nothing to clear.
+
+  Only a title's page follows it, as on the web; Home's hero keeps the logo.
+- `ui.theme_music_enabled` and `ui.theme_music_loop` (revision 11, `profile` and `profile_device`, this device's value first,
+  default `false`; the manifest lists them for `web` only, which the server does not enforce, and the apps read them too):
+  title pages play their theme music ([7.19](#719-theme-music)), and repeat it. Saved as the web's `useProfileDefaultWriter`
+  writes them: `PUT …?scope=profile`, then `DELETE …?scope=profile_device` when the effective value came from this device.
+  Only the acting profile's own read turns theme music on, never the previous profile's while the next one is read.
+
 ## 7. Catalog
 
 Every operation in this section needs the bearer token and, unless noted, `X-Profile-Id` (plus
@@ -651,6 +731,12 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   "Recently Added TV"; TV groups arrivals by show, returning an `episode` card for a single episode
   and a `series` card otherwise).
 - Never key logic on a section `id`; admins can rename and add rows.
+- **Hero banner**: `featured` marks the page's hero banner, set in Silo's web by an administrator or for one profile
+  ("Use as hero banner"). The server keeps one per page, but a profile's own featured row can follow an administrator's,
+  so the first one counts: Home shows it as its banner instead of as a row, as the web does
+  (`silo-server/web/src/pages/homeSectionState.ts:21-22`), and a later one stays a row. An administrator's banner kept on
+  the web (`web_only`) is sent only to `X-Silo-Client-Family: web`
+  (`silo-server/internal/sections/resolver_test.go:257-299`); Granary sends `desktop` and never sees it.
 - Dismissal: choose the surface **per card**, not per row. A card with `progress_updated_at` uses
   `continue_watching` (body `{ "progress_updated_at" }`); a card without it but with `series_id`
   (a next-up card, also inside a combined Continue Watching row) uses `next_up` (body
@@ -674,14 +760,18 @@ open string. Useful optional members: `series_id`, `series_title`, `season_numbe
 `poster_url`, `backdrop_url`, `logo_url`, `poster_thumbhash`, `backdrop_thumbhash` (there is no
 `logo_thumbhash`), `position_seconds`,
 `duration_seconds`, `progress_updated_at`, `item_source`, `play_content_id` (episode to play for a
-series/season card), `user_state { played, is_favorite, in_watchlist, not_interested }`,
-`overlay_summary` (resolution, hdr, codecs, audio channels, …), `badges[]`, `rating_imdb`,
+series/season card), `poster_is_episode_still`, `backdrop_is_episode_still` ([6.6.3](#663-episode-spoilers)),
+`user_state { played, is_favorite, in_watchlist, not_interested }`,
+`overlay_summary` (resolution, hdr, codecs, audio channels, …), `badges[]` (`new`; on a Continue Watching or Next Up
+episode `season_premiere`: the first episode of a season after the first, aired in the last 14 days,
+`internal/sections/fetcher.go` `recentSeasonPremiereBadges`), `rating_imdb`,
 `rating_tmdb`, `added_at`. There is no subtitle field: compose "S1 · E5" or the year on the client
 (`silo-server/internal/apiv2/catalog_types.go:19-90`).
 
 ### 7.3 Libraries
 
-- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"? }] }`.
+- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"?,
+  "box_sets_enabled" }] }` (box sets, 7.18).
   `type` is free text (`movies`, `series`, `mixed`, …); sort by `sort_order`. The libraries a profile browses are the
   web's `useUserLibraries`: read with the profile settings `ui.disabled_library_ids` (left out) and `ui.library_order`
   (those it names first, in its order, the rest after) in one `GET /api/v2/settings/values/effective?keys=…`. Both are
@@ -798,6 +888,7 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
   with `Retry-After`; an expired Meilisearch ranking session answers `invalid_cursor`.
 - People: `GET /api/v2/catalog/people?q=&limit=1..100&media_scope=video` → `{ "items": Person[] }`
   (only when `people_media_scope` is true). A person found opens their page (7.6a).
+- Box sets: `GET /api/v2/catalog/box-sets?q=` (7.18), only when `box_sets` is true.
 - Android: 300 ms debounce, `limit=60` (phone) / 40 (TV), people search in parallel with
   `limit=20` (`silo-android/.../SearchViewModel.kt:142-333`).
 
@@ -822,12 +913,14 @@ device-specific audio/subtitle preferences). Accepts movie, series, season and e
 `CatalogItemDetail` = `CatalogItem` plus: `original_title`, `tagline`, `overview`, `studios`,
 `networks`, `countries`, `first_air_date`, `last_air_date`, `season_count`, `episode_count`,
 `ratings[{ source, name, score, display }]` (render as given, max 3), `cast[{ name, character, order, person_id?, photo_url? }]`,
-`crew[{ name, job, person_id?, photo_url? }]`, `user_state`, `user_data` (`played`,
+`crew[{ name, job, person_id?, photo_url? }]`, `user_state`, `user_rating?` (the profile's own stars, 1 to 5, absent
+when unrated; 7.11), `user_data` (`played`,
 `watched_count`, `unplayed_count`, `in_progress_count`, `is_in_progress?`, `position_seconds?`,
 `duration_seconds?`, `last_file_id?`), `play_content_id`, `play_season_number` (next episode for a
 series/season), `versions[]` (`FileVersion`: `file_id`, `resolution`, `codec_video`, `codec_audio`,
 `container`, `hdr`, `file_size`, `duration` (s), `bitrate` (kbps), `audio_tracks[]`,
-`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`, `edition_raw?`), `playback_variants[]`,
+`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`, `edition_raw?`, `multi_episode_start?`,
+`multi_episode_end?` (a multi-episode file's first and last episode, see 7.7)), `playback_variants[]`,
 `subtitles[]`, `videos[]` (trailers), `extras[]`. `edition_raw` is an edition's label, not a file name: the scanner
 sets it only when it recognises an edition (the text of a `{edition-…}` tag in a folder or file name, or edition words
 it matches to an `edition_key`, `internal/naming/variants.go`), so the Info dialog may show it; `file_path` and
@@ -842,9 +935,25 @@ its default, as in 8.8.1). Their defaults are what playback picks: the file as `
 audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
 that audio.
 
+`themes?` is the theme music the page plays ([7.19](#719-theme-music)): `{ owner_id, items[{ id, title, duration_seconds,
+container }] }`, resolved by the server (a season without its own takes its series', an episode its season's, then its
+series'); an empty set keeps the item's id, and a failed lookup leaves the member out.
+
+`advisory_age?` (an integer) is a suggested minimum viewer age from an advisory service, not the certification, and
+`advisory_source?` who suggested it (`commonsense`, `mdblist`); absent means none was fetched, never "for everyone". The
+page shows it only with `catalog.show_advisory_age` ([6.6.4](#664-title-pages)).
+
 The Discord status (docs/architecture.md) reads `tmdb_id` here: a string of digits in the schema, absent for an item TMDB
 does not know. It takes the movie's own item, or an episode's series (`series_id` of the watch detail), and only a
 positive integer; anything else means no TMDB page and no poster.
+
+`extras[]` are the title's local extras, a movie's or series' only (the server leaves them out for other types), in the
+server's order, sorted by kind: `content_id`, `kind` (`trailer`, `teaser`, `featurette`, `clip`, `behind_the_scenes`,
+`bloopers`, `deleted_scene`, `other`; the server folds a kind it does not know to `other`), `title?`, `duration_seconds?`
+(an integer), `file_id?` (an integer, 7.9), `still_url?` (16:9, presigned and short-lived like all images, 7.10) and
+`still_thumbhash?`. An extra's `content_id` is a watch target of its own: `GET /api/v2/watch/{id}` (7.8) answers
+`type: "extra"` with the parent's year and art, and `series_id` and `series_title` only for a series' extra. Granary plays
+it as Silo's apps do, from its start (`PlayRequest.FromStart`), and as it is no episode nothing plays next after it.
 
 ### 7.7 Series → seasons → episodes
 
@@ -853,16 +962,26 @@ positive integer; anything else means no TMDB page and no poster.
   `overview?`, `play_content_id?`, `poster_url?`, `user_data?`.
 - `GET /api/v2/catalog/series/{id}/seasons/{num}/episodes` → `{ "items": Episode[] }`; `Episode`:
   `content_id`, `season_number`, `episode_number`, `title`, `runtime` (min), `overview?`,
-  `air_date?`, `still_url?`, `user_data?`, `files?[{ file_id, resolution?, hdr, file_size }]`.
+  `air_date?`, `still_url?`, `still_is_episode_still?` ([6.6.3](#663-episode-spoilers)), `user_data?`,
+  `files?[{ file_id, resolution?, hdr, file_size }]`.
 - `GET /api/v2/catalog/items/{season_id}/episodes` lists episodes of a season item (a series id is
   `404`).
+- A season's listing holds only the episodes with a file in a library (`episode_libraries`): an episode whose file is
+  gone loses its membership, and with it its place in the listing, in the same scan, and comes back as it was when the
+  file returns within the scanner's removal grace (24 h by default; `silo-server/docs/architecture/missing-files.md`).
+  Specials are season 0.
+- A double episode (S01E05-E06 in one file) is one file linked to its first episode, with the range in that file's
+  `multi_episode_start` and `multi_episode_end` (item detail and versions, 7.6). The current server gives each later
+  episode of the range a membership of its own (`internal/catalog/multi_episode_files.go`), so the listing has E05 and
+  E06 as two rows with the same `file_id`. A server from before that, or one whose next scan has not yet restored the
+  ranges a 2026-10-28 migration cleared, lists E05 only. An episode row never carries the range.
 - Next episode: `play_content_id` on series/season detail and seasons; `/watch` has no
   next-episode field. Android picks the initial season (in progress → partly watched → first
   unplayed → first; specials last) and resolves the next episode from the season lists.
 
 ### 7.8 Watch detail: `GET /api/v2/watch/{id}`
 
-The call right before playback (movie or episode; a series is `422`). Query: `file_id` (preferred
+The call right before playback (movie, episode or local extra, 7.6; a series is `422`). Query: `file_id` (preferred
 version; fills its on-demand markers), `library_id`, image params; header `X-Silo-Device-Id`.
 Returns `WatchDetail`: `content_id`, `type`, `title`, series context, `poster_url`/`backdrop_url`
 (for the OS media controls), `user_data` (resume, see [10.5](#105-resume)), `versions[]`
@@ -918,7 +1037,7 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `GET /api/v2/images/capabilities` reports `state: available` and lists the slot in
   `slot_width_params`. Keep the same widths across a paged listing (cursors are bound to them).
 
-### 7.11 Favorites, watchlist, watched
+### 7.11 Favorites, watchlist, watched, ratings
 
 - `PUT` / `DELETE /api/v2/favorites/{item_id}` and `/api/v2/watchlist/{item_id}` → `204`
   (idempotent). Membership comes from `user_state` on cards and detail; point checks use
@@ -926,6 +1045,21 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   (gate on `GET /api/v2/capabilities/personal-lists` → `membership_supported`). Avoid the older
   entry-or-404 `GET /api/v2/favorites/{item_id}`: bursts of 404s can trip intrusion detection.
 - `POST` / `DELETE /api/v2/watched/{id}` → `204` (movie, episode, season or series; non-retryable).
+- Ratings, the profile's own whole stars: `PUT /api/v2/ratings/{item_id}` `{ "rating": 1-5 }` → `204` replaces any
+  earlier rating of an item the viewer may see (else `404`); `DELETE /api/v2/ratings/{item_id}` → `204` runs no access
+  check and also answers `204` for a rating that never existed. Both are non-retryable (a repeat refreshes the
+  profile's recommendations again), so a failed write is not sent again. Granary has one writer per title and profile
+  for the whole app (`RatingWrites`), which sends one write at a time and, of the clicks made meanwhile, only the last,
+  each bound to the profile the page was read for (`SiloRequestOptions.Profile`), so a click waiting when the profile
+  changes is dropped unsent. It skips a click only when one of its own writes already stored it. The read is
+  `user_rating` on the item detail (7.6), absent when unrated, as the web reads it; a page that reads while the title's
+  writes are on their way shows their newest click instead, and one whose read began before they ended (within a
+  minute) what they left. `GET /api/v2/ratings` (the profile's ratings, newest first,
+  `{ items: [{ item_id, rating, rated_at }], page }` with a cursor) and `GET /api/v2/ratings/{item_id}`
+  (`{ item_id, rating, rated_at }`, `404` when unrated or hidden) are not used. The server takes any catalog item; the web, and Granary, show the stars on movies and series only
+  (`ItemDetail/components/MediaUserActionBar.tsx`). A profile that turned on "Send ratings" for a watch provider in the
+  web's Watch Providers settings has each change passed on by the server (`internal/watchsync/ratings.go`, 4 stars as
+  8/10); Granary only writes the rating.
 - `POST /api/v2/history/remove` `{ targets: [{ content_id, scope }] }` → `204`: clears the titles' watch history,
   watched state and resume progress for the profile. `scope` is `show` for a series or season, else `item`
   (the web's `lib/historyRemoval.ts`).
@@ -948,9 +1082,37 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   zone the days are reckoned in (absent is UTC; Windows ids need converting); `filter` is `following`, `trending`,
   `everything` (also `popular`, and the legacy `all`, `favorites`, `watchlist`).
 - `CalendarEvent`: `content_id`, `type` (`movie`, `episode`, `season_premiere`), `title` (the movie's or series'),
-  `series_id`, `season_number`, `episode_number`, `episode_title`, `air_at` (instant, when known) or `air_time` (HH:MM in
-  the network's zone), `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode
-  may not be in a library yet: the web opens the series, not the episode.
+  `series_id`, `season_number`, `episode_number`, `episode_title`, `air_date` (the source's date), `local_air_date` (the
+  day in `timezone` it is listed under), `air_at` (instant, when known) or `air_time` (HH:MM in the network's zone),
+  `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode may not be in a library
+  yet: the web opens the series, not the episode.
+- What it lists (`internal/catalog/calendar_repo.go`): every row of the server's episode metadata with an air date in the
+  window whose series is in a library the profile may see, whether the episode has a file or not; no specials (season
+  0); a `season_premiere` only for a season whose first episode has no air date. A double episode's later episode is a
+  row of its own. `filter` absent is `all`, no restriction; `library_id` keeps one library's series.
+- A season's grid (`ItemDetailViewModel.Airings.cs`, `SeasonGaps`, Granary's own; no Silo client does this) places the
+  episodes its listing lacks by the calendar, asked with no `filter` and the viewer's zone, and matched by `series_id`,
+  season and episode number. Its windows, at most 4 requests a page: today's next 62 days as two, always; then, the
+  latest first, each gap's between listed episodes, from one neighbour's `air_date` to the other's when they are at most
+  31 days apart (a day more at each end where that still fits, as the listing's source dates can be a day off the
+  viewer's), and the 31 days after the last listed episode's air date, up to yesterday. Windows that fit in 31 days
+  together are one request. Without an IANA name for the viewer's zone the server reckons in UTC, and the windows do too.
+  A season with no listed episode asks today's two windows only. Specials ask nothing.
+- An episode is missing once aired and upcoming before (by `air_at`, else by the day it is listed under), and dated by
+  the viewer's day. One aired more than 31 days after the last listed one is not found. A gap of at most 10 numbers shows
+  every number, by number alone where the calendar names none; a wider one, more likely numbering or a stray number,
+  only the episodes the calendar names. A season shows at most 50 places, the lowest numbers first.
+- A missing place is checked against the listed episode before it (the gap's first neighbour, or the last episode): on a
+  server whose listing has two episodes sharing a `file_id`, which lists double episodes' halves, nothing is read;
+  otherwise that episode is read (`GET /api/v2/catalog/items/{id}`, three at a time) for its versions'
+  `multi_episode_start`/`multi_episode_end`, so a double episode an older server lists by its first number only is never
+  a gap. One that cannot be read keeps the places it checks out.
+- The calendar's answer for a window lists every series, so it is asked once per server, profile, zone and window, kept
+  by series for 5 minutes (`SeriesAirings`) and shared by every page waiting for it; an episode's files are kept as long
+  (`EpisodeSpans`). A request goes out as whichever profile acts then, so an answer that came while another profile acts
+  is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
+  page's load does not wait for any of it. A failed calendar request leaves the season as listed, with a warning in the
+  log.
 
 ### 7.14 Notifications
 
@@ -1120,6 +1282,95 @@ read): a missing one answers 428, one changed since 412, after which the client 
   rule fields the server takes comes from `GET /api/v2/catalog/search/capabilities` (`extended_query_rules`,
   `show_title_rules`); facet and language values from `GET /api/v2/catalog/filters?source=query`; people from
   `GET /api/v2/catalog/people?q=` (a person rule stores the name).
+
+### 7.18 Movie box sets
+
+A movie or mixed library with `box_sets_enabled` gathers the movies TMDB lists in one collection (a trilogy, a
+franchise) into a box set of at least its `box_set_min_movies` (2 to 10) movies the viewer can see; library browse never
+groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv2/catalog_box_sets.go`). A box set
+(`CatalogBoxSet`): `id` (the TMDB collection's, a string), `library_id` (a string), `title` (TMDB's name, a trailing
+"Collection" written "Box Set"), `overview?`, `poster_url?`, `poster_thumbhash?`, `backdrop_url?`, `backdrop_thumbhash?`
+(cached like item artwork, or TMDB's own URL until the server caches it), `movie_count`, `played_count`, `first_year?`,
+`last_year?`. A server without box sets answers these reads 404.
+
+- `GET /api/v2/catalog/items/{id}/box-set[?library_id=]` (`getCatalogItemBoxSet`, image params) → `{ "box_set"?:
+  CatalogBoxSetDetail }`: the box set a movie's page shows, from `library_id` or the first of the movie's libraries with
+  box sets on. `box_set` is absent (`{}`, a 200) when the movie is in none the viewer sees, and for a series; 404 for an
+  id that is missing, hidden or not a catalog title. Granary asks only while one of the profile's libraries has
+  `box_sets_enabled`, as the web's `useItemBoxSet` does, so a server with box sets off is not asked on every movie page.
+  `BoxSetLibraries` reads `GET /api/v2/user/libraries` (the server's list, as the web's `useAvailableUserLibraries`: a
+  library the profile hid from its sidebar still counts) once per server and profile for every page that asks meanwhile,
+  and keeps the answer five minutes (the web's staleTime) unless the session changes or the answer came while another
+  profile acted. A read gives up after 30 s; any failure asks nothing and is not kept. It asks without `library_id`, since its title route carries none: the server then takes the
+  first of the movie's libraries with box sets on, while the web passes the library the movie is being viewed in. A 404
+  or any failure only leaves the row out, unlogged for a 404.
+- `GET /api/v2/catalog/box-sets/{id}?library_id=` (`getCatalogBoxSet`, `library_id` required, image params) →
+  `CatalogBoxSetDetail`: the box set and `items`, its movies in that library the viewer can see as `CatalogItem` cards, in
+  collection (release) order. 404 when the library has box sets off or the viewer sees too few of its movies: the
+  page says so in the web's words.
+- `GET /api/v2/catalog/box-sets?q=&limit=1..20[&library_id=]` (`searchCatalogBoxSets`, no image params) → `{ "items":
+  CatalogBoxSet[] }`, never null: the box sets of libraries with `box_sets_in_search` whose name holds every word of `q`,
+  or two or more of whose movies' titles do, best match first. Search asks with `limit=5`, as the web does, only while
+  `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
+  `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
+  1.5 s (Android's grace), shows none rather than holding the titles.
+
+### 7.19 Theme music
+
+A movie, series or season can own local theme audio (`theme.mp3` and the like, or a `theme-music/` folder;
+`silo-server/docs/catalog-api.md`, "Local theme songs, V2"). The item detail names the set to play (`themes`, 7.6); Granary
+plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/architecture.md, Theme music).
+
+- `GET /api/v2/catalog/themes/capabilities` (profile) → `{ state: available|disabled|not_configured|unsupported, allowed,
+  delivery, transcode, cluster_routing, grant_lifetime_seconds, revision }`. Themes play only while `state` is `available`
+  and `allowed` is not `false`; a `404` is a server that predates themes. `delivery: routed` lets a grant name a proxy
+  node's origin; with `local_direct_play` (or none) the audio comes from the server's own origin only
+  (`silo-server/internal/apiv2/theme_songs.go`). The answer stands 60 s, as the web's query keeps it; a failed read
+  changes nothing and is asked again with the next page.
+- `POST /api/v2/catalog/items/{owner_id}/themes/{theme_id}/playback` (profile) with `{ "accepted_formats": [{ container,
+  audio_codec }] }` → `{ url, expires_at, delivery: original|converted, content_type }`. Granary lists what Windows' media
+  player plays without extensions: `mp3/mp3`, `mp4/aac`, `m4a/aac`, `m4a/alac`, `aac/aac`, `flac/flac`, `wav/pcm`; the
+  server sends the original when it matches and otherwise converts it to AAC in audio-only MP4 (`converted`), or answers
+  `406` when it cannot. A grant answered after the profile changed is dropped.
+- `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
+  proxy node's origin (on the node, `/stream/theme/{token}`; `PlaybackUrl.ResolveTheme`, `ThemeOrigins`). A node is taken as
+  a video stream's is (9.1, `authorized_media_origins_v1`):
+  - Always: HTTPS, or HTTP beside an HTTP server (never HTTP beside an HTTPS one, as for a video node), no user info, no
+    fragment, and never this machine, a link-local, multicast or
+    unspecified address, however it is written: with the root's trailing dot (`127.0.0.1.`, `localhost.`), as `localhost`
+    or a name under it, as a single number, or inside an IPv6 address (IPv4-mapped, IPv4-compatible, 6to4 `2002::/16`,
+    NAT64 `64:ff9b::/96`), which counts as the IPv4 address it carries (`NetworkAddresses`).
+  - While the server's playback capabilities (`GET /api/v2/playback/capabilities`, read with the themes capability when it
+    says `routed`) offer `authorized_media_origins_v1`, the server vouches for the nodes it names, as for video: any
+    other address is taken, a private one included. The server names no list of its origins; the offer is the check, as
+    it is for a video attempt.
+  - Otherwise, or when that read fails: a public address or a host name is taken (a name is not looked up), and a
+    private (RFC 1918), shared (100.64/10) or unique-local node only while the server's own address is on a private
+    network too (such an address, one label, `.local`, `.lan`, `.internal`, `.home.arpa`): a proxy at `192.168.1.20` beside
+    a server at `192.168.1.10` plays, the same address named by a server on the internet does not.
+  - At the socket: a node's name could resolve anywhere (a rebinding, a wildcard DNS name), so the same rule is applied
+    again to the addresses it resolves to (`ThemeAudioDownloader.CreateHandler`, its `ConnectCallback`; the decision rides
+    on the request, `ThemeNode`): those it does not take are dropped, IPv6 forms carrying an IPv4 address included, and the
+    connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is fetched on a
+    client of its own (`theme-audio-node`) that never takes the system's proxy, which would look the name up out of
+    sight: it goes direct, so its theme plays behind a proxy too. The server's own origin is fetched on the `theme-audio`
+    client, which keeps the system's proxy as every other request to the server, and is not checked so: it connects as it
+    resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN. The rule
+    runs as a connection opens, so the handler keeps none for a later request (`PooledConnectionLifetime` and
+    `PooledConnectionIdleTimeout` zero; either alone stops the reuse in .NET 10): each download opens its own, and a
+    node's connection checked under one server's rule never serves a request made under another's.
+
+  Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
+  credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a
+  client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure is logged by
+  its status or kind alone.
+- A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
+  place. What a new grant might get past is tried once more with one: a grant or download lost to the network, a server
+  error or busy answer (5xx, 408, 429) or a timeout, and audio that fails or cannot be played; a theme that plays earns
+  that try back.
+  What would come back the same is not: a refused grant (403, 404, 406 and the like), a download refused (4xx), an
+  address Granary does not fetch, an answer that is no theme (empty, too large, unreadable), and a grant answered after
+  the profile changed. The page keeps such a theme chosen, so showing it again does not ask once more.
 
 ## 8. Playback protocol v3
 
@@ -1699,6 +1950,35 @@ no write progress for 180 s by default (operator-configurable via `SILO_STREAM_W
 a paused player that stops reading), so a long pause forces a new request; do not depend on the
 exact value.
 
+Granary does not wait for word of that close, which may never arrive (a connection that died
+silently): its media proxy cuts a wait in which the server sends nothing for 60 s, timing only its
+waits for the server (the answer, a token refresh before it included, then each read of the body),
+never the time a paused player does not read (§9.5).
+
+A direct play body that breaks off (the server, or a reverse proxy or firewall in front of it, closing
+a long download) or is cut that way is asked again from its next byte and spliced into the same
+answer to mpv, as Silo's Apple app reconnects its reader at the byte it had reached. Granary relies
+on the direct play route's range handling (§9.2): the request carries `Range: bytes=<next>-` and, as
+`If-Range`, the first answer's `ETag` (strong: `"<version>-<sha256>"`,
+`silo-server/internal/playback/directplay_etag.go`) or else its `Last-Modified`, as the server wrote
+it. A changed file fails the `If-Range` and is answered with the whole file (`200`, Go's
+`http.ServeContent`), which Granary never splices: only a `206` whose `Content-Range` starts at that
+byte with the same total and the first answer's validators goes on, read only up to the last byte
+it names. An answer with neither a strong `ETag` nor a `Last-Modified` is not resumed, as nothing
+would tell a changed file of the same size. `429`, `500`, `502`, `503`, `504`, `509`, lost
+connections and a token refresh the server cannot serve right now are asked again, at once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s). The proxy gives up
+after 12 resumes in a row that brought no data, 90 s after the break without data, or past 30
+resumes within 60 s; a `401` gets its one renewal (§9.4), and any other answer ends the request. A
+progressive remux (no length, no ranges) is never resumed.
+
+A request the proxy cannot resume is ended. mpv's HTTP reader (libcurl) then asks again from its
+byte offset where the stream can seek, at once (Granary sets `curl-max-retries=20`: mpv counts every
+retry since the last seek, ones that brought data too); a progressive remux ends, and the playback
+reconnects with the no-op `track_change` replan ([8.7](#87-replan)). A stream that waits 90 s for data while the
+viewer plays, with nothing new arriving, is given up and reconnected the same way. A reconnect plays
+on unless the viewer (or a Watch Party's room) had paused; mpv's own pause at the end of the data it
+had (keep-open) is not taken for theirs.
+
 ### 9.4 Token lifetime during long playback
 
 - Access token default lifetime **8 h** (`auth.access_token_expiry`,
@@ -1756,7 +2036,8 @@ v2 media routes collapse error codes to the HTTP status before the first byte (a
 | `422 validation_failed` on manifest/segment with `X-Silo-Tone-Map-Execution-Error` | Server tone-map recipe can no longer run (`source_revision_changed`, `source_preflight_rejected`) | Do not retry the URL; replan with `failure_recovery`. |
 
 Client network timeouts must exceed ~45 s: the server may hold a manifest for up to 30 s and a
-segment for ~12 s (plus up to 30 s after a seek restart).
+segment for ~12 s (plus up to 30 s after a seek restart). Granary's media proxy waits 60 s for the
+server's next bytes (§9.3).
 
 ### 9.6 Subtitle delivery
 
@@ -1988,6 +2269,17 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the resume rewind (client-local `player.resume_rewind_seconds`, default 7 s, applied only when
   the position is ≥ 30 s); it omits `start_position` when there is no saved position. It picks the
   version from `user_data.last_file_id` (`silo-android/androidApp/.../MobileVideoPlaybackStarter.kt:236-318`).
+  The rewind is never applied to Start Over, a Watch Party (the room's position), a retry or session renewal, a version
+  switch or a move to the next episode, which starts at 0 (`suppressResumeRewind`; `PlaybackStartPosition.kt`,
+  `applyResumeRewind`), and the result is clamped at 0. An On Deck pick in the player is an ordinary resume and is
+  rewound (`PlayerViewModel.playOnDeckItemNow`).
+- Granary keeps `player.resume_rewind_seconds` on the PC only (`resume_rewind_seconds` in `playback-device.json`, set
+  under Settings → Playback → This PC, 0 to 30) and writes nothing to the server. Its default is **0**, not the
+  contract's 7: the owner's choice, because viewers expect the exact point. A file without the key, or with a value
+  that is not a whole number from 0 to 30, reads as 0, and a save keeps to 0 to 30. Granary rewinds as Android does: Up Next starts the next episode
+  at 0, and the player's previous and next episode buttons (also in the taskbar preview and on the media keys), which
+  resume as the web player does, resume exactly (`PlayRequest.ResumeWithoutRewind`). Every other resume, On Deck in
+  the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
 - `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are
@@ -2179,8 +2471,10 @@ A server answering the ticket with 404 or 501 gets no lane until the next sign-i
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
   later connection back after more than 5 s without one (the lane's first has no gap): one
-  `ViewerStateChanges.Report()` once the burst has been quiet for 2 s, at most 30 s after its first change.
-  Home reloads in place while shown; other pages compare the version on their next visit.
+  `ViewerStateChanges.Report()` once the burst has been quiet for 2 s, at most 30 s after its first change. A
+  burst of only `catalog` events and `access_changed` is reported as the catalog's alone (`ReportCatalog()`):
+  Home reloads for it as for any, while a title's page that shows reads nothing for it (its Play pill and progress
+  are the viewer's state). Home reloads in place while shown; other pages compare the version on their next visit.
 - `user_state.changed` with `progress`: one report per 30 s window, none while this app plays.
 - Echoes: the events name no device, so Granary's own changes come back. News of the profile's state within
   5 s of a change the app reported itself is dropped, and a reload waiting only for such news is dropped
@@ -2274,6 +2568,16 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   …/suggestions/promote { suggestion_id }` plays any suggestion for everyone (`vote_host_override`), answering the room.
   The socket's `suggestions_update { suggestions[] }` carries the list with every `voted_by_me` false (and numeric
   `suggester_user_id`): a client keeps its own votes from what it knew.
+- From a title's page (the web's `StartPartySheet.tsx`), offered only while the capabilities say `staged_selection`
+  (Android's `watchPartyHostingOffered`): the sheet first reads the host's saved choice with `GET
+  /api/v2/settings/values/effective?keys=watch_party.guest_control_policy` (`guest_play_pause` or `host_only`, profile
+  scope), which the server gives the next room it creates for that profile
+  (`silo-server/internal/watchtogether/guest_control_preference.go`). Then `POST …/rooms` with the chosen mode; `PATCH
+  …/{id}/policy` where the room's policy differs from the switch, or the host flipped the switch to a value not saved
+  yet (the v2 route saves a policy it applied as the host's next choice, `UpdatePolicyAndRemember`); an unread saved
+  choice sends nothing and says what the room has. A host-pick room then gets `PUT …/{id}/staged-selection {
+  content_id }`, a vote room the title as its first suggestion (`POST …/suggestions`, which the web's room page sends on
+  arrival). A refused policy, stage or suggestion keeps the room. Each step is for the server and profile of the click.
 - Picker (with `X-Room-Token`): `GET …/{id}/picker` → `{ members, continue_together[], watchlist_union[] }`, each
   entry `{ item (a catalog card), members[] { user_id, profile_id, display_name, position_seconds?,
   duration_seconds? }, next_up? { content_id, season_number, episode_number, title?, member_count } }`, computed over

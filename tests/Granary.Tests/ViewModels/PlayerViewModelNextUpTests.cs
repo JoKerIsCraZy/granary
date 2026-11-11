@@ -2,9 +2,11 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
+using Granary.Tests.Settings;
 
 namespace Granary.Tests.ViewModels;
 
@@ -28,6 +30,7 @@ public sealed class PlayerViewModelNextUpTests
     private readonly AutoPlayStreak _streak = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
     private readonly PlaybackStops _stops = new();
+    private EpisodeSpoilerSettings? _spoilers;
     private double _position;
 
     private FakeServerPlayback Playback => _playbacks[^1];
@@ -44,7 +47,7 @@ public sealed class PlayerViewModelNextUpTests
             };
             _playbacks.Add(playback);
             return playback;
-        }, _stops, _time, _source, _streak);
+        }, _stops, _time, _source, _streak, spoilers: _spoilers);
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
         await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
@@ -74,8 +77,20 @@ public sealed class PlayerViewModelNextUpTests
         Assert.True(viewModel.HasNextEpisode);
 
         await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
-        Assert.Equal(PlayRequest.Resume("episode-1-2"), Playback.Started);
+        // A change of episode is never rewound, as Android's (suppressResumeRewind).
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2"), Playback.Started);
         Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task AnOnDeckPick_ResumesAsAnyResume_RewindIncluded()
+    {
+        // Android's On Deck tap is a normal resume, which its Rewind on resume applies to.
+        var viewModel = await PlayingAsync(Ted);
+
+        await viewModel.PlayOnDeckCommand.ExecuteAsync(new MediaCard("movie-9", CatalogItemTypes.Movie, "Alles Routine"));
+
+        Assert.Equal(PlayRequest.Resume("movie-9"), Playback.Started);
     }
 
     [Fact]
@@ -99,7 +114,7 @@ public sealed class PlayerViewModelNextUpTests
         Assert.False(viewModel.HasPreviousEpisode);
 
         await viewModel.PlayNextEpisodeCommand.ExecuteAsync(null);
-        Assert.Equal(PlayRequest.Resume("episode-1-4"), Playback.Started);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-4"), Playback.Started);
     }
 
     [Fact]
@@ -264,14 +279,84 @@ public sealed class PlayerViewModelNextUpTests
         Assert.False(viewModel.IsNextUpScreenShown);
     }
 
+    [Fact]
+    public async Task TheScreen_BlursAnUnwatchedNextEpisodesStill_AndLeavesItsDescriptionOut()
+    {
+        _spoilers = await SpoilerSwitches.StartedAsync();
+        var viewModel = await PlayingAsync(Ted);
+
+        PlayTo(2071);
+
+        Assert.True(viewModel.IsNextUpScreenShown);
+        Assert.True(viewModel.NextUpBlursStill);
+        Assert.Equal("", viewModel.NextUpOverview);
+        // The title stays.
+        Assert.Equal("Schrei der Verlorenen", viewModel.NextUpTitle);
+    }
+
+    [Fact]
+    public async Task TheScreen_ShowsANextEpisodeAlreadyStarted()
+    {
+        _spoilers = await SpoilerSwitches.StartedAsync();
+        _source.NextOne = Next with { IsUnwatched = false };
+        var viewModel = await PlayingAsync(Ted);
+
+        PlayTo(2071);
+
+        Assert.False(viewModel.NextUpBlursStill);
+        Assert.Equal("Ted and John.", viewModel.NextUpOverview);
+    }
+
+    [Fact]
+    public async Task TheScreen_KeepsTheSeriesArtStandingInForAStill()
+    {
+        _spoilers = await SpoilerSwitches.StartedAsync();
+        _source.NextOne = Next with { StillIsEpisodeStill = false };
+        var viewModel = await PlayingAsync(Ted);
+
+        PlayTo(2071);
+
+        Assert.False(viewModel.NextUpBlursStill);
+        Assert.Equal("", viewModel.NextUpOverview);
+    }
+
+    [Fact]
+    public async Task TheScreen_HidesNothing_WhileTheProfileHidesNothing()
+    {
+        _spoilers = await SpoilerSwitches.StartedAsync(images: false, overviews: false);
+        var viewModel = await PlayingAsync(Ted);
+
+        PlayTo(2071);
+
+        Assert.False(viewModel.NextUpBlursStill);
+        Assert.Equal("Ted and John.", viewModel.NextUpOverview);
+    }
+
+    [Fact]
+    public async Task ASwitchChangedWhilePlaying_ShowsOnTheScreen()
+    {
+        _spoilers = await SpoilerSwitches.StartedAsync(images: false, overviews: false);
+        var viewModel = await PlayingAsync(Ted);
+        PlayTo(2071);
+
+        await _spoilers.SetHidesImagesAsync(true);
+        await _spoilers.SetHidesOverviewsAsync(true);
+        PlayTo(2072);
+
+        Assert.True(viewModel.NextUpBlursStill);
+        Assert.Equal("", viewModel.NextUpOverview);
+    }
+
     private sealed class FakeUpNextSource : IUpNextSource
     {
         public IReadOnlyList<MediaCard> OnDeck { get; set; } = [];
 
         public string? OnDeckExcept { get; private set; }
 
+        public NextEpisode NextOne { get; set; } = Next;
+
         public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
-            Task.FromResult<NextEpisode?>(current == Ted ? Next : null);
+            Task.FromResult<NextEpisode?>(current == Ted ? NextOne : null);
 
         public NextEpisode? Previous { get; set; }
 

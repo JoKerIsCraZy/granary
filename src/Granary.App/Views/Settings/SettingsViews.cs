@@ -21,6 +21,8 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     {
         ViewModel = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(App.Services);
         Mpv = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(App.Services);
+        AudioDelay = ActivatorUtilities.CreateInstance<AudioDelaySettingsViewModel>(App.Services);
+        PlayerButtons = ActivatorUtilities.CreateInstance<PlayerButtonsSettingsViewModel>(App.Services);
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
@@ -29,13 +31,19 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
-        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), Mpv.LoadPresetsAsync()));
+        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), Mpv.LoadPresetsAsync(), AudioDelay.LoadAsync()));
     }
 
     public PlaybackSettingsViewModel ViewModel { get; }
 
     /// <summary>What Granary's mpv.conf editor changed, and the presets.</summary>
     public MpvSettingsViewModel Mpv { get; }
+
+    /// <summary>This device's audio sync offset, under Sound.</summary>
+    public AudioDelaySettingsViewModel AudioDelay { get; }
+
+    /// <summary>The player's buttons for this profile on this PC, under Player buttons.</summary>
+    public PlayerButtonsSettingsViewModel PlayerButtons { get; }
 
     /// <summary>Edit was pressed: the page shows the mpv.conf editor in this view's place.</summary>
     public event EventHandler? EditMpvConfigRequested;
@@ -44,6 +52,8 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     {
         ViewModel.Dispose();
         Mpv.Dispose();
+        AudioDelay.Dispose();
+        PlayerButtons.Dispose();
     }
 
     /// <summary>Back from the editor: focus returns to Edit, once the view is in the page again.</summary>
@@ -63,6 +73,56 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     }
 
     private void OnEditMpvConfigClick(object sender, RoutedEventArgs e) => EditMpvConfigRequested?.Invoke(this, EventArgs.Empty);
+
+    // The row moves at once; the keyboard goes with it, on the button pressed, or on the other one once the row has come to
+    // the end, so a remote can go on moving it.
+    private void OnMovePlayerButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: PlayerButtonRowViewModel row, Tag: string direction } button)
+        {
+            return;
+        }
+        var state = button.FocusState == FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+        bool up = direction == "up";
+        (up ? row.MoveUpCommand : row.MoveDownCommand).Execute(null);
+        PlayerButtonRows.UpdateLayout();
+        bool samePlace = up ? row.CanMoveUp : row.CanMoveDown;
+        string target = samePlace == up ? "up" : "down";
+        if (PlayerButtonRows.ContainerFromItem(row) is DependencyObject container
+            && Find<Button>(container, candidate => candidate.Tag as string == target) is { } next)
+        {
+            next.Focus(state);
+        }
+    }
+
+    // Reset goes once it is done: the keyboard goes on to the first button's switch.
+    private void OnResetPlayerButtonsClick(object sender, RoutedEventArgs e)
+    {
+        var state = ResetPlayerButtonsButton.FocusState == FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+        PlayerButtons.ResetCommand.Execute(null);
+        PlayerButtonRows.UpdateLayout();
+        if (PlayerButtonRows.ContainerFromIndex(0) is DependencyObject first && Find<ToggleSwitch>(first, _ => true) is { } toggle)
+        {
+            toggle.Focus(state);
+        }
+    }
+
+    private static T? Find<T>(DependencyObject element, Func<T, bool> matches)
+        where T : DependencyObject
+    {
+        if (element is T found && matches(found))
+        {
+            return found;
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            if (Find(VisualTreeHelper.GetChild(element, i), matches) is { } inside)
+            {
+                return inside;
+            }
+        }
+        return null;
+    }
 
     // The name first, in a question of its own; what it is saved under shows as it is typed. Enter saves, as the default.
     private async void OnSavePresetClick(object sender, RoutedEventArgs e)
@@ -197,8 +257,8 @@ public sealed partial class LanguageSettingsView : UserControl
 }
 
 /// <summary>
-/// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them
-/// and of the sidebar as the page leaves.
+/// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them,
+/// of the title preview and of the sidebar as the page leaves.
 /// </summary>
 public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 {
@@ -207,6 +267,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
         Posters = ActivatorUtilities.CreateInstance<PosterSettingsViewModel>(App.Services);
         ViewModel = ActivatorUtilities.CreateInstance<BadgeSettingsViewModel>(App.Services);
         Sidebar = ActivatorUtilities.CreateInstance<SidebarSettingsViewModel>(App.Services);
+        TitlePreview = ActivatorUtilities.CreateInstance<TitlePreviewSettingsViewModel>(App.Services);
         InitializeComponent();
         Loaded += OnFirstLoaded;
     }
@@ -217,11 +278,15 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 
     public SidebarSettingsViewModel Sidebar { get; }
 
+    /// <summary>The title preview at the top of Home, For You and Discover: Granary's own switch, for this profile on this PC.</summary>
+    public TitlePreviewSettingsViewModel TitlePreview { get; }
+
     public void Dispose()
     {
         Posters.Dispose();
         ViewModel.Dispose();
         Sidebar.Dispose();
+        TitlePreview.Dispose();
     }
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
@@ -251,6 +316,29 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
         {
             await ViewModel.ResetCommand.ExecuteAsync(null);
         }
+    }
+}
+
+/// <summary>
+/// Settings → Title Pages; it reads the profile's spoiler switches when it is shown, and lets go of them as the page leaves.
+/// </summary>
+public sealed partial class TitlePagesSettingsView : UserControl, IDisposable
+{
+    public TitlePagesSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<TitlePagesSettingsViewModel>(App.Services);
+        InitializeComponent();
+        Loaded += OnFirstLoaded;
+    }
+
+    public TitlePagesSettingsViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Dispose();
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
     }
 }
 

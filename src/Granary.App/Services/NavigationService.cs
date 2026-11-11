@@ -42,6 +42,7 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Person] = typeof(PersonPage),
         [AppRoute.WatchParty] = typeof(WatchPartyPage),
         [AppRoute.WatchPartyRoom] = typeof(WatchPartyRoomPage),
+        [AppRoute.BoxSet] = typeof(BoxSetPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);
@@ -64,6 +65,12 @@ public sealed class NavigationService : INavigationService
     /// then moves focus to the sidebar first (MainWindow.Remote.cs).
     /// </summary>
     public bool IsAtSection => _frame is null || _frame.BackStack.Count <= _sectionDepth;
+
+    /// <summary>
+    /// The page shown came with a reset, a new start (a sign-in, a profile picked), not as a section or from another page:
+    /// opened with a key, it starts as a page opened with OK (MainWindow.Remote.cs). Set before the frame's events.
+    /// </summary>
+    public bool IsStart { get; private set; }
 
     /// <summary>Raised after every navigation, Back included, and after the history was reset.</summary>
     public event EventHandler<AppRoute>? Navigated;
@@ -139,7 +146,7 @@ public sealed class NavigationService : INavigationService
         {
             return;
         }
-        Navigate(route, parameter);
+        Navigate(route, parameter, isStart: true);
         _frame.BackStack.Clear();
         _sectionDepth = 0;
         Arrived(route, parameter);
@@ -160,6 +167,7 @@ public sealed class NavigationService : INavigationService
         AppRoute? route = Routes.TryGetValue(entry.SourcePageType, out var type)
             ? type == AppRoute.List && entry.Parameter is CollectionRouteParameter ? AppRoute.Collection : type
             : null;
+        IsStart = false;
         if (route is { } target && TransitionFor?.Invoke(target) is { } transition)
         {
             frame.GoBack(transition);
@@ -176,8 +184,9 @@ public sealed class NavigationService : INavigationService
         }
     }
 
-    private void Navigate(AppRoute route, object? parameter)
+    private void Navigate(AppRoute route, object? parameter, bool isStart = false)
     {
+        IsStart = isStart;
         if (TransitionFor?.Invoke(route) is { } transition)
         {
             _frame!.Navigate(Pages[route], parameter, transition);

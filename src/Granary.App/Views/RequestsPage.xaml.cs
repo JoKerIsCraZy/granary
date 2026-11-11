@@ -57,21 +57,12 @@ public sealed partial class RequestsPage : Page
         Hero.Suspend();
     }
 
-    // The hero belongs to Discover: Yours shows its title and tabs at the top, as before. Static because the x:Bind function
-    // bindings call them on the type.
-    public static BrowseHeroTitle? DiscoverHero(BrowseHeroTitle? hero, bool isDiscover) => isDiscover ? hero : null;
-
-    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, bool isDiscover, BrowseHeroSizes sizes) =>
-        BrowseHero.RowsViewMargin(DiscoverHero(hero, isDiscover), sizes);
-
-    public static Thickness RowsPadding(BrowseHeroTitle? hero, bool isDiscover, BrowseHeroSizes sizes) =>
-        BrowseHero.RowsPadding(DiscoverHero(hero, isDiscover), sizes);
-
-    // The web's badge variants: Available filled red, Failed filled in the destructive red, approved and on their way in
-    // the secondary fill, Pending outlined, closed ones outlined and muted.
+    // Static because the x:Bind function bindings in the templates call them on the type. The web's badge variants
+    // (components/RequestStatusBadge.tsx, components/ui/badge.tsx): none in the accent; Failed filled in the destructive
+    // red with white, approved, on their way and available in the secondary fill, Pending outlined, closed ones outlined
+    // and muted.
     public static Brush BadgeBackground(RequestBadgeLook look) => look switch
     {
-        RequestBadgeLook.Primary => Resource("SiloPrimaryBrush"),
         RequestBadgeLook.Destructive => Destructive,
         RequestBadgeLook.Secondary => Secondary,
         _ => Transparent,
@@ -85,7 +76,7 @@ public sealed partial class RequestsPage : Page
 
     public static Brush BadgeForeground(RequestBadgeLook look) => look switch
     {
-        RequestBadgeLook.Primary or RequestBadgeLook.Destructive => White,
+        RequestBadgeLook.Destructive => White,
         RequestBadgeLook.Muted => Resource("SiloMutedBrush"),
         _ => Resource("SiloForegroundBrush"),
     };

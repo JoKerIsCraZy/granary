@@ -38,7 +38,8 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
         Loaded.Add(source);
         Current = Current with
         {
-            LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None, Sequence = ++_sequence,
+            LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, IsAudioOnly = false, Buffered = BufferedRanges.None,
+            Sequence = ++_sequence,
         };
         return LoadId;
     }
@@ -49,14 +50,79 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     public void SetPaused(bool paused)
     {
         PauseRequests.Add(paused);
+        _pauseAsked = paused;
         Current = Current with { IsPaused = paused };
+    }
+
+    /// <summary>The latest pause asked; a state a test raises (mpv's own pause at the end, say) leaves it.</summary>
+    public bool IsPauseAsked
+    {
+        get
+        {
+            bool asked = _pauseAsked;
+            // Read now, set later: an ask in between finds the value read already old.
+            Interleave();
+            return asked;
+        }
+    }
+
+    /// <summary>
+    /// Runs once as the pause is next set from the asks, between reading them and setting the pause: an ask of the viewer
+    /// or a room that arrives in that moment.
+    /// </summary>
+    public Action? WhilePauseIsApplied { get; set; }
+
+    /// <summary>How often the latest ask was applied (<see cref="ApplyAskedPause"/>).</summary>
+    public int AppliedAsks { get; private set; }
+
+    private bool _pauseAsked;
+
+    public void ApplyAskedPause()
+    {
+        // The engine applies the asks in one step: an ask in that moment comes first or after, never in between.
+        Interleave();
+        AppliedAsks++;
+        Current = Current with { IsPaused = _pauseAsked };
+    }
+
+    private void Interleave()
+    {
+        var interleaved = WhilePauseIsApplied;
+        WhilePauseIsApplied = null;
+        interleaved?.Invoke();
     }
 
     public void Seek(TimeSpan position) => Seeks.Add(position);
 
-    public void SetVolume(double percent) => Current = Current with { Volume = Math.Clamp(percent, 0, 100) };
+    /// <summary>
+    /// The volume and mute change only once a state says so (<see cref="RaiseState"/>), as mpv reports them a moment after
+    /// they were set; until then <see cref="Current"/> has the ones before.
+    /// </summary>
+    public bool ReportsVolumeLater { get; set; }
 
-    public void SetMuted(bool muted) => Current = Current with { IsMuted = muted };
+    /// <summary>Every volume asked for, in order.</summary>
+    public List<double> VolumeRequests { get; } = [];
+
+    /// <summary>Every mute or unmute asked for, in order (true mutes).</summary>
+    public List<bool> MuteRequests { get; } = [];
+
+    public void SetVolume(double percent)
+    {
+        VolumeRequests.Add(percent);
+        if (!ReportsVolumeLater)
+        {
+            Current = Current with { Volume = Math.Clamp(percent, 0, 100) };
+        }
+    }
+
+    public void SetMuted(bool muted)
+    {
+        MuteRequests.Add(muted);
+        if (!ReportsVolumeLater)
+        {
+            Current = Current with { IsMuted = muted };
+        }
+    }
 
     public double Speed { get; private set; } = 1;
 
@@ -64,7 +130,22 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public bool Fill { get; private set; }
 
-    public void SetFill(bool fill) => Fill = fill;
+    /// <summary>Thrown by <see cref="SetFill"/> while set, as an engine that has gone away might.</summary>
+    public Exception? FailFill { get; set; }
+
+    public void SetFill(bool fill)
+    {
+        if (FailFill is { } failure)
+        {
+            throw failure;
+        }
+        Fill = fill;
+    }
+
+    /// <summary>The audio delay in seconds, positive for later sound.</summary>
+    public double AudioDelay { get; private set; }
+
+    public void SetAudioDelay(double seconds) => AudioDelay = seconds;
 
     public PlaybackStats Stats { get; set; } = PlaybackStats.None;
 

@@ -10,8 +10,8 @@ namespace Granary.App.Interop;
 /// <item>WM_APPCOMMAND, which some remotes send for a button instead of a key: a Media Center remote's Play and Pause are
 /// separate commands, not the Play/Pause key. A command the window does not take goes on to Windows, which hands media
 /// commands to the media session.</item>
-/// <item>The taskbar's, for the Play/Pause in its preview (<c>WindowsTaskbarPlayButton</c>): Explorer's
-/// TaskbarButtonCreated, a thumbnail toolbar button's click, and the window's DPI changing.</item>
+/// <item>The taskbar's, for the buttons in its preview (<c>WindowsTaskbarToolbar</c>): Explorer's TaskbarButtonCreated, a
+/// thumbnail toolbar button's click, and the window's DPI changing.</item>
 /// </list>
 /// The events are raised inside the window's message, on the UI thread: nothing may escape a handler.
 /// </summary>

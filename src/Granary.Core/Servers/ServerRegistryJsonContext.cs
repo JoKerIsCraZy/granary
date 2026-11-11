@@ -12,7 +12,11 @@ internal sealed record ServerRegistryFileEntry(
     string? ServerId,
     DateTimeOffset AddedAt,
     DateTimeOffset LastUsedAt,
-    string? LastProfileId);
+    string? LastProfileId,
+    ServerRegistryFileBranding? Branding = null);
+
+/// <summary>The server's branding as it last answered; absent in files from before it was kept.</summary>
+internal sealed record ServerRegistryFileBranding(string? Accent, string? Wordmark);
 
 /// <summary>
 /// Serializer settings for the local server list. Separate from <c>SiloJsonContext</c> because the file

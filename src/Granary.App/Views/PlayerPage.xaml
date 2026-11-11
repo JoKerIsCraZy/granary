@@ -45,7 +45,7 @@
         <!-- Failed: what went wrong, Retry when it can help, and Back. -->
         <Grid Background="#B3000000" Visibility="{x:Bind ShowsInWindow(ViewModel.IsFailed, IsDocked), Mode=OneWay}">
             <StackPanel MaxWidth="560" Margin="32" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloPrimaryBrush}" />
+                <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloDestructiveBrush}" />
                 <TextBlock x:Name="ErrorText" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
                            TextWrapping="Wrap" TextAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
                 <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
@@ -130,13 +130,16 @@
                     <!--
                         The title, and "S1 · E1 — EPISODE · 31:55 / 48:41" under it. Left-aligned, the line takes only the
                         width it needs, so the times follow the episode; a long episode title is cut, never the times.
-                        Clicking the times switches the end between duration and time left.
+                        Clicking the times switches the end between duration and time left, which this PC keeps. Then
+                        "· ENDS 22:41", Granary's own: none of Silo's clients has the clock time the title ends.
                     -->
                     <StackPanel VerticalAlignment="Center" Spacing="3">
                         <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloPlayerTitleTextStyle}" />
                         <Grid HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
@@ -146,11 +149,19 @@
                             <TextBlock Grid.Column="1" Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
                                        Foreground="{StaticResource SiloPlayerMetaBrush}" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}"
                                        AutomationProperties.AccessibilityView="Raw" />
-                            <Button Grid.Column="2" Margin="-4,-2" Style="{StaticResource SiloPlayerTextButtonStyle}" Click="OnEndTimeClick"
-                                    AutomationProperties.Name="{x:Bind EndTimeName(ShowsRemaining), Mode=OneWay}">
+                            <Button Grid.Column="2" Margin="-4,-2" Style="{StaticResource SiloPlayerTextButtonStyle}"
+                                    Command="{x:Bind ViewModel.ToggleTimeLeftCommand}"
+                                    AutomationProperties.Name="{x:Bind EndTimeName(ViewModel.ShowsTimeLeft), Mode=OneWay}">
                                 <TextBlock Style="{StaticResource SiloPlayerMetaTextStyle}" Typography.NumeralAlignment="Tabular"
-                                           Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" />
+                                           Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" />
                             </Button>
+                            <TextBlock Grid.Column="3" Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                                       AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Grid.Column="4" Text="{x:Bind MetaText(ViewModel.EndsAtText), Mode=OneWay}" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Typography.NumeralAlignment="Tabular"
+                                       Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                                       AutomationProperties.Name="{x:Bind ViewModel.EndsAtSpoken, Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
 
@@ -202,15 +213,22 @@
                         </Grid>
                     </StackPanel>
 
+                    <!--
+                        The buttons Settings → Playback → Player buttons can hide and move (Granary's own; Silo's clients have no
+                        such editor), in its order (ArrangeBarButtons). Each shows when the editor lets it and, where it needs
+                        something, such as chapters, while there is that.
+                    -->
                     <StackPanel x:Name="RightControls" Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 LayoutUpdated="OnRightControlsLayoutUpdated">
                         <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
+                                Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"
                                 ToolTipService.ToolTip="{x:Bind MuteToolTip(ViewModel.IsMuted), Mode=OneWay}">
                             <FontIcon Glyph="{x:Bind VolumeGlyph(ViewModel.IsMuted, ViewModel.Volume), Mode=OneWay}" FontSize="18" />
                         </Button>
                         <!-- Muted, the slider keeps the level to come back to and only dims. -->
                         <Slider x:Name="VolumeSlider" Width="96" Margin="0,0,4,0" VerticalAlignment="Center" Minimum="0" Maximum="100"
+                                Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 StepFrequency="1" SmallChange="5" LargeChange="10" IsThumbToolTipEnabled="False"
                                 Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" Opacity="{x:Bind VolumeOpacity(ViewModel.IsMuted), Mode=OneWay}"
                                 AutomationProperties.Name="Volume">
@@ -232,9 +250,10 @@
                         <!--
                             The web's sleep timer (SleepTimerMenu, after the volume as in its audiobook player): the moon and "Sleep",
                             "Sleep 29:59" while a duration counts down; white with the amber dot while it is on. The menu: Turn off
-                            while on, the durations, and the end of what plays.
+                            while on, the durations, and the end of what plays. Hidden in Settings, it goes dot and all, and a timer
+                            that runs ends.
                         -->
-                        <Grid>
+                        <Grid x:Name="SleepTimerSlot" Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
                             <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
                                     AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
@@ -263,11 +282,17 @@
                             </Button>
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSleepTimerOn, Mode=OneWay}" />
                         </Grid>
-                        <!-- Shown with a track to name; as on the web player it opens once there are two to choose from. -->
+                        <!--
+                            Shown with a track to name; as on the web player it opens once there are two to choose from. Audio and
+                            subtitles stand side by side, where the web puts chapters between them: the two track choices belong together.
+                        -->
                         <Button x:Name="AudioButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasAudioTracks, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
+                                Visibility="{x:Bind ShowsButton(ViewModel.HasAudioTracks, ViewModel.Bar.Audio), Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
                                 AutomationProperties.Name="Audio tracks" ToolTipService.ToolTip="Audio tracks">
-                            <FontIcon Glyph="&#xE9E9;" FontSize="18" />
+                            <!-- The web's icon, lucide's AudioLines: its six strokes, drawn at 18 px as filled rounded bars. -->
+                            <PathIcon Width="18" Height="18"
+                                      Data="M0.75,7.5 A0.75,0.75 0 0 1 2.25,7.5 L2.25,9.75 A0.75,0.75 0 0 1 0.75,9.75 Z M3.75,4.5 A0.75,0.75 0 0 1 5.25,4.5 L5.25,12.75 A0.75,0.75 0 0 1 3.75,12.75 Z M6.75,2.25 A0.75,0.75 0 0 1 8.25,2.25 L8.25,15.75 A0.75,0.75 0 0 1 6.75,15.75 Z M9.75,6 A0.75,0.75 0 0 1 11.25,6 L11.25,11.25 A0.75,0.75 0 0 1 9.75,11.25 Z M12.75,3.75 A0.75,0.75 0 0 1 14.25,3.75 L14.25,13.5 A0.75,0.75 0 0 1 12.75,13.5 Z M15.75,7.5 A0.75,0.75 0 0 1 17.25,7.5 L17.25,9.75 A0.75,0.75 0 0 1 15.75,9.75 Z" />
                             <Button.Flyout>
                                 <Flyout x:Name="AudioMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerMenuStyle}"
                                         Opened="OnAudioMenuOpened">
@@ -313,9 +338,173 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <!--
+                            Subtitles: there for every server title, as its menu also adds them. White with the amber dot while one
+                            shows; struck through while none does, as the web's CaptionsOff.
+                        -->
+                        <Grid x:Name="SubtitleSlot" Visibility="{x:Bind ShowsButton(ViewModel.HasSubtitleMenu, ViewModel.Bar.Subtitles), Mode=OneWay}">
+                            <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
+                                    Foreground="{x:Bind UtilityForeground(ViewModel.IsSubtitleOn), Mode=OneWay}"
+                                    AutomationProperties.Name="Subtitles" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
+                                    AutomationProperties.AcceleratorKey="C" ToolTipService.ToolTip="Subtitles (C)">
+                                <Grid Width="20" Height="20">
+                                    <FontIcon x:Name="SubtitleGlyph" Glyph="&#xE7F0;" FontSize="18" />
+                                    <Line X1="3" Y1="3" X2="17" Y2="17" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Stroke="{Binding Foreground, ElementName=SubtitleGlyph}" Visibility="{x:Bind Not(ViewModel.IsSubtitleOn), Mode=OneWay}" />
+                                </Grid>
+                                <Button.Flyout>
+                                    <Flyout x:Name="SubtitleMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
+                                            Opened="OnSubtitleMenuOpened">
+                                        <StackPanel XYFocusKeyboardNavigation="Enabled">
+                                            <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.SubtitleTracks, Mode=OneWay}" IsTabStop="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="player:SubtitleTrackOption">
+                                                        <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnSubtitleTrackClick"
+                                                                Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
+                                                                Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsSelected)}"
+                                                                AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                                AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                                            <Grid ColumnSpacing="8">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="16" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="&#x2713;" FontSize="12" Margin="0,2,0,0" HorizontalAlignment="Center"
+                                                                           Visibility="{x:Bind IsSelected}" />
+                                                                <StackPanel Grid.Column="1" Spacing="2">
+                                                                    <Grid ColumnSpacing="12">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                            <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Format)}">
+                                                                                <TextBlock Text="{x:Bind Format}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
+                                                                                           FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
+                                                                            </Border>
+                                                                            <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Source)}">
+                                                                                <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Source)}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
+                                                                                           FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
+                                                                            </Border>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                    <TextBlock Text="{x:Bind Detail}" FontSize="12" Foreground="#66FFFFFF" TextTrimming="CharacterEllipsis"
+                                                                               Visibility="{x:Bind controls:PlayerMenus.Shows(Detail)}" />
+                                                                    <!-- The web's sync line: "Syncing… 40%", "Synced −3.0 s". -->
+                                                                    <TextBlock Text="{x:Bind SyncStatus}" FontSize="12" Foreground="#80FFFFFF" TextTrimming="CharacterEllipsis"
+                                                                               Visibility="{x:Bind controls:PlayerMenus.Shows(SyncStatus)}" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <!-- Silo's web: DELAY, then earlier, the value, later, and Reset; steps of 100 ms up to 10 s. -->
+                                            <Grid Margin="0,6,0,0" Padding="12,8" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0" ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                           AutomationProperties.AccessibilityView="Raw" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleEarlierClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayEarlier, Mode=OneWay}"
+                                                            AutomationProperties.Name="Subtitles 100 ms earlier">
+                                                        <FontIcon Glyph="&#xE738;" FontSize="12" />
+                                                    </Button>
+                                                    <TextBlock MinWidth="72" Text="{x:Bind ViewModel.SubtitleDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
+                                                               Foreground="#CCFFFFFF" TextAlignment="Center" VerticalAlignment="Center"
+                                                               AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.DelayName(ViewModel.SubtitleDelayText), Mode=OneWay}" />
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleLaterClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayLater, Mode=OneWay}"
+                                                            AutomationProperties.Name="Subtitles 100 ms later">
+                                                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
+                                                            Foreground="#99FFFFFF" Click="OnSubtitleDelayResetClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanResetSubtitleDelay, Mode=OneWay}"
+                                                            AutomationProperties.Name="Reset subtitle delay">
+                                                        <TextBlock Text="Reset" FontSize="12" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                            <!--
+                                                Silo's web: TIMING for the subtitle that shows, stored or a file next to the media: Sync to audio and
+                                                Reset timing, a running sync's progress, and the last result; a refusal says why instead.
+                                            -->
+                                            <StackPanel Padding="12,8" Spacing="4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0"
+                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.IsVisible, Mode=OneWay}">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="TIMING" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                               AutomationProperties.AccessibilityView="Raw" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                                                                Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsActions, Mode=OneWay}">
+                                                        <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
+                                                                Command="{x:Bind ViewModel.SyncSubtitleToAudioCommand}"
+                                                                IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
+                                                                Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsSync, Mode=OneWay}"
+                                                                AutomationProperties.Name="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}">
+                                                            <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}" FontSize="12" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
+                                                                Command="{x:Bind ViewModel.ResetSubtitleTimingCommand}"
+                                                                IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
+                                                                Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsReset, Mode=OneWay}"
+                                                                AutomationProperties.Name="Reset timing">
+                                                            <TextBlock Text="Reset timing" FontSize="12" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <StackPanel Margin="0,4,0,0" Spacing="4" Visibility="{x:Bind ViewModel.SubtitleTiming.IsRunning, Mode=OneWay}">
+                                                    <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" Foreground="#CCFFFFFF" Background="#26FFFFFF"
+                                                                 Value="{x:Bind ViewModel.SubtitleTiming.PercentValue, Mode=OneWay}"
+                                                                 AutomationProperties.Name="Subtitle sync progress" />
+                                                    <Grid>
+                                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PhaseText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" />
+                                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PercentText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF"
+                                                                   HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                                                    </Grid>
+                                                </StackPanel>
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
+                                                           Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsResult, Mode=OneWay}" />
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#CCFDE68A" TextWrapping="Wrap"
+                                                           Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsWarning, Mode=OneWay}" />
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.HintText, Mode=OneWay}" FontSize="12" Foreground="#66FFFFFF" TextWrapping="Wrap"
+                                                           Visibility="{x:Bind ViewModel.SubtitleTiming.HasHint, Mode=OneWay}" />
+                                                <TextBlock Text="This server doesn't allow changing subtitle timing." FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
+                                                           Visibility="{x:Bind ViewModel.SubtitleTiming.IsForbidden, Mode=OneWay}" />
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ErrorText, Mode=OneWay}" FontSize="12" Foreground="#FFFCA5A5" TextWrapping="Wrap"
+                                                           Visibility="{x:Bind ViewModel.SubtitleTiming.HasError, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
+                                            </StackPanel>
+                                            <!-- The web's footer: add a file or search for one, and the look. -->
+                                            <StackPanel Padding="0,4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
+                                                <Button x:Name="AddSubtitlesButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
+                                                        Click="OnAddSubtitlesClick" AutomationProperties.Name="Add Subtitles…">
+                                                    <TextBlock Text="Add Subtitles…" FontSize="14" />
+                                                </Button>
+                                                <Button x:Name="AppearanceButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
+                                                        Click="OnAppearanceClick" AutomationProperties.Name="Appearance…">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE790;" FontSize="13" Foreground="#80FFFFFF" />
+                                                        <TextBlock Text="Appearance…" FontSize="14" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSubtitleOn, Mode=OneWay}" />
+                        </Grid>
                         <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
                         <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasChapters, Mode=OneWay}"
+                                Visibility="{x:Bind ShowsButton(ViewModel.HasChapters, ViewModel.Bar.Chapters), Mode=OneWay}"
                                 AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
                             <FontIcon Glyph="&#xE8FD;" FontSize="18" />
                             <Button.Flyout>
@@ -357,178 +546,27 @@
                             </Button.Flyout>
                         </Button>
                         <!--
-                            Subtitles: there for every server title, as its menu also adds them. White with the amber dot while one
-                            shows; struck through while none does, as the web's CaptionsOff.
-                        -->
-                        <Grid Visibility="{x:Bind ViewModel.HasSubtitleMenu, Mode=OneWay}">
-                        <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Foreground="{x:Bind UtilityForeground(ViewModel.IsSubtitleOn), Mode=OneWay}"
-                                AutomationProperties.Name="Subtitles" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
-                                AutomationProperties.AcceleratorKey="C" ToolTipService.ToolTip="Subtitles (C)">
-                            <Grid Width="20" Height="20">
-                                <FontIcon x:Name="SubtitleGlyph" Glyph="&#xE7F0;" FontSize="18" />
-                                <Line X1="3" Y1="3" X2="17" Y2="17" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                      Stroke="{Binding Foreground, ElementName=SubtitleGlyph}" Visibility="{x:Bind Not(ViewModel.IsSubtitleOn), Mode=OneWay}" />
-                            </Grid>
-                            <Button.Flyout>
-                                <Flyout x:Name="SubtitleMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
-                                        Opened="OnSubtitleMenuOpened">
-                                    <StackPanel XYFocusKeyboardNavigation="Enabled">
-                                    <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.SubtitleTracks, Mode=OneWay}" IsTabStop="False">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="player:SubtitleTrackOption">
-                                                <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnSubtitleTrackClick"
-                                                        Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
-                                                        Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsSelected)}"
-                                                        AutomationProperties.Name="{x:Bind AccessibleName}"
-                                                        AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
-                                                    <Grid ColumnSpacing="8">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="16" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="&#x2713;" FontSize="12" Margin="0,2,0,0" HorizontalAlignment="Center"
-                                                                   Visibility="{x:Bind IsSelected}" />
-                                                        <StackPanel Grid.Column="1" Spacing="2">
-                                                            <Grid ColumnSpacing="12">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="*" />
-                                                                    <ColumnDefinition Width="Auto" />
-                                                                </Grid.ColumnDefinitions>
-                                                                <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
-                                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                                                    <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Format)}">
-                                                                        <TextBlock Text="{x:Bind Format}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
-                                                                                   FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
-                                                                    </Border>
-                                                                    <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Source)}">
-                                                                        <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Source)}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
-                                                                                   FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
-                                                                    </Border>
-                                                                </StackPanel>
-                                                            </Grid>
-                                                            <TextBlock Text="{x:Bind Detail}" FontSize="12" Foreground="#66FFFFFF" TextTrimming="CharacterEllipsis"
-                                                                       Visibility="{x:Bind controls:PlayerMenus.Shows(Detail)}" />
-                                                            <!-- The web's sync line: "Syncing… 40%", "Synced −3.0 s". -->
-                                                            <TextBlock Text="{x:Bind SyncStatus}" FontSize="12" Foreground="#80FFFFFF" TextTrimming="CharacterEllipsis"
-                                                                       Visibility="{x:Bind controls:PlayerMenus.Shows(SyncStatus)}" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Button>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <!-- Silo's web: DELAY, then earlier, the value, later, and Reset; steps of 100 ms up to 10 s. -->
-                                    <Grid Margin="0,6,0,0" Padding="12,8" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0" ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
-                                                   AutomationProperties.AccessibilityView="Raw" />
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleEarlierClick"
-                                                    IsEnabled="{x:Bind ViewModel.CanDelayEarlier, Mode=OneWay}"
-                                                    AutomationProperties.Name="Subtitles 100 ms earlier">
-                                                <FontIcon Glyph="&#xE738;" FontSize="12" />
-                                            </Button>
-                                            <TextBlock MinWidth="72" Text="{x:Bind ViewModel.SubtitleDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
-                                                       Foreground="#CCFFFFFF" TextAlignment="Center" VerticalAlignment="Center"
-                                                       AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.DelayName(ViewModel.SubtitleDelayText), Mode=OneWay}" />
-                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleLaterClick"
-                                                    IsEnabled="{x:Bind ViewModel.CanDelayLater, Mode=OneWay}"
-                                                    AutomationProperties.Name="Subtitles 100 ms later">
-                                                <FontIcon Glyph="&#xE710;" FontSize="12" />
-                                            </Button>
-                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
-                                                    Foreground="#99FFFFFF" Click="OnSubtitleDelayResetClick"
-                                                    IsEnabled="{x:Bind ViewModel.CanResetSubtitleDelay, Mode=OneWay}"
-                                                    AutomationProperties.Name="Reset subtitle delay">
-                                                <TextBlock Text="Reset" FontSize="12" />
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
-                                    <!--
-                                        Silo's web: TIMING for the subtitle that shows, stored or a file next to the media: Sync to audio and
-                                        Reset timing, a running sync's progress, and the last result; a refusal says why instead.
-                                    -->
-                                    <StackPanel Padding="12,8" Spacing="4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0"
-                                                Visibility="{x:Bind ViewModel.SubtitleTiming.IsVisible, Mode=OneWay}">
-                                        <Grid ColumnSpacing="12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="TIMING" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
-                                                       AutomationProperties.AccessibilityView="Raw" />
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
-                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsActions, Mode=OneWay}">
-                                                <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
-                                                        Command="{x:Bind ViewModel.SyncSubtitleToAudioCommand}"
-                                                        IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
-                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsSync, Mode=OneWay}"
-                                                        AutomationProperties.Name="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}">
-                                                    <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}" FontSize="12" />
-                                                </Button>
-                                                <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
-                                                        Command="{x:Bind ViewModel.ResetSubtitleTimingCommand}"
-                                                        IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
-                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsReset, Mode=OneWay}"
-                                                        AutomationProperties.Name="Reset timing">
-                                                    <TextBlock Text="Reset timing" FontSize="12" />
-                                                </Button>
-                                            </StackPanel>
-                                        </Grid>
-                                        <StackPanel Margin="0,4,0,0" Spacing="4" Visibility="{x:Bind ViewModel.SubtitleTiming.IsRunning, Mode=OneWay}">
-                                            <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" Foreground="#CCFFFFFF" Background="#26FFFFFF"
-                                                         Value="{x:Bind ViewModel.SubtitleTiming.PercentValue, Mode=OneWay}"
-                                                         AutomationProperties.Name="Subtitle sync progress" />
-                                            <Grid>
-                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PhaseText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" />
-                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PercentText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF"
-                                                           HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                                            </Grid>
-                                        </StackPanel>
-                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
-                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsResult, Mode=OneWay}" />
-                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#CCFDE68A" TextWrapping="Wrap"
-                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsWarning, Mode=OneWay}" />
-                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.HintText, Mode=OneWay}" FontSize="12" Foreground="#66FFFFFF" TextWrapping="Wrap"
-                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.HasHint, Mode=OneWay}" />
-                                        <TextBlock Text="This server doesn't allow changing subtitle timing." FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
-                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.IsForbidden, Mode=OneWay}" />
-                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ErrorText, Mode=OneWay}" FontSize="12" Foreground="#FFFCA5A5" TextWrapping="Wrap"
-                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.HasError, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
-                                    </StackPanel>
-                                    <!-- The web's footer: add a file or search for one, and the look. -->
-                                    <StackPanel Padding="0,4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
-                                        <Button x:Name="AddSubtitlesButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
-                                                Click="OnAddSubtitlesClick" AutomationProperties.Name="Add Subtitles…">
-                                            <TextBlock Text="Add Subtitles…" FontSize="14" />
-                                        </Button>
-                                        <Button x:Name="AppearanceButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
-                                                Click="OnAppearanceClick" AutomationProperties.Name="Appearance…">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE790;" FontSize="13" Foreground="#80FFFFFF" />
-                                                <TextBlock Text="Appearance…" FontSize="14" />
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                    </StackPanel>
-                                </Flyout>
-                            </Button.Flyout>
-                        </Button>
-                        <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSubtitleOn, Mode=OneWay}" />
-                        </Grid>
-                        <!--
                             The web player's settings (QualityMenu): the gear names the quality, and a speed other than 1x shows
                             beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
+                            Granary's own, as the web shows none: a dot fills the gear's hole, green while the server sends the
+                            original streams and amber while it re-encodes any of them; the name and tooltip say which.
                         -->
                         <Button x:Name="SettingsButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="10,0,12,0"
-                                Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge), Mode=OneWay}"
-                                ToolTipService.ToolTip="Playback settings">
+                                Visibility="{x:Bind ViewModel.Bar.Settings, Mode=OneWay}"
+                                Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge, ViewModel.StreamMethod), Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind SettingsTip(ViewModel.StreamMethod), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE713;" FontSize="16" />
+                                <!--
+                                    The dot covers the glyph's inner circle, 6.5 px across at 16 px and centred on its em box, and
+                                    leaves the teeth clear. Not rounded to whole pixels, so it stays on the glyph's centre.
+                                -->
+                                <Grid VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE713;" FontSize="16" />
+                                    <Ellipse Width="6.5" Height="6.5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                             UseLayoutRounding="False" IsHitTestVisible="False"
+                                             Fill="{x:Bind StreamMethodBrush(ViewModel.StreamMethod), Mode=OneWay}"
+                                             Visibility="{x:Bind ShowsStreamMethod(ViewModel.StreamMethod), Mode=OneWay}" />
+                                </Grid>
                                 <TextBlock Text="{x:Bind ViewModel.SettingsLabel, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
                                            FontWeight="Medium" FontSize="11" CharacterSpacing="25"
                                            Visibility="{x:Bind ShowsSettingsLabel(ViewModel.SettingsLabel, IsNarrow), Mode=OneWay}" />
@@ -544,6 +582,45 @@
                                         <!-- A Watch Party plays at the room's speed. -->
                                         <controls:SpeedTrack x:Name="SpeedTrack" Speed="{x:Bind ViewModel.Speed, Mode=OneWay}" SpeedPicked="OnSpeedPicked"
                                                              AutomationProperties.Name="Playback speed" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
+
+                                        <!--
+                                            Silo's Android player (Sync): the sound earlier or later, 50 ms a step up to 5 s, and Reset, drawn as
+                                            the subtitle menu's DELAY. This device's player.audio_sync_ms, as Settings → Playback → Sound. The
+                                            line under SPEED goes with it in a Watch Party, where the row comes first. A server that does not know
+                                            the setting has no row.
+                                        -->
+                                        <StackPanel Visibility="{x:Bind ViewModel.ShowsAudioDelay, Mode=OneWay}">
+                                            <Border Height="1" Margin="0,4" Background="#1AFFFFFF" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
+                                            <Grid Padding="12,8" ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="AUDIO DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                           AutomationProperties.AccessibilityView="Raw" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioEarlierClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayAudioEarlier, Mode=OneWay}"
+                                                            AutomationProperties.Name="Audio 50 ms earlier">
+                                                        <FontIcon Glyph="&#xE738;" FontSize="12" />
+                                                    </Button>
+                                                    <TextBlock MinWidth="72" Text="{x:Bind ViewModel.AudioDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
+                                                               Foreground="#CCFFFFFF" TextAlignment="Center" VerticalAlignment="Center"
+                                                               AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.AudioDelayName(ViewModel.AudioDelayText), Mode=OneWay}" />
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioLaterClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayAudioLater, Mode=OneWay}"
+                                                            AutomationProperties.Name="Audio 50 ms later">
+                                                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
+                                                            Foreground="#99FFFFFF" Click="OnAudioDelayResetClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanResetAudioDelay, Mode=OneWay}"
+                                                            AutomationProperties.Name="Reset audio delay">
+                                                        <TextBlock Text="Reset" FontSize="12" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
 
                                         <StackPanel Visibility="{x:Bind ViewModel.HasVersionOptions, Mode=OneWay}">
                                             <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />
@@ -601,7 +678,7 @@
                             </Button.Flyout>
                         </Button>
                         <!-- Edit markers, for an account that may: the web's tag button, white with the dot while the panel is open. -->
-                        <Grid Visibility="{x:Bind ViewModel.CanEditMarkers, Mode=OneWay}">
+                        <Grid x:Name="EditMarkersSlot" Visibility="{x:Bind ShowsButton(ViewModel.CanEditMarkers, ViewModel.Bar.EditMarkers), Mode=OneWay}">
                             <Button x:Name="EditMarkersButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMarkerEditCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
                                     AutomationProperties.Name="Edit markers" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
@@ -611,7 +688,7 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.MarkerEditor.IsEditing, Mode=OneWay}" />
                         </Grid>
                         <!-- Playback info, the mini view (the web's Picture in Picture) and Fill screen, as on the web. -->
-                        <Grid>
+                        <Grid x:Name="PlaybackInfoSlot" Visibility="{x:Bind ViewModel.Bar.PlaybackInfo, Mode=OneWay}">
                             <Button x:Name="PlaybackInfoButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
                                     AutomationProperties.Name="Playback info" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
@@ -621,10 +698,11 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsPlaybackInfoShown, Mode=OneWay}" />
                         </Grid>
                         <Button x:Name="MiniViewButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnMiniViewClick"
+                                Visibility="{x:Bind ViewModel.Bar.MiniView, Mode=OneWay}"
                                 AutomationProperties.Name="Mini view" AutomationProperties.AcceleratorKey="P" ToolTipService.ToolTip="Mini view (P)">
                             <FontIcon Glyph="&#xE93A;" FontSize="18" />
                         </Button>
-                        <Grid>
+                        <Grid x:Name="FillSlot" Visibility="{x:Bind ViewModel.Bar.Fill, Mode=OneWay}">
                             <Button x:Name="FillButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFillCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsFillingScreen), Mode=OneWay}"
                                     AutomationProperties.Name="Fill screen" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsFillingScreen), Mode=OneWay}"
@@ -634,6 +712,7 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsFillingScreen, Mode=OneWay}" />
                         </Grid>
                         <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
+                                Visibility="{x:Bind ViewModel.Bar.FullScreen, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
                                 ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">
                             <FontIcon Glyph="{x:Bind FullScreenGlyph(IsFullScreen), Mode=OneWay}" FontSize="16" />
@@ -1085,8 +1164,20 @@
                            FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
                 <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                            TextTrimming="CharacterEllipsis" MaxLines="1" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}" />
-                <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" FontSize="12"
-                           Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular" />
+                <!--
+                    The times, then the full player's end clock, which a bar too narrow for both leaves out rather than cut
+                    the times. Screen readers hear both from the times.
+                -->
+                <controls:FittingRow>
+                    <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" FontSize="12"
+                               Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular"
+                               AutomationProperties.Name="{x:Bind DockTimesName(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft, ViewModel.EndsAtSpoken), Mode=OneWay}" />
+                    <TextBlock Text="·" Margin="5,0,4,0" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Bind ViewModel.EndsAtText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               Typography.NumeralAlignment="Tabular" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                </controls:FittingRow>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">

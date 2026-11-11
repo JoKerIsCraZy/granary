@@ -23,6 +23,19 @@ public sealed partial class PlayerViewModel
     /// <summary>A row of the Chapters menu: to where the chapter starts.</summary>
     public void SeekToChapter(double startSeconds) => SeekTo(startSeconds);
 
+    /// <summary>
+    /// Ctrl+Right to the next chapter, Ctrl+Left back to the start of this one or the one before (<see cref="ChapterJump"/>).
+    /// From a seek on its way, as the skips go, so a key pressed again goes on from there. Nothing past the first and last,
+    /// and nothing while Settings hides the Chapters button.
+    /// </summary>
+    public void SeekToAdjacentChapter(bool forward)
+    {
+        if (Bar.Chapters && ChapterJump.Target(ChapterMarks, SkipOrigin, forward) is { } start)
+        {
+            SeekToChapter(start);
+        }
+    }
+
     private void ResetChapters()
     {
         _currentChapter = -1;

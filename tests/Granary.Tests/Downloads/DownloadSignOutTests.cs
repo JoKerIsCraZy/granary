@@ -321,7 +321,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         var http = _h.Silo.Http;
         using var sidebar = new SidebarViewModel(_h.Session, new ProfilesApi(http),
             new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _h.Logs.For<VisibleLibraries>()), new RecordingNavigation(),
-            new ImmediateDispatcher(), _h.Time, _h.Logs.For<SidebarViewModel>(), NewSignOut());
+            new ImmediateDispatcher(), _h.Time, _h.Logs.For<SidebarViewModel>(), downloads: NewSignOut());
 
         await sidebar.SignOutCommand.ExecuteAsync(null);
 

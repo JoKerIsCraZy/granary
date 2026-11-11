@@ -32,6 +32,12 @@ public sealed partial class PlayerViewModel
     // The duration the viewer started last here, which is saved as this device's; the running one while _sleepEnds is set.
     private int? _sleepPicked;
 
+    /// <summary>
+    /// The bar has the Sleep button, as Settings → Playback → Player buttons has it (<see cref="Bar"/>). Hidden, a timer that
+    /// runs ends, as Turn off ends it.
+    /// </summary>
+    public bool ShowsSleepTimer => Bar.SleepTimer;
+
     /// <summary>A duration counts down, or "End of episode" is on: the button is white with the amber dot.</summary>
     [ObservableProperty]
     public partial bool IsSleepTimerOn { get; private set; }
@@ -58,6 +64,11 @@ public sealed partial class PlayerViewModel
     public void ChooseSleepTimer(SleepTimerOption option)
     {
         ArgumentNullException.ThrowIfNull(option);
+        // A row from a menu opened before Settings took the button away: the timer stays off.
+        if (!ShowsSleepTimer)
+        {
+            return;
+        }
         switch (option.Action)
         {
             case SleepTimerAction.Minutes when option.Minutes > 0:
@@ -124,7 +135,8 @@ public sealed partial class PlayerViewModel
 
     private void OnSleepTick()
     {
-        if (_sleepEnds is not { } ends)
+        // Settings has hidden the timer's button, and that change waits behind this tick: it no longer runs out.
+        if (_sleepEnds is not { } ends || !_barToCome.SleepTimer)
         {
             return;
         }
@@ -231,6 +243,23 @@ public sealed partial class PlayerViewModel
 
     // The end row comes and goes with the title's end.
     partial void OnPhaseChanged(PlayerPhase value) => ShowSleepTimer();
+
+    // Settings → Playback → Player buttons hid the Sleep timer: a timer that runs ends, as Turn off ends it, and a hold it
+    // left at the end of what plays (End of episode, or a duration that ran out there) goes with it, so the next episode
+    // starts as usual.
+    private void EndSleepTimerWithItsButton()
+    {
+        if (IsSleepTimerOn)
+        {
+            _logger.LogInformation("Sleep timer turned off with its button in Settings");
+        }
+        StopSleepTimer();
+        if (_nextUp.IsHeld)
+        {
+            _nextUp.Hold(false, Now);
+            ShowNextUp();
+        }
+    }
 
     // "30 min", as the web's rows say it.
     private static string MinutesLabel(int minutes) => string.Create(CultureInfo.InvariantCulture, $"{minutes} min");

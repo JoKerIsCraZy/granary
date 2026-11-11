@@ -162,21 +162,25 @@ public sealed partial class MpvPlaybackEngine
         }
         BeforeLoadFile?.Invoke();
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
-        bool? pause;
-        lock (_gate)
+        // Under _pauseGate until mpv has it: a pause asked meanwhile reaches mpv after this one, not before.
+        lock (_pauseGate)
         {
-            // A newer load keeps its own wait.
-            if (_activeLoad != loadId && _activeLoad != 0)
+            bool? pause;
+            lock (_gate)
             {
-                return true;
+                // A newer load keeps its own wait.
+                if (_activeLoad != loadId && _activeLoad != 0)
+                {
+                    return true;
+                }
+                _pauseWaits = false;
+                pause = _pauseOnOpen;
+                _pauseOnOpen = null;
             }
-            _pauseWaits = false;
-            pause = _pauseOnOpen;
-            _pauseOnOpen = null;
-        }
-        if (pause is { } paused)
-        {
-            _mpv.SetProperty("pause", paused ? "yes" : "no");
+            if (pause is { } paused)
+            {
+                _mpv.SetProperty("pause", paused ? "yes" : "no");
+            }
         }
         return true;
     }

@@ -134,18 +134,25 @@ public sealed class PlayerSystemMedia : IDisposable
     // state that was. In a Watch Party play and pause are the host's and those of a guest the room lets, seeking the host's.
     private bool CanPlayPause => PlayPauseWorks(_player);
 
-    /// <summary>Whether play and pause work now; the taskbar's Play/Pause (<see cref="PlayerTaskbarButton"/>) follows it too.</summary>
+    /// <summary>Whether play and pause work now; the taskbar's Play/Pause (<see cref="PlayerTaskbarToolbar"/>) follows it too.</summary>
     internal static bool PlayPauseWorks(PlayerViewModel player) => !player.HasLeft && player.IsPlaying && player.CanPauseInRoom;
+
+    /// <summary>Whether the episode before can start now; the taskbar's Previous follows it too.</summary>
+    internal static bool PreviousWorks(PlayerViewModel player) => CanChangeEpisode(player) && player.HasPreviousEpisode;
+
+    /// <summary>Whether the episode after can start now; the taskbar's Next follows it too.</summary>
+    internal static bool NextWorks(PlayerViewModel player) => CanChangeEpisode(player) && player.HasNextEpisode;
 
     private bool CanSeek => !_player.HasLeft && _player.IsPlaying && _player.CanSeek && _player.CanSeekInRoom;
 
     // Settled, not loading nor buffering or replanning, so presses start one load, not one each; and in a Watch Party the
     // room decides what plays next, so the player has no episodes around.
-    private bool CanChangeEpisode => !_player.HasLeft && _player.IsPlaying && !_player.IsBuffering && !_player.IsWatchParty;
+    private static bool CanChangeEpisode(PlayerViewModel player) =>
+        !player.HasLeft && player.IsPlaying && !player.IsBuffering && !player.IsWatchParty;
 
-    private bool CanGoPrevious => CanChangeEpisode && _player.HasPreviousEpisode;
+    private bool CanGoPrevious => PreviousWorks(_player);
 
-    private bool CanGoNext => CanChangeEpisode && _player.HasNextEpisode;
+    private bool CanGoNext => NextWorks(_player);
 
     // Windows raises the buttons on a thread of its own.
     private void OnRequested(object? sender, SystemMediaRequest request) => _dispatcher.Post(() => Handle(request));

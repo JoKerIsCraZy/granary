@@ -27,7 +27,7 @@ Granary is built with C# / .NET 10, WinUI 3 (Windows App SDK) and libmpv. It pla
 Direct Play, so the server rarely has to transcode. Its look follows Silo's web app and its behaviour follows
 Silo's Android and Apple apps.
 
-**Status:** early development (version 0.2.1).
+**Status:** early development (version 0.3.1).
 
 ## Screenshots
 

@@ -25,6 +25,7 @@ using Granary.Core.Downloads;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
 using Granary.Core.Security;
 using Granary.Core.Servers;
@@ -96,6 +97,9 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<CollectionsApi>();
+        services.AddTransient<BoxSetsApi>();
+        // Which libraries have box sets on, kept a few minutes across movie pages.
+        services.AddSingleton<ViewModels.Detail.BoxSetLibraries>();
         services.AddTransient<RecommendationsApi>();
         services.AddTransient<CalendarApi>();
         services.AddTransient<NotificationsApi>();
@@ -105,6 +109,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ServerAccent>();
         services.AddSingleton<CardOverlaySettings>();
         services.AddSingleton<CardPresentationSettings>();
+        services.AddSingleton<EpisodeSpoilerSettings>();
+        services.AddSingleton<TitlePageSettings>();
+        AddThemeMusic(services);
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -133,6 +140,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(sp => new SidebarLayout(SidebarLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<SidebarLayout>>()));
         services.AddSingleton(sp => new LibraryTabs(LibraryTabs.DefaultPath, sp.GetRequiredService<ILogger<LibraryTabs>>()));
+        // Granary's own title preview switch, kept on this PC by server and profile as the sidebar's layout is.
+        services.AddSingleton(sp => new BrowseHeroSetting(BrowseHeroSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<BrowseHeroSetting>>()));
         // The app brings its own updater (Velopack); without it nothing updates. It applies an update only once
         // SignedReleaseVerifier has verified its release as signed. Release files come on a client of their own, with
         // nothing of this device or of a server's sign-in, following GitHub's redirect to where downloads are served.
@@ -159,6 +169,11 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
+        // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.
+        services.AddSingleton(sp => new PlayerButtonsLayout(PlayerButtonsLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),
+            sp.GetRequiredService<ILogger<PlayerButtonsLayout>>()));
+        services.AddSingleton<IPlayerButtonsLayout>(sp => sp.GetRequiredService<PlayerButtonsLayout>());
         // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts, and compares it at each load.
         services.AddSingleton(sp => new MpvConfigFolder(MpvConfigFolder.DefaultDirectory, sp.GetRequiredService<ILogger<MpvConfigFolder>>()));
         // How the player fared with it in this run, for Settings to show.
@@ -191,6 +206,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<WatchPartyFeature>();
         services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyHubViewModel>();
         services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyRoomViewModel>();
+        services.AddTransient<Granary.Core.ViewModels.WatchParty.StartPartyViewModel>();
         services.AddTransient<RequestsViewModel>();
         services.AddTransient<TitleViewModel>();
         services.AddTransient<RequestTitlesViewModel>();
@@ -198,6 +214,13 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();
         services.AddTransient<ItemDetailViewModel>();
+        services.AddTransient<BoxSetViewModel>();
+        // One writer per title's stars for the whole app, so a title's page opened again joins the writes still on their way.
+        services.AddSingleton<ViewModels.Detail.RatingWrites>();
+        // The calendar's airings a season's grid places missing and upcoming episodes by, and the double episodes' files it
+        // checks them with, kept for a few minutes across pages.
+        services.AddSingleton<ViewModels.Detail.SeriesAirings>();
+        services.AddSingleton<ViewModels.Detail.EpisodeSpans>();
         // One trailer at a time, over the whole window: the title's page opens it, the window shows it.
         services.AddSingleton<ViewModels.Detail.TrailerOverlayViewModel>();
         services.AddTransient<IProfileSettings, ProfileSettings>();
@@ -240,6 +263,8 @@ public static class CoreServiceCollectionExtensions
             sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ILogger<MediaProxy>>()));
         services.AddSingleton<IMediaProxy>(sp => sp.GetRequiredService<MediaProxy>());
+        // This device's audio delay, one for the app: Settings changes it, and the title that plays follows.
+        services.AddSingleton<AudioDelay>();
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
         services.AddTransient<IUpNextSource, UpNextSource>();
         // The Discord status's TMDB page and poster of each title, kept as long as the app runs.
@@ -315,6 +340,23 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
+    }
+
+    // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,
+    // cookies or redirects, and kept out of the log. The app puts its own output in first; without it themes are silent.
+    private static void AddThemeMusic(IServiceCollection services)
+    {
+        services.AddHttpClient(ThemeAudioDownloader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateHandler())
+            .RemoveAllLoggers();
+        // A proxy node's theme goes direct, never through the system's proxy, so its rule sees where its name resolves.
+        services.AddHttpClient(ThemeAudioDownloader.NodeHttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateNodeHandler())
+            .RemoveAllLoggers();
+        services.AddTransient<ThemesApi>();
+        services.AddTransient<ThemeAudioDownloader>();
+        services.TryAddSingleton<IThemeAudioOutput, NoThemeAudioOutput>();
+        services.AddSingleton<ThemeMusic>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

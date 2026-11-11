@@ -1,6 +1,7 @@
 using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Granary.Tests.Fakes;
 
 namespace Granary.Tests.Auth;
@@ -76,6 +77,49 @@ public sealed class SessionManagerTests
         Assert.Equal("7", session.ProfileId);
         Assert.Equal("7", _pipeline.Registry.Find(server.Id)!.LastProfileId);
         Assert.Equal("pin-token", (await _pipeline.Credentials.GetAsync(server.Id, ct))!.ProfileToken);
+    }
+
+    [Fact]
+    public async Task ABrandingSavedWhileAProfilePickIsSaved_StaysWithTheServer()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+        var hold = _pipeline.Registry.HoldNextUpdate();
+        var branding = new SavedBranding("#1d4ed8", null);
+
+        var pick = session.SelectProfileAsync(server.Id, "7", null, ct);
+        await hold.Reached.Task.WaitAsync(ct);
+        await _pipeline.Registry.UpdateAsync(server.Id, e => e with { Branding = branding }, ct);
+        hold.Release();
+        await pick;
+
+        var saved = _pipeline.Registry.Find(server.Id)!;
+        Assert.Equal("7", saved.LastProfileId);
+        Assert.Equal(branding, saved.Branding);
+    }
+
+    [Fact]
+    public async Task ABrandingSavedWhileAServerIsActivated_StaysWithTheServer()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        using var session = _pipeline.CreateSessionManager();
+        await session.InitializeAsync(ct);
+        _pipeline.Clock.Now += TimeSpan.FromMinutes(5);
+        var hold = _pipeline.Registry.HoldNextUpdate();
+        var branding = new SavedBranding("#1d4ed8", null);
+
+        var activation = session.ActivateServerAsync(server.Id, ct);
+        await hold.Reached.Task.WaitAsync(ct);
+        await _pipeline.Registry.UpdateAsync(server.Id, e => e with { Branding = branding }, ct);
+        hold.Release();
+        await activation;
+
+        var saved = _pipeline.Registry.Find(server.Id)!;
+        Assert.Equal(_pipeline.Clock.Now, saved.LastUsedAt);
+        Assert.Equal(branding, saved.Branding);
     }
 
     [Fact]

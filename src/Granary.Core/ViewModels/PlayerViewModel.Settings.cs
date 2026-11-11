@@ -6,6 +6,7 @@ namespace Granary.Core.ViewModels;
 
 // The settings menu of Silo's web player (QualityMenu): SPEED, VERSION when the title has several files, QUALITY when
 // the plan offers rungs; the gear names the quality ("…" while the plan changes), and a speed other than 1× shows beside it.
+// Granary's own: a dot in the gear says how the stream plays.
 public sealed partial class PlayerViewModel
 {
     [ObservableProperty]
@@ -34,6 +35,14 @@ public sealed partial class PlayerViewModel
     /// <summary>The quality on the gear ("Auto", "1080p High"), "…" while the plan changes; empty without a quality menu.</summary>
     [ObservableProperty]
     public partial string SettingsLabel { get; private set; } = "";
+
+    /// <summary>
+    /// How the server's stream plays, as the dot in the gear shows it (Granary's own): that of the plan whose stream the
+    /// player loaded, so a switch shows its own once the new stream plays, and a plan turned down never shows. None without
+    /// a server stream and whenever none plays: while a title (or its retry) prepares, and once it failed or ended.
+    /// </summary>
+    [ObservableProperty]
+    public partial StreamMethod StreamMethod { get; private set; }
 
     /// <summary>The viewer's pick in QUALITY: a new plan from where the viewer is; not saved, as on the web.</summary>
     public void SelectQuality(string preference)
@@ -78,11 +87,22 @@ public sealed partial class PlayerViewModel
             // A Watch Party plays one file for everyone, as the web player keeps it.
             VersionOptions = IsWatchParty ? [] : VersionOption.For(playback.Versions, playback.PlayingFileId, playback.RequestedFileId);
             Speed = playback.Speed;
+            // The server's answer to the setting is in once the title is prepared. Without the setting, the title has no
+            // delay, not even another server's in the hidden row.
+            ShowsAudioDelay = !playback.Preferences.AudioDelayRefused;
+            if (!ShowsAudioDelay)
+            {
+                AudioDelayMs = 0;
+            }
+            StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Playing or ServerPlaybackPhase.Reconnecting
+                ? StreamMethods.Of(playback.StreamInfo?.Plan)
+                : StreamMethod.None;
         }
         else
         {
             QualityOptions = [];
             VersionOptions = [];
+            StreamMethod = StreamMethod.None;
         }
         HasQualityOptions = QualityOptions.Count > 0;
         HasVersionOptions = VersionOptions.Count > 0;

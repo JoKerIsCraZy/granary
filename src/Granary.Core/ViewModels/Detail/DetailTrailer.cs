@@ -40,15 +40,5 @@ public sealed record DetailTrailer(string Title, string KindLabel, bool IsOffici
     }
 
     /// <summary>The web's extraKindLabel: "Trailer", "Behind the Scenes", "Extra" for anything unknown.</summary>
-    public static string KindText(string? kind) => kind?.Trim().ToLowerInvariant().Replace(' ', '_').Replace('-', '_') switch
-    {
-        "trailer" => "Trailer",
-        "teaser" => "Teaser",
-        "featurette" => "Featurette",
-        "clip" => "Clip",
-        "behind_the_scenes" or "behindthescenes" => "Behind the Scenes",
-        "bloopers" => "Bloopers",
-        "deleted_scene" or "deleted_scenes" => "Deleted Scene",
-        _ => "Extra",
-    };
+    public static string KindText(string? kind) => ExtraKinds.Label(kind);
 }

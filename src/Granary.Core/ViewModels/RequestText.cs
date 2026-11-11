@@ -3,7 +3,10 @@ using Granary.Core.Api.Requests;
 
 namespace Granary.Core.ViewModels;
 
-/// <summary>How a request's state badge is drawn, as the web's badge variants.</summary>
+/// <summary>
+/// How a request's state badge is drawn, as the web's badge variants (components/RequestStatusBadge.tsx): none takes the
+/// accent, Failed is the one destructive badge.
+/// </summary>
 public enum RequestBadgeLook
 {
     /// <summary>Pending: an outline.</summary>
@@ -12,11 +15,8 @@ public enum RequestBadgeLook
     /// <summary>Declined and cancelled: an outline in the muted colour.</summary>
     Muted,
 
-    /// <summary>Approved, processing, partially available: the secondary fill.</summary>
+    /// <summary>Approved, processing, partially available, available: the secondary fill.</summary>
     Secondary,
-
-    /// <summary>Available: the red fill.</summary>
-    Primary,
 
     /// <summary>Failed.</summary>
     Destructive,
@@ -66,8 +66,7 @@ internal static class RequestText
     public static RequestBadgeLook Look(string state) => state switch
     {
         RequestStates.Pending => RequestBadgeLook.Outline,
-        RequestStates.Approved or RequestStates.Processing or RequestStates.PartiallyAvailable => RequestBadgeLook.Secondary,
-        RequestStates.Available => RequestBadgeLook.Primary,
+        RequestStates.Approved or RequestStates.Processing or RequestStates.PartiallyAvailable or RequestStates.Available => RequestBadgeLook.Secondary,
         RequestStates.Failed => RequestBadgeLook.Destructive,
         _ => RequestBadgeLook.Muted,
     };

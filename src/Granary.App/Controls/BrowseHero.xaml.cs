@@ -18,14 +18,23 @@ namespace Granary.App.Controls;
 /// backdrop, for the card in focus. A new title's backdrop fades in over the last one, its blur first;
 /// the last one stays fully shown underneath until the fade is done. Once the rows below scroll, the hero folds into a
 /// compact header of the logo and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title
-/// shows only its backdrop's blur. On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
-/// The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
+/// shows only its backdrop's blur. An unwatched episode's still, while the profile hides those, shows blurred as the web's
+/// <c>HeroBanner</c> (<see cref="BrowseHeroTitle.BlursBackdrop"/>, <see cref="BackdropLayer"/>), and its overview not at all.
+/// On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
+/// Showing Home's banner (<see cref="SlideNumber"/>), it says which slide over the name and begins the rows lower, for the
+/// banner's buttons. The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
+/// With the title preview off (Settings → Navigation &amp; Cards, <see cref="BrowseHeroSetting"/>) the page gives it no title
+/// but Home's banner, so it stays hidden, holds no picture and the rows start at the top.
 /// </summary>
 public sealed partial class BrowseHero : UserControl
 {
     public static readonly DependencyProperty TitleProperty =
         DependencyProperty.Register(nameof(Title), typeof(BrowseHeroTitle), typeof(BrowseHero),
             new PropertyMetadata(null, (sender, e) => ((BrowseHero)sender).Show(e.NewValue as BrowseHeroTitle)));
+
+    public static readonly DependencyProperty SlideNumberProperty =
+        DependencyProperty.Register(nameof(SlideNumber), typeof(string), typeof(BrowseHero),
+            new PropertyMetadata(null, (sender, e) => ((BrowseHero)sender).ShowSlideNumber(e.NewValue as string)));
 
     public static readonly DependencyProperty SizesProperty =
         DependencyProperty.Register(nameof(Sizes), typeof(BrowseHeroSizes), typeof(BrowseHero), new PropertyMetadata(BrowseHeroLayout.For(0)));
@@ -39,12 +48,14 @@ public sealed partial class BrowseHero : UserControl
     private readonly DispatcherQueueTimer _fadeDone;
     // The text's sizes as the markup gives them, for a 1080 px window; a taller one grows them.
     private readonly (double LogoWidth, double Name, double Meta, double Overview, double OverviewLine, double OverviewWidth, double Width, double Top) _textAt1080;
+    private readonly (double Size, double Line, double Gap) _eyebrowAt1080;
     private FrameworkElement? _page;
     // The fold's numbers, which its expressions read: a page of another height sets them anew, the expressions run on.
     private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
-    private string? _picturesOf;
+    // The title whose pictures show, and whether its backdrop is blurred.
+    private (string Key, bool Blurs)? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
@@ -57,6 +68,7 @@ public sealed partial class BrowseHero : UserControl
         InitializeComponent();
         _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
             Texts.MaxWidth, Texts.Margin.Top);
+        _eyebrowAt1080 = (Eyebrow.FontSize, Eyebrow.LineHeight, Eyebrow.Margin.Bottom);
         ApplySizes(Sizes);
         _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
@@ -86,6 +98,16 @@ public sealed partial class BrowseHero : UserControl
         set => SetValue(TitleProperty, value);
     }
 
+    /// <summary>
+    /// Home's banner: the slide shown, "01", for "FEATURED — NO. 01" over its name; null or empty for a hero that follows the
+    /// cards.
+    /// </summary>
+    public string? SlideNumber
+    {
+        get => (string?)GetValue(SlideNumberProperty);
+        set => SetValue(SlideNumberProperty, value);
+    }
+
     /// <summary>The hero's sizes on its page now, for the page's rows (<see cref="RowsViewMargin"/>, <see cref="RowsPadding"/>).</summary>
     public BrowseHeroSizes Sizes
     {
@@ -105,13 +127,25 @@ public sealed partial class BrowseHero : UserControl
 
     // Static because the pages' x:Bind function bindings call them on the type. With a hero, the rows' view begins at the
     // compact header and the rows a fold's length below it, so at rest they start under the full hero and scroll up under
-    // the header as it folds; without one (loading, empty, an error), as on any page.
+    // the header as it folds; without one (the title preview off, loading, empty, an error), at the top. They take whether
+    // the page has a title, not the title: x:Bind calls a function again only for an argument that is not null, so a title
+    // that went would have left its room behind (BrowseHeroViewModel.HasTitle).
 
-    /// <summary>Where the rows' scroller begins under a hero for <paramref name="hero"/> of <paramref name="sizes"/>.</summary>
-    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(0, hero is null ? 0 : sizes.CompactHeight, 0, 0);
+    /// <summary>
+    /// How far down a page of rows begins without a hero: the web's Home, For You and Requests lay out their own top, 24 px
+    /// (<c>pt-6</c>), rather than the 32 px of its other pages.
+    /// </summary>
+    public const double TopWithoutHero = 24;
 
-    /// <summary>The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top.</summary>
-    public static Thickness RowsPadding(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(48, hero is null ? 32 : sizes.CollapseDistance, 48, 48);
+    /// <summary>Where the rows' scroller begins under a hero of <paramref name="sizes"/>, while the page <paramref name="hasHero"/>.</summary>
+    public static Thickness RowsViewMargin(bool hasHero, BrowseHeroSizes sizes) => new(0, hasHero ? sizes.CompactHeight : 0, 0, 0);
+
+    /// <summary>
+    /// The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top
+    /// (<see cref="TopWithoutHero"/> without a hero).
+    /// </summary>
+    public static Thickness RowsPadding(bool hasHero, BrowseHeroSizes sizes) =>
+        new(48, hasHero ? sizes.CollapseDistance : TopWithoutHero, 48, 48);
 
     /// <summary>
     /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroSizes.CollapseDistance"/>: the logo
@@ -205,12 +239,27 @@ public sealed partial class BrowseHero : UserControl
         ShowPictures();
     }
 
+    // Whether the hero shows Home's banner. x:Bind hands a string property "" for null, so empty means none too: the card
+    // hero showed "FEATURED — NO." over its title, and its rows began the banner's room lower.
+    private bool IsBanner => !string.IsNullOrEmpty(SlideNumber);
+
+    // The banner's eyebrow, read as the web's text ("Featured — No. 01"). The banner coming or going moves the rows.
+    private void ShowSlideNumber(string? number)
+    {
+        bool isBanner = !string.IsNullOrEmpty(number);
+        Eyebrow.Visibility = isBanner ? Visibility.Visible : Visibility.Collapsed;
+        EyebrowNumber.Text = isBanner ? "NO. " + number : "";
+        AutomationProperties.SetName(Eyebrow, isBanner ? "Featured — No. " + number : "");
+        FollowPageHeight(_page?.ActualHeight ?? double.NaN);
+    }
+
     // The logo and the backdrop of the title shown. Only while the hero is in the window: a cached page shows its title
     // again before it is back in the window (Resume from OnNavigatedTo), and a picture set then never raised ImageOpened,
     // so the logo and the backdrop stayed hidden behind the name and the blur. Loaded calls this again. Not while the page
     // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
     // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
-    // are being set follows them, rather than starting over from within.
+    // are being set follows them, rather than starting over from within. The same title with its backdrop blurred now, or
+    // no longer (a spoiler switch, the episode started), keeps its logo and fades its backdrop over.
     private void ShowPictures()
     {
         if (_showingPictures)
@@ -220,10 +269,13 @@ public sealed partial class BrowseHero : UserControl
         _showingPictures = true;
         try
         {
-            while (!_suspended && IsLoaded && _shown is { } title && title.Key != _picturesOf)
+            while (!_suspended && IsLoaded && _shown is { } title && PicturesOf(title) != _picturesOf)
             {
-                _picturesOf = title.Key;
-                ShowLogo(title.LogoUrl);
+                if (title.Key != _picturesOf?.Key)
+                {
+                    ShowLogo(title.LogoUrl);
+                }
+                _picturesOf = PicturesOf(title);
                 Begin(title);
             }
         }
@@ -232,6 +284,8 @@ public sealed partial class BrowseHero : UserControl
             _showingPictures = false;
         }
     }
+
+    private static (string Key, bool Blurs) PicturesOf(BrowseHeroTitle title) => (title.Key, title.BlursBackdrop);
 
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)
@@ -254,9 +308,20 @@ public sealed partial class BrowseHero : UserControl
         HeadingText.Opacity = 1;
     }
 
-    // A backdrop fades in on the layer not shown, on top; during a fade the newest title waits for it.
+    // A backdrop fades in on the layer not shown, on top; during a fade the newest title waits for it. A title whose still is
+    // blurred now takes its sharp picture away at once, also while it waits, rather than fading over it.
     private void Begin(BrowseHeroTitle title)
     {
+        if (title.BlursBackdrop)
+        {
+            foreach (var shown in _layers)
+            {
+                if (shown.Title is { BlursBackdrop: false } sharp && sharp.Key == title.Key)
+                {
+                    shown.Clear();
+                }
+            }
+        }
         if (_crossfade.Begin(title) is not int front)
         {
             return;
@@ -280,7 +345,7 @@ public sealed partial class BrowseHero : UserControl
             _layers[index].Grid.Opacity = 0;
             _layers[index].Clear();
         }
-        if (next is not null && next.Key == _picturesOf)
+        if (next is not null && PicturesOf(next) == _picturesOf)
         {
             Begin(next);
             return;
@@ -329,12 +394,12 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    // A page of another height (in steps, BrowseHeroLayout.For): the hero takes its sizes, the backdrop its box (decoded
-    // again when it grew notably), the fold its new numbers and where it counts as folded, and the page lays its rows under
-    // it again (Sizes).
+    // A page of another height (in steps, BrowseHeroLayout.For), or the banner come or gone: the hero takes its sizes, the
+    // backdrop its box (decoded again when it grew notably), the fold its new numbers and where it counts as folded, and the
+    // page lays its rows under it again (Sizes).
     private void FollowPageHeight(double height)
     {
-        var sizes = BrowseHeroLayout.For(height);
+        var sizes = BrowseHeroLayout.For(height, banner: IsBanner);
         if (sizes == Sizes)
         {
             return;
@@ -360,6 +425,10 @@ public sealed partial class BrowseHero : UserControl
         OverviewText.FontSize = BrowseHeroLayout.Scaled(text.Overview, sizes.TextGrow);
         OverviewText.LineHeight = BrowseHeroLayout.Scaled(text.OverviewLine, sizes.TextGrow);
         OverviewText.MaxWidth = BrowseHeroLayout.Scaled(text.OverviewWidth, sizes.Grow);
+        var eyebrow = _eyebrowAt1080;
+        Eyebrow.FontSize = Math.Round(eyebrow.Size * sizes.TextGrow, 1);
+        Eyebrow.LineHeight = BrowseHeroLayout.Scaled(eyebrow.Line, sizes.TextGrow);
+        Eyebrow.Margin = Eyebrow.Margin with { Bottom = BrowseHeroLayout.Scaled(eyebrow.Gap, sizes.Grow) };
     }
 
     // A picture not decoded yet is decoded now, fade or not; one decoded notably narrower fades in again at the new width.
@@ -371,7 +440,8 @@ public sealed partial class BrowseHero : UserControl
         }
         var front = _layers[_crossfade.Front];
         int needed = BackdropWidth();
-        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, front.DecodedWidth, needed))
+        bool blurred = front.Title is { BlursBackdrop: true };
+        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, blurred, front.DecodedWidth, needed))
         {
             case BackdropStep.LoadArt:
                 front.LoadArt(needed);
@@ -398,7 +468,7 @@ public sealed partial class BrowseHero : UserControl
         {
             return;
         }
-        bool folded = scroller.VerticalOffset > Sizes.CollapseDistance / 2;
+        bool folded = BrowseHeroLayout.IsFolded(scroller.VerticalOffset, Sizes);
         if (folded == _isFolded)
         {
             return;

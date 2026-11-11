@@ -15,6 +15,8 @@ public sealed class ItemDetailTextTests
         return new CatalogItemDetail { ContentId = "item-1", Type = type, Title = "Title", Genres = ["Drama", "Mystery"], Crew = credits };
     }
 
+    private static List<DetailPerson> People(CatalogItemDetail item) => [.. DetailCredits.Groups(item, Server).SelectMany(g => g.People)];
+
     [Theory]
     [InlineData(109, "1h 49m")]
     [InlineData(52, "52m")]
@@ -130,7 +132,7 @@ public sealed class ItemDetailTextTests
         });
 
         // Two director cards at most.
-        Assert.Equal(["Ann Lee", "Bo Kim"], DetailCredits.People(series, Server).Select(p => p.Name));
+        Assert.Equal(["Ann Lee", "Bo Kim"], People(series).Select(p => p.Name));
     }
 
     [Fact]
@@ -147,7 +149,7 @@ public sealed class ItemDetailTextTests
             Ratings = [new CatalogRating(null!, null!, 0, "5.0"), new CatalogRating("imdb", "IMDb", 50, "5.0")],
         };
 
-        Assert.Equal(["Ann Lee"], DetailCredits.People(movie, Server).Select(p => p.Name));
+        Assert.Equal(["Ann Lee"], People(movie).Select(p => p.Name));
         Assert.Equal([("Director", "Ann Lee")], DetailFacts.InfoSections(movie).Single(s => s.Title == "Crew").Rows.Select(r => (r.Label, r.Value)));
         Assert.Equal(["IMDb 5.0"], DetailFacts.Ratings(movie).Select(r => r.AccessibleName));
     }
@@ -157,7 +159,7 @@ public sealed class ItemDetailTextTests
     {
         var item = Item(CatalogItemTypes.Movie) with { Cast = [new CastCredit("Omar Sy", "Assane", 0, null, "/api/v2/artwork/p.webp?sig=x", null)] };
 
-        var people = DetailCredits.People(item, Server);
+        var people = People(item);
 
         Assert.Equal("Cast", DetailCredits.PeopleTitle(people));
         Assert.Equal(new Uri("https://silo.test/media/api/v2/artwork/p.webp?sig=x"), Assert.Single(people).PhotoUrl);

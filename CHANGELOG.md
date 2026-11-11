@@ -8,25 +8,74 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,
-  your Discord status says what you're watching: the series or film, the season and episode, the poster and the time
-  left, with a link to the title on TMDB. Paused shows as paused, and the status goes when you stop. Only titles from
-  your Silo server show, never a file you play directly. It needs the Discord app on this PC, and the poster shows when
-  your Silo server has Requests turned on.
-- **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
-  at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC.
-- **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
-  preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
-  button does.
+- **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 
 ### Fixed
 
-- Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
-  where it converted them.
-- Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
-- HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
-  card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
+- A Next Up card says Next Episode, as on Silo's web.
+- Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
+- A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
+
+## [0.3.1] - 2026-11-09
+
+### Added
+
+- **Volume stays:** the player remembers its volume and mute on this PC, for the next title and after a restart.
+- **Window place:** Granary opens where you closed it, at the same size, maximized if it was.
+
+### Fixed
+
+- Playback no longer buffers without end when you press Play after a long pause.
+
+## [0.3.0] - 2026-11-08
+
+### Added
+
+- **Player buttons:** Settings → Playback → Player buttons shows, hides and orders the player's buttons. A hidden
+  button's keys are off too, except F11 and the minimized player's own Mute and volume keys.
+- **When it ends:** the player shows the clock time the title ends, such as "Ends 22:41".
+- **Stream dot:** a dot in the player's gear is green for Direct Play or Direct Stream and amber while your Silo server
+  transcodes.
+- **Sleep timer:** the player's Sleep button pauses after 5 to 60 minutes, or stops at the end of the episode or movie
+  instead of playing the next one.
+- **Audio sync offset:** moves the sound up to 5 seconds earlier or later, in Settings → Playback or the player's menu.
+- **Chapter keys:** Ctrl+Right and Ctrl+Left jump between chapters.
+- **Taskbar preview:** Play/Pause, and Previous and Next episode, in the preview of Granary's taskbar button.
+- **Discord status:** Settings → Playback → This PC can show what you're watching in Discord.
+- **Theme music:** a title's page can play its theme quietly (Settings → Title Pages), when your Silo server has one.
+- **Title art and advisory age:** Settings → Title Pages chooses a title's logo or its name, and can show an advisory
+  age such as "Common Sense 13+".
+- **Spoilers:** Settings → Title Pages can blur the stills and hide the descriptions of episodes you haven't started.
+- **Star ratings:** rate a movie or series from 1 to 5 stars on its page.
+- **Box sets:** a film's page lists its box set, which has its own page and shows in Search.
+- **Extras:** title pages show the featurettes, deleted scenes and other extras your Silo server has.
+- **Missing and upcoming episodes:** a season marks missing episodes and lists the ones still to air.
+- **Cast & Crew:** the row marks where the writers and the cast begin.
+- **Watch Party from a title's page:** its ⋮ menu starts a party with that title and copies the invite.
+- **Home's hero banner:** a Home row set as the hero banner on Silo's web slides through its titles at the top of Home.
+- **Title preview switch:** Settings → Navigation & Cards can turn off the large title preview at the top of Home, For
+  You and Discover. A hero banner set on Silo's web stays.
+
+### Changed
+
+- **Resume** starts exactly where you stopped instead of 7 seconds earlier. Settings → Playback → This PC → Rewind on
+  resume brings a lead-in back.
+- **Time left stays:** click the player's time to show the time left, and the player remembers it.
+- **Player bar:** Audio and Subtitles sit side by side, and Audio has the sound-wave icon of Silo's web player.
+- **More Episodes** shows the whole season, with the episode you're on marked Now Viewing.
+
+### Fixed
+
+- Granary takes your Silo server's accent colour and logo also when the server was out of reach at start, and
+  remembers them. Without an accent set on the server it uses Silo's web light accent instead of red.
+- The display no longer turns off while something plays.
+- HDR and Dolby Vision films play directly on more graphics cards and servers.
+- A TV remote works right after start and after picking a profile, its OK switches tabs and choices, and the mouse
+  cursor hides over the picture while you use it.
+- For You and Discover no longer keep an empty space or an old title where their preview was.
+- A card you clicked no longer stays highlighted when you come back with the mouse's Back button.
+- Saving mpv.conf or loading a preset no longer fails now and then.
+- The Opacity boxes in Subtitle appearance and the badges in a card's right corners are no longer cut off.
 
 ## [0.2.1] - 2026-11-05
 

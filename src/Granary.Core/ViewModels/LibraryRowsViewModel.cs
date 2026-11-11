@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -12,9 +13,11 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// The Recommended tab: the library's landing rows as on Home (docs/api-contract.md, 7.1 and 7.3). Rows
 /// with <c>total_count == 0</c> are left out; rows that came back without cards but with a positive count
-/// are fetched on their own, at most <see cref="MaxConcurrentHydrations"/> at once, as Android does.
+/// are fetched on their own, at most <see cref="MaxConcurrentHydrations"/> at once, as Android does. Continue Watching and Next
+/// Up blur an unwatched episode's still as the profile's <paramref name="spoilers"/> say (<see cref="ShowSpoilers"/>).
 /// </summary>
-public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigationService navigation, ILogger logger) : ObservableObject
+public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigationService navigation, ILogger logger, Func<EpisodeSpoilers>? spoilers = null)
+    : ObservableObject
 {
     public const int MaxConcurrentHydrations = 4;
 
@@ -57,10 +60,8 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
             var empty = new List<LibraryRowViewModel>();
             foreach (var section in sections.Sections.Where(s => s.TotalCount > 0))
             {
-                var row = new LibraryRowViewModel(section.Id, section.Title, OpenCardCommand, ExploreAllCommandFor(section, libraryId))
-                {
-                    Cards = CardsOf(section, server),
-                };
+                var row = new LibraryRowViewModel(section.Id, section.Title, OpenCardCommand, ExploreAllCommandFor(section, libraryId));
+                Fill(row, section, server);
                 Rows.Add(row);
                 if (!row.HasCards)
                 {
@@ -86,6 +87,23 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
             {
                 logger.LogWarning(ex, "Could not load the rows of a library");
                 ShowError(ex);
+            }
+        }
+    }
+
+    /// <summary>The profile's spoiler switches changed, or arrived after the rows: the cards of rows made otherwise are made again.</summary>
+    public void ShowSpoilers()
+    {
+        if (_server is not { } server)
+        {
+            return;
+        }
+        var current = Spoilers;
+        foreach (var row in Rows)
+        {
+            if (row.Source is { } section && row.MadeWith != current)
+            {
+                Fill(row, section, server);
             }
         }
     }
@@ -164,7 +182,7 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
             var section = await catalog.GetLibrarySectionItemsAsync(server, libraryId, row.Id, images, cancellationToken);
             if (!cancellationToken.IsCancellationRequested)
             {
-                row.Cards = CardsOf(section, server);
+                Fill(row, section, server);
                 ShowState(stillLoading: true);
             }
             return null;
@@ -185,6 +203,18 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
         }
     }
 
-    private static List<MediaCard> CardsOf(Section section, Uri server) =>
-        [.. section.Items.Select(item => MediaCardFactory.ForSection(section, item, server))];
+    private EpisodeSpoilers Spoilers => spoilers?.Invoke() ?? EpisodeSpoilers.Off;
+
+    // Each row remembers the switches its cards were made with; the same cards again leave the row as it is.
+    private void Fill(LibraryRowViewModel row, Section section, Uri server)
+    {
+        var current = Spoilers;
+        List<MediaCard> cards = [.. section.Items.Select(item => MediaCardFactory.ForSection(section, item, server, current))];
+        row.Source = section;
+        row.MadeWith = current;
+        if (!cards.SequenceEqual(row.Cards))
+        {
+            row.Cards = cards;
+        }
+    }
 }

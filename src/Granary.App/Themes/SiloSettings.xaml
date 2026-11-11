@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The settings pages in the look of Silo's web (pages/settings): sections between hairlines with a title column, rows
-    with a label and a description, 36 px selects with a faint outline, red switches. A settings page merges this into
+    with a label and a description, 36 px selects with a faint outline, switches in the accent. A settings page merges this into
     its resources, so its combo boxes, switches and number boxes take these brushes instead of the Fluent ones.
 -->
 <ResourceDictionary
@@ -31,7 +31,10 @@
     <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF161619" />
     <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF242428" />
 
-    <!-- Switches: red when on, a dark track with a light knob when off, as the web's Switch. -->
+    <!--
+        Switches: the accent with the label's knob when on (bg-primary, bg-primary-foreground), a dark track with a light knob
+        when off, as the web's Switch (components/ui/switch.tsx).
+    -->
     <!-- Without text beside it, the switch is only its track, right-aligned in its row. -->
     <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
     <Thickness x:Key="ToggleSwitchTopHeaderMargin">0</Thickness>
@@ -48,9 +51,9 @@
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFFFF" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFFFF" />
+    <StaticResource x:Key="ToggleSwitchKnobFillOn" ResourceKey="SiloOnPrimaryBrush" />
+    <StaticResource x:Key="ToggleSwitchKnobFillOnPointerOver" ResourceKey="SiloOnPrimaryBrush" />
+    <StaticResource x:Key="ToggleSwitchKnobFillOnPressed" ResourceKey="SiloOnPrimaryBrush" />
 
     <!-- Number fields (opacity): the select's look. -->
     <SolidColorBrush x:Key="TextControlBackground" Color="#FF0E0E10" />
@@ -63,7 +66,7 @@
     <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFE8E8EC" />
 
-    <!-- The settings' own sidebar: the page open is white 6 % with red text and a red mark, as on the web. -->
+    <!-- The settings' own sidebar: the page open is white 6 % with text and a mark in the accent, as on the web. -->
     <!-- A disabled button (Reset with nothing to reset) keeps the page's background. -->
     <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
     <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#FF1A1A1E" />
@@ -109,6 +112,14 @@
         <Setter Property="BorderBrush" Value="#FF28282E" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!-- A quiet text or icon button, such as an editor's Move up: no fill until the pointer is on it. -->
+    <Style x:Key="SiloSettingsGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
     </Style>
 
     <!--

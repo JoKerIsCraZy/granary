@@ -51,7 +51,7 @@ public sealed record CardPresentation(PosterSize PosterSize, CardCaption Caption
     /// <summary>The title shows under the artwork.</summary>
     public bool ShowsCaption => Caption != CardCaption.Artwork;
 
-    /// <summary>The details show under the title: the year, an episode's title and code, the time left.</summary>
+    /// <summary>The details show under the title: the year, an episode's title and code, the time left and New Season.</summary>
     public bool ShowsDetails => Caption == CardCaption.TitleMetadata;
 
     /// <summary>The web's space between a grid's cards, across and down: <c>gap-3</c>, or <c>gap-4</c> for large posters.</summary>

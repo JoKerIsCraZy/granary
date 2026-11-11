@@ -19,6 +19,18 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         SavedUpDown.Add(upDown);
         return Task.CompletedTask;
     }
+
+    public bool TimeLeft { get; set; }
+
+    public List<bool> SavedTimeLeft { get; } = [];
+
+    public Task SetTimeLeftAsync(bool shown)
+    {
+        TimeLeft = shown;
+        SavedTimeLeft.Add(shown);
+        return Task.CompletedTask;
+    }
+
     public int PassoutThreshold { get; set; } = AutoPlayStreak.DefaultThreshold;
 
     public List<int> SavedPassoutThreshold { get; } = [];
@@ -27,6 +39,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
     {
         PassoutThreshold = episodes;
         SavedPassoutThreshold.Add(episodes);
+        return Task.CompletedTask;
+    }
+
+    public int ResumeRewindSeconds { get; set; } = ResumeRewind.DefaultSeconds;
+
+    public List<int> SavedResumeRewindSeconds { get; } = [];
+
+    public Task SetResumeRewindSecondsAsync(int seconds)
+    {
+        ResumeRewindSeconds = seconds;
+        SavedResumeRewindSeconds.Add(seconds);
         return Task.CompletedTask;
     }
 
@@ -45,6 +68,29 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         {
             DiscordStatusChanged?.Invoke(this, EventArgs.Empty);
         }
+        return Task.CompletedTask;
+    }
+
+    public PlayerVolume? Volume { get; set; }
+
+    public List<PlayerVolume> SavedVolume { get; } = [];
+
+    public Task SetVolumeAsync(PlayerVolume volume)
+    {
+        Volume = volume;
+        SavedVolume.Add(volume);
+        return Task.CompletedTask;
+    }
+
+    public bool SleepTimerSwitchOff { get; set; }
+
+    /// <summary>How often the Sleep timer switch was dropped from the file.</summary>
+    public int SleepTimerSwitchForgotten { get; private set; }
+
+    public Task ForgetSleepTimerSwitchAsync()
+    {
+        SleepTimerSwitchOff = false;
+        SleepTimerSwitchForgotten++;
         return Task.CompletedTask;
     }
 

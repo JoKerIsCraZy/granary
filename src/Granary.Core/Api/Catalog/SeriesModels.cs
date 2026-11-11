@@ -54,6 +54,12 @@ public sealed record Episode
 
     public string? StillThumbhash { get; init; }
 
+    /// <summary>
+    /// <see cref="StillUrl"/> is the episode's own still (true) or the series' art standing in (false); null when the server
+    /// does not say, as older ones do (docs/api-contract.md, 7.10).
+    /// </summary>
+    public bool? StillIsEpisodeStill { get; init; }
+
     public WatchRollup? UserData { get; init; }
 
     public CatalogItemOverlay? OverlaySummary { get; init; }

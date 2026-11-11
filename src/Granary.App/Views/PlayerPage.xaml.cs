@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using Granary.App.Controls;
 using Granary.App.Services;
@@ -13,6 +14,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -31,19 +33,18 @@ public sealed partial class PlayerPage : Page
     public static readonly DependencyProperty IsMiniViewProperty =
         DependencyProperty.Register(nameof(IsMiniView), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
-    public static readonly DependencyProperty ShowsRemainingProperty =
-        DependencyProperty.Register(nameof(ShowsRemaining), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
-
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
     private const double TitleBarHeight = 32;
 
     private AppWindow? _appWindow;
-    // The Play/Pause in the taskbar preview, for as long as Windows' media controls.
-    private PlayerTaskbarButton? _taskbarButton;
+    // Previous episode, Play/Pause and Next episode in the taskbar preview, for as long as Windows' media controls.
+    private PlayerTaskbarToolbar? _taskbarToolbar;
     // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
     private PlayerSystemMedia? _systemMedia;
     // Discord's status, likewise, while Settings allows it.
     private PlayerRichPresence? _richPresence;
+    // The display kept on while a title plays, likewise; the bar and the mini view are this page too.
+    private PlayerKeepAwake? _keepAwake;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
     private readonly IPlaybackDevicePreferences _devicePreferences;
@@ -64,6 +65,7 @@ public sealed partial class PlayerPage : Page
         InitializeDock();
         InitializeNotices();
         InitializePartyPanel();
+        ArrangeBarButtons();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();
@@ -90,13 +92,6 @@ public sealed partial class PlayerPage : Page
         private set => SetValue(IsMiniViewProperty, value);
     }
 
-    /// <summary>The end of the seek bar shows the time left instead of the duration.</summary>
-    public bool ShowsRemaining
-    {
-        get => (bool)GetValue(ShowsRemainingProperty);
-        private set => SetValue(ShowsRemainingProperty, value);
-    }
-
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
 
     /// <summary>Plays <paramref name="request"/>; the window shows the page over everything first.</summary>
@@ -119,13 +114,15 @@ public sealed partial class PlayerPage : Page
         _modes.Changed += OnWindowModeChanged;
         ShowWindowMode();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
-        _taskbarButton ??= new PlayerTaskbarButton(ViewModel, App.Services.GetRequiredService<ITaskbarPlayButton>(),
+        _taskbarToolbar ??= new PlayerTaskbarToolbar(ViewModel, App.Services.GetRequiredService<ITaskbarToolbar>(),
             App.Services.GetRequiredService<IUiDispatcher>());
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
             App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
+        _keepAwake ??= new PlayerKeepAwake(ViewModel, App.Services.GetRequiredService<IKeepAwake>());
         ShowSkipIntervals();
+        QueueNextUpStill();
         Focus(FocusState.Programmatic);
         ShowControls();
         // StartAsync runs on navigation, before this: it can have failed already.
@@ -141,14 +138,17 @@ public sealed partial class PlayerPage : Page
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         StopInput();
         StopAutoHide();
+        StopNextUpStill();
         StopSubtitlePanels();
         StopPartyPanel();
-        _taskbarButton?.Dispose();
-        _taskbarButton = null;
+        _taskbarToolbar?.Dispose();
+        _taskbarToolbar = null;
         _systemMedia?.Dispose();
         _systemMedia = null;
         _richPresence?.Dispose();
         _richPresence = null;
+        _keepAwake?.Dispose();
+        _keepAwake = null;
         ViewModel.Dispose();
     }
 
@@ -178,11 +178,14 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.IsNextUpScreenShown):
                 ShowNextUpScreen();
                 break;
-            case nameof(PlayerViewModel.NextUpStill):
-                ShowNextUpStill();
+            case nameof(PlayerViewModel.NextUpStill) or nameof(PlayerViewModel.NextUpBlursStill):
+                QueueNextUpStill();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
+                break;
+            case nameof(PlayerViewModel.Bar):
+                ShowBar();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt):
             case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
@@ -287,7 +290,67 @@ public sealed partial class PlayerPage : Page
         }
     }
 
-    private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
+    // Settings → Playback → Player buttons changed the bar: the buttons take its order, a menu goes with its button, and
+    // focus that was on a button that went stays in the page.
+    private void ShowBar()
+    {
+        ArrangeBarButtons();
+        var bar = ViewModel.Bar;
+        (bool Shown, FlyoutBase Menu)[] menus =
+        [
+            (bar.SleepTimer, SleepTimerMenu), (bar.Audio, AudioMenu), (bar.Subtitles, SubtitleMenu), (bar.Chapters, ChaptersMenu),
+            (bar.Settings, SettingsMenu),
+        ];
+        foreach (var (shown, menu) in menus)
+        {
+            if (!shown)
+            {
+                menu.Hide();
+            }
+        }
+        KeepFocusInPage();
+    }
+
+    // Each button's elements in the bar's order, moved only where that differs from the order shown. Tab and a remote's
+    // arrows follow it.
+    private void ArrangeBarButtons()
+    {
+        var children = RightControls.Children;
+        int index = 0;
+        foreach (var button in ViewModel.Bar.Order)
+        {
+            foreach (var element in ElementsOf(button))
+            {
+                int at = children.IndexOf(element);
+                // Each button's elements are the bar's own children; one that is not stays out of the order.
+                Debug.Assert(at >= 0, "A bar button's element is not in RightControls");
+                if (at < 0)
+                {
+                    continue;
+                }
+                if (at != index)
+                {
+                    children.Move((uint)at, (uint)index);
+                }
+                index++;
+            }
+        }
+    }
+
+    private UIElement[] ElementsOf(PlayerButton button) => button switch
+    {
+        PlayerButton.Volume => [MuteButton, VolumeSlider],
+        PlayerButton.SleepTimer => [SleepTimerSlot],
+        PlayerButton.Audio => [AudioButton],
+        PlayerButton.Subtitles => [SubtitleSlot],
+        PlayerButton.Chapters => [ChaptersButton],
+        PlayerButton.Settings => [SettingsButton],
+        PlayerButton.EditMarkers => [EditMarkersSlot],
+        PlayerButton.PlaybackInfo => [PlaybackInfoSlot],
+        PlayerButton.MiniView => [MiniViewButton],
+        PlayerButton.Fill => [FillSlot],
+        _ => [FullScreenButton],
+    };
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
@@ -320,9 +383,6 @@ public sealed partial class PlayerPage : Page
             ViewModel.SelectVersion(fileId);
         }
     }
-
-    // "Playback settings, 1.5×" while the speed is not 1×.
-    public string SettingsName(string speedBadge) => speedBadge.Length > 0 ? $"Playback settings, {speedBadge}" : "Playback settings";
 
     // A menu opens on the track that plays, so the keyboard starts from there.
     private void OnAudioMenuOpened(object? sender, object e) =>
@@ -389,6 +449,12 @@ public sealed partial class PlayerPage : Page
     private void OnSubtitleLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeSubtitleDelay(SubtitleDelayStepMs);
 
     private void OnSubtitleDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetSubtitleDelay();
+
+    private void OnAudioEarlierClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(-PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetAudioDelay();
 
     private void OnSubtitleTrackClick(object sender, RoutedEventArgs e)
     {
@@ -468,6 +534,12 @@ public sealed partial class PlayerPage : Page
         PlayerTime.Format(position, duration) + " / "
         + (showsRemaining ? PlayerTime.Remaining(position, duration) : PlayerTime.Format(duration));
 
+    // The bar's times for screen readers, with its end clock, which a narrow bar leaves out: "4:05 / 48:41, ends at 22:41".
+    public string DockTimesName(double position, double duration, bool showsTimeLeft, string endsAtSpoken) =>
+        endsAtSpoken.Length == 0
+            ? TimesText(position, duration, showsTimeLeft)
+            : $"{TimesText(position, duration, showsTimeLeft)}, {char.ToLowerInvariant(endsAtSpoken[0])}{endsAtSpoken[1..]}";
+
     // Upper case on screen only: screen readers get the line as written, so "S1 · E1" is not spelled out.
     public string MetaText(string subtitle) => subtitle.ToUpper(CultureInfo.CurrentCulture);
 
@@ -490,4 +562,7 @@ public sealed partial class PlayerPage : Page
         phase == PlayerPhase.Preparing || isChangingPlan ? "Loading" : "Buffering";
 
     public Visibility Shows(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
+    // A bar button that needs something, such as chapters, while there is that and Settings lets it show.
+    public Visibility ShowsButton(bool has, bool shown) => has && shown ? Visibility.Visible : Visibility.Collapsed;
 }

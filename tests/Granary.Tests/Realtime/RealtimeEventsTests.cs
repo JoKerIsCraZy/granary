@@ -175,6 +175,40 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ACatalogOrAccessChange_IsTheCatalogsOnly()
+    {
+        var socket = await StartedAsync();
+        List<bool> catalogOnly = [];
+        _harness.ViewerState.Changed += (_, change) => catalogOnly.Add(change.IsCatalogOnly);
+
+        await PushedAsync(socket, CatalogChanged);
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+        await PushedAsync(socket, """{ "type": "access_changed" }""");
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+
+        Assert.Equal([true, true], catalogOnly);
+    }
+
+    [Fact]
+    public async Task TheProfilesChange_ProgressAndACatchUp_AreTheViewers_AlsoInABurstWithTheCatalog()
+    {
+        var socket = await StartedAsync();
+        List<bool> catalogOnly = [];
+        _harness.ViewerState.Changed += (_, change) => catalogOnly.Add(change.IsCatalogOnly);
+
+        await PushedAsync(socket, CatalogChanged);
+        await PushedAsync(socket, UserState("7", "watched"));
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+        await PushedAsync(socket, UserState("7", "progress"));
+        _harness.Clock.Advance(RealtimeEvents.ProgressWindow);
+        // Back after a while: what was missed may be the profile's own.
+        _events.Handle(new EventsFrame(EventsFrameTypes.Subscribed) { Gap = TimeSpan.FromMinutes(1) }, "7");
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+
+        Assert.Equal([false, false, false], catalogOnly);
+    }
+
+    [Fact]
     public async Task ANotification_ReadsTheCountAgain()
     {
         var socket = await StartedAsync();

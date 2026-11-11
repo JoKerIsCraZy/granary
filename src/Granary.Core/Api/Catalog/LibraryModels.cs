@@ -9,4 +9,8 @@ public sealed record LibraryCollection(IReadOnlyList<Library> Items, PageInfo? P
 /// profiles with a library restriction.
 /// </summary>
 /// <param name="Type">Free text: <c>movies</c>, <c>series</c>, <c>mixed</c>, …</param>
-public sealed record Library(string Id, string Name, string Type, int SortOrder, string? PosterUrl);
+public sealed record Library(string Id, string Name, string Type, int SortOrder, string? PosterUrl)
+{
+    /// <summary>The library gathers its movies into box sets (docs/api-contract.md, 7.18); false on a server without them.</summary>
+    public bool BoxSetsEnabled { get; init; }
+}

@@ -4,8 +4,10 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -14,11 +16,16 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// Home: the server's rows as Silo's web client shows them (docs/api-contract.md, 7.1). Rows that came
 /// back empty but count cards are fetched again, at most four at a time as Android does; rows without
-/// cards are hidden, and Continue Watching keeps only video cards. The page calls
+/// cards are hidden, and Continue Watching keeps only video cards. The first row marked as the hero is
+/// the <see cref="Banner"/> at the top instead of a row (HomeViewModel.Banner.cs). The page calls
 /// <see cref="ActivateAsync"/> when it is shown and <see cref="Deactivate"/> when it leaves: another
 /// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>, or rows from
 /// before a change of the viewer's state (<see cref="ViewerStateChanges"/>: playback, a watched mark, …). Such a
-/// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to.
+/// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to. Continue Watching
+/// and Next Up rows, the banner and the hero follow the profile's spoiler switches (<see cref="EpisodeSpoilerSettings"/>) in
+/// place, without a reload: the banner keeps its slide and countdown, the hero its title. Until the profile's switches are
+/// read, the banner and the hero blur every unwatched episode's still. With the title preview off (<see cref="BrowseHeroSetting"/>)
+/// Home has no hero, and starts with its rows unless a row is the banner.
 /// </summary>
 /// <remarks>
 /// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
@@ -41,8 +48,13 @@ public sealed partial class HomeViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<HomeViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly EpisodeSpoilerSettings? _spoilers;
 
     private CancellationTokenSource? _run;
+    // The spoiler switches the rows' cards, the banner's slides and the hero's title were made with, and whether the
+    // profile's were read then (TopSpoilers).
+    private EpisodeSpoilers _madeWith;
+    private bool _madeKnown;
     private (bool IsReady, string? ServerId, string? ProfileId)? _shownFor;
     private DateTimeOffset? _loadedAt;
     private long _loadedVersion;
@@ -57,7 +69,10 @@ public sealed partial class HomeViewModel : ObservableObject
         IUiDispatcher dispatcher,
         TimeProvider time,
         ILogger<HomeViewModel> logger,
-        ViewerStateChanges? changes = null)
+        ViewerStateChanges? changes = null,
+        IArtworkPrefetcher? artwork = null,
+        EpisodeSpoilerSettings? spoilers = null,
+        BrowseHeroSetting? browseHero = null)
     {
         _session = session;
         _catalog = catalog;
@@ -67,13 +82,20 @@ public sealed partial class HomeViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _changes = changes;
-        Hero = new BrowseHeroViewModel(dispatcher, time);
+        _spoilers = spoilers;
+        Hero = new BrowseHeroViewModel(dispatcher, time, browseHero);
+        Banner = new FeaturedBannerViewModel(dispatcher, time, navigation, artwork);
+        Hero.PropertyChanged += OnHeroChanged;
+        Banner.PropertyChanged += OnBannerChanged;
     }
 
     [ObservableProperty]
     public partial IReadOnlyList<HomeRowViewModel> Rows { get; private set; } = [];
 
-    /// <summary>The title at the top of Home, following the card the pointer or the keyboard is on.</summary>
+    /// <summary>
+    /// The title at the top of Home without a banner, following the card the pointer or the keyboard is on; none while the title
+    /// preview is off.
+    /// </summary>
     public BrowseHeroViewModel Hero { get; }
 
     /// <summary>The first answer is on its way and there is nothing to show yet.</summary>
@@ -113,11 +135,19 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = true;
             _session.Changed += OnSessionChanged;
             _changes?.Changed += OnViewerStateChanged;
+            _spoilers?.PropertyChanged += OnSpoilersChanged;
+            Banner.SetActive(true);
+        }
+        ShowSpoilers();
+        if (Hero.MissedSwitch)
+        {
+            // The title preview was turned on or off while Home was away.
+            FollowRowsWithHero();
         }
         return RefreshIfNeededAsync();
     }
 
-    /// <summary>The page left; a load in flight still completes, so a return finds its rows.</summary>
+    /// <summary>The page left; a load in flight still completes, so a return finds its rows. The banner holds still.</summary>
     public void Deactivate()
     {
         if (_isActive)
@@ -125,6 +155,8 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = false;
             _session.Changed -= OnSessionChanged;
             _changes?.Changed -= OnViewerStateChanged;
+            _spoilers?.PropertyChanged -= OnSpoilersChanged;
+            Banner.SetActive(false);
         }
     }
 
@@ -143,19 +175,33 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
-    /// <summary>The pointer or the keyboard came to a card: the top of Home follows it.</summary>
+    /// <summary>
+    /// The pointer or the keyboard came to a card: the top of Home follows it, unless the banner is there. An unwatched episode
+    /// shows there as on its card, so the hero never shows the still the card blurs.
+    /// </summary>
     [RelayCommand]
     private void PointCard(MediaCard? card)
     {
-        if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
+        if (card is not null && !Banner.HasSlides && _session.ActiveServer is { } server
+            && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
         {
-            Hero.Point(item, server.BaseUri);
+            Hero.Point(item, server.BaseUri, TopSpoilers);
         }
     }
 
-    // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card.
-    private void FollowRowsWithHero() =>
-        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
+    // The rows or the spoiler switches changed: the top of Home keeps its title while a row still has it, else shows the first
+    // card. Under the banner it waits, and starts afresh at the first card once the banner goes.
+    private void FollowRowsWithHero()
+    {
+        if (Banner.HasSlides)
+        {
+            Hero.Forget();
+            Hero.Reset(null);
+            return;
+        }
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri,
+            TopSpoilers);
+    }
 
     partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
 
@@ -196,9 +242,15 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             row.RemoveWhere(SameTitle);
         }
+        bool hadSlides = Banner.HasSlides;
+        DropFromBanner(SameTitle);
         if (Rows.Any(r => r.Cards.Count == 0))
         {
             Rows = [.. Rows.Where(r => r.Cards.Count > 0)];
+            ShowLoaded();
+        }
+        else if (Banner.HasSlides != hadSlides)
+        {
             ShowLoaded();
         }
         FollowRowsWithHero();
@@ -242,7 +294,7 @@ public sealed partial class HomeViewModel : ObservableObject
         }
         bool isStale = _loadedAt is not { } loadedAt || _time.GetUtcNow() - loadedAt >= StaleAfter
             || _loadedVersion != (_changes?.Version ?? 0);
-        return isStale ? Loading = LoadAsync(quietly: !HasError && Rows.Count > 0) : Task.CompletedTask;
+        return isStale ? Loading = LoadAsync(quietly: !HasError && HasContent) : Task.CompletedTask;
     }
 
     /// <param name="quietly">Keeps the shown rows until the new ones are there, and keeps them if the refresh fails.</param>
@@ -258,21 +310,23 @@ public sealed partial class HomeViewModel : ObservableObject
         Notice = "";
         if (!quietly)
         {
-            // Another server or profile, or the first load: the hero starts afresh with the new rows.
+            // Another server or profile, or the first load: the hero and the banner start afresh with the new rows.
             Hero.Forget();
+            Banner.Show([]);
             Rows = [];
             _loadedAt = null;
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             // Signed out or between profiles: nothing to show and nothing to ask.
+            Banner.Show([]);
             Rows = [];
             IsLoading = false;
             ShowState(hasError: false, isEmpty: false, "");
             return;
         }
 
-        if (Rows.Count == 0)
+        if (!HasContent)
         {
             IsLoading = true;
             ShowState(hasError: false, isEmpty: false, LoadingText);
@@ -281,10 +335,16 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
-            var (sections, isComplete) = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
+            var fetched = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            ShowRows(BuildRows(sections, server.BaseUri));
+            _madeWith = Spoilers;
+            _madeKnown = SpoilersKnown;
+            // The banner first: the rows' hero follows them only without it.
+            int featuredAt = FeaturedAt(collection.Sections);
+            ShowBanner(featuredAt < 0 ? null : fetched[featuredAt], server.BaseUri, TopSpoilers);
+            ShowRows(BuildRows([.. fetched.Where((_, i) => i != featuredAt).OfType<Section>()], server.BaseUri, _madeWith));
             // A row that could not be fetched is tried again on the next visit.
+            bool isComplete = fetched.All(section => section is not null);
             _loadedAt = isComplete ? _time.GetUtcNow() : null;
             _loadedVersion = version;
             ShowLoaded();
@@ -298,7 +358,7 @@ public sealed partial class HomeViewModel : ObservableObject
             }
             _logger.LogWarning("Loading Home failed: {Failure}", ApiFailureText.Describe(ex));
             _loadedAt = null;
-            if (Rows.Count == 0)
+            if (!HasContent)
             {
                 string text = BrowseFailureText.Describe(ex, "Home could not be loaded right now.");
                 ErrorText = text;
@@ -315,11 +375,10 @@ public sealed partial class HomeViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Fetches the rows that came back without cards although they count some. A row that fails stays
-    /// out; the result says whether every fetch answered.
+    /// Fetches the rows that came back without cards although they count some. Each row keeps its place; one that fails is
+    /// null there.
     /// </summary>
-    private async Task<(IReadOnlyList<Section> Sections, bool IsComplete)> HydrateAsync(
-        Uri server, IReadOnlyList<Section> sections, ImageParameters images, CancellationToken cancellationToken)
+    private async Task<Section?[]> HydrateAsync(Uri server, IReadOnlyList<Section> sections, ImageParameters images, CancellationToken cancellationToken)
     {
         using var gate = new SemaphoreSlim(MaxConcurrentRowRequests);
         var fetches = sections
@@ -327,8 +386,7 @@ public sealed partial class HomeViewModel : ObservableObject
                 ? FetchRowAsync(server, section, images, gate, cancellationToken)
                 : Task.FromResult<Section?>(section))
             .ToArray();
-        var fetched = await Task.WhenAll(fetches);
-        return ([.. fetched.OfType<Section>()], fetched.All(s => s is not null));
+        return await Task.WhenAll(fetches);
     }
 
     private async Task<Section?> FetchRowAsync(Uri server, Section section, ImageParameters images, SemaphoreSlim gate, CancellationToken cancellationToken)
@@ -354,14 +412,14 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
-    private IReadOnlyList<HomeRowViewModel> BuildRows(IReadOnlyList<Section> sections, Uri server)
+    private IReadOnlyList<HomeRowViewModel> BuildRows(IReadOnlyList<Section> sections, Uri server, EpisodeSpoilers spoilers)
     {
         var rows = new List<HomeRowViewModel>();
         foreach (var section in sections.Where(s => s.TotalCount > 0))
         {
             var cards = section.Items
                 .Where(item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item))
-                .Select(item => (MediaCardFactory.ForSection(section, item, server), item))
+                .Select(item => (MediaCardFactory.ForSection(section, item, server, spoilers), item))
                 .ToList();
             if (cards.Count == 0)
             {
@@ -397,9 +455,62 @@ public sealed partial class HomeViewModel : ObservableObject
         FollowRowsWithHero();
     }
 
+    private EpisodeSpoilers Spoilers => _spoilers?.Shown ?? EpisodeSpoilers.Off;
+
+    // Whether the profile's switches are read; without the settings there is nothing to wait for.
+    private bool SpoilersKnown => _spoilers?.State != EpisodeSpoilerState.Loading;
+
+    // The switches the banner's slides and the hero's title are made with. Until the profile's are read, an unwatched episode's
+    // still counts as hidden there: Home can load first, and a large still shown sharp, then blurred a moment later, would
+    // give it away. Its description, and the rows' cards, wait for nothing.
+    private EpisodeSpoilers TopSpoilers => _madeKnown ? _madeWith : _madeWith with { HidesImages = true };
+
+    // The switches changed, arrived after the rows, or were read: the cards are made again in place, each row keeping its
+    // scroll, and so are the banner's slides, which keeps the one shown and its countdown, and the hero's title.
+    private void ShowSpoilers()
+    {
+        var spoilers = Spoilers;
+        bool isKnown = SpoilersKnown;
+        if ((spoilers == _madeWith && isKnown == _madeKnown) || _session.ActiveServer is not { } server)
+        {
+            return;
+        }
+        bool switched = spoilers != _madeWith;
+        _madeWith = spoilers;
+        _madeKnown = isKnown;
+        if (switched)
+        {
+            foreach (var row in Rows)
+            {
+                row.Remake(item => MediaCardFactory.ForSection(row.SectionType, item, server.BaseUri, spoilers));
+            }
+        }
+        if (Banner.HasSlides)
+        {
+            var top = TopSpoilers;
+            Banner.Show([.. Banner.Slides.Select(slide =>
+                slide with { Title = BrowseHeroTitle.From(slide.Item, server.BaseUri, top) })]);
+        }
+        FollowRowsWithHero();
+    }
+
+    // A change of the switches shows at once. A read sets its state just before the switches it brought, so the state is
+    // looked at a moment later, with them: a still they hide never shows sharp in between.
+    private void OnSpoilersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(EpisodeSpoilerSettings.Shown) && _dispatcher.HasThreadAccess)
+        {
+            ShowSpoilers();
+        }
+        else if (e.PropertyName is nameof(EpisodeSpoilerSettings.Shown) or nameof(EpisodeSpoilerSettings.State))
+        {
+            _dispatcher.Post(ShowSpoilers);
+        }
+    }
+
     private void ShowLoaded()
     {
-        bool isEmpty = Rows.Count == 0;
+        bool isEmpty = !HasContent;
         ShowState(hasError: false, isEmpty, isEmpty ? EmptyText : "");
     }
 
@@ -443,7 +554,7 @@ public sealed partial class HomeViewModel : ObservableObject
     {
         if (_isActive && !_isReportingOwnChange && _shownFor == SessionKey())
         {
-            Loading = LoadAsync(quietly: !HasError && Rows.Count > 0);
+            Loading = LoadAsync(quietly: !HasError && HasContent);
         }
     }
 

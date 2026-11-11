@@ -6,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -50,6 +51,9 @@ public sealed partial class ForYouViewModel : ObservableObject
     internal const string DefaultSubtitle =
         "Highly rated and recently added titles from your library. Watch and rate titles to personalize this page.";
 
+    // The server recommends movies and series only (its recommendableMediaTypes), so the hero has no episode to hide.
+    private static readonly EpisodeSpoilers NoEpisodes = EpisodeSpoilers.Off;
+
     private readonly ISessionManager _session;
     private readonly RecommendationsApi _recommendations;
     private readonly ImageParameterCache _images;
@@ -61,19 +65,23 @@ public sealed partial class ForYouViewModel : ObservableObject
     private readonly Dictionary<string, CatalogItem> _items = new(StringComparer.Ordinal);
 
     public ForYouViewModel(ISessionManager session, RecommendationsApi recommendations, ImageParameterCache images,
-        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger)
+        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger,
+        BrowseHeroSetting? browseHero = null)
     {
         _session = session;
         _recommendations = recommendations;
         _images = images;
         _navigation = navigation;
         _logger = logger;
-        Hero = new BrowseHeroViewModel(dispatcher, time);
+        Hero = new BrowseHeroViewModel(dispatcher, time, browseHero);
     }
 
     public ObservableCollection<RecommendationRowViewModel> Rows { get; } = [];
 
-    /// <summary>The title at the top of the page, following the card the pointer or the keyboard is on.</summary>
+    /// <summary>
+    /// The title at the top of the page, following the card the pointer or the keyboard is on; none while the title preview is
+    /// off, when the page starts with its title and rows.
+    /// </summary>
     public BrowseHeroViewModel Hero { get; }
 
     [ObservableProperty]
@@ -115,6 +123,11 @@ public sealed partial class ForYouViewModel : ObservableObject
     /// </summary>
     public Task ActivateAsync(bool isReturn)
     {
+        if (Hero.MissedSwitch)
+        {
+            // The title preview was turned on or off while the page was away.
+            FollowRowsWithHero();
+        }
         bool shown = _loadedFor == Key() && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         if (isReturn && shown)
         {
@@ -141,7 +154,7 @@ public sealed partial class ForYouViewModel : ObservableObject
     {
         if (card is not null && _session.ActiveServer is { } server && _items.TryGetValue(card.Id, out var item))
         {
-            Hero.Point(item, server.BaseUri);
+            Hero.Point(item, server.BaseUri, NoEpisodes);
         }
     }
 
@@ -289,9 +302,12 @@ public sealed partial class ForYouViewModel : ObservableObject
                 }
             }
         }
-        Hero.Follow([.. Rows.SelectMany(row => row.Cards).Select(card => _items.GetValueOrDefault(card.Id)).OfType<CatalogItem>()],
-            _session.ActiveServer?.BaseUri);
+        FollowRowsWithHero();
     }
+
+    private void FollowRowsWithHero() =>
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards).Select(card => _items.GetValueOrDefault(card.Id)).OfType<CatalogItem>()],
+            _session.ActiveServer?.BaseUri, NoEpisodes);
 
     private void ShowTaste(TasteProfile? taste)
     {

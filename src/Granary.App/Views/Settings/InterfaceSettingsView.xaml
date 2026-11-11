@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx): Posters, Badges, Sidebar. -->
+<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx): Posters, Badges, Pages (Granary's own), Sidebar. -->
 <UserControl
     x:Class="Granary.App.Views.Settings.InterfaceSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -13,13 +13,6 @@
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
         </ResourceDictionary.MergedDictionaries>
-        <!-- A quiet text button: no fill until the pointer is on it. -->
-        <Style x:Key="BadgeGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
-        </Style>
 
         <!-- A 28 px palette colour; the chosen one has a white ring, as the web's swatches. -->
         <DataTemplate x:Key="BadgeSwatchTemplate" x:DataType="settings:BadgeColorChoice">
@@ -59,11 +52,11 @@
                                Visibility="{x:Bind controls:SettingsText.Shows(Note)}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-                    <Button Style="{StaticResource BadgeGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveUpCommand}"
+                    <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveUpCommand}"
                             AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="Move up">
                         <FontIcon Glyph="&#xE70E;" FontSize="12" />
                     </Button>
-                    <Button Style="{StaticResource BadgeGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveDownCommand}"
+                    <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveDownCommand}"
                             AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="Move down">
                         <FontIcon Glyph="&#xE70D;" FontSize="12" />
                     </Button>
@@ -88,7 +81,7 @@
                     <TextBlock Text="{x:Bind Hint, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="12" FontStyle="Italic"
                                Opacity="0.8" Visibility="{x:Bind controls:SettingsText.Shows(Hint), Mode=OneWay}" />
                 </StackPanel>
-                <Button Grid.Column="1" Style="{StaticResource BadgeGhostButtonStyle}" Padding="10,6" VerticalAlignment="Center"
+                <Button Grid.Column="1" Style="{StaticResource SiloSettingsGhostButtonStyle}" Padding="10,6" VerticalAlignment="Center"
                         Visibility="{x:Bind IsEnabled, Mode=OneWay}" AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.AdjustName(Label)}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE9E9;" FontSize="14" />
@@ -169,9 +162,9 @@
                                             <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="Transparent" />
                                             <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
                                             <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#FFE8E8EC" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFFFF" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOn" ResourceKey="SiloOnPrimaryBrush" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOnPointerOver" ResourceKey="SiloOnPrimaryBrush" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOnPressed" ResourceKey="SiloOnPrimaryBrush" />
                                         </ToggleSwitch.Resources>
                                     </ToggleSwitch>
                                 </Grid>
@@ -352,7 +345,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="settings:BadgeGroupViewModel">
                                     <StackPanel BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
-                                        <Button Style="{StaticResource BadgeGhostButtonStyle}" CornerRadius="0" Padding="0" MinHeight="56"
+                                        <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" CornerRadius="0" Padding="0" MinHeight="56"
                                                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Command="{x:Bind ToggleCommand}"
                                                 AutomationProperties.Name="{x:Bind Title}"
                                                 AutomationProperties.ItemStatus="{x:Bind controls:BadgeSettingsLook.Folded(IsExpanded), Mode=OneWay}">
@@ -380,6 +373,19 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!--
+            Granary's own: the title preview at the top of Home, For You and Discover (BrowseHero) is Granary's, so Silo's
+            clients have no such switch. Kept for this profile on this PC (BrowseHeroSetting). Home's banner, a row marked as
+            the hero on Silo's web, is not this switch's.
+        -->
+        <controls:SettingsGroup Title="Pages" Description="The top of Home, For You and Discover, for this profile on this PC.">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Title preview at the top"
+                                  Description="Home, For You and Discover open with a large picture of the title you point at. Off, they start with the rows.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
+                              AutomationProperties.Name="Title preview at the top" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
 
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">

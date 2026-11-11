@@ -6,6 +6,7 @@ namespace Granary.Tests.Fakes;
 internal sealed class InMemoryServerRegistry : IServerRegistry
 {
     private readonly List<ServerEntry> _servers = [];
+    private WriteHold? _hold;
 
     public IReadOnlyList<ServerEntry> Servers => _servers;
 
@@ -14,6 +15,16 @@ internal sealed class InMemoryServerRegistry : IServerRegistry
     public ServerEntry? Active => ActiveServerId is null ? null : Find(ActiveServerId);
 
     public event EventHandler? Changed;
+
+    /// <summary>When set, a change by id throws it, as a save that fails would.</summary>
+    public Exception? FailWith { get; set; }
+
+    /// <summary>Saves <paramref name="entry"/> as it is, in place of one with the same id.</summary>
+    public void Add(ServerEntry entry)
+    {
+        _servers.RemoveAll(s => s.Id == entry.Id);
+        _servers.Add(entry);
+    }
 
     public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
@@ -39,15 +50,50 @@ internal sealed class InMemoryServerRegistry : IServerRegistry
         return Task.FromResult(entry);
     }
 
-    public Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(string id, Func<ServerEntry, ServerEntry> change, CancellationToken cancellationToken = default)
     {
-        int index = _servers.FindIndex(s => s.Id == entry.Id);
+        await WaitIfHeldAsync();
+        if (FailWith is { } failure)
+        {
+            throw failure;
+        }
+        int index = _servers.FindIndex(s => s.Id == id);
         if (index >= 0)
         {
-            _servers[index] = entry;
-            Changed?.Invoke(this, EventArgs.Empty);
+            var current = _servers[index];
+            var updated = change(current) with { Id = current.Id, BaseUri = current.BaseUri };
+            if (updated != current)
+            {
+                _servers[index] = updated;
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
         }
-        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Parks the next update until it is released, as a write waiting for the registry's lock would. What it writes is
+    /// worked out when it runs.
+    /// </summary>
+    public WriteHold HoldNextUpdate() => _hold = new WriteHold();
+
+    private async Task WaitIfHeldAsync()
+    {
+        if (Interlocked.Exchange(ref _hold, null) is { } hold)
+        {
+            hold.Reached.TrySetResult();
+            await hold.Released.Task;
+        }
+    }
+
+    /// <summary>An update parked by <see cref="HoldNextUpdate"/>.</summary>
+    internal sealed class WriteHold
+    {
+        /// <summary>Completes once the update is parked.</summary>
+        public TaskCompletionSource Reached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Released { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void Release() => Released.TrySetResult();
     }
 
     public Task SetActiveAsync(string id, CancellationToken cancellationToken = default)

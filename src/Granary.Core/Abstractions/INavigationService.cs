@@ -80,9 +80,15 @@ public enum AppRoute
     /// <summary>The Watch Party this profile is in (<c>WatchPartySession</c>).</summary>
     WatchPartyRoom,
 
+    /// <summary>A movie box set's films; the parameter is a <see cref="BoxSetRouteParameter"/>.</summary>
+    BoxSet,
+
     /// <summary>The active profile's downloads on this PC.</summary>
     Downloads,
 }
+
+/// <summary>A movie box set, by its TMDB collection id in one library; the title names the page while it loads.</summary>
+public sealed record BoxSetRouteParameter(string BoxSetId, string LibraryId, string Title);
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
 /// <param name="SectionType">The row's <c>section_type</c>; Continue Watching and Next Up list landscape cards.</param>

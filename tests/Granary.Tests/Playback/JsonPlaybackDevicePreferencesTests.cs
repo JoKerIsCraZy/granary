@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Playback;
 using Granary.Tests.Fakes;
 
@@ -87,6 +88,179 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_ThePlayersTimeShowsTheDuration() => Assert.False(Create().TimeLeft);
+
+    [Fact]
+    public async Task TheTimeLeft_StaysAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+
+        var again = Create();
+        Assert.True(again.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains("\"time_left\": true", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_ShowsTheDuration_AndKeepsTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"up_down\": \"volume\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
+    public async Task EveryChoice_SavedTogether_ComesBackAtTheNextStart()
+    {
+        // Each choice away from its default, so one a save leaves out comes back as the default. A new choice joins here.
+        var preferences = Create();
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+        await preferences.SetPassoutThresholdAsync(7);
+        await preferences.SetResumeRewindSecondsAsync(12);
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetVolumeAsync(new PlayerVolume(35, IsMuted: true));
+
+        var again = Create();
+        Assert.True(again.DecodesInSoftware);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.True(again.TimeLeft);
+        Assert.Equal(7, again.PassoutThreshold);
+        Assert.Equal(12, again.ResumeRewindSeconds);
+        Assert.True(again.DiscordStatus);
+        Assert.Equal(new PlayerVolume(35, IsMuted: true), again.Volume);
+    }
+
+    [Fact]
+    public void AtFirst_NoVolumeIsKept_SoThePlayerStartsAsMpvDoes() => Assert.Null(Create().Volume);
+
+    [Theory]
+    [InlineData(40.0, false)]
+    [InlineData(0.0, false)]
+    [InlineData(62.5, true)]
+    [InlineData(100.0, true)]
+    public async Task TheVolumeAndMute_StayAtTheNextStart_WithTheOtherChoices(double percent, bool muted)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetVolumeAsync(new PlayerVolume(percent, muted));
+
+        var again = Create();
+        Assert.Equal(new PlayerVolume(percent, muted), again.Volume);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        string file = await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"volume\": {percent}"), file, StringComparison.Ordinal);
+        Assert.Contains(muted ? "\"muted\": true" : "\"muted\": false", file, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(150.0, 100.0)]
+    [InlineData(-5.0, 0.0)]
+    [InlineData(double.PositiveInfinity, 100.0)]
+    [InlineData(double.NaN, 100.0)]
+    public async Task AVolumeOutOfBounds_IsSavedAsTheNearestAllowed(double asked, double kept)
+    {
+        var preferences = Create();
+
+        await preferences.SetVolumeAsync(new PlayerVolume(asked, IsMuted: false));
+
+        Assert.Equal(new PlayerVolume(kept, IsMuted: false), preferences.Volume);
+        Assert.Equal(new PlayerVolume(kept, IsMuted: false), Create().Volume);
+    }
+
+    [Theory]
+    [InlineData("{ \"volume\": 250, \"muted\": true }", 100.0, true)]
+    [InlineData("{ \"volume\": -3 }", 0.0, false)]
+    [InlineData("{ \"volume\": 37.5 }", 37.5, false)]
+    [InlineData("{ \"volume\": 40, \"muted\": null }", 40.0, false)]
+    [InlineData("{ \"volume\": 40 }", 40.0, false)]
+    [InlineData("{ \"volume\": 0, \"up_down\": \"volume\" }", 0.0, false)]
+    public async Task AVolumeInTheFile_IsBroughtIntoRange_AndAMissingMuteIsNone(string file, double percent, bool muted)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        Assert.Equal(new PlayerVolume(percent, muted), Create().Volume);
+    }
+
+    [Theory]
+    [InlineData("{ \"volume\": \"loud\", \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": \"40\", \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": true, \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": [40, [50]], \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": { \"level\": 40, \"more\": [{ \"up_down\": \"controls\" }] }, \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": null, \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"muted\": true, \"up_down\": \"volume\" }")]
+    public async Task AVolumeNotANumber_OrMissing_IsFull_AndKeepsTheMuteAndTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(new PlayerVolume(100, IsMuted: true), preferences.Volume);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Theory]
+    [InlineData("{ \"volume\": 40, \"muted\": \"yes\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": 1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": { \"on\": true, \"more\": [{ \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": [true, [false], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    public async Task AMuteNeitherTrueNorFalse_IsNotMuted_AndKeepsTheVolumeAndTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(new PlayerVolume(40, IsMuted: false), preferences.Volume);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+        Assert.DoesNotContain(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("{ \"muted\": \"yes\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": \"loud\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": \"40\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": null, \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": null, \"muted\": null, \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    public async Task AnOlderFile_OrOneWithoutAReadableVolumeOrMute_KeepsNone_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Null(preferences.Volume);
+        Assert.True(preferences.DecodesInSoftware);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
+    public async Task WithoutAKeptVolume_NoneIsWritten()
+    {
+        var preferences = Create();
+
+        await preferences.SetDiscordStatusAsync(true);
+
+        string file = await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain("\"volume\":", file, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"muted\":", file, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AtFirst_TheStillWatchingPromptComesAfterThreeEpisodes() =>
         Assert.Equal(AutoPlayStreak.DefaultThreshold, Create().PassoutThreshold);
 
@@ -121,6 +295,63 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         var preferences = Create();
 
         Assert.Equal(AutoPlayStreak.DefaultThreshold, preferences.PassoutThreshold);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
+    public void AtFirst_AResumeIsNotRewound() => Assert.Equal(0, Create().ResumeRewindSeconds);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public async Task RewindOnResume_StaysAtTheNextStart_WithTheOtherChoices(int seconds)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetResumeRewindSecondsAsync(seconds);
+
+        var again = Create();
+        Assert.Equal(seconds, again.ResumeRewindSeconds);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {seconds}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(99, 30)]
+    [InlineData(-5, 0)]
+    public async Task ARewindOutOfBounds_IsSavedAsTheNearestAllowed(int asked, int kept)
+    {
+        var preferences = Create();
+
+        await preferences.SetResumeRewindSecondsAsync(asked);
+
+        Assert.Equal(kept, preferences.ResumeRewindSeconds);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {kept}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{ \"resume_rewind_seconds\": 31, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": -1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": 7.5, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": \"seven\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": { \"seconds\": 7, \"more\": [1, { \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": [7, [8], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": null, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    public async Task ARewindOutOfBounds_NotWhole_NotANumber_OrMissing_MeansNone_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(0, preferences.ResumeRewindSeconds);
         Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
     }
 
@@ -166,6 +397,60 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
 
         Assert.Equal(2, changes);
         Assert.False(Create().DiscordStatus);
+    }
+
+    [Fact]
+    public async Task WithoutTheSleepTimerSwitch_ItWasNotTurnedOff_AndNoneIsWritten()
+    {
+        var preferences = Create();
+        Assert.False(preferences.SleepTimerSwitchOff);
+
+        await preferences.SetDiscordStatusAsync(true);
+
+        Assert.DoesNotContain("sleep_timer_button", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheSleepTimerSwitchTurnedOff_IsReadForThePlayerButtons_AndKeptAsItWas()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"sleep_timer_button\": false }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+        Assert.True(preferences.SleepTimerSwitchOff);
+        Assert.True(preferences.DiscordStatus);
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+
+        Assert.Contains("\"sleep_timer_button\": false", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        Assert.True(Create().SleepTimerSwitchOff);
+    }
+
+    [Fact]
+    public async Task TheSleepTimerSwitch_OnceTakenOver_IsDroppedFromTheFile_WithTheOtherChoicesKept()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"up_down\": \"volume\", \"sleep_timer_button\": false }",
+            TestContext.Current.CancellationToken);
+        var preferences = Create();
+
+        await preferences.ForgetSleepTimerSwitchAsync();
+
+        Assert.False(preferences.SleepTimerSwitchOff);
+        Assert.DoesNotContain("sleep_timer_button", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        var again = Create();
+        Assert.False(again.SleepTimerSwitchOff);
+        Assert.True(again.DiscordStatus);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+    }
+
+    [Fact]
+    public async Task TheSleepTimerSwitchLeftOn_WasNotTurnedOff()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"sleep_timer_button\": true }", TestContext.Current.CancellationToken);
+
+        Assert.False(Create().SleepTimerSwitchOff);
     }
 
     [Fact]

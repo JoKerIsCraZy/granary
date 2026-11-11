@@ -10,7 +10,7 @@ using Windows.System;
 
 namespace Granary.App.Views;
 
-public sealed partial class ChangePasswordPage : Page
+public sealed partial class ChangePasswordPage : Page, IOwnFocus
 {
     private string _announcedStatus = "";
 

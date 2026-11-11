@@ -26,6 +26,9 @@ public sealed record CatalogSearchCapabilities
     /// <summary>Rules about episodes take the show's title.</summary>
     public bool ShowTitleRules { get; init; }
 
+    /// <summary>The server has movie box sets (<see cref="BoxSetsApi"/>); absent on one without.</summary>
+    public bool BoxSets { get; init; }
+
     /// <summary>Maximum candidates in a Meilisearch ranked window.</summary>
     public int? ResultWindowLimit { get; init; }
 

@@ -40,7 +40,7 @@ public sealed class PlaybackInfoTests
     [Theory]
     [InlineData("video_to_hevc", "hevc", "HEVC (transcoded)")]
     [InlineData("video_to_h264", "h264", "H.264 (transcoded)")]
-    [InlineData("hdr_to_sdr_tonemap", "hevc", "HEVC (copy)")]
+    [InlineData("hdr_to_sdr_tonemap", "hevc", "HEVC (transcoded)")]
     public void TheVideoCodec_SaysTranscoded_WhenTheServerEncodesTheVideo_WhicheverCodecItEncodesTo(string transformation, string codec, string shown)
     {
         var plan = new PlaybackPlan
@@ -102,6 +102,52 @@ public sealed class PlaybackInfoTests
             ["Audio channels"] = "2",
             ["Audio sample rate"] = "48,000 Hz",
         }, Rows(sections, "Current Source File"));
+    }
+
+    [Fact]
+    public void ARemuxThatConvertsTheAudio_IsATranscode_AsTheSettingsGearSays()
+    {
+        var stream = new PlaybackStreamInfo(
+            Plan(PlaybackDeliveries.ServerRemuxHls, StreamProtocols.Hls, new PlaybackTransformation { Name = "audio_to_aac", Executor = "server" }),
+            new Uri("https://silo.example/api/v2/stream/s/master.m3u8"), Uhd, Uhd, AudioOrdinal: 0);
+
+        var sections = PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0);
+
+        Assert.Equal("Transcode", Rows(sections, "Player")["Play method"]);
+        Assert.Equal(new Dictionary<string, string>
+        {
+            ["Video codec"] = "H.264 (copy)",
+            ["Audio codec"] = "AAC (transcoded)",
+        }, Rows(sections, "Playback Stream Info"));
+    }
+
+    // A transformation of the server's own that Granary does not know may encode either stream: the play method says
+    // Transcode, and a codec line claims neither a copy nor a transcode unless a known encode says which.
+    [Theory]
+    [InlineData(new[] { "server_future_filter" }, "H.264", "AAC")]
+    [InlineData(new[] { "server_future_filter", "audio_to_aac" }, "H.264", "AAC (transcoded)")]
+    [InlineData(new[] { "server_future_filter", "video_to_h264" }, "H.264 (transcoded)", "AAC")]
+    [InlineData(new[] { "server_dv7_to_hdr10" }, "H.264 (copy)", "AAC (copy)")]
+    public void AServerTransformationThisAppDoesNotKnow_IsNeverCalledACopy(string[] transformations, string video, string audio)
+    {
+        var plan = Plan(PlaybackDeliveries.ServerRemuxHls, StreamProtocols.Hls,
+            [.. transformations.Select(name => new PlaybackTransformation { Name = name, Executor = "server" })]);
+        var stream = new PlaybackStreamInfo(plan, new Uri("https://silo.example/api/v2/stream/s/master.m3u8"), Uhd, Uhd, AudioOrdinal: 0);
+
+        var sections = PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0);
+
+        Assert.Equal(new Dictionary<string, string> { ["Video codec"] = video, ["Audio codec"] = audio }, Rows(sections, "Playback Stream Info"));
+    }
+
+    [Theory]
+    [InlineData(PlaybackDeliveries.ServerRemuxProgressive, "Direct Streaming")]
+    [InlineData(PlaybackDeliveries.ServerRemuxHls, "Direct Streaming")]
+    [InlineData("server_future_delivery", "—")]
+    public void ThePlayMethod_OfAPlanThatEncodesNothing(string delivery, string method)
+    {
+        var stream = new PlaybackStreamInfo(Plan(delivery, StreamProtocols.Hls), new Uri("https://silo.example/api/v2/stream/s"), Uhd, Uhd, AudioOrdinal: 0);
+
+        Assert.Equal(method, Rows(PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0), "Player")["Play method"]);
     }
 
     [Fact]

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The Silo look (docs/ui-design.md): one dark theme taken from Silo's web client, red as the only
-    accent, Plus Jakarta Sans. Fluent controls keep working; their theme brushes are pointed at this palette.
+    The Silo look (docs/ui-design.md): one dark theme taken from Silo's web client (Cinema Dark), one accent, Plus Jakarta
+    Sans. The accent is the server's, or without one Cinema Dark's own near-white primary #E8E8EC; errors and destructive
+    actions stay red (SiloDestructiveBrush), as the web's destructive. Fluent controls keep working; their theme brushes are
+    pointed at this palette.
 -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -11,21 +13,23 @@
     <ResourceDictionary.ThemeDictionaries>
         <!-- The app always runs dark (App.xaml); Light and Default point to the same values. -->
         <ResourceDictionary x:Key="Default">
-            <Color x:Key="SystemAccentColor">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight1">#FFF25858</Color>
-            <Color x:Key="SystemAccentColorLight2">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight3">#FFF87171</Color>
-            <Color x:Key="SystemAccentColorDark1">#FFDC2F2F</Color>
-            <Color x:Key="SystemAccentColorDark2">#FFB91C1C</Color>
-            <Color x:Key="SystemAccentColorDark3">#FF991B1B</Color>
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFF25858" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFDC2F2F" />
-            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFFFFFFF" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6FFFFFF" />
+            <Color x:Key="SystemAccentColor">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight1">#FFD2D2D6</Color>
+            <Color x:Key="SystemAccentColorLight2">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight3">#FFEEEEF1</Color>
+            <Color x:Key="SystemAccentColorDark1">#FFBCBCC0</Color>
+            <Color x:Key="SystemAccentColorDark2">#FFA7A7AA</Color>
+            <Color x:Key="SystemAccentColorDark3">#FF919194</Color>
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFD2D2D6" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFBCBCC0" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF141417" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6141417" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="#FF141417" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
@@ -44,21 +48,23 @@
             <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF161619" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-            <Color x:Key="SystemAccentColor">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight1">#FFF25858</Color>
-            <Color x:Key="SystemAccentColorLight2">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight3">#FFF87171</Color>
-            <Color x:Key="SystemAccentColorDark1">#FFDC2F2F</Color>
-            <Color x:Key="SystemAccentColorDark2">#FFB91C1C</Color>
-            <Color x:Key="SystemAccentColorDark3">#FF991B1B</Color>
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFF25858" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFDC2F2F" />
-            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFFFFFFF" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6FFFFFF" />
+            <Color x:Key="SystemAccentColor">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight1">#FFD2D2D6</Color>
+            <Color x:Key="SystemAccentColorLight2">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight3">#FFEEEEF1</Color>
+            <Color x:Key="SystemAccentColorDark1">#FFBCBCC0</Color>
+            <Color x:Key="SystemAccentColorDark2">#FFA7A7AA</Color>
+            <Color x:Key="SystemAccentColorDark3">#FF919194</Color>
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFD2D2D6" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFBCBCC0" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF141417" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6141417" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="#FF141417" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
@@ -97,9 +103,9 @@
     <Color x:Key="SiloBorderColor">#B3242428</Color>
     <Color x:Key="SiloForegroundColor">#FFE8E8EC</Color>
     <Color x:Key="SiloMutedColor">#FFA4A4AE</Color>
-    <Color x:Key="SiloPrimaryColor">#FFEF4444</Color>
-    <Color x:Key="SiloPrimaryHoverColor">#FFF25858</Color>
-    <Color x:Key="SiloPrimaryPressedColor">#FFDC2F2F</Color>
+    <Color x:Key="SiloPrimaryColor">#FFE8E8EC</Color>
+    <Color x:Key="SiloPrimaryHoverColor">#FFD2D2D6</Color>
+    <Color x:Key="SiloPrimaryPressedColor">#FFBCBCC0</Color>
     <Color x:Key="SiloBadgeBackgroundColor">#B314141E</Color>
     <Color x:Key="SiloBadgeBorderColor">#26FFFFFF</Color>
     <!-- The IMDb badge's gold, Tailwind's green-500 of a watched mark, emerald-400 of a watched button. -->
@@ -110,6 +116,23 @@
     <!-- Tailwind's amber-300 and amber-400: a watchlist title TMDB lost, in words and as a dot. -->
     <Color x:Key="SiloAttentionColor">#FFFCD34D</Color>
     <Color x:Key="SiloAttentionDotColor">#FFFBBF24</Color>
+    <!--
+        The web's destructive red: errors, and actions that delete or end something. It is never the accent: AccentPainter
+        leaves it alone, so it stays red whatever the server's accent.
+    -->
+    <Color x:Key="SiloDestructiveColor">#FFEF4444</Color>
+    <!--
+        A favourite's heart, red whatever the accent, as the web draws it: Tailwind's red-500 on cards (MediaItemMenu.tsx),
+        red-400 on a title's page (ItemDetail/components/ActionBar.tsx).
+    -->
+    <Color x:Key="SiloFavoriteColor">#FFEF4444</Color>
+    <Color x:Key="SiloFavoriteLightColor">#FFF87171</Color>
+    <!--
+        The dot in the player's gear, Granary's own: Tailwind's green-400 while the server sends the original streams (direct
+        play or direct stream), amber-400 while it re-encodes any of them. Both read clearly on the dark bar.
+    -->
+    <Color x:Key="SiloStreamDirectColor">#FF4ADE80</Color>
+    <Color x:Key="SiloStreamTranscodeColor">#FFFBBF24</Color>
 
     <SolidColorBrush x:Key="SiloBackgroundBrush" Color="{StaticResource SiloBackgroundColor}" />
     <SolidColorBrush x:Key="SiloSurfaceBrush" Color="{StaticResource SiloSurfaceColor}" />
@@ -117,7 +140,12 @@
     <SolidColorBrush x:Key="SiloBorderBrush" Color="{StaticResource SiloBorderColor}" />
     <SolidColorBrush x:Key="SiloForegroundBrush" Color="{StaticResource SiloForegroundColor}" />
     <SolidColorBrush x:Key="SiloMutedBrush" Color="{StaticResource SiloMutedColor}" />
+    <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
+    <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
+    <SolidColorBrush x:Key="SiloDestructiveBrush" Color="{StaticResource SiloDestructiveColor}" />
+    <SolidColorBrush x:Key="SiloFavoriteBrush" Color="{StaticResource SiloFavoriteColor}" />
+    <SolidColorBrush x:Key="SiloFavoriteLightBrush" Color="{StaticResource SiloFavoriteLightColor}" />
     <!--
         The accent's shades and see-through tints, and the labels drawn on it. AccentPainter repaints these brushes (and the
         Fluent accent brushes above) with the server's accent, keeping each one's alpha; anything in the accent's colour
@@ -125,21 +153,26 @@
     -->
     <SolidColorBrush x:Key="SiloPrimaryHoverBrush" Color="{StaticResource SiloPrimaryHoverColor}" />
     <SolidColorBrush x:Key="SiloPrimaryPressedBrush" Color="{StaticResource SiloPrimaryPressedColor}" />
-    <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26EF4444" />
-    <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99EF4444" />
-    <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFEF4444" />
-    <!-- Labels on an accent fill: dark on buttons and the play disc, white on small badges (for a custom accent, the web's choice). -->
-    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF0E0E10" />
-    <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint20Brush" Color="#33E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint40Brush" Color="#66E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFE8E8EC" />
+    <!--
+        Labels on an accent fill, buttons and small badges alike: Cinema Dark's dark label on a light accent, white on a dark
+        one, as the web's primary-foreground (AccentPainter).
+    -->
+    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF141417" />
+    <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FF141417" />
     <!-- The signed-out screens' glow at the top left. -->
     <RadialGradientBrush x:Key="SiloAccentGlowBrush" Center="0.18,0.18" GradientOrigin="0.18,0.18" RadiusX="0.26" RadiusY="0.52">
-        <GradientStop Offset="0" Color="#2EEF4444" />
-        <GradientStop Offset="1" Color="#00EF4444" />
+        <GradientStop Offset="0" Color="#2EE8E8EC" />
+        <GradientStop Offset="1" Color="#00E8E8EC" />
     </RadialGradientBrush>
     <!-- A card's glow at its top right, as the web's Start a party card (a blurred accent circle at 20 %). -->
     <RadialGradientBrush x:Key="SiloCardGlowBrush" Center="0.96,0.04" GradientOrigin="0.96,0.04" RadiusX="0.42" RadiusY="0.62">
-        <GradientStop Offset="0" Color="#33EF4444" />
-        <GradientStop Offset="1" Color="#00EF4444" />
+        <GradientStop Offset="0" Color="#33E8E8EC" />
+        <GradientStop Offset="1" Color="#00E8E8EC" />
     </RadialGradientBrush>
     <SolidColorBrush x:Key="SiloBadgeBackgroundBrush" Color="{StaticResource SiloBadgeBackgroundColor}" />
     <SolidColorBrush x:Key="SiloBadgeBorderBrush" Color="{StaticResource SiloBadgeBorderColor}" />
@@ -149,6 +182,8 @@
     <SolidColorBrush x:Key="SiloCompleteBrush" Color="{StaticResource SiloCompleteColor}" />
     <SolidColorBrush x:Key="SiloAttentionBrush" Color="{StaticResource SiloAttentionColor}" />
     <SolidColorBrush x:Key="SiloAttentionDotBrush" Color="{StaticResource SiloAttentionDotColor}" />
+    <SolidColorBrush x:Key="SiloStreamDirectBrush" Color="{StaticResource SiloStreamDirectColor}" />
+    <SolidColorBrush x:Key="SiloStreamTranscodeBrush" Color="{StaticResource SiloStreamTranscodeColor}" />
 
     <!-- Plus Jakarta Sans, one file per weight: XAML loads only the face of the file it names. -->
     <FontFamily x:Key="SiloFontRegular">ms-appx:///Assets/Fonts/PlusJakartaSans-Regular.ttf#Plus Jakarta Sans</FontFamily>
@@ -165,6 +200,8 @@
     <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">16</CornerRadius>
     <CornerRadius x:Key="SiloCardCornerRadius">16</CornerRadius>
+    <!-- A cast or crew card's photo (PersonCreditCard); the Cast & Crew row's separators stand as tall. -->
+    <x:Double x:Key="SiloCreditPhotoHeight">180</x:Double>
     <!-- Pills: with controls:Pill.IsEnabled the radius becomes half the height once laid out; WinUI would draw 999 as an oval. -->
     <CornerRadius x:Key="SiloPillCornerRadius">999</CornerRadius>
 
@@ -239,6 +276,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="10" />
         <Setter Property="CharacterSpacing" Value="25" />
+        <!-- White on artwork and dark pills; a badge on an accent fill sets SiloOnPrimaryBadgeBrush instead. -->
         <Setter Property="Foreground" Value="White" />
     </Style>
 
@@ -267,7 +305,7 @@
     </Style>
 
     <!--
-        Pill buttons as on Silo's web: the red primary (Play) with dark bold text, the dark secondary (Mark watched)
+        Pill buttons as on Silo's web: the primary (Play) in the accent with its label in bold, the dark secondary (Mark watched)
         with a faint light along its top edge, and round icon buttons of the secondary kind.
     -->
     <Style x:Key="SiloPrimaryButtonStyle" TargetType="Button">
@@ -527,6 +565,77 @@
         </Setter>
     </Style>
 
+    <!--
+        One of the web's Watch Party mode cards (a radio), the hub's "How the room picks" and the start sheet's "How to
+        pick": a faint border; chosen, the accent surface (#232328) with the foreground at half for its border; under the
+        pointer, the muted surface at 60 %, inside the border (its radius 1 less). Radius 12, as the hub's; the sheet's are 8.
+    -->
+    <controls:InsetCornerRadius x:Key="SiloInsetCornerRadius" />
+    <Style x:Key="SiloModeCardStyle" TargetType="RadioButton">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid x:Name="Card" CornerRadius="{TemplateBinding CornerRadius}" BorderThickness="1" BorderBrush="#99242428" Background="Transparent">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Hover.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Hover.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Card.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="CheckStates">
+                                <VisualState x:Name="Checked">
+                                    <VisualState.Setters>
+                                        <Setter Target="Card.Background" Value="#FF232328" />
+                                        <Setter Target="Card.BorderBrush" Value="#80E8E8EC" />
+                                        <Setter Target="Hover.Visibility" Value="Collapsed" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Unchecked" />
+                                <VisualState x:Name="Indeterminate" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Border x:Name="Hover" Background="#991C1C20" Opacity="0"
+                                CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource SiloInsetCornerRadius}}" />
+                        <ContentPresenter Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SiloModeTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style x:Key="SiloModeCaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
     <Style x:Key="SiloLinkButtonStyle" TargetType="HyperlinkButton">
         <Setter Property="Padding" Value="4,2" />
         <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
@@ -538,7 +647,7 @@
 
     <!--
         The signed-out screens (adding a server, signing in) as Silo's web draws its login: a 448 px card in the
-        middle, on the background with a red glow at the top left and a light one at the top right. Above it Granary's
+        middle, on the background with a glow of the accent at the top left and a light one at the top right. Above it Granary's
         own name and what it is, the screen's identity as Silo's developers asked; Silo's mark only refers to the
         server, inside the card (SiloAuthMarkStyle, Assets/Brand/NOTICE.txt). The page puts its form in as the content
         and merges Themes/SiloAuth.xaml for the inputs. The glows are the web's circles stretched with the window.
@@ -674,7 +783,7 @@
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontWeight" Value="Medium" />
     </Style>
-    <!-- A refusal in the card (the web's destructive alert); its text a lighter red, to read on the dark. -->
+    <!-- A refusal in the card, the web's destructive alert (Login.tsx); its text SiloDestructiveBrush, as text-destructive. -->
     <Style x:Key="SiloAuthErrorStyle" TargetType="Border">
         <Setter Property="Background" Value="#1AEF4444" />
         <Setter Property="BorderBrush" Value="#4DEF4444" />
@@ -989,9 +1098,9 @@
         <Setter Property="FontFamily" Value="{StaticResource SiloFontRegular}" />
         <Setter Property="FontWeight" Value="Normal" />
     </Style>
-    <!-- "Play Now" on the Playing Next screen: the red pill with white text. -->
+    <!-- "Play Now" on the Playing Next screen: the accent's pill with its label (bg-primary text-primary-foreground). -->
     <Style x:Key="SiloNextUpPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
-        <Setter Property="Foreground" Value="#FFFFFFFF" />
+        <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
         <Setter Property="Padding" Value="24,0,28,0" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -1218,7 +1327,7 @@
         </Setter>
     </Style>
 
-    <!-- The red play disc in the middle of a card under the pointer; it grows a little under the pointer itself. -->
+    <!-- The play disc in the accent in the middle of a card under the pointer; it grows a little under the pointer itself. -->
     <Style x:Key="SiloCardPlayButtonStyle" TargetType="Button">
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />

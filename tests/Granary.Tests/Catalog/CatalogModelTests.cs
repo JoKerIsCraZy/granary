@@ -45,6 +45,8 @@ public sealed class CatalogModelTests
         Assert.Null(episode.ProgressUpdatedAt);
         Assert.StartsWith("/api/v2/artwork/series/296762/backdrop/", episode.BackdropUrl, StringComparison.Ordinal);
         Assert.Equal("3OcRJYB4d3h/iIeHeEh3eIhw+j2w", episode.BackdropThumbhash);
+        Assert.True(episode.BackdropIsEpisodeStill);
+        Assert.Null(episode.PosterIsEpisodeStill);
         Assert.Empty(episode.Badges);
         Assert.Empty(episode.Studios);
         Assert.Null(episode.UserState);
@@ -162,6 +164,9 @@ public sealed class CatalogModelTests
         Assert.Equal(("201", "1080p", 1L), (first.Files[0].FileId, first.Files[0].Resolution, first.Files[0].FileSize));
         Assert.Empty(episodes.Items[1].Ratings);
         Assert.Null(episodes.Items[1].StillUrl);
+        // Whether the still is the episode's own: unknown when left out, as older servers do.
+        Assert.Null(first.StillIsEpisodeStill);
+        Assert.False(episodes.Items[1].StillIsEpisodeStill);
     }
 
     [Fact]

@@ -66,6 +66,85 @@ public sealed class JsonServerRegistryTests : IDisposable
         Assert.True(server.TryGetProperty("last_used_at", out _));
         Assert.False(server.TryGetProperty("server_id", out _));
         Assert.False(server.TryGetProperty("last_profile_id", out _));
+        Assert.False(server.TryGetProperty("branding", out _));
+    }
+
+    [Fact]
+    public async Task Branding_IsSavedWithTheServer_AndReadBack()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var registry = await LoadedAsync();
+        var entry = await registry.AddOrUpdateAsync(new Uri("https://nas.example/silo"), "NAS", null, ct);
+        var branding = new SavedBranding("#1d4ed8", "https://nas.example/silo/api/v2/branding/assets/wordmark?v=1.webp");
+
+        await registry.UpdateAsync(entry.Id, e => e with { Branding = branding }, ct);
+
+        Assert.Equal(branding, (await LoadedAsync()).Find(entry.Id)?.Branding);
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(FilePath, ct));
+        var saved = Assert.Single(document.RootElement.GetProperty("servers").EnumerateArray()).GetProperty("branding");
+        Assert.Equal("#1d4ed8", saved.GetProperty("accent").GetString());
+        Assert.Equal(branding.Wordmark, saved.GetProperty("wordmark").GetString());
+    }
+
+    [Fact]
+    public async Task AddingTheAddressAgain_KeepsItsBranding_UnlessAnotherServerAnswersThere()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var registry = await LoadedAsync();
+        var entry = await registry.AddOrUpdateAsync(new Uri("https://nas.example"), "NAS", "server-1", ct);
+        var branding = new SavedBranding("#1d4ed8", null);
+        await registry.UpdateAsync(entry.Id, e => e with { Branding = branding }, ct);
+
+        await registry.AddOrUpdateAsync(new Uri("https://nas.example"), "NAS", "server-1", ct);
+        await registry.AddOrUpdateAsync(new Uri("https://nas.example"), "NAS", null, ct);
+        Assert.Equal(branding, registry.Find(entry.Id)?.Branding);
+
+        await registry.AddOrUpdateAsync(new Uri("https://nas.example"), "NAS", "server-2", ct);
+        Assert.Null(registry.Find(entry.Id)?.Branding);
+    }
+
+    [Fact]
+    public async Task AFileFromBeforeBranding_ReadsFine_AndKeepsItsEntries()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, """
+            {
+              "active_server_id": "a1",
+              "servers": [
+                { "id": "a1", "base_url": "https://a.example", "name": "A", "server_id": "server-a", "added_at": "2026-10-01T12:00:00Z", "last_used_at": "2026-10-01T12:00:00Z", "last_profile_id": "7" }
+              ]
+            }
+            """, ct);
+
+        var registry = await LoadedAsync();
+
+        var entry = Assert.Single(registry.Servers);
+        Assert.Null(entry.Branding);
+        Assert.Equal(("a1", "server-a", "7"), (entry.Id, entry.ServerId, entry.LastProfileId));
+        Assert.Equal("a1", registry.ActiveServerId);
+        Assert.False(File.Exists(FilePath + ".bak"));
+    }
+
+    [Fact]
+    public async Task UpdateById_ChangesOnlyTheEntry_KeepingItsIdAndAddress()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var registry = await LoadedAsync();
+        var a = await registry.AddOrUpdateAsync(new Uri("https://a.example"), "A", null, ct);
+        var b = await registry.AddOrUpdateAsync(new Uri("https://b.example"), "B", null, ct);
+        int changes = 0;
+        registry.Changed += (_, _) => changes++;
+
+        await registry.UpdateAsync(a.Id, e => e with { Id = "other", BaseUri = new Uri("https://c.example"), LastProfileId = "7" }, ct);
+        await registry.UpdateAsync(a.Id, e => e, ct);
+        await registry.UpdateAsync("missing", e => e with { Name = "Gone" }, ct);
+
+        var reloaded = await LoadedAsync();
+        Assert.Equal(a with { LastProfileId = "7" }, reloaded.Find(a.Id));
+        Assert.Equal(b, reloaded.Find(b.Id));
+        Assert.Equal(2, reloaded.Servers.Count);
+        Assert.Equal(1, changes);
     }
 
     [Fact]
@@ -201,11 +280,11 @@ public sealed class JsonServerRegistryTests : IDisposable
         var registry = await LoadedAsync();
         var entry = await registry.AddOrUpdateAsync(new Uri("https://a.example"), "A", null, ct);
 
-        await registry.UpdateAsync(entry with { LastProfileId = "profile-7" }, ct);
+        await registry.UpdateAsync(entry.Id, e => e with { LastProfileId = "profile-7", BaseUri = new Uri("https://b.example") }, ct);
 
-        Assert.Equal("profile-7", (await LoadedAsync()).Find(entry.Id)?.LastProfileId);
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            registry.UpdateAsync(entry with { BaseUri = new Uri("https://b.example") }, ct));
+        var saved = (await LoadedAsync()).Find(entry.Id);
+        Assert.Equal("profile-7", saved?.LastProfileId);
+        Assert.Equal("https://a.example", saved?.BaseUri.OriginalString);
     }
 
     [Fact]
@@ -217,7 +296,7 @@ public sealed class JsonServerRegistryTests : IDisposable
         registry.Changed += (_, _) => changes++;
 
         var entry = await registry.AddOrUpdateAsync(new Uri("https://a.example"), "A", null, ct);
-        await registry.UpdateAsync(entry with { Name = "Renamed" }, ct);
+        await registry.UpdateAsync(entry.Id, e => e with { Name = "Renamed" }, ct);
         await registry.SetActiveAsync(entry.Id, ct);
         await registry.RemoveAsync(entry.Id, ct);
         await registry.RemoveAsync(entry.Id, ct);
@@ -334,7 +413,7 @@ public sealed class JsonServerRegistryTests : IDisposable
         int changes = 0;
         registry.Changed += (_, _) => changes++;
 
-        await registry.UpdateAsync(new ServerEntry("missing", new Uri("https://a.example"), "A", null, Start, Start, null), ct);
+        await registry.UpdateAsync("missing", e => e with { Name = "A" }, ct);
 
         Assert.Empty(registry.Servers);
         Assert.Equal(0, changes);

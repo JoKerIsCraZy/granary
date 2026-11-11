@@ -34,6 +34,10 @@ public sealed record PlaybackStats(int VideoWidth, int VideoHeight, long Dropped
 /// The load this state belongs to, as <see cref="IPlaybackEngine.Load"/> returned it; 0 before the first. Events reach
 /// their consumers on another thread, so one raised just before a load can arrive after it.
 /// </param>
+/// <param name="IsAudioOnly">
+/// The loaded file has no picture of its own: sound alone, or with an audio file's cover. Unknown until the file is open,
+/// which counts as a picture.
+/// </param>
 public sealed record PlaybackSnapshot(
     bool IsLoaded,
     bool IsPaused,
@@ -45,7 +49,8 @@ public sealed record PlaybackSnapshot(
     double Volume = 100,
     bool IsMuted = false,
     bool IsAtEnd = false,
-    long LoadId = 0)
+    long LoadId = 0,
+    bool IsAudioOnly = false)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
 
@@ -104,6 +109,19 @@ public interface IPlaybackEngine : IDisposable
 
     void SetPaused(bool paused);
 
+    /// <summary>
+    /// The latest <see cref="SetPaused"/> asked for a pause: what the viewer, a Watch Party's room or the server's control
+    /// lane wants. The player's own pauses are never asked, such as mpv's at the end of the data it had (keep-open), so
+    /// this can differ from <see cref="PlaybackSnapshot.IsPaused"/>. False until anything is asked; it holds across loads.
+    /// </summary>
+    bool IsPauseAsked { get; }
+
+    /// <summary>
+    /// Pauses or plays as last asked (<see cref="IsPauseAsked"/>), in one step with the asks: a pause or play asked at the
+    /// same moment is never undone by the older ask. A load's pause waits for its file, as with <see cref="SetPaused"/>.
+    /// </summary>
+    void ApplyAskedPause();
+
     void Seek(TimeSpan position);
 
     /// <summary>Sets the volume in percent; values outside 0 to 100 are clamped.</summary>
@@ -119,6 +137,12 @@ public interface IPlaybackEngine : IDisposable
     /// web player's Fill screen); it holds across loads.
     /// </summary>
     void SetFill(bool fill);
+
+    /// <summary>
+    /// Plays the sound this much later than the picture, negative earlier (<see cref="AudioDelay"/>); subtitles keep to the
+    /// picture. It holds across loads.
+    /// </summary>
+    void SetAudioDelay(double seconds);
 
     /// <summary>Reads what the player measures now; safe from any thread.</summary>
     PlaybackStats ReadStats();

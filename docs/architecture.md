@@ -18,12 +18,23 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
 - **Core** has no UI dependency. View models use CommunityToolkit.Mvvm, which is UI-agnostic, so a
   later Avalonia front end could reuse Core unchanged (the role `shared` plays in the Android client).
   Core defines the ports the other layers implement: `IPlaybackEngine`, `IUiDispatcher`,
-  `INavigationService`, `ISecretStore`, and `ISystemMediaControls` for Windows' media keys and their overlay
+  `INavigationService`, `ISecretStore`, `ISystemMediaControls` for Windows' media keys and their overlay
   (`PlayerSystemMedia` decides what they show and maps their buttons to the player's commands; the App's
-  `WindowsMediaControls` drives the main window's System Media Transport Controls), and `IRichPresence` for Discord's
-  status (see Discord status). `IReleaseFiles` gives
-  `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to hash and read; Core's own
-  `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed releases").
+  `WindowsMediaControls` drives the main window's System Media Transport Controls), `IRichPresence` for Discord's
+  status (see Discord status), and `IKeepAwake`, which keeps the display on while a title loads, plays or buffers
+  (`PlayerKeepAwake`, made and disposed with `PlayerSystemMedia` by the player page, follows Android's player: not while
+  paused, and only the system for sound without a picture, and asks again with the player's next change when Windows
+  refused; mpv's `stop-screensaver` asks Windows only from a window of its own, which composition mode has not). The
+  App's `WindowsKeepAwake` holds Windows' power requests (`PowerCreateRequest`, made once per reason and reused, then
+  `PowerSetRequest` and `PowerClearRequest`), as Core's `KeepAwakeRequests` lays them out: the new ones set before the
+  old ones are cleared, so nothing lapses. `powercfg /requests` then shows `Granary.exe` with "Playing video" under
+  DISPLAY and SYSTEM, or with "Playing audio" under EXECUTION and SYSTEM. A request belongs to its object, not to a
+  thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
+  falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
+  `IThemeAudioOutput` plays title pages' theme music (see Theme music).
+  `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
+  hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
+  releases").
 - **Player** implements `IPlaybackEngine` on libmpv and exposes the video side as
   `ICompositionVideoOutput`. It has no WinUI dependency either; the only Windows-specific code is the
   DXGI call in `Interop/DxgiSwapChain.cs`.
@@ -62,7 +73,9 @@ Settings → Playback → This PC opens `mpv.conf` in the data directory's `mpv`
 syntax holds: profiles, `profile-cond` (mpv's built-in `auto_profiles.lua`), `include`, and `~~/` for the folder
 (`glsl-shaders=~~/shaders/…`). The file is the viewer's own and trusted as mpv trusts it, within the limits below.
 Without it, mpv starts exactly as before: the same options in the same order (`MpvOwnOptions.Core`), `config=no`
-(libmpv's default), and its log asked for after the start.
+(libmpv's default), and its log asked for after the start. An `audio-delay` in the file stays as long as the audio sync
+offset is 0 and nothing in this run gave the engine another (`MpvPlaybackEngine.SetAudioDelay`); after that Granary's
+value holds, 0 included.
 
 **Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`;
 `player/loadfile.c`, `play_current_file`) and checked in a spike and in `MpvUserConfigTests`:
@@ -117,6 +130,11 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   (`KeepsOwn`), comparing the value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
   file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
   playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
+- The viewer's kept volume and mute (Server playback, "Volume") are set back the same way once Granary has set them
+  (`KeepsViewersSound`, `MpvPlaybackEngine.Volume.cs`): a profile's `volume=` or `mute=` as a file opens or while it
+  plays gives way to them. That is the viewer's choice, not a protection: after `SetBackLimit` set-backs within a title
+  the profile has its way for the rest of it, and the file stays in use. A notice older than Granary's latest value
+  (what mpv holds now is Granary's) is passed over rather than set back. Before Granary sets either, a profile's stands.
 - The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
   would set it again after every set-back; after five set-backs of one option within one title (`SetBackLimit`; the
   count starts again with each load, so a profile that changes it once per title never gets there), at the next change, or
@@ -126,7 +144,7 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   `mpv.conf keeps changing log-file; Granary stopped and plays without your mpv.conf`. The title that played ends as a
   failure (`PlaybackEndReason.Error`): a server playback reconnects by itself and loads it into the new mpv, and the
   player of a local file shows the failure with Retry. The engine's own settings carry over (volume, mute, speed,
-  subtitle look and delay, fill, the picture's size), and a new swap chain reaches `MpvVideoHost` through
+  audio delay, subtitle look and delay, fill, the picture's size), and a new swap chain reaches `MpvVideoHost` through
   `SwapChainChanged`. A call that still reaches the old one finds it closed and does nothing (`MpvClient`). The new
   mpv starts on the thread pool, so a load can come between the stop and that start: the load then makes the start
   itself, under `_restartGate`, and its title plays in the new mpv (`StartWithoutConfig`, once per stop, counted by
@@ -142,7 +160,8 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
 **Granary's own options.** Always, and kept over the file: the video in Granary's window (`vo=gpu-next`, `gpu-api` and
 `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
 drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
-`rebase-start-time`, `media-controls`), and no watch-later files (`resume-playback`, `save-position-on-quit`). With a
+`rebase-start-time`, `media-controls`), no watch-later files (`resume-playback`, `save-position-on-quit`), and room for
+the breaks of a long title that the media proxy gives up on (`curl-max-retries=20`; Server playback, "Media proxy"). With a
 file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them), behind the
 refusal above: the stream's address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
 `write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
@@ -280,6 +299,14 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
   `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
   stopped file back, and the position never goes back.
+- Once mpv has opened a file, the engine reads whether a picture plays: a selected video track
+  (`current-tracks/video`) that is not an audio file's cover (`albumart`). Without one, `PlaybackSnapshot.IsAudioOnly`
+  is set, and `PlayerKeepAwake` keeps only the system awake. It is read again whenever mpv says its tracks or their
+  choice changed (the property is observed without a value), so a stream that names its picture late, or a track
+  switched on or off, counts too. A load clears it, so a title still loading counts as having a picture. The event and
+  the tracks are read outside the lock, so what they say is kept only for the load that was playing when mpv said it
+  (`MpvPlaybackEngine.Opened`, `Started`, `Retracked`): a newer load meanwhile is neither open nor started yet, and keeps
+  its own state.
 
 ## Networking and security
 
@@ -365,6 +392,32 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   recycle pool and the pool to the repeater, so the walk from a Granary control at the root took in the whole repeater.
   Placeholders never come back once their titles arrive, so each grid kept a pool of skeletons, and each of them walked
   the grid's thousands of references: 1.15 of 1.6 million references per collection. Guarded by `TemplateRootTests`.
+- More Episodes' Now Viewing mark (`MediaCard.IsCurrent`) costs the other cards nothing: its ring (the artwork's hairline
+  in the accent and one more pixel inside it, so the artwork keeps its layout) and its pill are made (`x:Load`) for the
+  first marked card only, and its ping is one composition animation that stops while the card is unloaded or parked for
+  reuse (the row's `ElementClearing`). The row centres that card once its list is laid out and the scroller's range
+  reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening. A
+  movie's This film mark in its box set's row (`MediaCard.CurrentMark`) is made the same way, by its own `x:Load` element,
+  and does not ping.
+- A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
+  text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
+  caption while it shows; a recycled card without one shows the plain caption again.
+- A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
+  less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
+  rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the
+  cached bytes an eighth as wide as the card shows them, on the thread pool, blurs them there with a Gaussian of 3 of those
+  pixels, edges extended (`SpoilerBlur`: the web's 24 px at the card's size), and the card stretches the 30-odd pixels
+  over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
+  the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
+  shown again only makes its bitmap. Home's hero and banner take the same path for a hidden backdrop
+  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,100 px backdrop
+  is blurred by 2.8 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
+  the thumbhash as a sharp backdrop would; a wider window does not make it again (`BrowseHeroLayout.StepFor`). The hero
+  takes a title whose blur changed as a new picture, so a switch fades the backdrop over while the logo stays; a picture
+  that becomes hidden is let go at once rather than faded over. Until the profile's switches are read
+  (`EpisodeSpoilerState.Loading`), Home makes the banner's and the hero's titles as if images were hidden
+  (`HomeViewModel.TopSpoilers`), and it looks at the settings' state on the UI thread's next turn, after the switches the
+  read brought, so a hidden still never shows sharp in between.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the
@@ -391,7 +444,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 [api-contract.md](api-contract.md), sections 8 to 10.
 
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
-  start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
+  start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
+  read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
+  position), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -469,6 +524,28 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   broke off meanwhile reconnects once the refusal is in. The speed is mpv's `speed`, read
   from this device's `player.playback_speed` and saved there once it settles for a second (a drag passes several
   stops), or at the stop.
+- **Audio delay** (6.6): mpv's `audio-delay`, positive for later sound as Android's `DelayAudioProcessor` has it, from
+  this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value in a batch
+  of its own, so a server that refuses the key keeps the other settings and plays without a delay (no row, no Sound); it
+  takes the value unless a change made here is still on its way, keeps the one this run knows when the read failed if it
+  is the acting profile's on this server (`AudioDelay` remembers whose value it holds) and plays with none otherwise,
+  sets it at the start, and follows `Changed` until its stop, as Android's `SiloPlaybackService` does. Settings →
+  Playback → Sound and the player's settings menu change it (a local file starts with the delay as far as this run knows
+  it and follows a change made in Settings, and a step there goes only to the engine). A change belongs to the server
+  and profile acting when it was made: it is saved at `profile_device` once it settles for a second, or as the window
+  closes (`PlaybackStops`, which waits within its budget for every profile's saves still on their way,
+  `SaveAllNowAsync`), to that server and bound to that profile (`SettingsApi.SetValueAsProfileAsync`), so a server
+  switched to meanwhile does not lose it (the one before stays signed in) and a profile its server no longer acts as is
+  never written for the new one. Saves of one profile go one after another, so the latest value is the one its server
+  keeps; another profile's never wait for them, so a save that hangs on one server does not hold back the profile acting
+  now. Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
+  does not answer does not stop them. A timer that was due as a later change came saves nothing; a failed save is logged
+  and the value holds for this run; a read that answers after a change made here, once another profile acts, after a
+  newer read was taken or after a save of that profile went through, is dropped, as its answer is older than the value
+  held. A title's read, which goes with its other playback settings, is numbered before they go out
+  (`AudioDelay.StartRead`) and kept to the same rule, so a save done meanwhile is what the title plays. mpv moves only
+  the sound: subtitles keep to the picture, so the subtitle delay and subtitle sync, both timed against the picture, are
+  untouched.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
@@ -486,8 +563,26 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
   Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
-  theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
+  theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
+  changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
+- **Volume** (`PlayerViewModel.Volume.cs`; the web's `player-volume` and `player-muted` in localStorage): this PC keeps the
+  viewer's volume and mute (`IPlaybackDevicePreferences.Volume`, `volume` and `muted` in `playback-device.json`), and
+  `PlayAsync` sets both on the engine as each title starts, a Watch Party's and a direct file included, since mpv keeps
+  them across files but not past a start of Granary. Only the viewer's changes count (the slider, M, the volume keys, the
+  minimized bar's): a volume the engine reports by itself, a new mpv's own or an administrator's `set_volume`
+  (`ServerPlayback.Control.cs`), plays but is not kept, and Mute keeps the viewer's own level with it. The room of a Watch
+  Party never changes either. Who set the value decides, not a comparison with the engine's: a value shown from an engine
+  snapshot (`ShowVolume`) is the engine's, any other the viewer's, and it always goes to the engine, with an unmute when
+  a mute shows or the engine has one, unless an unmute is on its way. mpv reports a volume or mute a moment after it was
+  set, so what was asked of it (a change, a title's start) shows until mpv reports it, or for a second at most after it
+  was asked (`RequestHolds`, for the volume and the mute each, so the slider moving keeps no mute waiting): a snapshot
+  taken meanwhile does not move the slider back, and the next Mute toggles what shows, so quick presses take turns. A first
+  Mute without a kept volume keeps the level the engine plays at. A change is saved once it has settled for 500 ms on
+  the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
+  through. Set after mpv read the viewer's mpv.conf, and kept against its profiles ("Your own mpv.conf"), a kept volume
+  and mute win over a `volume=` or `mute=` there; without a kept one nothing is set, so mpv.conf keeps its say. A
+  `volume` that is not a number or a `muted` that is not true or false in the file only loses itself.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left
@@ -499,10 +594,45 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). Player buttons
+  can hide the button (below): `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off ends it,
+  and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A tick reads the
+  latest bar the player was told of, so one that waits behind a change from another thread does not run out.
+- **Player buttons** (`PlayerBar`, `PlayerButtonsLayout`, `PlayerViewModel.Buttons.cs`; Granary's own, Silo's clients
+  have no such editor): which of the eleven buttons on the right of the bar may show, and in which order, for each server
+  and profile on this PC (`player-buttons.json`, by "server id/profile id", as `SidebarLayout` keeps the sidebar; the
+  server keeps nothing). A `PlayerBar` is immutable: every `PlayerButton` in the profile's order and the hidden ones. A
+  profile's order names buttons by id (`volume`, `sleep_timer`, `audio`, `subtitles`, `chapters`, `settings`,
+  `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
+  button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
+  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar and is
+  kept as `player-buttons.json.bak` before the next write; when that copy fails, nothing writes over the file in that
+  run, and changes hold until Granary closes. A change shows at once and its save follows (one at a time,
+  each writing the layouts as they are then, so the last change is what stays; a failed one is logged and the change
+  holds for the run), so the editor's Move takes the next press at once, as the sidebar editor's does. This PC's Sleep
+  timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button: false` in
+  `playback-device.json`) is taken over once, while there is no file yet: the file is written at once with
+  `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own, and once that is on disk the switch
+  is dropped (`ForgetSleepTimerSwitchAsync`), so a file deleted later does not hide the Sleep timer again; a write that
+  failed leaves it for the next start, and one left beside an existing file is dropped then. A change gives the profile
+  a bar of its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
+  and follows `Changed` until it is disposed, so the minimized bar does too: a change on the UI thread applies at once,
+  so work already queued there, such as the title's end, finds a hidden Sleep timer off; one from another thread is
+  posted, and does nothing once the player is disposed. The player keeps the latest bar it was told of as well, on the
+  telling thread, and a sleep tick reads that, so one queued ahead of a hide from another thread does not run out. Each change carries its own bar, so hidden and shown again before
+  the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
+  buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
+  needs something, while there is that (`ShowsButton`); a menu goes with its hidden button. A hidden button is off: the
+  page asks `PlayerBar.AllowsKey` before a key of one (`PlayerKey`: M, the volume keys, C, the chapter keys, P, F and a
+  double click; the minimized bar keeps its own Mute and the volume keys), Down opens `PlayerBar.MenuOnDown`, the first
+  of the audio, subtitle and settings menus that shows, and the view model's own commands check `Bar` too (C, the chapter
+  keys, opening Playback info, filling, opening the marker panel). Hidden, Playback info closes and Fill screen ends,
+  as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
+  and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
-  seek bar's ticks and the chapter named in its bubble.
+  seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
+  a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
   again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
@@ -544,6 +674,21 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   on → a new attempt at the position, and the old session is stopped; an administrator's stop (410) → leave; a
   seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
   are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
+- **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at one
+  position, with what mpv holds ahead growing by no more than half a second of the title, while the viewer wants to
+  play is stopped and reconnected like a lost connection, as Android gives a stalled load 90 s. A slow link whose
+  cache still grows (a remote server, a high bitrate, a long `cache-pause-wait`) is left to fill it, as Apple's
+  detector counts bytes, not time. Not while the viewer (or a Watch Party's room) has paused, also with a pause
+  asked that mpv has not shown yet. The 90 s are above the server's longest hold of a request (a playlist 30 s, a
+  segment 12 s plus 30 s after a seek; docs/api-contract.md, 9.5) and the media proxy's 60 s, after which the proxy
+  resumes the body, or mpv asks again by itself, and the stream usually recovers in place. Buffering's start and end
+  are logged with the position and what mpv holds ahead.
+- **Play intent across reloads**: a reload (a replan, a reconnect) plays or pauses as last asked of the engine
+  (`IPlaybackEngine.IsPauseAsked`: the viewer, a Watch Party's room, the control lane), as Apple's reconnect
+  carries the viewer's play intent. A stream that broke off plays to the end of the data mpv had and mpv pauses
+  itself there (keep-open, `PlaybackSnapshot.IsAtEnd`). Nobody asked for that pause, so the stream comes back
+  playing; a pause asked meanwhile, also by a room while the stream was down, stays. The engine applies the last
+  ask in one step with the asks (`ApplyAskedPause`), so one made in that moment is never undone by an older one.
 - **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
   (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):
@@ -561,15 +706,46 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
 - **Media proxy** (`MediaProxy`, the Apple client's design): an `HttpListener` on 127.0.0.1 between mpv and the
-  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan
-  URL's path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream
-  only (a progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds
-  the headers per request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the
-  request, so mpv never sees an expiry. Redirects are not followed, cookies and the upstream's other headers
-  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. The
-  secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
-  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have
-  sent them wherever a redirect or a playlist pointed.
+  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan URL's
+  path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream only (a
+  progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds the headers per
+  request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the request, so mpv never
+  sees an expiry. Redirects are not followed, and cookies and the upstream's other headers stay behind. A server that
+  sends nothing for 60 s, before its answer (a token refresh included) or within its body (`UpstreamWatch`), is cut
+  off: the server closes a stream a paused player stopped reading after 180 s, and word of that close may never
+  arrive. Only waits for the server are timed, never a write the player is not taking.
+- **Resume** (`UpstreamResume`, as Silo's Apple app reconnects its reader at the byte it had reached): a body that
+  breaks off, is cut or ends early goes on from its next byte in the same answer, so mpv never sees the break. A
+  server, or a proxy or firewall in front of it, that drops long downloads now and then otherwise ended the stream:
+  mpv's reader counts every retry since the last seek against `curl-max-retries`, ones that brought data too, so five
+  breaks anywhere in an episode made it give up, play out its cache and buffer. Only an answer that can be asked again
+  from any byte, and checked, is resumed: a 206 with its `Content-Range`, or a 200 with `Accept-Ranges: bytes`, each
+  with a length, not encoded, and with a strong `ETag` or a `Last-Modified` (with neither, a changed file of the same
+  size would pass); a remux is not. The resume asks `Range: bytes=<next>-` (to the answer's own end when it ended
+  before the file's) with the headers of the moment, none of the player's conditions, and the first answer's strong
+  `ETag`, or else its `Last-Modified`, as `If-Range`, each sent back as the server wrote it. Only a 206 whose range
+  starts at that byte and ends within the answer, with the same total and the validators the first answer had, is
+  spliced in, and only up to the last byte it names, whatever its body sends past it. A 200 (the file changed),
+  another range, a 416, no login, a refusal its one renewal did not cure (the Apple app's reader gives those a short
+  ladder; here the player's own request meets the refusal and the playback reloads), or any other answer (a 404, a
+  501) gives up at once. A busy or failing server (429, 500, 502, 503, 504, 509), a lost connection, a cut, or no token
+  for now is asked again: at once after a break, then 1, 2, 4 and 8 s apart, longer for a `Retry-After` up to 15 s.
+  Each broken or busy answer is let go before the next wait. It gives up after 12 resumes in a row that brought no
+  data (a resume whose connection delivers starts that count again, as the Apple app's does), once a break has gone
+  90 s without data whatever each try waits (Silo's Android app retries a load within 90 s, and the stall watch gives a
+  stream as long), or after more than 30 resumes within 60 s, which a server that cuts every few kilobytes would have
+  go on unpaced. The route's closing ends a resume at once, its waits too, and so does a newer GET of the same URL on
+  the route: mpv reads a direct play file through one request at a time and cannot say when it left one for a seek, so
+  an abandoned resume would hold one of the route's 16 places up to its 90 s. HLS segments have URLs of their own and
+  are read side by side, untouched by this. Resumes and give-ups are logged with the byte, never the URL or headers.
+- What cannot be resumed aborts the response, so mpv sees a lost connection, not an end. Its curl reader then asks
+  again from its offset where the stream can seek, at once; mpv counts those retries since the last seek, so Granary
+  allows 20 (`curl-max-retries=20`, its own option): room for the proxy's give-ups across a long title, but not for
+  long on a server that is gone. A remux ends and the playback reconnects. Cuts and bodies that broke off are logged
+  without URL or headers.
+  The secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
+  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have sent them
+  wherever a redirect or a playlist pointed.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 
@@ -668,6 +844,39 @@ breaks YouTube's terms.
   is. The app under the trailer is hidden meanwhile. When the window leaves full screen another way (F11), the page is
   asked to leave its own.
 
+## Theme music
+
+A title page plays its local theme music while Settings → Title Pages → Theme music is on (docs/api-contract.md, 6.6.4 and
+7.19). Behaviour follows the apps (Android's `ThemeMusicCoordinator` and `ThemeMusicPlayer`, Apple's `ThemeMusicCenter` and
+`ThemeMusicController`), which follow the web's `useThemeMusic.ts` and `lib/themeMusic.ts`.
+
+- **`ThemeMusic`** (Core, a singleton) decides when. A title page's view model shows it a token of its own with the page's
+  themes (none while it loads) and hides it as the page leaves; it never holds the page. Nothing plays unless the acting
+  profile's own settings say so and the server's capability says themes are available (read again once a minute old; when
+  they are routed, with whether the server authorizes media origins, which decides the proxy nodes a theme may come from,
+  `ThemeOrigins`). A page that leaves or loads fades its theme out and pauses it; two seconds later (`ReleaseGrace`) the theme is let go, unless a
+  page shows the same theme again, as a season with its series' set does, which goes on where it was. While the player
+  holds a title, over the window or as its bar, or a trailer is open, the theme stops at once and starts over after
+  (`OtherMediaPlaying`, which MainWindow sets once the window's turn is done, so a player taking over from a trailer does not
+  let it start in between; a title replacing the one that played counts from its Play, while the old player lets the
+  picture go, until it opens or fails to, the player closes, or 3 s have passed, a `DispatcherQueueTimer` through
+  `WeakTick`). A minimized window counts as a page that left (`IsMinimized`, from `AppWindow.Changed`). A
+  profile, server or sign-out stops it at once and forgets the capability.
+- **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
+  out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
+  ends and plays again from a new grant. A grant or download lost on the way (network, 5xx, timeout) or audio that fails
+  is tried once more with a new grant, audio that plays earning the try back; a refusal (`ThemeFetch.Refused`) is not.
+- **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials, cookies or redirects, on the
+  `theme-audio` client and its own handler, which logs nothing: the URL carries its own token and stays in Core. The
+  handler's `ConnectCallback` connects a proxy node only to a resolved address the node's rule takes (`ThemeNode`, set on the
+  request by `PlaybackUrl.ResolveTheme`), so a name that resolves to this PC or an unvouched private address is refused
+  where the address is known. A node goes on the `theme-audio-node` client, whose handler never takes the system's proxy
+  (the proxy would resolve the name out of the rule's sight); the server's own origin goes on `theme-audio`, which keeps
+  the proxy and connects as it resolves.
+- **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside
+  mpv, not a second mpv), with its command manager off, so it stays out of Windows' media overlay and the media keys stay
+  the player's. Its events come on Windows' threads; Core takes them to the UI thread.
+
 ## Window modes
 
 The main window is a window (maximized or not), full screen, or the player's mini view (CompactOverlay), and that is one
@@ -680,13 +889,48 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   full screen ends a trailer's.
 - **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
   a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
-  window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
-  to each other without it, so either returns to the window as it was before both. Coming back, a restored window keeps
+  window comes back maximized, and Core's `WindowPlaceKeeper`: the place and size it last had restored; while maximized,
+  the place Windows restores it to, from `GetWindowPlacement`'s `rcNormalPosition` turned from workspace into screen
+  coordinates by the work area's offset on the display that rect lies on (`DisplayArea.GetFromRect`, as Chromium uses
+  `MonitorFromRect`; `WindowBounds.FromWorkspace`), so it follows a maximized window to another display
+  (Win+Shift+Arrow). It is trusted only while its title bar lies on the display the maximized window is on
+  (`WindowPlaceKeeper.KeepMaximized`); otherwise the last place stays, moved onto that display if it is not there, so a
+  convention read the wrong way never sends the window elsewhere. Nothing of a minimized one, nor bounds that are no
+  real place, empty or at -32000, as a window being destroyed may give); full screen and the mini view go to each other
+  without it,
+  so either returns to the window as it was before both. Coming back, a restored window keeps
   its place and size as long as its title bar (32 view px high, at least 120 wide) shows on some display's work area
   (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
   flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
   the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
-  so is the window's real presenter when setting one fails (logged). Nothing is saved: each start begins as a window.
+  so is the window's real presenter when setting one fails (logged). Each start begins as a window.
+- **Across starts**: the service saves that same windowed place to `window.json` in the data directory (Core's
+  `WindowPlaceFile`): the restored bounds in pixels, the scale of the display they lie on (its effective DPI through
+  `GetDpiForMonitor`), and whether it was maximized:
+  `{ "x": 312, "y": 140, "width": 1440, "height": 900, "scale": 1.5, "maximized": false }`. It saves once the window
+  settles, 1 s after the last change it kept (a `DispatcherQueueTimer` through `WeakTick`), off the UI thread, so a crash,
+  a kill or Windows shutting down keeps it too: asking for it swaps the place to write in (`Interlocked`) and never waits
+  for a write in flight, which alone holds the file's lock. And as the window closes (`Window.Closed`, so also full
+  screen's Close and a restart into an update), on the UI thread, after a write in flight (waited for at most 2 s,
+  `AppUpdatesViewModel.SaveWaitAtExit`, as closing waits for the other saves; a write held longer, on a slow or network
+  data folder, is logged and the close's save given up) and in place of one not yet written; that save is the last word: the service keeps nothing the closing window still reports (the presenter it
+  leaves full screen for) and starts no settle save, and the file writes none that comes after it. A place the file
+  holds already is not written again. Temporary files a Granary killed mid-save left (`window.json.<guid>.tmp`, older
+  than a minute) are removed as the file is read at start. Closed in full screen or the mini view, that is the window it would have gone
+  back to; closed minimized, the last place it had. MainWindow's constructor puts the window there while it is still
+  hidden (`WindowModeService.OpenAtLastPlace`, Core's `WindowPlace.OpenOn`): on a display of another scale it keeps its
+  size in view pixels, as Windows resizes a window moved between displays, and is fitted onto that display if it then
+  does not fit; otherwise the rule above. Maximizing shows a window, so a maximized one is maximized in
+  `WindowModeService.Show`, which App calls in place of `Activate`, right before the activation: the first frame is
+  already maximized, and un-maximizing goes back to its bounds. Should the launcher's show command (a shortcut's) take
+  the place of that first show, a window shown restored is maximized after the activation, and one shown minimized gets
+  `WPF_RESTORETOMAXIMIZED`, so it comes back maximized from the taskbar and counts as maximized meanwhile (both logged
+  at Debug; with `Start-Process -WindowStyle Normal` or `Minimized` the first show stayed maximized). Files
+  are written as other small files are (a temporary file, then `File.Move`, tried again for a moment while something has
+  the file open); a write that fails is logged. No file, or one that cannot be read (logged), and Windows places the
+  window at 1440 × 900 px. Unreadable counts a file over 64 KiB, which is not read at all, and a place out of range:
+  more than 65,536 px out or across, or a scale outside 0.5 to 5 (Windows' 100 % to 500 %, with room). The same check
+  keeps such a place from being written.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again
@@ -699,23 +943,37 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
 
 ## Taskbar preview
 
-The player's Play/Pause under the window's taskbar preview (docs/ui-design.md, Player) goes through the port
-`ITaskbarPlayButton` (Core): show or change, hide, and a pressed event.
+The player's Previous episode, Play/Pause and Next episode under the window's taskbar preview (docs/ui-design.md, Player)
+go through the port `ITaskbarToolbar` (Core): show or change the three buttons' state (`TaskbarToolbarState`: each
+hidden, disabled or enabled, and Play/Pause's paused), hide them all, and a pressed event naming the button.
 
-- **`PlayerTaskbarButton`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) follows
-  the player: shown from a title's load until the player is left, Play or Pause by `IsPaused`, and off by
-  `PlayerSystemMedia.PlayPauseWorks`, the rule Windows' media controls use. It shows only a change of that, never a
-  position tick. A press is posted to the UI thread, so it runs after the window's message has returned, and runs the
-  player's `TogglePauseCommand` if the rule still allows it.
-- **`WindowsTaskbarPlayButton`** (App) is the one button of the main window's thumbnail toolbar (`ITaskbarList3` through
-  its vtable, `Interop/TaskbarList.cs`). The window's messages come through `Interop/WindowMessageHook.cs`, the window's
-  single comctl32 subclass, made with the window, which also takes a remote's WM_APPCOMMAND: Explorer's
-  `TaskbarButtonCreated` (before it, `ITaskbarList3` is not called; after it, the button is added, again when Explorer
-  restarts and makes a new taskbar button), the button's `WM_COMMAND` with `THBN_CLICKED`, and `WM_DPICHANGED`, which
-  remakes the icons. A toolbar's buttons cannot be removed, so hiding sets `THBF_HIDDEN`. The icons
-  (`Interop/PlayPauseIcons.cs`) are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with
-  `CreateIconIndirect`; the taskbar copies them, and Granary destroys its own when they are replaced and when the window
-  closes, with the COM object. Three failures in a row and the player goes on without the button.
+- **`PlayerTaskbarToolbar`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) follows
+  the player: shown from a title's load until the player is left, Play or Pause by `IsPaused`. Each button is enabled by
+  the rule Windows' media controls use, which `PlayerSystemMedia` shares: `PlayPauseWorks`, and `PreviousWorks` and
+  `NextWorks` (its `CanChangeEpisode` and the player's `HasPreviousEpisode` or `HasNextEpisode`). Previous and Next
+  show only while `MediaInfo.Kind` is an episode. Until a new title's details have come (`MediaInfo` is `None`) the
+  kind it remembers holds while the phase is `Preparing`, so they grey, not vanish, while the next episode loads; a
+  title that failed before its details came has none, and leaving the player forgets the kind. It shows only a change
+  of that, never a position tick. A press is posted to the UI thread, so it runs after the window's message has
+  returned, and runs the player's `PlayPreviousEpisodeCommand`, `TogglePauseCommand` or `PlayNextEpisodeCommand` if the
+  rule still allows it. `PlayerViewModel` clears `HasLeft` on a new start only after the title before is cleared
+  (`Phase`, `MediaInfo`), so nothing that follows the player shows that title again for a moment.
+- **`TaskbarToolbarSender`** (Core) hands each state to the App's Explorer call and keeps it handed on. A failed send
+  is sent again after 2 s, also when nothing changed (`PlayerTaskbarToolbar` sends only changes). It gives up only on
+  three failures in a row spanning 10 s at least, and then hides the buttons as far as Explorer still takes it. Given
+  up, a change at least a minute after the last failure tries again, and so does a new taskbar button. The clock is a
+  `TimeProvider`, the retries run on the UI thread through `IUiDispatcher`.
+- **`WindowsTaskbarToolbar`** (App) is the main window's thumbnail toolbar (`ITaskbarList3` through its vtable,
+  `Interop/TaskbarList.cs`): ids 1, 2 and 3 for Previous, Play/Pause and Next, in that order. The window's messages come
+  through `Interop/WindowMessageHook.cs`, the window's single comctl32 subclass, made with the window, which also takes a
+  remote's WM_APPCOMMAND: Explorer's `TaskbarButtonCreated` (before it, `ITaskbarList3` is not called; after it, all
+  three buttons are added in one `ThumbBarAddButtons`, again when Explorer restarts and makes a new taskbar button), a
+  button's `WM_COMMAND` with `THBN_CLICKED` in the high word of wParam and its id in the low word, and `WM_DPICHANGED`,
+  which remakes the icons. A toolbar's buttons can be neither added later nor removed, so `ThumbBarUpdateButtons` shows
+  and hides them (`THBF_HIDDEN`) and greys them (`THBF_DISABLED`). The icons (`Interop/TaskbarIcons.cs`: ⏮, ▶, ⏸, ⏭)
+  are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with `CreateIconIndirect`; the taskbar
+  copies them, and Granary destroys its own when they are replaced and when the window closes, with the COM object. A
+  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on.
 
 ## Watch Party
 
@@ -742,6 +1000,17 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   its position reported. The hub says why in the web's words (`WatchPartyText`) until it is dismissed, which leaves the
   room on this device. A room that only stopped playing is still on: the player closes, and the room page under it shows
   again.
+- **From a title's page.** `StartPartyViewModel` (Core, one per detail hero) offers "Start a Watch Party" while the page
+  has a title (`ItemDetailViewModel.WatchPartyRequest`), the server's capabilities say rooms with `staged_selection`, and
+  the session is in no room. Its sheet creates the room through the session, so the session has the room's proof at
+  once: it changes the pause policy where the switch says otherwise, stages the title or (in a vote) suggests it, and
+  copies the invite before the room page opens, which says what happened on the way (`WatchPartyArrival`, the web's
+  toasts). Each step is for the server and profile the sheet was opened for; a change of either ends it quietly, and a
+  sheet put away or a page left mid-create still joins the room but neither copies the invite nor opens the room page.
+  Its commands catch every failure, as an exception out of an `AsyncRelayCommand` ends the app: a failed create is said
+  in the sheet, a failed step after it only logged once the room stands. The read of the server's rooms an attach
+  starts is waited for by nobody, so it catches everything too, and `WatchPartyFeature` drops an answer read for the
+  server and profile before.
 
 ## Discord status
 

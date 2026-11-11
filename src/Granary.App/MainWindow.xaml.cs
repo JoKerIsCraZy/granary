@@ -78,6 +78,7 @@ public sealed partial class MainWindow : Window
         WatchParty = watchParty;
         InitializeComponent();
         InitializeTrailers();
+        InitializeThemeMusic();
         _railHover = DispatcherQueue.CreateTimer();
         _railHover.Interval = RailHoverDelay;
         _railHover.IsRepeating = false;
@@ -103,7 +104,11 @@ public sealed partial class MainWindow : Window
         InitializeRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
+        // Where it was closed last, as it was; the first time where Windows places it.
+        if (!_modes.OpenAtLastPlace())
+        {
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
+        }
         AppWindow.Closing += OnClosing;
 
         _navigation.Attach(ContentFrame);
@@ -291,10 +296,12 @@ public sealed partial class MainWindow : Window
 
     /// <summary>
     /// Plays the mark's intro over the window until the shell has <paramref name="started"/> and its first page has what it
-    /// shows; a longer wait runs the loading loop meanwhile, and <see cref="StartupLimit"/> ends it in any case.
+    /// shows; a longer wait runs the loading loop meanwhile, and <see cref="StartupLimit"/> ends it in any case. Then the
+    /// first page gets focus, for a remote's arrows.
     /// </summary>
     public async void ShowStartup(Task started)
     {
+        var input = InputSoFar();
         try
         {
             var limit = Task.Delay(StartupLimit);
@@ -312,6 +319,7 @@ public sealed partial class MainWindow : Window
             _logger.LogWarning(ex, "The start screen ended early");
         }
         HideSplash();
+        PlaceStartFocus(input);
         // Updates are looked for once the app shows, so the first page's requests go first.
         await Updates.RunAsync(_updatesRun.Token);
     }
@@ -604,8 +612,8 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A title's page and a person's, the web's detail pages: the sidebar narrows to its rail beside them.
-    private static bool IsDetail(AppRoute? route) => route is AppRoute.Item or AppRoute.Person;
+    // A title's page, a person's and a box set's, the web's detail pages: the sidebar narrows to its rail beside them.
+    private static bool IsDetail(AppRoute? route) => route is AppRoute.Item or AppRoute.Person or AppRoute.BoxSet;
 
     // The headers fold their sections in the open pane; in the icon-only rail each is the web's short divider. Set here,
     // not by NavigationView's pane states, which lag behind after the player's minimal mode. LIBRARIES only with libraries.
@@ -629,6 +637,9 @@ public sealed partial class MainWindow : Window
         _player?.ViewModel.Leave();
         // So does a Watch Party's socket, with a close the room sees at once rather than a connection that times out.
         _stops.Track(_room.LeaveAsync());
+        // And an audio delay changed just before, which would otherwise be saved once it settled, with every profile's saves
+        // still on their way.
+        _stops.Track(App.Services.GetRequiredService<AudioDelay>().SaveAllNowAsync());
         var stopped = _stops.WhenStoppedAsync(StopBudget);
         if (stopped.IsCompleted)
         {

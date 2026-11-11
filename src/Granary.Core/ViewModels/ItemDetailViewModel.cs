@@ -9,7 +9,9 @@ using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -30,8 +32,8 @@ public enum ItemDetailState
 /// <summary>
 /// The detail page of a movie, series, season or episode (docs/api-contract.md 7.6, 7.7, 7.11), worded like
 /// Silo's web client. The item comes first; its seasons, episodes and "More like this" follow in parallel,
-/// and one that fails only hides its section. Watched, favourite and watchlist change at once and roll back
-/// when the server refuses.
+/// and one that fails only hides its section. Watched, favourite, watchlist and the stars change at once and roll
+/// back when the server refuses.
 /// </summary>
 /// <remarks>
 /// Only <see cref="LoadCommand"/> is cancellable. The toggles take no token on purpose: a cancellable command
@@ -57,6 +59,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly ViewerStateChanges? _changes;
     private readonly TrackPreferencesApi? _trackPreferences;
     private readonly TrackChoiceWrites? _trackChoices;
+    private readonly EpisodeSpoilerSettings? _spoilers;
+    private readonly TitlePageSettings? _titlePage;
+    private readonly ThemeMusic? _themeMusic;
+    private readonly IUiDispatcher? _dispatcher;
+    private readonly TimeProvider _time;
+    private readonly RatingWrites? _ratings;
+    private readonly SeriesAirings? _airings;
+    private readonly EpisodeSpans? _spans;
+    private readonly BoxSetsApi? _boxSets;
+    private readonly BoxSetLibraries? _boxSetLibraries;
     private readonly DownloadActions? _downloads;
 
     // A newer load makes the answers of older calls stale.
@@ -69,6 +81,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private WatchRollup? _watch;
     private IReadOnlyList<Season> _seasons = [];
     private IReadOnlyList<Episode> _episodes = [];
+    // The season whose episodes the page lists, and an episode's siblings in More Episodes.
+    private string? _episodesSeasonId;
+    private IReadOnlyList<Episode> _siblings = [];
+    private ImageParameters _imageParameters = ImageParameters.None;
 
     // The page lists episodes: a season, or a series with a single season.
     private bool _listsEpisodes;
@@ -84,6 +100,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ViewerStateChanges? changes = null,
         TrackPreferencesApi? trackPreferences = null,
         TrackChoiceWrites? trackChoices = null,
+        EpisodeSpoilerSettings? spoilers = null,
+        TitlePageSettings? titlePage = null,
+        ThemeMusic? themeMusic = null,
+        IUiDispatcher? dispatcher = null,
+        TimeProvider? time = null,
+        RatingWrites? ratings = null,
+        SeriesAirings? airings = null,
+        EpisodeSpans? spans = null,
+        BoxSetsApi? boxSets = null,
+        BoxSetLibraries? boxSetLibraries = null,
         DownloadActions? downloads = null)
     {
         _session = session;
@@ -95,6 +121,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _changes = changes;
         _trackPreferences = trackPreferences;
         _trackChoices = trackChoices;
+        _spoilers = spoilers;
+        _titlePage = titlePage;
+        _themeMusic = themeMusic;
+        _dispatcher = dispatcher;
+        _time = time ?? TimeProvider.System;
+        _ratings = ratings;
+        _airings = airings;
+        _spans = spans;
+        _boxSets = boxSets;
+        _boxSetLibraries = boxSetLibraries;
         _downloads = downloads;
     }
 
@@ -151,13 +187,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string BackdropThumbhash { get; private set; } = "";
 
+    /// <summary>The logo the hero names the title with; none when the profile turned title art off (ItemDetailViewModel.TitlePage.cs).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsLogo), nameof(ShowsTitleText))]
     public partial Uri? LogoUrl { get; private set; }
 
     public bool ShowsLogo => LogoUrl is not null && !_logoFailed;
 
-    public bool ShowsTitleText => !ShowsLogo;
+    public bool ShowsTitleText => !ShowsLogo && !HoldsTitle;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBreadcrumbs))]
@@ -167,10 +204,13 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasOverview))]
+    [NotifyPropertyChangedFor(nameof(HasOverview), nameof(ShowsOverview))]
     public partial string Overview { get; private set; } = "";
 
     public bool HasOverview => Overview.Length > 0;
+
+    /// <summary>The hero shows the overview: there is one, and spoiler protection does not hide it (<see cref="IsOverviewHidden"/>).</summary>
+    public bool ShowsOverview => HasOverview && !IsOverviewHidden;
 
 
 
@@ -241,7 +281,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public string WatchlistLabel => IsInWatchlist ? "Remove from Watchlist" : "Add to Watchlist";
 
-    /// <summary>Why the last watched, favourite or watchlist change did not stick; empty when it did.</summary>
+    /// <summary>Why the last watched, favourite, watchlist or rating change did not stick; empty when it did.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasActionError))]
     public partial string ActionError { get; private set; } = "";
@@ -276,7 +316,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string EpisodesTotalText { get; private set; } = "";
 
-    /// <summary>The other episodes of an episode's season (the episode itself left out).</summary>
+    /// <summary>
+    /// An episode's whole season in its order, the episode itself marked (<see cref="MediaCard.IsCurrent"/>), as the web's;
+    /// empty unless there is another episode to go to.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMoreEpisodes))]
     public partial IReadOnlyList<MediaCard> MoreEpisodes { get; private set; } = [];
@@ -289,11 +332,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public bool HasTrailers => Trailers.Count > 0;
 
+    /// <summary>The Cast &amp; Crew row as laid out: the cards in their groups, a separator before each after the first.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPeople))]
-    public partial IReadOnlyList<DetailPerson> People { get; private set; } = [];
+    [NotifyPropertyChangedFor(nameof(People), nameof(HasPeople))]
+    public partial IReadOnlyList<DetailCredit> Credits { get; private set; } = [];
 
-    public bool HasPeople => People.Count > 0;
+    /// <summary>The row's cards without its separators.</summary>
+    public IReadOnlyList<DetailPerson> People => [.. Credits.OfType<DetailPerson>()];
+
+    // A separator stands only before cards: a row with entries has people.
+    public bool HasPeople => Credits.Count > 0;
 
     [ObservableProperty]
     public partial string PeopleTitle { get; private set; } = "Cast";
@@ -331,17 +379,28 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             State = ItemDetailState.Failed;
             return;
         }
+        // The profile the item is read for: a switch during the read must not bind this page's writes to the next one. And
+        // where the rating writes stand, to see one that ends during the read.
+        string? profileId = _session.ProfileId;
+        long ratingMark = _ratings?.Mark ?? 0;
         try
         {
             var images = await ImageParametersAsync(server, cancellationToken);
+            _imageParameters = images;
             var item = await _catalog.GetItemAsync(server.BaseUri, id, images: images, cancellationToken: cancellationToken);
             if (generation != _generation)
             {
                 return;
             }
-            Show(item, server.BaseUri);
+            Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
-            await LoadSectionsAsync(item, server.BaseUri, images, generation, cancellationToken);
+            await LoadSectionsAsync(item, server.BaseUri, profileId, images, generation, cancellationToken);
+            if (generation == _generation)
+            {
+                // A stop or a mark that came while the page loaded may be newer than what it read.
+                _isLoaded = true;
+                RefreshIfStale();
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -412,31 +471,43 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _watch = null;
         _seasons = [];
         _episodes = [];
+        _episodesSeasonId = null;
+        _siblings = [];
         _listsEpisodes = false;
         _logoFailed = false;
+        // What changed before this load is in what it reads.
+        _isLoaded = false;
+        _watchStateStale = false;
         State = ItemDetailState.Loading;
         LoadErrorText = "";
         ActionError = "";
         Breadcrumbs = [];
         Overview = "";
-        MetaLine = "";
+        IsOverviewHidden = false;
+        ResetTitlePage();
         BackdropUrl = null;
         BackdropThumbhash = "";
         AvailableVersionLine = "";
         ResetPrePlay();
+        ResetRating();
         InfoSections = [];
         LogoUrl = null;
         Seasons = [];
         Episodes = [];
+        StopPlacing();
+        _places = [];
+        EpisodeGrid.Clear();
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
+        ExtraGroups = [];
         Trailers = [];
-        People = [];
+        Credits = [];
         Similar = [];
+        ResetBoxSet();
         ShowDownloads();
     }
 
-    private void Show(CatalogItemDetail item, Uri server)
+    private void Show(CatalogItemDetail item, Uri server, string? profileId, long ratingMark)
     {
         _item = item;
         _contentId = string.IsNullOrWhiteSpace(item.ContentId) ? ItemId.Trim() : item.ContentId;
@@ -451,32 +522,39 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl);
         BackdropThumbhash = item.BackdropThumbhash ?? "";
         // An episode's logo would be its series': the episode's own title stays visible instead.
-        LogoUrl = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
+        _titleLogo = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
+        ShowTitleArt();
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
         Overview = item.Overview?.Trim() ?? "";
-        MetaLine = DetailFacts.MetaLine(item);
+        ShowMetaLine();
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
-        People = DetailCredits.People(item, server);
+        Credits = DetailCredits.Row(DetailCredits.Groups(item, server));
         PeopleTitle = DetailCredits.PeopleTitle(People);
+        ExtraGroups = DetailExtraGroup.From(item.Extras, server);
         Trailers = DetailTrailer.From(item.Videos);
         ShowsWatchedAction = DetailFacts.IsVideo(item.Type);
         CanFavorite = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
         IsWatched = item.UserData?.Played ?? item.UserState?.Played ?? false;
         IsFavorite = item.UserState?.IsFavorite ?? false;
         IsInWatchlist = item.UserState?.InWatchlist ?? false;
+        ShowRating(item, server, profileId, ratingMark);
         ShowPlayAction();
+        ShowOverview();
         ShowDownloads();
     }
 
-    private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken) =>
+    private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, string? profileId, ImageParameters images, int generation,
+        CancellationToken cancellationToken) =>
         item.Type switch
         {
             CatalogItemTypes.Series => Task.WhenAll(
                 LoadSeasonsAsync(item, server, images, generation, cancellationToken),
                 LoadSimilarAsync(item, server, images, generation, cancellationToken)),
-            CatalogItemTypes.Movie => LoadSimilarAsync(item, server, images, generation, cancellationToken),
+            CatalogItemTypes.Movie => Task.WhenAll(
+                LoadSimilarAsync(item, server, images, generation, cancellationToken),
+                LoadBoxSetAsync(server, profileId, images, generation, cancellationToken)),
             CatalogItemTypes.Season => LoadSeasonEpisodesAsync(item, server, images, generation, cancellationToken),
             CatalogItemTypes.Episode => LoadEpisodeContextAsync(item, server, images, generation, cancellationToken),
             _ => Task.CompletedTask,
@@ -490,7 +568,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         var seasons = OrderSeasons(collection.Items);
-        MetaLine = DetailFacts.MetaLine(item, seasons);
+        ShowMetaLine(seasons);
         InfoSections = DetailFacts.InfoSections(item, seasons);
         if (seasons is [{ ContentId.Length: > 0 }])
         {
@@ -504,7 +582,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             _seasons = seasons;
             if (episodes is not null)
             {
-                ShowEpisodes(episodes.Items, only.EpisodeCount);
+                ShowEpisodes(only.ContentId, episodes.Items, only.EpisodeCount);
+                StartPlacing(server, _contentId, only.SeasonNumber, generation, cancellationToken);
                 return;
             }
         }
@@ -551,13 +630,15 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             return;
         }
-        ShowEpisodes(collection.Items, item.EpisodeCount);
-        MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
+        ShowEpisodes(_contentId, collection.Items, item.EpisodeCount);
+        ShowMetaLine(listedEpisodes: collection.Items.Count);
         InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
+        StartPlacing(server, item.SeriesId, item.SeasonNumber, generation, cancellationToken);
     }
 
-    // The season crumb links once the season is known; "More Episodes" lists the season's other episodes.
+    // The season crumb links once the season is known; "More Episodes" lists the whole season, this episode marked Now
+    // Viewing, as the web's EpisodeContent.tsx.
     private async Task LoadEpisodeContextAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(item.SeriesId) || item.SeasonNumber is not { } number || number < 0)
@@ -575,7 +656,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         var episodes = await episodesLoad;
         if (generation == _generation && episodes is not null)
         {
-            MoreEpisodes = [.. episodes.Items.Where(e => e.ContentId.Length > 0 && e.ContentId != _contentId).Select(e => MediaCardFactory.Episode(e, server))];
+            ShowSiblings(episodes.Items);
         }
     }
 
@@ -603,8 +684,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
     }
 
-    private void ShowEpisodes(IReadOnlyList<Episode> episodes, int? total)
+    private void ShowEpisodes(string seasonId, IReadOnlyList<Episode> episodes, int? total)
     {
+        _episodesSeasonId = seasonId;
         _episodes = episodes;
         _listsEpisodes = true;
         ShowEpisodeCards();
@@ -613,14 +695,23 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowDownloads();
     }
 
+    // An unwatched episode's still blurred and its overview left out as the profile chose (ItemDetailViewModel.Spoilers.cs).
     private void ShowEpisodeCards()
     {
         if (_serverBase is not { } server)
         {
             return;
         }
+        var spoilers = Spoilers;
         // The overview gets three lines of its own under the card instead of the card's one-line caption.
-        Episodes = [.. _episodes.Select(e => new DetailEpisode(MediaCardFactory.Episode(e, server) with { Caption = null }, string.IsNullOrWhiteSpace(e.Overview) ? null : e.Overview.Trim()))];
+        IReadOnlyList<DetailEpisode> episodes = [.. _episodes.Select(e => new DetailEpisode(MediaCardFactory.Episode(e, server, spoilers) with { Caption = null },
+            spoilers.HidesOverview(e) || string.IsNullOrWhiteSpace(e.Overview) ? null : e.Overview.Trim()))];
+        // The same cards again keep the grid as it is.
+        if (!episodes.SequenceEqual(Episodes))
+        {
+            Episodes = episodes;
+        }
+        ShowEpisodeGrid();
     }
 
     private void ShowSeasonCards()
@@ -643,7 +734,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             ShowSeasonCards();
         }
+        ShowSiblingCards();
         ShowPlayAction();
+        ShowOverview();
     }
 
     private void ShowPlayAction()

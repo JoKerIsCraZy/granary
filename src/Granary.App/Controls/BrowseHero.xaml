@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The top of Home (docs/ui-design.md, Home): the title the pointer or the keyboard is on, with its backdrop on the right,
-    fading into the page toward the text and the rows. It stays at the top while the rows scroll, folding to a compact
-    header (BrowseHero.FollowScroll).
+    The top of Home (docs/ui-design.md, Home): the title the pointer or the keyboard is on, or the slide of Home's banner,
+    with its backdrop on the right, fading into the page toward the text and the rows. It stays at the top while the rows
+    scroll, folding to a compact header (BrowseHero.FollowScroll).
 -->
 <UserControl
     x:Class="Granary.App.Controls.BrowseHero"
@@ -47,6 +47,10 @@
 
         <!-- The sizes here are a 1080 px window's; a taller one grows them (BrowseHero.ApplySizes). -->
         <StackPanel x:Name="Texts" Margin="48,40,48,0" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+            <!-- Home's banner: the web's eyebrow over the slide's name, "FEATURED — NO. 01" in tracked small capitals. -->
+            <TextBlock x:Name="Eyebrow" Visibility="Collapsed" Margin="0,0,0,12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                       FontSize="11.5" LineHeight="14" LineStackingStrategy="BlockLineHeight" CharacterSpacing="220" TextWrapping="NoWrap"
+                       Foreground="#9EE8E8EC"><Run Text="FEATURED" Foreground="#EBE8E8EC" /><Run Text="  —  " Foreground="#47E8E8EC" /><Run x:Name="EyebrowNumber" /></TextBlock>
             <!-- The logo stands in for the name; without one, or when it does not load, the name in large type. -->
             <Grid x:Name="Heading" Height="80" HorizontalAlignment="Left">
                 <Image x:Name="Logo" MaxWidth="400" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Opacity="0"

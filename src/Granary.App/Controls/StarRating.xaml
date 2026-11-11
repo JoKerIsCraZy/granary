@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The web's StarRating (components/StarRating.tsx, app.css .star-rating): five stars in a dark pill with a faint edge. The
+    rating's stars are yellow and filled, the rest a muted outline; the star under the pointer previews its value instead, and
+    so does a star the keyboard or a remote moves to, until a click or OK rates. The stars' size follows FontSize, the pill's
+    the height.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.StarRating"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    IsTabStop="False"
+    FontSize="20"
+    AutomationProperties.Name="Rating">
+
+    <UserControl.Resources>
+        <!-- The web's rgb(250 204 21) for a rated star, its muted foreground at 50 % for the others. -->
+        <SolidColorBrush x:Key="StarFilledBrush" Color="#FFFACC15" />
+        <SolidColorBrush x:Key="StarEmptyBrush" Color="#80A4A4AE" />
+        <!-- A bare star: no fill of its own under the pointer, only the system focus ring. -->
+        <Style x:Key="StarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="-1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                            <ContentPresenter Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center"
+                                              VerticalContentAlignment="Center" AutomationProperties.AccessibilityView="Raw"
+                                              Content="{TemplateBinding Content}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#D11B1B1E" BorderBrush="#4D28282E" BorderThickness="1" controls:Pill.IsEnabled="True">
+        <Border BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0" IsHitTestVisible="False" controls:Pill.IsEnabled="True" />
+        <!-- One Tab stop that lands on the rating's star (StarRating.xaml.cs); the arrows move between the stars. -->
+        <StackPanel x:Name="Stars" Margin="12,0" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center"
+                    TabFocusNavigation="Once" XYFocusKeyboardNavigation="Enabled"
+                    GettingFocus="OnStarsGettingFocus" PreviewKeyDown="OnStarsPreviewKeyDown" />
+    </Grid>
+</UserControl>

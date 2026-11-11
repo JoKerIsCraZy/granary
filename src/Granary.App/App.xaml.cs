@@ -6,8 +6,10 @@ using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -76,7 +78,8 @@ public partial class App : Application
         _window = Services.GetRequiredService<MainWindow>();
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
-        _window.Activate();
+        // Activated, and maximized at once if it was closed so.
+        Services.GetRequiredService<WindowModeService>().Show();
 #if DEBUG
         // Developer shortcut: --remote shows a TV remote on screen beside the window (Debugging/RemoteWindow.cs).
         if (Environment.GetCommandLineArgs().Contains("--remote"))
@@ -100,6 +103,10 @@ public partial class App : Application
         _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
         // The profile's poster size and caption, likewise.
         _ = Services.GetRequiredService<CardPresentationSettings>().StartAsync();
+        // The profile's spoiler switches, likewise.
+        _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
+        // And the rest of its Title Pages settings.
+        _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
@@ -162,10 +169,16 @@ public partial class App : Application
         services.AddSingleton<DiscordStatus>();
         services.AddSingleton<IRichPresence>(sp => sp.GetRequiredService<DiscordStatus>());
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
-        // The main window's full screen and mini view, shared by the app, the player and a trailer.
+        // The main window's full screen and mini view, shared by the app, the player and a trailer; and where the window
+        // opens, where it was closed (window.json).
+        services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
         services.AddSingleton<WindowModeService>();
-        // The Play/Pause in the main window's taskbar preview while a title plays.
-        services.AddSingleton<ITaskbarPlayButton, WindowsTaskbarPlayButton>();
+        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
+        services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
+        // Keeps the display on while a title plays.
+        services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
+        // Title pages' theme music, through Windows' own media player beside mpv.
+        services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

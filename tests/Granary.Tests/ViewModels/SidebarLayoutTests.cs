@@ -164,7 +164,7 @@ public sealed class SidebarLayoutTests : IDisposable
         var forYou = settings.Groups[1].Rows[0];
         Assert.False(forYou.MoveUpCommand.CanExecute(null));
 
-        await calendar.MoveUpCommand.ExecuteAsync(null);
+        calendar.MoveUpCommand.Execute(null);
         settings.Groups[2].Rows.Single(row => row.Label == "History").IsShown = false;
         await layout.Saving;
 
@@ -173,6 +173,25 @@ public sealed class SidebarLayoutTests : IDisposable
         Assert.True(layout.IsHidden("List:history"));
         Assert.True(settings.IsCustomized);
         Assert.Equal(SidebarSettingsViewModel.ServerOfferNote, settings.Groups[1].Rows.Single(row => row.Tag == "Requests").Note);
+    }
+
+    [Fact]
+    public async Task MovePressedTwice_WhileTheFirstSaveWaits_MovesTwice()
+    {
+        var layout = Create();
+        var gate = new TaskCompletionSource();
+        layout.BeforeWrite = () => gate.Task;
+        using var libraries = Libraries();
+        using var settings = new SidebarSettingsViewModel(layout, libraries);
+        var notifications = settings.Groups[1].Rows.Single(row => row.Tag == "Notifications");
+
+        notifications.MoveUpCommand.Execute(null);
+        Assert.True(notifications.MoveUpCommand.CanExecute(null));
+        notifications.MoveUpCommand.Execute(null);
+        gate.SetResult();
+        await layout.Saving;
+
+        Assert.Equal(["ForYou", "Notifications", "Requests", "Calendar"], Create().Arrange(SidebarSection.Discover, Discover));
     }
 
     [Fact]
@@ -210,7 +229,8 @@ public sealed class SidebarLayoutTests : IDisposable
 
         Assert.Equal(["List:history", "List:favorites", "List:watchlist", "WatchParty", "Collections", "Downloads"], rows.Select(row => row.Tag));
         Assert.Equal(SidebarSettingsViewModel.ServerOfferNote, rows[^1].Note);
-        await rows[^1].MoveUpCommand.ExecuteAsync(null);
+        rows[^1].MoveUpCommand.Execute(null);
+        await layout.Saving;
         Assert.Equal("Downloads", settings.Groups[2].Rows[^2].Tag);
     }
 

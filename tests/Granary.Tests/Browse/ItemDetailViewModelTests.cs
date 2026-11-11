@@ -83,6 +83,9 @@ public sealed class ItemDetailViewModelTests
             [("David Ayer", "Director"), ("Sylvester Stallone", "Writer"), ("Chuck Dixon", "Writer"),
              ("Jason Statham", "Levon Cade"), ("Arianna Rivas", "Jenny"), ("Jason Flemyng", "Gareth")],
             detail.People.Select(p => (p.Name, p.Role ?? "")));
+        // The row lays them out with a separator before the writers and the cast; the director leads without one.
+        Assert.Equal(["WRITERS", "CAST"], detail.Credits.OfType<DetailCreditSeparator>().Select(s => s.Text));
+        Assert.IsType<DetailCreditSeparator>(detail.Credits[1]);
         var statham = detail.People.Single(p => p.Name == "Jason Statham");
         Assert.Equal(Art("/api/v2/artwork/people/976/w185.webp?exp=1&sig=c"), statham.PhotoUrl);
         Assert.Equal("JS", statham.Initials);
@@ -122,6 +125,18 @@ public sealed class ItemDetailViewModelTests
 
         detail.PlayCommand.Execute(null);
 
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(MovieId)), _fixture.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
+    public async Task TheResumeLabel_NamesTheSavedPoint_NotARewoundOne()
+    {
+        // Left at 1312.5 s. As the web's "Resume at", the label names that point; Rewind on resume moves only where the
+        // player starts (to 21:45 with 7 s), which the page leaves to the player.
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+
+        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        detail.PlayCommand.Execute(null);
         Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(MovieId)), _fixture.Navigation.Navigations[^1]);
     }
 
@@ -403,6 +418,7 @@ public sealed class ItemDetailViewModelTests
         Assert.False(detail.CanFavorite);
         Assert.Equal("Cast", detail.PeopleTitle);
         Assert.Equal(["Omar Sy"], detail.People.Select(p => p.Name));
+        Assert.DoesNotContain(detail.Credits, c => c is DetailCreditSeparator);
 
         Assert.Equal("8 total", detail.EpisodesTotalText);
         var first = detail.Episodes[0];
@@ -476,15 +492,54 @@ public sealed class ItemDetailViewModelTests
     }
 
     [Fact]
-    public async Task Episode_LinksItsSeasonAndListsTheOtherEpisodes()
+    public async Task Episode_LinksItsSeasonAndListsTheWholeSeason()
     {
         var detail = await _fixture.Episode().LoadAsync(EpisodeId);
 
         Assert.Equal(
             [new DetailCrumb("Lupin", SeriesId, true), new DetailCrumb("Staffel 3", Season3Id, false), new DetailCrumb("Episode 1", null, false)],
             detail.Breadcrumbs);
-        // The episode itself is left out.
-        Assert.Equal(["S03E02 · Chapter 2"], detail.MoreEpisodes.Select(c => c.Title));
+        Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2"], detail.MoreEpisodes.Select(c => c.Title));
+        Assert.True(detail.HasMoreEpisodes);
+    }
+
+    [Fact]
+    public async Task EpisodePage_MoreEpisodes_KeepsTheSeasonsOrder_AndMarksOnlyThisEpisode()
+    {
+        _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(ThreeEpisodes));
+
+        var detail = await _fixture.LoadAsync(EpisodeId);
+
+        Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2", "S03E03 · Chapter 3"], detail.MoreEpisodes.Select(c => c.Title));
+        Assert.Equal([true, false, false], detail.MoreEpisodes.Select(c => c.IsCurrent));
+        Assert.Equal("S03E01 · Chapter 1, now viewing", detail.MoreEpisodes[0].AccessibleName);
+        Assert.Equal("S03E02 · Chapter 2", detail.MoreEpisodes[1].AccessibleName);
+    }
+
+    [Fact]
+    public async Task EpisodePage_SeasonOfOneEpisode_HidesMoreEpisodes()
+    {
+        _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(OnlyEpisode));
+
+        var detail = await _fixture.LoadAsync(EpisodeId);
+
+        Assert.False(detail.HasMoreEpisodes);
+        Assert.Empty(detail.MoreEpisodes);
+    }
+
+    [Fact]
+    public async Task SeriesSeasonAndMoviePages_MarkNoCard()
+    {
+        var series = await _fixture.Series().LoadAsync(SeriesId);
+        var season = await _fixture.Season().LoadAsync(Season3Id);
+        var movie = await _fixture.Movie().LoadAsync(MovieId);
+
+        var cards = series.Seasons.Concat(series.Similar).Concat(season.Episodes.Select(e => e.Card)).Concat(movie.Similar).ToList();
+        Assert.NotEmpty(series.Seasons);
+        Assert.NotEmpty(season.Episodes);
+        Assert.NotEmpty(movie.Similar);
+        Assert.DoesNotContain(cards, card => card.IsCurrent);
+        Assert.False(series.HasMoreEpisodes || season.HasMoreEpisodes || movie.HasMoreEpisodes);
     }
 
     [Fact]
@@ -612,11 +667,23 @@ public sealed class ItemDetailViewModelTests
     {
         var detail = await _fixture.Episode().LoadAsync(EpisodeId);
 
-        detail.OpenCardCommand.Execute(detail.MoreEpisodes[0]);
+        detail.OpenCardCommand.Execute(detail.MoreEpisodes[1]);
         detail.OpenCrumbCommand.Execute(new DetailCrumb("Episode 1", EpisodeId, false));
         detail.OpenCrumbCommand.Execute(detail.Breadcrumbs[1]);
 
         Assert.Equal(new (AppRoute, object?)[] { (AppRoute.Item, Episode2Id), (AppRoute.Item, Season3Id) }, _fixture.Navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task EpisodePage_TheCurrentCard_OpensNothing()
+    {
+        var detail = await _fixture.Episode().LoadAsync(EpisodeId);
+        var current = Assert.Single(detail.MoreEpisodes, card => card.IsCurrent);
+
+        // The page stays, as the web's link to the page it is on.
+        detail.OpenCardCommand.Execute(current);
+
+        Assert.Empty(_fixture.Navigation.Navigations);
     }
 
     [Fact]
@@ -662,6 +729,9 @@ public sealed class ItemDetailViewModelTests
         using var provider = services.BuildServiceProvider();
 
         Assert.NotSame(provider.GetRequiredService<ItemDetailViewModel>(), provider.GetRequiredService<ItemDetailViewModel>());
+        // The calendar's airings are kept for the whole app, so every title page finds what another asked.
+        Assert.Same(provider.GetRequiredService<SeriesAirings>(), provider.GetRequiredService<SeriesAirings>());
+        Assert.Same(provider.GetRequiredService<EpisodeSpans>(), provider.GetRequiredService<EpisodeSpans>());
         // One set of Download items for every title page, as the downloads they follow are the app's.
         Assert.Same(provider.GetRequiredService<DownloadActions>(), provider.GetRequiredService<DownloadActions>());
     }

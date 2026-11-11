@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A movie box set, as Silo's web BoxSetPage.tsx shows it (docs/ui-design.md, "Box sets"): over its backdrop the poster,
+    "BOX SET" over its name, its facts as the web's metadata badges, the overview and Play for the film to watch next; then
+    "Movies", its films in release order as the library's posters. The hero is laid out as a title from TMDB's (TitlePage),
+    the web's DetailHero with its poster.
+-->
+<Page
+    x:Class="Granary.App.Views.BoxSetPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:detail="using:Granary.Core.ViewModels.Detail"
+    xmlns:views="using:Granary.App.Views"
+    xmlns:vm="using:Granary.Core.ViewModels"
+    Background="{StaticResource SiloBackgroundBrush}">
+
+    <Page.Resources>
+        <Style x:Key="BoxSetChipTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="11.2" />
+            <Setter Property="CharacterSpacing" Value="40" />
+            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <ScrollViewer x:Name="PageScroller" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
+            <StackPanel>
+                <!-- The hero: the backdrop, its placeholder first, fades into the background toward the left and the bottom. -->
+                <Grid>
+                    <Rectangle IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                        <Rectangle.Fill>
+                            <ImageBrush Stretch="UniformToFill" AlignmentY="Top" ImageSource="{x:Bind views:BoxSetPage.Blur(ViewModel.BackdropThumbhash), Mode=OneWay}" />
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                        <Rectangle.Fill>
+                            <ImageBrush Stretch="UniformToFill" AlignmentY="Top"
+                                        ImageSource="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}" />
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Offset="0" Color="#F2141417" />
+                                <GradientStop Offset="0.35" Color="#B3141417" />
+                                <GradientStop Offset="0.7" Color="#33141417" />
+                                <GradientStop Offset="1" Color="#00141417" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                <GradientStop Offset="0" Color="{StaticResource SiloBackgroundColor}" />
+                                <GradientStop Offset="0.3" Color="#CC141417" />
+                                <GradientStop Offset="0.65" Color="#00141417" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+
+                    <Grid Padding="48,96,48,36" VerticalAlignment="Bottom">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="220" Height="330" Margin="0,0,40,0" VerticalAlignment="Bottom" CornerRadius="{StaticResource SiloCardCornerRadius}"
+                              Background="{StaticResource SiloSurfaceBrush}" BorderBrush="#33FFFFFF" BorderThickness="1">
+                            <TextBlock Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                       MaxLines="5" Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                                       AutomationProperties.AccessibilityView="Raw" />
+                            <Image Stretch="UniformToFill" Source="{x:Bind views:BoxSetPage.Blur(ViewModel.PosterThumbhash), Mode=OneWay}"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                            <Image Stretch="UniformToFill" Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.PosterUrl, 440), Mode=OneWay}"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" MaxWidth="760" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                            <TextBlock Margin="0,0,0,12" Text="{x:Bind vm:BoxSetViewModel.Overline}" Style="{StaticResource SiloSectionLabelTextStyle}"
+                                       FontSize="12" CharacterSpacing="160" />
+                            <TextBlock Margin="0,0,0,14" Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
+                                       MaxLines="3" TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level1" />
+
+                            <ItemsRepeater Margin="0,0,0,14" ItemsSource="{x:Bind ViewModel.Facts, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Orientation="Horizontal" Spacing="8" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailChip">
+                                        <Border Style="{StaticResource SiloChipStyle}">
+                                            <TextBlock Text="{x:Bind Text}" Style="{StaticResource BoxSetChipTextStyle}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+
+                            <TextBlock Text="{x:Bind ViewModel.Overview, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="5"
+                                       Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Overview), Mode=OneWay}" />
+
+                            <!-- The film to watch next; a long title is cut rather than widen the hero, as the web's. -->
+                            <Button x:Name="PlayButton" Margin="0,26,0,0" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
+                                    Visibility="{x:Bind ViewModel.CanPlay, Mode=OneWay}" AutomationProperties.Name="{x:Bind ViewModel.PlayLabel, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <FontIcon Glyph="&#xF5B0;" FontSize="16" />
+                                    <TextBlock MaxWidth="520" Text="{x:Bind ViewModel.PlayLabel, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <StackPanel Padding="48,8,48,56" Spacing="14">
+                    <TextBlock Text="Movies" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Films, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ProgressRing Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the box set" />
+
+        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+                    Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}">
+            <TextBlock Text="{x:Bind vm:BoxSetViewModel.FailedTitle}" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+                       AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock Text="{x:Bind vm:BoxSetViewModel.FailedText}" Style="{StaticResource SiloBodyTextStyle}"
+                       Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+        </StackPanel>
+
+        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+                    Visibility="{x:Bind ViewModel.IsUnavailable, Mode=OneWay}">
+            <TextBlock Text="{x:Bind vm:BoxSetViewModel.UnavailableTitle}" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+                       AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock Text="{x:Bind vm:BoxSetViewModel.UnavailableText}" Style="{StaticResource SiloBodyTextStyle}"
+                       Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</Page>

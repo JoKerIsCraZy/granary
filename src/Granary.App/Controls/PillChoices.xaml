@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text (red with white text
+    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text (the accent with its label
     when IsAccent), the others faint, lighter under the pointer. Arrow keys move between them.
 -->
 <UserControl

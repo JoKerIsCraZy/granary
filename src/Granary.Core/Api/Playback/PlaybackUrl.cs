@@ -80,6 +80,69 @@ public static class PlaybackUrl
         return valid ? new Uri(target.AbsoluteUri) : null;
     }
 
+    /// <summary>
+    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, while
+    /// <paramref name="origins"/> lets one, on a proxy node's origin, decided as a video stream's is
+    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): HTTPS (or HTTP beside an HTTP server), no user info,
+    /// no fragment, and never this machine, a link-local, multicast or unspecified address, however written (<see cref="NetworkAddresses"/>).
+    /// A server that authorizes media origins vouches for the node, a private address included; without that, a private or
+    /// unique-local node is taken only from a server that is on a private network itself. It carries its own token, so it is
+    /// fetched without credentials. A node's connection is checked again on the addresses its name resolves to
+    /// (<see cref="ThemeAudioAddress.Node"/>).
+    /// </summary>
+    public static ThemeAudioAddress? ResolveTheme(Uri server, string? value, ThemeOrigins origins)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        if (Resolve(server, value) is { } onServer)
+        {
+            return IsPlain(onServer.OriginalString) ? new ThemeAudioAddress(onServer, Node: null) : null;
+        }
+        if (origins == ThemeOrigins.Server || !IsElsewhere(server, value) || !IsPlain(value!)
+            || !Uri.TryCreate(value, UriKind.Absolute, out var node))
+        {
+            return null;
+        }
+        // As a video stream's node: HTTPS, or plain HTTP beside a plain HTTP server, never HTTP beside an HTTPS one.
+        bool secure = node.Scheme == Uri.UriSchemeHttps || (node.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
+        if (!secure || node.UserInfo.Length > 0 || node.Fragment.Length > 0)
+        {
+            return null;
+        }
+        string host = NetworkAddresses.HostOf(node);
+        bool isPrivate;
+        if (NetworkAddresses.IsLocalhostName(host))
+        {
+            return null;
+        }
+        if (NetworkAddresses.Parse(host) is { } address)
+        {
+            if (NetworkAddresses.IsNeverANode(address))
+            {
+                return null;
+            }
+            isPrivate = NetworkAddresses.IsPrivate(address);
+        }
+        else
+        {
+            isPrivate = NetworkAddresses.IsLanName(host);
+        }
+        bool takesPrivate = origins == ThemeOrigins.Authorized || IsOnPrivateNetwork(server);
+        return !isPrivate || takesPrivate ? new ThemeAudioAddress(new Uri(node.AbsoluteUri), new ThemeNode(takesPrivate)) : null;
+    }
+
+    // The server itself is on a private network: by its address, this PC's included, or by a name only a LAN resolves.
+    private static bool IsOnPrivateNetwork(Uri server)
+    {
+        string host = NetworkAddresses.HostOf(server);
+        if (NetworkAddresses.IsLocalhostName(host))
+        {
+            return true;
+        }
+        return NetworkAddresses.Parse(host) is { } address
+            ? NetworkAddresses.IsPrivate(address) || IPAddress.IsLoopback(address)
+            : NetworkAddresses.IsLanName(host);
+    }
+
     /// <summary>An absolute HTTP URL that is not on the saved server: a proxy node's, or one the client refuses.</summary>
     public static bool IsElsewhere(Uri server, string? value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var absolute)
@@ -106,22 +169,16 @@ public static class PlaybackUrl
             && path.Split('/').All(segment => segment is not ("." or ".."));
     }
 
-    // A node is somewhere else on the network: not this machine, not a link-local or cloud metadata address.
+    // A node is somewhere else on the network: not this machine, however it is written, not a link-local or cloud metadata
+    // address.
     private static bool IsRemote(Uri node)
     {
-        if (node.IsLoopback || node.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        string host = NetworkAddresses.HostOf(node);
+        if (node.IsLoopback || NetworkAddresses.IsLocalhostName(host))
         {
             return false;
         }
-        if (!IPAddress.TryParse(node.Host.Trim('[', ']'), out var address))
-        {
-            return true;
-        }
-        byte[] bytes = address.GetAddressBytes();
-        bool ipv4LinkLocal = bytes.Length == 4 && bytes[0] == 169 && bytes[1] == 254;
-        bool unspecified = address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any);
-        bool multicast = address.IsIPv6Multicast || (bytes.Length == 4 && bytes[0] is >= 224 and <= 239);
-        return !ipv4LinkLocal && !address.IsIPv6LinkLocal && !unspecified && !multicast;
+        return NetworkAddresses.Parse(host) is not { } address || !NetworkAddresses.IsNeverANode(address);
     }
 
     private static bool IsSeekOnly(string query) =>

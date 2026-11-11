@@ -148,18 +148,22 @@ public static class DetailFacts
     /// <summary>
     /// The one line under the title: a movie's "2026 · 1h 58m · R · Mystery, Thriller", a
     /// series' air years, rating, regular seasons and genres, a season's year and episodes, an episode's
-    /// "S3 E1 · 47m · 8 Jan 2021 · TV-MA". Unknown parts are left out.
+    /// "S3 E1 · 47m · 8 Jan 2021 · TV-MA". Unknown parts are left out. With <paramref name="showsAdvisoryAge"/>, a movie's
+    /// or series' <see cref="AdvisoryAge"/> follows its rating, as the web's MetadataBadges places it.
     /// </summary>
-    public static string MetaLine(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
+    public static string MetaLine(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null,
+        bool showsAdvisoryAge = false)
     {
         ArgumentNullException.ThrowIfNull(item);
         string? genres = item.Genres.Count > 0 ? string.Join(", ", item.Genres.Where(g => !string.IsNullOrWhiteSpace(g)).Take(MetaGenres)) : null;
+        string? advisory = showsAdvisoryAge ? AdvisoryAge(item) : null;
         string?[] parts = item.Type switch
         {
             CatalogItemTypes.Series =>
             [
                 DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year),
                 item.ContentRating,
+                advisory,
                 Counted(seasons?.Count(s => !IsSpecials(s)) is > 0 and var regular ? regular : item.SeasonCount, "season", "seasons"),
                 genres,
             ],
@@ -182,10 +186,33 @@ public static class DetailFacts
                 DetailText.Year(item.Year) ?? DetailText.YearOf(item.ReleaseDate),
                 DetailText.Runtime(RuntimeMinutes(item)),
                 item.ContentRating,
+                item.Type == CatalogItemTypes.Movie ? advisory : null,
                 genres,
             ],
         };
         return string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
+    }
+
+    /// <summary>
+    /// A suggested minimum viewer age as the web's MetadataBadges words it: "Common Sense 13+", "MDBList 16+", or "13+" from
+    /// a source it does not name; null without a positive age. It is not the certification, only shown beside it.
+    /// </summary>
+    public static string? AdvisoryAge(CatalogItemDetail item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.AdvisoryAge is not { } age || age <= 0)
+        {
+            return null;
+        }
+        string? source = item.AdvisorySource?.Trim() switch
+        {
+            "commonsense" => "Common Sense",
+            "mdblist" => "MDBList",
+            _ => null,
+        };
+        return source is null
+            ? string.Create(CultureInfo.InvariantCulture, $"{age}+")
+            : string.Create(CultureInfo.InvariantCulture, $"{source} {age}+");
     }
 
     /// <summary>
@@ -225,9 +252,11 @@ public static class DetailFacts
     /// The Info dialog: the details (with the full overview, a series' regular seasons and episodes once its season list
     /// is read, a season's number and episodes), the cast, the crew by job, and each file's facts with the played file's
     /// audio as its badge words it ("EAC3 5.1"). File names and paths are left out: they are administrator data.
-    /// Sections without rows are left out.
+    /// Sections without rows are left out; so is the overview with <paramref name="withOverview"/> false, an unwatched
+    /// episode's the profile hides.
     /// </summary>
-    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
+    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null,
+        bool withOverview = true)
     {
         // Counted like the server's season_count: regular seasons, without the specials.
         var regular = seasons?.Where(s => !IsSpecials(s)).ToList();
@@ -262,7 +291,7 @@ public static class DetailFacts
             Row("Networks", Joined(item.Networks)),
             Row("Ratings", Ratings(item) is { Count: > 0 } ratings ? string.Join(" · ", ratings.Select(r => r.AccessibleName)) : null),
             Row("Tagline", item.Tagline),
-            Row("Overview", item.Overview),
+            Row("Overview", withOverview ? item.Overview : null),
         ]);
         Add("Cast", [.. item.Cast
             .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name))
@@ -333,7 +362,7 @@ public static class DetailFacts
     }
 
     // "1:02:33", "12:05".
-    private static string Clock(double seconds)
+    internal static string Clock(double seconds)
     {
         var time = TimeSpan.FromSeconds(Math.Floor(seconds));
         return time.TotalHours >= 1

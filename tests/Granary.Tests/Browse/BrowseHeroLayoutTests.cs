@@ -155,6 +155,35 @@ public sealed partial class BrowseHeroLayoutTests
             BrowseHeroLayout.Scaled(15, sizes.TextGrow), BrowseHeroLayout.Scaled(22, sizes.TextGrow)));
     }
 
+    [Fact]
+    public void ABanner_GivesItsButtonsRoomAboveTheRows_TheHeroAndItsHeaderStayAsTheyAre()
+    {
+        var hero = BrowseHeroLayout.For(1040);
+        var banner = BrowseHeroLayout.For(1040, banner: true);
+
+        Assert.Equal((348d, 198d), (banner.RowsTop, banner.CollapseDistance));
+        Assert.Equal(hero with { RowsTop = 348 }, banner);
+    }
+
+    [Theory]
+    [InlineData(0, false, false)]
+    [InlineData(75, false, false)]
+    [InlineData(76, false, true)]
+    [InlineData(99, true, false)]
+    [InlineData(100, true, true)]
+    public void TheHero_FoldsPastHalfTheWay(double offset, bool banner, bool folded)
+    {
+        Assert.Equal(folded, BrowseHeroLayout.IsFolded(offset, BrowseHeroLayout.For(1040, banner)));
+    }
+
+    [Fact]
+    public void OnATallerPage_TheBannersRoomGrowsWithTheRows()
+    {
+        var banner = BrowseHeroLayout.For(1520, banner: true);
+
+        Assert.Equal((643d, 185d, 509d), (banner.RestHeight, banner.CompactHeight, banner.RowsTop));
+    }
+
     [Theory]
     [InlineData(1660, 1000, 1079)]
     [InlineData(1652, 1008, 1074)]
@@ -181,16 +210,20 @@ public sealed partial class BrowseHeroLayoutTests
 
     [Theory]
     // The first title of a start shows before its width is known, and its fade still runs when the width comes.
-    [InlineData(true, false, true, 0, 1200, BackdropStep.LoadArt)]
-    [InlineData(true, false, false, 0, 1200, BackdropStep.LoadArt)]
-    [InlineData(true, true, false, 0, 1200, BackdropStep.None)]
-    [InlineData(true, false, true, 0, 0, BackdropStep.None)]
-    [InlineData(false, false, true, 800, 1200, BackdropStep.None)]
-    [InlineData(false, false, false, 800, 1200, BackdropStep.DecodeAgain)]
-    [InlineData(false, false, false, 1150, 1200, BackdropStep.None)]
-    public void AKnownWidth_LoadsAWaitingPicture_EvenDuringItsFade(bool waits, bool folded, bool fading, int decoded, int needed, BackdropStep step)
+    [InlineData(true, false, true, false, 0, 1200, BackdropStep.LoadArt)]
+    [InlineData(true, false, false, false, 0, 1200, BackdropStep.LoadArt)]
+    [InlineData(true, true, false, false, 0, 1200, BackdropStep.None)]
+    [InlineData(true, false, true, false, 0, 0, BackdropStep.None)]
+    [InlineData(false, false, true, false, 800, 1200, BackdropStep.None)]
+    [InlineData(false, false, false, false, 800, 1200, BackdropStep.DecodeAgain)]
+    [InlineData(false, false, false, false, 1150, 1200, BackdropStep.None)]
+    // A hidden still waits for its width as any picture, but is never made again wider: its blur is stretched anyway.
+    [InlineData(true, false, false, true, 0, 1200, BackdropStep.LoadArt)]
+    [InlineData(false, false, false, true, 800, 1200, BackdropStep.None)]
+    public void AKnownWidth_LoadsAWaitingPicture_EvenDuringItsFade(bool waits, bool folded, bool fading, bool blurred, int decoded, int needed,
+        BackdropStep step)
     {
-        Assert.Equal(step, BrowseHeroLayout.StepFor(waits, folded, fading, decoded, needed));
+        Assert.Equal(step, BrowseHeroLayout.StepFor(waits, folded, fading, blurred, decoded, needed));
     }
 
     [Theory]

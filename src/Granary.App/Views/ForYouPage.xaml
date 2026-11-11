@@ -3,7 +3,8 @@
     For You, as Silo's web shows it: the title and what the rows are based on, the profile's taste (top genres and
     favourite directors) on the right, then a row per recommendation. Above them, as on Home, a hero for the card the
     pointer or the keyboard is on (BrowseHero); the title and the taste profile scroll up under its compact header with
-    the rows. The page is cached: Back keeps its place.
+    the rows. With that title preview off (Settings → Navigation & Cards), the title is at the top, as on the web. The page
+    is cached: Back keeps its place.
 -->
 <Page
     x:Class="Granary.App.Views.ForYouPage"
@@ -17,8 +18,8 @@
         <!-- Behind the rows: they scroll under the compact header and are cut off at its edge. -->
         <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" HeadingLevel="None" />
 
-        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.Shown, Hero.Sizes), Mode=OneWay}">
-            <StackPanel Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.Shown, Hero.Sizes), Mode=OneWay}" Spacing="32">
+        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.HasTitle, Hero.Sizes), Mode=OneWay}">
+            <StackPanel Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.HasTitle, Hero.Sizes), Mode=OneWay}" Spacing="32">
                 <Grid ColumnSpacing="32">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

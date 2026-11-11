@@ -12,7 +12,9 @@ namespace Granary.Core.Realtime;
 /// history, a card taken off Home), the catalog changed, the access changed, or a connection came back after a while:
 /// <see cref="ViewerStateChanges"/> once the burst settled (<see cref="SettleDelay"/>, but at least every
 /// <see cref="LongestSettle"/> during a long one, a scan for instance), so Home reloads in place and other pages on their
-/// next visit. Another device's progress counts at most once per <see cref="ProgressWindow"/>. A notification created or
+/// next visit. A burst of only the catalog's or the access's news is reported as the catalog's alone
+/// (<see cref="ViewerStateChanges.ReportCatalog"/>), so a title's page leaves it be. Another device's progress counts at
+/// most once per <see cref="ProgressWindow"/>. A notification created or
 /// read, or the unread ones sent on subscribing, read the sidebar's count again. Another profile gets a connection of its
 /// own; signed out there is none.
 /// </summary>
@@ -67,6 +69,9 @@ public sealed class RealtimeEvents : IDisposable
     private EventsLane? _lane;
     private DateTimeOffset? _settlingSince;
     private bool _settlingForOthers;
+    // The burst holds news of the profile's own state, or may (a connection back after a gap): its reload is the viewer's,
+    // not only the catalog's.
+    private bool _settlingForViewer;
     private bool _progressPending;
     private DateTimeOffset? _appChangedAt;
     private int _handled;
@@ -161,14 +166,16 @@ public sealed class RealtimeEvents : IDisposable
         switch (frame.Type)
         {
             case EventsFrameTypes.Subscribed when frame.Gap > CatchUpAfter:
+                SettleLocked(forOthers: true, forViewer: true);
+                break;
             case EventsFrameTypes.AccessChanged:
-                SettleLocked(forOthers: true);
+                SettleLocked(forOthers: true, forViewer: false);
                 break;
             case EventsFrameTypes.Snapshot when frame.Channel == EventsChannels.Notifications:
                 CountLocked();
                 break;
             case EventsFrameTypes.Event when frame.Channel == EventsChannels.Catalog:
-                SettleLocked(forOthers: true);
+                SettleLocked(forOthers: true, forViewer: false);
                 break;
             case EventsFrameTypes.Event when frame.Channel == EventsChannels.Notifications:
                 CountLocked();
@@ -192,7 +199,7 @@ public sealed class RealtimeEvents : IDisposable
         }
         if (frame.Text("change") != ProgressChange)
         {
-            SettleLocked(forOthers: false);
+            SettleLocked(forOthers: false, forViewer: true);
         }
         else if (!_stops.IsPlaying)
         {
@@ -216,6 +223,7 @@ public sealed class RealtimeEvents : IDisposable
             if (_settlingSince is not null && !_settlingForOthers)
             {
                 _settlingSince = null;
+                _settlingForViewer = false;
                 _settle.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
             }
             _progressPending = false;
@@ -266,11 +274,12 @@ public sealed class RealtimeEvents : IDisposable
         }
     }
 
-    private void SettleLocked(bool forOthers)
+    private void SettleLocked(bool forOthers, bool forViewer)
     {
         var now = _time.GetUtcNow();
         _settlingSince ??= now;
         _settlingForOthers |= forOthers;
+        _settlingForViewer |= forViewer;
         var latest = _settlingSince.Value + LongestSettle - now;
         var due = latest < SettleDelay ? latest : SettleDelay;
         _settle.Change(due > TimeSpan.Zero ? due : TimeSpan.Zero, Timeout.InfiniteTimeSpan);
@@ -291,6 +300,7 @@ public sealed class RealtimeEvents : IDisposable
     {
         _settlingSince = null;
         _settlingForOthers = false;
+        _settlingForViewer = false;
         _progressPending = false;
         _appChangedAt = null;
         _settle.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -300,6 +310,7 @@ public sealed class RealtimeEvents : IDisposable
 
     private void OnSettled()
     {
+        bool catalogOnly;
         lock (_gate)
         {
             if (_settlingSince is null)
@@ -309,10 +320,12 @@ public sealed class RealtimeEvents : IDisposable
             _settlingSince = null;
             _settlingForOthers = false;
             // This reload covers the progress that waited too.
+            catalogOnly = !_settlingForViewer && !_progressPending;
+            _settlingForViewer = false;
             _progressPending = false;
             _progress.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
-        Report();
+        Report(catalogOnly);
     }
 
     private void OnProgressWindowClosed()
@@ -325,16 +338,23 @@ public sealed class RealtimeEvents : IDisposable
             }
             _progressPending = false;
         }
-        Report();
+        Report(catalogOnly: false);
     }
 
     // Outside the lock: the pages' handlers run their own work.
-    private void Report()
+    private void Report(bool catalogOnly)
     {
         t_reporting = true;
         try
         {
-            _changes.Report();
+            if (catalogOnly)
+            {
+                _changes.ReportCatalog();
+            }
+            else
+            {
+                _changes.Report();
+            }
         }
         finally
         {

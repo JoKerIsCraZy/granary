@@ -132,4 +132,19 @@ public sealed class ForYouHeroTests
 
         Assert.Null(page.Hero.Shown);
     }
+
+    [Fact]
+    public async Task NoRowsAnyMore_TellsThePageTheHeroWent_SoItsTitleMovesUp()
+    {
+        var page = await LoadedAsync();
+        Assert.True(page.Hero.HasTitle);
+        var changed = new List<string?>();
+        page.Hero.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        _harness.Answer(DiscoverPath, RecommendationPayloads.NoRows);
+
+        await page.ActivateAsync(isReturn: false);
+
+        Assert.False(page.Hero.HasTitle);
+        Assert.Contains(nameof(BrowseHeroViewModel.HasTitle), changed);
+    }
 }

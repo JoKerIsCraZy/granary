@@ -360,6 +360,7 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Empty(_device.SavedDiscordStatus);
     }
 
+
     [Fact]
     public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
     {
@@ -476,6 +477,55 @@ public sealed class SettingsViewModelTests : IDisposable
 
         Assert.Equal("5", Playback().SelectedStillWatching?.Value);
         Assert.Empty(_device.SavedPassoutThreshold);
+    }
+
+    [Fact]
+    public void RewindOnResume_IsThisPcsChoice_NoneAtFirst()
+    {
+        var page = Playback();
+        Assert.Equal(0, page.ResumeRewindSeconds);
+        Assert.Empty(_device.SavedResumeRewindSeconds);
+
+        page.ResumeRewindSeconds = 7;
+
+        Assert.Equal([7], _device.SavedResumeRewindSeconds);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void RewindOnResume_ShowsWhatThisPcHolds_WithoutSavingIt()
+    {
+        _device.ResumeRewindSeconds = 12;
+
+        Assert.Equal(12, Playback().ResumeRewindSeconds);
+        Assert.Empty(_device.SavedResumeRewindSeconds);
+    }
+
+    [Theory]
+    [InlineData(45, 30)]
+    [InlineData(-3, 0)]
+    [InlineData(6.6, 7)]
+    public void ARewindOutOfBounds_OrNotWhole_BecomesTheNearestAllowed(double typed, int kept)
+    {
+        _device.ResumeRewindSeconds = 10;
+        var page = Playback();
+
+        page.ResumeRewindSeconds = typed;
+
+        Assert.Equal(kept, page.ResumeRewindSeconds);
+        Assert.Equal([kept], _device.SavedResumeRewindSeconds);
+    }
+
+    [Fact]
+    public void AClearedRewind_ShowsWhatHoldsAgain_AndSavesNothing()
+    {
+        _device.ResumeRewindSeconds = 12;
+        var page = Playback();
+
+        page.ResumeRewindSeconds = double.NaN;
+
+        Assert.Equal(12, page.ResumeRewindSeconds);
+        Assert.Empty(_device.SavedResumeRewindSeconds);
     }
 
     [Fact]

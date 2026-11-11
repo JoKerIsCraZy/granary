@@ -31,6 +31,7 @@ internal sealed class ScriptedSilo
     private readonly List<SentRequest> _sent = [];
     private readonly Dictionary<string, Queue<Func<Task<HttpResponseMessage>>>> _routes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Func<CancellationToken, Task<HttpResponseMessage>>> _cancellable = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Func<Uri, CancellationToken, Task<HttpResponseMessage>>> _byUrl = new(StringComparer.Ordinal);
 
     public ScriptedSilo()
     {
@@ -41,6 +42,12 @@ internal sealed class ScriptedSilo
     public FakeHttpMessageHandler Handler { get; }
 
     public SiloHttp Http { get; }
+
+    /// <summary>
+    /// The profile the server acts as now. When set, a write made for another profile is refused unsent, as the
+    /// authentication handler refuses it (<see cref="ProfileChangedException"/>), and is not in <see cref="Sent"/>.
+    /// </summary>
+    public Func<string?>? ActingProfile { get; set; }
 
     /// <summary>What was sent so far, as a copy.</summary>
     public IReadOnlyList<SentRequest> Sent
@@ -81,6 +88,19 @@ internal sealed class ScriptedSilo
         return this;
     }
 
+    /// <summary>
+    /// Answers every request to <paramref name="path"/> through <paramref name="responder"/>, which reads the request's URL and
+    /// query, and sees its cancellation.
+    /// </summary>
+    public ScriptedSilo OnUrl(HttpMethod method, string path, Func<Uri, CancellationToken, Task<HttpResponseMessage>> responder)
+    {
+        lock (_gate)
+        {
+            _byUrl[Key(method, Url(path))] = responder;
+        }
+        return this;
+    }
+
     public IReadOnlyList<SentRequest> SentTo(HttpMethod method, string path) =>
         [.. Sent.Where(r => r.Method == method && Key(r.Method, r.Uri) == Key(method, Url(path)))];
 
@@ -111,6 +131,10 @@ internal sealed class ScriptedSilo
 
     private async Task<HttpResponseMessage> RespondAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if (ActingProfile is { } acting && request.GetProfile() is { } owner && acting() != owner)
+        {
+            throw new ProfileChangedException();
+        }
         string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         var uri = request.RequestUri!;
         bool savedOnly = request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool only) && only;
@@ -133,6 +157,10 @@ internal sealed class ScriptedSilo
             if (_cancellable.TryGetValue(Key(sent.Method, sent.Uri), out var cancellable))
             {
                 return cancellable;
+            }
+            if (_byUrl.TryGetValue(Key(sent.Method, sent.Uri), out var byUrl))
+            {
+                return cancellationToken => byUrl(sent.Uri, cancellationToken);
             }
             if (!_routes.TryGetValue(Key(sent.Method, sent.Uri), out var responders) || responders.Count == 0)
             {

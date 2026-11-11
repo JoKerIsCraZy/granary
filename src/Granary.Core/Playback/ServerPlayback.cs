@@ -89,7 +89,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     // The load showed its first frame.
     private bool _started;
 
-    // The title was handed to the engine once: a later load (a replan, a reconnect) keeps whether it is paused.
+    // The title was handed to the engine once: a later load (a replan, a reconnect) plays or pauses as last asked.
     private bool _titleLoaded;
 
     // The plan showed a first frame in one of its loads: a later failure is a lost connection, not a failed route.
@@ -119,7 +119,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         ILoggerFactory loggers,
         ServerPlaybackOptions? options = null,
         Func<PlaybackControlLane>? controlLanes = null,
-        SubtitleSyncApi? subtitleSync = null)
+        SubtitleSyncApi? subtitleSync = null,
+        AudioDelay? audioDelay = null)
     {
         _starter = starter;
         _api = api;
@@ -135,6 +136,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _logger = loggers.CreateLogger<ServerPlayback>();
         _options = options ?? ServerPlaybackOptions.Default;
         _controlLane = controlLanes?.Invoke();
+        _audioDelay = audioDelay;
         if (subtitleSync is not null)
         {
             SubtitleSync = new SubtitleSyncTracker(subtitleSync, dispatcher, time, loggers.CreateLogger<SubtitleSyncTracker>());
@@ -238,6 +240,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A delay or a speed the viewer just set is saved now, not when its wait would have ended.
         SaveSubtitleDelayNow();
         SaveSpeedNow();
+        StopAudioDelay();
         StopTimers();
         StopTrickplay();
         StopControlLane();
@@ -253,6 +256,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     {
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
+        StopAudioDelay();
         StopTimers();
         StopTrickplay();
         // Saves still waiting go with the stop; without one there is nobody left to save for.
@@ -271,6 +275,8 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     private async Task PrepareAndStartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
+        // Before the settings are read: a save of the audio delay done while they are is newer than what they say.
+        long audioDelayRead = _audioDelay?.StartRead() ?? 0;
         try
         {
             _context = await _starter.PrepareAsync(request, cancellationToken);
@@ -292,8 +298,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A Watch Party plays at the room's speed: 1x, with the room's own corrections.
         _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
+        StartAudioDelay(_context.Preferences, audioDelayRead);
         SetStatus(Status);
-        await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
+        await StartAttemptAsync(_starter.StartPosition(_context.Watch, request), cancellationToken);
     }
 
     // A new attempt: a fresh attempt id and, from the server, a fresh session.
@@ -455,6 +462,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _generation++;
         _started = false;
         _endedDuringRecovery = null;
+        ForgetBuffering();
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
@@ -470,12 +478,23 @@ public sealed partial class ServerPlayback : IServerPlayback
             (refused, cancellationToken) => _auth.GetAsync(server, refused, cancellationToken), media);
         // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
         _loadId = _engine.Load(new MediaSource(_route.LocalUrl, [], TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
+        // The player took this plan's stream (a load it refuses throws): the playback info and the settings gear's dot
+        // describe it from here.
+        _loaded = (_plan, _streamUrl!);
         if (!_titleLoaded)
         {
             // The title plays, however the one before was left: mpv keeps a pause across files, and pauses itself
             // at a file's end (keep-open), which is where the next episode starts from.
             _titleLoaded = true;
             _engine.SetPaused(false);
+        }
+        else
+        {
+            // A reload plays or pauses as last asked, by the viewer, a Watch Party's room or the control lane, as
+            // Apple's reconnect carries the viewer's play intent. mpv's own pause where a stream that broke off ran
+            // out of data (keep-open) was never asked, so that stream comes back playing. The engine applies the asks in
+            // one step, so one made in that moment is not undone.
+            _engine.ApplyAskedPause();
         }
         WatchFirstFrame(_loadId);
     }
@@ -519,6 +538,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // plays on says where the viewer is.
         if (state.IsAtEnd)
         {
+            ForgetBuffering();
             return;
         }
         bool playing = state is { IsLoaded: true, HasStarted: true };
@@ -538,6 +558,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             // The server learns about a pause only from a sample, and a paused session lives 30 minutes, not 45 s.
             SchedulePauseReport();
         }
+        FollowBuffering(state);
     }
 
     private void OnStreamStarted(PlaybackSnapshot state)
@@ -589,6 +610,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = 0;
         _started = false;
         StopFirstFrameWatch();
+        ForgetBuffering();
         if (_recovering)
         {
             _endedDuringRecovery = (ended, played);
@@ -820,6 +842,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _pauseReport?.Dispose();
         _pauseReport = null;
         StopFirstFrameWatch();
+        StopStallWatch();
     }
 
     // Work started from an event or a timer has no caller to report to: log what it did not expect.

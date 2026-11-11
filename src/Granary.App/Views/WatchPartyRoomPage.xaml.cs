@@ -95,6 +95,11 @@ public sealed partial class WatchPartyRoomPage : Page
     {
         base.OnNavigatedTo(e);
         ViewModel.Activate();
+        // A room just started from a title's page says what happened on the way; Back to the page later does not again.
+        if (e.NavigationMode == NavigationMode.New && e.Parameter is WatchPartyArrival arrival)
+        {
+            ViewModel.Arrive(arrival);
+        }
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)

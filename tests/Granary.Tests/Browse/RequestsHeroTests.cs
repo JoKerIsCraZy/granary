@@ -137,4 +137,41 @@ public sealed class RequestsHeroTests
 
         Assert.Null(hub.Hero.Shown);
     }
+
+    [Fact]
+    public async Task NothingToDiscoverAnyMore_TellsThePageTheHeroWent_SoItsTitleMovesUp()
+    {
+        var hub = await LoadedAsync();
+        Assert.Equal("New One", hub.HeroTitle?.Heading);
+        Assert.True(hub.HasHeroTitle);
+        var changed = new List<string?>();
+        hub.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        _harness.Answer("api/v2/requests/discover", """{ "items": [] }""");
+
+        await hub.ActivateAsync(isReturn: false);
+
+        Assert.Null(hub.HeroTitle);
+        Assert.False(hub.HasHeroTitle);
+        Assert.Contains(nameof(RequestsViewModel.HeroTitle), changed);
+        Assert.Contains(nameof(RequestsViewModel.HasHeroTitle), changed);
+    }
+
+    [Fact]
+    public async Task Yours_HasNoHero_AndDiscoverHasItAgain()
+    {
+        var hub = await LoadedAsync();
+        var changed = new List<string?>();
+        hub.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        hub.SelectTabCommand.Execute(RequestsTab.Yours);
+
+        Assert.Null(hub.HeroTitle);
+        Assert.False(hub.HasHeroTitle);
+        Assert.Contains(nameof(RequestsViewModel.HasHeroTitle), changed);
+
+        hub.SelectTabCommand.Execute(RequestsTab.Discover);
+
+        Assert.Equal("New One", hub.HeroTitle?.Heading);
+        Assert.True(hub.HasHeroTitle);
+    }
 }

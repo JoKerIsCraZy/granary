@@ -79,7 +79,7 @@
             </Grid>
 
             <TextBlock Text="{x:Bind ViewModel.CollectionNotice, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasCollectionNotice, Mode=OneWay}"
-                       Foreground="{StaticResource SiloPrimaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                       Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
 
             <!-- The watchlist's tabs: the list, and the titles the library doesn't have yet with their count and an amber dot. -->
             <Grid Visibility="{x:Bind ViewModel.ShowsTabs, Mode=OneWay}">

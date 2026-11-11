@@ -50,7 +50,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     // In the room, with a player that has not started yet.
-    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null)
+    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null, IPlaybackDevicePreferences? devicePreferences = null)
     {
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
         await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
@@ -64,7 +64,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation);
+        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation, devicePreferences: devicePreferences);
     }
 
     private Task Marked() => ServerPlaybackFixture.Until(
@@ -141,6 +141,28 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ARoomsTitle_StartsWithThisPcsVolume_AndOnlyTheViewersOwnChangeIsKept()
+    {
+        var preferences = new InMemoryPlaybackDevicePreferences { Volume = new PlayerVolume(40, IsMuted: true) };
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"),
+            devicePreferences: preferences);
+
+        await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+        Assert.Equal((40.0, true), (_engine.Current.Volume, _engine.Current.IsMuted));
+        // The room plays the title: what the engine reports meanwhile is not the viewer's.
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        At(30);
+        At(31);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Empty(preferences.SavedVolume);
+
+        viewModel.Volume = 55;
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Equal([new PlayerVolume(55, IsMuted: false)], preferences.SavedVolume);
+    }
+
+    [Fact]
     public async Task AGuestsSeek_IsRefused_WithTheWebsWords()
     {
         var viewModel = await PlayingAsync(role: "guest");
@@ -150,6 +172,33 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.Empty(Playback.Seeks);
         Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
         Assert.False(viewModel.CanSeekInRoom);
+    }
+
+    [Fact]
+    public async Task TheHostsChapterJump_IsAskedOfTheRoom_NotDoneHere()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 7200, null)]);
+
+        viewModel.SeekToAdjacentChapter(forward: true);
+
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"transport_request\"", StringComparison.Ordinal)), "the request");
+        var request = JsonDocument.Parse(Socket.Sent.First(f => f.Contains("\"transport_request\"", StringComparison.Ordinal))).RootElement;
+        Assert.Equal(("seek", 600.0), (request.GetProperty("action").GetString(), request.GetProperty("position_seconds").GetDouble()));
+        Assert.Empty(Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task AGuestsChapterJump_IsRefused_WithTheWebsWords()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 7200, null)]);
+
+        viewModel.SeekToAdjacentChapter(forward: true);
+
+        Assert.Empty(Playback.Seeks);
+        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -458,12 +507,13 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     public async Task InARoom_TheTaskbarsPlayPause_AsksTheRoom()
     {
         var viewModel = await PlayingAsync();
-        var button = new FakeTaskbarPlayButton();
-        using var taskbar = new PlayerTaskbarButton(viewModel, button, new ImmediateDispatcher());
+        var toolbar = new FakeTaskbarToolbar();
+        using var taskbar = new PlayerTaskbarToolbar(viewModel, toolbar, new ImmediateDispatcher());
 
-        Assert.Equal(new TaskbarPlayButtonState(IsPaused: false, IsEnabled: true), button.Current);
+        Assert.Equal(new TaskbarToolbarState(TaskbarButtonState.Hidden, TaskbarButtonState.Enabled, TaskbarButtonState.Hidden, IsPaused: false),
+            toolbar.Current);
 
-        button.Press();
+        toolbar.Press(TaskbarButton.PlayPause);
 
         Assert.False(_engine.Current.IsPaused);
         await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the request");
@@ -473,31 +523,82 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     public async Task AGuestTheRoomDoesNotLetPause_HasTheTaskbarsPlayPauseOff_AndAPressAsksNothing()
     {
         var viewModel = await PlayingAsync(role: "guest", transport: false);
-        var button = new FakeTaskbarPlayButton();
-        using var taskbar = new PlayerTaskbarButton(viewModel, button, new ImmediateDispatcher());
+        var toolbar = new FakeTaskbarToolbar();
+        using var taskbar = new PlayerTaskbarToolbar(viewModel, toolbar, new ImmediateDispatcher());
 
-        Assert.Equal(new TaskbarPlayButtonState(IsPaused: false, IsEnabled: false), button.Current);
+        Assert.Equal(TaskbarButtonState.Disabled, toolbar.Current!.PlayPause);
 
-        button.Press();
+        toolbar.Press(TaskbarButton.PlayPause);
 
         Assert.False(_engine.Current.IsPaused);
         Assert.Null(viewModel.Notice);
         Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
     }
 
+    // The room plays an episode of a series, with the taskbar's buttons on the toolbar given following the player from
+    // before its start.
+    private async Task<PlayerTaskbarToolbar> EpisodeInARoomAsync(FakeTaskbarToolbar toolbar, string role, bool transport = true)
+    {
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role,
+            selected: "episode:dark-1-3", transport: transport));
+        var taskbar = new PlayerTaskbarToolbar(viewModel, toolbar, new ImmediateDispatcher());
+        await viewModel.StartAsync(PlayRequest.WatchParty("episode:dark-1-3", "77", 1));
+        Playback.Episode = new PlayingEpisode("episode:dark-1-3", "series:dark", "Dark", 1, 3);
+        Playback.MediaInfo = new PlaybackMediaInfo("Secrets", "Dark — S1 · E3", null) { Kind = PlaybackMediaKind.Episode };
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromHours(2), null, HasStarted: true));
+        return taskbar;
+    }
+
+    [Fact]
+    public async Task AnEpisodeInARoom_HasTheTaskbarsPreviousAndNextGreyed_ForAGuestWithoutPermission_AndTheirPressesDoNothing()
+    {
+        var toolbar = new FakeTaskbarToolbar();
+        using var taskbar = await EpisodeInARoomAsync(toolbar, "guest", transport: false);
+
+        Assert.Equal(new TaskbarToolbarState(TaskbarButtonState.Disabled, TaskbarButtonState.Disabled, TaskbarButtonState.Disabled, IsPaused: false),
+            toolbar.Current);
+
+        toolbar.Press(TaskbarButton.Previous);
+        toolbar.Press(TaskbarButton.PlayPause);
+        toolbar.Press(TaskbarButton.Next);
+
+        Assert.Single(_playbacks);
+        Assert.False(_engine.Current.IsPaused);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AnEpisodeInARoom_HasTheTaskbarsPreviousAndNextGreyed_ForTheHostToo_WhosePlayPauseAsksTheRoom()
+    {
+        var toolbar = new FakeTaskbarToolbar();
+        using var taskbar = await EpisodeInARoomAsync(toolbar, "host");
+
+        Assert.Equal(new TaskbarToolbarState(TaskbarButtonState.Disabled, TaskbarButtonState.Enabled, TaskbarButtonState.Disabled, IsPaused: false),
+            toolbar.Current);
+
+        toolbar.Press(TaskbarButton.Previous);
+        toolbar.Press(TaskbarButton.Next);
+        Assert.Single(_playbacks);
+
+        toolbar.Press(TaskbarButton.PlayPause);
+        Assert.False(_engine.Current.IsPaused);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the request");
+    }
+
     [Fact]
     public async Task TheRoomTakingAGuestsPauseAway_TurnsTheTaskbarsPlayPauseOff_AndAPressFromBeforeAsksNothing()
     {
         var viewModel = await PlayingAsync(role: "guest");
-        var button = new FakeTaskbarPlayButton();
+        var toolbar = new FakeTaskbarToolbar();
         var dispatcher = new QueuedDispatcher();
-        using var taskbar = new PlayerTaskbarButton(viewModel, button, dispatcher);
-        Assert.True(button.Current!.IsEnabled);
-        button.Press();
+        using var taskbar = new PlayerTaskbarToolbar(viewModel, toolbar, dispatcher);
+        Assert.Equal(TaskbarButtonState.Enabled, toolbar.Current!.PlayPause);
+        toolbar.Press(TaskbarButton.PlayPause);
 
         Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "playing", generation: 4, revision: 1, role: "guest",
             selected: "movie:heat", transport: false)));
-        await ServerPlaybackFixture.Until(() => button.Current is { IsEnabled: false }, "the button turned off");
+        await ServerPlaybackFixture.Until(() => toolbar.Current is { PlayPause: TaskbarButtonState.Disabled }, "the button turned off");
         dispatcher.RunAll();
 
         Assert.False(_engine.Current.IsPaused);

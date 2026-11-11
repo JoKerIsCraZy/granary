@@ -11,7 +11,8 @@ internal static class BrowsePayloads
 {
     private static readonly JsonSerializerOptions Options = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
-    public static object Item(string id, string type = "movie", string? seriesId = null, string? progressUpdatedAt = null) => new
+    public static object Item(string id, string type = "movie", string? seriesId = null, string? progressUpdatedAt = null,
+        string? playContentId = null) => new
     {
         content_id = id,
         type,
@@ -27,16 +28,22 @@ internal static class BrowsePayloads
         progress_updated_at = progressUpdatedAt,
         position_seconds = progressUpdatedAt is null ? (double?)null : 600,
         duration_seconds = progressUpdatedAt is null ? (double?)null : 3000,
+        play_content_id = playContentId,
         poster_url = $"/api/v2/artwork/{id}/poster.webp?exp=1&sig=s",
     };
 
-    public static object Section(string id, string type, int total, params object[] items) => new
+    public static object Section(string id, string type, int total, params object[] items) => Row(id, type, total, featured: false, 20, items);
+
+    /// <summary>A row the server marks as the page's hero (<c>featured</c>).</summary>
+    public static object Featured(string id, string type, int total, params object[] items) => Row(id, type, total, featured: true, 20, items);
+
+    public static object Row(string id, string type, int total, bool featured, int itemLimit, params object[] items) => new
     {
         id,
         section_type = type,
         title = "Row " + id,
-        featured = false,
-        item_limit = 20,
+        featured,
+        item_limit = itemLimit,
         is_custom = false,
         customized = false,
         total_count = total,
@@ -60,7 +67,7 @@ internal static class BrowsePayloads
     public static string People(params (string Id, string Name)[] people) =>
         Serialize(new { items = people.Select(p => new { id = p.Id, name = p.Name, photo_url = $"/api/v2/artwork/people/{p.Id}.webp?sig=p" }) });
 
-    public static string SearchCapabilities(bool people) => Serialize(new
+    public static string SearchCapabilities(bool people, bool boxSets = false) => Serialize(new
     {
         revision = "r1",
         state = "available",
@@ -68,5 +75,6 @@ internal static class BrowsePayloads
         provider = "meilisearch",
         people_media_scope = people,
         video_with_episodes_scope = false,
+        box_sets = boxSets,
     });
 }

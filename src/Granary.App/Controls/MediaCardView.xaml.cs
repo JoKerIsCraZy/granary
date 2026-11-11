@@ -185,6 +185,7 @@ public sealed partial class MediaCardView : UserControl
         ArtImage.OpacityTransition = null;
         ArtImage.Opacity = 0;
         ArtImage.Source = null;
+        ShowSpoiler(card);
         if (_artworkUrl is { } url)
         {
             _artwork = new CancellationTokenSource();
@@ -192,6 +193,8 @@ public sealed partial class MediaCardView : UserControl
         }
 
         ShowBadges(card);
+        ShowMark(card);
+        ShowBoxSet(card);
 
         TitleText.Text = card?.Title ?? "";
         // A recycled card mostly shows the same shape and colours: each is set only when it changes.
@@ -480,7 +483,8 @@ public sealed partial class MediaCardView : UserControl
 
         string favorite = state.IsFavorite ? "Remove from Favorites" : "Add to Favorites";
         FavoriteIcon.Glyph = state.IsFavorite ? "" : "";
-        FavoriteIcon.Foreground = Brush(state.IsFavorite ? "SiloPrimaryBrush" : "SiloForegroundBrush");
+        // Red whatever the accent, as the web's text-red-500 fill-red-500 (MediaItemMenu.tsx).
+        FavoriteIcon.Foreground = Brush(state.IsFavorite ? "SiloFavoriteBrush" : "SiloForegroundBrush");
         Label(FavoriteButton, favorite);
         FavoriteButton.Visibility = Visible(canCollect);
         MenuFavorite.Text = favorite;
@@ -651,7 +655,9 @@ public sealed partial class MediaCardView : UserControl
     // keeps them at their size. Over a progress bar the bottom row rises clear of it, as the web's does.
     private void PlaceBadges()
     {
-        double width = _artWidth;
+        // The badges lie inside the art's hairline: measured from its outer width, each edge was two pixels wider than its
+        // slot, and the right corner (the watched mark) lost them.
+        double width = _artWidth - Art.BorderThickness.Left - Art.BorderThickness.Right;
         if (width <= 0)
         {
             return;
@@ -675,6 +681,7 @@ public sealed partial class MediaCardView : UserControl
         TopBadges.Margin = new Thickness(inset, inset, right, 0);
         BottomBadges.Margin = new Thickness(inset, 0, right, inset + (lifted ? EdgeInset : 0));
         TopScale.ScaleX = TopScale.ScaleY = BottomScale.ScaleX = BottomScale.ScaleY = scale;
+        PlaceThisFilm();
     }
 
     // The profile chose other badges, or they arrived: from any thread the setting changes on, here on the card's.
@@ -700,7 +707,7 @@ public sealed partial class MediaCardView : UserControl
         LayoutRoot.RowSpacing = _caption == CardCaption.Artwork ? 0 : CaptionGap;
         ShowEpisodeTitle(card);
         SetText(SubtitleText, details ? card?.Subtitle : null);
-        SetText(CaptionText, details ? card?.Caption : null);
+        ShowCaptionText(details ? card?.Caption : null, details ? card?.CaptionBadge : null);
     }
 
     private void ShowEpisodeTitle(MediaCard? card)
@@ -758,6 +765,7 @@ public sealed partial class MediaCardView : UserControl
         RedecodeIfResized();
         PlaceBadges();
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
+        CenterSpoiler();
         SizeActions(width);
     }
 
@@ -833,6 +841,19 @@ public sealed partial class MediaCardView : UserControl
         EnsureActions();
         ShowState();
         SetHovered(true);
+    }
+
+    // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen), or one recycled
+    // for another title under it, hears no PointerEntered; the pointer's first move over it shows the look again. Only the
+    // look: Request stays disarmed until the pointer really enters, so a click meant for the title never requests it.
+    private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_hovered && Card is not null && Pick is null)
+        {
+            EnsureActions();
+            ShowState();
+            SetHovered(true);
+        }
     }
 
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
@@ -998,13 +1019,20 @@ public sealed partial class MediaCardView : UserControl
             }
         }
         ShowState();
+        _loaded = true;
+        UpdatePing();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        // A click that opens a title takes the page away under the pointer, so the card never hears it leave; a cached
+        // page would show it hovered on the way back until the pointer crossed it again.
+        SetHovered(false);
         _actions.Changed -= OnStateChanged;
         _overlays.PropertyChanged -= OnOverlaysChanged;
         ForgetHost();
+        _loaded = false;
+        UpdatePing();
     }
 
     private void ForgetHost()
@@ -1066,10 +1094,16 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide.
+    // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
+    // blurred, never sharp.
     private void LoadArtwork(Uri url, CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
+        if (_blurs)
+        {
+            _ = LoadSpoilerAsync(url, cancellationToken);
+            return;
+        }
         ArtImage.Source = _landscape
             ? Artwork.Load(url, DecodeSize(_artWidth, LandscapeWidth), cancellationToken)
             : Artwork.LoadAtHeight(url, DecodeSize(_artWidth * 3 / 2, PosterHeight), cancellationToken);

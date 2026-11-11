@@ -241,7 +241,6 @@ public sealed class PlayerViewModelTests
     public void AVolumeTheEngineReported_IsNotTheViewersChange()
     {
         var viewModel = CreateViewModel();
-        viewModel.Volume = 40;
         // The engine has set the viewer's volume on a new mpv already.
         _engine.Current = Loaded() with { Volume = 40, IsMuted = true, Sequence = 5 };
 

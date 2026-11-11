@@ -29,16 +29,31 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>An episode's poster card: the episode's own title under the series', "Safe Harbor", as on the web.</summary>
     public string? EpisodeTitle { get; init; }
 
-    /// <summary>A third line: "18 min left", "Next episode" on landscape cards; a watchlist title's status on its poster card.</summary>
+    /// <summary>A third line: "18 min left", "Next Episode" on landscape cards; a watchlist title's status on its poster card.</summary>
     public string? Caption { get; init; }
 
     /// <summary>The caption warns, in amber: a watchlist title TMDB no longer lists as saved.</summary>
     public bool IsCaptionAttention { get; init; }
 
+    /// <summary>
+    /// A pill in the accent after the caption: "NEW SEASON" on a Continue Watching or Next Up card for the first episode of a
+    /// season that has just begun, as the web's <c>ContinueWatchingCard</c>. Null on every other card.
+    /// </summary>
+    public string? CaptionBadge { get; init; }
+
+    /// <summary>What screen readers hear for <see cref="CaptionBadge"/> in the card's name: "new season".</summary>
+    public string? CaptionBadgeName { get; init; }
+
     public Uri? ImageUrl { get; init; }
 
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
     public string? ImageThumbhash { get; init; }
+
+    /// <summary>
+    /// The picture is the still of an episode the profile has not started, and the profile hides those
+    /// (<see cref="Settings.EpisodeSpoilers"/>): it is drawn blurred, as the web's <c>scale-110 blur-xl</c>.
+    /// </summary>
+    public bool BlursImage { get; init; }
 
     /// <summary>
     /// What the card's badges can say (resolution, audio, ratings, show status, …); which of them it shows, where and how,
@@ -74,6 +89,46 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public Api.Requests.MediaRequestCreate? RequestOffer { get; init; }
 
+    /// <summary>
+    /// How the card marks the title its page is about, among its siblings: an episode's own card in its season's More
+    /// Episodes, and a movie's own in its box set's row. <see cref="CurrentMark.None"/> on every other card.
+    /// </summary>
+    public CurrentMark CurrentMark { get; init; }
+
+    /// <summary>The card is its page's own title (<see cref="CurrentMark"/>): its row opens with it in the middle.</summary>
+    public bool IsCurrent => CurrentMark != CurrentMark.None;
+
+    /// <summary>
+    /// A box set's card (Search's Box sets, <see cref="MediaCardFactory.BoxSet"/>): its films, "3 films", in the corner beside
+    /// the BOX SET pill, as the web's <c>BoxSetCard</c>. Null for any other card.
+    /// </summary>
+    public string? BoxSetFilms { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
-    public string AccessibleName => string.Join(", ", new[] { Title, EpisodeTitle, Subtitle }.Where(text => !string.IsNullOrEmpty(text)));
+    public string AccessibleName => string.Join(", ",
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
+            .Where(text => !string.IsNullOrEmpty(text)));
+
+    private string? CurrentName => CurrentMark switch
+    {
+        CurrentMark.NowViewing => "now viewing",
+        CurrentMark.ThisFilm => "this film",
+        _ => null,
+    };
+}
+
+/// <summary>How a card marks the title its page is about (<see cref="MediaCard.IsCurrent"/>).</summary>
+public enum CurrentMark
+{
+    /// <summary>Not the page's own title: no mark.</summary>
+    None,
+
+    /// <summary>An episode among its season's: an accent ring and "Now Viewing" top left, as the web's <c>EpisodeCarousel</c>.</summary>
+    NowViewing,
+
+    /// <summary>
+    /// A movie among its box set's films: a light ring and "This film" at the poster's foot, as the web's <c>MovieBoxSetRow</c>.
+    /// Its card offers no actions, as the apps' rows leave its menu out: the page's own buttons hold its state.
+    /// </summary>
+    ThisFilm,
 }
