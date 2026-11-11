@@ -1,11 +1,13 @@
 using Granary.Core.Api;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Http;
 
 /// <summary>
 /// Adds the <c>X-Silo-Device-*</c> and <c>X-Silo-Client*</c> headers (docs/api-contract.md, 6.4) to
-/// requests addressed to a Silo server, including the public sign-in calls. Never to other origins.
+/// requests addressed to a Silo server, including the public sign-in calls, and <c>Accept-Language</c> with the language
+/// on screen, as Silo's apps send it (silo-server docs/architecture/i18n.md, "Accept-Language"). Never to other origins.
 /// </summary>
 public sealed class ClientIdentityHandler(ClientIdentity identity) : DelegatingHandler
 {
@@ -21,6 +23,8 @@ public sealed class ClientIdentityHandler(ClientIdentity identity) : DelegatingH
             Set(request, "X-Silo-Client-Version", identity.ClientVersion);
             Set(request, "X-Silo-Client-Channel", identity.ClientChannel);
             Set(request, "X-Silo-Client-Family", identity.ClientFamily);
+            // One tag, the language texts come in; no answer depends on it yet.
+            Set(request, "Accept-Language", AppText.Language.Tag);
         }
         return base.SendAsync(request, cancellationToken);
     }

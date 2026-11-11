@@ -347,6 +347,8 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
   es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Granary does not read or write the profile's setting yet.
+- **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
+  (docs/api-contract.md, 6.4).
 
 ## Networking and security
 

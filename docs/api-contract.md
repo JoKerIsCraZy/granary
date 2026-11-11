@@ -520,6 +520,12 @@ calls; never to other origins (artwork CDNs, S3). Sources:
 `silo-server/internal/auth/client_device.go:14-55`, `silo-server/internal/apiv2/device_header.go:24-57`,
 `silo-server/docs/settings-api.md:724-781`.
 
+The same requests carry `Accept-Language` with one tag, the language on screen (`AppText.Language`; `en` until Granary
+enables other languages), as Silo's Android and Apple apps send it. It is a hint for text the server writes for that
+request: no answer depends on it yet, so the server sends no `Vary: Accept-Language`, and its plugin route proxy
+forwards it to plugins. Text the server writes for a profile rather than a request follows the profile's
+`ui.app_language` instead (`silo-server/docs/architecture/i18n.md`, "`Accept-Language`").
+
 ### 6.5 Multiple servers
 
 Android stores one registry entry per saved URL (`id`, `url`, display name, last profile id,
