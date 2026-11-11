@@ -18,6 +18,8 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     private const uint ShowMinimized = 2;
 
     private AppWindowPresenter? _presenter;
+    // Opened in full screen, closed so while maximized: maximized as it comes back from full screen (MaximizeOnRestore).
+    private bool _maximizeOnRestore;
     private bool _isScaleFailureLogged;
 
     /// <summary>
@@ -29,6 +31,11 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     {
         _presenter = window.Presenter;
         var state = StateOf(window.Presenter);
+        if (state == WindowState.Restored)
+        {
+            // Restored as a window since: no longer one to maximize on its way out of full screen.
+            _maximizeOnRestore = false;
+        }
         if (state == WindowState.Maximized)
         {
             // Checked against the display the maximized window is on.
@@ -45,6 +52,8 @@ internal sealed partial class WindowedPlacement(ILogger logger)
         // Read first: setting the presenter raises the window's Changed event, which can keep the window again on its way.
         var presenter = _presenter;
         var bounds = _place.Bounds;
+        bool maximize = _maximizeOnRestore;
+        _maximizeOnRestore = false;
         if (presenter is not null)
         {
             window.SetPresenter(presenter);
@@ -57,10 +66,40 @@ internal sealed partial class WindowedPlacement(ILogger logger)
         {
             window.MoveAndResize(Displays.ToRect(OnDisplay(kept, scale)));
         }
+        if (maximize)
+        {
+            Maximize(window);
+        }
     }
 
-    /// <summary>Where the window opens at the next start: the place kept, with its display's scale; none before it had one.</summary>
-    public WindowPlace? Place => _place.Bounds is { } bounds ? _place.ToPlace(ScaleOf(Displays.At(bounds))) : null;
+    /// <summary>
+    /// The window opens in full screen, closed so while it was maximized: maximizing it first would show it as a window, so
+    /// it is maximized as it leaves full screen instead, and counts as maximized meanwhile, also when it closes so again.
+    /// </summary>
+    public void MaximizeOnRestore()
+    {
+        _maximizeOnRestore = true;
+        _place.Keep(WindowState.Maximized, default);
+    }
+
+    /// <summary>The window left full screen some other way, by itself: <see cref="MaximizeOnRestore"/> no longer holds.</summary>
+    public void ForgetMaximizeOnRestore() => _maximizeOnRestore = false;
+
+    /// <summary>
+    /// Where the window opens at the next start: the place kept, with its display's scale, and in full screen when
+    /// <paramref name="isFullScreen"/>; none before it had one.
+    /// </summary>
+    public WindowPlace? PlaceFor(bool isFullScreen)
+    {
+        if (_place.Bounds is not { } bounds || _place.ToPlace(ScaleOf(Displays.At(bounds))) is not { } place)
+        {
+            return null;
+        }
+        return place with { IsFullScreen = isFullScreen };
+    }
+
+    /// <summary>The window is minimized, whichever presenter it has; a window that no longer says counts as not.</summary>
+    public static bool IsMinimized(AppWindow window) => IsIconic(Win32Interop.GetWindowFromWindowId(window.Id));
 
     /// <summary>
     /// The window, not shown yet, where it was closed, on a display as the displays are now; restored, so as not to show
@@ -198,4 +237,9 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetWindowPlacement(nint window, ref NativePlacement placement);
+
+    [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool IsIconic(nint window);
 }

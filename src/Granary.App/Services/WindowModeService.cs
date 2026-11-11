@@ -10,7 +10,7 @@ namespace Granary.App.Services;
 /// The window's one full-screen state, shared by the app (the title bar's button, F11), the player (F, its button, the
 /// mini view) and a trailer's own full screen. Core's <see cref="WindowModes"/> decides; this puts it on the window through
 /// its AppWindow presenters and keeps the window as it was to go back to (<see cref="WindowedPlacement"/>), and to open
-/// there at the next start (<see cref="WindowPlaceFile"/>).
+/// there at the next start, in full screen when it closed so (<see cref="WindowPlaceFile"/>).
 /// </summary>
 public sealed partial class WindowModeService(ILogger<WindowModeService> logger, WindowPlaceFile placeFile)
 {
@@ -30,6 +30,9 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
 
     /// <summary>A trailer's page fills the screen.</summary>
     public bool IsTrailerFullScreen => _modes.IsTrailerFullScreen;
+
+    /// <summary>The viewer's own full screen, or the mini view opened from it (<see cref="WindowModes.IsViewersFullScreen"/>).</summary>
+    public bool IsViewersFullScreen => _modes.IsViewersFullScreen;
 
     private double Scale => _window?.Content?.XamlRoot?.RasterizationScale ?? 1;
 
@@ -51,6 +54,9 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
 
     private void Change(Action decide)
     {
+        // Asked for by the app (a title, F11, the mini view, a trailer): a window shown minimized at first no longer waits to
+        // go full screen as it comes back (FollowRestoreToFullScreen), whatever this change is.
+        _fullScreenOnRestore = false;
         var from = _modes.Mode;
         bool trailer = _modes.IsTrailerFullScreen;
         decide();
@@ -64,13 +70,28 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
             {
                 // The state must not say what the window does not show: it follows what the window shows instead.
                 logger.LogWarning(ex, "The window did not go from {From} to {To}", from, _modes.Mode);
-                _modes.Follow(ShownMode(window));
+                FollowShown(ShownMode(window));
             }
         }
+        // Saved again soon after any change, so a kill keeps whether the window is full screen (window.json) too; a place the
+        // file holds already is not written again.
+        SettleSoon();
         if (_modes.Mode != from || _modes.IsTrailerFullScreen != trailer)
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    // The mode the window shows by itself, taken over. Back as a window that way, it is no longer one to maximize on its way
+    // out of full screen (WindowedPlacement.MaximizeOnRestore).
+    private void FollowShown(WindowMode mode)
+    {
+        _modes.Follow(mode);
+        if (mode == WindowMode.Window)
+        {
+            _windowed.ForgetMaximizeOnRestore();
+        }
+        SettleSoon();
     }
 
     private void Present(AppWindow window, WindowMode from, WindowMode to)
@@ -112,9 +133,10 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
         // A presenter the window took by itself; the ones set here match the state already.
         if (args.DidPresenterChange && mode != _modes.Mode)
         {
-            _modes.Follow(mode);
+            FollowShown(mode);
             Changed?.Invoke(this, EventArgs.Empty);
         }
+        FollowRestoreToFullScreen(sender);
     }
 
     // What the window shows; a window that is closing may not say any more, and counts as a window.

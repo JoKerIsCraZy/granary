@@ -874,7 +874,9 @@ F11 is the keyboard's way, and screen readers still reach it.
 The window opens where it was closed (Granary's own; Silo's clients have no desktop window): on the same display, at the
 same place and size, and maximized if it was, with un-maximizing going back to the size it had before. A maximized
 window moved to another display (Win+Shift+Arrow) opens maximized there, and un-maximizes on that display. Closed in full
-screen or the mini view, it opens as the window those would have gone back to; closed minimized, where it was before.
+screen, it opens in full screen again, already in its first frame, and leaving full screen goes back to the window it
+would have gone back to, maximized if it was. Closed in the mini view, it opens as the window that would have gone back
+to; closed minimized, where it was before, as a window.
 On a display of another scale it keeps its size as the scale shows it, and fits onto that display; a display that is gone
 or moved never leaves it off-screen: it opens on the nearest one, as after full screen. Kept for this PC
 (`window.json` in the data directory), a second after the window last moved, changed size or was maximized, and as it
@@ -1225,8 +1227,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   with a menu open (a key pressed in a flyout reaches the window; the menu closes as the window changes size); in the
   player also F, its own full-screen button and a double click on the picture. A held F11 toggles once. Leaving full
   screen returns to the window as it was: maximized stays maximized, a restored window gets its place and size back.
-  Each start begins in a window; full screen is not remembered. Closed in full screen or the mini view, Granary opens
-  as the window it would have gone back to.
+  Closed in full screen, Granary opens in full screen again, and leaving it then returns to the window it would have
+  gone back to; a trailer's own full screen does not count. Closed in the mini view or minimized, it opens as a window
+  (see the main window's place, above). The player also keeps its full screen for the next title (below).
 - **Look**: the title bar keeps its 32 px, the title on the left, so the pages keep their place under it. Windows shows
   no caption buttons in full screen: in their corner the title bar shows Exit full screen ("Exit full screen (F11)", the
   BackToWindow glyph) and Close (✕, "Close"; red under the pointer, as Windows' own). Close closes the window through the
@@ -1239,6 +1242,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   out: the player's own ✕ Exit sits right under it, and two crosses, one quitting Granary and one only leaving the
   player, would be mistaken for each other. The player's top bar, and the Playing Next screen's Close and small video,
   keep the place below the 32 px strip in full screen too. The mini view (P) from full screen goes back to full screen, from a window back to that window.
+- **The next title** (Granary's own; Silo's web ends full screen with its player): a title that opens the player (Play,
+  Resume, a card's play, Continue Watching, a Watch Party, `--play` and `--play-item`) opens it in full screen when the
+  player was in full screen as it was last left on this PC, by any way (Exit, Back, Stop, the title's end, another page,
+  closing Granary; the mini view counts as the full screen it goes back to), also after a restart (`player_full_screen`
+  in `playback-device.json`, Core's `PlayerFullScreen`); left in a window, the next title opens in the window as it is.
+  Bringing the bar back, leaving the mini view and the next episode in the same player keep the window as it is. Esc in
+  full screen still leaves full screen first; an Esc that then leaves the player within 5 seconds counts as leaving in
+  full screen, unless anything came in between (another key, a click, an Esc a skip pill, the marker panel or a menu
+  took, a change of the window, minimizing). Only that Esc does: leaving another way soon after (Back, the title's end,
+  another page, closing Granary) counts as the window it is in, and an Esc to watch on in the window does not count.
 - **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
@@ -1255,7 +1268,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   full screen (see Full screen). The app under it is neither drawn nor reached and keeps the page the title was played
   from. Full screen is the whole window's (see Full screen): leaving the player stops playback and ends the mini view,
   whichever way it is left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change), but keeps full screen;
-  the page under it shows again.
+  the page under it shows again, and the next title opens in full screen too (see Full screen, The next title).
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
