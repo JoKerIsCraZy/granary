@@ -292,6 +292,25 @@ public sealed class DownloadStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task FolderWorkThatFails_IsLogged_AndTheFoldersAreTriedAgain()
+    {
+        var store = await LoadedAsync();
+        var added = await store.AddAsync(Record("dl_1"), Token);
+        store.IndexWritten = () => throw new InvalidOperationException("The delete pass broke.");
+
+        await store.RemoveWhereAsync(_ => true, store.MarkCleared("srv1", null), Token);
+        await store.FolderWork;
+        bool folderAfterFailure = Directory.Exists(added.Folder);
+        store.IndexWritten = null;
+        store.RecheckFolders();
+        await store.FolderWork;
+
+        Assert.Contains("folders failed (InvalidOperationException", _logs.All, StringComparison.Ordinal);
+        Assert.True(folderAfterFailure);
+        Assert.False(Directory.Exists(added.Folder));
+    }
+
+    [Fact]
     public async Task BytesOnDisk_CountsTheProfilesFiles()
     {
         var store = await LoadedAsync();

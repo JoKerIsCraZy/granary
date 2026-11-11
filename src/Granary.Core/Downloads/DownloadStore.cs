@@ -69,7 +69,7 @@ public sealed partial class DownloadStore
 
     /// <summary>
     /// The folders' deletes and index write a <see cref="RecheckFolders"/> or a <see cref="RemoveWhereAsync"/> started; the queue
-    /// waits for them.
+    /// waits for them. It never fails: what fails in it is logged, and the folders still to delete are tried again.
     /// </summary>
     internal Task FolderWork { get; private set; } = Task.CompletedTask;
 
@@ -369,7 +369,7 @@ public sealed partial class DownloadStore
                 {
                     if (FolderWork.IsCompleted)
                     {
-                        FolderWork = WriteIndexThenDeleteFoldersAsync();
+                        FolderWork = FolderWorkAsync();
                     }
                 }
             }
@@ -434,9 +434,23 @@ public sealed partial class DownloadStore
         {
             var before = FolderWork;
             FolderWork = before.IsCompleted
-                ? Task.Run(WriteIndexThenDeleteFoldersAsync, CancellationToken.None)
-                : before.ContinueWith(_ => WriteIndexThenDeleteFoldersAsync(), CancellationToken.None, TaskContinuationOptions.None,
+                ? Task.Run(FolderWorkAsync, CancellationToken.None)
+                : before.ContinueWith(_ => FolderWorkAsync(), CancellationToken.None, TaskContinuationOptions.None,
                     TaskScheduler.Default).Unwrap();
+        }
+    }
+
+    // The index and the folders beside a caller, as FolderWork: nothing may wait for it, so a failure is logged here. The
+    // folders still to delete stay in the state, and the next recheck tries them again.
+    private async Task FolderWorkAsync()
+    {
+        try
+        {
+            await WriteIndexThenDeleteFoldersAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Deleting removed downloads' folders failed ({Failure}); they are tried again", DownloadLog.Failure(ex));
         }
     }
 

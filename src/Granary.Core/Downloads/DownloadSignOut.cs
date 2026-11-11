@@ -183,16 +183,28 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
         var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), generation, CancellationToken.None);
-        if (!loaded)
+        bool waited = false;
+        try
         {
-            Observe(removal);
-            return;
+            if (loaded)
+            {
+                if (deletes is not null)
+                {
+                    await TellTheServerAsync(deletes, cancellationToken).ConfigureAwait(false);
+                }
+                await WaitForIndexAsync(removal, cancellationToken).ConfigureAwait(false);
+                waited = true;
+            }
         }
-        if (deletes is not null)
+        finally
         {
-            await TellTheServerAsync(deletes, cancellationToken).ConfigureAwait(false);
+            // A removal not waited for (the downloads were not read in time, or the server's deletes ended in a failure) logs
+            // its own failure.
+            if (!waited)
+            {
+                Observe(removal);
+            }
         }
-        await WaitForIndexAsync(removal, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

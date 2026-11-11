@@ -513,6 +513,27 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AClearThatFailsWhileTellingTheServer_StillLogsWhatTheRemovalHit()
+    {
+        await KeptAsync("dl_1");
+        _h.Silo.OnCancellable(HttpMethod.Delete, EntryPath("dl_1"), async ct =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        _h.Store.Changed += (_, _) => throw new InvalidOperationException("A follower broke.");
+        using var giveUp = CancellationTokenSource.CreateLinkedTokenSource(Token);
+
+        var clearing = NewSignOut().ClearAsync("srv1", "1", giveUp.Token);
+        await Until(() => DeletesSent.Count == 1, "the delete went out");
+        await giveUp.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => clearing);
+        await Until(() => _h.Logs.All.Contains("Taking the downloads off this PC failed in part (InvalidOperationException", StringComparison.Ordinal),
+            "the removal's failure was logged");
+    }
+
+    [Fact]
     public async Task AShareThatDoesNotAnswer_GetsTheQuestionWithoutTheSize()
     {
         await KeptAsync("dl_1");
