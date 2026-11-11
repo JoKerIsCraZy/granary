@@ -166,6 +166,8 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
+        // Whether a title opens the player in full screen, as it was last left on this PC.
+        services.AddSingleton<PlayerFullScreen>();
         // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.
         services.AddSingleton(sp => new PlayerButtonsLayout(PlayerButtonsLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),

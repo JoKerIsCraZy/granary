@@ -65,6 +65,8 @@ public sealed partial class PlayerPage
             // returns to where it was opened from.
             SetMiniView(false);
             CloseMenus();
+            // Minimized after an Esc out of full screen: that Esc was not on the way out.
+            _fullScreen.ForgetEscape();
         }
         ShowNextUpScreen();
         ShowControls();

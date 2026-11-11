@@ -11,7 +11,8 @@ public enum WindowMode
 /// <summary>
 /// The window's one full-screen state, shared by the app (the title bar's button, F11), the player (F, its button, the
 /// mini view) and a trailer's own full screen (docs/ui-design.md, "Full screen"): which mode the window goes to when one
-/// of them asks. The App's <c>WindowModeService</c> puts it on the window. Each start begins as a window.
+/// of them asks. The App's <c>WindowModeService</c> puts it on the window. Each start begins as a window, or in full screen
+/// when Granary closed in it (<see cref="ReopensInFullScreen"/>).
 /// </summary>
 public sealed class WindowModes
 {
@@ -30,6 +31,12 @@ public sealed class WindowModes
 
     /// <summary>A trailer's page fills the screen; the window is full screen meanwhile.</summary>
     public bool IsTrailerFullScreen { get; private set; }
+
+    /// <summary>
+    /// The viewer's own full screen, or the mini view opened from it, which goes back there; not a trailer's own. What the
+    /// player is left in, also as the window closes (<see cref="Playback.PlayerFullScreen.Left"/>).
+    /// </summary>
+    public bool IsViewersFullScreen => (IsFullScreen && !_fullScreenForTrailer) || (IsMiniView && _miniViewFromFullScreen);
 
     /// <summary>Full screen, or back to the window; from the mini view straight to full screen.</summary>
     public void ToggleFullScreen() => SetFullScreen(!IsFullScreen);
@@ -88,6 +95,13 @@ public sealed class WindowModes
             GoTo(WindowMode.Window);
         }
     }
+
+    /// <summary>
+    /// Whether the next start opens in full screen, were Granary to close now: in the viewer's own full screen, not in a
+    /// trailer's that the window would leave with it, nor in the mini view or with the window minimized, which open as a
+    /// window.
+    /// </summary>
+    public bool ReopensInFullScreen(bool isMinimized) => IsFullScreen && !_fullScreenForTrailer && !isMinimized;
 
     /// <summary>The window changed by itself, not through these: the state follows it.</summary>
     public void Follow(WindowMode mode)

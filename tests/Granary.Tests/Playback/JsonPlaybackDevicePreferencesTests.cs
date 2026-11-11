@@ -129,6 +129,7 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         await preferences.SetResumeRewindSecondsAsync(12);
         await preferences.SetDiscordStatusAsync(true);
         await preferences.SetVolumeAsync(new PlayerVolume(35, IsMuted: true));
+        await preferences.SetPlayerFullScreenAsync(true);
 
         var again = Create();
         Assert.True(again.DecodesInSoftware);
@@ -138,6 +139,49 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         Assert.Equal(12, again.ResumeRewindSeconds);
         Assert.True(again.DiscordStatus);
         Assert.Equal(new PlayerVolume(35, IsMuted: true), again.Volume);
+        Assert.True(again.PlayerFullScreen);
+    }
+
+    [Fact]
+    public void AtFirst_ThePlayerOpensInAWindow() => Assert.False(Create().PlayerFullScreen);
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ThePlayersFullScreen_StaysAtTheNextStart_WithTheOtherChoices(bool fullScreen)
+    {
+        // From the other value, saved, so a save that left it as it was cannot pass.
+        var preferences = Create();
+        await preferences.SetPlayerFullScreenAsync(!fullScreen);
+        Assert.Equal(!fullScreen, Create().PlayerFullScreen);
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetPlayerFullScreenAsync(fullScreen);
+
+        var again = Create();
+        Assert.Equal(fullScreen, again.PlayerFullScreen);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains(fullScreen ? "\"player_full_screen\": true" : "\"player_full_screen\": false",
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{ \"player_full_screen\": \"yes\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"player_full_screen\": 1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"player_full_screen\": null, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"player_full_screen\": { \"on\": true, \"more\": [{ \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"player_full_screen\": [true, [true], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    public async Task AFullScreenNeitherTrueNorFalse_OrMissing_OpensInAWindow_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.PlayerFullScreen);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+        Assert.DoesNotContain(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal));
     }
 
     [Fact]
