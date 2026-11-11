@@ -264,15 +264,7 @@ public sealed partial class PlayerPage
     // does not say where it is.
     private void OnPagePointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        if (e.Pointer.PointerDeviceType != PointerDeviceType.Mouse)
-        {
-            _cursor.TouchOrPenMoves();
-        }
-        else if (!GetCursorPos(out var at))
-        {
-            _cursor.Show();
-        }
-        else if (!_cursor.Moves(at.X, at.Y, XamlRoot?.RasterizationScale ?? 1))
+        if (!IsRealMove(e.Pointer.PointerDeviceType))
         {
             // Seen again without moving, for one as a window over it went. Such events come at the mouse's report rate.
             if (_cursor.IsLookDue)
@@ -281,8 +273,24 @@ public sealed partial class PlayerPage
             }
             return;
         }
+        // Every real move, a measured one or not, shows the arrow and the controls.
         ApplyCursor();
         ShowControls();
+    }
+
+    private bool IsRealMove(PointerDeviceType device)
+    {
+        if (device != PointerDeviceType.Mouse)
+        {
+            _cursor.TouchOrPenMoves();
+            return true;
+        }
+        if (!GetCursorPos(out var at))
+        {
+            _cursor.Show();
+            return true;
+        }
+        return _cursor.Moves(at.X, at.Y, XamlRoot?.RasterizationScale ?? 1);
     }
 
     private void OnWindowActivatedForCursor(object sender, WindowActivatedEventArgs e)
