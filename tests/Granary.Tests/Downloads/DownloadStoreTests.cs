@@ -292,6 +292,39 @@ public sealed class DownloadStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AClearThatWaitedForTheDownloads_KeepsADeleteQueuedAfterIt()
+    {
+        await (await LoadedAsync()).AddAsync(Record("dl_1"), Token);
+        using var drive = new ManualResetEventSlim();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var store = Create();
+        store.Loading = () =>
+        {
+            reached.TrySetResult();
+            drive.Wait(TimeSpan.FromSeconds(30));
+        };
+        var loading = store.LoadAsync(Token);
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        // The account signed in again, downloaded and deleted, while the old sign-out's removal still waited for the drive.
+        long cleared = store.MarkCleared("srv1", "1");
+        store.EndClear(cleared);
+        var ui = new BusyContext();
+        var removal = ui.Run(() => store.RemoveWhereAsync(scope => scope.AccountId == "1", cleared, Token));
+        var adding = store.AddUnlessClearedAsync(Record("dl_2"), store.ClearGeneration, Token);
+        drive.Set();
+        await loading.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await adding.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await store.RemoveAsync(Record("dl_2").Scope, "dl_2", queueServerDelete: true, Token);
+
+        await ui.RunPostedAsync();
+        await removal.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await store.FolderWork;
+
+        Assert.Empty(store.All);
+        Assert.Equal(["dl_2"], store.PendingDeletes(Record("dl_2").Scope).Select(d => d.DownloadId));
+    }
+
+    [Fact]
     public async Task AClearWhileTheFolderIsMade_KeepsNothing()
     {
         var store = await LoadedAsync();

@@ -140,4 +140,11 @@ public sealed record StoredDownload(DownloadRecord Record, string Folder, bool F
 }
 
 /// <summary>A server entry to delete once its profile is active and the server answers: its files are gone already.</summary>
-public sealed record PendingDelete(DownloadScope Scope, string DownloadId);
+public sealed record PendingDelete(DownloadScope Scope, string DownloadId)
+{
+    /// <summary>
+    /// The store's <see cref="DownloadStore.ClearGeneration"/> when this run queued it; 0 for one read from the disk. A
+    /// sign-out's removal takes only the deletes queued before its clear, as it takes downloads.
+    /// </summary>
+    internal long ClearsSeen { get; init; }
+}

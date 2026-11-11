@@ -264,10 +264,11 @@ public sealed partial class DownloadStore
             {
                 return state;
             }
-            var delete = new PendingDelete(scope, downloadId);
+            var delete = new PendingDelete(scope, downloadId) { ClearsSeen = _clearGeneration };
+            bool queued = state.PendingDeletes.Any(d => d.Scope == scope && d.DownloadId == downloadId);
             return new Snapshot(
                 [.. state.Downloads.Where(d => d != removed)],
-                queueServerDelete && !state.PendingDeletes.Contains(delete) ? [.. state.PendingDeletes, delete] : state.PendingDeletes,
+                queueServerDelete && !queued ? [.. state.PendingDeletes, delete] : state.PendingDeletes,
                 [.. state.FolderDeletes, new FolderDelete(scope, downloadId, removed.Folder)]);
         });
         if (removed is null)
@@ -279,9 +280,9 @@ public sealed partial class DownloadStore
 
     /// <summary>
     /// Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out whose clear
-    /// is <paramref name="clearGeneration"/>, from <see cref="MarkCleared"/>). Only downloads added before that clear go, those
-    /// read from the disk included: a removal that waits for a slow drive to be read takes no download of the same account
-    /// signed in again since. The rows go at once, and the call ends once the index without them is written, or could not be
+    /// is <paramref name="clearGeneration"/>, from <see cref="MarkCleared"/>). Only downloads and deletes queued before that clear
+    /// go, those read from the disk included: a removal that waits for a slow drive to be read takes no download, and no
+    /// delete still to send, of the same account signed in again since. The rows go at once, and the call ends once the index without them is written, or could not be
     /// (it is written again with the next change). Their folders go after that, beside the caller (<see cref="FolderWork"/>),
     /// and are tried again as any removed download's: a drive or a share that does not answer holds no sign-out up.
     /// </summary>
@@ -293,7 +294,7 @@ public sealed partial class DownloadStore
         Change(state =>
         {
             var removed = state.Downloads.Where(d => match(d.Record.Scope) && d.ClearsSeen < clearGeneration).ToList();
-            var deletes = state.PendingDeletes.Where(d => !match(d.Scope)).ToList();
+            var deletes = state.PendingDeletes.Where(d => !match(d.Scope) || d.ClearsSeen >= clearGeneration).ToList();
             changed = removed.Count > 0 || deletes.Count != state.PendingDeletes.Count;
             return changed
                 ? new Snapshot([.. state.Downloads.Except(removed)], deletes,
