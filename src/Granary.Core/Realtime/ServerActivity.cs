@@ -1,4 +1,6 @@
 using System.Collections.Frozen;
+using Granary.Core.Api.Admin;
+using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Realtime;
 
@@ -15,6 +17,9 @@ public sealed record ServerActivityState
     public bool IsAvailable => Channels.Count > 0;
 
     public EventsConnection Connection { get; init; } = EventsConnection.Disconnected;
+
+    /// <summary>The playback sessions running now; null while there is none to show (not read yet, or not offered).</summary>
+    public IReadOnlyList<AdminPlaybackSession>? Sessions { get; init; }
 }
 
 /// <summary>
@@ -25,16 +30,45 @@ public sealed record ServerActivityState
 /// no requests.
 /// </summary>
 /// <remarks>
-/// Frames and the connection's state arrive on the lane's thread. <see cref="Follow"/> hands out a number for each server
-/// and profile followed; what arrives under an older number is dropped. <see cref="Changed"/> is raised on whichever
-/// thread brought the news, outside the lock.
+/// <para>
+/// Each source stands alone. One the server does not offer (its channel turned down, or its list answering 403, 404, 501
+/// or 503) is not shown and not asked for again until the next connection; any other failed read keeps what was shown.
+/// </para>
+/// <para>
+/// Frames and the connection's state arrive on the lane's thread, answers on the thread pool, timers on theirs.
+/// <see cref="Follow"/> hands out a number for each server and profile followed; frames under an older number are
+/// dropped, and so are the answers of reads started for an earlier following or before an access change.
+/// <see cref="Changed"/> is raised on whichever thread brought the news, outside the lock.
+/// </para>
 /// </remarks>
-public sealed class ServerActivity
+public sealed partial class ServerActivity : IDisposable
 {
+    private const string SessionsReplaced = "sessions.replaced";
+
+    private readonly AdminApi _admin;
+    private readonly TimeProvider _time;
+    private readonly ILogger<ServerActivity> _logger;
     private readonly Lock _gate = new();
-    private Uri? _server;
+    private readonly Reread _sessions;
+    private readonly Reread[] _rereads;
+    private Following? _following;
     private long _feed;
     private ServerActivityState _state = ServerActivityState.None;
+
+    public ServerActivity(AdminApi admin, TimeProvider time, ILogger<ServerActivity> logger)
+    {
+        _admin = admin;
+        _time = time;
+        _logger = logger;
+        _sessions = Source(EventsChannels.Sessions, "playback sessions",
+            async (server, cancellationToken) =>
+            {
+                var sessions = (await _admin.ListSessionsAsync(server, cancellationToken).ConfigureAwait(false)).Items;
+                return state => state with { Sessions = sessions };
+            },
+            state => state with { Sessions = null });
+        _rereads = [_sessions];
+    }
 
     public ServerActivityState State
     {
@@ -50,6 +84,15 @@ public sealed class ServerActivity
     /// <summary>Raised after every change of <see cref="State"/>.</summary>
     public event EventHandler? Changed;
 
+    public void Dispose()
+    {
+        Follow(null);
+        foreach (var reread in _rereads)
+        {
+            reread.Window.Dispose();
+        }
+    }
+
     /// <summary>
     /// Starts over for another server or profile, or for none (signed out, not an administrator account): what was known
     /// is gone. Answers the number its frames come under.
@@ -58,13 +101,15 @@ public sealed class ServerActivity
     {
         long feed;
         bool changed;
+        Following? previous;
         lock (_gate)
         {
             feed = ++_feed;
-            _server = server;
+            previous = StartOverLocked(server);
             changed = !ReferenceEquals(_state, ServerActivityState.None);
             _state = ServerActivityState.None;
         }
+        previous?.Cancel();
         if (changed)
         {
             Changed?.Invoke(this, EventArgs.Empty);
@@ -77,7 +122,7 @@ public sealed class ServerActivity
     {
         lock (_gate)
         {
-            if (feed != _feed || _server is null || _state.Connection == connection)
+            if (feed != _feed || _following is null || _state.Connection == connection)
             {
                 return;
             }
@@ -90,30 +135,97 @@ public sealed class ServerActivity
     internal void Handle(long feed, EventsFrame frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
+        Following? previous = null;
         lock (_gate)
         {
-            if (feed != _feed || _server is null || !HandleLocked(frame))
+            if (feed != _feed || _following is not { } following)
             {
                 return;
             }
+            switch (frame.Type)
+            {
+                case EventsFrameTypes.Subscribed:
+                    SubscribedLocked(frame);
+                    break;
+                case EventsFrameTypes.AccessChanged:
+                    // Who this profile is to the server changed: nothing shows, and no answer on its way counts, until
+                    // the next connection says what it may see.
+                    previous = StartOverLocked(following.Server);
+                    _state = ServerActivityState.None with { Connection = _state.Connection };
+                    break;
+                case EventsFrameTypes.Event when _state.Channels.Contains(frame.Channel ?? ""):
+                    if (!EventLocked(frame))
+                    {
+                        return;
+                    }
+                    break;
+                default:
+                    return;
+            }
         }
+        previous?.Cancel();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // True when the state changed.
-    private bool HandleLocked(EventsFrame frame)
+    // What the server gave this connection is all there is to follow: each source it gave is read, the others are gone.
+    private void SubscribedLocked(EventsFrame frame)
     {
-        switch (frame.Type)
+        var channels = frame.Accepted.Intersect(EventsChannels.Admin).ToFrozenSet(StringComparer.Ordinal);
+        _state = _state with { Channels = channels };
+        foreach (var reread in _rereads)
         {
-            case EventsFrameTypes.Subscribed:
-                _state = _state with { Channels = frame.Accepted.Intersect(EventsChannels.Admin).ToFrozenSet(StringComparer.Ordinal) };
-                return true;
-            case EventsFrameTypes.AccessChanged:
-                // Who this profile is to the server changed: nothing shows until the next connection says what it may see.
-                _state = ServerActivityState.None with { Connection = _state.Connection };
-                return true;
+            reread.IsOff = !channels.Contains(reread.Channel);
+            if (reread.IsOff)
+            {
+                _state = reread.Clear(_state);
+            }
+            else
+            {
+                CueLocked(reread);
+            }
+        }
+    }
+
+    // True when the state changed with the event itself; a read it asks for reports its own change.
+    private bool EventLocked(EventsFrame frame)
+    {
+        switch (frame.Channel)
+        {
+            // As the web: the frame only says that the sessions changed, and may be cut for its size.
+            case EventsChannels.Sessions when frame.Event == SessionsReplaced:
+                CueLocked(_sessions);
+                return false;
             default:
                 return false;
         }
+    }
+
+    // The reads of what was followed so far no longer count; the caller cancels them once the lock is released.
+    private Following? StartOverLocked(Uri? server)
+    {
+        var previous = _following;
+        _following = server is null ? null : new Following(server);
+        foreach (var reread in _rereads)
+        {
+            reread.IsReading = false;
+            reread.IsWaiting = false;
+            reread.IsDue = false;
+            reread.IsOff = false;
+            reread.Window.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        }
+        return previous;
+    }
+
+    /// <summary>One server and profile followed, or the same after an access change: what its reads are cancelled by.</summary>
+    private sealed class Following(Uri server)
+    {
+        // Never disposed: a read may still hold its token, and it has no timer or link to release.
+        private readonly CancellationTokenSource _reads = new();
+
+        public Uri Server { get; } = server;
+
+        public CancellationToken Token => _reads.Token;
+
+        public void Cancel() => _reads.Cancel();
     }
 }

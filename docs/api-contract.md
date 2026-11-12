@@ -1208,8 +1208,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 
 ### 7.16 Administration
 
-Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403. Granary reads the
-web's Dashboard and Activity and sends Activity's commands; nothing else of the admin API is used.
+Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403, and so does an
+administrator account on a profile that is not its primary one (the server's "acting administrator"). Granary reads the
+web's Dashboard and Activity, sends Activity's commands and reads what the activity indicator shows (12.3); nothing
+else of the admin API is used.
 
 - `GET /api/v2/admin/stats` → `{ "active_streams", "total_movies", "total_movie_files", "total_shows", "total_show_files",
   "total_files", "total_storage_bytes", "total_users", "advisory_titles", "watch_providers" }`.
@@ -2659,6 +2661,16 @@ Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) asks for `session
 for the accepted channels, and a profile the server turns down causes no request. `access_changed` closes the gate
 until the next connection's answer. The state starts over with the lane, on a server or profile switch and on
 sign-out, and frames or answers of the replaced one are dropped by a number handed out per following.
+
+What the indicator reads, each source by itself (a source the server does not offer is left out):
+- **Streams** (`sessions`): every page of `GET /api/v2/admin/sessions` (7.16) once the channel is accepted and again on
+  `sessions.replaced`, as the web's `useAdminSessions`. The frame's own rows (an older shape, 200 at most, possibly
+  cut for their size) and the channel's snapshot are never read; the lifecycle events
+  (`session.started|paused|resumed|stopped`) are not followed, as on the web.
+
+Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
+or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until
+the next connection (at most five minutes away); any other failure keeps what was shown and waits for the next news.
 
 ## 13. Consequences for the Windows client
 

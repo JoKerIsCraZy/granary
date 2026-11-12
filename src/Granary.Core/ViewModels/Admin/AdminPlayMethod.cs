@@ -52,6 +52,17 @@ public static class AdminPlayMethod
         _ => "Unknown",
     };
 
+    /// <summary>The web's order of the methods, by how much work the server does; unknown last, anything else after it.</summary>
+    public static int Rank(string method) => method switch
+    {
+        Direct => 0,
+        Remux => 1,
+        DirectStream => 2,
+        Transcode => 3,
+        Unknown => 4,
+        _ => 5,
+    };
+
     private static string Or(string? value, string fallback) => string.IsNullOrEmpty(value) ? fallback : value;
 
     private static string Decision(string? decision) => decision?.Trim() switch

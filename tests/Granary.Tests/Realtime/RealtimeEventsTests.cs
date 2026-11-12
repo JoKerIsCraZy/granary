@@ -32,7 +32,8 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
         _harness.Answer("api/v2/notifications/unread-count", """{ "count": 3 }""");
         var notifications = new NotificationsApi(_harness.Silo.Http);
         _badge = new NotificationBadge(_harness.Session, notifications, _harness.Clock, _harness.Logs.For<NotificationBadge>());
-        _events = new RealtimeEvents(_harness.Session, Lane, _harness.ViewerState, _stops, _badge, new ServerActivity(), new ImmediateDispatcher(),
+        var activity = new ServerActivity(new Granary.Core.Api.Admin.AdminApi(_harness.Silo.Http), _harness.Clock, _harness.Logs.For<ServerActivity>());
+        _events = new RealtimeEvents(_harness.Session, Lane, _harness.ViewerState, _stops, _badge, activity, new ImmediateDispatcher(),
             _harness.Clock, _harness.Logs.For<RealtimeEvents>());
     }
 

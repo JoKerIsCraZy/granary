@@ -1,4 +1,5 @@
 using System.Net;
+using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Events;
 using Granary.Core.Api.Notifications;
@@ -27,7 +28,7 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         Library.Session.Account = Administrator;
         Library.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
         var badge = new NotificationBadge(Library.Session, new NotificationsApi(Library.Silo.Http), Library.Clock, Library.Logs.For<NotificationBadge>());
-        Activity = new ServerActivity();
+        Activity = new ServerActivity(new AdminApi(Library.Silo.Http), Library.Clock, Library.Logs.For<ServerActivity>());
         Events = new RealtimeEvents(Library.Session, Lane, Library.ViewerState, new PlaybackStops(), badge, Activity, new ImmediateDispatcher(),
             Library.Clock, Library.Logs.For<RealtimeEvents>());
     }

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The activity indicator of an acting administrator, as the web's (components/ServerActivity.tsx): a glass disc with the
+    web's pulse icon (lucide's Activity), a red count on its corner while something is going on, a red dot at its foot once
+    the events stream has stayed away, and behind it a panel, 320 px wide and at most 400 px of rows, that lists what the
+    server does. Its rows are only read: the arrows walk them, and "View all" beside Streams opens Admin → Activity.
+    The window places it and decides when it shows (MainWindow.Activity.cs).
+-->
+<UserControl
+    x:Class="Granary.App.Controls.ServerActivityButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:admin="using:Granary.Core.ViewModels.Admin"
+    xmlns:adminViews="using:Granary.App.Views.Admin"
+    IsTabStop="False">
+
+    <UserControl.Resources>
+        <!-- The web's popover: the surface nearly opaque, a hairline around it, 16 px corners, no padding of its own. -->
+        <Style x:Key="ActivityPanelStyle" TargetType="FlyoutPresenter">
+            <Setter Property="Background" Value="#F2161619" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MaxWidth" Value="340" />
+            <Setter Property="RequestedTheme" Value="Dark" />
+            <!-- The rows scroll in the panel's own scroller, under the header that stays. -->
+            <Setter Property="ScrollViewer.VerticalScrollMode" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style x:Key="ActivitySectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="CharacterSpacing" Value="120" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="ActivityRowTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="ActivityEmptyRowTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        </Style>
+        <!-- A section's number beside its title. -->
+        <Style x:Key="ActivityCountChipStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SiloPrimaryTint10Brush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="ActivityCountChipTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
+        </Style>
+        <Style x:Key="ActivityLinkStyle" TargetType="HyperlinkButton">
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Margin" Value="0,-2,-4,-2" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="ActivityRowStyle" TargetType="controls:ReadingRow">
+            <Setter Property="Padding" Value="4,3" />
+            <Setter Property="Margin" Value="-4,0" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
+        <!-- "2 Direct Play", behind a dot in the method's colour. The root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
+        <DataTemplate x:Key="ActivityStreamRowTemplate" x:DataType="admin:ActivityStreamRow">
+            <Grid>
+                <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" AutomationProperties.Name="{x:Bind Text, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind adminViews:AdminDashboardView.MethodBrush(Method)}" />
+                        <TextBlock Text="{x:Bind Text, Mode=OneWay}" Style="{StaticResource ActivityRowTextStyle}" />
+                    </StackPanel>
+                </controls:ReadingRow>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Button x:Name="Trigger" Style="{StaticResource SiloPageBackButtonStyle}" AutomationProperties.Name="{x:Bind ViewModel.Name, Mode=OneWay}"
+                ToolTipService.ToolTip="Server activity">
+            <Viewbox Width="18" Height="18" Stretch="Uniform">
+                <Canvas Width="24" Height="24">
+                    <Path x:Name="Pulse" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Stroke="{x:Bind PulseBrush(ViewModel.HasActivity), Mode=OneWay}"
+                          Data="M22,12 H19.52 A2,2 0 0 0 17.59,13.46 L15.24,21.82 A0.25,0.25 0 0 1 14.76,21.82 L9.24,2.18 A0.25,0.25 0 0 0 8.76,2.18 L6.41,10.54 A2,2 0 0 1 4.49,12 H2" />
+                </Canvas>
+            </Viewbox>
+            <Button.Flyout>
+                <Flyout x:Name="Panel" Placement="BottomEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource ActivityPanelStyle}"
+                        Opened="OnPanelOpened" Closed="OnPanelClosed">
+                    <Grid Width="320">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Padding="16,12" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1">
+                            <TextBlock Text="Server Activity" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="13"
+                                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+                            <!-- Only while the events stream is not live. -->
+                            <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasConnectionText, Mode=OneWay}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
+                                       FontWeight="Medium" FontSize="10" Foreground="#FFE9B44C" AutomationProperties.LiveSetting="Polite" />
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" MaxHeight="400" XYFocusKeyboardNavigation="Enabled" HorizontalScrollMode="Disabled"
+                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <controls:ReadingRow Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Padding="16,32" CornerRadius="0"
+                                                     AutomationProperties.Name="No active server activity">
+                                    <TextBlock Text="No active server activity" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                                               HorizontalAlignment="Center" />
+                                </controls:ReadingRow>
+
+                                <StackPanel Visibility="{x:Bind ViewModel.HasSections, Mode=OneWay}">
+                                    <!-- Streams: one row per play method. -->
+                                    <StackPanel Padding="16,12" Visibility="{x:Bind ViewModel.ShowsStreams, Mode=OneWay}">
+                                        <Grid Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="STREAMS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                           AutomationProperties.Name="Streams" />
+                                                <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasStreams, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind ViewModel.StreamCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <HyperlinkButton x:Name="ViewStreamsLink" Style="{StaticResource ActivityLinkStyle}" Click="OnViewStreamsClick"
+                                                             AutomationProperties.Name="View all streams">
+                                                <StackPanel Orientation="Horizontal" Spacing="2">
+                                                    <TextBlock Text="View all" />
+                                                    <FontIcon Glyph="&#xE76C;" FontSize="8" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </HyperlinkButton>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.Streams}" ItemTemplate="{StaticResource ActivityStreamRowTemplate}"
+                                                      IsTabStop="False" />
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoStreams, Mode=OneWay}"
+                                                             AutomationProperties.Name="No active streams">
+                                            <TextBlock Text="No active streams" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                        </controls:ReadingRow>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Flyout>
+            </Button.Flyout>
+        </Button>
+
+        <!-- How much is going on: the web's red count on the corner, breathing once every two seconds. -->
+        <Border x:Name="Badge" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-3,0" MinWidth="18" Height="18"
+                CornerRadius="9" Padding="4,0" Background="#FFEF4444" IsHitTestVisible="False"
+                Visibility="{x:Bind ViewModel.HasActivity, Mode=OneWay}">
+            <TextBlock Text="{x:Bind ViewModel.BadgeText, Mode=OneWay}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="10"
+                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       AutomationProperties.AccessibilityView="Raw" />
+        </Border>
+        <!-- The events stream has stayed away for a while: what shows may be old. -->
+        <Ellipse HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Width="14" Height="14" Fill="#FFEF4444"
+                 Stroke="{StaticResource SiloBackgroundBrush}" StrokeThickness="2" IsHitTestVisible="False"
+                 Visibility="{x:Bind ViewModel.ShowsConnectionProblem, Mode=OneWay}" />
+    </Grid>
+</UserControl>

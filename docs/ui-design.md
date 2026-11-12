@@ -1257,6 +1257,35 @@ stream's commands on Activity.
   route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
   when nothing shows.
 
+### Activity indicator
+
+For the acting administrator (whoever the server gives its administrator's channels, docs/api-contract.md 12.3), the
+web's `ServerActivity` (`components/ServerActivity.tsx`): `ServerActivityButton` on `ServerActivityViewModel`, placed
+by `MainWindow.Activity.cs`.
+
+- **The button.** A 36 px glass disc as the way back's, over the page at its top right (20 px from the edge, 12 px
+  down), with the web's pulse icon (lucide's Activity) in the accent while something is going on, muted otherwise. A
+  red count on its corner ("3", "99+" past 99) fades to half and back every two seconds, standing still when Windows'
+  animations are off. A red dot at its foot once the events stream has had no connection for 4 s. Its name for a
+  screen reader: "Server activity: 3 active", or "Server activity" when idle.
+- **When it shows.** As the web: on the admin area's pages always; on every other page only while something is going
+  on, or while its panel is open. Never over the full player, which has the window to itself; over the pages while the
+  player is its bar. Not on the signed-out screens.
+- **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
+  "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
+  on it says "No active server activity". Otherwise a section each, a small uppercase title with its count beside it:
+  - **Streams**: a row per play method in use, a dot in the method's colour and "2 Direct Play", in the order Direct
+    Play, Remux, Direct Stream, Transcode, Unknown; "No active streams" without any. "View all ›" closes the panel and
+    opens Admin → Activity (in place when the admin area shows, else the area opens on it and Back returns).
+  A section whose list the server does not offer is left out.
+- **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
+  the page's top edge moves to it (a held key stops at the edge), Down or Left from it back to where focus was on the
+  page. Enter or Space opens the panel and moves into it; the arrows walk its rows, which are only read (`ReadingRow`:
+  focus and one text for a screen reader, nothing happens on OK), and reach "View all"; Esc or the remote's Back closes
+  it, also while focus is still on the button.
+- **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
+  scans or the preparation queue).
+
 ## Full screen
 
 The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state

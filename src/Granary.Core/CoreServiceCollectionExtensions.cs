@@ -226,6 +226,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
         services.AddSingleton<AdminSidebarViewModel>();
+        services.AddSingleton<ServerActivityViewModel>();
         services.AddTransient<AdminDashboardViewModel>();
         services.AddTransient<AdminActivityViewModel>();
         return services;

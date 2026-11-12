@@ -46,7 +46,8 @@ public sealed partial class AdminPage : Page, IDockSpace
         Bindings.StopTracking();
     }
 
-    private void Open(string page)
+    /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
+    public void Open(string page)
     {
         var item = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? (ListViewItem)Pages.Items[0];
         if (ReferenceEquals(Pages.SelectedItem, item))
