@@ -1,3 +1,5 @@
+using Granary.Core.Api.Images;
+
 namespace Granary.Core.ViewModels;
 
 /// <summary>
@@ -208,7 +210,7 @@ public static class BrowseHeroLayout
             return 0;
         }
         var sizes = For(windowHeight, banner: false, size);
-        return BackdropDecodeWidth(BackdropBoxWidth(windowWidth), sizes.RestHeight);
+        return FillWidth(BackdropBoxWidth(windowWidth), sizes.RestHeight);
     }
 
     /// <summary>
@@ -255,10 +257,15 @@ public static class BrowseHeroLayout
 
     /// <summary>
     /// How wide to decode a backdrop filling a box <paramref name="boxWidth"/> by <paramref name="boxHeight"/> (the hero's,
-    /// Search's): as wide as the box, or as wide as the box's height needs at the picture's shape; 0 while the width is not
-    /// known.
+    /// Search's): as wide as the box, or as wide as the box's height needs at the picture's shape, and never wider than the
+    /// widest picture the server gives (<see cref="ImageSizes.WidestHeroBackdrop"/>): past that a decode only takes memory.
+    /// 0 while the width is not known.
     /// </summary>
-    public static int BackdropDecodeWidth(double boxWidth, double boxHeight) => boxWidth > 0
+    public static int BackdropDecodeWidth(double boxWidth, double boxHeight) =>
+        Math.Min(ImageSizes.WidestHeroBackdrop, FillWidth(boxWidth, boxHeight));
+
+    // How wide a backdrop is drawn to fill a box: the box's width, or what its height needs at the picture's shape.
+    private static int FillWidth(double boxWidth, double boxHeight) => boxWidth > 0
         ? (int)Math.Ceiling(Math.Max(boxWidth, double.IsFinite(boxHeight) && boxHeight > 0 ? boxHeight * BackdropAspect : 0))
         : 0;
 

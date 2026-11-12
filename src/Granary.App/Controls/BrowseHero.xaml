@@ -13,7 +13,7 @@
 
     <UserControl.Resources>
         <!-- The compact hero's fades: behind the text, and toward the rows. Its text hangs from the top, clear of the bottom
-             fade the full hero's stands in, so the side shade is measured on the text, not on the hero's width: the full
+             fade the full hero's stands in, so the side shade is sized to the text's widest reach, not to the hero's width: the full
              hero's 88 % of the page's colour at the left edge and its 58 % where the text ends, then its 22 % and clear
              three eighths and three quarters of the text's reach further (the brush is 1.75 times the text's reach wide,
              BrowseHeroLayout.TextShadeReach, so the text ends at 4/7 of it). -->

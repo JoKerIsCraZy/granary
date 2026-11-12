@@ -269,7 +269,9 @@ public sealed partial class BrowseHeroLayoutTests
         Assert.Equal((fullPicture.Width, fullPicture.Height, fullPicture.Left), (picture.Width, picture.Height, picture.Left));
         // A fifth of what either hero cuts off the picture's height goes at the top, so the lower hero begins a little
         // further down in it.
-        Assert.True(compact.RestHeight < full.RestHeight && picture.Top <= fullPicture.Top, $"{picture} {fullPicture}");
+        Assert.True(compact.RestHeight < full.RestHeight, $"{compact.RestHeight} {full.RestHeight}");
+        Assert.Equal(BrowseHeroLayout.PlaceBackdrop(pageWidth, compact.RestHeight).Top, picture.Top);
+        Assert.True(picture.Top < fullPicture.Top || picture.Height <= compact.RestHeight, $"{picture} {fullPicture}");
     }
 
     [Theory]
@@ -350,6 +352,10 @@ public sealed partial class BrowseHeroLayoutTests
     [Theory]
     [InlineData(2000, 700, 2000)]
     [InlineData(1000, 700, 1245)]
+    // No wider than the widest picture there is to ask for: decoded wider, it would only take memory (a 3,580 px page's
+    // would be 29 MB for each of the hero's two layers, for nothing more to see).
+    [InlineData(3580, 643, 2560)]
+    [InlineData(1000, 2000, 2560)]
     [InlineData(1000, double.NaN, 1000)]
     [InlineData(1000, double.PositiveInfinity, 1000)]
     [InlineData(0, 700, 0)]
