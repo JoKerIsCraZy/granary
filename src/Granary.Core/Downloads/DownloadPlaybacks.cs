@@ -108,7 +108,9 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
     {
         lock (_gate)
         {
-            if (_reads.TryGetValue(download.Folder, out var running))
+            // One that has ended is not under way, though it is still listed until its continuation ran: a Play right after
+            // it reads the folder as it is now, not what that read found.
+            if (_reads.TryGetValue(download.Folder, out var running) && !running.IsCompleted)
             {
                 return running;
             }
