@@ -11,6 +11,7 @@ using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -749,9 +750,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     private static string DescribeLoadFailure(Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => "The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
+        SiloApiException { Status: 429 } api => ApiFailureText.TooManyRequests(api.RetryAfter),
         SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The server could not load this title (error {api.Status}).",
+        SiloApiException api => AppText.Get("granary.detail.loadFailed", ("status", api.Status)),
         _ => ApiFailureText.ForTransport(ex),
     };
 }
