@@ -1079,7 +1079,10 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   every section's rows. The first news after a quiet 250 ms is looked at at once, more news within it once it is up;
   a change of who may see the indicator at all never waits. Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
   row the keyboard is on keeps its focus while its numbers change. The shell says where it is (`ShowsWhenIdle` on the
-  admin area's pages) and whether the panel is open; `IsVisible` is the web's rule.
+  admin area's pages) and whether the panel is open; `IsVisible` is the web's rule, and also holds while there may
+  be scans nobody knows of. What the shell's keys do around the button that needs no WinUI is in Core too
+  (`ActivityIndicatorFocus`: Up at a page's top, and whether a button that goes gives focus back), as is where the
+  button lies for a page that must keep clear of it (`ActivityIndicatorPlace`).
 
 ## Discord status
 
