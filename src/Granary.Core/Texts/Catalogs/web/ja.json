@@ -881,6 +881,90 @@
       "value": "再生できる項目がありません。"
     }
   ],
+  "watchParty.button.imReady": [
+    {
+      "type": 0,
+      "value": "準備完了にする"
+    }
+  ],
+  "watchParty.button.suggest": [
+    {
+      "type": 0,
+      "value": "提案"
+    }
+  ],
+  "watchParty.connection.disconnected": [
+    {
+      "type": 0,
+      "value": "切断"
+    }
+  ],
+  "watchParty.end.confirm": [
+    {
+      "type": 0,
+      "value": "Watch Partyを終了"
+    }
+  ],
+  "watchParty.options.everyoneVotes": [
+    {
+      "type": 0,
+      "value": "全員で投票"
+    }
+  ],
+  "watchParty.page.start": [
+    {
+      "type": 0,
+      "value": "Watch Partyを開始"
+    }
+  ],
+  "watchParty.seat.host": [
+    {
+      "type": 0,
+      "value": "ホスト"
+    }
+  ],
+  "watchParty.strip.guest": [
+    {
+      "type": 0,
+      "value": "再生する作品はホストが決めます。"
+    }
+  ],
+  "watchParty.strip.manager": [
+    {
+      "type": 0,
+      "value": "キューに追加すると次に再生されます。"
+    }
+  ],
+  "watchParty.theHost": [
+    {
+      "type": 0,
+      "value": "ホスト"
+    }
+  ],
+  "watchParty.title": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "watchParty.whoSeen.inProgress": [
+    {
+      "type": 0,
+      "value": "視聴中"
+    }
+  ],
+  "watchParty.whoSeen.title": [
+    {
+      "type": 0,
+      "value": "視聴済みのメンバー"
+    }
+  ],
+  "watchParty.whoSeen.watched": [
+    {
+      "type": 0,
+      "value": "視聴済み"
+    }
+  ],
   "web.admin.homeRows.restore.libraryFallback": [
     {
       "type": 0,
@@ -6527,6 +6611,12 @@
       "value": "チャプター"
     }
   ],
+  "web.player.connection.reconnecting": [
+    {
+      "type": 0,
+      "value": "再接続中…"
+    }
+  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,
@@ -6551,10 +6641,149 @@
       "value": "音量"
     }
   ],
+  "web.player.room.inviteNotReady": [
+    {
+      "type": 0,
+      "value": "招待リンクはまだ準備できていません。"
+    }
+  ],
+  "web.player.room.noticeTitle": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.player.room.onlyHostCanControl": [
+    {
+      "type": 0,
+      "value": "再生を操作できるのはホストのみです。"
+    }
+  ],
+  "web.player.room.onlyHostCanSeek": [
+    {
+      "type": 0,
+      "value": "ルームをシークできるのはホストのみです。"
+    }
+  ],
+  "web.player.room.reconnecting": [
+    {
+      "type": 0,
+      "value": "ルームに再接続しています。操作は一時的に使用できません。"
+    }
+  ],
   "web.player.sleepTimer.trigger": [
     {
       "type": 0,
       "value": "スリープタイマー"
+    }
+  ],
+  "web.player.watchTogether.allowPause": [
+    {
+      "type": 0,
+      "value": "一時停止を許可"
+    }
+  ],
+  "web.player.watchTogether.codePending": [
+    {
+      "type": 0,
+      "value": "…"
+    }
+  ],
+  "web.player.watchTogether.connectionReplaced": [
+    {
+      "type": 0,
+      "value": "このプロフィールは別のデバイスでWatch Partyに参加しました。"
+    }
+  ],
+  "web.player.watchTogether.member.buffering": [
+    {
+      "type": 0,
+      "value": "バッファリング中"
+    }
+  ],
+  "web.player.watchTogether.member.connected": [
+    {
+      "type": 0,
+      "value": "接続済み"
+    }
+  ],
+  "web.player.watchTogether.member.ready": [
+    {
+      "type": 0,
+      "value": "準備完了"
+    }
+  ],
+  "web.player.watchTogether.member.syncing": [
+    {
+      "type": 0,
+      "value": "同期中"
+    }
+  ],
+  "web.player.watchTogether.policy.guestsCanPause": [
+    {
+      "type": 0,
+      "value": "ゲストは一時停止・再開できます"
+    }
+  ],
+  "web.player.watchTogether.policy.hostControls": [
+    {
+      "type": 0,
+      "value": "再生はホストが操作します"
+    }
+  ],
+  "web.player.watchTogether.policy.hostOnly": [
+    {
+      "type": 0,
+      "value": "再生を操作できるのは自分だけです"
+    }
+  ],
+  "web.player.watchTogether.policy.youCanPause": [
+    {
+      "type": 0,
+      "value": "一時停止・再開できます"
+    }
+  ],
+  "web.player.watchTogether.selfName": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "（自分）"
+    }
+  ],
+  "web.player.watchTogether.setHostOnly": [
+    {
+      "type": 0,
+      "value": "ホストのみ"
+    }
+  ],
+  "web.player.watchTogether.syncingRoom": [
+    {
+      "type": 0,
+      "value": "ルームの状態を同期中"
+    }
+  ],
+  "web.player.watchTogether.viewerCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "人が視聴中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.profiles.libraries.count": [
@@ -10275,6 +10504,2184 @@
     {
       "type": 0,
       "value": "保存中..."
+    }
+  ],
+  "web.watchTogether.actions.endRoomFailed": [
+    {
+      "type": 0,
+      "value": "ルームを終了できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.guestControlOff": [
+    {
+      "type": 0,
+      "value": "ルームはホストが操作するようになりました"
+    }
+  ],
+  "web.watchTogether.actions.guestControlOn": [
+    {
+      "type": 0,
+      "value": "ゲストが一時停止と再開をできるようになりました"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopied": [
+    {
+      "type": 0,
+      "value": "招待をコピーしました。ルームコード"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopiedWithCode": [
+    {
+      "type": 0,
+      "value": "招待をコピーしました。ルームコード"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopyFailed": [
+    {
+      "type": 0,
+      "value": "招待リンクをコピーできませんでした"
+    }
+  ],
+  "web.watchTogether.actions.modeFailed": [
+    {
+      "type": 0,
+      "value": "ルームの選び方を変更できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.notConnected": [
+    {
+      "type": 0,
+      "value": "まだルームに接続されていません"
+    }
+  ],
+  "web.watchTogether.actions.promoteFailed": [
+    {
+      "type": 0,
+      "value": "その提案を開始できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.stageFailed": [
+    {
+      "type": 0,
+      "value": "キューに追加できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.startFailed": [
+    {
+      "type": 0,
+      "value": "再生を開始できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.stopFailed": [
+    {
+      "type": 0,
+      "value": "再生を停止できませんでした"
+    }
+  ],
+  "web.watchTogether.actions.updateRoomFailed": [
+    {
+      "type": 0,
+      "value": "ルームを更新できませんでした"
+    }
+  ],
+  "web.watchTogether.activity.episodeTitle": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " · S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.activity.joined": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が参加しました"
+    }
+  ],
+  "web.watchTogether.activity.left": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が退出しました"
+    }
+  ],
+  "web.watchTogether.activity.mode": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "がルームを"
+    },
+    {
+      "type": 1,
+      "value": "mode"
+    },
+    {
+      "type": 0,
+      "value": "に切り替えました"
+    }
+  ],
+  "web.watchTogether.activity.modeHostPick": [
+    {
+      "type": 0,
+      "value": "ホストが選択"
+    }
+  ],
+  "web.watchTogether.activity.modeVote": [
+    {
+      "type": 0,
+      "value": "全員で投票"
+    }
+  ],
+  "web.watchTogether.activity.playbackPaused": [
+    {
+      "type": 0,
+      "value": "再生を一時停止しました"
+    }
+  ],
+  "web.watchTogether.activity.playbackResumed": [
+    {
+      "type": 0,
+      "value": "再生を再開しました"
+    }
+  ],
+  "web.watchTogether.activity.policy": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "policy"
+    },
+    {
+      "type": 0,
+      "value": "に設定しました"
+    }
+  ],
+  "web.watchTogether.activity.ready": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が準備完了です"
+    }
+  ],
+  "web.watchTogether.activity.staged": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "をキューに追加しました"
+    }
+  ],
+  "web.watchTogether.activity.started": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を開始しました"
+    }
+  ],
+  "web.watchTogether.activity.stopped": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を停止しました"
+    }
+  ],
+  "web.watchTogether.activity.suggested": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を提案しました"
+    }
+  ],
+  "web.watchTogether.activity.timeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "時間"
+    }
+  ],
+  "web.watchTogether.activity.timeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.watchTogether.activity.timeNow": [
+    {
+      "type": 0,
+      "value": "今"
+    }
+  ],
+  "web.watchTogether.activity.titleLoading": [
+    {
+      "type": 0,
+      "value": "…"
+    }
+  ],
+  "web.watchTogether.activity.unready": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が準備完了を取り消しました"
+    }
+  ],
+  "web.watchTogether.activity.unstaged": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "がキューをクリアしました"
+    }
+  ],
+  "web.watchTogether.activity.unsuggested": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を削除しました"
+    }
+  ],
+  "web.watchTogether.browse.chipAll": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.watchTogether.browse.chipMovies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.watchTogether.browse.chipRecent": [
+    {
+      "type": 0,
+      "value": "最近"
+    }
+  ],
+  "web.watchTogether.browse.chipSeries": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.watchTogether.browse.chipTogether": [
+    {
+      "type": 0,
+      "value": "一緒に"
+    }
+  ],
+  "web.watchTogether.browse.chipWatchlists": [
+    {
+      "type": 0,
+      "value": "ウォッチリスト"
+    }
+  ],
+  "web.watchTogether.browse.collapsed": [
+    {
+      "type": 0,
+      "value": "ブラウズ"
+    }
+  ],
+  "web.watchTogether.browse.collapsedHintPick": [
+    {
+      "type": 0,
+      "value": "検索するか、ルームの共通作品をブラウズして選んでください。"
+    }
+  ],
+  "web.watchTogether.browse.collapsedHintSuggest": [
+    {
+      "type": 0,
+      "value": "検索するか、ルームの共通作品をブラウズして提案してください。"
+    }
+  ],
+  "web.watchTogether.browse.emptyAll": [
+    {
+      "type": 0,
+      "value": "ブラウズできる作品はまだありません。上で検索してください。"
+    }
+  ],
+  "web.watchTogether.browse.emptyMovies": [
+    {
+      "type": 0,
+      "value": "ライブラリに映画はまだありません。上で検索してください。"
+    }
+  ],
+  "web.watchTogether.browse.emptyRecent": [
+    {
+      "type": 0,
+      "value": "最近追加された作品はありません。"
+    }
+  ],
+  "web.watchTogether.browse.emptySeries": [
+    {
+      "type": 0,
+      "value": "ライブラリにシリーズはまだありません。上で検索してください。"
+    }
+  ],
+  "web.watchTogether.browse.emptyTogether": [
+    {
+      "type": 0,
+      "value": "2人以上が視聴中の作品はまだありません。"
+    }
+  ],
+  "web.watchTogether.browse.emptyWatchlists": [
+    {
+      "type": 0,
+      "value": "ルームの誰のウォッチリストにも作品がありません。"
+    }
+  ],
+  "web.watchTogether.browse.filterLabel": [
+    {
+      "type": 0,
+      "value": "フィルター"
+    }
+  ],
+  "web.watchTogether.browse.hide": [
+    {
+      "type": 0,
+      "value": "ブラウズを隠す"
+    }
+  ],
+  "web.watchTogether.browse.noMatches": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "」に一致する結果はありません。別のタイトルを試すか、フィルターをクリアしてください。"
+    }
+  ],
+  "web.watchTogether.browse.recentMovies": [
+    {
+      "type": 0,
+      "value": "最近追加された映画"
+    }
+  ],
+  "web.watchTogether.browse.recentSeries": [
+    {
+      "type": 0,
+      "value": "最近追加されたシリーズ"
+    }
+  ],
+  "web.watchTogether.browse.resultCount": [
+    {
+      "type": 0,
+      "value": "· "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.browse.searchFailed": [
+    {
+      "type": 0,
+      "value": "検索できませんでした。"
+    }
+  ],
+  "web.watchTogether.browse.searchLabel": [
+    {
+      "type": 0,
+      "value": "映画とシリーズを検索"
+    }
+  ],
+  "web.watchTogether.browse.searchPlaceholder": [
+    {
+      "type": 0,
+      "value": "映画、シリーズ、エピソードを検索…"
+    }
+  ],
+  "web.watchTogether.browse.searchResults": [
+    {
+      "type": 0,
+      "value": "検索結果"
+    }
+  ],
+  "web.watchTogether.browse.sectionPick": [
+    {
+      "type": 0,
+      "value": "ブラウズして選択"
+    }
+  ],
+  "web.watchTogether.browse.sectionSuggest": [
+    {
+      "type": 0,
+      "value": "ブラウズして提案"
+    }
+  ],
+  "web.watchTogether.browse.togetherHint": [
+    {
+      "type": 0,
+      "value": "2人以上が視聴中"
+    }
+  ],
+  "web.watchTogether.browse.togetherTitle": [
+    {
+      "type": 0,
+      "value": "一緒に視聴を続ける"
+    }
+  ],
+  "web.watchTogether.browse.watchlistsHint": [
+    {
+      "type": 0,
+      "value": "ルーム内の誰か"
+    }
+  ],
+  "web.watchTogether.browse.watchlistsTitle": [
+    {
+      "type": 0,
+      "value": "みんなのウォッチリスト"
+    }
+  ],
+  "web.watchTogether.candidate.stageForRoom": [
+    {
+      "type": 0,
+      "value": "ルームに用意する"
+    }
+  ],
+  "web.watchTogether.candidate.stageIt": [
+    {
+      "type": 0,
+      "value": "用意する"
+    }
+  ],
+  "web.watchTogether.candidate.suggestThis": [
+    {
+      "type": 0,
+      "value": "これを提案"
+    }
+  ],
+  "web.watchTogether.common.change": [
+    {
+      "type": 0,
+      "value": "変更"
+    }
+  ],
+  "web.watchTogether.common.codeCopied": [
+    {
+      "type": 0,
+      "value": "ルームコード"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "をコピーしました"
+    }
+  ],
+  "web.watchTogether.common.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.common.episodeNumber": [
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.watchTogether.common.hostPicks": [
+    {
+      "type": 0,
+      "value": "ホストが選択"
+    }
+  ],
+  "web.watchTogether.common.movie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.watchTogether.common.policyGuestPlayPause": [
+    {
+      "type": 0,
+      "value": "ゲストも一時停止可能"
+    }
+  ],
+  "web.watchTogether.common.policyHostOnly": [
+    {
+      "type": 0,
+      "value": "ホストが再生を操作"
+    }
+  ],
+  "web.watchTogether.common.replaces": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を置き換えます"
+    }
+  ],
+  "web.watchTogether.common.roomInactive": [
+    {
+      "type": 0,
+      "value": "そのルームはすでに終了しています。"
+    }
+  ],
+  "web.watchTogether.common.roomNotFound": [
+    {
+      "type": 0,
+      "value": "ルームが見つかりません。"
+    }
+  ],
+  "web.watchTogether.common.season": [
+    {
+      "type": 0,
+      "value": "シーズン"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.watchTogether.common.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.watchTogether.common.someone": [
+    {
+      "type": 0,
+      "value": "誰か"
+    }
+  ],
+  "web.watchTogether.common.specials": [
+    {
+      "type": 0,
+      "value": "特別編"
+    }
+  ],
+  "web.watchTogether.common.suggestFailed": [
+    {
+      "type": 0,
+      "value": "提案できませんでした"
+    }
+  ],
+  "web.watchTogether.connection.connected": [
+    {
+      "type": 0,
+      "value": "接続済み"
+    }
+  ],
+  "web.watchTogether.connection.connecting": [
+    {
+      "type": 0,
+      "value": "接続中…"
+    }
+  ],
+  "web.watchTogether.endDialog.description": [
+    {
+      "type": 0,
+      "value": "全員のWatch Partyを終了しますか？"
+    }
+  ],
+  "web.watchTogether.endDialog.title": [
+    {
+      "type": 0,
+      "value": "Watch Partyを終了しますか？"
+    }
+  ],
+  "web.watchTogether.hero.episode": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " — S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.hero.episodeTitled": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " — S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.watchTogether.hero.movieYear": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "（"
+    },
+    {
+      "type": 1,
+      "value": "year"
+    },
+    {
+      "type": 0,
+      "value": "）"
+    }
+  ],
+  "web.watchTogether.hero.unavailable": [
+    {
+      "type": 0,
+      "value": "利用できません"
+    }
+  ],
+  "web.watchTogether.hub.codeLabel": [
+    {
+      "type": 0,
+      "value": "ルームコード"
+    }
+  ],
+  "web.watchTogether.hub.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "ABCD1234"
+    }
+  ],
+  "web.watchTogether.hub.create": [
+    {
+      "type": 0,
+      "value": "Watch Partyを作成"
+    }
+  ],
+  "web.watchTogether.hub.createFailed": [
+    {
+      "type": 0,
+      "value": "ルームを作成できませんでした。"
+    }
+  ],
+  "web.watchTogether.hub.creating": [
+    {
+      "type": 0,
+      "value": "作成中…"
+    }
+  ],
+  "web.watchTogether.hub.fromTitleHint": [
+    {
+      "type": 0,
+      "value": "見たい作品が決まっていますか？その作品のページを開き、メニューから"
+    },
+    {
+      "type": 8,
+      "value": "item",
+      "children": [
+        {
+          "type": 0,
+          "value": "これでWatch Partyを開始"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "を選択してください。"
+    }
+  ],
+  "web.watchTogether.hub.headline": [
+    {
+      "type": 0,
+      "value": "どこにいても、みんなで一緒に見る。"
+    }
+  ],
+  "web.watchTogether.hub.hostPickCaption": [
+    {
+      "type": 0,
+      "value": "ホストが選び、全員で視聴します。"
+    }
+  ],
+  "web.watchTogether.hub.howItWorks": [
+    {
+      "type": 0,
+      "value": "使い方"
+    }
+  ],
+  "web.watchTogether.hub.intro": [
+    {
+      "type": 0,
+      "value": "ルームを開いてコードを共有すれば、全員が同期して再生します。再生する作品はホストが選ぶか、ルーム全員の投票で決めます。"
+    }
+  ],
+  "web.watchTogether.hub.join": [
+    {
+      "type": 0,
+      "value": "Watch Partyに参加"
+    }
+  ],
+  "web.watchTogether.hub.joinFailed": [
+    {
+      "type": 0,
+      "value": "ルームに参加できませんでした。"
+    }
+  ],
+  "web.watchTogether.hub.joinTitle": [
+    {
+      "type": 0,
+      "value": "Watch Partyに参加"
+    }
+  ],
+  "web.watchTogether.hub.joining": [
+    {
+      "type": 0,
+      "value": "参加中…"
+    }
+  ],
+  "web.watchTogether.hub.modeGroup": [
+    {
+      "type": 0,
+      "value": "ルームでの選び方"
+    }
+  ],
+  "web.watchTogether.hub.paste": [
+    {
+      "type": 0,
+      "value": "貼り付け"
+    }
+  ],
+  "web.watchTogether.hub.pasteLabel": [
+    {
+      "type": 0,
+      "value": "ルームコードを貼り付け"
+    }
+  ],
+  "web.watchTogether.hub.recentChecking": [
+    {
+      "type": 0,
+      "value": "確認中…"
+    }
+  ],
+  "web.watchTogether.hub.recentEnded": [
+    {
+      "type": 0,
+      "value": "終了"
+    }
+  ],
+  "web.watchTogether.hub.recentHosted": [
+    {
+      "type": 0,
+      "value": "自分のルーム"
+    }
+  ],
+  "web.watchTogether.hub.recentJoined": [
+    {
+      "type": 0,
+      "value": "参加済み"
+    }
+  ],
+  "web.watchTogether.hub.recentLive": [
+    {
+      "type": 0,
+      "value": "開催中"
+    }
+  ],
+  "web.watchTogether.hub.recentTitle": [
+    {
+      "type": 0,
+      "value": "最近のWatch Party"
+    }
+  ],
+  "web.watchTogether.hub.recentUnknown": [
+    {
+      "type": 0,
+      "value": "状態不明"
+    }
+  ],
+  "web.watchTogether.hub.rejoin": [
+    {
+      "type": 0,
+      "value": "再参加"
+    }
+  ],
+  "web.watchTogether.hub.startBody": [
+    {
+      "type": 0,
+      "value": "今すぐ空のルームを開き、みんなが集まってから見る作品を選びます。"
+    }
+  ],
+  "web.watchTogether.hub.stepOpenCaption": [
+    {
+      "type": 0,
+      "value": "ここで作成するか、映画やエピソードのページから開始します。"
+    }
+  ],
+  "web.watchTogether.hub.stepOpenTitle": [
+    {
+      "type": 0,
+      "value": "ルームを開く"
+    }
+  ],
+  "web.watchTogether.hub.stepShareCaption": [
+    {
+      "type": 0,
+      "value": "一緒に見る人に招待リンクか8文字のコードを送ります。"
+    }
+  ],
+  "web.watchTogether.hub.stepShareTitle": [
+    {
+      "type": 0,
+      "value": "コードを共有"
+    }
+  ],
+  "web.watchTogether.hub.stepSyncCaption": [
+    {
+      "type": 0,
+      "value": "再生、一時停止、シークをみんなで一緒に。ホストが退出してから2分後にルームは終了します。"
+    }
+  ],
+  "web.watchTogether.hub.stepSyncTitle": [
+    {
+      "type": 0,
+      "value": "同期して視聴"
+    }
+  ],
+  "web.watchTogether.hub.voteCaption": [
+    {
+      "type": 0,
+      "value": "誰でも提案でき、ルームで投票します。"
+    }
+  ],
+  "web.watchTogether.inviteBar.code": [
+    {
+      "type": 0,
+      "value": "コード"
+    }
+  ],
+  "web.watchTogether.inviteBar.guestsCanPause": [
+    {
+      "type": 0,
+      "value": "ゲストも一時停止可能"
+    }
+  ],
+  "web.watchTogether.inviteBar.hostControls": [
+    {
+      "type": 0,
+      "value": "再生はホストが操作"
+    }
+  ],
+  "web.watchTogether.inviteBar.label": [
+    {
+      "type": 0,
+      "value": "招待"
+    }
+  ],
+  "web.watchTogether.inviteBar.link": [
+    {
+      "type": 0,
+      "value": "リンク"
+    }
+  ],
+  "web.watchTogether.inviteBar.shareCode": [
+    {
+      "type": 0,
+      "value": "コードを共有して参加してもらいましょう。"
+    }
+  ],
+  "web.watchTogether.lobby.guestBody": [
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": "が選んでいます。下で選んだ作品は提案として追加されます。"
+    }
+  ],
+  "web.watchTogether.lobby.guestCaption": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "host"
+            },
+            {
+              "type": 0,
+              "value": "が再生すると開始 · "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "人中"
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": "人が準備完了"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.lobby.hostBody": [
+    {
+      "type": 0,
+      "value": "下で作品を選ぶと、ここに表示されて全員が確認できます。ルームで決めてもらうこともできます。"
+    }
+  ],
+  "web.watchTogether.lobby.nothingOn": [
+    {
+      "type": 0,
+      "value": "まだ何も選ばれていません"
+    }
+  ],
+  "web.watchTogether.lobby.openVoting": [
+    {
+      "type": 0,
+      "value": "投票で決める"
+    }
+  ],
+  "web.watchTogether.lobby.queueThis": [
+    {
+      "type": 0,
+      "value": "キューに追加"
+    }
+  ],
+  "web.watchTogether.lobby.readyDone": [
+    {
+      "type": 0,
+      "value": "準備完了 ✓"
+    }
+  ],
+  "web.watchTogether.lobby.roomOpen": [
+    {
+      "type": 0,
+      "value": "ルーム開設中"
+    }
+  ],
+  "web.watchTogether.lobby.startAlone": [
+    {
+      "type": 0,
+      "value": "1人で開始"
+    }
+  ],
+  "web.watchTogether.lobby.startEveryone": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "全員で開始 · "
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": "/"
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "人が準備完了"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.lobby.suggestionsCount": [
+    {
+      "type": 0,
+      "value": "提案 · "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.lobby.upNext": [
+    {
+      "type": 0,
+      "value": "次に再生"
+    }
+  ],
+  "web.watchTogether.lobby.upNextGuest": [
+    {
+      "type": 0,
+      "value": "次に再生 · "
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": "がキューに追加"
+    }
+  ],
+  "web.watchTogether.lobby.waitingGuest": [
+    {
+      "type": 0,
+      "value": "ゲストの参加を待っています"
+    }
+  ],
+  "web.watchTogether.movie.close": [
+    {
+      "type": 0,
+      "value": "詳細を閉じる"
+    }
+  ],
+  "web.watchTogether.movie.newForEveryone": [
+    {
+      "type": 0,
+      "value": "全員が初視聴"
+    }
+  ],
+  "web.watchTogether.movie.notSeen": [
+    {
+      "type": 0,
+      "value": "未視聴"
+    }
+  ],
+  "web.watchTogether.movie.onWatchlist": [
+    {
+      "type": 0,
+      "value": "ウォッチリストに登録済み"
+    }
+  ],
+  "web.watchTogether.movie.percentIn": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%まで視聴"
+    }
+  ],
+  "web.watchTogether.movie.rewatchForEveryone": [
+    {
+      "type": 0,
+      "value": "全員が再視聴"
+    }
+  ],
+  "web.watchTogether.movie.seenOf": [
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "人中"
+    },
+    {
+      "type": 1,
+      "value": "seen"
+    },
+    {
+      "type": 0,
+      "value": "人"
+    }
+  ],
+  "web.watchTogether.movie.startedOf": [
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "人中"
+    },
+    {
+      "type": 1,
+      "value": "started"
+    },
+    {
+      "type": 0,
+      "value": "人が視聴開始"
+    }
+  ],
+  "web.watchTogether.picker.moreMembers": [
+    {
+      "type": 0,
+      "value": "+"
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.picker.rowHint": [
+    {
+      "type": 0,
+      "value": "· "
+    },
+    {
+      "type": 1,
+      "value": "hint"
+    }
+  ],
+  "web.watchTogether.playing.afterTitle": [
+    {
+      "type": 0,
+      "value": "この後 · 引き続き提案を受付中"
+    }
+  ],
+  "web.watchTogether.playing.caption": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "clock"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "state"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "人が参加中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.playing.empty": [
+    {
+      "type": 0,
+      "value": "この後の作品はまだありません。下から作品を探して提案してください。"
+    }
+  ],
+  "web.watchTogether.playing.eyebrow": [
+    {
+      "type": 0,
+      "value": "再生中"
+    }
+  ],
+  "web.watchTogether.playing.guestNote": [
+    {
+      "type": 0,
+      "value": "ほかの人の再生は続きます。再参加すると、ルームの再生位置から視聴できます。"
+    }
+  ],
+  "web.watchTogether.playing.hostNote": [
+    {
+      "type": 0,
+      "value": "ほかの人の再生は続きます。停止すると全員がここに戻り、別の作品を選べます。"
+    }
+  ],
+  "web.watchTogether.playing.paused": [
+    {
+      "type": 0,
+      "value": "一時停止中"
+    }
+  ],
+  "web.watchTogether.playing.playing": [
+    {
+      "type": 0,
+      "value": "再生中"
+    }
+  ],
+  "web.watchTogether.playing.rejoin": [
+    {
+      "type": 0,
+      "value": "再生に戻る"
+    }
+  ],
+  "web.watchTogether.playing.stop": [
+    {
+      "type": 0,
+      "value": "全員の再生を停止"
+    }
+  ],
+  "web.watchTogether.playing.waiting": [
+    {
+      "type": 0,
+      "value": "全員のバッファリングを待っています"
+    }
+  ],
+  "web.watchTogether.presence.ready": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "人中"
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": "人が準備完了"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.rail.activity": [
+    {
+      "type": 0,
+      "value": "アクティビティ"
+    }
+  ],
+  "web.watchTogether.rail.activityEmpty": [
+    {
+      "type": 0,
+      "value": "ルーム内でのメンバーの操作がここに表示されます。"
+    }
+  ],
+  "web.watchTogether.rail.people": [
+    {
+      "type": 0,
+      "value": "メンバー"
+    }
+  ],
+  "web.watchTogether.rail.peopleEmpty": [
+    {
+      "type": 0,
+      "value": "まだ誰もいません。招待を共有してメンバーを集めましょう。"
+    }
+  ],
+  "web.watchTogether.rail.stateBuffering": [
+    {
+      "type": 0,
+      "value": "バッファリング中"
+    }
+  ],
+  "web.watchTogether.rail.stateConnected": [
+    {
+      "type": 0,
+      "value": "接続済み"
+    }
+  ],
+  "web.watchTogether.rail.statePaused": [
+    {
+      "type": 0,
+      "value": "一時停止中"
+    }
+  ],
+  "web.watchTogether.rail.stateReady": [
+    {
+      "type": 0,
+      "value": "準備完了"
+    }
+  ],
+  "web.watchTogether.rail.stateWatching": [
+    {
+      "type": 0,
+      "value": "視聴中"
+    }
+  ],
+  "web.watchTogether.rail.you": [
+    {
+      "type": 0,
+      "value": "（自分）"
+    }
+  ],
+  "web.watchTogether.room.backToHub": [
+    {
+      "type": 0,
+      "value": "Watch Partyに戻る"
+    }
+  ],
+  "web.watchTogether.room.changeUpNext": [
+    {
+      "type": 0,
+      "value": "次に再生する作品を変更"
+    }
+  ],
+  "web.watchTogether.room.closed": [
+    {
+      "type": 0,
+      "value": "ルームは終了しました。"
+    }
+  ],
+  "web.watchTogether.room.closedBody": [
+    {
+      "type": 0,
+      "value": "新しいWatch Partyを始めるか、別のルームに参加して一緒に視聴を続けてください。"
+    }
+  ],
+  "web.watchTogether.room.ended": [
+    {
+      "type": 0,
+      "value": "このWatch Partyは終了しています。"
+    }
+  ],
+  "web.watchTogether.room.firstSuggestionFailed": [
+    {
+      "type": 0,
+      "value": "最初の提案を追加できませんでした"
+    }
+  ],
+  "web.watchTogether.room.forbidden": [
+    {
+      "type": 0,
+      "value": "このWatch Partyにアクセスする権限がありません。"
+    }
+  ],
+  "web.watchTogether.room.guestFooter": [
+    {
+      "type": 0,
+      "value": "ホスト："
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "policy"
+    }
+  ],
+  "web.watchTogether.room.hostFooter": [
+    {
+      "type": 0,
+      "value": "接続が切れた場合、ルームは2分間待機してから終了します。"
+    }
+  ],
+  "web.watchTogether.room.inviteNotReady": [
+    {
+      "type": 0,
+      "value": "招待リンクはまだ準備できていません"
+    }
+  ],
+  "web.watchTogether.room.rejoin": [
+    {
+      "type": 0,
+      "value": "Watch Partyに再参加"
+    }
+  ],
+  "web.watchTogether.room.removeFailed": [
+    {
+      "type": 0,
+      "value": "削除できませんでした"
+    }
+  ],
+  "web.watchTogether.room.replacedTitle": [
+    {
+      "type": 0,
+      "value": "別のデバイスでWatch Partyに参加しました"
+    }
+  ],
+  "web.watchTogether.room.suggestAfter": [
+    {
+      "type": 0,
+      "value": "この後に見る作品を提案"
+    }
+  ],
+  "web.watchTogether.room.suggested": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を提案しました"
+    }
+  ],
+  "web.watchTogether.room.unavailable": [
+    {
+      "type": 0,
+      "value": "ルームを利用できません。"
+    }
+  ],
+  "web.watchTogether.room.unknownHost": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.watchTogether.room.voteFailed": [
+    {
+      "type": 0,
+      "value": "投票できませんでした"
+    }
+  ],
+  "web.watchTogether.series.close": [
+    {
+      "type": 0,
+      "value": "シリーズを閉じる"
+    }
+  ],
+  "web.watchTogether.series.episodes": [
+    {
+      "type": 0,
+      "value": "エピソード"
+    }
+  ],
+  "web.watchTogether.series.pickedEpisode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.watchTogether.series.runtime": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.watchTogether.series.seasons": [
+    {
+      "type": 0,
+      "value": "シーズン"
+    }
+  ],
+  "web.watchTogether.startSheet.allowPause": [
+    {
+      "type": 0,
+      "value": "ゲストの一時停止を許可"
+    }
+  ],
+  "web.watchTogether.startSheet.allowPauseHint": [
+    {
+      "type": 0,
+      "value": "オフの場合、再生を操作できるのは自分だけです"
+    }
+  ],
+  "web.watchTogether.startSheet.choose": [
+    {
+      "type": 0,
+      "value": "選択"
+    }
+  ],
+  "web.watchTogether.startSheet.chooseEpisode": [
+    {
+      "type": 0,
+      "value": "エピソードを選択"
+    }
+  ],
+  "web.watchTogether.startSheet.create": [
+    {
+      "type": 0,
+      "value": "パーティーを作成して招待をコピー"
+    }
+  ],
+  "web.watchTogether.startSheet.createFailed": [
+    {
+      "type": 0,
+      "value": "ルームを作成できませんでした"
+    }
+  ],
+  "web.watchTogether.startSheet.creating": [
+    {
+      "type": 0,
+      "value": "作成中…"
+    }
+  ],
+  "web.watchTogether.startSheet.episode": [
+    {
+      "type": 0,
+      "value": "エピソード"
+    }
+  ],
+  "web.watchTogether.startSheet.episodeTitle": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.watchTogether.startSheet.episodeWithCode": [
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.watchTogether.startSheet.eyebrow": [
+    {
+      "type": 0,
+      "value": "一緒に見る"
+    }
+  ],
+  "web.watchTogether.startSheet.footnote": [
+    {
+      "type": 0,
+      "value": "作成後はルームに移動します。開始するまで何も再生されません。ルームではメンバーの視聴途中の作品が表示されます。"
+    }
+  ],
+  "web.watchTogether.startSheet.hostPickCaptionEmpty": [
+    {
+      "type": 0,
+      "value": "次に再生する作品はありません。全員がそろったら開始してください。"
+    }
+  ],
+  "web.watchTogether.startSheet.hostPickCaptionTarget": [
+    {
+      "type": 0,
+      "value": "これが次に再生されます。全員がそろったら開始してください。"
+    }
+  ],
+  "web.watchTogether.startSheet.howToPick": [
+    {
+      "type": 0,
+      "value": "選び方"
+    }
+  ],
+  "web.watchTogether.startSheet.keepPick": [
+    {
+      "type": 0,
+      "value": "現在の選択を維持"
+    }
+  ],
+  "web.watchTogether.startSheet.noEpisodes": [
+    {
+      "type": 0,
+      "value": "再生できるエピソードがありません。"
+    }
+  ],
+  "web.watchTogether.startSheet.policyFailed": [
+    {
+      "type": 0,
+      "value": "ルームは作成されましたが、ゲストはまだ一時停止できません。ルームから変更してください。"
+    }
+  ],
+  "web.watchTogether.startSheet.policyGuestsCanPause": [
+    {
+      "type": 0,
+      "value": "このWatch Partyではゲストも一時停止できます。ルームから変更できます。"
+    }
+  ],
+  "web.watchTogether.startSheet.policyHostOnly": [
+    {
+      "type": 0,
+      "value": "このWatch Partyでは再生を操作できるのは自分だけです。ルームから変更できます。"
+    }
+  ],
+  "web.watchTogether.startSheet.policyHostOnlyFailed": [
+    {
+      "type": 0,
+      "value": "ルームは作成されましたが、ゲストはまだ一時停止できます。ルームから変更できます。"
+    }
+  ],
+  "web.watchTogether.startSheet.stageFailed": [
+    {
+      "type": 0,
+      "value": "ルームは作成されましたが、作品をキューに入れられませんでした。ルームから選択してください。"
+    }
+  ],
+  "web.watchTogether.startSheet.title": [
+    {
+      "type": 0,
+      "value": "この作品でパーティーを開始"
+    }
+  ],
+  "web.watchTogether.startSheet.voteCaptionEmpty": [
+    {
+      "type": 0,
+      "value": "最初の提案はありません。誰でも追加と投票ができます。"
+    }
+  ],
+  "web.watchTogether.startSheet.voteCaptionTarget": [
+    {
+      "type": 0,
+      "value": "これが最初の提案になります。誰でも追加と投票ができます。"
+    }
+  ],
+  "web.watchTogether.startSheet.watched": [
+    {
+      "type": 0,
+      "value": "視聴済み"
+    }
+  ],
+  "web.watchTogether.strip.changeMode": [
+    {
+      "type": 0,
+      "value": "ルームの選び方を変更"
+    }
+  ],
+  "web.watchTogether.strip.copyCode": [
+    {
+      "type": 0,
+      "value": "ルームコード"
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": "をコピー"
+    }
+  ],
+  "web.watchTogether.strip.copyInvite": [
+    {
+      "type": 0,
+      "value": "招待リンクをコピー"
+    }
+  ],
+  "web.watchTogether.strip.endRoom": [
+    {
+      "type": 0,
+      "value": "ルームを終了"
+    }
+  ],
+  "web.watchTogether.strip.inviteLink": [
+    {
+      "type": 0,
+      "value": "招待リンク"
+    }
+  ],
+  "web.watchTogether.strip.leave": [
+    {
+      "type": 0,
+      "value": "退出"
+    }
+  ],
+  "web.watchTogether.strip.leaveLabel": [
+    {
+      "type": 0,
+      "value": "ルームから退出"
+    }
+  ],
+  "web.watchTogether.strip.live": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ライブ · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "人"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.strip.modeYou": [
+    {
+      "type": 0,
+      "value": "· 自分"
+    }
+  ],
+  "web.watchTogether.strip.playing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再生中 · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "人"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.strip.voting": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "投票中 · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "人"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.suggestions.leading": [
+    {
+      "type": 0,
+      "value": "最多得票"
+    }
+  ],
+  "web.watchTogether.suggestions.note": [
+    {
+      "type": 0,
+      "value": "：「"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "」"
+    }
+  ],
+  "web.watchTogether.suggestions.playThis": [
+    {
+      "type": 0,
+      "value": "これを再生"
+    }
+  ],
+  "web.watchTogether.suggestions.remove": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を削除"
+    }
+  ],
+  "web.watchTogether.suggestions.unvote": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "への投票を取り消す"
+    }
+  ],
+  "web.watchTogether.suggestions.vote": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "に投票"
+    }
+  ],
+  "web.watchTogether.suggestions.voteMark": [
+    {
+      "type": 0,
+      "value": "✓"
+    }
+  ],
+  "web.watchTogether.suggestions.votes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "票"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.voting.empty": [
+    {
+      "type": 0,
+      "value": "まだ提案はありません。下の一覧から最初の作品を追加してください。"
+    }
+  ],
+  "web.watchTogether.voting.emptyGuest": [
+    {
+      "type": 0,
+      "value": "下の一覧から誰でも提案を追加できます。全員で投票し、1位の作品を"
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": "が再生します。"
+    }
+  ],
+  "web.watchTogether.voting.emptyHost": [
+    {
+      "type": 0,
+      "value": "下の一覧から誰でも提案を追加できます。全員で投票し、1位の作品をホストが再生します。"
+    }
+  ],
+  "web.watchTogether.voting.firstSuggestion": [
+    {
+      "type": 0,
+      "value": "最初の提案"
+    }
+  ],
+  "web.watchTogether.voting.guestCaption": [
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": "が再生すると始まります"
+    }
+  ],
+  "web.watchTogether.voting.hostCaption": [
+    {
+      "type": 0,
+      "value": "1位の作品か、下の提案を再生"
+    }
+  ],
+  "web.watchTogether.voting.leading": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "1位・"
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "票中"
+            },
+            {
+              "type": 1,
+              "value": "votes"
+            },
+            {
+              "type": 0,
+              "value": "票"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.voting.noSuggestions": [
+    {
+      "type": 0,
+      "value": "まだ提案はありません"
+    }
+  ],
+  "web.watchTogether.voting.oneVote": [
+    {
+      "type": 0,
+      "value": "1人1票・いつでも変更可能"
+    }
+  ],
+  "web.watchTogether.voting.open": [
+    {
+      "type": 0,
+      "value": "投票受付中"
+    }
+  ],
+  "web.watchTogether.voting.playForEveryone": [
+    {
+      "type": 0,
+      "value": "全員で"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を再生"
+    }
+  ],
+  "web.watchTogether.voting.ranked": [
+    {
+      "type": 0,
+      "value": "提案・得票順"
+    }
+  ],
+  "web.watchTogether.voting.theHost": [
+    {
+      "type": 0,
+      "value": "ホスト"
     }
   ]
 }

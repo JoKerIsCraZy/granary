@@ -7,6 +7,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
@@ -44,14 +45,15 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         "profile_activity_feed", "because_you_watched", "recommended_for_you", "similar_users_liked", "taste_match", "forgotten_favorites",
     };
 
-    private static readonly IReadOnlyDictionary<string, string> EmptyTexts = new Dictionary<string, string>
+    // What a filter with nothing to show says, by its text's key.
+    private static readonly IReadOnlyDictionary<string, string> EmptyKeys = new Dictionary<string, string>
     {
-        [AllChip] = "Nothing to browse yet. Search for something above.",
-        [MoviesChip] = "No movies in the library yet. Search for one above.",
-        [SeriesChip] = "No series in the library yet. Search for one above.",
-        [TogetherChip] = "Nothing in progress for two or more of you yet.",
-        [WatchlistsChip] = "Nobody in the room has anything on their watchlist.",
-        [RecentChip] = "Nothing added recently.",
+        [AllChip] = "web.watchTogether.browse.emptyAll",
+        [MoviesChip] = "web.watchTogether.browse.emptyMovies",
+        [SeriesChip] = "web.watchTogether.browse.emptySeries",
+        [TogetherChip] = "web.watchTogether.browse.emptyTogether",
+        [WatchlistsChip] = "web.watchTogether.browse.emptyWatchlists",
+        [RecentChip] = "web.watchTogether.browse.emptyRecent",
     };
 
     private readonly WatchPartySession _party;
@@ -80,7 +82,14 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         _images = images;
         _time = time;
         _logger = logger;
+        Chips =
+        [
+            new(AllChip, AppText.Get("web.watchTogether.browse.chipAll")), new(MoviesChip, AppText.Get("web.watchTogether.browse.chipMovies")),
+            new(SeriesChip, AppText.Get("web.watchTogether.browse.chipSeries")), new(TogetherChip, AppText.Get("web.watchTogether.browse.chipTogether")),
+            new(WatchlistsChip, AppText.Get("web.watchTogether.browse.chipWatchlists")), new(RecentChip, AppText.Get("web.watchTogether.browse.chipRecent")),
+        ];
         SelectedChip = Chips[0];
+        FoldedLabel = AppText.Get("web.watchTogether.browse.collapsed");
     }
 
     /// <summary>The page's lifetime: the shelf's reads end with it.</summary>
@@ -89,11 +98,8 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     /// <summary>A card the viewer chose, to put on the stage.</summary>
     public event EventHandler<WatchPartyShelfCard>? CardChosen;
 
-    public IReadOnlyList<SettingChoice> Chips { get; } =
-    [
-        new(AllChip, "All"), new(MoviesChip, "Movies"), new(SeriesChip, "Series"), new(TogetherChip, "Together"),
-        new(WatchlistsChip, "Watchlists"), new(RecentChip, "Recent"),
-    ];
+    /// <summary>The filters, worded when the room's page is made.</summary>
+    public IReadOnlyList<SettingChoice> Chips { get; }
 
     /// <summary>The rows that show, under the chosen filter.</summary>
     public ObservableCollection<WatchPartyShelfRow> Rows { get; } = [];
@@ -122,7 +128,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
 
     /// <summary>"Change what's up next" or "Suggest something for after".</summary>
     [ObservableProperty]
-    public partial string FoldedLabel { get; set; } = "Browse";
+    public partial string FoldedLabel { get; set; }
 
     /// <summary>Choosing stages the title (the host of a host-pick lobby) or suggests it (everyone else).</summary>
     [ObservableProperty]
@@ -130,7 +136,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     public partial bool Picks { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSearchState))]
+    [NotifyPropertyChangedFor(nameof(HasSearchState), nameof(ResultsCount))]
     public partial string SearchState { get; private set; } = "";
 
     [ObservableProperty]
@@ -152,9 +158,11 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
 
     public bool HasEmptyText => EmptyText.Length > 0;
 
-    public string FoldedHint => $"Search or browse what the room has in common to {(Picks ? "pick" : "suggest")} something.";
+    public string FoldedHint => Picks
+        ? AppText.Get("web.watchTogether.browse.collapsedHintPick")
+        : AppText.Get("web.watchTogether.browse.collapsedHintSuggest");
 
-    public string ShelfName => Picks ? "Browse to pick" : "Browse to suggest";
+    public string ShelfName => Picks ? AppText.Get("web.watchTogether.browse.sectionPick") : AppText.Get("web.watchTogether.browse.sectionSuggest");
 
     /// <summary>Reads what the shelf shows; the picker's rows again once the room's members change.</summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -248,7 +256,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         {
             return;
         }
-        SearchState = "Searching…";
+        SearchState = AppText.Get("web.collections.manual.searching");
         SearchFailed = false;
         try
         {
@@ -269,7 +277,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         {
             _logger.LogWarning(ex, "The room's search failed");
             _found = [];
-            SearchState = "Could not search.";
+            SearchState = AppText.Get("web.watchTogether.browse.searchFailed");
             SearchFailed = true;
         }
         Show();
@@ -399,12 +407,13 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         var rows = new List<WatchPartyShelfRow>();
         if (chip is AllChip or TogetherChip && _picker is { } together)
         {
-            AddRow(rows, "together", "Continue watching together", "in progress for 2+ of you",
+            AddRow(rows, "together", AppText.Get("web.watchTogether.browse.togetherTitle"), AppText.Get("web.watchTogether.browse.togetherHint"),
                 together.ContinueTogether.Select(e => Card(e, server, tints)));
         }
         if (chip is AllChip or WatchlistsChip && _picker is { } lists)
         {
-            AddRow(rows, "watchlists", "On your watchlists", "anyone in the room", lists.WatchlistUnion.Select(e => Card(e, server, tints)));
+            AddRow(rows, "watchlists", AppText.Get("web.watchTogether.browse.watchlistsTitle"), AppText.Get("web.watchTogether.browse.watchlistsHint"),
+                lists.WatchlistUnion.Select(e => Card(e, server, tints)));
         }
         if (chip is AllChip or MoviesChip or SeriesChip)
         {
@@ -415,11 +424,11 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         }
         if (chip is AllChip or MoviesChip or RecentChip)
         {
-            AddRow(rows, "recent-movies", "Recently added movies", "", _recentMovies.Select(i => Card(i, server, tints)));
+            AddRow(rows, "recent-movies", AppText.Get("web.watchTogether.browse.recentMovies"), "", _recentMovies.Select(i => Card(i, server, tints)));
         }
         if (chip is AllChip or SeriesChip or RecentChip)
         {
-            AddRow(rows, "recent-series", "Recently added series", "", _recentSeries.Select(i => Card(i, server, tints)));
+            AddRow(rows, "recent-series", AppText.Get("web.watchTogether.browse.recentSeries"), "", _recentSeries.Select(i => Card(i, server, tints)));
         }
         Rows.Clear();
         foreach (var row in rows)
@@ -427,18 +436,18 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
             Rows.Add(row);
         }
         bool read = _browseRead || _picker is not null;
-        EmptyText = read && rows.Count == 0 ? EmptyTexts[chip] : "";
-        OnPropertyChanged(nameof(ResultsHeading));
+        EmptyText = read && rows.Count == 0 ? AppText.Get(EmptyKeys[chip]) : "";
+        OnPropertyChanged(nameof(ResultsCount));
         OnPropertyChanged(nameof(NoResultsText));
         OnPropertyChanged(nameof(HasNoResults));
     }
 
-    /// <summary>"SEARCH RESULTS · 4".</summary>
-    public string ResultsHeading => $"Search results · {Results.Count}";
+    /// <summary>"· 4", beside the heading "SEARCH RESULTS"; nothing while a search is on its way, as the web's.</summary>
+    public string ResultsCount => HasSearchState ? "" : AppText.Get("web.watchTogether.browse.resultCount", ("count", Results.Count));
 
     public bool HasNoResults => IsSearching && !HasSearchState && Results.Count == 0;
 
-    public string NoResultsText => $"No matches for “{Query.Trim()}”. Try another title, or clear the filter.";
+    public string NoResultsText => AppText.Get("web.watchTogether.browse.noMatches", ("query", Query.Trim()));
 
     private static void AddRow(List<WatchPartyShelfRow> rows, string key, string title, string hint, IEnumerable<WatchPartyShelfCard> cards)
     {
@@ -459,7 +468,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     private static bool Pickable(CatalogItem item) => item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
 
     private WatchPartyShelfCard Card(CatalogItem item, Uri? server, IReadOnlyDictionary<string, int> tints) =>
-        new(item.ContentId, item.Type, item.Title, item.Year?.ToString(CultureInfo.InvariantCulture) ?? (item.Type == CatalogItemTypes.Series ? "Series" : "Movie"),
+        new(item.ContentId, item.Type, item.Title, item.Year?.ToString(CultureInfo.InvariantCulture) ?? Kind(item.Type),
             server is null ? null : ArtworkUrl.Resolve(server, item.PosterUrl), item.PosterUrl, [], 0, "", null, null, item.Year)
         {
             IsSelected = item.ContentId == SelectedId,
@@ -475,8 +484,8 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         var ratios = entry.Members.Where(m => m.PositionSeconds is not null && m.DurationSeconds is > 0)
             .Select(m => Math.Clamp(m.PositionSeconds!.Value / m.DurationSeconds!.Value, 0, 1)).ToList();
         string caption = entry.NextUp is { } next
-            ? $"S{next.SeasonNumber} E{next.EpisodeNumber}"
-            : item.Year?.ToString(CultureInfo.InvariantCulture) ?? (item.Type == CatalogItemTypes.Series ? "Series" : "Movie");
+            ? WatchPartyText.EpisodeCode(next.SeasonNumber, next.EpisodeNumber)
+            : item.Year?.ToString(CultureInfo.InvariantCulture) ?? Kind(item.Type);
         return new WatchPartyShelfCard(item.ContentId, item.Type, item.Title, caption, server is null ? null : ArtworkUrl.Resolve(server, item.PosterUrl),
             item.PosterUrl, badges, Math.Max(0, entry.Members.Count - 2), string.Join(", ", entry.Members.Select(m => m.DisplayName)),
             ratios.Count > 0 ? ratios.Min() : null, entry.NextUp?.SeasonNumber, item.Year)
@@ -484,6 +493,11 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
             IsSelected = item.ContentId == SelectedId,
         };
     }
+
+    // A card's caption without a year: "Series" or "Movie".
+    private static string Kind(string type) => type == CatalogItemTypes.Series
+        ? AppText.Get("web.watchTogether.common.series")
+        : AppText.Get("web.watchTogether.common.movie");
 
     private string MemberSet() =>
         string.Join(",", (_party.Room?.Members ?? []).Select(m => m.Key).Order(StringComparer.Ordinal));

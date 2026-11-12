@@ -125,7 +125,7 @@ public sealed class WatchPartyEndTests : IAsyncDisposable
         var untold = new WatchPartyEnd("replaced", Replaced: true);
 
         Assert.Equal(("Watch Party joined on another device", "Joined from the living room TV."), (WatchPartyText.EndedTitle(told), WatchPartyText.EndedText(told)));
-        Assert.Equal(WatchPartyFrames.ReplacedText, WatchPartyText.EndedText(untold));
+        Assert.Equal("This profile joined the Watch Party on another device.", WatchPartyText.EndedText(untold));
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public sealed class WatchPartyEndTests : IAsyncDisposable
         Assert.False(hub.IsInRoom);
         Assert.Equal(("The room has ended.", StartNew, false), (hub.EndedTitle, hub.EndedText, hub.CanRejoin));
         var row = Assert.Single(hub.Recent);
-        Assert.Equal(("Ended", "ENDED", false), (row.Status, row.EndLabel, row.CanRejoin));
+        Assert.Equal((WatchPartyRecentStatus.Ended, "Ended", "ENDED", false), (row.Status, row.StatusText, row.EndLabel, row.CanRejoin));
         // Ended in the list already: nobody asked the server again.
         Assert.Empty(_silo.SentTo(HttpMethod.Get, Room));
         page.Deactivate();
@@ -289,16 +289,16 @@ public sealed class WatchPartyEndTests : IAsyncDisposable
     }
 
     [Theory]
-    [InlineData(403, "permission_denied")]
-    [InlineData(409, "capability_disabled")]
-    public async Task AnEndRefusedForAnotherReason_IsAFailure(int status, string code)
+    [InlineData(403, "permission_denied", "Failed to end room. This profile isn't allowed to see this.")]
+    [InlineData(409, "capability_disabled", "Failed to end room. Something went wrong while loading it. Try again in a moment.")]
+    public async Task AnEndRefusedForAnotherReason_IsAFailure(int status, string code, string said)
     {
         _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(status, code));
         var page = await InTheRoomAsync(role: "host");
 
         await page.EndRoomAsync();
 
-        Assert.StartsWith("Could not end the room.", page.Message, StringComparison.Ordinal);
+        Assert.Equal(said, page.Message);
         Assert.Null(_party.End);
         Assert.True(_party.IsInRoom);
         Assert.False(Socket.Disposed);

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.WatchParty;
+using Granary.Core.Texts;
 using Granary.Core.WatchParty;
 
 namespace Granary.Core.ViewModels.WatchParty;
@@ -111,7 +112,7 @@ public sealed partial class WatchPartyShelfCard(string contentId, string type, s
 
     public bool HasMoreMembers => MoreMembers > 0;
 
-    public string MoreText => $"+{MoreMembers}";
+    public string MoreText => AppText.Get("web.watchTogether.picker.moreMembers", ("count", MoreMembers));
 
     public bool HasProgress => Progress is not null;
 
@@ -177,15 +178,21 @@ public sealed partial class WatchPartySuggestionRow(WatchPartySuggestion suggest
 
     public bool VotedByMe => Suggestion.VotedByMe;
 
-    public string By => Suggestion.Note.Length > 0 ? $"{SuggesterName}: \u201C{Suggestion.Note}\u201D" : SuggesterName;
+    /// <summary>Who suggested it, and their note as the web puts it after the name ("Maya: “Friday classic”").</summary>
+    public string By => Suggestion.Note.Length > 0
+        ? SuggesterName + AppText.Get("web.watchTogether.suggestions.note", ("note", Suggestion.Note))
+        : SuggesterName;
 
-    public string VotesText => Suggestion.VoteCount == 1 ? "1 vote" : $"{Suggestion.VoteCount} votes";
+    public string VotesText => AppText.Get("web.watchTogether.suggestions.votes", ("count", Suggestion.VoteCount),
+        ("count_text", AppText.Number(Suggestion.VoteCount)));
 
     public double SharePercent => Share * 100;
 
-    public string VoteName => VotedByMe ? $"Remove your vote for {Title}" : $"Vote for {Title}";
+    public string VoteName => VotedByMe
+        ? AppText.Get("web.watchTogether.suggestions.unvote", ("title", Title))
+        : AppText.Get("web.watchTogether.suggestions.vote", ("title", Title));
 
-    public string DeleteName => $"Remove {Title}";
+    public string DeleteName => AppText.Get("web.watchTogether.suggestions.remove", ("title", Title));
 }
 
 /// <summary>A member in the candidate's "who's seen it" list.</summary>
@@ -195,33 +202,51 @@ public sealed record WatchPartySeenRow(string Name, int Tint, string State, bool
     public string Initials => WatchPartyMembers.Initials(Name);
 }
 
+/// <summary>Whether a recent room is still on, as its row says it.</summary>
+public enum WatchPartyRecentStatus
+{
+    /// <summary>Not asked yet: "Checking…".</summary>
+    Checking,
+
+    Live,
+
+    /// <summary>The server could not be asked: "Status unavailable", and it may be rejoined.</summary>
+    Unknown,
+
+    Ended,
+}
+
 /// <summary>A room on the hub's "Your recent parties".</summary>
-/// <param name="Status">"Live", "Checking…", "Status unavailable" or "Ended".</param>
 public sealed partial class WatchPartyRecentRow(WatchPartyRecentRoom room) : ObservableObject
 {
     public WatchPartyRecentRoom Room { get; } = room;
 
-    public string Title => Room.Title ?? "Watch Party";
+    /// <summary>The room's name as stored (English, as the web stores it), or "Watch Party".</summary>
+    public string Title => Room.Title ?? AppText.Get("watchParty.title");
 
-    public string Role => Room.IsHost ? "Your room" : "Joined";
+    public string Role => Room.IsHost ? AppText.Get("web.watchTogether.hub.recentHosted") : AppText.Get("web.watchTogether.hub.recentJoined");
 
     public string Code => Room.Code;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsLive), nameof(CanRejoin), nameof(IsDimmed), nameof(EndLabel))]
-    public partial string Status { get; set; } = room.Ended ? EndedStatus : CheckingStatus;
+    [NotifyPropertyChangedFor(nameof(IsLive), nameof(CanRejoin), nameof(IsDimmed), nameof(EndLabel), nameof(StatusText))]
+    public partial WatchPartyRecentStatus Status { get; set; } = room.Ended ? WatchPartyRecentStatus.Ended : WatchPartyRecentStatus.Checking;
 
-    public bool IsLive => Status == LiveStatus;
+    /// <summary>"Live", "Checking…", "Status unavailable" or "Ended".</summary>
+    public string StatusText => Status switch
+    {
+        WatchPartyRecentStatus.Live => AppText.Get("web.watchTogether.hub.recentLive"),
+        WatchPartyRecentStatus.Checking => AppText.Get("web.watchTogether.hub.recentChecking"),
+        WatchPartyRecentStatus.Unknown => AppText.Get("web.watchTogether.hub.recentUnknown"),
+        _ => AppText.Get("web.watchTogether.hub.recentEnded"),
+    };
 
-    public bool CanRejoin => Status is LiveStatus or UnknownStatus;
+    public bool IsLive => Status == WatchPartyRecentStatus.Live;
+
+    public bool CanRejoin => Status is WatchPartyRecentStatus.Live or WatchPartyRecentStatus.Unknown;
 
     public bool IsDimmed => !IsLive;
 
     /// <summary>"ENDED" where a row cannot be rejoined, nothing while it is checked.</summary>
-    public string EndLabel => CanRejoin || Status == CheckingStatus ? "" : "ENDED";
-
-    public const string LiveStatus = "Live";
-    public const string CheckingStatus = "Checking…";
-    public const string UnknownStatus = "Status unavailable";
-    public const string EndedStatus = "Ended";
+    public string EndLabel => CanRejoin || Status == WatchPartyRecentStatus.Checking ? "" : AppText.Upper(AppText.Get("web.watchTogether.hub.recentEnded"));
 }

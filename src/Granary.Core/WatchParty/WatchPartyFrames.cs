@@ -34,8 +34,6 @@ public abstract record WatchPartyFrame
 /// </summary>
 public static class WatchPartyFrames
 {
-    public const string ReplacedText = "This profile joined the Watch Party on another device.";
-
     public static WatchPartyFrame? Parse(string text)
     {
         try
@@ -59,7 +57,8 @@ public static class WatchPartyFrames
                 "suggestions_update" when root.TryGetProperty("suggestions", out var list) && list.ValueKind == JsonValueKind.Array =>
                     new WatchPartyFrame.Suggestions(list.Deserialize(WatchPartyJsonContext.Default.IReadOnlyListWatchPartySuggestion) ?? []),
                 "room_closed" => new WatchPartyFrame.Closed(Text(root, "reason") ?? "room_closed"),
-                "connection_replaced" => new WatchPartyFrame.Replaced(Text(root, "reason") is { Length: > 0 } reason ? reason : ReplacedText),
+                // Without the server's reason, the page says it in the language on screen.
+                "connection_replaced" => new WatchPartyFrame.Replaced(Text(root, "reason") ?? ""),
                 // Some server paths report the end as an error, before or instead of room_closed.
                 "error" when Text(root, "code") is "not_found" => new WatchPartyFrame.Closed("not_found"),
                 "error" when Text(root, "code") is "gone" => new WatchPartyFrame.Closed("ended"),

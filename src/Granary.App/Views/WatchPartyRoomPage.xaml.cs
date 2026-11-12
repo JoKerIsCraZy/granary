@@ -50,14 +50,37 @@ public sealed partial class WatchPartyRoomPage : Page
 
     public static bool Not(bool value) => !value;
 
-    public static string Upper(string text) => text.ToUpperInvariant();
+    /// <summary>An overline in capitals, by the rules of the language on screen.</summary>
+    public static string Upper(string text) => AppText.Upper(text);
 
-    public static string Hint(string hint) => "· " + hint;
+    /// <summary>A shelf row's hint after its title: "· anyone in the room".</summary>
+    public static string Hint(string hint) => AppText.Get("web.watchTogether.picker.rowHint", ("hint", hint));
 
-    public static string CopyCodeName(string code) => $"Copy room code {code}";
+    public static string CopyCodeName(string code) => AppText.Get("web.watchTogether.strip.copyCode", ("code", code));
 
-    /// <summary>"Host picks · you".</summary>
-    public static string ModeMenuLabel(string mode) => mode + " · you";
+    // Words of the templates, read where each element is made.
+    public static string SeriesPill => AppText.Get("web.watchTogether.common.series");
+
+    public static string VoteMark => AppText.Get("web.watchTogether.suggestions.voteMark");
+
+    public static string LeadingBadge => AppText.Upper(AppText.Get("web.watchTogether.suggestions.leading"));
+
+    public static string HostBadge => AppText.Upper(AppText.Get("watchParty.seat.host"));
+
+    public static string YouMark => AppText.Get("web.watchTogether.rail.you");
+
+    public static string OnWatchlistName => AppText.Get("web.watchTogether.movie.onWatchlist");
+
+    // The page's overlines.
+    public string WhoSeenHeading => AppText.Upper(AppText.Get("watchParty.whoSeen.title"));
+
+    public string VotingOpenHeading => AppText.Upper(AppText.Get("web.watchTogether.voting.open"));
+
+    public string RoomOpenHeading => AppText.Upper(AppText.Get("web.watchTogether.lobby.roomOpen"));
+
+    public string InviteHeading => AppText.Upper(AppText.Get("web.watchTogether.inviteBar.label"));
+
+    public string SearchResultsHeading => AppText.Upper(AppText.Get("web.watchTogether.browse.searchResults"));
 
     public static object? Tip(string names) => names.Length > 0 ? names : null;
 
@@ -126,7 +149,7 @@ public sealed partial class WatchPartyRoomPage : Page
     {
         if (ViewModel.Code.Length > 0 && RoomClipboard.Copy(ViewModel.Code))
         {
-            ViewModel.Copied($"Room code {ViewModel.Code} copied");
+            ViewModel.Copied(AppText.Get("web.watchTogether.common.codeCopied", ("code", ViewModel.Code)));
         }
     }
 
@@ -134,12 +157,12 @@ public sealed partial class WatchPartyRoomPage : Page
     {
         if (ViewModel.InviteLink is not { } link)
         {
-            ViewModel.Copied("Invite link isn't ready yet");
+            ViewModel.Copied(AppText.Get("web.watchTogether.room.inviteNotReady"));
             return;
         }
         if (RoomClipboard.Copy(link.AbsoluteUri))
         {
-            ViewModel.Copied("Invite link copied");
+            ViewModel.Copied(WatchPartyText.InviteCopied(ViewModel.Code));
         }
     }
 
@@ -180,9 +203,9 @@ public sealed partial class WatchPartyRoomPage : Page
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "End this watch party?",
-            Content = new TextBlock { Text = "Everyone leaves the room and playback stops for all of them.", TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = "End room",
+            Title = AppText.Get("web.watchTogether.endDialog.title"),
+            Content = new TextBlock { Text = AppText.Get("web.watchTogether.endDialog.description"), TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = AppText.Get("watchParty.end.confirm"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
