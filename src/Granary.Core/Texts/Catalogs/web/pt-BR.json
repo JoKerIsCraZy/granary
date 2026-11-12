@@ -515,6 +515,66 @@
       "value": "Em alta nesta semana"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "Desfoca a miniatura de um episódio até você começar a assistir, para que a imagem não revele a história."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "Desfocar imagens de episódios não assistidos"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "Oculta a descrição de um episódio até você começar a assistir."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "Ocultar descrições de episódios não assistidos"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "Mostrar idade recomendada"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "Toca a música-tema local enquanto você navega pelas páginas de detalhes de filmes e séries."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "Música-tema"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "Repete a música-tema enquanto a página de detalhes estiver aberta."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "Repetir música-tema"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "Mostrar arte do título"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -1555,6 +1615,108 @@
     {
       "type": 0,
       "value": "Idioma e legendas"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "Aplicar a todos os dispositivos"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "Usar esta opção em todos os dispositivos conectados a este perfil."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "A arte do título está desativada em todos os dispositivos conectados a este perfil. Alterar aqui altera em todos. Desative “Aplicar a todos os dispositivos” para voltar a escolher por dispositivo."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "A arte do título está ativada em todos os dispositivos conectados a este perfil. Alterar aqui altera em todos. Desative “Aplicar a todos os dispositivos” para voltar a escolher por dispositivo."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "Como um filme ou uma série é identificado no topo da página."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração da arte do título"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "Título"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "Usar o logotipo como título quando disponível."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Usar padrão do servidor"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Mostrar uma idade mínima sugerida, como a da Common Sense Media, na página de um título. Isso apenas mostra a idade; quem gerencia a casa pode limitar um perfil por ela nas configurações de acesso do perfil."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "Orientação de idade"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração da página do título"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "Toca enquanto a página de um título está aberta."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "Som"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "Vale para episódios que você ainda não começou, em todos os dispositivos que usam este perfil."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "Spoilers"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "O que a página de um filme ou série mostra e reproduz ao ser aberta."
     }
   ],
   "web.settings.titlePages.title": [

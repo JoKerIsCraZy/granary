@@ -93,6 +93,20 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# A setting's name, description and choices as Silo's settings manifest words them for every client
+# (settingsManifest.<key>.label, .description, .option.<value>), where the web's settings pages show them for the same
+# setting: src/Granary.App/Views/Settings and src/Granary.Core/ViewModels/Settings.
+settingsManifest.catalog.hide_unwatched_episode_images.description
+settingsManifest.catalog.hide_unwatched_episode_images.label
+settingsManifest.catalog.hide_unwatched_episode_overviews.description
+settingsManifest.catalog.hide_unwatched_episode_overviews.label
+settingsManifest.catalog.show_advisory_age.label
+settingsManifest.ui.theme_music_enabled.description
+settingsManifest.ui.theme_music_enabled.label
+settingsManifest.ui.theme_music_loop.description
+settingsManifest.ui.theme_music_loop.label
+settingsManifest.ui.title_art.label
+
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
 # src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
@@ -151,7 +165,9 @@ web.search.placeholderProminent
 # src/Granary.App/Views/SettingsPage.xaml(.cs), as the web's UserSettingsSidebar and lib/userSettingsNav.ts, with its group
 # names upper-cased at display as its CSS does; Navigation & Cards (src/Granary.App/Views/Settings/InterfaceSettingsView.xaml,
 # src/Granary.App/Controls/BadgeSettingsLook.cs, and in src/Granary.Core/ViewModels/Settings PosterSettingsViewModel.cs,
-# BadgeSettingsViewModel.cs and BadgeSettingsText.cs, the badges, styles and colours as the web's lib/overlays names them).
+# BadgeSettingsViewModel.cs and BadgeSettingsText.cs, the badges, styles and colours as the web's lib/overlays names them);
+# Title Pages (TitlePagesSettingsView.xaml and TitlePagesSettingsViewModel.cs), as TitlePagesSettings.tsx and
+# TitleArtSettingsGroup.tsx, its Spoilers panel in the words of the Navigation & Cards one.
 web.settings.cardOverlay.adjust
 web.settings.cardOverlay.adjustLabel
 web.settings.cardOverlay.badgesDescription
@@ -274,6 +290,23 @@ web.settings.resetButton.label
 web.settings.sidebar.backToApp
 web.settings.sidebar.title
 web.settings.subtitleAppearance.title
+web.settings.titleArt.allDevices
+web.settings.titleArt.allDevicesDescription
+web.settings.titleArt.allDevicesOffNote
+web.settings.titleArt.allDevicesOnNote
+web.settings.titleArt.description
+web.settings.titleArt.saveFailed
+web.settings.titleArt.title
+web.settings.titleArt.titleArtDescription
+web.settings.titleArt.useServerDefault
+web.settings.titlePages.advisoryAgeDescription
+web.settings.titlePages.ageGuidanceTitle
+web.settings.titlePages.saveFailed
+web.settings.titlePages.soundDescription
+web.settings.titlePages.soundTitle
+web.settings.titlePages.spoilersDescription
+web.settings.titlePages.spoilersTitle
+web.settings.titlePages.subtitle
 web.settings.titlePages.title
 
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at

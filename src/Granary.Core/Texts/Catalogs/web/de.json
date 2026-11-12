@@ -523,6 +523,66 @@
       "value": "Diese Woche im Trend"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "Zeichnet das Vorschaubild einer Folge weich, bis du sie zu schauen beginnst, damit das Bild nichts von der Handlung verrät."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "Bilder ungesehener Folgen weichzeichnen"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "Blendet die Beschreibung einer Folge aus, bis du sie zu schauen beginnst."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "Beschreibungen ungesehener Folgen ausblenden"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "Empfohlenes Alter anzeigen"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "Lokale Titelmusik auf den Detailseiten von Filmen und Serien abspielen."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "Titelmusik"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "Titelmusik wiederholen, solange die Detailseite geöffnet bleibt."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "Titelmusik wiederholen"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "Titelgrafik anzeigen"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -1547,6 +1607,108 @@
     {
       "type": 0,
       "value": "Sprache & Untertitel"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "Auf alle Geräte anwenden"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "Diese Auswahl auf jedem Gerät verwenden, das mit diesem Profil angemeldet ist."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "Das Titellogo ist auf jedem Gerät aus, das mit diesem Profil angemeldet ist. Eine Änderung hier gilt überall. Schalte „Auf alle Geräte anwenden“ aus, um wieder pro Gerät zu wählen."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "Das Titellogo ist auf jedem Gerät ein, das mit diesem Profil angemeldet ist. Eine Änderung hier gilt überall. Schalte „Auf alle Geräte anwenden“ aus, um wieder pro Gerät zu wählen."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "Wie ein Film oder eine Serie oben auf der eigenen Seite benannt wird."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "Die Einstellung für das Titellogo konnte nicht gespeichert werden"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "Titel"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "Logo als Titel verwenden, wenn verfügbar."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Serverstandard verwenden"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Zeigt auf der Seite eines Titels ein empfohlenes Mindestalter an, etwa das von Common Sense Media. Das Alter wird nur angezeigt; wer den Haushalt verwaltet, kann ein Profil in dessen Zugriffseinstellungen danach beschränken."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "Altersempfehlung"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "Die Einstellung für Titelseiten konnte nicht gespeichert werden"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "Wird abgespielt, während die Seite eines Titels geöffnet ist."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "Ton"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "Gilt für Folgen, die du noch nicht begonnen hast, auf jedem Gerät, das dieses Profil nutzt."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "Spoiler"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "Was eine Film- oder Serienseite beim Öffnen anzeigt und abspielt."
     }
   ],
   "web.settings.titlePages.title": [

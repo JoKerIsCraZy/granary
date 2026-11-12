@@ -515,6 +515,66 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "تمويه الصورة المصغّرة للحلقة حتى تبدأ مشاهدتها، كي لا تكشف الصورة أحداث القصة."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "تمويه صور الحلقات غير المشاهَدة"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "إخفاء وصف الحلقة حتى تبدأ مشاهدتها."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "إخفاء أوصاف الحلقات غير المشاهَدة"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "عرض العمر الموصى به"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "تشغيل موسيقى الشارة المحلية أثناء تصفح صفحات تفاصيل الأفلام والمسلسلات."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "تكرار موسيقى الشارة ما دامت صفحة التفاصيل مفتوحة."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "تكرار موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "عرض شعار العنوان"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -1595,6 +1655,108 @@
     {
       "type": 0,
       "value": "اللغة والترجمة"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "التطبيق على جميع الأجهزة"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "استخدم هذا الاختيار على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "صورة العنوان معطّلة على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي. تغييرها هنا يغيّرها في كل مكان. أوقف «التطبيق على جميع الأجهزة» لتختار لكل جهاز على حدة مرة أخرى."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "صورة العنوان مفعّلة على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي. تغييرها هنا يغيّرها في كل مكان. أوقف «التطبيق على جميع الأجهزة» لتختار لكل جهاز على حدة مرة أخرى."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "كيف يظهر اسم الفيلم أو المسلسل أعلى صفحته."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد صورة العنوان"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "استخدم صورة الشعار عنوانًا عند توفرها."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "استخدام الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "اعرض الحد الأدنى المقترح لعمر المشاهد، مثل تقييم Common Sense Media، في صفحة العنوان. يعرض هذا العمر فقط؛ ويمكن لمدير المنزل تقييد ملف شخصي بناءً عليه من إعدادات الوصول الخاصة بالملف الشخصي."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "إرشادات العمر"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد صفحة العنوان"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "يُشغَّل أثناء فتح صفحة العنوان."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "ينطبق على الحلقات التي لم تبدأ مشاهدتها، على كل جهاز يستخدم هذا الملف الشخصي."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "حرق الأحداث"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "ما تعرضه صفحة الفيلم أو المسلسل وتشغّله عند فتحها."
     }
   ],
   "web.settings.titlePages.title": [

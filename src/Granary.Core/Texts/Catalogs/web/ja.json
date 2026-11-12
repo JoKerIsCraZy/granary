@@ -515,6 +515,66 @@
       "value": "今週のトレンド"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "エピソードのサムネイルを視聴を始めるまでぼかし、画像からストーリーがわからないようにします。"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "未視聴エピソードの画像をぼかす"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "エピソードの説明を視聴を始めるまで非表示にします。"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "未視聴エピソードの説明を非表示"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "推奨年齢を表示"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "映画やシリーズの詳細ページを閲覧中に、ローカルのテーマ音楽を再生します。"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "テーマ音楽"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "詳細ページを開いている間、テーマ音楽を繰り返し再生します。"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "テーマ音楽をループ"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "タイトルアートを表示"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -1511,6 +1571,108 @@
     {
       "type": 0,
       "value": "言語と字幕"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "すべてのデバイスに適用"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでこの設定を使用します。"
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでタイトルアートがオフになっています。ここで変更すると、すべてのデバイスで変更されます。デバイスごとに選択するには、「すべてのデバイスに適用」をオフにしてください。"
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでタイトルアートがオンになっています。ここで変更すると、すべてのデバイスで変更されます。デバイスごとに選択するには、「すべてのデバイスに適用」をオフにしてください。"
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "映画やシリーズのページ上部でのタイトルの表示方法です。"
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "タイトルアートの設定を保存できませんでした"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "タイトル"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "ロゴのアートワークがある場合は、タイトルとして使用します。"
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルトを使用"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Common Sense Mediaなどによる推奨視聴年齢をタイトルのページに表示します。年齢を表示するだけです。世帯の管理者は、プロフィールのアクセス設定でこの年齢によってプロフィールを制限できます。"
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "年齢の目安"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "タイトルページの設定を保存できませんでした"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "タイトルのページを開いている間に再生されます。"
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "サウンド"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "このプロフィールを使用するすべてのデバイスで、まだ見始めていないエピソードに適用されます。"
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "ネタバレ"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "映画やシリーズのページを開いたときに表示・再生される内容です。"
     }
   ],
   "web.settings.titlePages.title": [

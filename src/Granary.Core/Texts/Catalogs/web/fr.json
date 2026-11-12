@@ -515,6 +515,66 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "Floute la miniature d’un épisode jusqu’à ce que vous commenciez à le regarder, pour que l’image ne dévoile pas l’intrigue."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "Flouter les images des épisodes non vus"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "Masque la description d’un épisode jusqu’à ce que vous commenciez à le regarder."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "Masquer les descriptions des épisodes non vus"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "Afficher l’âge conseillé"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "Lire la musique de générique locale pendant la consultation des pages de détails des films et des séries."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "Musique de générique"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "Répéter la musique de générique tant que la page de détails reste ouverte."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "Musique de générique en boucle"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "Afficher le logo du titre"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -1547,6 +1607,108 @@
     {
       "type": 0,
       "value": "Langue et sous-titres"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "Appliquer à tous les appareils"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "Utiliser ce choix sur tous les appareils connectés à ce profil."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "Le logo de titre est désactivé sur tous les appareils connectés à ce profil. Le modifier ici le modifie partout. Désactivez « Appliquer à tous les appareils » pour choisir de nouveau par appareil."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "Le logo de titre est activé sur tous les appareils connectés à ce profil. Le modifier ici le modifie partout. Désactivez « Appliquer à tous les appareils » pour choisir de nouveau par appareil."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "Comment le nom d’un film ou d’une série s’affiche en haut de sa page."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’enregistrer le paramètre du logo de titre"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "Titre"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "Utiliser le logo comme titre lorsqu’il est disponible."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Utiliser la valeur par défaut du serveur"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Afficher un âge minimum conseillé, comme celui de Common Sense Media, sur la page d’un titre. Seul l’âge est affiché ; la personne qui gère le foyer peut s’en servir pour limiter un profil dans les paramètres d’accès de ce profil."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "Âge conseillé"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’enregistrer le paramètre des pages de titre"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "Lu pendant que la page d’un titre est ouverte."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "Son"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "S’applique aux épisodes que vous n’avez pas commencés, sur tous les appareils qui utilisent ce profil."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "Spoilers"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "Ce que la page d’un film ou d’une série affiche et lit à son ouverture."
     }
   ],
   "web.settings.titlePages.title": [
