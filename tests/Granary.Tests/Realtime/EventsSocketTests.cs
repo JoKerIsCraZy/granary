@@ -84,6 +84,67 @@ public sealed class EventsSocketTests : IAsyncDisposable
         await lane.StopAsync();
     }
 
+    [Fact]
+    public async Task AFrameLargerThanTheLaneTakes_IsCutToItsHead_AndTheConnectionStays()
+    {
+        var token = TestContext.Current.CancellationToken;
+        var frames = new List<EventsFrame>();
+        var gotEvent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // The app's sockets: frames up to the lane's limit whole, of larger ones the head.
+        await using var lane = new EventsLane(new EventsApi(_silo.Http),
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes), TimeProvider.System, _logs.For<EventsLane>());
+        lane.Follow(_server, ["catalog", "sessions"], frame =>
+        {
+            lock (frames)
+            {
+                frames.Add(frame);
+            }
+            if (frame.Type == EventsFrameTypes.Event)
+            {
+                gotEvent.TrySetResult();
+            }
+        });
+        var context = await _listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10), token);
+        var accepted = await context.AcceptWebSocketAsync("silo.events.v2");
+        using var socket = accepted.WebSocket;
+        await SendAsync(socket, EventsLaneTests.Hello, token);
+        await ReceiveAsync(socket, token);
+        await SendAsync(socket, """{ "type": "subscribed", "request_id": "req-1", "channels": ["catalog", "sessions"] }""", token);
+
+        // Every running session with long titles: half as much again as the lane takes whole.
+        string row = $$"""{"session_id":"s","media_title":"{{new string('t', 1000)}}"}""";
+        string rows = string.Join(",", Enumerable.Repeat(row, EventsLane.MaxFrameBytes * 3 / 2 / row.Length));
+        await SendAsync(socket, $$"""{"type":"snapshot","channel":"sessions","timestamp":"2026-10-01T12:00:00Z","data":[{{rows}}]}""", token);
+        await SendAsync(socket, """{ "type": "event", "channel": "catalog", "event": "catalog.item.changed", "event_id": "e1", "timestamp": "t", "data": {} }""", token);
+        await gotEvent.Task.WaitAsync(TimeSpan.FromSeconds(10), token);
+
+        lock (frames)
+        {
+            Assert.Equal([EventsFrameTypes.Subscribed, EventsFrameTypes.Snapshot, EventsFrameTypes.Event], frames.Select(f => f.Type));
+            Assert.Equal(("sessions", true), (frames[1].Channel, frames[1].IsCut));
+            Assert.Equal(("catalog", false), (frames[2].Channel, frames[2].IsCut));
+        }
+        Assert.Equal(WebSocketState.Open, socket.State);
+        Assert.Single(_silo.Sent, r => r.Method == HttpMethod.Post);
+        await lane.StopAsync();
+    }
+
+    [Fact]
+    public async Task ASocketWithoutAHead_ClosesOnAFrameTooLarge()
+    {
+        var token = TestContext.Current.CancellationToken;
+        await using var client = new WebSocketRealtimeSocket(maxFrameBytes: 8192);
+        var connecting = client.ConnectAsync(new UriBuilder(_server) { Scheme = "ws", Path = "/x" }.Uri, ["p"], token);
+        var context = await _listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10), token);
+        var accepted = await context.AcceptWebSocketAsync("p");
+        using var socket = accepted.WebSocket;
+        await connecting;
+
+        await SendAsync(socket, new string('x', 10_000), token);
+
+        Assert.Null(await client.ReceiveAsync(token).WaitAsync(TimeSpan.FromSeconds(10), token));
+    }
+
     public ValueTask DisposeAsync()
     {
         _listener.Close();

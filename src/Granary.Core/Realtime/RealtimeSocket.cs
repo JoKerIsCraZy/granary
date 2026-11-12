@@ -24,7 +24,9 @@ public interface IRealtimeSocket : IAsyncDisposable
 
 /// <summary>
 /// A socket over <see cref="ClientWebSocket"/>. Frames above <c>maxFrameBytes</c> close it: 64 KiB by default, the
-/// playback control lane's limit.
+/// playback control lane's limit. With <c>oversizeHeadBytes</c> the connection stays instead: the rest of such a frame is
+/// read and dropped, and its first bytes are handed on, which is no whole JSON any more (the events stream, where one
+/// frame may hold every running playback session).
 /// </summary>
 public sealed class WebSocketRealtimeSocket : IRealtimeSocket
 {
@@ -34,11 +36,15 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
 
     private readonly ClientWebSocket _socket = new();
     private readonly int _maxFrameBytes;
+    private readonly int _oversizeHeadBytes;
 
-    public WebSocketRealtimeSocket(int maxFrameBytes = DefaultMaxFrameBytes)
+    public WebSocketRealtimeSocket(int maxFrameBytes = DefaultMaxFrameBytes, int oversizeHeadBytes = 0)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxFrameBytes, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(oversizeHeadBytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(oversizeHeadBytes, maxFrameBytes);
         _maxFrameBytes = maxFrameBytes;
+        _oversizeHeadBytes = oversizeHeadBytes;
         _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
     }
 
@@ -67,6 +73,8 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
         using var closing = cancellationToken.Register(() => _ = Task.Run(CloseAsync));
         var message = new ArrayBufferWriter<byte>();
         var chunk = new byte[4096];
+        // The frame grew past the limit: nothing more of it is kept.
+        bool oversize = false;
         while (true)
         {
             var received = await _socket.ReceiveAsync(chunk, CancellationToken.None).ConfigureAwait(false);
@@ -74,16 +82,28 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
             {
                 return null;
             }
-            if (message.WrittenCount + received.Count > _maxFrameBytes)
+            if (!oversize && message.WrittenCount + received.Count > _maxFrameBytes)
             {
-                await _socket.CloseOutputAsync(WebSocketCloseStatus.MessageTooBig, null, cancellationToken).ConfigureAwait(false);
-                return null;
+                if (_oversizeHeadBytes == 0)
+                {
+                    await _socket.CloseOutputAsync(WebSocketCloseStatus.MessageTooBig, null, cancellationToken).ConfigureAwait(false);
+                    return null;
+                }
+                oversize = true;
             }
-            message.Write(chunk.AsSpan(0, received.Count));
+            if (!oversize)
+            {
+                message.Write(chunk.AsSpan(0, received.Count));
+            }
             if (received.EndOfMessage)
             {
                 // Binary frames are not part of the protocol: an empty text stands for them and is ignored.
-                return received.MessageType == WebSocketMessageType.Text ? Encoding.UTF8.GetString(message.WrittenSpan) : "";
+                if (received.MessageType != WebSocketMessageType.Text)
+                {
+                    return "";
+                }
+                var kept = oversize ? message.WrittenSpan[..Math.Min(_oversizeHeadBytes, message.WrittenCount)] : message.WrittenSpan;
+                return Encoding.UTF8.GetString(kept);
             }
         }
     }

@@ -46,7 +46,27 @@ public sealed class EventsFramesTests
         Assert.NotNull(frame);
         Assert.Equal(EventsFrameTypes.Subscribed, frame.Type);
         Assert.Equal(["notifications"], frame.Rejected);
+        Assert.Equal(["catalog", "user_state"], frame.Accepted);
     }
+
+    [Fact]
+    public void AFrameCutShort_IsReadByWhatItsHeadNames()
+    {
+        // What the socket keeps of a frame larger than the lane takes: its first bytes.
+        var snapshot = EventsFrames.Parse("""{"type":"snapshot","channel":"sessions","timestamp":"2026-10-01T12:00:00Z","data":[{"session_id":"s1","username":"ele""");
+        var replaced = EventsFrames.Parse("""{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e1","timestamp":"t","data":[{"sess""");
+
+        Assert.NotNull(snapshot);
+        Assert.True(snapshot.IsCut);
+        Assert.Equal((EventsFrameTypes.Snapshot, "sessions"), (snapshot.Type, snapshot.Channel));
+        Assert.Equal(JsonValueKind.Undefined, snapshot.Data.ValueKind);
+        Assert.NotNull(replaced);
+        Assert.Equal((EventsFrameTypes.Event, "sessions", "sessions.replaced", true), (replaced.Type, replaced.Channel, replaced.Event, replaced.IsCut));
+    }
+
+    [Fact]
+    public void AWholeFrame_IsNotCut() =>
+        Assert.False(EventsFrames.Parse("""{ "type": "snapshot", "channel": "sessions", "timestamp": "t", "data": [] }""")!.IsCut);
 
     [Theory]
     [InlineData("""{ "type": "hello", "schema_version": 2, "connection_id": "c", "available_channels": ["catalog"], "required_action": "subscribe" }""", "hello")]
@@ -62,6 +82,8 @@ public sealed class EventsFramesTests
     [InlineData("[1, 2]")]
     [InlineData("""{ "channel": "catalog" }""")]
     [InlineData("""{ "type": 3 }""")]
+    [InlineData("""{ "channel": "sessions", "data": [{ "type": "eve""")]
+    [InlineData("""{ "type": "event" "channel" """)]
     public void WhatIsNoFrame_IsNothing(string text) => Assert.Null(EventsFrames.Parse(text));
 
     [Fact]

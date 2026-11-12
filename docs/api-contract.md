@@ -2469,11 +2469,20 @@ after `access_changed`). Sources: `silo-server/docs/realtime-api.md:23-106`,
 Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per signed-in profile, opened
 with the window and replaced on a profile or server switch, none while signed out. A profile-bound
 ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
-to `catalog`, `user_state`, `notifications` after `hello`; frames up to 1 MiB. The connection ends with
+to `catalog`, `user_state`, `notifications` after `hello`, and for an administrator account also to `sessions`,
+`tasks`, `scans` and `download_preparations` (12.3). The connection ends with
 `max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes and holds
 longer than 1 s, and at once after `access_changed` or close code 4001 on a connection that held that long
 (one closed sooner waits like any loss, so a server that closes every connection is not asked in a loop).
 A server answering the ticket with 404 or 501 gets no lane until the next sign-in, profile switch or start.
+
+Frames are taken whole up to 1 MiB. A larger one does not end the connection: the socket keeps its first 4 KiB and
+drops the rest, and the frame is handed on with its `type`, `channel` and `event`, which the server writes before
+`data`, and without a payload (`EventsFrame.IsCut`). Only an administrator's `sessions` frames get that large: the
+snapshot and every `sessions.replaced` carry up to 200 rows of the older row shape, about 2 KB each with ordinary
+titles (0.4 MB), about 4 KB with long ones (0.8 MB), and titles have no upper bound. Granary reads those frames only
+as a cue to re-read `GET /admin/sessions`, so nothing is lost with the payload.
+
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
   later connection back after more than 5 s without one (the lane's first has no gap): one
@@ -2489,9 +2498,9 @@ What it does:
   (`GET /notifications/unread-count`), rather than counted locally.
 - Left out: `user_settings` (card badges and other profile settings are read on sign-in and profile
   switch), the web's toasts for new notifications, the open inbox's own list (only the count follows),
-  the request lists, the administrator channels (`jobs`, `sessions`, `tasks`, `scans`, `settings`,
-  `download_preparations`, `history_import`; Admin → Activity polls), and the web's reconnect with a
-  growing wait when `notifications` is rejected with `profile_required` (logged; the other channels go on).
+  the request lists, the channels `jobs`, `settings` and `history_import`, the playback sessions' lifecycle
+  events (Admin → Activity still polls), and the web's reconnect with a growing wait when `notifications` is
+  rejected with `profile_required` (logged; the other channels go on).
 
 ### 12.1 Playback control lane
 
@@ -2634,6 +2643,22 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   device leaves the entry, and the hub asks each once with `GET …/{id}` whether it is still on (403 forgets it,
   404/409/410 mark it ended) and rejoins with the kept proof. The code and the invite link are copied with the
   clipboard's history and roaming off.
+
+### 12.3 The administrator's channels
+
+The server gives `jobs`, `sessions`, `tasks`, `scans`, `settings` and `download_preparations` to the acting
+administrator only: an administrator account as its primary profile, or without a profile while the household needs
+none. Anyone else gets each back in `subscribed.rejected` with `forbidden` (an older server: `unknown_channel`) and
+keeps the connection. When that changes, the server sends `access_changed` and closes with 4001. Sources:
+`silo-server/internal/api/handlers/events_ws.go` (`allowedChannelsForRole`, `resolveChannelSelection`),
+`silo-server/docs/realtime-api.md` ("Access changes").
+
+Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) asks for `sessions`, `tasks`, `scans` and
+`download_preparations` on every connection of an account whose role is `admin`, and takes the `channels` of the
+`subscribed` answer as the only say on who is an acting administrator: the activity indicator and its reads exist
+for the accepted channels, and a profile the server turns down causes no request. `access_changed` closes the gate
+until the next connection's answer. The state starts over with the lane, on a server or profile switch and on
+sign-out, and frames or answers of the replaced one are dropped by a number handed out per following.
 
 ## 13. Consequences for the Windows client
 

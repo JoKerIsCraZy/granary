@@ -71,13 +71,29 @@ public sealed class EventsLaneTests
         }
     }
 
+    private readonly List<EventsConnection> _connections = [];
+
     private void Follow(EventsLane lane) => lane.Follow(ScriptedSilo.Base, Channels, frame =>
     {
         lock (_frames)
         {
             _frames.Add(frame);
         }
+    }, connection =>
+    {
+        lock (_connections)
+        {
+            _connections.Add(connection);
+        }
     });
+
+    private List<EventsConnection> Connections()
+    {
+        lock (_connections)
+        {
+            return [.. _connections];
+        }
+    }
 
     // Opens connection number index: hello, then the server takes the subscription.
     private async Task OpenAsync(int index)
@@ -123,6 +139,39 @@ public sealed class EventsLaneTests
 
         await ServerPlaybackFixture.Until(() => Frames().Count == 3, "the frames");
         Assert.Equal([EventsFrameTypes.Subscribed, EventsFrameTypes.Event, EventsFrameTypes.Snapshot], Frames().Select(f => f.Type));
+    }
+
+    [Fact]
+    public async Task AFrameCutShort_IsHandedOnAsNewsOfItsChannel()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+
+        // What the socket keeps of a frame larger than the lane takes.
+        Socket(0).Push("""{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e1","timestamp":"t","data":[{"session_id":"s1","media_ti""");
+        Socket(0).Push("""{ "type": "event", "channel": "catalog", "event": "catalog.item.changed", "event_id": "e2", "timestamp": "t", "data": {} }""");
+
+        await ServerPlaybackFixture.Until(() => Frames().Count == 3, "the frames");
+        Assert.Equal([(null, false), ("sessions", true), ("catalog", false)], Frames().Select(f => (f.Channel, f.IsCut)));
+    }
+
+    [Fact]
+    public async Task TheConnectionsState_IsToldAsItChanges()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+        Assert.Equal([EventsConnection.Connecting, EventsConnection.Live], Connections());
+
+        Socket(0).Close();
+        await WaitForTheWaitAsync(TimeSpan.FromSeconds(1));
+        Assert.Equal(EventsConnection.Disconnected, Connections()[^1]);
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        await OpenAsync(1);
+        Assert.Equal([EventsConnection.Connecting, EventsConnection.Live, EventsConnection.Disconnected, EventsConnection.Connecting, EventsConnection.Live],
+            Connections());
     }
 
     [Fact]
@@ -254,6 +303,7 @@ public sealed class EventsLaneTests
 
         await lane.Running.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(0, SocketCount);
+        Assert.Equal([EventsConnection.Connecting, EventsConnection.Disconnected], Connections());
     }
 
     [Fact]
@@ -300,6 +350,8 @@ public sealed class EventsLaneTests
         Follow(lane);
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
+        // Its end is the caller's own doing and is not reported.
+        Assert.Equal([EventsConnection.Connecting, EventsConnection.Live], Connections());
         Assert.True(lane.Running.IsCompleted);
         Assert.True(Socket(0).Disposed);
         Assert.Equal(1, SocketCount);

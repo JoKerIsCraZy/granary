@@ -30,11 +30,29 @@ public static class EventsChannels
 
     /// <summary>The profile's inbox: created and read notifications, and a snapshot of the unread ones on subscribing.</summary>
     public const string Notifications = "notifications";
+
+    /// <summary>The playback sessions running now. An administrator's, as the three below.</summary>
+    public const string Sessions = "sessions";
+
+    /// <summary>The server's scheduled tasks: <c>task.updated</c> while one runs.</summary>
+    public const string Tasks = "tasks";
+
+    /// <summary>Library scans: a snapshot of the active ones on subscribing, then each run as it changes.</summary>
+    public const string Scans = "scans";
+
+    /// <summary>The queue that prepares offline downloads.</summary>
+    public const string DownloadPreparations = "download_preparations";
+
+    /// <summary>
+    /// What the activity indicator follows. The server gives these to the acting administrator only and turns them down
+    /// (<c>forbidden</c>) for everyone else, keeping the connection.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Admin = [Sessions, Tasks, Scans, DownloadPreparations];
 }
 
 /// <summary>
-/// A frame of the events stream. <see cref="Data"/> is the event's or snapshot's payload; <see cref="Rejected"/> names the
-/// channels a <c>subscribed</c> frame turned down.
+/// A frame of the events stream. <see cref="Data"/> is the event's or snapshot's payload; <see cref="Accepted"/> and
+/// <see cref="Rejected"/> name the channels a <c>subscribed</c> frame took and turned down.
 /// </summary>
 public sealed record EventsFrame(string Type)
 {
@@ -45,7 +63,15 @@ public sealed record EventsFrame(string Type)
 
     public JsonElement Data { get; init; }
 
+    public IReadOnlyList<string> Accepted { get; init; } = [];
+
     public IReadOnlyList<string> Rejected { get; init; } = [];
+
+    /// <summary>
+    /// The frame was larger than the lane takes (<see cref="EventsLane.MaxFrameBytes"/>): only what its head names is
+    /// here, and <see cref="Data"/> is empty. It still says that its channel has news.
+    /// </summary>
+    public bool IsCut { get; init; }
 
     /// <summary>
     /// On a <c>subscribed</c> frame of a later connection: how long the lane was without one (null on its first). Changes
@@ -84,7 +110,11 @@ public static class EventsFrames
         return System.Text.Encoding.UTF8.GetString(buffer.ToArray());
     }
 
-    /// <summary>The frame in <paramref name="text"/>; null for what is not one (not JSON, not an object, no type).</summary>
+    /// <summary>
+    /// The frame in <paramref name="text"/>; null for what is not one (not JSON, not an object, no type). A text that ends
+    /// before its JSON does is what the socket kept of a frame too large to take: it is read by what its head names
+    /// (<see cref="EventsFrame.IsCut"/>).
+    /// </summary>
     public static EventsFrame? Parse(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -105,14 +135,72 @@ public static class EventsFrames
                 Event = Member(root, "event"),
                 // The document goes with this call: the payload is kept apart from it.
                 Data = root.TryGetProperty("data", out var data) ? data.Clone() : default,
+                Accepted = Accepted(root),
                 Rejected = Rejected(root),
             };
         }
         catch (JsonException)
         {
-            return null;
+            return Head(text);
         }
     }
+
+    // The server writes type, channel and event before the payload, so the head of a cut frame names them. Read as a
+    // block that is not the last one, the reader stops where the text ends instead of failing; text that is wrong before
+    // that is no frame.
+    private static EventsFrame? Head(string text)
+    {
+        string? type = null;
+        string? channel = null;
+        string? name = null;
+        try
+        {
+            var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(text), isFinalBlock: false, state: default);
+            if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
+            {
+                return null;
+            }
+            while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
+            {
+                string member = reader.GetString() ?? "";
+                if (!reader.Read() || (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray && !reader.TrySkip()))
+                {
+                    break;
+                }
+                if (reader.TokenType != JsonTokenType.String)
+                {
+                    continue;
+                }
+                switch (member)
+                {
+                    case "type":
+                        type = reader.GetString();
+                        break;
+                    case "channel":
+                        channel = reader.GetString();
+                        break;
+                    case "event":
+                        name = reader.GetString();
+                        break;
+                }
+            }
+            // An object that ended was whole, and whole JSON is read above: this one is something else.
+            if (reader.TokenType == JsonTokenType.EndObject && reader.CurrentDepth == 0)
+            {
+                return null;
+            }
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        return type is null ? null : new EventsFrame(type) { Channel = channel, Event = name, IsCut = true };
+    }
+
+    private static List<string> Accepted(JsonElement root) =>
+        root.TryGetProperty("channels", out var channels) && channels.ValueKind == JsonValueKind.Array
+            ? [.. channels.EnumerateArray().Where(entry => entry.ValueKind == JsonValueKind.String).Select(entry => entry.GetString()!)]
+            : [];
 
     // The rejected entries are { channel, code }: the channels are what counts.
     private static List<string> Rejected(JsonElement root) =>

@@ -282,7 +282,9 @@ public static class CoreServiceCollectionExtensions
     {
         services.AddTransient<EventsApi>();
         services.AddSingleton<Func<EventsLane>>(sp => () => new EventsLane(sp.GetRequiredService<EventsApi>(),
-            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes), sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<EventsLane>>()));
+        services.AddSingleton<ServerActivity>();
         services.AddSingleton<RealtimeEvents>();
     }
 
