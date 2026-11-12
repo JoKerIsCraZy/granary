@@ -77,6 +77,14 @@ public sealed class AdminApi(SiloHttp http)
     public Task<AdminLibraryCollection> ListLibrariesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/libraries", SiloAuth.Profile, AdminJsonContext.Default.AdminLibraryCollection, cancellationToken);
 
+    /// <summary>
+    /// Every scheduled task with its state on the server that answers, hidden workers included, as the web's activity
+    /// indicator reads them (<c>useTasksIncludingHidden</c>): a running one is not on the plain list when it is hidden.
+    /// </summary>
+    public Task<AdminTaskCollection> ListTasksAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, "api/v2/admin/tasks?include_hidden=true", SiloAuth.Profile, AdminJsonContext.Default.AdminTaskCollection,
+            cancellationToken);
+
     /// <summary>The accounts seen at <paramref name="ip"/> over the last <paramref name="days"/>, a page at a time.</summary>
     public Task<AdminIpUserCollection> ListIpUsersAsync(Uri server, string ip, int days, int limit, string? cursor = null,
         CancellationToken cancellationToken = default)

@@ -77,6 +77,43 @@
             <Setter Property="Margin" Value="-4,0" />
             <Setter Property="CornerRadius" Value="6" />
         </Style>
+        <!-- A section: a hairline above it, so whichever sections show are parted by one line. -->
+        <Style x:Key="ActivitySectionStyle" TargetType="StackPanel">
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+        </Style>
+        <!-- "42%", "12.5%" at a row's right. -->
+        <Style x:Key="ActivityRowNumberStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- "Running" beside a spinner, in the accent. -->
+        <Style x:Key="ActivityRowWorkingStyle" TargetType="TextBlock" BasedOn="{StaticResource ActivityRowNumberStyle}">
+            <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
+        </Style>
+        <Style x:Key="ActivitySpinnerStyle" TargetType="ProgressRing">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        </Style>
+        <!-- A row's progress: the web's 6 px bar, the accent on the muted track. -->
+        <Style x:Key="ActivityProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="MinHeight" Value="6" />
+            <Setter Property="Height" Value="6" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
+            <Setter Property="Background" Value="#FF28282E" />
+            <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        </Style>
 
         <!-- "2 Direct Play", behind a dot in the method's colour. The root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
         <DataTemplate x:Key="ActivityStreamRowTemplate" x:DataType="admin:ActivityStreamRow">
@@ -85,6 +122,31 @@
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind adminViews:AdminDashboardView.MethodBrush(Method)}" />
                         <TextBlock Text="{x:Bind Text, Mode=OneWay}" Style="{StaticResource ActivityRowTextStyle}" />
+                    </StackPanel>
+                </controls:ReadingRow>
+            </Grid>
+        </DataTemplate>
+
+        <!-- A running task: its name, and "42%" over a bar once it says how far it is, a spinner and "Running" until then. -->
+        <DataTemplate x:Key="ActivityTaskRowTemplate" x:DataType="admin:ActivityTaskRow">
+            <Grid>
+                <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" AutomationProperties.Name="{x:Bind ReadText, Mode=OneWay}">
+                    <StackPanel Spacing="4">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" Style="{StaticResource ActivityRowTextStyle}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
+                                       Style="{StaticResource ActivityRowNumberStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Visibility="{x:Bind IsWorking, Mode=OneWay}">
+                                <ProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
+                                <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource ActivityRowWorkingStyle}" />
+                            </StackPanel>
+                        </Grid>
+                        <ProgressBar Value="{x:Bind ProgressValue, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
+                                     Style="{StaticResource ActivityProgressBarStyle}" />
                     </StackPanel>
                 </controls:ReadingRow>
             </Grid>
@@ -109,7 +171,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Grid Padding="16,12" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid Padding="16,12">
                             <TextBlock Text="Server Activity" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="13"
                                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
                             <!-- Only while the events stream is not live. -->
@@ -120,15 +182,17 @@
                         <ScrollViewer Grid.Row="1" MaxHeight="400" XYFocusKeyboardNavigation="Enabled" HorizontalScrollMode="Disabled"
                                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <controls:ReadingRow Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Padding="16,32" CornerRadius="0"
-                                                     AutomationProperties.Name="No active server activity">
-                                    <TextBlock Text="No active server activity" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
-                                               HorizontalAlignment="Center" />
-                                </controls:ReadingRow>
+                                <Border Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" BorderBrush="{StaticResource SiloBorderBrush}"
+                                        BorderThickness="0,1,0,0">
+                                    <controls:ReadingRow Padding="16,32" AutomationProperties.Name="No active server activity">
+                                        <TextBlock Text="No active server activity" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                                                   HorizontalAlignment="Center" />
+                                    </controls:ReadingRow>
+                                </Border>
 
                                 <StackPanel Visibility="{x:Bind ViewModel.HasSections, Mode=OneWay}">
                                     <!-- Streams: one row per play method. -->
-                                    <StackPanel Padding="16,12" Visibility="{x:Bind ViewModel.ShowsStreams, Mode=OneWay}">
+                                    <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsStreams, Mode=OneWay}">
                                         <Grid Margin="0,0,0,8">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock Text="STREAMS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
@@ -150,6 +214,23 @@
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoStreams, Mode=OneWay}"
                                                              AutomationProperties.Name="No active streams">
                                             <TextBlock Text="No active streams" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                        </controls:ReadingRow>
+                                    </StackPanel>
+
+                                    <!-- Tasks: the scheduled tasks running now. -->
+                                    <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsTasks, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                            <TextBlock Text="TASKS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                       AutomationProperties.Name="Tasks" />
+                                            <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasTasks, Mode=OneWay}">
+                                                <TextBlock Text="{x:Bind ViewModel.TaskCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.Tasks}" ItemTemplate="{StaticResource ActivityTaskRowTemplate}"
+                                                      IsTabStop="False" />
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoTasks, Mode=OneWay}"
+                                                             AutomationProperties.Name="No running tasks">
+                                            <TextBlock Text="No running tasks" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
                                 </StackPanel>

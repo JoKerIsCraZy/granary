@@ -1249,6 +1249,12 @@ else of the admin API is used.
   session's playback authority is revoked for good, the player told as best it can be.
 - `GET /api/v2/admin/ips?ip=&days=30&limit=50[&cursor=]` → `{ "items": [{ "user_id", "username", "first_seen",
   "last_seen", "request_count" }], "page" }`: the accounts seen at an address.
+- `GET /api/v2/admin/tasks?include_hidden=true` → `{ "items": [{ "key", "name", "description", "category", "state"
+  (`idle`, `running`, `cancelling`), "progress" (0 to 100, 0 while unknown), "manual_only", "last_execution"?,
+  "triggers", "next_run_at"?, "execution_scope" }] }`: the scheduled tasks as the answering server process runs them.
+  Without `include_hidden` the hidden workers are missing, also while they run. Granary reads `key`, `name`, `state` and
+  `progress` for the activity indicator; `name` is the server's English, which the web shows too for a task it has no
+  translation for. Source: `silo-server/internal/apiv2/admin_tasks.go`.
 
 ### 7.17 A profile's own collections, made and changed
 
@@ -2667,6 +2673,10 @@ What the indicator reads, each source by itself (a source the server does not of
   `sessions.replaced`, as the web's `useAdminSessions`. The frame's own rows (an older shape, 200 at most, possibly
   cut for their size) and the channel's snapshot are never read; the lifecycle events
   (`session.started|paused|resumed|stopped`) are not followed, as on the web.
+- **Tasks** (`tasks`): `GET /api/v2/admin/tasks?include_hidden=true` (7.16) once the channel is accepted and again on
+  `task.updated`, as the web's `useTasksIncludingHidden`; the running ones (`state` `running`) show and count. The
+  server sends `task.updated` at most every 250 ms per running task, and at once when one ends. The channel's snapshot
+  and the frame's own task are not used: both lack the hidden workers or are one server's view.
 
 Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
 or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until

@@ -98,6 +98,26 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     /// <summary>One row per play method in use, in the web's order: direct, remux, direct stream, transcode, unknown.</summary>
     public ObservableCollection<ActivityStreamRow> Streams { get; } = [];
 
+    /// <summary>The server offers its scheduled tasks.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoTasks))]
+    public partial bool ShowsTasks { get; private set; }
+
+    /// <summary>The tasks running now.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTasks), nameof(HasNoTasks), nameof(TaskCountText))]
+    public partial int TaskCount { get; private set; }
+
+    public bool HasTasks => TaskCount > 0;
+
+    /// <summary>"No running tasks" in place of the rows.</summary>
+    public bool HasNoTasks => ShowsTasks && !HasTasks;
+
+    public string TaskCountText => ServerActivityText.Count(TaskCount);
+
+    /// <summary>A row per running task, in the server's order.</summary>
+    public ObservableCollection<ActivityTaskRow> Tasks { get; } = [];
+
     /// <summary>"View all" beside Streams was picked: the shell opens Admin → Activity.</summary>
     public event EventHandler? StreamsRequested;
 
@@ -122,7 +142,11 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         ServerActivityRows.Sync(Streams,
             [.. sessions.GroupBy(AdminPlayMethod.Of).OrderBy(group => AdminPlayMethod.Rank(group.Key)).ThenBy(group => group.Key, StringComparer.Ordinal)],
             group => group.Key, row => row.Method, group => new ActivityStreamRow(group.Key), (row, group) => row.Count = group.Count());
-        Total = sessions.Count;
+        var running = (state.Tasks ?? []).Where(task => task.IsRunning).ToList();
+        ShowsTasks = state.Tasks is not null;
+        TaskCount = running.Count;
+        ServerActivityRows.Sync(Tasks, running, task => task.Key, row => row.Key, task => new ActivityTaskRow(task.Key), (row, task) => row.Show(task));
+        Total = sessions.Count + running.Count;
     }
 
     // The news comes on the stream's or a read's thread, in bursts: one look at the latest state per burst.

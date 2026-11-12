@@ -22,4 +22,5 @@ namespace Granary.Core.Api.Admin;
 [JsonSerializable(typeof(AdminPlaybackTerminate))]
 [JsonSerializable(typeof(AdminPlaybackTerminateReceipt))]
 [JsonSerializable(typeof(AdminIpUserCollection))]
+[JsonSerializable(typeof(AdminTaskCollection))]
 internal sealed partial class AdminJsonContext : JsonSerializerContext;

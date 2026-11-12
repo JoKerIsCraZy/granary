@@ -149,6 +149,75 @@ public sealed class ServerActivityViewModelTests : IDisposable
         Assert.Empty(_indicator.Streams);
     }
 
+    private static AdminTask Scheduled(string key, string name, string state, double progress = 0) =>
+        new() { Key = key, Name = name, State = state, Progress = progress };
+
+    [Fact]
+    public void RunningTasks_AreListedAndCounted_TheOthersAreNot()
+    {
+        _indicator.Show(Live(Session("s1", AdminPlayMethod.Direct)) with
+        {
+            Tasks = [Scheduled("refresh_metadata", "Refresh Metadata", "running", 41.5), Scheduled("backup", "Back Up Server", "idle"),
+                Scheduled("match_media", "Match Media Files", "running"), Scheduled("cleanup", "", "cancelling")],
+        });
+
+        Assert.True(_indicator.ShowsTasks);
+        Assert.Equal(2, _indicator.TaskCount);
+        Assert.Equal("2", _indicator.TaskCountText);
+        Assert.Equal(3, _indicator.Total);
+        Assert.Equal(["Refresh Metadata", "Match Media Files"], _indicator.Tasks.Select(row => row.Name));
+        var known = _indicator.Tasks[0];
+        Assert.Equal((true, false, "41.5%", 41.5), (known.HasProgress, known.IsWorking, known.StatusText, known.ProgressValue));
+        Assert.Equal("Refresh Metadata, 41.5%", known.ReadText);
+        var unknown = _indicator.Tasks[1];
+        Assert.Equal((false, true, "Running"), (unknown.HasProgress, unknown.IsWorking, unknown.StatusText));
+        Assert.Equal("Match Media Files, Running", unknown.ReadText);
+    }
+
+    [Fact]
+    public void ATaskThatGoesOn_KeepsItsRow_WithItsNewProgress()
+    {
+        _indicator.Show(Live() with { Tasks = [Scheduled("refresh_metadata", "Refresh Metadata", "running", 10)] });
+        var row = Assert.Single(_indicator.Tasks);
+
+        _indicator.Show(Live() with { Tasks = [Scheduled("refresh_metadata", "Refresh Metadata", "running", 55)] });
+
+        Assert.Same(row, Assert.Single(_indicator.Tasks));
+        Assert.Equal("55%", row.StatusText);
+    }
+
+    [Fact]
+    public void WithNothingRunning_TheSectionSaysSo_AndWithoutTheList_ThereIsNoSection()
+    {
+        _indicator.Show(Live(Session("s1", AdminPlayMethod.Direct)) with { Tasks = [Scheduled("backup", "Back Up Server", "idle")] });
+        Assert.True(_indicator.HasNoTasks);
+        Assert.Empty(_indicator.Tasks);
+
+        _indicator.Show(Live(Session("s1", AdminPlayMethod.Direct)));
+        Assert.False(_indicator.ShowsTasks);
+        Assert.False(_indicator.HasNoTasks);
+    }
+
+    [Fact]
+    public void ARunningTaskAlone_ShowsTheButtonOnARegularPage()
+    {
+        _indicator.Show(Live() with { Tasks = [Scheduled("backup", "Back Up Server", "running")] });
+
+        Assert.True(_indicator.IsVisible);
+        Assert.Equal("Server activity: 1 active", _indicator.Name);
+    }
+
+    [Theory]
+    [InlineData(0.4, "0.4%")]
+    [InlineData(42, "42%")]
+    [InlineData(12.34, "12.3%")]
+    [InlineData(99.96, "99.9%")]
+    [InlineData(100, "100%")]
+    [InlineData(250, "100%")]
+    [InlineData(double.NaN, "0%")]
+    public void ATasksProgress_IsWrittenAsTheWebWritesIt(double progress, string expected) =>
+        Assert.Equal(expected, ServerActivityText.TaskProgress(progress));
+
     [Fact]
     public void TheConnection_IsNamedInThePanel_AndOnTheButtonOnlyOnceItStayedAway()
     {

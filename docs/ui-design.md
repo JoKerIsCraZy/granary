@@ -1277,7 +1277,10 @@ by `MainWindow.Activity.cs`.
   - **Streams**: a row per play method in use, a dot in the method's colour and "2 Direct Play", in the order Direct
     Play, Remux, Direct Stream, Transcode, Unknown; "No active streams" without any. "View all ›" closes the panel and
     opens Admin → Activity (in place when the admin area shows, else the area opens on it and Back returns).
-  A section whose list the server does not offer is left out.
+  - **Tasks**: a row per running scheduled task with the server's name for it. Once the task says how far it is,
+    "42%" (or "12.5%", never "100.0%" while it runs) at the right and a 6 px bar under the name; until then a spinner
+    and "Running" in the accent. "No running tasks" without any.
+  A section whose list the server does not offer is left out; a hairline parts the sections that show.
 - **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
   the page's top edge moves to it (a held key stops at the edge), Down or Left from it back to where focus was on the
   page. Enter or Space opens the panel and moves into it; the arrows walk its rows, which are only read (`ReadingRow`:

@@ -20,6 +20,9 @@ public sealed record ServerActivityState
 
     /// <summary>The playback sessions running now; null while there is none to show (not read yet, or not offered).</summary>
     public IReadOnlyList<AdminPlaybackSession>? Sessions { get; init; }
+
+    /// <summary>Every scheduled task, the idle ones too; null as <see cref="Sessions"/>.</summary>
+    public IReadOnlyList<AdminTask>? Tasks { get; init; }
 }
 
 /// <summary>
@@ -44,12 +47,14 @@ public sealed record ServerActivityState
 public sealed partial class ServerActivity : IDisposable
 {
     private const string SessionsReplaced = "sessions.replaced";
+    private const string TaskUpdated = "task.updated";
 
     private readonly AdminApi _admin;
     private readonly TimeProvider _time;
     private readonly ILogger<ServerActivity> _logger;
     private readonly Lock _gate = new();
     private readonly Reread _sessions;
+    private readonly Reread _tasks;
     private readonly Reread[] _rereads;
     private Following? _following;
     private long _feed;
@@ -67,7 +72,14 @@ public sealed partial class ServerActivity : IDisposable
                 return state => state with { Sessions = sessions };
             },
             state => state with { Sessions = null });
-        _rereads = [_sessions];
+        _tasks = Source(EventsChannels.Tasks, "scheduled tasks",
+            async (server, cancellationToken) =>
+            {
+                var tasks = (await _admin.ListTasksAsync(server, cancellationToken).ConfigureAwait(false)).Items;
+                return state => state with { Tasks = tasks };
+            },
+            state => state with { Tasks = null });
+        _rereads = [_sessions, _tasks];
     }
 
     public ServerActivityState State
@@ -194,6 +206,11 @@ public sealed partial class ServerActivity : IDisposable
             // As the web: the frame only says that the sessions changed, and may be cut for its size.
             case EventsChannels.Sessions when frame.Event == SessionsReplaced:
                 CueLocked(_sessions);
+                return false;
+            // The frame's task is one server's view and never a hidden worker's whole story: the list is read again, as
+            // on the web. A running task sends this four times a second.
+            case EventsChannels.Tasks when frame.Event == TaskUpdated:
+                CueLocked(_tasks);
                 return false;
             default:
                 return false;
