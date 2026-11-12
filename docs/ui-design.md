@@ -1310,7 +1310,11 @@ by `MainWindow.Activity.cs`.
   A section whose list the server does not offer is left out; a hairline parts the sections that show.
 - **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
   the page's top edge moves to it (a held key stops at the edge; from a row of tabs there too), Down or Left from it
-  back to where focus was on the page. Enter or Space opens the panel and moves into it, onto "View all" first. Up
+  back to where focus was on the page. Where the way back lies above, Up goes to that, as on a page without the
+  indicator, and Up from the way back goes on to the indicator (`ActivityIndicatorFocus` in Core). A button that goes
+  while it has focus (its last activity ended, or its panel closed on a page where it shows only while open) gives
+  focus back to the page first. Enter or Space opens the panel and moves into it, onto its first stop: "View all"
+  beside Streams, or the first row on a server without the streams' list. Up
   and Down walk the link and the rows one by one in the order they are read and stop at the panel's ends, the scroller
   following the focused row (the panel takes the two keys itself: left to the scroller they scrolled by lines, past
   rows that never got focus). The rows are only read (`ReadingRow`: focus and one text for a screen reader, nothing

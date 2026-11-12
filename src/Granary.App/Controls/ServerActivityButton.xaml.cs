@@ -19,8 +19,8 @@ public sealed partial class ServerActivityButton : UserControl
     private const float BadgeDimmed = 0.5f;
     private static readonly TimeSpan BadgeBreath = TimeSpan.FromSeconds(2);
 
-    // Windows' "Animation effects", read once when the app starts: turned off, the count stands still.
-    private static readonly bool Breathes = new UISettings().AnimationsEnabled;
+    // Windows' "Animation effects": turned off, the count stands still. Followed while the button is loaded.
+    private static readonly UISettings WindowsSettings = new();
 
     private bool _breathing;
 
@@ -31,11 +31,13 @@ public sealed partial class ServerActivityButton : UserControl
         Loaded += (_, _) =>
         {
             ViewModel.PropertyChanged += OnViewModelChanged;
+            WindowsSettings.AnimationsEnabledChanged += OnAnimationsChanged;
             ShowBreath();
         };
         Unloaded += (_, _) =>
         {
             ViewModel.PropertyChanged -= OnViewModelChanged;
+            WindowsSettings.AnimationsEnabledChanged -= OnAnimationsChanged;
             ShowBreath();
         };
         RegisterPropertyChangedCallback(VisibilityProperty, (_, _) => ShowBreath());
@@ -45,6 +47,11 @@ public sealed partial class ServerActivityButton : UserControl
 
     /// <summary>The panel is open.</summary>
     public bool IsPanelOpen => Panel.IsOpen;
+
+    /// <summary>Keyboard focus is on the button or in its panel.</summary>
+    public bool HoldsFocus =>
+        XamlRoot is { } root && FocusManager.GetFocusedElement(root) is DependencyObject focused
+        && (IsWithin(focused, Trigger) || IsWithin(focused, PanelRoot));
 
     /// <summary>Moves the keyboard to the button, as the remote's Up at a page's top edge does.</summary>
     public bool FocusButton() => Trigger.Focus(FocusState.Keyboard);
@@ -63,6 +70,9 @@ public sealed partial class ServerActivityButton : UserControl
     // Instance method because x:Bind function bindings in this markup call it on the control. The web's text-primary while
     // something is going on, its muted foreground otherwise.
     public Brush PulseBrush(bool hasActivity) => (Brush)Application.Current.Resources[hasActivity ? "SiloPrimaryBrush" : "SiloMutedBrush"];
+
+    // A section's heading for a screen reader, with its count: "Streams, 3". The count beside it is only drawn.
+    public string SectionName(string title, string count, bool hasCount) => hasCount ? $"{title}, {count}" : title;
 
     private void OnPanelOpened(object? sender, object e) => ViewModel.IsPanelOpen = true;
 
@@ -113,6 +123,22 @@ public sealed partial class ServerActivityButton : UserControl
         }
     }
 
+    // Raised off the UI thread.
+    private void OnAnimationsChanged(UISettings sender, UISettingsAnimationsEnabledChangedEventArgs args) =>
+        DispatcherQueue.TryEnqueue(ShowBreath);
+
+    private static bool IsWithin(DependencyObject element, DependencyObject ancestor)
+    {
+        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, ancestor))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ServerActivityViewModel.HasActivity))
@@ -124,7 +150,7 @@ public sealed partial class ServerActivityButton : UserControl
     // On the compositor, so it costs the UI thread nothing; only while the count shows.
     private void ShowBreath()
     {
-        bool breathe = Breathes && IsLoaded && Visibility == Visibility.Visible && ViewModel.HasActivity;
+        bool breathe = WindowsSettings.AnimationsEnabled && IsLoaded && Visibility == Visibility.Visible && ViewModel.HasActivity;
         if (breathe == _breathing)
         {
             return;
