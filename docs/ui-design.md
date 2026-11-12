@@ -83,18 +83,29 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered. A card
   drops its hover look as it leaves the screen, so a card that opened a title is not still hovered when you come back
   to the page; the pointer's next move over it shows the look again.
-  The lines under a card are links of their own for the pointer, as on the web's cards (`hover:underline`): the line
-  under the mouse is underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click
-  or tap on the title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where
-  the server names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
-  Which lines are links is the card's (`MediaCard.Links`, `CardLinks`), by its web twin:
-  - A library title's poster (`ItemCard`: grids, search, a person's titles, a box set's films): the title, an
-    episode's own title and the line under them (year, "S04E01"), each by itself. More Like This shows the same poster;
-    the web's card there (`RecommendationGrid`) has the title only, also a link.
-  - The same poster in a row (`SectionItemCard`: Home, a library's rows, For You): an episode's title and its code are
-    one link, so the pointer over either underlines both, also between them (`MediaCard.JoinsEpisodeLines`).
+  What a card shows under the pointer follows where the pointer is (`CardHover`), as on the web, whose overlay belongs to
+  the artwork's box (`group/media`) and whose links to the caption: over the artwork the hover look (the zoom, the play
+  disc, the card's buttons) and no underline; over the lines under it, or between them, only a link's underline and no
+  hover look. The 11 px between the artwork and the caption belong to neither (they are the button's, not the card's):
+  there the look is off and nothing is underlined, so the way from one to the other switches once and nothing blinks.
+  Focus by keyboard or remote, an open ⋮ menu and a request being sent show what they did before, and the hero that
+  follows the pointed card follows a card whose caption is pointed at too.
+  The lines under a card are links for the pointer, as on the web's cards (`hover:underline`): under the mouse a line is
+  underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click or tap on the
+  title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where the server
+  names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
+  **Lines that open the same page are underlined together** (`CardLinks.Underlined`), also while the pointer is between
+  two of them. This departs from the web, where each link is underlined alone; the owner asked for it, so a card shows
+  what one click reaches. On a movie's, a series', a box set's, a TMDB title's and a watchlist title's card that is every
+  link line at once; on an episode's card the title line alone (the series) and the lines under it together (the
+  episode), on a poster and on a wide card alike. Which lines are links is the card's (`MediaCard.Links`), by its web twin:
+  - A library title's poster (`ItemCard` in grids, search, a person's titles and a box set's films; `SectionItemCard` in
+    the rows of Home, a library and For You): the title, an episode's own title and the line under them (year,
+    "S04E01"). More Like This shows the same poster; the web's card there (`RecommendationGrid`) has the title only,
+    also a link.
   - A Continue Watching or Next Up card (`ContinueWatchingCard`): the title, the episode's line and the time left or
-    "Next Episode"; the last only as far as its text reaches, and never the "NEW SEASON" pill. A movie's year, a line
+    "Next Episode". The pointer is on the last only as far as its text reaches (the web's `w-fit`), though it is
+    underlined with its group from the line above; the "NEW SEASON" pill is never part of it. A movie's year, a line
     the web's card does not have, opens the movie as its other lines do.
   - A box set's card (`BoxSetCard`), a title from TMDB on Requests and Discover (`RequestPosterCard`) and a watchlist
     title (`WatchlistTitleCard`): the title and the line under it; a watchlist title's status is plain text.
@@ -103,8 +114,14 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
     TMDB title without a page), on the player's On Deck, where a click plays, and while a grid selects (History's
     Select), where a click picks.
   A line is a link over the whole width of the caption, as the web's block links. Underlining changes no size, so no
-  text moves. A card that is recycled, left by a click or shown again never keeps an underline: it goes with the
-  hover look.
+  text moves. A card that is recycled, left by a click or shown again never keeps an underline or the hand: they go
+  when the pointer does, and the card then has no cursor of its own.
+  A click on a link is the click of the card's button, with its pressed look, its focus and "release elsewhere cancels":
+  the card only notes a press of the left button, a finger or a pen that begins on a title line that opens its series
+  (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
+  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
+  forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
+  the button, so Enter and a remote's Select always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
