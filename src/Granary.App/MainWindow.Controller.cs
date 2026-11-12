@@ -68,7 +68,7 @@ public sealed partial class MainWindow
     // back, start afresh: what is held then is not a press, and a seek under way is dropped, never sent.
     private void FollowPads(bool forget)
     {
-        bool reads = _isInFront && _pads.HasPads;
+        bool reads = (_isInFront && _pads.HasPads) || HasDebugPad;
         if (!forget && reads == _padTimer.IsRunning)
         {
             return;
@@ -90,7 +90,7 @@ public sealed partial class MainWindow
     {
         try
         {
-            var reading = _pads.Read();
+            var reading = ReadPads();
             // A pad lying on the table: nothing to decide, and nothing of the window is even looked at.
             if (_pad.IsIdle && PadInterpreter.IsAtRest(reading))
             {
@@ -255,4 +255,46 @@ public sealed partial class MainWindow
 
     [LibraryImport("kernel32.dll")]
     private static partial uint SetThreadExecutionState(uint flags);
+
+#if DEBUG
+    // The debug remote's pad (Debugging/RemoteWindow.cs): a pad at rest for a moment, then the reading for as long as it
+    // is held, then at rest again so the press is let go, and then no pad. The rest before it matters: a pad's first
+    // reading is no press (PadInterpreter), so a button down from the start would do nothing.
+    private const long DebugPadLeadIn = 100;
+    private const long DebugPadRest = 300;
+    private PadReading _debugPad;
+    private long _debugPadFrom;
+    private long _debugPadUntil;
+    private long _debugPadGone;
+
+    private bool HasDebugPad => Environment.TickCount64 < _debugPadGone;
+
+    /// <summary>Holds <paramref name="reading"/> for <paramref name="held"/>, as if a pad reported it.</summary>
+    internal void HoldDebugPad(PadReading reading, TimeSpan held)
+    {
+        _debugPad = reading;
+        _debugPadFrom = Environment.TickCount64 + DebugPadLeadIn;
+        _debugPadUntil = _debugPadFrom + (long)held.TotalMilliseconds;
+        _debugPadGone = _debugPadUntil + DebugPadRest;
+        FollowPads(forget: false);
+    }
+
+    // The debug pad is read behind another window too: a script may drive the remote while something else is in front.
+    private PadReading ReadPads()
+    {
+        var reading = _isInFront ? _pads.Read() : default;
+        if (!HasDebugPad)
+        {
+            // Its moment is over: reading stops again unless a real pad is there.
+            FollowPads(forget: false);
+            return reading;
+        }
+        long now = Environment.TickCount64;
+        return now >= _debugPadFrom && now < _debugPadUntil ? PadReading.Merge(reading, _debugPad) : reading;
+    }
+#else
+    private static bool HasDebugPad => false;
+
+    private PadReading ReadPads() => _pads.Read();
+#endif
 }
