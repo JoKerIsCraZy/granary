@@ -787,10 +787,264 @@
       "value": "Username"
     }
   ],
+  "web.calendar.allLibraries": [
+    {
+      "type": 0,
+      "value": "All Libraries"
+    }
+  ],
+  "web.calendar.dayLabel": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    }
+  ],
+  "web.calendar.dayLabelWithEvents": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": " (has events)"
+    }
+  ],
+  "web.calendar.emptyEverything": [
+    {
+      "type": 0,
+      "value": "Nothing scheduled this week."
+    }
+  ],
+  "web.calendar.emptyFollowing": [
+    {
+      "type": 0,
+      "value": "Nothing upcoming from shows you follow this week."
+    }
+  ],
+  "web.calendar.emptyTrending": [
+    {
+      "type": 0,
+      "value": "Nothing trending this week."
+    }
+  ],
+  "web.calendar.event.badge.digital": [
+    {
+      "type": 0,
+      "value": "Digital"
+    }
+  ],
+  "web.calendar.event.badge.finale": [
+    {
+      "type": 0,
+      "value": "Finale"
+    }
+  ],
+  "web.calendar.event.badge.physical": [
+    {
+      "type": 0,
+      "value": "Physical"
+    }
+  ],
   "web.calendar.event.badge.seasonPremiere": [
     {
       "type": 0,
       "value": "New Season"
+    }
+  ],
+  "web.calendar.event.badge.seriesPremiere": [
+    {
+      "type": 0,
+      "value": "Premiere"
+    }
+  ],
+  "web.calendar.event.episode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.calendar.event.episodeTitled": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " - "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.calendar.event.movie": [
+    {
+      "type": 0,
+      "value": "Movie"
+    }
+  ],
+  "web.calendar.event.season": [
+    {
+      "type": 0,
+      "value": "Season "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    }
+  ],
+  "web.calendar.event.seasonTitled": [
+    {
+      "type": 0,
+      "value": "Season "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.calendar.loading": [
+    {
+      "type": 0,
+      "value": "Loading..."
+    }
+  ],
+  "web.calendar.nextWeek": [
+    {
+      "type": 0,
+      "value": "Next week"
+    }
+  ],
+  "web.calendar.nothingScheduledFor": [
+    {
+      "type": 0,
+      "value": "Nothing scheduled for "
+    },
+    {
+      "type": 8,
+      "value": "day",
+      "children": [
+        {
+          "type": 1,
+          "value": "date"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.calendar.presetAll": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.calendar.presetFollowing": [
+    {
+      "type": 0,
+      "value": "Following"
+    }
+  ],
+  "web.calendar.presetLabel": [
+    {
+      "type": 0,
+      "value": "Calendar preset"
+    }
+  ],
+  "web.calendar.presetTrending": [
+    {
+      "type": 0,
+      "value": "Trending"
+    }
+  ],
+  "web.calendar.previousWeek": [
+    {
+      "type": 0,
+      "value": "Previous week"
+    }
+  ],
+  "web.calendar.showEverything": [
+    {
+      "type": 0,
+      "value": "Show everything"
+    }
+  ],
+  "web.calendar.title": [
+    {
+      "type": 0,
+      "value": "Calendar"
+    }
+  ],
+  "web.calendar.today": [
+    {
+      "type": 0,
+      "value": "Today"
+    }
+  ],
+  "web.calendar.todayButton": [
+    {
+      "type": 0,
+      "value": "Today"
+    }
+  ],
+  "web.calendar.weekOf": [
+    {
+      "type": 0,
+      "value": "Week of "
+    },
+    {
+      "type": 1,
+      "value": "range"
     }
   ],
   "web.catalog.carousel.exploreAll": [

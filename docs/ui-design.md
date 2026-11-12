@@ -287,7 +287,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   chosen one in the accent) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
   25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
   which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
-  the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE, watched ones marked. Unlike the web,
+  the air time on the viewer's clock, the web's PREMIERE / NEW SEASON / FINALE, watched ones marked. Unlike the web,
   a week with airings lists its empty days too, each with "Nothing scheduled." in a faint box, so picking one scrolls
   to its place instead of the top; a day picked in an empty week says "Nothing scheduled for …". An airing opens its series (a movie itself); airings have no card menu. An empty week names the
   other presets. The preset is kept while the app runs (the web keeps it in the browser).

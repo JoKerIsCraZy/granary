@@ -91,7 +91,7 @@ public sealed class CalendarViewModelTests
         var premiere = aired[0].Cards[0];
         Assert.Equal("Severance", premiere.Title);
         Assert.Equal("S2 · E1 - HELLO, MS. COBEL", premiere.Subtitle);
-        Assert.Equal("SEASON PREMIERE", premiere.StatusBadge);
+        Assert.Equal("NEW SEASON", premiere.StatusBadge);
         Assert.Equal(new TimeOnly(21, 0).ToString("t", CultureInfo.CurrentCulture), premiere.Caption);
         Assert.Equal(CalendarViewModel.CardType, premiere.Type);
         var movie = aired[1].Cards[0];

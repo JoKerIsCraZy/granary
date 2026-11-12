@@ -159,6 +159,19 @@ web.auth.passwordRules.savePassword
 web.auth.signIn
 web.auth.username
 
+# Calendar, in the words of the web's Calendar page and its airings (lib/upcomingEventPresentation.ts):
+# src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and CalendarText.cs in src/Granary.Core/ViewModels.
+# The dates themselves stay in English for now.
+web.calendar.allLibraries
+web.calendar.dayLabel
+web.calendar.dayLabelWithEvents
+web.calendar.emptyEverything
+web.calendar.emptyFollowing
+web.calendar.emptyTrending
+web.calendar.event.badge.digital
+web.calendar.event.badge.finale
+web.calendar.event.badge.physical
+
 # A card's words, as the web's ItemCard, ContinueWatchingCard, SectionItemCard, BoxSetCard, CardWatchedBadge,
 # CardPlayOverlay, MediaItemMenu and a Requests card's watchlist toggle (components/requests): src/Granary.App/Controls/
 # MediaCardView.xaml(.cs) and src/Granary.Core/ViewModels/Cards/MediaCard.cs and MediaCardFactory.cs. The episode
@@ -166,6 +179,27 @@ web.auth.username
 # a box set's in lib/boxSets.ts (src/Granary.Core/ViewModels/BoxSetText.cs), the watched action as the web's
 # pages/ItemDetail/watchedState.ts (DetailFacts.WatchedLabel).
 web.calendar.event.badge.seasonPremiere
+
+# More of the calendar's words, as above.
+web.calendar.event.badge.seriesPremiere
+web.calendar.event.episode
+web.calendar.event.episodeTitled
+web.calendar.event.movie
+web.calendar.event.season
+web.calendar.event.seasonTitled
+web.calendar.loading
+web.calendar.nextWeek
+web.calendar.nothingScheduledFor
+web.calendar.presetAll
+web.calendar.presetFollowing
+web.calendar.presetLabel
+web.calendar.presetTrending
+web.calendar.previousWeek
+web.calendar.showEverything
+web.calendar.title
+web.calendar.today
+web.calendar.todayButton
+web.calendar.weekOf
 
 # A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
 # as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):

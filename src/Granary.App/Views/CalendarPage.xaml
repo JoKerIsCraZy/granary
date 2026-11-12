@@ -26,10 +26,10 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Calendar" Style="{StaticResource SiloDisplayTextStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock Text="{x:Bind t:AppText.Get('web.calendar.title')}" Style="{StaticResource SiloDisplayTextStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <controls:PillChoices IsAccent="True" ItemsSource="{x:Bind ViewModel.Presets}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}"
-                                      VerticalAlignment="Center" AutomationProperties.Name="Calendar preset" />
+                                      VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.presetLabel')}" />
                 <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="34" Padding="14,4,10,4"
                                 FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
                                 Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}"
@@ -50,17 +50,17 @@
                 <Grid>
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.PreviousWeekCommand}"
-                                AutomationProperties.Name="Previous week" ToolTipService.ToolTip="Previous week">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.previousWeek')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.calendar.previousWeek')}">
                             <FontIcon Glyph="&#xE76B;" FontSize="12" />
                         </Button>
                         <TextBlock Text="{x:Bind ViewModel.WeekLabel, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                    FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" Margin="4,0" />
                         <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.NextWeekCommand}"
-                                AutomationProperties.Name="Next week" ToolTipService.ToolTip="Next week">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.nextWeek')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.calendar.nextWeek')}">
                             <FontIcon Glyph="&#xE76C;" FontSize="12" />
                         </Button>
                     </StackPanel>
-                    <Button Content="Today" HorizontalAlignment="Right" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ThisWeekCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('web.calendar.todayButton')}" HorizontalAlignment="Right" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ThisWeekCommand}" />
                 </Grid>
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Days, Mode=OneWay}">
                     <ItemsRepeater.Layout>
@@ -99,9 +99,9 @@
                 </Border>
 
                 <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading the calendar" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.calendar.loading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="Couldn't load the calendar." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('granary.calendar.loadFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                TextAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryCommand}" />
@@ -148,7 +148,7 @@
                                         </Border>
                                     </StackPanel>
                                     <Border Padding="16,17" CornerRadius="16" Background="#0AFFFFFF">
-                                        <TextBlock Text="Nothing scheduled." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                                        <TextBlock Text="{x:Bind t:AppText.Get('granary.calendar.dayEmpty')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                                    LineHeight="0" TextLineBounds="Tight" VerticalAlignment="Center" />
                                     </Border>
                                 </StackPanel>
