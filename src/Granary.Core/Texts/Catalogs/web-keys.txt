@@ -123,6 +123,14 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# A title known only from TMDB, in the words of the web's TitleDetail and ExternalTitleContent pages, its request bar
+# (RequestActionBar.tsx), its cancel dialog (CancelRequestDialog.tsx), the request and watchlist toasts
+# (hooks/queries/useRequests.ts, watchlistTitles.ts) and the seasons' words of RequestSeasonsDialog.tsx and
+# lib/mediaRequests.ts: src/Granary.App/Views/TitlePage.xaml(.cs), and TitleViewModel.cs and TitleText.cs in
+# src/Granary.Core/ViewModels.
+requests.error.create
+requests.error.follow
+
 # A setting's name, description and choices as Silo's settings manifest words them for every client
 # (settingsManifest.<key>.label, .description, .option.<value>), where the web's settings pages show them for the same
 # setting: src/Granary.App/Views/Settings and src/Granary.Core/ViewModels/Settings.
@@ -409,6 +417,10 @@ web.common.devicePlatform.kind.unknown
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
 
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.common.requests.toast.cancelFailed
+web.common.requests.toast.submitted
+
 # More of a library page's words, as above under catalog.sort.added.
 web.common.sort.bitrate
 web.common.sort.contentRating
@@ -428,6 +440,15 @@ web.common.toast.collections.deleteFailed
 # More of a title's page's words, as above under web.collections.addToCollection.title.
 web.common.toast.subtitles.resetPreferenceFailed
 web.common.toast.subtitles.savePreferenceFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.common.toast.watchlist.added
+web.common.toast.watchlist.addedAndRequested
+web.common.toast.watchlist.availableNotice
+web.common.toast.watchlist.notRequestedReason
+web.common.toast.watchlist.removed
+web.common.toast.watchlist.requestedNotice
+web.common.toast.watchlist.updateFailed
 
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
@@ -535,6 +556,11 @@ web.detail.extras.kindGroup.featurette
 web.detail.extras.kindGroup.otherKind
 web.detail.extras.kindGroup.teaser
 web.detail.extras.kindGroup.trailer
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.hero.typeMovie
+
+# More of a title's page's words, as above under web.collections.addToCollection.title.
 web.detail.hero.typeSeries
 web.detail.mediaInfo.audio
 web.detail.mediaInfo.defaultBadge
@@ -551,11 +577,43 @@ web.detail.mediaInfo.row.fileSize
 web.detail.mediaInfo.row.hearingImpaired
 web.detail.mediaInfo.row.resolution
 web.detail.mediaInfo.video
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.overview.createdBy
+web.detail.overview.directedBy
+
+# More of a title's page's words, as above under web.collections.addToCollection.title.
 web.detail.overview.revealHidden
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.overview.tmdbVotes
+
+# More of a title's page's words, as above under web.collections.addToCollection.title.
 web.detail.page.itemLoadFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.page.loadFailedBody
+
+# More of a title's page's words, as above under web.collections.addToCollection.title.
 web.detail.page.loadingDetails
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.page.titleLoadFailed
+
+# More of a title's page's words, as above under web.collections.addToCollection.title.
 web.detail.page.unavailableBody
 web.detail.page.unavailableTitle
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.request.cancelRequest
+web.detail.request.inLibrary
+web.detail.request.notifyWhenAvailable
+web.detail.request.onWatchlist
+web.detail.request.openInLibrary
+web.detail.request.requestMovie
+web.detail.request.requestSeries
+web.detail.request.requested
+web.detail.request.stopNotifying
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.episodeCount
@@ -775,18 +833,44 @@ web.recommendations.tasteProfile
 web.recommendations.title
 web.recommendations.topGenres
 
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.cancel.action
+web.requests.cancel.description
+web.requests.cancel.keep
+web.requests.cancel.title
+
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.requests.card.addToWatchlist
 web.requests.card.addToWatchlistFor
 web.requests.card.onWatchlist
 web.requests.card.removeFromWatchlist
 
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.download.progress
+
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.requests.results.loadMoreFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.seasons.allAvailable
+web.requests.seasons.alreadyRequested
+web.requests.seasons.inLibrary
+web.requests.seasons.notAired
+web.requests.seasons.notAnnounced
+web.requests.seasons.partlyInLibrary
+web.requests.seasons.reason
+web.requests.seasons.requested
+web.requests.seasons.season
+web.requests.seasons.seasonNamed
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.status.approved
 web.requests.status.processing
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.status.seasonEpisodes
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.toAdd.heading
 web.search.boxSets
 

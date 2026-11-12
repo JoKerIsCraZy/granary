@@ -605,6 +605,18 @@
       "value": "本周热门"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "无法提交请求"
+    }
+  ],
+  "requests.error.follow": [
+    {
+      "type": 0,
+      "value": "无法更新通知"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -2088,6 +2100,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "无法取消请求"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "请求已提交"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -2170,6 +2194,64 @@
     {
       "type": 0,
       "value": "无法保存字幕偏好"
+    }
+  ],
+  "web.common.toast.watchlist.added": [
+    {
+      "type": 0,
+      "value": "已添加到你的待看清单"
+    }
+  ],
+  "web.common.toast.watchlist.addedAndRequested": [
+    {
+      "type": 0,
+      "value": "已添加到你的待看清单并已请求"
+    }
+  ],
+  "web.common.toast.watchlist.availableNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "可观看时，我们会通知你。"
+    }
+  ],
+  "web.common.toast.watchlist.notRequestedReason": [
+    {
+      "type": 0,
+      "value": "未请求此内容："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.common.toast.watchlist.removed": [
+    {
+      "type": 0,
+      "value": "已从你的待看清单中移除"
+    }
+  ],
+  "web.common.toast.watchlist.requestedNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "可观看时，我们会通知你。它会自动移入你的待看清单。"
+    }
+  ],
+  "web.common.toast.watchlist.updateFailed": [
+    {
+      "type": 0,
+      "value": "无法更新你的待看清单"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2767,6 +2849,12 @@
       "value": "预告片"
     }
   ],
+  "web.detail.hero.typeMovie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
   "web.detail.hero.typeSeries": [
     {
       "type": 0,
@@ -2863,10 +2951,44 @@
       "value": "视频"
     }
   ],
+  "web.detail.overview.createdBy": [
+    {
+      "type": 0,
+      "value": "创作者："
+    }
+  ],
+  "web.detail.overview.directedBy": [
+    {
+      "type": 0,
+      "value": "导演："
+    }
+  ],
   "web.detail.overview.revealHidden": [
     {
       "type": 0,
       "value": "简介在观看前隐藏。显示简介"
+    }
+  ],
+  "web.detail.overview.tmdbVotes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "票"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.page.itemLoadFailed": [
@@ -2875,10 +2997,22 @@
       "value": "无法加载此项目"
     }
   ],
+  "web.detail.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "加载时出错。请稍后重试。"
+    }
+  ],
   "web.detail.page.loadingDetails": [
     {
       "type": 0,
       "value": "正在加载项目详情"
+    }
+  ],
+  "web.detail.page.titleLoadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载此作品"
     }
   ],
   "web.detail.page.unavailableBody": [
@@ -2891,6 +3025,60 @@
     {
       "type": 0,
       "value": "此项目不可用"
+    }
+  ],
+  "web.detail.request.cancelRequest": [
+    {
+      "type": 0,
+      "value": "取消请求"
+    }
+  ],
+  "web.detail.request.inLibrary": [
+    {
+      "type": 0,
+      "value": "已在媒体库中"
+    }
+  ],
+  "web.detail.request.notifyWhenAvailable": [
+    {
+      "type": 0,
+      "value": "可观看时通知我"
+    }
+  ],
+  "web.detail.request.onWatchlist": [
+    {
+      "type": 0,
+      "value": "已在待看清单"
+    }
+  ],
+  "web.detail.request.openInLibrary": [
+    {
+      "type": 0,
+      "value": "在媒体库中打开"
+    }
+  ],
+  "web.detail.request.requestMovie": [
+    {
+      "type": 0,
+      "value": "请求电影"
+    }
+  ],
+  "web.detail.request.requestSeries": [
+    {
+      "type": 0,
+      "value": "请求剧集"
+    }
+  ],
+  "web.detail.request.requested": [
+    {
+      "type": 0,
+      "value": "已请求"
+    }
+  ],
+  "web.detail.request.stopNotifying": [
+    {
+      "type": 0,
+      "value": "停止通知我"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -4157,6 +4345,38 @@
       "value": "热门类型"
     }
   ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "取消请求"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "你对“"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "”的请求将在发送到自动下载之前撤回。"
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "保留请求"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "要取消此请求吗？"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -4193,10 +4413,100 @@
       "value": "title"
     }
   ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "下载进度"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "无法加载更多作品。"
+    }
+  ],
+  "web.requests.seasons.allAvailable": [
+    {
+      "type": 0,
+      "value": "每一季都已在媒体库中。"
+    }
+  ],
+  "web.requests.seasons.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "此剧集已有未完成的请求。"
+    }
+  ],
+  "web.requests.seasons.inLibrary": [
+    {
+      "type": 0,
+      "value": "已在媒体库中"
+    }
+  ],
+  "web.requests.seasons.notAired": [
+    {
+      "type": 0,
+      "value": "尚未播出"
+    }
+  ],
+  "web.requests.seasons.notAnnounced": [
+    {
+      "type": 0,
+      "value": "尚未公布"
+    }
+  ],
+  "web.requests.seasons.partlyInLibrary": [
+    {
+      "type": 0,
+      "value": "部分在媒体库中"
+    }
+  ],
+  "web.requests.seasons.reason": [
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.requests.seasons.requested": [
+    {
+      "type": 0,
+      "value": "已请求"
+    }
+  ],
+  "web.requests.seasons.season": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "季"
+    }
+  ],
+  "web.requests.seasons.seasonNamed": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "季："
+    },
+    {
+      "type": 1,
+      "value": "name"
     }
   ],
   "web.requests.status.approved": [
@@ -4209,6 +4519,28 @@
     {
       "type": 0,
       "value": "处理中"
+    }
+  ],
+  "web.requests.status.seasonEpisodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "集"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.requests.toAdd.heading": [

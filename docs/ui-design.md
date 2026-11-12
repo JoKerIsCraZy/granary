@@ -350,8 +350,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
   state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
   watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
-  available for someone else's open request, IMDb and TMDB in the browser, the download's progress; then Seasons (with
-  "In library", "Requested", "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
+  available for someone else's open request, IMDb and TMDB in the browser, the download's progress; what an action did,
+  or why it failed, under the buttons in the web's toast words ("Request submitted", "Failed to submit request", "Added
+  to your watchlist" with the toast's second line on a line of its own); then Seasons (with "In library", "Requested",
+  "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
 - Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under

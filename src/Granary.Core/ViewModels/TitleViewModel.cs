@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -41,9 +42,6 @@ public sealed record TitleSeason(string Name, string Meta, string Status, Uri? P
 /// </summary>
 public sealed partial class TitleViewModel : ObservableObject
 {
-    internal const string NotFoundTitle = "This item isn't available";
-    internal const string NotFoundHint = "It may have been removed, or you may not have access to it.";
-
     private readonly ISessionManager _session;
     private readonly RequestsApi _requests;
     private readonly RequestsFeature _feature;
@@ -142,7 +140,7 @@ public sealed partial class TitleViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(WatchlistLabel))]
     public partial bool IsInWatchlist { get; private set; }
 
-    public string WatchlistLabel => IsInWatchlist ? "On Watchlist" : "Add to Watchlist";
+    public string WatchlistLabel => IsInWatchlist ? AppText.Get("web.detail.request.onWatchlist") : AppText.Get("web.detail.actions.addToWatchlist");
 
     [ObservableProperty]
     public partial bool CanCancel { get; private set; }
@@ -154,7 +152,7 @@ public sealed partial class TitleViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(FollowLabel))]
     public partial bool IsFollowing { get; private set; }
 
-    public string FollowLabel => IsFollowing ? "Stop notifying me" : "Notify me when available";
+    public string FollowLabel => IsFollowing ? AppText.Get("web.detail.request.stopNotifying") : AppText.Get("web.detail.request.notifyWhenAvailable");
 
     /// <summary>"Adding it to your watchlist also requests it."</summary>
     [ObservableProperty]
@@ -254,7 +252,7 @@ public sealed partial class TitleViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(IsIdle))]
-    private Task CancelAsync() => ActAsync("Couldn't cancel the request. Try again.", async (server, detail) =>
+    private Task CancelAsync() => ActAsync(() => AppText.Get("web.common.requests.toast.cancelFailed"), async (server, detail) =>
     {
         if (_ownRequestId is { } id)
         {
@@ -263,16 +261,16 @@ public sealed partial class TitleViewModel : ObservableObject
     });
 
     [RelayCommand(CanExecute = nameof(IsIdle))]
-    private Task ToggleFollowAsync() => ActAsync("Couldn't change the notification. Try again.", (server, detail) =>
+    private Task ToggleFollowAsync() => ActAsync(() => AppText.Get("requests.error.follow"), (server, detail) =>
         _requests.SetFollowAsync(server, detail.MediaType, detail.TmdbId, follow: !IsFollowing));
 
     [RelayCommand(CanExecute = nameof(IsIdle))]
-    private Task ToggleWatchlistAsync() => ActAsync("Failed to update your watchlist", async (server, detail) =>
+    private Task ToggleWatchlistAsync() => ActAsync(() => AppText.Get("web.common.toast.watchlist.updateFailed"), async (server, detail) =>
     {
         if (IsInWatchlist)
         {
             await _requests.RemoveFromWatchlistAsync(server, detail.MediaType, detail.TmdbId);
-            Say("Removed from your watchlist");
+            Say(AppText.Get("web.common.toast.watchlist.removed"));
             return;
         }
         var entry = await _requests.AddToWatchlistAsync(server, detail.MediaType, detail.TmdbId);
@@ -300,7 +298,7 @@ public sealed partial class TitleViewModel : ObservableObject
 
     private bool IsIdle() => !IsBusy && !IsStale;
 
-    private Task SendRequestAsync(IReadOnlyList<int>? seasons) => ActAsync("Couldn't send the request. Try again.", async (server, detail) =>
+    private Task SendRequestAsync(IReadOnlyList<int>? seasons) => ActAsync(() => AppText.Get("requests.error.create"), async (server, detail) =>
     {
         if (!detail.Request.Requestable)
         {
@@ -318,13 +316,13 @@ public sealed partial class TitleViewModel : ObservableObject
             BackdropPath = string.IsNullOrWhiteSpace(detail.BackdropPath) ? null : detail.BackdropPath,
             Seasons = seasons,
         });
-        Say($"Requested {detail.Title}");
+        Say(AppText.Get("web.common.requests.toast.submitted"));
     });
 
     // An action, then the title read again so every button says where it stands; a failure says so and reads it too. The
     // buttons wait until then: until the read, the page still shows the state from before the action. When the read
     // fails after an action that went through, they stay off until Reload.
-    private async Task ActAsync(string failure, Func<Uri, RequestMediaDetail, Task> act)
+    private async Task ActAsync(Func<string> failure, Func<Uri, RequestMediaDetail, Task> act)
     {
         if (IsBusy || IsStale || _detail is not { } detail || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -341,15 +339,16 @@ public sealed partial class TitleViewModel : ObservableObject
         catch (Exception ex)
         {
             Log(ex, "A request action failed");
-            Say(failure, isError: true);
+            Say(failure(), isError: true);
             acted = false;
         }
         bool read = await LoadAsync(quiet: true);
         if (!read && acted)
         {
             IsStale = true;
-            string done = Notice.TrimEnd('.');
-            Say(done.Length > 0 ? $"{done}. Reload to see where it stands now." : "Reload to see where it stands now.", IsNoticeError);
+            // What the action did, then on a line of its own that the page could not show it: two messages, not one glued.
+            string reload = AppText.Get("granary.title.reloadToSee");
+            Say(Notice.Length > 0 ? $"{Notice}{Environment.NewLine}{reload}" : reload, IsNoticeError);
             return;
         }
         IsBusy = false;
@@ -475,8 +474,11 @@ public sealed partial class TitleViewModel : ObservableObject
         bool isSeries = detail.MediaType == "series";
         var today = DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime);
         Title = detail.Title;
-        Overline = string.Join(" · ", new[] { isSeries ? "Series" : "Movie", TitleText.Studio(detail) }.Where(p => !string.IsNullOrWhiteSpace(p)))
-            .ToUpperInvariant();
+        // In capitals as the web's CSS shows its context line, the studio's name with it.
+        Overline = AppText.Upper(string.Join(" · ", new[]
+        {
+            isSeries ? AppText.Get("web.detail.hero.typeSeries") : AppText.Get("web.detail.hero.typeMovie"), TitleText.Studio(detail),
+        }.Where(p => !string.IsNullOrWhiteSpace(p))));
         Tagline = detail.Tagline ?? "";
         Overview = detail.Overview ?? "";
         BackdropUrl = TmdbImages.Poster(detail.BackdropPath, "original");
@@ -487,7 +489,9 @@ public sealed partial class TitleViewModel : ObservableObject
             : [];
         VotesText = Ratings.Count > 0 && detail.VoteCount is int votes and > 0 ? TitleText.Votes(votes) : "";
         IReadOnlyList<string> crew = isSeries ? detail.Creators : detail.Director is { Length: > 0 } director ? [director] : [];
-        CrewLine = crew.Count == 0 ? "" : $"{(isSeries ? "Created by" : "Directed by")} {string.Join(", ", crew)}";
+        // The job's label before the names, as the web's HeroCrewLine puts them side by side.
+        string job = isSeries ? AppText.Get("web.detail.overview.createdBy") : AppText.Get("web.detail.overview.directedBy");
+        CrewLine = crew.Count == 0 ? "" : $"{job} {string.Join(", ", crew)}";
         Genres = string.Join(", ", detail.Genres);
         ShowActions(detail);
         ImdbUrl = detail.ImdbId is { Length: > 0 } imdb && imdb.All(char.IsAsciiLetterOrDigit) ? new Uri($"https://www.imdb.com/title/{imdb}") : null;
@@ -512,19 +516,19 @@ public sealed partial class TitleViewModel : ObservableObject
         if (request.Requestable)
         {
             PrimaryAction = TitlePrimaryAction.Request;
-            PrimaryLabel = detail.MediaType == "series" ? "Request series" : "Request movie";
+            PrimaryLabel = detail.MediaType == "series" ? AppText.Get("web.detail.request.requestSeries") : AppText.Get("web.detail.request.requestMovie");
         }
         else if (inLibrary && !string.IsNullOrEmpty(detail.LibraryContentId))
         {
             PrimaryAction = TitlePrimaryAction.OpenInLibrary;
-            PrimaryLabel = "Open in library";
+            PrimaryLabel = AppText.Get("web.detail.request.openInLibrary");
         }
         else
         {
             PrimaryAction = TitlePrimaryAction.None;
             // The viewer's side of a pending request: they asked, nobody has answered.
-            PrimaryLabel = inLibrary ? "In the library"
-                : state is not null ? state == RequestStates.Pending ? "Requested" : RequestText.StateLabel(state)
+            PrimaryLabel = inLibrary ? AppText.Get("web.detail.request.inLibrary")
+                : state is not null ? state == RequestStates.Pending ? AppText.Get("web.detail.request.requested") : RequestText.StateLabel(state)
                 : RequestText.ReasonLabel(request.Reason);
         }
         IsPrimaryEnabled = PrimaryAction != TitlePrimaryAction.None;
@@ -565,7 +569,7 @@ public sealed partial class TitleViewModel : ObservableObject
         {
             if (!string.IsNullOrWhiteSpace(text))
             {
-                chips.Add(new DetailChip(text.Trim().ToUpperInvariant()));
+                chips.Add(new DetailChip(AppText.Upper(text.Trim())));
             }
         }
     }
@@ -580,33 +584,38 @@ public sealed partial class TitleViewModel : ObservableObject
         return card;
     }
 
-    // As the web's toast after an add: whether it also requested the title, or why not.
-    private string WatchlistAdded(WatchlistTitleEntry entry, RequestMediaDetail detail)
+    // As the web's toast after an add (watchlistAddToast): whether it also requested the title, or why not. The web's toast
+    // has a title and a line under it; here the line follows on a line of its own.
+    private static string WatchlistAdded(WatchlistTitleEntry entry, RequestMediaDetail detail)
     {
         var before = detail.Request;
         var after = entry.Request;
-        string available = $"We'll let you know when {detail.Title} is available.";
+        string added = AppText.Get("web.common.toast.watchlist.added");
         if (!string.IsNullOrEmpty(entry.ItemId))
         {
-            return "Added to your watchlist";
+            return added;
         }
         if (after.RequestedByViewer && !before.RequestedByViewer)
         {
-            return $"Added to your watchlist and requested. {available}";
+            return Lines(AppText.Get("web.common.toast.watchlist.addedAndRequested"),
+                AppText.Get("web.common.toast.watchlist.requestedNotice", ("title", detail.Title)));
         }
         if (after.Following && !before.Following)
         {
-            return $"Added to your watchlist. {available}";
+            return Lines(added, AppText.Get("web.common.toast.watchlist.availableNotice", ("title", detail.Title)));
         }
         if (!string.IsNullOrEmpty(after.Status))
         {
-            return "Added to your watchlist";
+            return added;
         }
         if (!string.IsNullOrEmpty(after.Reason))
         {
-            return $"Added to your watchlist. It wasn't requested: {RequestText.ReasonLabel(after.Reason).ToLowerInvariant()}.";
+            string reason = RequestText.ReasonLabel(after.Reason).ToLower(AppText.Language.Culture);
+            return Lines(added, AppText.Get("web.common.toast.watchlist.notRequestedReason", ("reason", reason)));
         }
-        return "Added to your watchlist";
+        return added;
+
+        static string Lines(string title, string description) => $"{title}{Environment.NewLine}{description}";
     }
 
     private void Log(Exception ex, string message)

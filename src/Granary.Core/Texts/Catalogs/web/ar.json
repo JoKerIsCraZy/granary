@@ -605,6 +605,18 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "فشل إرسال الطلب"
+    }
+  ],
+  "requests.error.follow": [
+    {
+      "type": 0,
+      "value": "فشل تحديث الإشعار"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -2486,6 +2498,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إلغاء الطلب"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "تم إرسال الطلب"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -2568,6 +2592,72 @@
     {
       "type": 0,
       "value": "فشل حفظ تفضيل الترجمة"
+    }
+  ],
+  "web.common.toast.watchlist.added": [
+    {
+      "type": 0,
+      "value": "تمت الإضافة إلى قائمة المشاهدة"
+    }
+  ],
+  "web.common.toast.watchlist.addedAndRequested": [
+    {
+      "type": 0,
+      "value": "تمت الإضافة إلى قائمة المشاهدة وتم الطلب"
+    }
+  ],
+  "web.common.toast.watchlist.availableNotice": [
+    {
+      "type": 0,
+      "value": "سنُعلمك عندما يصبح "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " متاحًا."
+    }
+  ],
+  "web.common.toast.watchlist.notRequestedReason": [
+    {
+      "type": 0,
+      "value": "لم يتم طلبه: "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.common.toast.watchlist.removed": [
+    {
+      "type": 0,
+      "value": "تمت الإزالة من قائمة المشاهدة"
+    }
+  ],
+  "web.common.toast.watchlist.requestedNotice": [
+    {
+      "type": 0,
+      "value": "سنُعلمك عندما يصبح "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " متاحًا. سيُنقل إلى قائمة المشاهدة تلقائيًا."
+    }
+  ],
+  "web.common.toast.watchlist.updateFailed": [
+    {
+      "type": 0,
+      "value": "فشل تحديث قائمة المشاهدة"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -3311,6 +3401,12 @@
       "value": "إعلانات ترويجية"
     }
   ],
+  "web.detail.hero.typeMovie": [
+    {
+      "type": 0,
+      "value": "فيلم"
+    }
+  ],
   "web.detail.hero.typeSeries": [
     {
       "type": 0,
@@ -3407,10 +3503,100 @@
       "value": "الفيديو"
     }
   ],
+  "web.detail.overview.createdBy": [
+    {
+      "type": 0,
+      "value": "من إنشاء"
+    }
+  ],
+  "web.detail.overview.directedBy": [
+    {
+      "type": 0,
+      "value": "إخراج"
+    }
+  ],
   "web.detail.overview.revealHidden": [
     {
       "type": 0,
       "value": "الوصف مخفي حتى تشاهد الحلقة. عرضه"
+    }
+  ],
+  "web.detail.overview.tmdbVotes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " صوت"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " صوت"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "صوتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أصوات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " صوتًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " صوت"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.page.itemLoadFailed": [
@@ -3419,10 +3605,22 @@
       "value": "تعذّر تحميل هذا العنصر"
     }
   ],
+  "web.detail.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
   "web.detail.page.loadingDetails": [
     {
       "type": 0,
       "value": "جارٍ تحميل تفاصيل العنصر"
+    }
+  ],
+  "web.detail.page.titleLoadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذا العنوان"
     }
   ],
   "web.detail.page.unavailableBody": [
@@ -3435,6 +3633,60 @@
     {
       "type": 0,
       "value": "هذا العنصر غير متاح"
+    }
+  ],
+  "web.detail.request.cancelRequest": [
+    {
+      "type": 0,
+      "value": "إلغاء الطلب"
+    }
+  ],
+  "web.detail.request.inLibrary": [
+    {
+      "type": 0,
+      "value": "في المكتبة"
+    }
+  ],
+  "web.detail.request.notifyWhenAvailable": [
+    {
+      "type": 0,
+      "value": "إعلامي عند التوفر"
+    }
+  ],
+  "web.detail.request.onWatchlist": [
+    {
+      "type": 0,
+      "value": "في قائمة المشاهدة"
+    }
+  ],
+  "web.detail.request.openInLibrary": [
+    {
+      "type": 0,
+      "value": "فتح في المكتبة"
+    }
+  ],
+  "web.detail.request.requestMovie": [
+    {
+      "type": 0,
+      "value": "طلب الفيلم"
+    }
+  ],
+  "web.detail.request.requestSeries": [
+    {
+      "type": 0,
+      "value": "طلب المسلسل"
+    }
+  ],
+  "web.detail.request.requested": [
+    {
+      "type": 0,
+      "value": "مطلوب"
+    }
+  ],
+  "web.detail.request.stopNotifying": [
+    {
+      "type": 0,
+      "value": "إيقاف إعلامي"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -5032,6 +5284,38 @@
       "value": "أبرز الأنواع"
     }
   ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "إلغاء الطلب"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "سيُسحب طلبك لـ«"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "» قبل إرساله إلى أتمتة التنزيل."
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "الإبقاء على الطلب"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "إلغاء هذا الطلب؟"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -5072,10 +5356,96 @@
       "value": " من قائمة المشاهدة"
     }
   ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "تقدم التنزيل"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "تعذّر تحميل المزيد من العناوين."
+    }
+  ],
+  "web.requests.seasons.allAvailable": [
+    {
+      "type": 0,
+      "value": "كل المواسم موجودة في المكتبة بالفعل."
+    }
+  ],
+  "web.requests.seasons.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "لهذا المسلسل طلب مفتوح بالفعل."
+    }
+  ],
+  "web.requests.seasons.inLibrary": [
+    {
+      "type": 0,
+      "value": "في المكتبة"
+    }
+  ],
+  "web.requests.seasons.notAired": [
+    {
+      "type": 0,
+      "value": "لم يُعرض بعد"
+    }
+  ],
+  "web.requests.seasons.notAnnounced": [
+    {
+      "type": 0,
+      "value": "لم يُعلن عنه"
+    }
+  ],
+  "web.requests.seasons.partlyInLibrary": [
+    {
+      "type": 0,
+      "value": "في المكتبة جزئيًا"
+    }
+  ],
+  "web.requests.seasons.reason": [
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.requests.seasons.requested": [
+    {
+      "type": 0,
+      "value": "مطلوب"
+    }
+  ],
+  "web.requests.seasons.season": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.requests.seasons.seasonNamed": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": ": "
+    },
+    {
+      "type": 1,
+      "value": "name"
     }
   ],
   "web.requests.status.approved": [
@@ -5088,6 +5458,84 @@
     {
       "type": 0,
       "value": "قيد المعالجة"
+    }
+  ],
+  "web.requests.status.seasonEpisodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حلقتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.requests.toAdd.heading": [

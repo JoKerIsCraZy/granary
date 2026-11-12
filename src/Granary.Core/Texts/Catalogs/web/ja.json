@@ -605,6 +605,18 @@
       "value": "今週のトレンド"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "リクエストを送信できませんでした"
+    }
+  ],
+  "requests.error.follow": [
+    {
+      "type": 0,
+      "value": "通知を更新できませんでした"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -2088,6 +2100,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "リクエストをキャンセルできませんでした"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "リクエストを送信しました"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -2170,6 +2194,64 @@
     {
       "type": 0,
       "value": "字幕の設定を保存できませんでした"
+    }
+  ],
+  "web.common.toast.watchlist.added": [
+    {
+      "type": 0,
+      "value": "ウォッチリストに追加しました"
+    }
+  ],
+  "web.common.toast.watchlist.addedAndRequested": [
+    {
+      "type": 0,
+      "value": "ウォッチリストに追加し、リクエストしました"
+    }
+  ],
+  "web.common.toast.watchlist.availableNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "が視聴可能になったらお知らせします。"
+    }
+  ],
+  "web.common.toast.watchlist.notRequestedReason": [
+    {
+      "type": 0,
+      "value": "リクエストはされていません："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.common.toast.watchlist.removed": [
+    {
+      "type": 0,
+      "value": "ウォッチリストから外しました"
+    }
+  ],
+  "web.common.toast.watchlist.requestedNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "が視聴可能になったらお知らせします。ウォッチリストには自動で移動します。"
+    }
+  ],
+  "web.common.toast.watchlist.updateFailed": [
+    {
+      "type": 0,
+      "value": "ウォッチリストを更新できませんでした"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2763,6 +2845,12 @@
       "value": "予告編"
     }
   ],
+  "web.detail.hero.typeMovie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
   "web.detail.hero.typeSeries": [
     {
       "type": 0,
@@ -2859,10 +2947,44 @@
       "value": "映像"
     }
   ],
+  "web.detail.overview.createdBy": [
+    {
+      "type": 0,
+      "value": "制作："
+    }
+  ],
+  "web.detail.overview.directedBy": [
+    {
+      "type": 0,
+      "value": "監督："
+    }
+  ],
   "web.detail.overview.revealHidden": [
     {
       "type": 0,
       "value": "視聴するまで説明は非表示です。表示する"
+    }
+  ],
+  "web.detail.overview.tmdbVotes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "票"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.page.itemLoadFailed": [
@@ -2871,10 +2993,22 @@
       "value": "このアイテムを読み込めませんでした"
     }
   ],
+  "web.detail.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "読み込み中に問題が発生しました。しばらくしてからもう一度お試しください。"
+    }
+  ],
   "web.detail.page.loadingDetails": [
     {
       "type": 0,
       "value": "アイテムの詳細を読み込み中"
+    }
+  ],
+  "web.detail.page.titleLoadFailed": [
+    {
+      "type": 0,
+      "value": "このタイトルを読み込めませんでした"
     }
   ],
   "web.detail.page.unavailableBody": [
@@ -2887,6 +3021,60 @@
     {
       "type": 0,
       "value": "このアイテムは利用できません"
+    }
+  ],
+  "web.detail.request.cancelRequest": [
+    {
+      "type": 0,
+      "value": "リクエストをキャンセル"
+    }
+  ],
+  "web.detail.request.inLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリにあります"
+    }
+  ],
+  "web.detail.request.notifyWhenAvailable": [
+    {
+      "type": 0,
+      "value": "視聴可能になったら通知"
+    }
+  ],
+  "web.detail.request.onWatchlist": [
+    {
+      "type": 0,
+      "value": "ウォッチリスト追加済み"
+    }
+  ],
+  "web.detail.request.openInLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリで開く"
+    }
+  ],
+  "web.detail.request.requestMovie": [
+    {
+      "type": 0,
+      "value": "映画をリクエスト"
+    }
+  ],
+  "web.detail.request.requestSeries": [
+    {
+      "type": 0,
+      "value": "シリーズをリクエスト"
+    }
+  ],
+  "web.detail.request.requested": [
+    {
+      "type": 0,
+      "value": "リクエスト済み"
+    }
+  ],
+  "web.detail.request.stopNotifying": [
+    {
+      "type": 0,
+      "value": "通知を停止"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -4133,6 +4321,38 @@
       "value": "よく見るジャンル"
     }
   ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "リクエストをキャンセル"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」のリクエストは、ダウンロードの自動処理に送信される前に取り消されます。"
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "リクエストを維持"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "このリクエストをキャンセルしますか？"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -4165,10 +4385,96 @@
       "value": "をウォッチリストから削除"
     }
   ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "ダウンロードの進捗"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "さらにタイトルを読み込めませんでした。"
+    }
+  ],
+  "web.requests.seasons.allAvailable": [
+    {
+      "type": 0,
+      "value": "すべてのシーズンがすでにライブラリにあります。"
+    }
+  ],
+  "web.requests.seasons.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "このシリーズにはすでに未処理のリクエストがあります。"
+    }
+  ],
+  "web.requests.seasons.inLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリにあり"
+    }
+  ],
+  "web.requests.seasons.notAired": [
+    {
+      "type": 0,
+      "value": "未放送"
+    }
+  ],
+  "web.requests.seasons.notAnnounced": [
+    {
+      "type": 0,
+      "value": "未発表"
+    }
+  ],
+  "web.requests.seasons.partlyInLibrary": [
+    {
+      "type": 0,
+      "value": "一部ライブラリにあり"
+    }
+  ],
+  "web.requests.seasons.reason": [
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.requests.seasons.requested": [
+    {
+      "type": 0,
+      "value": "リクエスト済み"
+    }
+  ],
+  "web.requests.seasons.season": [
+    {
+      "type": 0,
+      "value": "シーズン"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.requests.seasons.seasonNamed": [
+    {
+      "type": 0,
+      "value": "シーズン"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "："
+    },
+    {
+      "type": 1,
+      "value": "name"
     }
   ],
   "web.requests.status.approved": [
@@ -4181,6 +4487,28 @@
     {
       "type": 0,
       "value": "処理中"
+    }
+  ],
+  "web.requests.status.seasonEpisodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "エピソード"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.requests.toAdd.heading": [

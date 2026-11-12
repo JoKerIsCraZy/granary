@@ -605,6 +605,18 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "Impossible d’envoyer la demande"
+    }
+  ],
+  "requests.error.follow": [
+    {
+      "type": 0,
+      "value": "Impossible de mettre à jour la notification"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -2251,6 +2263,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’annuler la demande"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "Demande envoyée"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -2333,6 +2357,72 @@
     {
       "type": 0,
       "value": "Impossible d’enregistrer la préférence de sous-titres"
+    }
+  ],
+  "web.common.toast.watchlist.added": [
+    {
+      "type": 0,
+      "value": "Ajouté à votre liste à voir"
+    }
+  ],
+  "web.common.toast.watchlist.addedAndRequested": [
+    {
+      "type": 0,
+      "value": "Ajouté à votre liste à voir et demandé"
+    }
+  ],
+  "web.common.toast.watchlist.availableNotice": [
+    {
+      "type": 0,
+      "value": "Nous vous préviendrons quand "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " sera disponible."
+    }
+  ],
+  "web.common.toast.watchlist.notRequestedReason": [
+    {
+      "type": 0,
+      "value": "Le titre n’a pas été demandé : "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.common.toast.watchlist.removed": [
+    {
+      "type": 0,
+      "value": "Retiré de votre liste à voir"
+    }
+  ],
+  "web.common.toast.watchlist.requestedNotice": [
+    {
+      "type": 0,
+      "value": "Nous vous préviendrons quand "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " sera disponible. Le titre rejoindra automatiquement votre liste à voir."
+    }
+  ],
+  "web.common.toast.watchlist.updateFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de mettre à jour votre liste à voir"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2988,6 +3078,12 @@
       "value": "Bandes-annonces"
     }
   ],
+  "web.detail.hero.typeMovie": [
+    {
+      "type": 0,
+      "value": "Film"
+    }
+  ],
   "web.detail.hero.typeSeries": [
     {
       "type": 0,
@@ -3084,10 +3180,68 @@
       "value": "Vidéo"
     }
   ],
+  "web.detail.overview.createdBy": [
+    {
+      "type": 0,
+      "value": "Créée par"
+    }
+  ],
+  "web.detail.overview.directedBy": [
+    {
+      "type": 0,
+      "value": "Réalisé par"
+    }
+  ],
   "web.detail.overview.revealHidden": [
     {
       "type": 0,
       "value": "Description masquée jusqu’au visionnage. L’afficher"
+    }
+  ],
+  "web.detail.overview.tmdbVotes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " vote"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de votes"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " votes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.page.itemLoadFailed": [
@@ -3096,10 +3250,22 @@
       "value": "Impossible de charger cet élément"
     }
   ],
+  "web.detail.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "Une erreur s’est produite lors du chargement. Réessayez dans un instant."
+    }
+  ],
   "web.detail.page.loadingDetails": [
     {
       "type": 0,
       "value": "Chargement des détails de l’élément"
+    }
+  ],
+  "web.detail.page.titleLoadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger ce titre"
     }
   ],
   "web.detail.page.unavailableBody": [
@@ -3112,6 +3278,60 @@
     {
       "type": 0,
       "value": "Cet élément n’est pas disponible"
+    }
+  ],
+  "web.detail.request.cancelRequest": [
+    {
+      "type": 0,
+      "value": "Annuler la demande"
+    }
+  ],
+  "web.detail.request.inLibrary": [
+    {
+      "type": 0,
+      "value": "Dans la bibliothèque"
+    }
+  ],
+  "web.detail.request.notifyWhenAvailable": [
+    {
+      "type": 0,
+      "value": "Me prévenir dès que disponible"
+    }
+  ],
+  "web.detail.request.onWatchlist": [
+    {
+      "type": 0,
+      "value": "Dans la liste à voir"
+    }
+  ],
+  "web.detail.request.openInLibrary": [
+    {
+      "type": 0,
+      "value": "Ouvrir dans la bibliothèque"
+    }
+  ],
+  "web.detail.request.requestMovie": [
+    {
+      "type": 0,
+      "value": "Demander le film"
+    }
+  ],
+  "web.detail.request.requestSeries": [
+    {
+      "type": 0,
+      "value": "Demander la série"
+    }
+  ],
+  "web.detail.request.requested": [
+    {
+      "type": 0,
+      "value": "Demandée"
+    }
+  ],
+  "web.detail.request.stopNotifying": [
+    {
+      "type": 0,
+      "value": "Ne plus me prévenir"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -4518,6 +4738,38 @@
       "value": "Genres favoris"
     }
   ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "Annuler la demande"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "Votre demande pour « "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " » sera retirée avant d’être envoyée à l’automatisation des téléchargements."
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "Conserver la demande"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "Annuler cette demande ?"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -4558,10 +4810,96 @@
       "value": " de votre liste à voir"
     }
   ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "Progression du téléchargement"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "Impossible de charger plus de titres."
+    }
+  ],
+  "web.requests.seasons.allAvailable": [
+    {
+      "type": 0,
+      "value": "Toutes les saisons sont déjà dans la bibliothèque."
+    }
+  ],
+  "web.requests.seasons.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "Cette série a déjà une demande en cours."
+    }
+  ],
+  "web.requests.seasons.inLibrary": [
+    {
+      "type": 0,
+      "value": "Dans la bibliothèque"
+    }
+  ],
+  "web.requests.seasons.notAired": [
+    {
+      "type": 0,
+      "value": "Pas encore diffusée"
+    }
+  ],
+  "web.requests.seasons.notAnnounced": [
+    {
+      "type": 0,
+      "value": "Non annoncée"
+    }
+  ],
+  "web.requests.seasons.partlyInLibrary": [
+    {
+      "type": 0,
+      "value": "En partie dans la bibliothèque"
+    }
+  ],
+  "web.requests.seasons.reason": [
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.requests.seasons.requested": [
+    {
+      "type": 0,
+      "value": "Demandée"
+    }
+  ],
+  "web.requests.seasons.season": [
+    {
+      "type": 0,
+      "value": "Saison "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.requests.seasons.seasonNamed": [
+    {
+      "type": 0,
+      "value": "Saison "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": " : "
+    },
+    {
+      "type": 1,
+      "value": "name"
     }
   ],
   "web.requests.status.approved": [
@@ -4574,6 +4912,52 @@
     {
       "type": 0,
       "value": "En traitement"
+    }
+  ],
+  "web.requests.status.seasonEpisodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " épisode"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " d’épisodes"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " épisodes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.requests.toAdd.heading": [
