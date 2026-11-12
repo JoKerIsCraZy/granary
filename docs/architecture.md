@@ -1050,13 +1050,16 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
   notification count live on (docs/api-contract.md, 12).
 - **`ServerActivity`** (Core, a singleton) keeps a `ServerActivityState`, a record that is replaced and never changed:
-  the administrator's channels the server accepted, the connection's state, and each source's list or null. The server
+  the administrator's channels the server accepted, the connection's state, and each source's list or null (the
+  streams, the tasks and the preparation queue are read; the scans come with the stream alone, with the libraries'
+  names read for their rows). The server
   is the only judge of who is an acting administrator: nothing is read before a `subscribed` frame accepted a channel,
   and `access_changed` empties the state until the next one. The lists are read over REST when the stream says they
   changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
   5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
   403, 404, 501 or 503 on the read) is left out and not asked for again on that connection; another failure keeps what
-  was shown. `RealtimeEvents` tells it of every change of server, profile, role or sign-in under the lock it replaces
+  was shown. While preparation jobs are on their way, their list is also read again 60 s after its last read.
+  `RealtimeEvents` tells it of every change of server, profile, role or sign-in under the lock it replaces
   its lane in (`Follow`), and gets a number its frames come under: frames under an older number are dropped, and each
   following has an object of its own that its reads are cancelled by and compared against, so a late answer is dropped
   too. Everything in it is guarded by one lock; `Changed` is raised outside it, on the lane's, a read's or a timer's

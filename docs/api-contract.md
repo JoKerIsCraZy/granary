@@ -1255,6 +1255,20 @@ else of the admin API is used.
   Without `include_hidden` the hidden workers are missing, also while they run. Granary reads `key`, `name`, `state` and
   `progress` for the activity indicator; `name` is the server's English, which the web shows too for a task it has no
   translation for. Source: `silo-server/internal/apiv2/admin_tasks.go`.
+- `GET /api/v2/admin/downloads/preparations?limit=200` (1 to 500) → `{ "counts": { "running", "queued", "retrying",
+  "paused", "failed_recent" }, "items": [...] }`: the jobs that turn library files into offline downloads, running
+  first, then those waiting to retry, the queue, the paused ones and the failures of the last 24 hours; the counts
+  cover every job whatever the limit. An item: `id`, `state` (`running`, `queued`, `retrying`, `paused`, `failed`),
+  `format` (`remux`, `transcode`), `queue_position`?, `media_file_id`, `media_title`, `media_type`, `series_name`?,
+  `episode_name`?, `season_number`?, `episode_number`?, `source`, `output` (`container`, `video_codec` and
+  `audio_codec`, each a codec or `copy`, `resolution`?, `bitrate_kbps`?, `tone_map_mode`?), `worker`? (`kind`
+  `server` or `node`, `node_id`?, `name`), `attempts`, `max_attempts`, `error`?, the instants `created_at`,
+  `started_at`?, `failed_at`?, `next_retry_at`?, `paused_at`?, `progress`? (`encoded_seconds`, `duration_seconds`
+  with 0 for unknown, `speed` with 0 for not reported, `updated_at`), `progress_unavailable` and `requesters`. A server
+  without the queue answers `503 dependency_unavailable` with `Retry-After: 30`. Granary reads the counts and, of the
+  items, the id, state, format, titles and numbers, `output.video_codec` and `output.resolution`, the worker and the
+  progress; its pause, resume and cancel are not used. Source:
+  `silo-server/internal/apiv2/admin_download_preparations.go`.
 
 ### 7.17 A profile's own collections, made and changed
 
@@ -2688,6 +2702,16 @@ What the indicator reads, each source by itself (a source the server does not of
   `GET /api/v2/libraries` (7.16), read with each connection that was given the channel and once more for a scan of a
   library the names do not hold. Sources: `silo-server/internal/events/scan_registry.go`,
   `internal/api/handlers/events_ws.go` (`maxRealtimeScanSnapshotRuns`).
+- **Download preparations** (`download_preparations`): `GET /api/v2/admin/downloads/preparations?limit=200` (7.16)
+  once the channel is accepted, as the web's `useAdminDownloadPreparations`. The channel's snapshot is `null` and only
+  says "read"; Granary reads on `subscribed` instead. `download_preparation.progress` carries `{ "id", "progress":
+  { "encoded_seconds", "duration_seconds", "speed", "updated_at" } }`, at most every 5 s per job, and is put into
+  that job when it runs in the list as known; for any other job, and on `download_preparation.changed`, the list is
+  read again. `download_storage.changed` on the same channel is news of the storage views and is ignored. While jobs
+  run, wait or retry the list is read again 60 s after its last read, as not every change announces itself (the web
+  reads every 60 s then). The web also reads once when the oldest failure turns 24 hours old; Granary leaves that to
+  the read every connection starts with, at most five minutes later. 503 (`dependency_unavailable`): the server has
+  no such queue, and the indicator no such section.
 
 Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
 or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until

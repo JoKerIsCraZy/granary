@@ -1289,6 +1289,17 @@ by `MainWindow.Activity.cs`.
     at least 500 active", and the line "At least 475 more scans queued". Without any: "No active scans" when the
     stream said so; while it is away, "Connecting…" or "Disconnected", since scans are known from the stream alone
     (the web says "No active scans" there too). The big "No active server activity" waits for the scans to be known.
+  - **Preparing downloads** (only on a server that prepares offline downloads): its count is the jobs still to
+    finish, running, queued and waiting to retry; paused and failed ones do not count. A row for each of the first
+    three running jobs: the title ("Dark S01E03" for an episode, else the movie's title, else "File #48211"), "42%"
+    (rounded down) and a bar once its progress is known, a spinner with "Encoding" or "Remuxing" until then, and under
+    it "Transcode 1080p H.264 · gpu-1 · about 12 min left": what is made ("Remux", "Transcode", or "Transcode" with
+    the target when the video is encoded anew), the worker's name ("Node 3", "Node" or "Local server" without one)
+    and the time left at the current speed ("under 1 min left", "about 12 min left", "about 2 h left", "about 2 h 5
+    min left"), each part only when it is known. Under the rows, each line only when it has something to say: a
+    clock and "2 more running · 4 queued · 1 waiting to retry", a pause sign and "2 paused", a warning sign and, in
+    red, "1 failed in the last 24 hours". With none of it: "No downloads being prepared". A recent failure keeps the
+    sections showing where the panel would otherwise say "No active server activity", though it does not count.
   A section whose list the server does not offer is left out; a hairline parts the sections that show.
 - **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
   the page's top edge moves to it (a held key stops at the edge), Down or Left from it back to where focus was on the
@@ -1296,7 +1307,8 @@ by `MainWindow.Activity.cs`.
   focus and one text for a screen reader, nothing happens on OK), and reach "View all"; Esc or the remote's Back closes
   it, also while focus is still on the button.
 - **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
-  scans or the preparation queue).
+  scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
+  web shows too for a task it has no translation for).
 
 ## Full screen
 

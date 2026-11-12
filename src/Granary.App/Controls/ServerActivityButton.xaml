@@ -98,6 +98,13 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- A line that sums jobs up under the rows: an icon and "4 queued · 1 waiting to retry". -->
+        <Style x:Key="ActivitySummaryIconStyle" TargetType="FontIcon">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        </Style>
         <!-- "Running" beside a spinner, in the accent. -->
         <Style x:Key="ActivityRowWorkingStyle" TargetType="TextBlock" BasedOn="{StaticResource ActivityRowNumberStyle}">
             <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
@@ -109,7 +116,6 @@
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         </Style>
         <!-- A row's progress: the web's 6 px bar, the accent on the muted track. -->
         <Style x:Key="ActivityProgressBarStyle" TargetType="ProgressBar">
@@ -191,6 +197,37 @@
                                        Style="{StaticResource ActivityRowNoteStyle}" Opacity="0.8" />
                         </StackPanel>
                     </Grid>
+                </controls:ReadingRow>
+            </Grid>
+        </DataTemplate>
+
+        <!--
+            A download being prepared: its title, "42%" over a bar once its progress is known (a spinner and "Encoding" or
+            "Remuxing" until then), and under it what is made, where, and how long it still takes.
+        -->
+        <DataTemplate x:Key="ActivityPreparationRowTemplate" x:DataType="admin:ActivityPreparationRow">
+            <Grid>
+                <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" AutomationProperties.Name="{x:Bind ReadText, Mode=OneWay}">
+                    <StackPanel Spacing="4">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource ActivityRowTextStyle}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
+                                       Style="{StaticResource ActivityRowNumberStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Visibility="{x:Bind IsWorking, Mode=OneWay}">
+                                <ProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
+                                <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource ActivityRowWorkingStyle}" />
+                            </StackPanel>
+                        </Grid>
+                        <!-- Named as the web names it: "Dark S01E03 progress". -->
+                        <ProgressBar Value="{x:Bind ProgressValue, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
+                                     Style="{StaticResource ActivityProgressBarStyle}" AutomationProperties.AccessibilityView="Control"
+                                     AutomationProperties.Name="{x:Bind ProgressName, Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind DetailText, Mode=OneWay}" Style="{StaticResource ActivityRowNoteStyle}" />
+                    </StackPanel>
                 </controls:ReadingRow>
             </Grid>
         </DataTemplate>
@@ -295,6 +332,56 @@
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoScans, Mode=OneWay}"
                                                              AutomationProperties.Name="{x:Bind ViewModel.ScanEmptyText, Mode=OneWay}">
                                             <TextBlock Text="{x:Bind ViewModel.ScanEmptyText, Mode=OneWay}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                        </controls:ReadingRow>
+                                    </StackPanel>
+
+                                    <!--
+                                        Preparing downloads: three running jobs at most, then how many more run, wait and retry, how
+                                        many are paused, and how many failed in the last day. Only on a server with such a queue.
+                                    -->
+                                    <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsPreparations, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                            <TextBlock Text="PREPARING DOWNLOADS" Style="{StaticResource ActivitySectionTitleStyle}"
+                                                       AutomationProperties.HeadingLevel="Level3" AutomationProperties.Name="Preparing downloads" />
+                                            <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasPreparations, Mode=OneWay}">
+                                                <TextBlock Text="{x:Bind ViewModel.PreparationCountText, Mode=OneWay}"
+                                                           Style="{StaticResource ActivityCountChipTextStyle}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.Preparations}" ItemTemplate="{StaticResource ActivityPreparationRowTemplate}"
+                                                      IsTabStop="False" />
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}"
+                                                             Visibility="{x:Bind ViewModel.HasWaitingPreparations, Mode=OneWay}"
+                                                             AutomationProperties.Name="{x:Bind ViewModel.WaitingPreparationsText, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE823;" Style="{StaticResource ActivitySummaryIconStyle}" />
+                                                <TextBlock Text="{x:Bind ViewModel.WaitingPreparationsText, Mode=OneWay}"
+                                                           Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                            </StackPanel>
+                                        </controls:ReadingRow>
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}"
+                                                             Visibility="{x:Bind ViewModel.HasPausedPreparations, Mode=OneWay}"
+                                                             AutomationProperties.Name="{x:Bind ViewModel.PausedPreparationsText, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE769;" Style="{StaticResource ActivitySummaryIconStyle}" />
+                                                <TextBlock Text="{x:Bind ViewModel.PausedPreparationsText, Mode=OneWay}"
+                                                           Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                            </StackPanel>
+                                        </controls:ReadingRow>
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}"
+                                                             Visibility="{x:Bind ViewModel.HasFailedPreparations, Mode=OneWay}"
+                                                             AutomationProperties.Name="{x:Bind ViewModel.FailedPreparationsText, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE7BA;" Style="{StaticResource ActivitySummaryIconStyle}"
+                                                          Foreground="{StaticResource SiloDestructiveBrush}" />
+                                                <TextBlock Text="{x:Bind ViewModel.FailedPreparationsText, Mode=OneWay}"
+                                                           Style="{StaticResource ActivityEmptyRowTextStyle}" FontFamily="{StaticResource SiloFontMedium}"
+                                                           FontWeight="Medium" Foreground="{StaticResource SiloDestructiveBrush}" />
+                                            </StackPanel>
+                                        </controls:ReadingRow>
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoPreparations, Mode=OneWay}"
+                                                             AutomationProperties.Name="No downloads being prepared">
+                                            <TextBlock Text="No downloads being prepared" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
                                 </StackPanel>

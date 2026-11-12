@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Admin;
 using Granary.Core.Realtime;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -19,6 +20,9 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     /// <summary>The most scans the panel lists; the rest are counted in a line under them.</summary>
     public const int MaxScanRows = 25;
+
+    /// <summary>The most running preparation jobs the panel lists; the rest join the line of those that wait.</summary>
+    public const int MaxPreparationRows = 3;
 
     private readonly ServerActivity _activity;
     private readonly IUiDispatcher _dispatcher;
@@ -89,9 +93,10 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     /// <summary>
     /// Nothing is going on: the panel says so in place of its sections. Not before the scans are known, which come with
-    /// the stream alone, as the web waits for them.
+    /// the stream alone, as the web waits for them, and not over a download that failed to be prepared, which would
+    /// have nowhere else to be seen.
     /// </summary>
-    public bool IsEmpty => Total == 0 && AreScansKnown;
+    public bool IsEmpty => Total == 0 && AreScansKnown && !HasFailedPreparations;
 
     /// <summary>The stream said which scans there are, or the server offers none.</summary>
     [ObservableProperty]
@@ -172,6 +177,47 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     [ObservableProperty]
     public partial string ScanEmptyText { get; private set; } = "";
 
+    /// <summary>The server has a queue that prepares offline downloads.</summary>
+    [ObservableProperty]
+    public partial bool ShowsPreparations { get; private set; }
+
+    /// <summary>The jobs still to finish: running, queued and waiting to retry. Paused and failed ones do not count.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPreparations), nameof(PreparationCountText))]
+    public partial int PreparationCount { get; private set; }
+
+    public bool HasPreparations => PreparationCount > 0;
+
+    public string PreparationCountText => ServerActivityText.Count(PreparationCount);
+
+    /// <summary>The first <see cref="MaxPreparationRows"/> running jobs.</summary>
+    public ObservableCollection<ActivityPreparationRow> Preparations { get; } = [];
+
+    /// <summary>"2 more running · 4 queued · 1 waiting to retry"; empty when nothing waits.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasWaitingPreparations))]
+    public partial string WaitingPreparationsText { get; private set; } = "";
+
+    public bool HasWaitingPreparations => WaitingPreparationsText.Length > 0;
+
+    /// <summary>"2 paused"; empty without any.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPausedPreparations))]
+    public partial string PausedPreparationsText { get; private set; } = "";
+
+    public bool HasPausedPreparations => PausedPreparationsText.Length > 0;
+
+    /// <summary>"1 failed in the last 24 hours"; empty without any.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFailedPreparations), nameof(IsEmpty), nameof(HasSections))]
+    public partial string FailedPreparationsText { get; private set; } = "";
+
+    public bool HasFailedPreparations => FailedPreparationsText.Length > 0;
+
+    /// <summary>"No downloads being prepared" in place of everything above.</summary>
+    [ObservableProperty]
+    public partial bool HasNoPreparations { get; private set; }
+
     /// <summary>"View all" beside Streams was picked: the shell opens Admin → Activity.</summary>
     public event EventHandler? StreamsRequested;
 
@@ -201,7 +247,8 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         TaskCount = running.Count;
         ServerActivityRows.Sync(Tasks, running, task => task.Key, row => row.Key, task => new ActivityTaskRow(task.Key), (row, task) => row.Show(task));
         int scans = ShowScans(state);
-        Total = sessions.Count + running.Count + scans;
+        int preparations = ShowPreparations(state.Preparations);
+        Total = sessions.Count + running.Count + scans + preparations;
     }
 
     // Answers how many scans count.
@@ -220,6 +267,24 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
             : state.Connection == EventsConnection.Disconnected ? "Disconnected"
             : "Connecting…";
         return active.Count;
+    }
+
+    // As the web's PreparationsSummary. Answers how many jobs count.
+    private int ShowPreparations(AdminDownloadPreparationList? list)
+    {
+        var counts = list?.Counts ?? new AdminDownloadPreparationCounts();
+        var running = (list?.Items ?? []).Where(job => job.IsRunning).ToList();
+        ShowsPreparations = list is not null;
+        PreparationCount = counts.Active;
+        ServerActivityRows.Sync(Preparations, [.. running.Take(MaxPreparationRows)], job => job.Id, row => row.Id,
+            job => new ActivityPreparationRow(job.Id), (row, job) => row.Show(job));
+        // Running jobs past the listed ones join the waiting line, so the lines still add up to the section's count.
+        WaitingPreparationsText = ServerActivityText.WaitingPreparations(running.Count - Preparations.Count, counts.Queued, counts.Retrying);
+        PausedPreparationsText = counts.Paused > 0 ? $"{ServerActivityText.Number(counts.Paused)} paused" : "";
+        FailedPreparationsText = counts.FailedRecent > 0 ? $"{ServerActivityText.Number(counts.FailedRecent)} failed in the last 24 hours" : "";
+        HasNoPreparations = list is not null && Preparations.Count == 0 && !HasWaitingPreparations && !HasPausedPreparations
+            && !HasFailedPreparations;
+        return counts.Active;
     }
 
     // The news comes on the stream's or a read's thread, in bursts: one look at the latest state per burst.

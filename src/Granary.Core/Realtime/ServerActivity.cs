@@ -32,6 +32,9 @@ public sealed record ServerActivityState
 
     /// <summary>The libraries' names by id, for the scans' rows; null while they are not read.</summary>
     public FrozenDictionary<string, string>? LibraryNames { get; init; }
+
+    /// <summary>The queue that prepares offline downloads; null as <see cref="Sessions"/>, and on a server without one.</summary>
+    public AdminDownloadPreparationList? Preparations { get; init; }
 }
 
 /// <summary>
@@ -65,6 +68,8 @@ public sealed partial class ServerActivity : IDisposable
     private readonly Reread _sessions;
     private readonly Reread _tasks;
     private readonly Reread _libraries;
+    private readonly Reread _preparations;
+    private readonly ITimer _preparationsDue;
     private readonly Reread[] _rereads;
     private Following? _following;
     private long _feed;
@@ -90,7 +95,9 @@ public sealed partial class ServerActivity : IDisposable
             },
             state => state with { Tasks = null });
         _libraries = LibrariesSource();
-        _rereads = [_sessions, _tasks, _libraries];
+        _preparations = PreparationsSource();
+        _preparationsDue = time.CreateTimer(_ => OnPreparationsDue(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _rereads = [_sessions, _tasks, _libraries, _preparations];
     }
 
     public ServerActivityState State
@@ -114,6 +121,7 @@ public sealed partial class ServerActivity : IDisposable
         {
             reread.Window.Dispose();
         }
+        _preparationsDue.Dispose();
     }
 
     /// <summary>
@@ -232,6 +240,8 @@ public sealed partial class ServerActivity : IDisposable
                 return false;
             case EventsChannels.Scans:
                 return ScanEventLocked(frame);
+            case EventsChannels.DownloadPreparations:
+                return PreparationEventLocked(frame);
             default:
                 return false;
         }
@@ -251,6 +261,7 @@ public sealed partial class ServerActivity : IDisposable
             reread.Window.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
         _askedLibraries.Clear();
+        _preparationsDue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         return previous;
     }
 
