@@ -13,8 +13,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
     xmlns:t="using:Granary.Core.Texts"
-    NavigationCacheMode="Enabled"
-    AutomationProperties.Name="Home">
+    NavigationCacheMode="Enabled">
 
     <Grid>
         <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (RowsViewMargin). -->
@@ -59,11 +58,11 @@
                           Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
             <FontIcon Glyph="&#xE8B9;" FontSize="40" Foreground="{StaticResource SiloMutedBrush}"
                       Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
-            <TextBlock Text="Home could not be loaded" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.home.page.loadFailedTitle')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center"
                        Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
                        Style="{x:Bind StatusStyle(ViewModel.HasError), Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
-            <TextBlock Text="Rows appear here once this server has something for the profile." HorizontalAlignment="Center"
+            <TextBlock Text="{x:Bind t:AppText.Get('granary.home.emptyHint')}" HorizontalAlignment="Center"
                        TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
                        Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
             <Button Content="{x:Bind t:AppText.Get('common.retry')}" HorizontalAlignment="Center" Style="{StaticResource SiloSecondaryButtonStyle}"

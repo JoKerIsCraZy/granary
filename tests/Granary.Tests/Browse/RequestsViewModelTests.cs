@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -293,6 +294,22 @@ public sealed class RequestsViewModelTests
         var navigation = Assert.Single(_harness.Navigation.Navigations);
         Assert.Equal(AppRoute.RequestTitles, navigation.Route);
         Assert.Equal(new RequestTitlesRouteParameter("trending_movies", "Trending Movies"), navigation.Parameter);
+    }
+
+    [Fact]
+    public async Task ARowSiloTitled_ShowsItsTitleInTheLanguageOnScreen_AndExploreAllTakesIt()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _harness.Answer(DiscoverPath, Discover.Replace("\"title\": \"Trending Movies\",",
+            "\"title\": \"Trending Movies\", \"title_key\": \"home.section.discoverTrendingMovies\",", StringComparison.Ordinal));
+
+        var hub = await LoadedAsync();
+        hub.DiscoverRows[0].ExploreAllCommand!.Execute(null);
+
+        string german = AppText.Get("home.section.discoverTrendingMovies");
+        Assert.NotEqual("Trending Movies", german);
+        Assert.Equal(german, hub.DiscoverRows[0].Title);
+        Assert.Equal(new RequestTitlesRouteParameter("trending_movies", german), Assert.Single(_harness.Navigation.Navigations).Parameter);
     }
 
     [Fact]

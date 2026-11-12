@@ -91,6 +91,60 @@
       "value": "視聴を続ける"
     }
   ],
+  "home.section.discoverGenres": [
+    {
+      "type": 0,
+      "value": "ジャンル"
+    }
+  ],
+  "home.section.discoverNetworks": [
+    {
+      "type": 0,
+      "value": "ネットワーク"
+    }
+  ],
+  "home.section.discoverOnAirSeries": [
+    {
+      "type": 0,
+      "value": "放送中のシリーズ"
+    }
+  ],
+  "home.section.discoverPopularMovies": [
+    {
+      "type": 0,
+      "value": "人気の映画"
+    }
+  ],
+  "home.section.discoverPopularSeries": [
+    {
+      "type": 0,
+      "value": "人気のシリーズ"
+    }
+  ],
+  "home.section.discoverStudios": [
+    {
+      "type": 0,
+      "value": "スタジオ"
+    }
+  ],
+  "home.section.discoverTrendingMovies": [
+    {
+      "type": 0,
+      "value": "トレンドの映画"
+    }
+  ],
+  "home.section.discoverTrendingSeries": [
+    {
+      "type": 0,
+      "value": "トレンドのシリーズ"
+    }
+  ],
+  "home.section.discoverUpcomingMovies": [
+    {
+      "type": 0,
+      "value": "近日公開の映画"
+    }
+  ],
   "home.section.forYou": [
     {
       "type": 0,
@@ -635,6 +689,64 @@
       "value": "ユーザー名"
     }
   ],
+  "web.catalog.carousel.exploreAll": [
+    {
+      "type": 0,
+      "value": "すべて見る"
+    }
+  ],
+  "web.catalog.carousel.exploreAllLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "をすべて見る"
+    }
+  ],
+  "web.catalog.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "左にスクロール"
+    }
+  ],
+  "web.catalog.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "右にスクロール"
+    }
+  ],
+  "web.catalog.filters.heading": [
+    {
+      "type": 0,
+      "value": "フィルター"
+    }
+  ],
+  "web.catalog.filters.locked": [
+    {
+      "type": 0,
+      "value": "このソースではフィルターは固定されています。"
+    }
+  ],
+  "web.catalog.grid.noItems": [
+    {
+      "type": 0,
+      "value": "アイテムが見つかりません。"
+    }
+  ],
+  "web.catalog.page.catalogFailed": [
+    {
+      "type": 0,
+      "value": "カタログの結果を読み込めませんでした。"
+    }
+  ],
+  "web.catalog.page.catalogSubtitle": [
+    {
+      "type": 0,
+      "value": "種類、年代、評価、ジャンルでアーカイブを絞り込みます。"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -651,6 +763,156 @@
     {
       "type": 0,
       "value": "サーバーが応答していません。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.common.ui.loadMore.loading": [
+    {
+      "type": 0,
+      "value": "さらに読み込み中"
+    }
+  ],
+  "web.home.dismiss.removeFailed": [
+    {
+      "type": 0,
+      "value": "アイテムを外せませんでした"
+    }
+  ],
+  "web.home.hero.episodeIdentity": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.home.hero.eyebrow": [
+    {
+      "type": 0,
+      "value": "注目"
+    }
+  ],
+  "web.home.hero.moreInfo": [
+    {
+      "type": 0,
+      "value": "詳細情報"
+    }
+  ],
+  "web.home.hero.nextSlide": [
+    {
+      "type": 0,
+      "value": "次のスライド"
+    }
+  ],
+  "web.home.hero.pauseSlideshow": [
+    {
+      "type": 0,
+      "value": "スライドショーを一時停止"
+    }
+  ],
+  "web.home.hero.play": [
+    {
+      "type": 0,
+      "value": "再生"
+    }
+  ],
+  "web.home.hero.playSlideshow": [
+    {
+      "type": 0,
+      "value": "スライドショーを再生"
+    }
+  ],
+  "web.home.hero.previousSlide": [
+    {
+      "type": 0,
+      "value": "前のスライド"
+    }
+  ],
+  "web.home.hero.runtimeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "時間"
+    }
+  ],
+  "web.home.hero.runtimeHoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "時間"
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.home.hero.runtimeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.home.hero.slideNumber": [
+    {
+      "type": 0,
+      "value": "No."
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "現在、セクションのレイアウトを読み込めません。"
+    }
+  ],
+  "web.home.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "ホームページを読み込めません"
+    }
+  ],
+  "web.home.page.title": [
+    {
+      "type": 0,
+      "value": "ホーム"
+    }
+  ],
+  "web.item.menu.removeFromContinueWatching": [
+    {
+      "type": 0,
+      "value": "「視聴を続ける」から削除"
+    }
+  ],
+  "web.item.menu.removeFromNextUp": [
+    {
+      "type": 0,
+      "value": "「次のエピソード」から削除"
     }
   ],
   "web.markers.save": [
@@ -739,6 +1001,162 @@
     {
       "type": 0,
       "value": "確認中…"
+    }
+  ],
+  "web.recommendations.emptyBody": [
+    {
+      "type": 0,
+      "value": "ライブラリに視聴できるタイトルが追加されると、ここに映画やシリーズが表示されます。"
+    }
+  ],
+  "web.recommendations.emptyTitle": [
+    {
+      "type": 0,
+      "value": "まだ表示するものがありません"
+    }
+  ],
+  "web.recommendations.fallbackCluster": [
+    {
+      "type": 0,
+      "value": "パーソナライズされたおすすめ"
+    }
+  ],
+  "web.recommendations.fallbackClusterKey": [
+    {
+      "type": 0,
+      "value": "パーソナライズされたおすすめ "
+    },
+    {
+      "type": 1,
+      "value": "key"
+    }
+  ],
+  "web.recommendations.fallbackDefault": [
+    {
+      "type": 0,
+      "value": "おすすめ"
+    }
+  ],
+  "web.recommendations.fallbackGenre": [
+    {
+      "type": 0,
+      "value": "人気の"
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.recommendations.fallbackGenrePicks": [
+    {
+      "type": 0,
+      "value": "ジャンル別のおすすめ"
+    }
+  ],
+  "web.recommendations.fallbackPopular": [
+    {
+      "type": 0,
+      "value": "このサーバーで人気"
+    }
+  ],
+  "web.recommendations.fallbackRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "最近追加"
+    }
+  ],
+  "web.recommendations.fallbackSimilarUsers": [
+    {
+      "type": 0,
+      "value": "好みの似たプロフィールが楽しんだ作品"
+    }
+  ],
+  "web.recommendations.fallbackTopRated": [
+    {
+      "type": 0,
+      "value": "ライブラリの高評価作品"
+    }
+  ],
+  "web.recommendations.favoriteDirectors": [
+    {
+      "type": 0,
+      "value": "お気に入りの監督"
+    }
+  ],
+  "web.recommendations.loadFailed": [
+    {
+      "type": 0,
+      "value": "おすすめを読み込めませんでした。"
+    }
+  ],
+  "web.recommendations.sectionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のタイトル"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.recommendations.sectionEmptyBody": [
+    {
+      "type": 0,
+      "value": "さらに視聴・評価すると、このセクションにおすすめが表示されます。"
+    }
+  ],
+  "web.recommendations.sectionEmptyTitle": [
+    {
+      "type": 0,
+      "value": "まだ何もありません"
+    }
+  ],
+  "web.recommendations.sectionLoadFailed": [
+    {
+      "type": 0,
+      "value": "このセクションを読み込めませんでした。"
+    }
+  ],
+  "web.recommendations.subtitleDefault": [
+    {
+      "type": 0,
+      "value": "ライブラリの高評価作品と最近追加されたタイトルです。タイトルを視聴・評価すると、このページがパーソナライズされます。"
+    }
+  ],
+  "web.recommendations.subtitlePersonal": [
+    {
+      "type": 0,
+      "value": "視聴履歴と評価に基づくパーソナライズされたおすすめです。"
+    }
+  ],
+  "web.recommendations.tasteProfile": [
+    {
+      "type": 0,
+      "value": "好みのプロフィール"
+    }
+  ],
+  "web.recommendations.title": [
+    {
+      "type": 0,
+      "value": "おすすめ"
+    }
+  ],
+  "web.recommendations.topGenres": [
+    {
+      "type": 0,
+      "value": "よく見るジャンル"
     }
   ],
   "web.search.label": [

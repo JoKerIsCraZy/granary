@@ -529,7 +529,7 @@ public sealed class HomeViewModelTests
         await home.RemoveCommand.ExecuteAsync(home.Rows[0].Cards[0]);
 
         Assert.Single(home.Rows[0].Cards);
-        Assert.Equal("Title movie-1 could not be removed. Try again.", home.Notice);
+        Assert.Equal("Failed to remove item", home.Notice);
     }
 
     [Fact]

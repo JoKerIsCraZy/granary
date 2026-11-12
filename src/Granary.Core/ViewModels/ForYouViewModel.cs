@@ -7,6 +7,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -47,9 +48,8 @@ public sealed record RecommendationRowViewModel(string Title, IReadOnlyList<Medi
 /// </summary>
 public sealed partial class ForYouViewModel : ObservableObject
 {
-    internal const string PersonalSubtitle = "Personalized picks based on your viewing history and ratings.";
-    internal const string DefaultSubtitle =
-        "Highly rated and recently added titles from your library. Watch and rate titles to personalize this page.";
+    internal static string PersonalSubtitle => AppText.Get("web.recommendations.subtitlePersonal");
+    internal static string DefaultSubtitle => AppText.Get("web.recommendations.subtitleDefault");
 
     // The server recommends movies and series only (its recommendableMediaTypes), so the hero has no episode to hide.
     private static readonly EpisodeSpoilers NoEpisodes = EpisodeSpoilers.Off;
@@ -260,10 +260,10 @@ public sealed partial class ForYouViewModel : ObservableObject
             }
             var cards = items.Select(i => MediaCardFactory.Poster(i, server)).ToList();
             var section = RecommendationSectionKinds.IsKnown(row.Kind)
-                ? new RecommendationSectionRouteParameter(row.Kind!, row.Key, row.Title)
+                ? new RecommendationSectionRouteParameter(row.Kind!, row.Key, SectionTitle.Shown(row))
                 : null;
             var exploreAll = section is null ? null : new RelayCommand(() => _navigation.NavigateTo(AppRoute.RecommendationSection, section));
-            rows.Add(new RecommendationRowViewModel(row.Title, cards, OpenCardCommand, exploreAll, section, items, PointCardCommand));
+            rows.Add(new RecommendationRowViewModel(SectionTitle.Shown(row), cards, OpenCardCommand, exploreAll, section, items, PointCardCommand));
         }
         return rows;
     }

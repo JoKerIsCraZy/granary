@@ -30,6 +30,17 @@ internal static class RecommendationPayloads
         { "items": [ { "type": "popular", "title": "Popular on This Server", "kind": "popular", "items": [ {{Alien}} ] } ] }
         """;
 
+    /// <summary>Rows Silo titled, with the key of each title: one with a value, one without.</summary>
+    public const string DiscoverKeyed = $$"""
+        {
+          "items": [
+            { "type": "genre", "title": "Top Crime", "title_key": "home.section.topGenre", "title_args": { "genre": "Krimi" },
+              "kind": "genre", "key": "Crime", "items": [ {{Heat}} ] },
+            { "type": "popular", "title": "Popular on This Server", "title_key": "home.section.popularOnServer", "kind": "popular", "items": [ {{Alien}} ] }
+          ]
+        }
+        """;
+
     public const string NoRows = """{ "items": [] }""";
 
     public const string Taste = """
@@ -42,5 +53,9 @@ internal static class RecommendationPayloads
         { "type": "popular", "title": "Popular on This Server", "kind": "popular", "items": [ {{Alien}}, {{Heat}} ] }
         """;
 
-    public const string UntitledSection = """{ "type": "genre", "title": "", "kind": "genre", "key": "Crime", "items": [] }""";
+    public const string KeyedSection = $$"""
+        { "type": "popular", "title": "Popular on This Server", "title_key": "home.section.popularOnServer", "kind": "popular", "items": [ {{Alien}} ] }
+        """;
+
+    public const string UntitledSection ="""{ "type": "genre", "title": "", "kind": "genre", "key": "Crime", "items": [] }""";
 }

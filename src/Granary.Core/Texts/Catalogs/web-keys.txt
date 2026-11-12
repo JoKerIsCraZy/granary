@@ -17,13 +17,24 @@ common.signOut
 common.tryAgain
 
 # The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
-# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs.
+# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs. For You's rows and Requests'
+# Discover rows (discover…) carry them too: RecommendationRow in RecommendationModels.cs and DiscoverSection in
+# src/Granary.Core/Api/Requests/RequestModels.cs, all shown through src/Granary.Core/ViewModels/SectionTitle.cs.
 home.section.becauseYouEnjoy
 home.section.becauseYouWatched
 home.section.becauseYouWatchedTitle
 home.section.continueListening
 home.section.continueReading
 home.section.continueWatching
+home.section.discoverGenres
+home.section.discoverNetworks
+home.section.discoverOnAirSeries
+home.section.discoverPopularMovies
+home.section.discoverPopularSeries
+home.section.discoverStudios
+home.section.discoverTrendingMovies
+home.section.discoverTrendingSeries
+home.section.discoverUpcomingMovies
 home.section.forYou
 home.section.hiddenGems
 home.section.highlyRatedInLibrary
@@ -116,6 +127,19 @@ web.auth.password
 web.auth.signIn
 web.auth.username
 
+# A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
+# as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
+# src/Granary.App/Views/SectionPage.xaml and src/Granary.Core/ViewModels/SectionViewModel.cs.
+web.catalog.carousel.exploreAll
+web.catalog.carousel.exploreAllLabel
+web.catalog.carousel.scrollLeft
+web.catalog.carousel.scrollRight
+web.catalog.filters.heading
+web.catalog.filters.locked
+web.catalog.grid.noItems
+web.catalog.page.catalogFailed
+web.catalog.page.catalogSubtitle
+
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
@@ -124,6 +148,32 @@ web.catalog.page.doneSelecting
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
 web.common.ui.loadError.generic
 web.common.ui.loadError.timeout
+
+# The spinner under a grid that loads more, as the web's LoadMoreOnScroll: src/Granary.App/Views/SectionPage.xaml.
+web.common.ui.loadMore.loading
+
+# Home, in the words of the web's Home page (pages/Home.tsx), its banner (components/HeroBanner.tsx, heroMetadata.ts)
+# and its card menu (components/MediaItemMenu.tsx, hooks/queries/homeDismissals.ts):
+# src/Granary.App/Views/HomePage.xaml(.cs), src/Granary.App/Controls/BrowseHero.xaml.cs and FeaturedBannerControls.xaml,
+# src/Granary.Core/ViewModels/HomeViewModel.cs, HomeRowViewModel.cs, FeaturedBannerViewModel.cs and BrowseHeroTitle.cs.
+web.home.dismiss.removeFailed
+web.home.hero.episodeIdentity
+web.home.hero.eyebrow
+web.home.hero.moreInfo
+web.home.hero.nextSlide
+web.home.hero.pauseSlideshow
+web.home.hero.play
+web.home.hero.playSlideshow
+web.home.hero.previousSlide
+web.home.hero.runtimeHours
+web.home.hero.runtimeHoursMinutes
+web.home.hero.runtimeMinutes
+web.home.hero.slideNumber
+web.home.page.loadFailedBody
+web.home.page.loadFailedTitle
+web.home.page.title
+web.item.menu.removeFromContinueWatching
+web.item.menu.removeFromNextUp
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
@@ -141,6 +191,32 @@ web.profiles.pin.lockedLater
 web.profiles.pin.lockedMinutes
 web.profiles.pin.title
 web.profiles.pin.verifying
+
+# For You and a row of it in full, as the web's Recommendations and RecommendationsSection pages:
+# src/Granary.App/Views/ForYouPage.xaml(.cs), RecommendationSectionPage.xaml, and ForYouViewModel.cs and
+# RecommendationSectionViewModel.cs in src/Granary.Core/ViewModels.
+web.recommendations.emptyBody
+web.recommendations.emptyTitle
+web.recommendations.fallbackCluster
+web.recommendations.fallbackClusterKey
+web.recommendations.fallbackDefault
+web.recommendations.fallbackGenre
+web.recommendations.fallbackGenrePicks
+web.recommendations.fallbackPopular
+web.recommendations.fallbackRecentlyAdded
+web.recommendations.fallbackSimilarUsers
+web.recommendations.fallbackTopRated
+web.recommendations.favoriteDirectors
+web.recommendations.loadFailed
+web.recommendations.sectionCount
+web.recommendations.sectionEmptyBody
+web.recommendations.sectionEmptyTitle
+web.recommendations.sectionLoadFailed
+web.recommendations.subtitleDefault
+web.recommendations.subtitlePersonal
+web.recommendations.tasteProfile
+web.recommendations.title
+web.recommendations.topGenres
 
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.

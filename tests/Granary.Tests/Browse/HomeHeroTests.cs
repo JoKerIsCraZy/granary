@@ -76,7 +76,7 @@ public sealed class HomeHeroTests
         var title = BrowseHeroTitle.From(episode, Server, EpisodeSpoilers.Off);
 
         Assert.Equal("My Name Is Elena", title.Heading);
-        Assert.Equal("S1 E1 · Kein Zufall · 25m · TV-14", title.Meta);
+        Assert.Equal("S1 · E1 · Kein Zufall · 25 min · TV-14", title.Meta);
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public sealed class HomeHeroTests
             ContentRating = "TV-14",
         };
 
-        Assert.Equal("Kein Zufall · 25m · TV-14", BrowseHeroTitle.From(episode, Server, EpisodeSpoilers.Off).Meta);
+        Assert.Equal("Kein Zufall · 25 min · TV-14", BrowseHeroTitle.From(episode, Server, EpisodeSpoilers.Off).Meta);
     }
 
     [Fact]

@@ -91,6 +91,60 @@
       "value": "Continuar assistindo"
     }
   ],
+  "home.section.discoverGenres": [
+    {
+      "type": 0,
+      "value": "Gêneros"
+    }
+  ],
+  "home.section.discoverNetworks": [
+    {
+      "type": 0,
+      "value": "Emissoras"
+    }
+  ],
+  "home.section.discoverOnAirSeries": [
+    {
+      "type": 0,
+      "value": "Séries no ar"
+    }
+  ],
+  "home.section.discoverPopularMovies": [
+    {
+      "type": 0,
+      "value": "Filmes populares"
+    }
+  ],
+  "home.section.discoverPopularSeries": [
+    {
+      "type": 0,
+      "value": "Séries populares"
+    }
+  ],
+  "home.section.discoverStudios": [
+    {
+      "type": 0,
+      "value": "Estúdios"
+    }
+  ],
+  "home.section.discoverTrendingMovies": [
+    {
+      "type": 0,
+      "value": "Filmes em alta"
+    }
+  ],
+  "home.section.discoverTrendingSeries": [
+    {
+      "type": 0,
+      "value": "Séries em alta"
+    }
+  ],
+  "home.section.discoverUpcomingMovies": [
+    {
+      "type": 0,
+      "value": "Filmes em breve"
+    }
+  ],
   "home.section.forYou": [
     {
       "type": 0,
@@ -635,6 +689,64 @@
       "value": "Nome de usuário"
     }
   ],
+  "web.catalog.carousel.exploreAll": [
+    {
+      "type": 0,
+      "value": "Explorar tudo"
+    }
+  ],
+  "web.catalog.carousel.exploreAllLabel": [
+    {
+      "type": 0,
+      "value": "Explorar tudo em "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.catalog.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "Rolar para a esquerda"
+    }
+  ],
+  "web.catalog.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "Rolar para a direita"
+    }
+  ],
+  "web.catalog.filters.heading": [
+    {
+      "type": 0,
+      "value": "Filtros"
+    }
+  ],
+  "web.catalog.filters.locked": [
+    {
+      "type": 0,
+      "value": "Os filtros estão fixos para esta origem."
+    }
+  ],
+  "web.catalog.grid.noItems": [
+    {
+      "type": 0,
+      "value": "Nenhum item encontrado."
+    }
+  ],
+  "web.catalog.page.catalogFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar os resultados do catálogo."
+    }
+  ],
+  "web.catalog.page.catalogSubtitle": [
+    {
+      "type": 0,
+      "value": "Refine o acervo por tipo, época, avaliação ou gênero."
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -651,6 +763,156 @@
     {
       "type": 0,
       "value": "O servidor não está respondendo. Tente novamente em instantes."
+    }
+  ],
+  "web.common.ui.loadMore.loading": [
+    {
+      "type": 0,
+      "value": "Carregando mais"
+    }
+  ],
+  "web.home.dismiss.removeFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível remover o item"
+    }
+  ],
+  "web.home.hero.episodeIdentity": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.home.hero.eyebrow": [
+    {
+      "type": 0,
+      "value": "Destaque"
+    }
+  ],
+  "web.home.hero.moreInfo": [
+    {
+      "type": 0,
+      "value": "Mais informações"
+    }
+  ],
+  "web.home.hero.nextSlide": [
+    {
+      "type": 0,
+      "value": "Próximo slide"
+    }
+  ],
+  "web.home.hero.pauseSlideshow": [
+    {
+      "type": 0,
+      "value": "Pausar apresentação de slides"
+    }
+  ],
+  "web.home.hero.play": [
+    {
+      "type": 0,
+      "value": "Reproduzir"
+    }
+  ],
+  "web.home.hero.playSlideshow": [
+    {
+      "type": 0,
+      "value": "Reproduzir apresentação de slides"
+    }
+  ],
+  "web.home.hero.previousSlide": [
+    {
+      "type": 0,
+      "value": "Slide anterior"
+    }
+  ],
+  "web.home.hero.runtimeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " h"
+    }
+  ],
+  "web.home.hero.runtimeHoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " h "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.home.hero.runtimeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.home.hero.slideNumber": [
+    {
+      "type": 0,
+      "value": "Nº "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar o layout das suas seções agora."
+    }
+  ],
+  "web.home.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar o Início"
+    }
+  ],
+  "web.home.page.title": [
+    {
+      "type": 0,
+      "value": "Início"
+    }
+  ],
+  "web.item.menu.removeFromContinueWatching": [
+    {
+      "type": 0,
+      "value": "Remover de Continuar assistindo"
+    }
+  ],
+  "web.item.menu.removeFromNextUp": [
+    {
+      "type": 0,
+      "value": "Remover de Próximos episódios"
     }
   ],
   "web.markers.save": [
@@ -771,6 +1033,186 @@
     {
       "type": 0,
       "value": "Verificando…"
+    }
+  ],
+  "web.recommendations.emptyBody": [
+    {
+      "type": 0,
+      "value": "Filmes e séries aparecem aqui quando suas bibliotecas tiverem títulos que você pode assistir."
+    }
+  ],
+  "web.recommendations.emptyTitle": [
+    {
+      "type": 0,
+      "value": "Nada para mostrar ainda"
+    }
+  ],
+  "web.recommendations.fallbackCluster": [
+    {
+      "type": 0,
+      "value": "Grupo personalizado"
+    }
+  ],
+  "web.recommendations.fallbackClusterKey": [
+    {
+      "type": 0,
+      "value": "Grupo personalizado "
+    },
+    {
+      "type": 1,
+      "value": "key"
+    }
+  ],
+  "web.recommendations.fallbackDefault": [
+    {
+      "type": 0,
+      "value": "Recomendações"
+    }
+  ],
+  "web.recommendations.fallbackGenre": [
+    {
+      "type": 0,
+      "value": "Destaques de "
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.recommendations.fallbackGenrePicks": [
+    {
+      "type": 0,
+      "value": "Escolhas por gênero"
+    }
+  ],
+  "web.recommendations.fallbackPopular": [
+    {
+      "type": 0,
+      "value": "Populares neste servidor"
+    }
+  ],
+  "web.recommendations.fallbackRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "Adicionados recentemente"
+    }
+  ],
+  "web.recommendations.fallbackSimilarUsers": [
+    {
+      "type": 0,
+      "value": "Curtidos por perfis parecidos com o seu"
+    }
+  ],
+  "web.recommendations.fallbackTopRated": [
+    {
+      "type": 0,
+      "value": "Bem avaliados na sua biblioteca"
+    }
+  ],
+  "web.recommendations.favoriteDirectors": [
+    {
+      "type": 0,
+      "value": "Diretores favoritos"
+    }
+  ],
+  "web.recommendations.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar as recomendações."
+    }
+  ],
+  "web.recommendations.sectionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " título"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de títulos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " títulos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.recommendations.sectionEmptyBody": [
+    {
+      "type": 0,
+      "value": "Assista e avalie mais conteúdos para receber sugestões nesta seção."
+    }
+  ],
+  "web.recommendations.sectionEmptyTitle": [
+    {
+      "type": 0,
+      "value": "Nada aqui ainda"
+    }
+  ],
+  "web.recommendations.sectionLoadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar esta seção."
+    }
+  ],
+  "web.recommendations.subtitleDefault": [
+    {
+      "type": 0,
+      "value": "Títulos bem avaliados e adicionados recentemente à sua biblioteca. Assista e avalie títulos para personalizar esta página."
+    }
+  ],
+  "web.recommendations.subtitlePersonal": [
+    {
+      "type": 0,
+      "value": "Sugestões personalizadas com base no seu histórico e nas suas avaliações."
+    }
+  ],
+  "web.recommendations.tasteProfile": [
+    {
+      "type": 0,
+      "value": "Seu perfil de gosto"
+    }
+  ],
+  "web.recommendations.title": [
+    {
+      "type": 0,
+      "value": "Para você"
+    }
+  ],
+  "web.recommendations.topGenres": [
+    {
+      "type": 0,
+      "value": "Gêneros favoritos"
     }
   ],
   "web.search.label": [

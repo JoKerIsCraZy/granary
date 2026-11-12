@@ -401,7 +401,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     fold its new numbers.
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
     does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
-    logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
+    logo "S1 · E1 · Kein Zufall · 25 min · TV-14", where it sits and its length in the web hero's words); and the
+    overview, at most three lines 570 px wide. All of it comes with
     the rows; nothing is read for the hero.
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
     middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a

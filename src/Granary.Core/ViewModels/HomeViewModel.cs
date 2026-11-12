@@ -8,6 +8,7 @@ using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -227,7 +228,8 @@ public sealed partial class HomeViewModel : ObservableObject
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("Removing a card from Home failed: {Failure}", ApiFailureText.Describe(ex));
-            Notice = $"{card.Title} could not be removed. Try again.";
+            // The web's words for a card it could not take off Home (hooks/queries/homeDismissals.ts).
+            Notice = AppText.Get("web.home.dismiss.removeFailed");
             return;
         }
         if (_shownFor != shownFor)
@@ -360,7 +362,7 @@ public sealed partial class HomeViewModel : ObservableObject
             _loadedAt = null;
             if (!HasContent)
             {
-                string text = BrowseFailureText.Describe(ex, "Home could not be loaded right now.");
+                string text = BrowseFailureText.Describe(ex, AppText.Get("web.home.page.loadFailedBody"));
                 ErrorText = text;
                 ShowState(hasError: true, isEmpty: false, text);
             }

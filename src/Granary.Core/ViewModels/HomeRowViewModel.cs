@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels;
@@ -20,8 +21,10 @@ public sealed class HomeRowViewModel
         PointCardCommand = pointCard;
         ExploreAllCommand = exploreAll;
         RemoveCardCommand = CanRemoveCards ? removeCard : null;
-        // As the web words it, by the surface rather than the row's own title.
-        RemoveLabel = SectionType == SectionTypes.NextUp ? "Remove from Next Up" : "Remove from Continue Watching";
+        // As the web words it, by the surface rather than the row's own title (components/MediaItemMenu.tsx).
+        RemoveLabel = SectionType == SectionTypes.NextUp
+            ? AppText.Get("web.item.menu.removeFromNextUp")
+            : AppText.Get("web.item.menu.removeFromContinueWatching");
         foreach (var (card, item) in cards)
         {
             if (_items.TryAdd(card, item))

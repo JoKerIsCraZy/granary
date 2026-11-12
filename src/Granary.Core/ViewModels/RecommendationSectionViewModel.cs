@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +41,7 @@ public sealed partial class RecommendationSectionViewModel : ObservableObject
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
 
-    /// <summary>"24 titles"; empty until there are cards.</summary>
+    /// <summary>"24 titles", in the web's words; empty until there are cards.</summary>
     [ObservableProperty]
     public partial string CountText { get; private set; } = "";
 
@@ -118,13 +119,14 @@ public sealed partial class RecommendationSectionViewModel : ObservableObject
             }
             if (row.Title.Length > 0)
             {
-                Title = row.Title;
+                Title = SectionTitle.Shown(row);
             }
             foreach (var item in row.Items.Where(i => !string.IsNullOrWhiteSpace(i.ContentId)).DistinctBy(i => i.ContentId, StringComparer.Ordinal))
             {
                 Cards.Add(MediaCardFactory.Poster(item, server.BaseUri));
             }
-            CountText = Cards.Count == 0 ? "" : CollectionCards.Titles(Cards.Count);
+            CountText = Cards.Count == 0 ? ""
+                : AppText.Get("web.recommendations.sectionCount", ("count", Cards.Count), ("count_text", AppText.Number(Cards.Count)));
             State = Cards.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
         }
         catch (Exception ex)
@@ -150,14 +152,18 @@ public sealed partial class RecommendationSectionViewModel : ObservableObject
     // The web's names for a row whose answer has none.
     private static string FallbackTitle(RecommendationSectionRouteParameter section) => section.Kind switch
     {
-        "for-you-main" => "For You",
-        "cluster" => section.Key is { Length: > 0 } key ? $"Personalized cluster {key}" : "Personalized cluster",
-        "similar-users" => "Profiles Like You Enjoyed",
-        "popular" => "Popular on This Server",
-        "recently-added" => "Recently Added",
-        "top-rated" => "Highly Rated in Your Library",
-        "genre" => section.Key is { Length: > 0 } genre ? $"Top {genre}" : "Genre picks",
-        _ => "Recommendations",
+        "for-you-main" => AppText.Get("web.recommendations.title"),
+        "cluster" => section.Key is { Length: > 0 } key
+            ? AppText.Get("web.recommendations.fallbackClusterKey", ("key", key))
+            : AppText.Get("web.recommendations.fallbackCluster"),
+        "similar-users" => AppText.Get("web.recommendations.fallbackSimilarUsers"),
+        "popular" => AppText.Get("web.recommendations.fallbackPopular"),
+        "recently-added" => AppText.Get("web.recommendations.fallbackRecentlyAdded"),
+        "top-rated" => AppText.Get("web.recommendations.fallbackTopRated"),
+        "genre" => section.Key is { Length: > 0 } genre
+            ? AppText.Get("web.recommendations.fallbackGenre", ("genre", genre))
+            : AppText.Get("web.recommendations.fallbackGenrePicks"),
+        _ => AppText.Get("web.recommendations.fallbackDefault"),
     };
 
     private (string? ServerId, string? ProfileId) Key() => (_session.ActiveServer?.Id, _session.ProfileId);

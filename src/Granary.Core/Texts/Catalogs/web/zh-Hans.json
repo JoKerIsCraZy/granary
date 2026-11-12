@@ -91,6 +91,60 @@
       "value": "继续观看"
     }
   ],
+  "home.section.discoverGenres": [
+    {
+      "type": 0,
+      "value": "类型"
+    }
+  ],
+  "home.section.discoverNetworks": [
+    {
+      "type": 0,
+      "value": "电视网"
+    }
+  ],
+  "home.section.discoverOnAirSeries": [
+    {
+      "type": 0,
+      "value": "正在播出的剧集"
+    }
+  ],
+  "home.section.discoverPopularMovies": [
+    {
+      "type": 0,
+      "value": "人气电影"
+    }
+  ],
+  "home.section.discoverPopularSeries": [
+    {
+      "type": 0,
+      "value": "人气剧集"
+    }
+  ],
+  "home.section.discoverStudios": [
+    {
+      "type": 0,
+      "value": "制片公司"
+    }
+  ],
+  "home.section.discoverTrendingMovies": [
+    {
+      "type": 0,
+      "value": "热门电影"
+    }
+  ],
+  "home.section.discoverTrendingSeries": [
+    {
+      "type": 0,
+      "value": "热门剧集"
+    }
+  ],
+  "home.section.discoverUpcomingMovies": [
+    {
+      "type": 0,
+      "value": "即将上映的电影"
+    }
+  ],
   "home.section.forYou": [
     {
       "type": 0,
@@ -635,6 +689,64 @@
       "value": "用户名"
     }
   ],
+  "web.catalog.carousel.exploreAll": [
+    {
+      "type": 0,
+      "value": "查看全部"
+    }
+  ],
+  "web.catalog.carousel.exploreAllLabel": [
+    {
+      "type": 0,
+      "value": "查看全部"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.catalog.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "向左滚动"
+    }
+  ],
+  "web.catalog.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "向右滚动"
+    }
+  ],
+  "web.catalog.filters.heading": [
+    {
+      "type": 0,
+      "value": "筛选"
+    }
+  ],
+  "web.catalog.filters.locked": [
+    {
+      "type": 0,
+      "value": "筛选条件已锁定为此来源。"
+    }
+  ],
+  "web.catalog.grid.noItems": [
+    {
+      "type": 0,
+      "value": "未找到项目。"
+    }
+  ],
+  "web.catalog.page.catalogFailed": [
+    {
+      "type": 0,
+      "value": "无法加载目录结果。"
+    }
+  ],
+  "web.catalog.page.catalogSubtitle": [
+    {
+      "type": 0,
+      "value": "按类型、年代、评分或类别筛选片库。"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -651,6 +763,164 @@
     {
       "type": 0,
       "value": "服务器没有响应。请稍后重试。"
+    }
+  ],
+  "web.common.ui.loadMore.loading": [
+    {
+      "type": 0,
+      "value": "正在加载更多"
+    }
+  ],
+  "web.home.dismiss.removeFailed": [
+    {
+      "type": 0,
+      "value": "无法移除项目"
+    }
+  ],
+  "web.home.hero.episodeIdentity": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "季 · 第"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": "集"
+    }
+  ],
+  "web.home.hero.eyebrow": [
+    {
+      "type": 0,
+      "value": "精选"
+    }
+  ],
+  "web.home.hero.moreInfo": [
+    {
+      "type": 0,
+      "value": "更多信息"
+    }
+  ],
+  "web.home.hero.nextSlide": [
+    {
+      "type": 0,
+      "value": "下一张"
+    }
+  ],
+  "web.home.hero.pauseSlideshow": [
+    {
+      "type": 0,
+      "value": "暂停轮播"
+    }
+  ],
+  "web.home.hero.play": [
+    {
+      "type": 0,
+      "value": "播放"
+    }
+  ],
+  "web.home.hero.playSlideshow": [
+    {
+      "type": 0,
+      "value": "播放轮播"
+    }
+  ],
+  "web.home.hero.previousSlide": [
+    {
+      "type": 0,
+      "value": "上一张"
+    }
+  ],
+  "web.home.hero.runtimeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "小时"
+    }
+  ],
+  "web.home.hero.runtimeHoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "小时"
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分钟"
+    }
+  ],
+  "web.home.hero.runtimeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分钟"
+    }
+  ],
+  "web.home.hero.slideNumber": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "个"
+    }
+  ],
+  "web.home.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "暂时无法载入你的版块布局。"
+    }
+  ],
+  "web.home.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "无法载入首页"
+    }
+  ],
+  "web.home.page.title": [
+    {
+      "type": 0,
+      "value": "首页"
+    }
+  ],
+  "web.item.menu.removeFromContinueWatching": [
+    {
+      "type": 0,
+      "value": "从继续观看中移除"
+    }
+  ],
+  "web.item.menu.removeFromNextUp": [
+    {
+      "type": 0,
+      "value": "从接下来中移除"
     }
   ],
   "web.markers.save": [
@@ -743,6 +1013,162 @@
     {
       "type": 0,
       "value": "正在验证……"
+    }
+  ],
+  "web.recommendations.emptyBody": [
+    {
+      "type": 0,
+      "value": "当你的媒体库中有可观看的作品后，电影和剧集会显示在这里。"
+    }
+  ],
+  "web.recommendations.emptyTitle": [
+    {
+      "type": 0,
+      "value": "暂无内容"
+    }
+  ],
+  "web.recommendations.fallbackCluster": [
+    {
+      "type": 0,
+      "value": "个性化分组"
+    }
+  ],
+  "web.recommendations.fallbackClusterKey": [
+    {
+      "type": 0,
+      "value": "个性化分组"
+    },
+    {
+      "type": 1,
+      "value": "key"
+    }
+  ],
+  "web.recommendations.fallbackDefault": [
+    {
+      "type": 0,
+      "value": "推荐"
+    }
+  ],
+  "web.recommendations.fallbackGenre": [
+    {
+      "type": 0,
+      "value": "热门"
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.recommendations.fallbackGenrePicks": [
+    {
+      "type": 0,
+      "value": "类型精选"
+    }
+  ],
+  "web.recommendations.fallbackPopular": [
+    {
+      "type": 0,
+      "value": "此服务器上的热门内容"
+    }
+  ],
+  "web.recommendations.fallbackRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "最近添加"
+    }
+  ],
+  "web.recommendations.fallbackSimilarUsers": [
+    {
+      "type": 0,
+      "value": "口味相似的个人资料喜爱的内容"
+    }
+  ],
+  "web.recommendations.fallbackTopRated": [
+    {
+      "type": 0,
+      "value": "你媒体库中的高分作品"
+    }
+  ],
+  "web.recommendations.favoriteDirectors": [
+    {
+      "type": 0,
+      "value": "喜爱的导演"
+    }
+  ],
+  "web.recommendations.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载推荐。"
+    }
+  ],
+  "web.recommendations.sectionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "部作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.recommendations.sectionEmptyBody": [
+    {
+      "type": 0,
+      "value": "观看并评分更多内容，即可为此版块生成推荐。"
+    }
+  ],
+  "web.recommendations.sectionEmptyTitle": [
+    {
+      "type": 0,
+      "value": "这里还没有内容"
+    }
+  ],
+  "web.recommendations.sectionLoadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载此版块。"
+    }
+  ],
+  "web.recommendations.subtitleDefault": [
+    {
+      "type": 0,
+      "value": "来自你媒体库的高分作品和最近添加的作品。观看并评分作品即可个性化此页面。"
+    }
+  ],
+  "web.recommendations.subtitlePersonal": [
+    {
+      "type": 0,
+      "value": "根据你的观看记录和评分为你挑选的推荐。"
+    }
+  ],
+  "web.recommendations.tasteProfile": [
+    {
+      "type": 0,
+      "value": "你的口味档案"
+    }
+  ],
+  "web.recommendations.title": [
+    {
+      "type": 0,
+      "value": "为你推荐"
+    }
+  ],
+  "web.recommendations.topGenres": [
+    {
+      "type": 0,
+      "value": "热门类型"
     }
   ],
   "web.search.label": [

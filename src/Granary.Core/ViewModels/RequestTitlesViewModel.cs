@@ -321,7 +321,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         if (route.Browse is not { } kind)
         {
             var section = await _requests.GetDiscoverSectionAsync(server, route.Key, page, token);
-            return new TitlesPage(section.Results, section.TotalPages, section.NextPage, section.Title, null);
+            return new TitlesPage(section.Results, section.TotalPages, section.NextPage, SectionTitle.Shown(section), null);
         }
         // A select can clear its choice while its list changes; the web falls back the same way.
         string? mediaType = kind == DiscoverBrowseKind.Genre ? SelectedMedia?.Value ?? Movies.Value : null;

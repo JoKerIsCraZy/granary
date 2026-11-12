@@ -16,16 +16,16 @@
             </StackPanel>
 
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.recommendations.loadingTitles')}" />
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                <TextBlock Text="Failed to load this section." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.sectionLoadFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            TextAlignment="Center" />
                 <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.RetryCommand}" />
             </StackPanel>
             <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="6" Margin="0,48" HorizontalAlignment="Center">
-                <TextBlock Text="Nothing here yet" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                <TextBlock Text="Watch and rate more content to surface picks for this section." Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.sectionEmptyTitle')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.sectionEmptyBody')}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
             </StackPanel>
 

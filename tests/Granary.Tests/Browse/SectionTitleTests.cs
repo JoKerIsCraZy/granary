@@ -14,7 +14,8 @@ public sealed class SectionTitleTests
     /// <summary>
     /// The keyed titles Silo writes today, with its English and values (silo-server 0e95e55b6:
     /// internal/sections/defaults.go, title_keys.go, generated.go, because_watched_title.go,
-    /// recommendation_title.go, recipes/text_keys.go and seasonal_catalog.go, internal/recommendations/titles.go).
+    /// recommendation_title.go, recipes/text_keys.go and seasonal_catalog.go, internal/recommendations/titles.go,
+    /// internal/requests/discoverrows/defaults.go).
     /// </summary>
     private static readonly (string Key, string? Name, string? Value, string Title)[] Titles =
     [
@@ -92,6 +93,15 @@ public sealed class SectionTitleTests
         ("home.section.seasonal.familyMovieNight.new", null, null, "Family Movie Night"),
         ("home.section.seasonal.familyMovieNight.favorites", null, null, "Family Favorites"),
         ("home.section.seasonal.familyMovieNight.liveAction", null, null, "Family Movie Night"),
+        ("home.section.discoverTrendingMovies", null, null, "Trending Movies"),
+        ("home.section.discoverTrendingSeries", null, null, "Trending Series"),
+        ("home.section.discoverPopularMovies", null, null, "Popular Movies"),
+        ("home.section.discoverPopularSeries", null, null, "Popular Series"),
+        ("home.section.discoverUpcomingMovies", null, null, "Upcoming Movies"),
+        ("home.section.discoverOnAirSeries", null, null, "On Air Series"),
+        ("home.section.discoverStudios", null, null, "Studios"),
+        ("home.section.discoverNetworks", null, null, "Networks"),
+        ("home.section.discoverGenres", null, null, "Genres"),
     ];
 
     public static TheoryData<string, string?, string?, string> ServerTitles

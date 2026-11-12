@@ -112,6 +112,12 @@ public sealed record DiscoverSection
 
     public string Title { get; init => field = value ?? ""; } = "";
 
+    /// <summary>
+    /// The shared translation catalog's key for <see cref="Title"/> while a built-in row keeps its default title, such as
+    /// <c>home.section.discoverTrendingMovies</c>; null for a title an administrator typed. It has no placeholders.
+    /// </summary>
+    public string? TitleKey { get; init => field = string.IsNullOrEmpty(value) ? null : value; }
+
     public int Page { get; init; }
 
     /// <summary>
