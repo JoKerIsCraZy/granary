@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The top of the detail page (docs/ui-design.md), on the backdrop the page itself draws
-    behind its scrolling content. The logo (or the title), one line of facts, the tagline and four lines of overview, then
-    Granary's own buttons at a larger size with the web's stars, and the file's short facts. Chips, ratings, credits and
-    the files' details are in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole; the step
+    behind its scrolling content. The logo (or the title), one line of facts with the web's quality badges of the chosen
+    file after it, the tagline and four lines of overview, then Granary's own buttons at a larger size with the web's
+    stars, and the file's short facts. Ratings, credits and the files' details are in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole; the step
     sets sizes rather than styles, so a button keeps its focus when the window crosses it.
 -->
 <UserControl
@@ -172,8 +172,30 @@
             <TextBlock x:Name="SubtitleText" Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
                        FontWeight="Medium" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
                        Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Subtitle), Mode=OneWay}" />
-            <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
-                       TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.MetaLine), Mode=OneWay}" />
+            <!--
+                The facts and, after them, a movie's or episode's quality badges: the web's QualityBadges after its
+                MetadataBadges (MovieContent.tsx, EpisodeContent.tsx), "1080P", "DV HDR10", "DD+ ATMOS" for the file the
+                Version picker shows. 12 px after the text and 8 apart, as the web's facts; together they go to a line of
+                their own where the text leaves no room. A series or a season has the text alone.
+            -->
+            <controls:WrapPanel x:Name="Facts" HorizontalAlignment="Left" HorizontalSpacing="12" VerticalSpacing="8"
+                                Visibility="{x:Bind controls:DetailHero.ShowsFacts(ViewModel.MetaLine, ViewModel.HasQualityBadges), Mode=OneWay}">
+                <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
+                           TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.MetaLine), Mode=OneWay}" />
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.QualityBadges, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasQualityBadges, Mode=OneWay}"
+                               AutomationProperties.Name="Quality">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Horizontal" Spacing="8" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Border Style="{StaticResource SiloQualityBadgeStyle}">
+                                <TextBlock Text="{x:Bind}" Style="{StaticResource SiloQualityBadgeTextStyle}" />
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </controls:WrapPanel>
             <TextBlock x:Name="TaglineText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}"
                        FontFamily="{StaticResource SiloFontItalic}" FontStyle="Italic" FontSize="17" Foreground="{StaticResource DetailTextBrush}"
                        TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />

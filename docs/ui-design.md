@@ -17,7 +17,7 @@ The greys are a step darker than the web's (`#141417`, `#1C1C20`, `#232328`, `#2
 app; the steps between them stay the web's. Gradients that fade to the page name `SiloBackgroundColor` rather than repeat it.
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
-| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint15/20/40/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
+| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint10/15/20/40/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
 | `SiloDestructiveBrush` | `#EF4444` | The web's `destructive`: errors, and actions that delete or end something. Never the accent: it stays red whatever the server's accent. |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
 | `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
@@ -47,7 +47,9 @@ Buttons: `SiloPrimaryButtonStyle` (accent pill: Play, Resume), `SiloSecondaryBut
 Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL"). The title bar's
 own buttons are drawn as Windows' caption buttons: `SiloTitleBarButtonStyle` (Full screen) and
 `SiloTitleBarCloseButtonStyle` (Close in full screen, red under the pointer).
-Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EAC3).
+Chips: `SiloChipStyle` (year, rating, runtime), and `SiloAccentChipStyle` for one of them in the accent. `SiloQualityBadgeStyle`
+with `SiloQualityBadgeTextStyle` is the web's `QualityBadges` look for a file's quality ("1080P", "DD+ ATMOS"): the accent
+at 20 % round the accent at 10 %, radius 8, 8 px in and about 22 high, 11 px semibold capitals in the accent.
 
 The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
 seek track), `SiloPlayerPlayButtonStyle` (accent disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
@@ -519,12 +521,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
+    (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
+    (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
+    "DV HDR10+", "DV HLG", "HDR10+", "HDR10", "HLG", "HDR"; none for SDR) and its best audio ("DD+ ATMOS",
+    "TRUEHD ATMOS", "ATMOS", "TRUEHD", "DTS-HD", "DTS", "EAC3", "AAC", "FLAC"). The audio is the best of the file's
+    tracks, not the one that will play: among tracks of one family the one that names Atmos (in its codec, profile or
+    titles) gives the badge. As on the web, a resolution or an audio family it does not rank (4320p; AC3, Opus, MP3) has
+    no badge. Another pick in the Version picker changes them (`QualityBadges` in Core, `ItemDetailViewModel.QualityBadges`).
+    They stand 12 px after the text and 8 apart, centred on its line; where the line leaves no room they go under it
+    together (`WrapPanel`). A series or a season has none, as on the web. A screen reader reads each badge after the line.
   - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
-    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a
+    line of Granary's own (the web has none), kept beside the quality badges for the video codec and the size they do not
+    say.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
     playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
@@ -1372,8 +1386,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the title cannot be sought and on the Playing Next screen the keys pass on. A jump shows the controls as a skip does; in
   a Watch Party it is a seek like any other, asked of the room, and a guest's is refused with the web's words. They work
   in the full player, the mini view and the minimized bar, taken before the focused control: on the picture, the seek
-  bar, the volume slider (which keeps the plain arrows) or a button, also while a remote's arrows move between the
-  controls.
+  bar, the volume slider or a button, also while a remote's arrows move between the controls. The slider keeps the plain
+  arrows for the volume while it has the focus from Tab or a click; while a remote's arrows move between the controls,
+  they move on from it too.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
   title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
   with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are
@@ -1649,6 +1664,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
+  Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the
+  arrows: on it every arrow sets the volume, and a remote could not go on to the buttons beside it. A remote sets the
+  volume with its own volume keys, M mutes, and Up and Down set it where Settings gives them the volume. For the move the
+  slider is taken out of the tab stops, at every display scale; a rectangle for the arrows to leave out
+  (`FindNextElementOptions.ExclusionRect`) held only at 100 %, since WinUI scales it and not the bounds it compares it
+  with, so on a TV at 150 % focus landed on the slider (`FocusRectangleTests`).
   A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown

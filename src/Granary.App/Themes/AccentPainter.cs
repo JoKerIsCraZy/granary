@@ -18,8 +18,8 @@ internal static class AccentPainter
     // The selected text's background is Fluent's, drawn in the accent like the rest.
     private static readonly string[] PrimaryKeys =
     [
-        "SiloPrimaryBrush", "SiloPrimaryTint15Brush", "SiloPrimaryTint20Brush", "SiloPrimaryTint40Brush", "SiloPrimaryTint60Brush",
-        "SiloPrimaryTint75Brush",
+        "SiloPrimaryBrush", "SiloPrimaryTint10Brush", "SiloPrimaryTint15Brush", "SiloPrimaryTint20Brush", "SiloPrimaryTint40Brush",
+        "SiloPrimaryTint60Brush", "SiloPrimaryTint75Brush",
         "AccentFillColorDefaultBrush", "AccentTextFillColorTertiaryBrush", "AccentFillColorSelectedTextBackgroundBrush",
     ];
 

@@ -93,6 +93,10 @@ public sealed partial class DetailHero : UserControl
 
     public static Visibility Both(bool first, bool second) => first && second ? Visibility.Visible : Visibility.Collapsed;
 
+    // The facts' row is there for its text or for the quality badges after it.
+    public static Visibility ShowsFacts(string? metaLine, bool hasQualityBadges) =>
+        !string.IsNullOrEmpty(metaLine) || hasQualityBadges ? Visibility.Visible : Visibility.Collapsed;
+
     public static Style ChipStyle(bool isAccent) => (Style)Application.Current.Resources[isAccent ? "SiloAccentChipStyle" : "SiloChipStyle"];
 
     public static Brush ChipForeground(bool isAccent) => Resource(isAccent ? "AccentTextFillColorPrimaryBrush" : "SiloForegroundBrush");
