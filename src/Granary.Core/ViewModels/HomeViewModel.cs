@@ -139,6 +139,7 @@ public sealed partial class HomeViewModel : ObservableObject
             Banner.SetActive(true);
         }
         ShowSpoilers();
+        Hero.TakeSize();
         if (Hero.MissedSwitch)
         {
             // The title preview was turned on or off while Home was away.

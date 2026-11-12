@@ -394,7 +394,32 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     switch's: a row marked as the hero on the web still shows as the banner. Focus still starts on the first row's first
     card. It is kept on this PC for each server and profile (`browse-hero.json` in the data directory, the profiles that
     turned it off); a page takes a change the next time it shows.
-  - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
+  - Hero size (Settings → Navigation & Cards → Pages; `BrowseHeroSetting.Size`, `BrowseHeroSize`), Compact by default,
+    sets how tall this hero is: on Home, For You and Discover alike, and for both things it shows, the title preview and
+    the slides of Home's banner. With Title preview at the top off, only Home's banner is left to follow it. Granary's own
+    choice, kept beside the switch in `browse-hero.json` (`hidden_for` and `full_for`: the profiles that turned the
+    preview off, and those that chose Full; a file without `full_for` means Compact). A page takes a change the next time
+    it shows.
+    - Compact is the hero as the points below describe it: the first row shows without scrolling.
+    - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
+      height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from
+      a page 1152 px high, which a 3840 × 1600 screen's is). The rows begin under it, rather than 300 px down. The web
+      takes 66 % of the browser window's height on a wide layout and 54 % on a narrow one; Granary takes 66 % of the
+      page's height at every width. On a page under about 580 px high the hero is at its least, 380 px, and a banner
+      slide with a long overview can lose its last line there.
+    - Full's text stands at the hero's foot, as the web's `HeroBanner` has it (`lg:pb-16`): the overview, or the details
+      of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
+      Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,
+      the rail and the pause button level beside them, and the text ends 28 px over the buttons (the web's `mb-7`).
+    - Everything else is Compact's on the same page: the logo, the type, the backdrop's share and fades, and the compact
+      header. The backdrop still covers the right 65 % of the page, so a window narrower than about 2.7 times the hero's
+      height cuts a 16:9 picture's sides (a 1440 × 900 window shows three quarters of its width).
+    - Full folds into the same compact header over its longer way, the hero's height less the header's (536 px of
+      scrolling on a 1080 px window's page). The text goes up with the rows themselves until it is where the header has
+      it, and stays (`BrowseHeroLayout.TextLift`, from the text's height now); meanwhile the logo shrinks, the overview
+      fades and the backdrop shortens as in Compact, its foot on the first row's top all the way. The banner's buttons
+      scroll up under the header with the rows.
+  - Its sizes below are Compact's on a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
     the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
     logo and the text block grow half as much (on 3840 × 1600: header 185, logo 98 high and 492 wide), and the details
@@ -429,7 +454,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     shows at once; after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not
     one per card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while
     the rows still have them. Another profile starts afresh, and so does the hero after a banner went.
-  - The rows begin 300 px down (348 under a banner). Scrolling them folds the hero into a compact 150 px header that stays
+  - The rows begin 300 px down (348 under a banner; under a Full hero, at its foot). Scrolling them folds the hero into a compact 150 px header that stays
     at the top and cuts the rows off at its edge: over the first 150 px of scrolling (198 under a banner) the logo shrinks
     to 45 px, the details move up under it, the overview fades and the backdrop shortens to the header. It follows the
     scroll on the compositor (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A
@@ -448,9 +473,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     setting for it; Title preview at the top (above) does not touch it.
   - What a slide shows: the web's eyebrow over the name, "FEATURED — NO. 01" (11.5 px semibold, tracked, white at 62 %,
     FEATURED at 92 %, read as "Featured — No. 01"), then the hero's logo or name, its details and overview, and its
-    backdrop. The rows begin 48 px lower than under the card hero, and the room between the compact header and the first
+    backdrop. The rows begin 48 px lower than under the card hero (not under a Full hero, which holds the buttons itself:
+    Hero size, above), and the room between the compact header and the first
     row holds the buttons, which scroll up under the header with the rows: the Play pill in the accent and the glass More Info pill
-    (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row; on the right, level with them,
+    (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row (64 px under a Full hero); on the right, level with them,
     "01 —— 05" (11 px monospaced, tracked, white at 68 %, the slide's number white), a 144 × 2 px rail that fills over
     the slide's 8 s, and a 28 px pause button ("Pause slideshow" / "Play slideshow"). The arrows ("Previous slide",
     "Next slide": the 36 px glass discs of PageBack) stand 8 px in from the page's sides, half way down the banner, and
@@ -1075,10 +1101,12 @@ says why above the sections.
   buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
   badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Pages, Granary's
-  own group since Silo's clients have no such switch (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
+  own group since Silo's clients have no such settings (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
   of Home, For You and Discover, for this profile on this PC.", with Title preview at the top ("Home, For You and
-  Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, saved on
-  this PC at once and taken by each page the next time it shows (Home's hero, above). Then Sidebar, with
+  Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, and
+  Hero size ("Compact shows the first row without scrolling. Full is as tall as on Silo's web."), Compact or Full as
+  choice buttons, Compact by default; both saved on this PC at once and taken by each page the next time it shows
+  (Home's hero, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down

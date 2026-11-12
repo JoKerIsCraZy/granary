@@ -144,6 +144,38 @@ public sealed partial class BrowseHeroLayoutTests
         Assert.Equal((1d, 1d), (sizes.Grow, sizes.TextGrow));
     }
 
+    // The hero's sizes as they were worked out before its size could be chosen, number for number.
+    private static (double, double, double, double, double, double, double, double) SizesBeforeTheChoice(double pageHeight, bool banner)
+    {
+        static double Round(double value) => Math.Round(value, MidpointRounding.AwayFromZero);
+        double stepped = Math.Floor(pageHeight / 8) * 8;
+        double scale = double.IsNaN(stepped) ? 1 : Math.Clamp(stepped / 1040, 1, 720d / 440);
+        double grow = 1 + (scale - 1) / 2;
+        double rest = Round(440 * scale);
+        return (rest, Round(150 * grow), Round((banner ? 348 : 300) * scale), Round(80 * grow), Round(45 * grow), Round(rest * 0.55), grow,
+            1 + (scale - 1) / 4);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TheCompactHero_HasTheSizesItAlwaysHad_AtEveryPageHeight(bool banner)
+    {
+        var heights = Enumerable.Range(0, 2401).Select(height => (double)height)
+            .Concat([-1, 1047.5, 4320, double.NaN, double.NegativeInfinity, double.PositiveInfinity]);
+
+        foreach (double height in heights)
+        {
+            var sizes = BrowseHeroLayout.For(height, banner);
+
+            Assert.Equal(SizesBeforeTheChoice(height, banner), (sizes.RestHeight, sizes.CompactHeight, sizes.RowsTop, sizes.HeadingHeight,
+                sizes.CompactHeadingHeight, sizes.FadeHeight, sizes.Grow, sizes.TextGrow));
+            // Where the text and the banner's buttons stood before there was a choice: the text from the top, the buttons
+            // 26 px above the rows.
+            Assert.Equal(((double?)null, 26d), (sizes.TextBottom, sizes.ButtonsBottom));
+        }
+    }
+
     [Fact]
     public void OnATallerPage_TheRowsFollowTheHero_TheHeaderAndTheLogoGrowHalfAsMuch_AndTheTextLess()
     {

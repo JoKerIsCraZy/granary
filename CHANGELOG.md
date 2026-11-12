@@ -14,6 +14,9 @@ release's section is what its update says it changes (docs/release.md).
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
+- **Hero size:** Settings → Navigation & Cards → Pages has a new choice. Full makes the picture at the top of Home, For
+  You and Discover as tall as on Silo's web, with the rows under it; Compact, as before, shows the first row without
+  scrolling.
 
 ### Changed
 

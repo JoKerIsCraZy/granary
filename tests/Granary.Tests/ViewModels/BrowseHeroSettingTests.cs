@@ -7,7 +7,10 @@ using Granary.Tests.Fakes;
 
 namespace Granary.Tests.ViewModels;
 
-/// <summary>Settings → Navigation &amp; Cards → Title preview at the top: on by default, kept on this PC for each server and profile.</summary>
+/// <summary>
+/// Settings → Navigation &amp; Cards → Pages: the title preview at the top, on by default, and the hero's size, compact by
+/// default; both kept on this PC for each server and profile.
+/// </summary>
 public sealed class BrowseHeroSettingTests : IDisposable
 {
     private static readonly ServerEntry Server = new("srv1", new Uri("https://silo.test"), "Elena's Silo", null, default, default, null);
@@ -170,5 +173,166 @@ public sealed class BrowseHeroSettingTests : IDisposable
         File.WriteAllText(FilePath, "{ not json");
 
         Assert.True(Create().IsShown);
+        Assert.Equal(BrowseHeroSize.Compact, Create().Size);
+    }
+
+    [Fact]
+    public void AtFirst_TheHeroIsCompact_AndNothingIsWritten()
+    {
+        var setting = Create();
+
+        Assert.Equal(BrowseHeroSize.Compact, setting.Size);
+        Assert.False(File.Exists(FilePath));
+    }
+
+    [Fact]
+    public async Task SetToFull_TheHeroStaysFull_AtTheNextStart_AndCompactAgainOnceSetBack()
+    {
+        var setting = Create();
+
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+
+        Assert.Equal(BrowseHeroSize.Full, setting.Size);
+        Assert.Equal(BrowseHeroSize.Full, Create().Size);
+
+        await setting.SetSizeAsync(BrowseHeroSize.Compact);
+
+        Assert.Equal(BrowseHeroSize.Compact, setting.Size);
+        Assert.Equal(BrowseHeroSize.Compact, Create().Size);
+    }
+
+    [Fact]
+    public async Task TheFile_NamesTheServerAndTheProfileOfAFullHero_BesideTheSwitch()
+    {
+        await Create().SetSizeAsync(BrowseHeroSize.Full);
+
+        using var file = JsonDocument.Parse(await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken));
+        Assert.Equal(["srv1/7"], file.RootElement.GetProperty("full_for").EnumerateArray().Select(e => e.GetString()));
+        Assert.Empty(file.RootElement.GetProperty("hidden_for").EnumerateArray());
+    }
+
+    [Fact]
+    public void AFileFromBeforeTheSizeCouldBeChosen_MeansCompact_AndKeepsItsSwitch()
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(FilePath, """{ "hidden_for": [ "srv1/7" ] }""");
+
+        var setting = Create();
+
+        Assert.Equal(BrowseHeroSize.Compact, setting.Size);
+        Assert.False(setting.IsShown);
+    }
+
+    [Theory]
+    [InlineData("""{ "full_for": null }""")]
+    [InlineData("""{ "full_for": [ null, "srv1/8" ] }""")]
+    [InlineData("""{ "hidden_for": [], "full_for": [] }""")]
+    public void AFileThatNamesNoFullHeroForTheProfile_MeansCompact(string json)
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(FilePath, json);
+
+        Assert.Equal(BrowseHeroSize.Compact, Create().Size);
+    }
+
+    [Fact]
+    public async Task TheSizeAndTheSwitch_AreKeptSideBySide()
+    {
+        var setting = Create();
+        await setting.SetShownAsync(false);
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+
+        var next = Create();
+        Assert.False(next.IsShown);
+        Assert.Equal(BrowseHeroSize.Full, next.Size);
+
+        await next.SetShownAsync(true);
+
+        var last = Create();
+        Assert.True(last.IsShown);
+        Assert.Equal(BrowseHeroSize.Full, last.Size);
+    }
+
+    [Fact]
+    public async Task EachProfile_HasItsOwnSize()
+    {
+        var setting = Create();
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+        var changed = new List<string?>();
+        setting.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+
+        Assert.Equal(BrowseHeroSize.Compact, setting.Size);
+        Assert.Contains(nameof(BrowseHeroSetting.Size), changed);
+
+        _session.ProfileId = "7";
+        _session.RaiseChanged();
+
+        Assert.Equal(BrowseHeroSize.Full, setting.Size);
+    }
+
+    [Fact]
+    public async Task WithoutAProfile_TheSizeStaysCompact_AndNothingIsWritten()
+    {
+        _session.ProfileId = null;
+        var setting = Create();
+
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+
+        Assert.Equal(BrowseHeroSize.Compact, setting.Size);
+        Assert.False(File.Exists(FilePath));
+    }
+
+    [Fact]
+    public void TheSettingsChoices_AreCompactAndFull_WithCompactChosenAtFirst()
+    {
+        using var page = new TitlePreviewSettingsViewModel(Create());
+
+        Assert.Equal(["Compact", "Full"], page.Sizes.Select(choice => choice.Label));
+        Assert.Equal("Compact", Assert.Single(page.Sizes, choice => choice.IsSelected).Label);
+    }
+
+    [Fact]
+    public async Task PickingFull_SavesIt_AndShowsItChosen()
+    {
+        var setting = Create();
+        using var page = new TitlePreviewSettingsViewModel(setting);
+        var full = page.Sizes[1];
+
+        await full.PickCommand.ExecuteAsync(null);
+        await setting.Saving;
+
+        Assert.Equal("Full", Assert.Single(page.Sizes, choice => choice.IsSelected).Label);
+        // The same choices while the pick changes, so focus stays on the one picked.
+        Assert.Same(full, page.Sizes[1]);
+        Assert.Equal(BrowseHeroSize.Full, Create().Size);
+    }
+
+    [Fact]
+    public async Task TheSettingsChoices_ShowTheSizeOfTheProfileActing()
+    {
+        var setting = Create();
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+        using var page = new TitlePreviewSettingsViewModel(setting);
+        Assert.Equal("Full", Assert.Single(page.Sizes, choice => choice.IsSelected).Label);
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+
+        Assert.Equal("Compact", Assert.Single(page.Sizes, choice => choice.IsSelected).Label);
+    }
+
+    [Fact]
+    public async Task TheSettingsChoices_LetGoOfTheSetting_AsThePageLeaves()
+    {
+        var setting = Create();
+        var page = new TitlePreviewSettingsViewModel(setting);
+
+        page.Dispose();
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+
+        Assert.Equal("Compact", Assert.Single(page.Sizes, choice => choice.IsSelected).Label);
     }
 }
