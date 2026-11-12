@@ -8,8 +8,8 @@
     web's compiled catalog, one message per key. For every language the script gets the pinned file, checks its SHA-256
     and keeps only the keys src/Granary.Core/Texts/Catalogs/web-keys.txt lists, each message unchanged. It writes them
     to src/Granary.Core/Texts/Catalogs/web/<tag>.json, UTF-8 without BOM, keys in ordinal order, indented by two spaces.
-    Nothing in the repository changes until every file is checked, and a file whose content stays the same is left
-    alone, so a second run changes nothing.
+    Nothing in the repository changes until every file is checked and every changed file is written whole beside its
+    place, and a file whose content stays the same is left alone, so a second run changes nothing.
 
     A listed key missing from English stops the script: English is every language's fallback. A listed key missing from
     another language is only reported, since that language then shows the English text.
@@ -770,14 +770,32 @@ if ($repin) {
 }
 
 # Writes only what changed, decided for every file first. A checkout may hold the files with CRLF line ends; that alone
-# is no change. The lock comes last, so a run that stops halfway leaves the old pin to run again from.
+# is no change. Each changed file is first written whole beside its place, and only then are they moved in, the lock
+# last: a run that fails while writing changes nothing, and one that stops between two moves leaves whole files and
+# the old pin to run again from. The script is run by hand on tracked files, so it takes no lock against a second run
+# at the same time; `git restore` undoes whatever a run left.
 $writes = @($outputs.Keys | Where-Object { -not (Test-SameText -Path $_ -Text $outputs[$_]) })
 [void][IO.Directory]::CreateDirectory($OutDir)
 $changed = 0
-foreach ($path in $writes) {
-    [IO.File]::WriteAllText($path, $outputs[$path], $Utf8NoBom)
-    Write-Host "Wrote $([IO.Path]::GetFileName($path))"
-    $changed++
+$staged = [ordered]@{}
+try {
+    foreach ($path in $writes) {
+        $beside = "$path.sync-tmp"
+        $staged[$path] = $beside
+        [IO.File]::WriteAllText($beside, $outputs[$path], $Utf8NoBom)
+    }
+    foreach ($path in $writes) {
+        Move-Item -LiteralPath $staged[$path] -Destination $path -Force
+        Write-Host "Wrote $([IO.Path]::GetFileName($path))"
+        $changed++
+    }
+}
+finally {
+    foreach ($beside in $staged.Values) {
+        if (Test-Path -LiteralPath $beside) {
+            Remove-Item -LiteralPath $beside
+        }
+    }
 }
 # A language the lock no longer names leaves no catalog behind.
 foreach ($file in @(Get-ChildItem -LiteralPath $OutDir -Filter '*.json' -File)) {
