@@ -256,7 +256,8 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
 
         await ShownAsync(0);
         await ServerPlaybackFixture.Until(() => LogLines("A listener of the server's activity failed") >= 1, "the failure in the log");
-        Assert.True(Volatile.Read(ref later) >= 1);
+        // The failure is logged before the next listener is called: waited for, not read at once.
+        await ServerPlaybackFixture.Until(() => Volatile.Read(ref later) >= 1, "the listener after the one that failed");
     }
 
     [Fact]
