@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Settings;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.Logging;
 
@@ -56,12 +57,19 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
     public SubtitleAppearanceEditor Look { get; } = new();
 
     [ObservableProperty]
-    public partial IReadOnlyList<SettingChoice> SpokenLanguageChoices { get; private set; } = LanguageChoices("No preference");
+    public partial IReadOnlyList<SettingChoice> SpokenLanguageChoices { get; private set; } =
+        LanguageChoices(AppText.Get("settingsManifest.playback.audio_language.unsetLabel"));
 
     [ObservableProperty]
-    public partial IReadOnlyList<SettingChoice> SubtitleLanguageChoices { get; private set; } = LanguageChoices("None");
+    public partial IReadOnlyList<SettingChoice> SubtitleLanguageChoices { get; private set; } =
+        LanguageChoices(AppText.Get("settingsManifest.playback.subtitle_language.unsetLabel"));
 
-    public IReadOnlyList<SettingChoice> SubtitleModeChoices { get; } = [new("auto", "Auto"), new("always", "Always on"), new("off", "Off")];
+    public IReadOnlyList<SettingChoice> SubtitleModeChoices { get; } =
+    [
+        new("auto", AppText.Get("settingsManifest.playback.subtitle_mode.option.auto")),
+        new("always", AppText.Get("settingsManifest.playback.subtitle_mode.option.always")),
+        new("off", AppText.Get("settingsManifest.playback.subtitle_mode.option.off")),
+    ];
 
     [ObservableProperty]
     public partial bool IsLoading { get; private set; } = true;
@@ -89,8 +97,15 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(OffsetText), nameof(CanOffsetEarlier), nameof(CanOffsetLater), nameof(CanResetOffset))]
     public partial int OffsetMs { get; private set; }
 
-    /// <summary>"+300 ms", "0 ms", "−200 ms".</summary>
-    public string OffsetText => OffsetMs == 0 ? "0 ms" : (OffsetMs > 0 ? "+" : "−") + Math.Abs(OffsetMs).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+    /// <summary>"+300 ms", "0 ms", "−200 ms": the signed number in the web's offset message.</summary>
+    public string OffsetText => AppText.Get("web.settings.subtitleAppearance.timing.offsetValue", ("offset", OffsetMs == 0
+        ? "0"
+        : (OffsetMs > 0 ? "+" : "−") + Math.Abs(OffsetMs).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+    /// <summary>The step buttons' names for screen readers: "Show subtitles 100 ms earlier", and later.</summary>
+    public string OffsetEarlierName => AppText.Get("web.settings.subtitleAppearance.timing.earlier", ("ms", OffsetStepMs));
+
+    public string OffsetLaterName => AppText.Get("web.settings.subtitleAppearance.timing.later", ("ms", OffsetStepMs));
 
     public bool CanOffsetEarlier => OffsetMs > -MaxOffsetMs;
 
@@ -111,7 +126,7 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken) || ex is InvalidOperationException)
         {
             _logger.LogInformation("The language and subtitle settings could not be read: {Failure}", ApiFailureText.Describe(ex));
-            ErrorMessage = "Could not load the language and subtitle settings. " + ApiFailureText.Describe(ex);
+            ErrorMessage = AppText.Get("granary.settings.subtitles.loadFailed", ("reason", ApiFailureText.Describe(ex)));
         }
         finally
         {
@@ -129,7 +144,7 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         {
             if (!saved)
             {
-                ErrorMessage = "Failed to save subtitle appearance";
+                ErrorMessage = AppText.Get("web.settings.subtitleAppearance.saveFailed");
                 return;
             }
             _sources[SettingKeys.SubtitleAppearance] = SettingScopes.Profile;
@@ -155,7 +170,7 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         {
             if (!saved)
             {
-                ErrorMessage = "Failed to reset subtitle appearance";
+                ErrorMessage = AppText.Get("web.settings.subtitleAppearance.resetFailed");
                 return;
             }
             _sources[SettingKeys.SubtitleAppearance] = "default";
@@ -239,7 +254,7 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         if (value is not null)
         {
             Save(SettingKeys.AudioLanguage, value, () => SelectedSpokenLanguage, v => SelectedSpokenLanguage = v,
-                value.Value.Length == 0 ? null : SettingValues.Json(value.Value), "Failed to save language");
+                value.Value.Length == 0 ? null : SettingValues.Json(value.Value), AppText.Get("web.settings.subtitleAppearance.languageSaveFailed"));
         }
     }
 
@@ -248,7 +263,7 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         if (value is not null)
         {
             Save(SettingKeys.SubtitleLanguage, value, () => SelectedSubtitleLanguage, v => SelectedSubtitleLanguage = v,
-                value.Value.Length == 0 ? null : SettingValues.Json(value.Value), "Failed to save language");
+                value.Value.Length == 0 ? null : SettingValues.Json(value.Value), AppText.Get("web.settings.subtitleAppearance.languageSaveFailed"));
         }
     }
 
@@ -275,13 +290,15 @@ public sealed partial class LanguageSettingsViewModel : ObservableObject
         {
             _applying = false;
         }
-        return Save(SettingKeys.SubtitleSyncMs, offset, () => OffsetMs, v => OffsetMs = v, SettingValues.Json(offset), "Failed to save subtitle offset");
+        return Save(SettingKeys.SubtitleSyncMs, offset, () => OffsetMs, v => OffsetMs = v, SettingValues.Json(offset),
+            AppText.Get("web.settings.subtitleAppearance.timing.saveFailed"));
     }
 
     // Saved after the saves before it; a refusal puts the control back to what the server holds, unless the viewer
     // has moved it on since. A null value is a reset.
-    private Task Save<T>(string key, T value, Func<T> shown, Action<T> show, JsonElement? json, string failure = "Failed to save subtitle setting")
+    private Task Save<T>(string key, T value, Func<T> shown, Action<T> show, JsonElement? json, string? failure = null)
     {
+        failure ??= AppText.Get("web.settings.subtitleAppearance.subtitleSettingSaveFailed");
         if (_applying)
         {
             return Task.CompletedTask;

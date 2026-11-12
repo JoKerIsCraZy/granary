@@ -639,6 +639,21 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Empty(_settings.Writes);
     }
 
+    [Fact]
+    public async Task ALanguageTheServerRefuses_GoesBack_InTheWebsWords()
+    {
+        _settings.Set(SettingKeys.AudioLanguage, "\"de\"");
+        var page = Language();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        _settings.Refuses = true;
+
+        page.SelectedSpokenLanguage = page.SpokenLanguageChoices.Single(c => c.Value == "fr");
+        await Until(() => page.ErrorMessage.Length > 0);
+
+        Assert.Equal("de", page.SelectedSpokenLanguage?.Value);
+        Assert.Equal("Failed to save language setting", page.ErrorMessage);
+    }
+
     private const string ProbePath = "api/v2/playback/bandwidth-probe";
 
     private static string ConnectionWithProbe(string? probe) =>
