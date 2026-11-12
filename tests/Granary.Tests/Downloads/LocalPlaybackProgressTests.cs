@@ -23,6 +23,8 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     [Fact]
     public async Task ALocalPlay_RecordsEvery10s_AndAtTheStop()
     {
+        // Nothing leaves the queue here: what was recorded stays to be looked at.
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
         var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
         Frame(9.5);
 
@@ -57,6 +59,7 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     [Fact]
     public async Task ATitleLeftPaused_DoesNotGrowNewerByItself()
     {
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
         await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
         Frame(60, paused: true);
         _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
@@ -65,7 +68,7 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         // An hour paused: watched on from another device meanwhile, that position is the newer one.
         _fixture.Harness.Time.Advance(TimeSpan.FromHours(1));
 
-        Assert.Equal(recorded with { State = Entry.State }, Entry);
+        Assert.Equal((recorded.PositionMs, recorded.UpdatedAt), (Entry.PositionMs, Entry.UpdatedAt));
     }
 
     [Fact]
