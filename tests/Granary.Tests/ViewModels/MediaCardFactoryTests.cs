@@ -190,7 +190,7 @@ public sealed class MediaCardFactoryTests
     {
         var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp), Server);
 
-        Assert.Equal("Harbor Lights, Season 2 Episode 1 • Homecoming, new season", card.AccessibleName);
+        Assert.Equal("Harbor Lights, Season 2 Episode 1 • Homecoming, New Season", card.AccessibleName);
     }
 
     [Fact]

@@ -689,6 +689,12 @@
       "value": "Username"
     }
   ],
+  "web.calendar.event.badge.seasonPremiere": [
+    {
+      "type": 0,
+      "value": "New Season"
+    }
+  ],
   "web.catalog.carousel.exploreAll": [
     {
       "type": 0,
@@ -753,6 +759,58 @@
       "value": "Done"
     }
   ],
+  "web.common.format.runtime.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "h "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "m"
+    }
+  ],
+  "web.common.format.runtime.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "m"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "m"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -769,6 +827,316 @@
     {
       "type": 0,
       "value": "Loading more"
+    }
+  ],
+  "web.detail.actions.markSeasonUnwatched": [
+    {
+      "type": 0,
+      "value": "Mark Season Unwatched"
+    }
+  ],
+  "web.detail.actions.markSeasonWatched": [
+    {
+      "type": 0,
+      "value": "Mark Season Watched"
+    }
+  ],
+  "web.detail.actions.markSeriesUnwatched": [
+    {
+      "type": 0,
+      "value": "Mark Series Unwatched"
+    }
+  ],
+  "web.detail.actions.markSeriesWatched": [
+    {
+      "type": 0,
+      "value": "Mark Series Watched"
+    }
+  ],
+  "web.detail.actions.markUnwatched": [
+    {
+      "type": 0,
+      "value": "Mark Unwatched"
+    }
+  ],
+  "web.detail.actions.markWatched": [
+    {
+      "type": 0,
+      "value": "Mark Watched"
+    }
+  ],
+  "web.detail.boxSet.cardLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ", box set of "
+    },
+    {
+      "type": 1,
+      "value": "films"
+    }
+  ],
+  "web.detail.boxSet.continueTitle": [
+    {
+      "type": 0,
+      "value": "Continue · "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.detail.boxSet.filmCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " film"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " films"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.boxSet.label": [
+    {
+      "type": 0,
+      "value": "Box set"
+    }
+  ],
+  "web.detail.boxSet.playTitle": [
+    {
+      "type": 0,
+      "value": "Play "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.detail.boxSet.thisFilm": [
+    {
+      "type": 0,
+      "value": "This film"
+    }
+  ],
+  "web.detail.boxSet.watchedFraction": [
+    {
+      "type": 1,
+      "value": "played"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " watched"
+    }
+  ],
+  "web.detail.boxSet.watchedOf": [
+    {
+      "type": 1,
+      "value": "played"
+    },
+    {
+      "type": 0,
+      "value": " of "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " watched"
+    }
+  ],
+  "web.detail.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.episodes.nowViewing": [
+    {
+      "type": 0,
+      "value": "Now Viewing"
+    }
+  ],
+  "web.detail.seasons.episodeCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episode"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episodes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.seasons.numbered": [
+    {
+      "type": 0,
+      "value": "Season "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    }
+  ],
+  "web.detail.seasons.watchedProgress": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episode"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episodes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.home.continueWatching.episodeLabelWithTitle": [
+    {
+      "type": 0,
+      "value": "Season "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " Episode "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " • "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.home.continueWatching.minutesLeft": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min left"
+    }
+  ],
+  "web.home.continueWatching.nextEpisode": [
+    {
+      "type": 0,
+      "value": "Next Episode"
     }
   ],
   "web.home.dismiss.removeFailed": [
@@ -903,16 +1271,86 @@
       "value": "Home"
     }
   ],
+  "web.home.sectionRow.seriesType": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
+  "web.item.card.play": [
+    {
+      "type": 0,
+      "value": "Play "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.item.card.watched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.item.menu.addToFavorites": [
+    {
+      "type": 0,
+      "value": "Add to Favorites"
+    }
+  ],
+  "web.item.menu.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "Add to Watchlist"
+    }
+  ],
+  "web.item.menu.moreActions": [
+    {
+      "type": 0,
+      "value": "More actions"
+    }
+  ],
+  "web.item.menu.notInterested": [
+    {
+      "type": 0,
+      "value": "Not Interested"
+    }
+  ],
+  "web.item.menu.playFromBeginning": [
+    {
+      "type": 0,
+      "value": "Play from Beginning"
+    }
+  ],
   "web.item.menu.removeFromContinueWatching": [
     {
       "type": 0,
       "value": "Remove from Continue Watching"
     }
   ],
+  "web.item.menu.removeFromFavorites": [
+    {
+      "type": 0,
+      "value": "Remove from Favorites"
+    }
+  ],
   "web.item.menu.removeFromNextUp": [
     {
       "type": 0,
       "value": "Remove from Next Up"
+    }
+  ],
+  "web.item.menu.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "Remove from Watchlist"
+    }
+  ],
+  "web.item.menu.showInRecommendations": [
+    {
+      "type": 0,
+      "value": "Show in Recommendations"
     }
   ],
   "web.markers.save": [
@@ -1185,6 +1623,46 @@
     {
       "type": 0,
       "value": "Top Genres"
+    }
+  ],
+  "web.requests.card.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "Add to Watchlist"
+    }
+  ],
+  "web.requests.card.addToWatchlistFor": [
+    {
+      "type": 0,
+      "value": "Add "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " to your watchlist"
+    }
+  ],
+  "web.requests.card.onWatchlist": [
+    {
+      "type": 0,
+      "value": "On Watchlist"
+    }
+  ],
+  "web.requests.card.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "Remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " from your watchlist"
     }
   ],
   "web.search.label": [

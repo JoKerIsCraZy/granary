@@ -11,6 +11,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts"
     SizeChanged="OnSizeChanged"
     PointerEntered="OnPointerEntered"
     PointerMoved="OnPointerMoved"
@@ -98,7 +99,7 @@
                         <TextBlock x:Name="StatusText" Style="{StaticResource SiloBadgeTextStyle}" />
                     </Border>
                     <Border x:Name="WatchedMark" Width="22" Height="22" CornerRadius="11" HorizontalAlignment="Right"
-                            Background="{StaticResource SiloWatchedBrush}" AutomationProperties.Name="Watched">
+                            Background="{StaticResource SiloWatchedBrush}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.item.card.watched')}">
                         <FontIcon Glyph="&#xE73E;" FontSize="12" Foreground="White" />
                     </Border>
                 </StackPanel>
@@ -130,7 +131,7 @@
                             <Ellipse Fill="{StaticResource SiloOnPrimaryBadgeBrush}" />
                         </Grid>
                         <!-- The card's name says it already ("…, now viewing"). -->
-                        <TextBlock Text="NOW VIEWING" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="80" TextLineBounds="Tight"
+                        <TextBlock Text="{x:Bind NowViewingText}" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="80" TextLineBounds="Tight"
                                    Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" VerticalAlignment="Center"
                                    AutomationProperties.AccessibilityView="Raw" />
                     </StackPanel>
@@ -149,7 +150,7 @@
                 <Border x:Name="ThisFilmPill" Margin="0,0,0,11" Padding="10,6" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                         CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Background="#D90E0E10">
                     <!-- The card's name says it already ("…, this film"). -->
-                    <TextBlock Text="THIS FILM" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
+                    <TextBlock Text="{x:Bind ThisFilmText}" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
                                Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.AccessibilityView="Raw" />
                 </Border>
             </Border>
@@ -162,7 +163,7 @@
             <Grid x:Name="BoxSetMarks" x:Load="False" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
                 <Border Margin="10" Padding="10,5" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="{StaticResource SiloPillCornerRadius}"
                         controls:Pill.IsEnabled="True" Background="#661C1C20" BorderBrush="#26FFFFFF" BorderThickness="1">
-                    <TextBlock Text="BOX SET" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
+                    <TextBlock Text="{x:Bind BoxSetLabel}" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
                                Foreground="{StaticResource SiloForegroundBrush}" />
                 </Border>
                 <Border x:Name="BoxSetCount" Margin="0,0,8,10" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Bottom" CornerRadius="6"
@@ -175,7 +176,7 @@
             <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
                          Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"
-                         AutomationProperties.Name="Progress" />
+                         AutomationProperties.Name="{x:Bind t:AppText.Get('granary.card.progress')}" />
 
             <!--
                 While its grid selects (History's Select): the web's pick mark top left, an empty ring or the accent with a
@@ -194,8 +195,7 @@
                     <ScalarTransition Duration="0:0:0.15" />
                 </Grid.OpacityTransition>
                 <Button x:Name="PlayButton" Style="{StaticResource SiloCardPlayButtonStyle}" Width="40" Height="40"
-                        HorizontalAlignment="Center" VerticalAlignment="Center" Click="OnPlayClick"
-                        AutomationProperties.Name="Play">
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Click="OnPlayClick">
                     <FontIcon Glyph="&#xF5B0;" FontSize="15" Margin="2,0,0,0" />
                 </Button>
                 <StackPanel x:Name="ActionsPanel" Margin="10" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Left" VerticalAlignment="Bottom">
@@ -207,7 +207,8 @@
                     </Button>
                 </StackPanel>
                 <Button x:Name="MoreButton" Style="{StaticResource SiloCardActionButtonStyle}" Margin="10" HorizontalAlignment="Right"
-                        VerticalAlignment="Bottom" AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
+                        VerticalAlignment="Bottom" AutomationProperties.Name="{x:Bind t:AppText.Get('web.item.menu.moreActions')}"
+                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.item.menu.moreActions')}">
                     <FontIcon Glyph="&#xE712;" FontSize="15" RenderTransformOrigin="0.5,0.5">
                         <FontIcon.RenderTransform>
                             <RotateTransform Angle="90" />
@@ -216,9 +217,9 @@
                     <Button.Flyout>
                         <!-- Silo's web card menu, in its order; also on right-click, Shift+F10 or the menu key. -->
                         <MenuFlyout x:Name="MoreMenu" Placement="BottomEdgeAlignedRight" Opening="OnMoreOpening">
-                            <MenuFlyoutItem x:Name="MenuPlayFromBeginning" Text="Play from Beginning" Click="OnPlayFromBeginningClick" />
+                            <MenuFlyoutItem x:Name="MenuPlayFromBeginning" Text="{x:Bind t:AppText.Get('web.item.menu.playFromBeginning')}" Click="OnPlayFromBeginningClick" />
                             <MenuFlyoutItem x:Name="MenuWatched" Click="OnWatchedClick" />
-                            <MenuFlyoutItem x:Name="MenuResetProgress" Text="Reset Progress" Click="OnResetProgressClick" />
+                            <MenuFlyoutItem x:Name="MenuResetProgress" Text="{x:Bind t:AppText.Get('granary.card.resetProgress')}" Click="OnResetProgressClick" />
                             <MenuFlyoutItem x:Name="MenuFavorite" Click="OnFavoriteClick" />
                             <MenuFlyoutItem x:Name="MenuWatchlist" Click="OnWatchlistClick" />
                             <MenuFlyoutItem x:Name="MenuNotInterested" Click="OnNotInterestedClick" />

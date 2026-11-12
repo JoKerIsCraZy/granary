@@ -136,7 +136,7 @@ public sealed class ItemDetailBoxSetTests
         var current = Assert.Single(detail.BoxSetFilms, c => c.IsCurrent);
         Assert.Equal(MovieId, current.Id);
         Assert.Equal(CurrentMark.ThisFilm, current.CurrentMark);
-        Assert.Equal("Masterplan, 2026, this film", current.AccessibleName);
+        Assert.Equal("Masterplan, 2026, This film", current.AccessibleName);
         // The other films are cards as any row's: their year, their badges, their progress.
         Assert.Equal("Groundwork, 2019", detail.BoxSetFilms[0].AccessibleName);
         Assert.Equal("2160p", detail.BoxSetFilms[2].Overlay?.Resolution);

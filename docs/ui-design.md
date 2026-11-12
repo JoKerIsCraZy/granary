@@ -630,7 +630,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
-    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
+    readers hear "S04E04 · Title, …, Now Viewing". The row opens scrolled at once so that card is in its middle, or as far
     as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
@@ -696,7 +696,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     hairline and a pixel inside it) and "THIS FILM" (10 px semibold capitals 0.14 em apart, on the page's dark at 85 %),
     centred with its top 32 px above the poster's foot; its corners keep their badges. While the card shows bottom badges
     (the profile's rating, say), the pill stands 4 px above them instead, a departure from the web, where the two overlap. Screen readers hear "Masterplan,
-    2026, this film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
+    2026, This film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
     clicking it stays on the page, and as in the apps it has no play disc, buttons or menu, since the page's own buttons
     hold its state. Another film opens its page. It is asked for only while one of the profile's libraries has box sets
     on, as the web asks. The row shows nothing while it loads, for a movie in no box set, and on a server without box sets

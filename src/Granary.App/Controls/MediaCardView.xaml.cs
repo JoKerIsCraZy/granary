@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using Granary.Core.Overlays;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
@@ -111,6 +112,14 @@ public sealed partial class MediaCardView : UserControl
         TopBadges.Gap = BottomBadges.Gap = EdgeInset;
         Show(null);
     }
+
+    // The web's marks on a card, in capitals as its CSS shows them: an episode's own, a box set's film, a box set. Instance
+    // properties because the control's own x:Bind reads them.
+    public string NowViewingText => AppText.Upper(AppText.Get("web.detail.episodes.nowViewing"));
+
+    public string ThisFilmText => AppText.Upper(AppText.Get("web.detail.boxSet.thisFilm"));
+
+    public string BoxSetLabel => AppText.Upper(AppText.Get("web.detail.boxSet.label"));
 
     public MediaCard? Card
     {
@@ -463,14 +472,17 @@ public sealed partial class MediaCardView : UserControl
         TitleWatchlistIcon.IsChecked = state.InWatchlist;
         TitleWatchlistIcon.Foreground = Brush(state.InWatchlist ? "SiloPrimaryBrush" : "SiloForegroundBrush");
         AutomationProperties.SetName(TitleWatchlistButton,
-            state.InWatchlist ? $"Remove {card?.Title} from your watchlist" : $"Add {card?.Title} to your watchlist");
-        ToolTipService.SetToolTip(TitleWatchlistButton, state.InWatchlist ? "On Watchlist" : "Add to Watchlist");
+            state.InWatchlist
+                ? AppText.Get("web.requests.card.removeFromWatchlist", ("title", card?.Title))
+                : AppText.Get("web.requests.card.addToWatchlistFor", ("title", card?.Title)));
+        ToolTipService.SetToolTip(TitleWatchlistButton,
+            state.InWatchlist ? AppText.Get("web.requests.card.onWatchlist") : AppText.Get("web.requests.card.addToWatchlist"));
 
         bool canPlay = card is not null && MediaCardActions.CanPlay(card);
         bool canWatch = card is not null && MediaCardActions.CanMarkWatched(card);
         bool canCollect = card is not null && MediaCardActions.CanCollect(card);
         PlayButton.Visibility = canPlay ? Visibility.Visible : Visibility.Collapsed;
-        AutomationProperties.SetName(PlayButton, "Play " + card?.Title);
+        AutomationProperties.SetName(PlayButton, AppText.Get("web.item.card.play", ("title", card?.Title)));
 
         string watched = card is null ? "" : DetailFacts.WatchedLabel(card.Type, state.IsWatched);
         // Silo's eye: open and green once watched, struck through before.
@@ -481,7 +493,7 @@ public sealed partial class MediaCardView : UserControl
         MenuWatched.Text = watched;
         MenuWatched.Visibility = Visible(canWatch);
 
-        string favorite = state.IsFavorite ? "Remove from Favorites" : "Add to Favorites";
+        string favorite = state.IsFavorite ? AppText.Get("web.item.menu.removeFromFavorites") : AppText.Get("web.item.menu.addToFavorites");
         FavoriteIcon.Glyph = state.IsFavorite ? "" : "";
         // Red whatever the accent, as the web's text-red-500 fill-red-500 (MediaItemMenu.tsx).
         FavoriteIcon.Foreground = Brush(state.IsFavorite ? "SiloFavoriteBrush" : "SiloForegroundBrush");
@@ -489,7 +501,7 @@ public sealed partial class MediaCardView : UserControl
         FavoriteButton.Visibility = Visible(canCollect);
         MenuFavorite.Text = favorite;
         MenuFavorite.Visibility = Visible(canCollect);
-        MenuWatchlist.Text = state.InWatchlist ? "Remove from Watchlist" : "Add to Watchlist";
+        MenuWatchlist.Text = state.InWatchlist ? AppText.Get("web.item.menu.removeFromWatchlist") : AppText.Get("web.item.menu.addToWatchlist");
         MenuWatchlist.Visibility = Visible(canCollect);
 
         bool fromBeginning = card is not null && MediaCardActions.CanPlayFromBeginning(card, state);
@@ -497,7 +509,7 @@ public sealed partial class MediaCardView : UserControl
         bool notInterested = card is not null && MediaCardActions.CanMarkNotInterested(card);
         MenuPlayFromBeginning.Visibility = Visible(fromBeginning);
         MenuResetProgress.Visibility = Visible(resetProgress);
-        MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
+        MenuNotInterested.Text = state.IsNotInterested ? AppText.Get("web.item.menu.showInRecommendations") : AppText.Get("web.item.menu.notInterested");
         MenuNotInterested.Visibility = Visible(notInterested);
         var row = card is null ? null : RowOf(this);
         if (!_gridFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)

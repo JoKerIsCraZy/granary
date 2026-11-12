@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Detail;
 
@@ -8,12 +9,12 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static class DetailText
 {
-    /// <summary>"1h 49m", "52m" (web: formatRuntimeMinutes); null without a runtime.</summary>
+    /// <summary>"1h 49m", "52m", in the web's words (lib/mediaFormat.ts, formatRuntimeMinutes); null without a runtime.</summary>
     public static string? Runtime(int? minutes) => minutes switch
     {
         null or <= 0 => null,
-        >= 60 => string.Create(CultureInfo.InvariantCulture, $"{minutes / 60}h {minutes % 60}m"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{minutes}m"),
+        >= 60 => AppText.Get("web.common.format.runtime.hoursMinutes", ("hours", minutes.Value / 60), ("minutes", minutes.Value % 60)),
+        _ => AppText.Get("web.common.format.runtime.minutes", ("count", minutes.Value), ("count_text", AppText.Number(minutes.Value))),
     };
 
     /// <summary>The year of a <c>YYYY-MM-DD</c> date, or null when it has none.</summary>

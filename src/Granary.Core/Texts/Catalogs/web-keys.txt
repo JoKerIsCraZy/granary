@@ -127,6 +127,14 @@ web.auth.password
 web.auth.signIn
 web.auth.username
 
+# A card's words, as the web's ItemCard, ContinueWatchingCard, SectionItemCard, BoxSetCard, CardWatchedBadge,
+# CardPlayOverlay, MediaItemMenu and a Requests card's watchlist toggle (components/requests): src/Granary.App/Controls/
+# MediaCardView.xaml(.cs) and src/Granary.Core/ViewModels/Cards/MediaCard.cs and MediaCardFactory.cs. The episode
+# and season cards and the runtime in the web's EpisodeCarousel words (lib/episodeCardLabels.ts, lib/mediaFormat.ts),
+# a box set's in lib/boxSets.ts (src/Granary.Core/ViewModels/BoxSetText.cs), the watched action as the web's
+# pages/ItemDetail/watchedState.ts (DetailFacts.WatchedLabel).
+web.calendar.event.badge.seasonPremiere
+
 # A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
 # as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
 # src/Granary.App/Views/SectionPage.xaml and src/Granary.Core/ViewModels/SectionViewModel.cs.
@@ -143,6 +151,10 @@ web.catalog.page.catalogSubtitle
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.common.format.runtime.hoursMinutes
+web.common.format.runtime.minutes
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
@@ -151,6 +163,30 @@ web.common.ui.loadError.timeout
 
 # The spinner under a grid that loads more, as the web's LoadMoreOnScroll: src/Granary.App/Views/SectionPage.xaml.
 web.common.ui.loadMore.loading
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.detail.actions.markSeasonUnwatched
+web.detail.actions.markSeasonWatched
+web.detail.actions.markSeriesUnwatched
+web.detail.actions.markSeriesWatched
+web.detail.actions.markUnwatched
+web.detail.actions.markWatched
+web.detail.boxSet.cardLabel
+web.detail.boxSet.continueTitle
+web.detail.boxSet.filmCount
+web.detail.boxSet.label
+web.detail.boxSet.playTitle
+web.detail.boxSet.thisFilm
+web.detail.boxSet.watchedFraction
+web.detail.boxSet.watchedOf
+web.detail.episodeCode
+web.detail.episodes.nowViewing
+web.detail.seasons.episodeCount
+web.detail.seasons.numbered
+web.detail.seasons.watchedProgress
+web.home.continueWatching.episodeLabelWithTitle
+web.home.continueWatching.minutesLeft
+web.home.continueWatching.nextEpisode
 
 # Home, in the words of the web's Home page (pages/Home.tsx), its banner (components/HeroBanner.tsx, heroMetadata.ts)
 # and its card menu (components/MediaItemMenu.tsx, hooks/queries/homeDismissals.ts):
@@ -172,8 +208,22 @@ web.home.hero.slideNumber
 web.home.page.loadFailedBody
 web.home.page.loadFailedTitle
 web.home.page.title
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
+# Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
+web.home.sectionRow.seriesType
+web.item.card.play
+web.item.card.watched
+web.item.menu.addToFavorites
+web.item.menu.addToWatchlist
+web.item.menu.moreActions
+web.item.menu.notInterested
+web.item.menu.playFromBeginning
 web.item.menu.removeFromContinueWatching
+web.item.menu.removeFromFavorites
 web.item.menu.removeFromNextUp
+web.item.menu.removeFromWatchlist
+web.item.menu.showInRecommendations
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
@@ -217,6 +267,12 @@ web.recommendations.subtitlePersonal
 web.recommendations.tasteProfile
 web.recommendations.title
 web.recommendations.topGenres
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.requests.card.addToWatchlist
+web.requests.card.addToWatchlistFor
+web.requests.card.onWatchlist
+web.requests.card.removeFromWatchlist
 
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.
