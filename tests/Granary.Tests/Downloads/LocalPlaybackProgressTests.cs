@@ -238,6 +238,40 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFileThatBreaksOffWhereItWasLastRecordedPastNineTenths_StillGoesOnFromThere()
+    {
+        _fixture.GoOffline();
+        await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(6600);
+        // Recorded on the way, as any position past nine tenths: the title would start over.
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        await Until(() => Record.ResumeMs == 0, "the download kept the position on the way");
+
+        // The file breaks off before the position moved on.
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "read error"));
+
+        await Until(() => Record.ResumeMs == 6_600_000, "the download kept where it broke off");
+        Assert.False(Record.IsWatched);
+        Assert.Equal(6_600_000, Entry.PositionMs);
+    }
+
+    [Fact]
+    public async Task AFileThatBreaksOffWhereItWasLastRecorded_IsNotRecordedAgain()
+    {
+        _fixture.GoOffline();
+        await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(1500, paused: true);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        var recorded = Entry;
+
+        // Paused for an hour, then the file would not play on: the position is the one known already, and grows no newer.
+        _fixture.Harness.Time.Advance(TimeSpan.FromHours(1));
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "read error"));
+
+        Assert.Equal((recorded.PositionMs, recorded.UpdatedAt), (Entry.PositionMs, Entry.UpdatedAt));
+    }
+
+    [Fact]
     public async Task AFileThatEndsLongBeforeItsLength_IsNotTheTitlesEnd()
     {
         _fixture.GoOffline();

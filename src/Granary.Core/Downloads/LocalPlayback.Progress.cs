@@ -30,6 +30,9 @@ public sealed partial class LocalPlayback
 
     // When it was recorded, as it was stamped.
     private DateTimeOffset? _recordedAt;
+
+    // It was recorded as a title left near its end: the next play starts over.
+    private bool _recordedStartsOver;
     private double? _engineDuration;
 
     // The record's writes, in the order the positions were recorded.
@@ -69,7 +72,10 @@ public sealed partial class LocalPlayback
             return;
         }
         double position = _position;
-        if (!double.IsFinite(position) || position <= 0 || (_recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd))
+        // Nothing new while the position stands, but for the title's end, and for a file that breaks off where its position
+        // was just recorded as one left near the end: that record would have the next play start over.
+        bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd && !(brokeOff && _recordedStartsOver);
+        if (!double.IsFinite(position) || position <= 0 || stands)
         {
             return;
         }
@@ -78,6 +84,7 @@ public sealed partial class LocalPlayback
         double duration = DurationSeconds ?? _engineDuration ?? 0;
         long positionMs = (long)Math.Round(position * 1000);
         bool startsOver = playedToTheEnd || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
+        _recordedStartsOver = startsOver;
         // Later than what this PC last recorded for the title or read of it from the server, also on a clock that was set
         // back meanwhile: the viewer is here now.
         var known = _store?.Find(record.Scope, record.DownloadId)?.Record.ResumeAt;

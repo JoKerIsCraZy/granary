@@ -1571,7 +1571,9 @@ device.
 - **Recording.** `LocalPlayback` records where the viewer is every `ProgressInterval` (10 s) once the first frame showed,
   at the stop, at the title's end and when the file breaks off, but only when the position moved by a second or more
   since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
-  device meanwhile. Nothing is recorded before the first frame. A title's times never go backwards: a position is
+  device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
+  recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
+  before the first frame. A title's times never go backwards: a position is
   stamped at least a millisecond after the one it replaces in the queue, after the last one this play recorded, and
   after the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
   now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get
