@@ -92,9 +92,12 @@ internal static class TextFixtures
     public static TextCatalog Catalog(string tag, string? web, string? granary) =>
         TextCatalog.Read(tag, Stream(web), Stream(granary));
 
-    /// <summary>A language made of the fixture catalogs, falling back to the English fixtures.</summary>
-    public static TextLanguage Language(string tag, ILogger? logger = null) =>
-        new(Catalog(tag), EnglishCatalog(), logger);
+    /// <summary>
+    /// A language made of the fixture catalogs, falling back to the English fixtures. It marks what is missing as its
+    /// build does, unless told.
+    /// </summary>
+    public static TextLanguage Language(string tag, ILogger? logger = null, bool? marksProblems = null) =>
+        new(Catalog(tag), EnglishCatalog(), logger, marksProblems ?? TextLanguage.MarksProblemsInThisBuild);
 
     private static MemoryStream? Stream(string? json) => json is null ? null : new MemoryStream(Encoding.UTF8.GetBytes(json));
 }

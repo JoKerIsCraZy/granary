@@ -12,6 +12,13 @@ namespace Granary.Core.Texts;
 /// </summary>
 public sealed class TextLanguage
 {
+    /// <summary>Whether what is missing shows marked (<c>[key]</c>, <c>{name}</c>): in a debug build, for whoever converts a text.</summary>
+#if DEBUG
+    internal const bool MarksProblemsInThisBuild = true;
+#else
+    internal const bool MarksProblemsInThisBuild = false;
+#endif
+
     private static readonly Dictionary<string, string> EmptyValues = [];
 
     private readonly TextCatalog _own;
@@ -20,13 +27,15 @@ public sealed class TextLanguage
     private readonly MessageFormatter _englishFormatter;
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, bool> _reported = new(StringComparer.Ordinal);
+    private readonly bool _marksProblems;
 
-    internal TextLanguage(TextCatalog own, TextCatalog english, ILogger? logger)
+    internal TextLanguage(TextCatalog own, TextCatalog english, ILogger? logger, bool marksProblems = MarksProblemsInThisBuild)
     {
         _own = own;
         _english = english;
-        _formatter = new MessageFormatter(own.Tag);
-        _englishFormatter = ReferenceEquals(own, english) ? _formatter : new MessageFormatter(english.Tag);
+        _marksProblems = marksProblems;
+        _formatter = new MessageFormatter(own.Tag, marksProblems);
+        _englishFormatter = ReferenceEquals(own, english) ? _formatter : new MessageFormatter(english.Tag, marksProblems);
         _logger = logger ?? NullLogger.Instance;
         Tag = own.Tag;
         IsRightToLeft = AppLanguage.IsRightToLeft(Tag);
@@ -165,12 +174,13 @@ public sealed class TextLanguage
         }
     }
 
-    private static TextOutput Missing(string key, bool keepRuns)
+    private TextOutput Missing(string key, bool keepRuns)
     {
         var output = new TextOutput(keepRuns);
-#if DEBUG
-        output.Append($"[{key}]");
-#endif
+        if (_marksProblems)
+        {
+            output.Append($"[{key}]");
+        }
         return output;
     }
 }

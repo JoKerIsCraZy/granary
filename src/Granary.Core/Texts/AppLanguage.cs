@@ -110,7 +110,8 @@ public static class AppLanguage
     };
 
     // A BCP 47 tag as Intl.Locale takes it ('_' read as '-'): a language, then an optional script and region, then
-    // variants and extensions, which matching ignores. A malformed tag selects nothing, as Intl.Locale refuses it.
+    // variants, extensions and private use, which matching ignores. A malformed tag selects nothing, as Intl.Locale
+    // refuses it.
     private static bool TryParse(string tag, out string language, out string? script, out string? region)
     {
         language = "";
@@ -135,9 +136,44 @@ public static class AppLanguage
         {
             region = parts[next++];
         }
-        // What follows must be variants (5-8 characters, or a digit and three) or start an extension (one character).
-        return next >= parts.Length || IsVariant(parts[next]) || parts[next].Length == 1;
+        return IsWellFormedRest(parts.AsSpan(next));
     }
+
+    // What follows the region: variants, each once; then extensions, each a singleton that comes once with at least one
+    // subtag of two characters or more (de-u is no tag); then private use, x with at least one subtag. What an extension's
+    // subtags say (-u-, -t-) is not checked further.
+    private static bool IsWellFormedRest(ReadOnlySpan<string> parts)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int next = 0;
+        while (next < parts.Length && IsVariant(parts[next]))
+        {
+            if (!seen.Add(parts[next++]))
+            {
+                return false;
+            }
+        }
+        while (next < parts.Length && parts[next].Length == 1 && !IsPrivateUse(parts[next]))
+        {
+            if (!seen.Add(parts[next++]))
+            {
+                return false;
+            }
+            int first = next;
+            while (next < parts.Length && parts[next].Length >= 2)
+            {
+                next++;
+            }
+            if (next == first)
+            {
+                return false;
+            }
+        }
+        // After x, every subtag is private: any one to eight characters, which all parts are already.
+        return next == parts.Length || (IsPrivateUse(parts[next]) && next + 1 < parts.Length);
+    }
+
+    private static bool IsPrivateUse(string part) => part is "x" or "X";
 
     private static bool IsRegion(string part) =>
         (part.Length == 2 && part.All(char.IsAsciiLetter)) || (part.Length == 3 && part.All(char.IsAsciiDigit));

@@ -89,6 +89,8 @@ public sealed class IcuMessageParserTests
     [InlineData("{}")]
     [InlineData("{name")]
     [InlineData("{name, plural, one {x}}")]
+    // formatjs reads an exact value as an integer (parser.ts, tryParseDecimalInteger), so =1.5 is a syntax error there too.
+    [InlineData("{name, plural, =1.5 {x} other {y}}")]
     [InlineData("{name, select, other {x} other {y}}")]
     [InlineData("{name, selectordinal, other {#th}}")]
     [InlineData("{name, date, short}")]

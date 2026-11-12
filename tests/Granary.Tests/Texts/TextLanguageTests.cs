@@ -140,6 +140,23 @@ public sealed class TextLanguageTests
         Assert.Equal("Because you enjoy true", TextFixtures.Language("en").Get("home.section.becauseYouEnjoy", [("genres", true)]));
     }
 
+    [Theory]
+    [InlineData("en", "1.2345", "1.235 seconds")]
+    [InlineData("en", "-1.2345", "-1.235 seconds")]
+    [InlineData("en", "1.0005", "1.001 seconds")]
+    [InlineData("en", "1234.5675", "1,234.568 seconds")]
+    [InlineData("en", "1.2344999", "1.234 seconds")]
+    [InlineData("de", "2.5005", "2,501 Sekunden")]
+    public void AGroupedNumber_RoundsAHalfAwayFromZero(string tag, string seconds, string expected)
+    {
+        // Intl.NumberFormat's default (roundingMode halfExpand), to three decimals: 1.2345 is 1.235, never 1.234.
+        decimal exact = decimal.Parse(seconds, System.Globalization.CultureInfo.InvariantCulture);
+        var language = TextFixtures.Language(tag);
+
+        Assert.Equal(expected, language.Get("player.seekInterval.choice", [("seconds", exact)]));
+        Assert.Equal(expected, language.Get("player.seekInterval.choice", [("seconds", (double)exact)]));
+    }
+
     [Fact]
     public void ANumberElement_IsGroupedInTheLanguagesCulture()
     {
@@ -207,32 +224,58 @@ public sealed class TextLanguageTests
         Assert.Equal("1.000 Dateien", TextFixtures.Language("de").Get("granary.test.files", [("count", 1000)]));
     }
 
-    [Fact]
-    public void AKeyMissingInEnglish_ShowsTheKeyInBrackets_AndIsLoggedOnce()
+    // What is missing shows marked in a debug build and as nothing in a release, as the web shows nothing. Both are
+    // tested in either build: CI runs the tests from a release build.
+    [Theory]
+    [InlineData(true, "[web.nowhere.toBeFound]")]
+    [InlineData(false, "")]
+    public void AKeyMissingInEnglish_ShowsTheKeyInBracketsWhereProblemsAreMarked_AndIsLoggedOnce(bool marksProblems, string expected)
     {
         var logs = new LogSink();
-        var german = TextFixtures.Language("de", logs.For<TextLanguage>());
+        var german = TextFixtures.Language("de", logs.For<TextLanguage>(), marksProblems);
 
         string first = german.Get("web.nowhere.toBeFound");
         string second = german.Get("web.nowhere.toBeFound");
 
-        // Tests run debug builds; a release build shows nothing instead, as the web does.
-        Assert.Equal("[web.nowhere.toBeFound]", first);
+        Assert.Equal(expected, first);
         Assert.Equal(first, second);
+        Assert.Equal(expected, string.Concat(german.Runs("web.nowhere.toBeFound").Select(run => run.Text)));
         Assert.Single(logs.Lines, line => line.Contains("web.nowhere.toBeFound", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void AMissingValue_ShowsItsPlaceholder_AndIsLoggedOnce()
+    [Theory]
+    [InlineData(true, "Because you enjoy {genres}")]
+    [InlineData(false, "Because you enjoy ")]
+    public void AMissingValue_ShowsItsPlaceholderWhereProblemsAreMarked_AndIsLoggedOnce(bool marksProblems, string expected)
     {
         var logs = new LogSink();
-        var english = TextFixtures.Language("en", logs.For<TextLanguage>());
+        var english = TextFixtures.Language("en", logs.For<TextLanguage>(), marksProblems);
 
         string text = english.Get("home.section.becauseYouEnjoy");
         english.Get("home.section.becauseYouEnjoy");
 
-        Assert.Equal("Because you enjoy {genres}", text);
+        Assert.Equal(expected, text);
         Assert.Single(logs.Lines, line => line.Contains("genres", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AMissingValueOfAFallbackMessage_IsMarkedTheSameWay()
+    {
+        var japanese = TextFixtures.Language("ja", marksProblems: true);
+
+        Assert.Equal("Because you enjoy {genres}", japanese.Get("home.section.becauseYouEnjoy"));
+    }
+
+    [Fact]
+    public void OnlyADebugBuild_MarksProblemsByItself()
+    {
+#if DEBUG
+        const string expected = "[web.nowhere.toBeFound]";
+#else
+        const string expected = "";
+#endif
+
+        Assert.Equal(expected, TextFixtures.Language("en").Get("web.nowhere.toBeFound"));
     }
 
     [Fact]
@@ -261,6 +304,18 @@ public sealed class TextLanguageTests
         Assert.Equal($"لأنك تحب {Fsi}Drama{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", "Drama")]));
         Assert.Equal("لأنك تحب 42", arabic.Get("home.section.becauseYouEnjoy", [("genres", 42)]));
         Assert.Equal($"في {Fsi}3-4{Pdi} مجموعات", arabic.Get("web.collections.copy.inCollections", [("count", 3), ("count_text", "3-4")]));
+    }
+
+    [Theory]
+    [InlineData(-5, "-5")]
+    [InlineData(1.5, "1.5")]
+    public void InArabic_ANumberWithASignOrADecimalMark_IsIsolated_AsOnTheWeb(double number, string printed)
+    {
+        // The web prints a number value first and isolates what is not digits alone (format.ts, prepareValues: "A range
+        // or a signed number keeps its isolate, or Arabic text would reorder it"), so the printed text decides, not the type.
+        var arabic = TextFixtures.Language("ar");
+
+        Assert.Equal($"لأنك تحب {Fsi}{printed}{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", number)]));
     }
 
     [Fact]

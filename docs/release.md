@@ -297,8 +297,28 @@ a listed key. A key another language lacks is only reported: that language shows
    Granary's interface does (AGENTS.md). Tests that expect the old English then fail; check the new wording on the web
    and change the tests to it.
 
-To add a language, add its tag to `sha256` in `texts.lock.json` with an empty value and run the script with `-Commit`
-(the pinned commit will do). The web's pseudo-locales `en-XA` and `ar-XB`, made for testing the web, are not taken.
+**A new language.** Only one Silo's web ships (`SHIPPED_LANGUAGES` in silo-server's `web/src/lib/appLocale.ts`). The
+web's pseudo-locales `en-XA` and `ar-XB`, made for testing the web, are not taken.
+
+1. Add its tag to `sha256` in `texts.lock.json` with an empty value and run the script with `-Commit` (the pinned
+   commit will do). That writes `src/Granary.Core/Texts/Catalogs/web/<tag>.json` and its SHA-256.
+2. Add the tag to `Tags` in `tests/Granary.Tests/Texts/WebCatalogFilesTests.cs`, which holds the catalogs and the lock
+   to that list.
+3. Teach `AppLanguage` (`src/Granary.Core/Texts/AppLanguage.cs`) the language, with tests in `AppLanguageTests`:
+   - `Shipped` gets the tag, in the web's order;
+   - `Match` gets its language and script, and `LikelyScript` the script CLDR's likely subtags give the language
+     (`new Intl.Locale(tag).maximize()` says it; where it differs by region, as Chinese does, list the regions);
+   - `IsRightToLeft`, when it is written right to left.
+4. Give `PluralRules.Category` its CLDR cardinal rule, with cases in `PluralRulesTests` checked against
+   `Intl.PluralRules`. Without one, every count takes `other`.
+5. Check its numbers in `MessageFormatter` against `Intl.NumberFormat`: .NET's culture gives the marks, but not a rule
+   such as Spanish's, which groups only from five digits on.
+6. Name it in the "Translations of Silo's web client" table of `THIRD_PARTY_NOTICES.md`.
+7. Translate Granary's own texts in `src/Granary.Core/Texts/Catalogs/granary/<tag>.json`; what is missing there shows
+   in English.
+
+The language ships then, and a debug build shows it with `--language <tag>`. Users get it once it is in
+`AppLanguage.Enabled` (docs/architecture.md, "Texts").
 
 The source catalog that Silo translates in, `Silo-Server/silo-translations`, is private; the web's generated files in
 silo-server are public, under the AGPL with Silo's platform exception (`THIRD_PARTY_NOTICES.md`).

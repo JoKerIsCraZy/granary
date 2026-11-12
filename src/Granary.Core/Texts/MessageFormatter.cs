@@ -16,10 +16,14 @@ internal sealed class MessageFormatter
     private readonly string _tag;
     private readonly NumberFormatInfo _numbers;
     private readonly bool _groupsFromFiveDigits;
+    private readonly bool _marksMissingValues;
 
-    public MessageFormatter(string tag)
+    /// <param name="tag">The language of the messages.</param>
+    /// <param name="marksMissingValues">Whether a value that was not given shows as <c>{name}</c>, else as nothing.</param>
+    public MessageFormatter(string tag, bool marksMissingValues)
     {
         _tag = tag;
+        _marksMissingValues = marksMissingValues;
         _numbers = Numbers(tag);
         // CLDR's minimumGroupingDigits 2: Spanish writes 1234 but 12.345, as Intl.NumberFormat does; .NET always groups.
         _groupsFromFiveDigits = AppLanguage.Match(tag) == "es";
@@ -143,14 +147,10 @@ internal sealed class MessageFormatter
         return number.ToString(ungrouped ? "0.###" : "#,0.###", _numbers);
     }
 
-    private static string Missing(string name, Call call)
+    private string Missing(string name, Call call)
     {
         call.Output.Problem($"has no value for {name}");
-#if DEBUG
-        return $"{{{name}}}";
-#else
-        return "";
-#endif
+        return _marksMissingValues ? $"{{{name}}}" : "";
     }
 
     private static string Invariant(decimal number) => number.ToString("0.############################", CultureInfo.InvariantCulture);
