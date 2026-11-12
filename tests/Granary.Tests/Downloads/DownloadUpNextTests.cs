@@ -171,4 +171,58 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
 
         Assert.Equal("ep_7", next?.ContentId);
     }
+
+    [Fact]
+    public async Task AServerThatSaysTheSeriesEndsHere_IsTakenAtItsWord_AlsoWithALaterEpisodeOnThisPC()
+    {
+        await AddDownloadsAsync();
+        // The profile may no longer see what follows episode 5 (a maturity limit, a library taken away), or the server
+        // dropped it: its lists end at 5, and name no later season.
+        _h.Silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 4, 5)));
+        _h.Silo.On(HttpMethod.Get, Seasons, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "season_number": 1 } ] }"""));
+
+        var next = await Create().NextEpisodeAsync(Episode5, Token);
+
+        // Episode 7 is on this PC and still plays from its row; it is not what follows.
+        Assert.Null(next);
+    }
+
+    [Fact]
+    public async Task AfterTheLastSpecial_TheFirstSeasonFollows_WithTheServerAndWithout()
+    {
+        const string specials = "api/v2/catalog/series/sr_1/seasons/0/episodes";
+        var special = new PlayingEpisode("ep_901", "sr_1", "Example Series", 0, 1);
+        await _h.AddPlayableAsync("dl_901", "ep_901", episode: 1, season: 0);
+        await _h.AddPlayableAsync("dl_5", "ep_5", episode: 5);
+
+        // With the server: its specials end at this one, and its lowest later season that is not specials is the first.
+        _h.Silo.On(HttpMethod.Get, specials, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "items": [ { "content_id": "ep_901", "season_number": 0, "episode_number": 1, "title": "Special", "files": [ { "file_id": "f1" } ] } ] }
+            """));
+        _h.Silo.On(HttpMethod.Get, Seasons, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "items": [ { "season_number": 0, "is_specials": true }, { "season_number": 1 } ] }"""));
+        _h.Silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 5, 6)));
+        Assert.Equal(("ep_5", 1, 5), await NextAsync());
+
+        // Without it, this PC goes on the same way: to the first season's first download.
+        _h.Silo.On(HttpMethod.Get, specials, ScriptedSilo.NetworkError());
+        Offline();
+        Assert.Equal(("ep_5", 1, 5), await NextAsync());
+
+        async Task<(string?, int?, int?)> NextAsync()
+        {
+            var next = await Create().NextEpisodeAsync(special, Token);
+            return (next?.ContentId, next?.SeasonNumber, next?.EpisodeNumber);
+        }
+    }
+
+    [Fact]
+    public async Task FromARegularSeason_NoSpecialFollows()
+    {
+        await _h.AddPlayableAsync("dl_5", "ep_5", episode: 5);
+        await _h.AddPlayableAsync("dl_901", "ep_901", episode: 9, season: 0);
+        Offline();
+
+        Assert.Null(await Create().NextEpisodeAsync(Episode5, Token));
+    }
 }

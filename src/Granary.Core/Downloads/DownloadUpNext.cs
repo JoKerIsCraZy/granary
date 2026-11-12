@@ -7,9 +7,10 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// The episodes around the playing one with downloads in mind (docs/architecture.md, "Playing a download"): the server's
 /// answer comes first, so a series goes on in its order, and the next episode plays from this PC when it is downloaded too
-/// (<see cref="DownloadPlaybacks"/>). When the server has none to name, as without a connection, the active profile's
-/// downloads of the series answer: the next one on this PC, as Silo's Android app goes on to an episode it holds. On Deck is
-/// the server's.
+/// (<see cref="DownloadPlaybacks"/>). When the server cannot be asked, as without a connection, the active profile's
+/// downloads of the series answer: the next one on this PC, as Silo's Android app goes on to an episode it holds. A server
+/// that answers "none" is taken at its word: the series ends there for this profile, also when a later episode is still on
+/// this PC (one the server has dropped, or no longer shows the profile). On Deck is the server's.
 /// </summary>
 public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISessionManager session, TimeProvider time) : IUpNextSource
 {
@@ -22,7 +23,8 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
     public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return ServerFirstAsync(server.NextEpisodeAsync(current, cancellationToken), () =>
+        // After the last special comes the first season, as the server's lists are read (UpNextSource): the same on this PC.
+        return ServerFirstAsync(server.FindNextAsync(current, cancellationToken), () =>
             Downloaded(current, e => e.Season > current.SeasonNumber || (e.Season == current.SeasonNumber && e.Episode > current.EpisodeNumber))
                 .OrderBy(e => e.Season).ThenBy(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }
@@ -31,7 +33,7 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
     public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return ServerFirstAsync(server.PreviousEpisodeAsync(current, cancellationToken), () =>
+        return ServerFirstAsync(server.FindPreviousAsync(current, cancellationToken), () =>
             Downloaded(current, e => e.Season == current.SeasonNumber && e.Episode < current.EpisodeNumber)
                 .OrderByDescending(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }
@@ -39,14 +41,15 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
     public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>
         server.OnDeckAsync(exceptSeriesId, cancellationToken);
 
-    // The server's answer, which is null by itself when the server cannot say; else the downloads'. A server that takes
+    // The server's answer when it gave one, also "none"; the downloads' when it could not be asked. A server that takes
     // longer than the budget gives way to a download that follows, and is waited for when none does: a slow server still
     // names the next episode of a title that streams.
-    private async Task<NextEpisode?> ServerFirstAsync(Task<NextEpisode?> answer, Func<NextEpisode?> downloaded, CancellationToken cancellationToken)
+    private async Task<NextEpisode?> ServerFirstAsync(Task<EpisodeAnswer> answer, Func<NextEpisode?> downloaded, CancellationToken cancellationToken)
     {
         try
         {
-            return await answer.WaitAsync(ServerBudget, time, cancellationToken).ConfigureAwait(false) ?? downloaded();
+            var said = await answer.WaitAsync(ServerBudget, time, cancellationToken).ConfigureAwait(false);
+            return said.Answered ? said.Episode : downloaded();
         }
         catch (TimeoutException)
         {
@@ -57,7 +60,8 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
                     TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
                 return here;
             }
-            return await answer.WaitAsync(cancellationToken).ConfigureAwait(false) ?? downloaded();
+            var late = await answer.WaitAsync(cancellationToken).ConfigureAwait(false);
+            return late.Answered ? late.Episode : downloaded();
         }
     }
 
