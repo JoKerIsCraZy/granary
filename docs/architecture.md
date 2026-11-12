@@ -1500,7 +1500,9 @@ while the server answers.
   answer within the budget, a `5xx`) is the kept one, so the subtitle look, the subtitle and audio delays, the speed,
   the skips, the marker settings and the sleep timer's duration are the profile's; a batch the server refuses (`422`,
   a key it does not know) is its answer, and a profile whose settings were never read here gets the defaults. A
-  stream's read never takes a kept batch. The title's subtitle preference is the title's own, since the server resolves
+  stream's read never takes a kept batch. The file is never written before it was read: one that cannot be read
+  now is read again before each write, so one profile's start does not write the other profiles' settings away. The
+  title's subtitle preference is the title's own, since the server resolves
   it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
   the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
   that takes the downloads, and a server's removal, forget the kept settings of those accounts.
@@ -1645,8 +1647,10 @@ device.
   raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A
   complete one also settles what still waits in the queue (`OfflineProgressQueue.DropKnown`): a pending position whose
   title the server lists with a time at or after the position's own is there already, or beaten by a newer one, and
-  leaves unsent; that is how a position whose send was taken while its answer got lost stops being sent. One the
-  listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
+  leaves unsent; that is how a position whose send was taken while its answer got lost stops being sent. A server on
+  SQLite keeps times in whole seconds, so there the entry's own row is up to a second older than the entry: a row on
+  the entry's whole second with the entry's very position counts as that entry too, and any other position of that
+  second does not, since it may be an older one. One the listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
   live.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
   and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did

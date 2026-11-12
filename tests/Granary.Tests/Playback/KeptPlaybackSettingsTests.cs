@@ -262,4 +262,58 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.NotNull(Open().Find("srv1/1/7", ["a"]));
         Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task AFileThatCannotBeReadNow_IsNeverWrittenOver_AndItsOtherProfilesSettingsStay()
+    {
+        var before = Open();
+        before.Keep("srv1/1/8", ["a"], new EffectiveSettings([], 3));
+        before.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 3));
+        await before.LatestSave;
+        string keptText = await File.ReadAllTextAsync(FilePath, Token);
+        var kept = Open();
+
+        // Something has the file open and shares nothing, as a virus scanner at the start.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Null(kept.Find("srv1/1/8", ["a"]));
+            kept.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 4));
+            await kept.LatestSave;
+        }
+
+        // Profile 8's settings were not written over with nothing.
+        Assert.Equal(keptText, await File.ReadAllTextAsync(FilePath, Token));
+        Assert.Contains("could not be read", _logs.All, StringComparison.Ordinal);
+
+        // The next write reads the file first: profile 8's are back, and profile 7's newer answer holds.
+        kept.Keep("srv1/1/7", ["b"], new EffectiveSettings([], 4));
+        await kept.LatestSave;
+
+        Assert.Equal(3, kept.Find("srv1/1/8", ["a"])!.Revision);
+        Assert.Equal(4, kept.Find("srv1/1/7", ["a"])!.Revision);
+        var again = Open();
+        Assert.Equal((3L, 4L, 4L), (again.Find("srv1/1/8", ["a"])!.Revision, again.Find("srv1/1/7", ["a"])!.Revision, again.Find("srv1/1/7", ["b"])!.Revision));
+    }
+
+    [Fact]
+    public async Task WhatWasForgottenWhileTheFileCouldNotBeRead_DoesNotComeBackWithIt()
+    {
+        var before = Open();
+        before.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 3));
+        before.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 3));
+        await before.LatestSave;
+        var kept = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+        kept.Keep("srv1/2/7", ["b"], new EffectiveSettings([], 4));
+        await kept.LatestSave;
+
+        Assert.Null(kept.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(kept.Find("srv1/2/7", ["a"]));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+    }
 }

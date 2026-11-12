@@ -17,7 +17,8 @@ namespace Granary.Core.Playback;
 /// <remarks>
 /// Safe from any thread. The file is read at the first use and written whole, off the caller's thread, only when an answer
 /// differs from the one kept. It is a copy of what the server has: one that cannot be read or written is logged, and playback
-/// goes on without it.
+/// goes on without it. It is never written before it was read: a file that cannot be read now (something has it open) holds
+/// the other profiles' settings, so each write tries the read again first, and what was kept meanwhile joins what it holds.
 /// </remarks>
 public sealed class KeptPlaybackSettings
 {
@@ -26,8 +27,14 @@ public sealed class KeptPlaybackSettings
     private readonly ILogger<KeptPlaybackSettings> _logger;
     private readonly Lock _gate = new();
 
-    // Under the lock: each owner's batches by their keys, with the JSON they were kept as, to tell a change.
-    private Dictionary<string, Dictionary<string, Kept>>? _owners;
+    // Under the lock: each owner's batches by their keys, with the JSON they were kept as, to tell a change. What the file
+    // held joins them once it is read (_loaded); until then they are this run's only, and what was forgotten meanwhile is
+    // remembered for what the file still holds.
+    private readonly Dictionary<string, Dictionary<string, Kept>> _owners = new(StringComparer.Ordinal);
+    private readonly List<string> _removedUnread = [];
+    private bool _loadTried;
+    private bool _loaded;
+    private bool _readFailureSaid;
     private Task _latestSave = Task.CompletedTask;
     private bool _saveWaits;
 
@@ -111,7 +118,11 @@ public sealed class KeptPlaybackSettings
         {
             var owners = Loaded();
             var gone = owners.Keys.Where(owner => owner.StartsWith(prefix, StringComparison.Ordinal)).ToList();
-            if (gone.Count == 0)
+            if (!_loaded)
+            {
+                _removedUnread.Add(prefix);
+            }
+            else if (gone.Count == 0)
             {
                 return;
             }
@@ -126,44 +137,66 @@ public sealed class KeptPlaybackSettings
     // Ids are the server's and Granary's own and hold no slash.
     private static string Key(string serverEntryId, string accountId) => serverEntryId + "/" + accountId + "/";
 
-    // Under the lock.
-    private Dictionary<string, Dictionary<string, Kept>> Loaded() => _owners ??= Read();
-
-    private Dictionary<string, Dictionary<string, Kept>> Read()
+    // Under the lock. The file is read at the first use; one that could not be read then is read again by the next write.
+    private Dictionary<string, Dictionary<string, Kept>> Loaded()
     {
-        var owners = new Dictionary<string, Dictionary<string, Kept>>(StringComparer.Ordinal);
+        if (!_loadTried)
+        {
+            _loadTried = true;
+            TryLoad();
+        }
+        return _owners;
+    }
+
+    // Under the lock. Sets _loaded once what the file holds is in _owners: no file, a file read, or one that is no such file.
+    private void TryLoad()
+    {
+        KeptSettingsFile? file = null;
         try
         {
-            if (!File.Exists(_path))
-            {
-                return owners;
-            }
-            var file = JsonSerializer.Deserialize(File.ReadAllBytes(_path), KeptSettingsJsonContext.Default.KeptSettingsFile);
-            // JSON can say null for every member.
-            foreach (var (owner, batches) in file?.Profiles ?? [])
-            {
-                if (owner is not { Length: > 0 } || batches is null)
-                {
-                    continue;
-                }
-                var kept = new Dictionary<string, Kept>(StringComparer.Ordinal);
-                foreach (var (batch, values) in batches)
-                {
-                    if (batch is { Length: > 0 } && values is { Items: not null } && values.Items.All(i => i is { Key.Length: > 0 }))
-                    {
-                        kept[batch] = new Kept(values, JsonSerializer.Serialize(values, KeptSettingsJsonContext.Default.EffectiveSettings));
-                    }
-                }
-                owners[owner] = kept;
-            }
+            file = JsonSerializer.Deserialize(File.ReadAllBytes(_path), KeptSettingsJsonContext.Default.KeptSettingsFile);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
-            // Only the kind: the message would name the data folder, with the Windows user's name.
-            _logger.LogWarning("The playback settings kept on this PC could not be read ({Failure}); they are kept anew", ex.GetType().Name);
-            owners.Clear();
+            // Nothing kept yet.
         }
-        return owners;
+        catch (JsonException)
+        {
+            _logger.LogWarning("The playback settings kept on this PC are damaged; they are kept anew");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Its settings are still in it: it is left as it is. Only the kind: the message would name the data folder, with
+            // the Windows user's name. Said once: every write tries again.
+            if (!_readFailureSaid)
+            {
+                _readFailureSaid = true;
+                _logger.LogWarning("The playback settings kept on this PC could not be read ({Failure}); the file is left alone and read again before each write",
+                    ex.GetType().Name);
+            }
+            return;
+        }
+        // JSON can say null for every member. What this run kept before the file could be read is the newer of a batch's two.
+        foreach (var (owner, batches) in file?.Profiles ?? [])
+        {
+            if (owner is not { Length: > 0 } || batches is null || _removedUnread.Any(prefix => owner.StartsWith(prefix, StringComparison.Ordinal)))
+            {
+                continue;
+            }
+            if (!_owners.TryGetValue(owner, out var kept))
+            {
+                _owners[owner] = kept = new Dictionary<string, Kept>(StringComparer.Ordinal);
+            }
+            foreach (var (batch, values) in batches)
+            {
+                if (batch is { Length: > 0 } && values is { Items: not null } && values.Items.All(i => i is { Key.Length: > 0 }))
+                {
+                    kept.TryAdd(batch, new Kept(values, JsonSerializer.Serialize(values, KeptSettingsJsonContext.Default.EffectiveSettings)));
+                }
+            }
+        }
+        _removedUnread.Clear();
+        _loaded = true;
     }
 
     // Under the lock. A start reads several batches in a row: the write that waits takes them all.
@@ -183,6 +216,15 @@ public sealed class KeptPlaybackSettings
         lock (_gate)
         {
             _saveWaits = false;
+            if (!_loaded)
+            {
+                TryLoad();
+            }
+            if (!_loaded)
+            {
+                // Never over a file that was not read: it holds settings this run does not know.
+                return;
+            }
             file = new KeptSettingsFile
             {
                 Profiles = Loaded().ToDictionary(owner => owner.Key,
