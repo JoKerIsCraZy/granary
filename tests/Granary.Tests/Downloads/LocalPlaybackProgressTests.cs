@@ -190,6 +190,23 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFileThatEndsLongBeforeItsLength_IsNotTheTitlesEnd()
+    {
+        _fixture.GoOffline();
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(1500);
+
+        // The player reached the end of the data, 95 minutes before the title's.
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+
+        // Not ended: nothing plays next, and the title is not watched.
+        Assert.Equal(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, LocalPlayback.CannotPlay, CanRetry: true), playback.Status);
+        Assert.Equal(1_500_000, Entry.PositionMs);
+        await Until(() => Record.ResumeMs == 1_500_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
     public async Task ADownloadDeletedWhileItPlays_StillStopsCleanly()
     {
         var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));

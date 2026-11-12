@@ -366,13 +366,19 @@ public sealed partial class LocalPlayback : IServerPlayback
             Fail();
             return;
         }
-        bool atItsEnd = (DurationSeconds ?? _engineDuration) is not { } duration || _position >= duration - EndTolerance;
-        if (atItsEnd && (DurationSeconds ?? _engineDuration) is { } length)
+        // The file's own length as the player read it, else the manifest's. Without either, an end can only be taken for the end.
+        double? length = _engineDuration ?? DurationSeconds;
+        if (length is { } whole && _position < whole - EndTolerance)
         {
-            // Played to its end: that is where the viewer is, whatever the last position read said.
-            _position = length;
+            // The file breaks off long before its length: a damaged copy, not the title's end. As Silo's Apple app, the
+            // title is not watched and nothing plays next ("The downloaded video file ends early.").
+            _logger.LogWarning("Download {DownloadId} ended {Seconds:F0} s before its length", _download.Record.DownloadId, whole - _position);
+            Fail();
+            return;
         }
-        RecordProgress(isFinal: true, playedToTheEnd: atItsEnd);
+        // Played to its end: that is where the viewer is, whatever the last position read said.
+        _position = length ?? _position;
+        RecordProgress(isFinal: true, playedToTheEnd: true);
         StopProgress();
         _started = false;
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
