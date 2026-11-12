@@ -207,32 +207,58 @@ public sealed class TextLanguageTests
         Assert.Equal("1.000 Dateien", TextFixtures.Language("de").Get("granary.test.files", [("count", 1000)]));
     }
 
-    [Fact]
-    public void AKeyMissingInEnglish_ShowsTheKeyInBrackets_AndIsLoggedOnce()
+    // What is missing shows marked in a debug build and as nothing in a release, as the web shows nothing. Both are
+    // tested in either build: CI runs the tests from a release build.
+    [Theory]
+    [InlineData(true, "[web.nowhere.toBeFound]")]
+    [InlineData(false, "")]
+    public void AKeyMissingInEnglish_ShowsTheKeyInBracketsWhereProblemsAreMarked_AndIsLoggedOnce(bool marksProblems, string expected)
     {
         var logs = new LogSink();
-        var german = TextFixtures.Language("de", logs.For<TextLanguage>());
+        var german = TextFixtures.Language("de", logs.For<TextLanguage>(), marksProblems);
 
         string first = german.Get("web.nowhere.toBeFound");
         string second = german.Get("web.nowhere.toBeFound");
 
-        // Tests run debug builds; a release build shows nothing instead, as the web does.
-        Assert.Equal("[web.nowhere.toBeFound]", first);
+        Assert.Equal(expected, first);
         Assert.Equal(first, second);
+        Assert.Equal(expected, string.Concat(german.Runs("web.nowhere.toBeFound").Select(run => run.Text)));
         Assert.Single(logs.Lines, line => line.Contains("web.nowhere.toBeFound", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void AMissingValue_ShowsItsPlaceholder_AndIsLoggedOnce()
+    [Theory]
+    [InlineData(true, "Because you enjoy {genres}")]
+    [InlineData(false, "Because you enjoy ")]
+    public void AMissingValue_ShowsItsPlaceholderWhereProblemsAreMarked_AndIsLoggedOnce(bool marksProblems, string expected)
     {
         var logs = new LogSink();
-        var english = TextFixtures.Language("en", logs.For<TextLanguage>());
+        var english = TextFixtures.Language("en", logs.For<TextLanguage>(), marksProblems);
 
         string text = english.Get("home.section.becauseYouEnjoy");
         english.Get("home.section.becauseYouEnjoy");
 
-        Assert.Equal("Because you enjoy {genres}", text);
+        Assert.Equal(expected, text);
         Assert.Single(logs.Lines, line => line.Contains("genres", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AMissingValueOfAFallbackMessage_IsMarkedTheSameWay()
+    {
+        var japanese = TextFixtures.Language("ja", marksProblems: true);
+
+        Assert.Equal("Because you enjoy {genres}", japanese.Get("home.section.becauseYouEnjoy"));
+    }
+
+    [Fact]
+    public void OnlyADebugBuild_MarksProblemsByItself()
+    {
+#if DEBUG
+        const string expected = "[web.nowhere.toBeFound]";
+#else
+        const string expected = "";
+#endif
+
+        Assert.Equal(expected, TextFixtures.Language("en").Get("web.nowhere.toBeFound"));
     }
 
     [Fact]
