@@ -741,6 +741,24 @@
       "value": "未找到项目。"
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "电影和剧集"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "完成"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "人物"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "“"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "”的结果"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "无法加载搜索结果。"
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "搜索"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "搜索范围"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -809,6 +865,12 @@
     {
       "type": 0,
       "value": "服务器没有响应。请稍后重试。"
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "加载更多"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1602,6 +1664,24 @@
       "value": "title"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "无法加载更多作品。"
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "请求添加"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "系列电影"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1612,6 +1692,18 @@
     {
       "type": 0,
       "value": "搜索电影、剧集……"
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "正在搜索……"
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "作品"
     }
   ],
   "web.shell.pageBack.goBack": [

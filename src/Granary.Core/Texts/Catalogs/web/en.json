@@ -741,6 +741,24 @@
       "value": "No items found."
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "Movies & Series"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "Done"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "People"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "Results for \""
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "\""
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "Could not load search results."
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "Search"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "Search scope"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -821,6 +877,12 @@
     {
       "type": 0,
       "value": "The server isn't responding. Try again in a moment."
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "Load more"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1665,6 +1727,24 @@
       "value": " from your watchlist"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "Couldn’t load more titles."
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "Request to add"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "Box sets"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1675,6 +1755,18 @@
     {
       "type": 0,
       "value": "Search movies, series..."
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "Searching..."
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "Titles"
     }
   ],
   "web.shell.pageBack.goBack": [

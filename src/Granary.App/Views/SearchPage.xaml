@@ -50,13 +50,13 @@
                           Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
                 <ProgressRing Width="20" Height="20" Margin="0,0,22,0" HorizontalAlignment="Right" VerticalAlignment="Center"
                               IsActive="{x:Bind ViewModel.IsSearching, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSearching, Mode=OneWay}"
-                              AutomationProperties.Name="Searching" />
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.searching')}" />
             </Grid>
 
-            <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="Search in">
-                <SelectorBarItem Text="Movies &amp; Series" />
-                <SelectorBarItem Text="Movies" />
-                <SelectorBarItem Text="Series" />
+            <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.search.scopeLabel')}">
+                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.moviesAndSeries')}" />
+                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.movies')}" />
+                <SelectorBarItem Text="{x:Bind t:AppText.Get('web.catalog.mediaType.series')}" />
             </SelectorBar>
 
             <!--
@@ -64,12 +64,12 @@
                 in the titles' own columns.
             -->
             <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsBoxSets, Mode=OneWay}">
-                <TextBlock Text="Box sets" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.search.boxSets')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.BoxSets, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenBoxSetCommand}" />
             </StackPanel>
 
             <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsPeople, Mode=OneWay}">
-                <TextBlock Text="People" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.people')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <ScrollView ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
                             VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden"
                             controls:WheelScrollsPage.IsEnabled="True">
@@ -91,7 +91,7 @@
 
             <!-- Out of the way while Request to add stands in for a library that found nothing, as the web hides its grid. -->
             <StackPanel Spacing="14" Visibility="{x:Bind Not(ViewModel.IsLibraryRescued), Mode=OneWay}">
-                <TextBlock Text="Titles" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.search.titles')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2"
                            Visibility="{x:Bind ViewModel.ShowsTitlesHeading, Mode=OneWay}" />
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}"
                                     CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}"
@@ -113,7 +113,7 @@
             -->
             <StackPanel x:Name="RequestSection" Spacing="14" Visibility="{x:Bind ViewModel.ShowsRequests, Mode=OneWay}">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Request to add" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.toAdd.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <TextBlock Text="{x:Bind ViewModel.Requests.Note, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind HasText(ViewModel.Requests.Note), Mode=OneWay}" />
                 </StackPanel>
@@ -126,15 +126,15 @@
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
                                     LoadMoreCommand="{x:Bind ViewModel.Requests.LoadMoreCommand}" CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
 
-                <TextBlock Text="Every title found so far is already in your library." TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="{x:Bind t:AppText.Get('granary.search.allInLibrary')}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.Requests.IsEmptySoFar, Mode=OneWay}" />
                 <ProgressRing IsActive="{x:Bind ViewModel.Requests.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Requests.IsLoadingMore, Mode=OneWay}"
-                              Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles to request" />
+                              Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.search.loadingMoreRequests')}" />
                 <!-- The grid's end coming into view presses it; it stays for the keyboard. -->
-                <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                <Button Content="{x:Bind t:AppText.Get('web.common.ui.loadMore.button')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.Requests.LoadMoreCommand}" Visibility="{x:Bind ViewModel.Requests.ShowsLoadMore, Mode=OneWay}" />
                 <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Requests.HasMoreError, Mode=OneWay}">
-                    <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.results.loadMoreFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                HorizontalAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
                     <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.Requests.TryAgainCommand}" />

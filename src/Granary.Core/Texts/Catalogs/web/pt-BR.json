@@ -741,6 +741,24 @@
       "value": "Nenhum item encontrado."
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "Filmes"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "Filmes e séries"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "Séries"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "Concluir"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "Pessoas"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "Resultados para “"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "”"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar os resultados da busca."
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "Buscar"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "Escopo da busca"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -833,6 +889,12 @@
     {
       "type": 0,
       "value": "O servidor não está respondendo. Tente novamente em instantes."
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "Carregar mais"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1752,6 +1814,24 @@
       "value": " da sua lista para assistir"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar mais títulos."
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "Solicitar para adicionar"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "Coletâneas"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1762,6 +1842,18 @@
     {
       "type": 0,
       "value": "Pesquisar filmes, séries…"
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "Pesquisando…"
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "Títulos"
     }
   ],
   "web.shell.pageBack.goBack": [

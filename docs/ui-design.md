@@ -361,8 +361,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
   under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
   or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
-  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and "No titles found"
-  shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
+  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and the web's "No items
+  found." shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
   web pages TMDB's twenty a page with Previous, "Page 1 of 2" and Next, even when the library's titles leave six of them;
   here the pages gather: a read takes TMDB's next pages until 20 titles came or 3 pages were read, and the grid's end
   coming into view reads on (Load more for the keyboard, a ring meanwhile), to TMDB's last page (at most 500). A title

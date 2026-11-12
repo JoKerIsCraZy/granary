@@ -145,11 +145,27 @@ web.catalog.carousel.scrollRight
 web.catalog.filters.heading
 web.catalog.filters.locked
 web.catalog.grid.noItems
+
+# Search, in the words of the web's catalog page for a search (pages/Catalog.tsx), its search scope (components/catalog/
+# SearchScopeChips.tsx), the global search's headings (components/GlobalSearch.tsx, boxsets/BoxSetSearchResults.tsx) and
+# Request to add (components/RequestToAddSection.tsx, RequestResultsGrid.tsx, LoadMoreOnScroll.tsx):
+# src/Granary.App/Views/SearchPage.xaml and src/Granary.Core/ViewModels/SearchViewModel.cs.
+web.catalog.mediaType.movies
+web.catalog.mediaType.moviesAndSeries
+web.catalog.mediaType.series
+
 web.catalog.page.catalogFailed
 web.catalog.page.catalogSubtitle
 
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.catalog.page.people
+web.catalog.page.resultsFor
+web.catalog.page.searchFailed
+web.catalog.page.searchTitle
+web.catalog.search.scopeLabel
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.common.format.runtime.hoursMinutes
@@ -161,7 +177,9 @@ web.common.format.runtime.minutes
 web.common.ui.loadError.generic
 web.common.ui.loadError.timeout
 
-# The spinner under a grid that loads more, as the web's LoadMoreOnScroll: src/Granary.App/Views/SectionPage.xaml.
+# A grid that loads more, as the web's LoadMoreOnScroll: its button (Search's Request to add,
+# src/Granary.App/Views/SearchPage.xaml) and its spinner (src/Granary.App/Views/SectionPage.xaml).
+web.common.ui.loadMore.button
 web.common.ui.loadMore.loading
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
@@ -274,10 +292,19 @@ web.requests.card.addToWatchlistFor
 web.requests.card.onWatchlist
 web.requests.card.removeFromWatchlist
 
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.requests.results.loadMoreFailed
+web.requests.toAdd.heading
+web.search.boxSets
+
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
 web.search.placeholderProminent
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.search.searching
+web.search.titles
 
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),

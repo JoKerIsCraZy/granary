@@ -741,6 +741,24 @@
       "value": "アイテムが見つかりません。"
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "映画とシリーズ"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "完了"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "人物"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "」の検索結果"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "検索結果を読み込めませんでした。"
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "検索"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "検索範囲"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -809,6 +865,12 @@
     {
       "type": 0,
       "value": "サーバーが応答していません。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "さらに読み込む"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1582,6 +1644,24 @@
       "value": "をウォッチリストから削除"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "さらにタイトルを読み込めませんでした。"
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "追加をリクエスト"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "ボックスセット"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1592,6 +1672,18 @@
     {
       "type": 0,
       "value": "映画、シリーズを検索…"
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "検索中…"
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "タイトル"
     }
   ],
   "web.shell.pageBack.goBack": [

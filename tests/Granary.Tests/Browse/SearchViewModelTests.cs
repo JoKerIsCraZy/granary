@@ -323,7 +323,7 @@ public sealed class SearchViewModelTests
 
         await search.ActivateAsync("zzz");
 
-        Assert.Equal("No titles found for \"zzz\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
         Assert.False(search.HasError);
     }
 

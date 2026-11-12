@@ -741,6 +741,24 @@
       "value": "Aucun élément trouvé."
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "Films"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "Films et séries"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "Séries"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "Terminé"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "Personnes"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "Résultats pour « "
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": " »"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger les résultats de recherche."
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "Recherche"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "Portée de la recherche"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -833,6 +889,12 @@
     {
       "type": 0,
       "value": "Le serveur ne répond pas. Réessayez dans un instant."
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "Charger plus"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1748,6 +1810,24 @@
       "value": " de votre liste à voir"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger plus de titres."
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "Demander un ajout"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "Sagas"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1758,6 +1838,18 @@
     {
       "type": 0,
       "value": "Rechercher des films, des séries…"
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "Recherche…"
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "Titres"
     }
   ],
   "web.shell.pageBack.goBack": [

@@ -741,6 +741,24 @@
       "value": "لم يُعثر على عناصر."
     }
   ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "الأفلام والمسلسلات"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
   "web.catalog.page.catalogFailed": [
     {
       "type": 0,
@@ -757,6 +775,44 @@
     {
       "type": 0,
       "value": "تم"
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "الأشخاص"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "نتائج «"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "»"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل نتائج البحث."
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "البحث"
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "نطاق البحث"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -869,6 +925,12 @@
     {
       "type": 0,
       "value": "الخادم لا يستجيب. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
     }
   ],
   "web.common.ui.loadMore.loading": [
@@ -1948,6 +2010,24 @@
       "value": " من قائمة المشاهدة"
     }
   ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل المزيد من العناوين."
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "طلب للإضافة"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "سلاسل أفلام"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1958,6 +2038,18 @@
     {
       "type": 0,
       "value": "البحث عن أفلام ومسلسلات..."
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "جارٍ البحث..."
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "العناوين"
     }
   ],
   "web.shell.pageBack.goBack": [
