@@ -104,6 +104,13 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# The password change after sign-in, as the web's ChoosePassword page (pages/ChoosePassword.tsx) and, for the server's
+# limits and refusals, its account settings' password form: src/Granary.App/Views/ChangePasswordPage.xaml and
+# src/Granary.Core/ViewModels/ChangePasswordViewModel.cs.
+web.auth.choosePassword.description
+web.auth.choosePassword.settleFailed
+web.auth.choosePassword.temporaryPassword
+
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
 # src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
@@ -124,6 +131,14 @@ web.auth.login.signingIn
 web.auth.loginSubtitle.default
 web.auth.oauthFailure.accountDisabled
 web.auth.password
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.auth.passwordRules.chooseNewPassword
+web.auth.passwordRules.confirmNewPassword
+web.auth.passwordRules.newPassword
+web.auth.passwordRules.passwordChanged
+web.auth.passwordRules.savePassword
+
 web.auth.signIn
 web.auth.username
 
@@ -306,6 +321,14 @@ web.search.placeholderProminent
 web.search.searching
 web.search.titles
 
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.settings.account.password.current
+web.settings.account.password.error.mismatch
+web.settings.account.password.error.tooLong
+web.settings.account.password.error.tooShort
+web.settings.account.password.error.unavailable
+web.settings.account.password.requirements
+
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
 # src/Granary.App/Controls/SidebarSectionHeader.xaml.cs, and the entries' names in
@@ -332,3 +355,6 @@ web.shell.sidebar.switchProfile
 web.shell.sidebar.watchParty
 web.shell.sidebar.watchlist
 web.shell.sidebar.yourStuff
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.ui.saving

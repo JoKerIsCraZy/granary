@@ -569,6 +569,32 @@
       "value": "本周热门"
     }
   ],
+  "web.auth.choosePassword.description": [
+    {
+      "type": 0,
+      "value": "管理员为"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "设置了临时密码。请设置你自己的密码以继续。"
+    }
+  ],
+  "web.auth.choosePassword.settleFailed": [
+    {
+      "type": 0,
+      "value": "新密码已保存，但登录未能完成。"
+    }
+  ],
+  "web.auth.choosePassword.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "临时密码"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -675,6 +701,36 @@
     {
       "type": 0,
       "value": "密码"
+    }
+  ],
+  "web.auth.passwordRules.chooseNewPassword": [
+    {
+      "type": 0,
+      "value": "选择新密码"
+    }
+  ],
+  "web.auth.passwordRules.confirmNewPassword": [
+    {
+      "type": 0,
+      "value": "确认新密码"
+    }
+  ],
+  "web.auth.passwordRules.newPassword": [
+    {
+      "type": 0,
+      "value": "新密码"
+    }
+  ],
+  "web.auth.passwordRules.passwordChanged": [
+    {
+      "type": 0,
+      "value": "密码已更改"
+    }
+  ],
+  "web.auth.passwordRules.savePassword": [
+    {
+      "type": 0,
+      "value": "保存密码"
     }
   ],
   "web.auth.signIn": [
@@ -1706,6 +1762,98 @@
       "value": "作品"
     }
   ],
+  "web.settings.account.password.current": [
+    {
+      "type": 0,
+      "value": "当前密码"
+    }
+  ],
+  "web.settings.account.password.error.mismatch": [
+    {
+      "type": 0,
+      "value": "两次输入的新密码不一致。"
+    }
+  ],
+  "web.settings.account.password.error.tooLong": [
+    {
+      "type": 0,
+      "value": "新密码最多为"
+    },
+    {
+      "type": 1,
+      "value": "maximum"
+    },
+    {
+      "type": 0,
+      "value": "字节。"
+    }
+  ],
+  "web.settings.account.password.error.tooShort": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新密码至少需要"
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": "个字符。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.account.password.error.unavailable": [
+    {
+      "type": 0,
+      "value": "此账户无法更改密码。"
+    }
+  ],
+  "web.settings.account.password.requirements": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "至少"
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": "个字符，且不超过"
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": "字节。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,
@@ -1848,6 +1996,12 @@
     {
       "type": 0,
       "value": "我的内容"
+    }
+  ],
+  "web.ui.saving": [
+    {
+      "type": 0,
+      "value": "正在保存……"
     }
   ]
 }

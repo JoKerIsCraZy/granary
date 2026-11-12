@@ -569,6 +569,32 @@
       "value": "今週のトレンド"
     }
   ],
+  "web.auth.choosePassword.description": [
+    {
+      "type": 0,
+      "value": "管理者が"
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": "に一時パスワードを設定しました。続行するには、新しいパスワードを設定してください。"
+    }
+  ],
+  "web.auth.choosePassword.settleFailed": [
+    {
+      "type": 0,
+      "value": "新しいパスワードは保存されましたが、サインインを完了できませんでした。"
+    }
+  ],
+  "web.auth.choosePassword.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "一時パスワード"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -675,6 +701,36 @@
     {
       "type": 0,
       "value": "パスワード"
+    }
+  ],
+  "web.auth.passwordRules.chooseNewPassword": [
+    {
+      "type": 0,
+      "value": "新しいパスワードを設定"
+    }
+  ],
+  "web.auth.passwordRules.confirmNewPassword": [
+    {
+      "type": 0,
+      "value": "新しいパスワード（確認）"
+    }
+  ],
+  "web.auth.passwordRules.newPassword": [
+    {
+      "type": 0,
+      "value": "新しいパスワード"
+    }
+  ],
+  "web.auth.passwordRules.passwordChanged": [
+    {
+      "type": 0,
+      "value": "パスワードを変更しました"
+    }
+  ],
+  "web.auth.passwordRules.savePassword": [
+    {
+      "type": 0,
+      "value": "パスワードを保存"
     }
   ],
   "web.auth.signIn": [
@@ -1686,6 +1742,94 @@
       "value": "タイトル"
     }
   ],
+  "web.settings.account.password.current": [
+    {
+      "type": 0,
+      "value": "現在のパスワード"
+    }
+  ],
+  "web.settings.account.password.error.mismatch": [
+    {
+      "type": 0,
+      "value": "新しいパスワードが一致しません。"
+    }
+  ],
+  "web.settings.account.password.error.tooLong": [
+    {
+      "type": 0,
+      "value": "新しいパスワードは"
+    },
+    {
+      "type": 1,
+      "value": "maximum"
+    },
+    {
+      "type": 0,
+      "value": "バイト以下にしてください。"
+    }
+  ],
+  "web.settings.account.password.error.tooShort": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新しいパスワードは"
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": "文字以上にしてください。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.account.password.error.unavailable": [
+    {
+      "type": 0,
+      "value": "このアカウントではパスワードを変更できません。"
+    }
+  ],
+  "web.settings.account.password.requirements": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": "文字以上、"
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": "バイト以下。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,
@@ -1828,6 +1972,12 @@
     {
       "type": 0,
       "value": "マイコンテンツ"
+    }
+  ],
+  "web.ui.saving": [
+    {
+      "type": 0,
+      "value": "保存中..."
     }
   ]
 }
