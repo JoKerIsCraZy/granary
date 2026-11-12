@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -82,7 +83,8 @@ public sealed class PrePlayPickers
     /// <summary>"2160p · HEVC · HDR10 · DTS".</summary>
     public string VersionSummary { get; }
 
-    public string VersionName => "Version, " + VersionSummary;
+    /// <summary>For screen readers: the picker's label and what it shows, "Version, 2160p · HEVC".</summary>
+    public string VersionName => $"{AppText.Get("web.detail.versions.versionButton")}, {VersionSummary}";
 
     /// <summary>Auto, then the file's tracks; none when the file lists no audio.</summary>
     public IReadOnlyList<DetailAudioOption> Audio { get; }
@@ -92,7 +94,7 @@ public sealed class PrePlayPickers
     /// <summary>"Auto: German · TrueHD Atmos · 7.1", or the picked track's words.</summary>
     public string AudioSummary { get; }
 
-    public string AudioName => "Audio, " + AudioSummary;
+    public string AudioName => $"{AppText.Get("web.detail.audio.button")}, {AudioSummary}";
 
     /// <summary>Auto, Off, then the file's tracks; none when the file has no subtitles.</summary>
     public IReadOnlyList<DetailSubtitleOption> Subtitles { get; }
@@ -102,7 +104,7 @@ public sealed class PrePlayPickers
     /// <summary>"Auto: English · SRT", "Off", or the picked track's words.</summary>
     public string SubtitleSummary { get; }
 
-    public string SubtitleName => "Subtitles, " + SubtitleSummary;
+    public string SubtitleName => $"{AppText.Get("web.detail.subtitles.button")}, {SubtitleSummary}";
 
     public bool ShowsAny => ShowsVersions || ShowsAudio || ShowsSubtitles;
 
@@ -187,7 +189,7 @@ public sealed class PrePlayPickers
         bool editions = files.Select(v => v.EditionRaw?.Trim() ?? "").Distinct(StringComparer.Ordinal).Count() > 1;
         return [.. files.Select(v => new DetailVersionOption(
             v.FileId,
-            PrePlayText.QualitySummary(v) is { Length: > 0 } summary ? summary : "Version " + v.FileId,
+            PrePlayText.QualitySummary(v) is { Length: > 0 } summary ? summary : PrePlayText.FileIdFallback(v),
             PlaybackInfo.VideoRangeLabel(v.VideoTracks, v.Hdr),
             string.Join(" · ", new[] { editions ? v.EditionRaw?.Trim() : null, PrePlayText.DetailLine(v) }.Where(p => !string.IsNullOrEmpty(p))),
             v.FileId == selected.FileId))];
@@ -212,8 +214,8 @@ public sealed class PrePlayPickers
             return "";
         }
         return picked is { } ordinal ? PrePlayText.AudioSummary(version.AudioTracks[ordinal])
-            : pending ? "Auto"
-            : "Auto: " + PrePlayText.AudioSummary(version.AudioTracks[AutoAudio(version)]);
+            : pending ? AppText.Get("web.detail.tracks.auto")
+            : AppText.Get("web.detail.tracks.autoSummary", ("summary", PrePlayText.AudioSummary(version.AudioTracks[AutoAudio(version)])));
     }
 
     private static IReadOnlyList<DetailAudioOption> AudioRows(FileVersion version, int? picked, bool pending)
@@ -223,8 +225,8 @@ public sealed class PrePlayPickers
         {
             return [];
         }
-        var auto = new DetailAudioOption(null, "Auto", pending ? "" : PrePlayText.AudioSummary(tracks[AutoAudio(version)]), "", "", false,
-            picked is null);
+        var auto = new DetailAudioOption(null, AppText.Get("web.detail.tracks.auto"), pending ? "" : PrePlayText.AudioSummary(tracks[AutoAudio(version)]),
+            "", "", false, picked is null);
         return
         [
             auto,
@@ -256,23 +258,25 @@ public sealed class PrePlayPickers
         var autoRow = rows.FirstOrDefault(r => ReferenceEquals(r.Candidate, auto));
         // A remembered track stands as the choice itself, not as an Auto guess (web: overrideCandidate).
         var remembered = mode == SubtitlePickMode.Auto && remembers ? autoRow : null;
+        string off = AppText.Get("web.detail.subtitles.off");
         string summary = mode switch
         {
-            SubtitlePickMode.Off => "Off",
+            SubtitlePickMode.Off => off,
             SubtitlePickMode.Track => rows.First(r => r.Candidate.SelectionIndex == picked).Summary,
-            _ when pending => "Auto",
+            _ when pending => AppText.Get("web.detail.tracks.auto"),
             _ when remembered is not null => remembered.Summary,
-            _ => "Auto: " + (autoRow?.Summary ?? "Off"),
+            _ => AppText.Get("web.detail.tracks.autoSummary", ("summary", autoRow?.Summary ?? off)),
         };
         int? chosen = mode == SubtitlePickMode.Track ? picked : remembered?.Candidate.SelectionIndex;
-        string autoDetail = pending ? "" : remembered is not null ? "Reset to profile defaults" : autoRow?.LanguageLabel ?? "Off";
+        string autoDetail = pending ? "" : remembered is not null ? AppText.Get("web.detail.subtitles.resetToDefaults") : autoRow?.LanguageLabel ?? off;
         var options = new List<DetailSubtitleOption>
         {
-            new(DetailSubtitleKind.Auto, -1, "Auto", autoDetail, "", false, false, false, mode == SubtitlePickMode.Auto && remembered is null),
-            new(DetailSubtitleKind.Off, -1, "Off", "", "", false, false, false, mode == SubtitlePickMode.Off),
+            new(DetailSubtitleKind.Auto, -1, AppText.Get("web.detail.tracks.auto"), autoDetail, "", false, false, false,
+                mode == SubtitlePickMode.Auto && remembered is null),
+            new(DetailSubtitleKind.Off, -1, off, "", "", false, false, false, mode == SubtitlePickMode.Off),
         };
-        options.AddRange(Section(rows.Where(r => !r.Track.External), "Embedded", chosen));
-        options.AddRange(Section(rows.Where(r => r.Track.External), "External", chosen));
+        options.AddRange(Section(rows.Where(r => !r.Track.External), AppText.Get("web.detail.mediaInfo.embedded"), chosen));
+        options.AddRange(Section(rows.Where(r => r.Track.External), AppText.Get("web.detail.mediaInfo.external"), chosen));
         return (options, summary);
     }
 

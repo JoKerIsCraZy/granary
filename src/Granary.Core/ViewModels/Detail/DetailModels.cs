@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -31,8 +32,8 @@ public sealed record DetailPerson(string Name, string? Role, Uri? PhotoUrl, stri
 /// <param name="Label">The group's name, the web's "Writers" or "Cast".</param>
 public sealed record DetailCreditSeparator(string Label) : DetailCredit
 {
-    /// <summary>The label as shown, in capitals as the web's.</summary>
-    public string Text => Label.ToUpperInvariant();
+    /// <summary>The label as shown, in capitals as the web's CSS shows it.</summary>
+    public string Text => AppText.Upper(Label);
 }
 
 /// <summary>A group of the "Cast &amp; Crew" row: the director or creators, the writers, or the cast.</summary>
@@ -53,7 +54,7 @@ public sealed record DetailEpisode(MediaCard Card, string? Overview) : DetailEpi
 {
     public string Id => Card.Id;
 
-    public string AccessibleName => Card.IsWatched ? $"{Card.AccessibleName}, watched" : Card.AccessibleName;
+    public string AccessibleName => Card.IsWatched ? $"{Card.AccessibleName}, {AppText.Get("web.item.card.watched")}" : Card.AccessibleName;
 }
 
 /// <summary>
@@ -67,14 +68,16 @@ public sealed record DetailEpisodePlaceholder(int EpisodeNumber, bool IsMissing,
     : DetailEpisodeEntry
 {
     /// <summary>The pill on a missing episode's place, upper-cased as the card badges.</summary>
-    public const string MissingBadge = "MISSING";
+    public static string MissingBadge => AppText.Upper(AppText.Get("granary.detail.missing"));
 }
 
 /// <summary>A part of the Info dialog: "Details", "Cast", "Crew", "File".</summary>
 public sealed record DetailInfoSection(string Title, IReadOnlyList<DetailInfoRow> Rows);
 
 /// <summary>A label and its value in the Info dialog: "Runtime" and "1h 58m", or an actor and their role.</summary>
-public sealed record DetailInfoRow(string Label, string Value);
+/// <param name="IsSelectable">The value is worth copying from, as the overview is; the others are short facts.</param>
+public sealed record DetailInfoRow(string Label, string Value, bool IsSelectable = false);
 
 /// <summary>What the primary button says and which item it would play.</summary>
-public sealed record DetailPlayAction(string Label, string? TargetId);
+/// <param name="Resumes">It goes on from where the viewer stopped, so the page also offers to start over.</param>
+public sealed record DetailPlayAction(string Label, string? TargetId, bool Resumes = false);

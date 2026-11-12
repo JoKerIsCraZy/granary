@@ -2218,6 +2218,12 @@
       "value": "مزيد من الإجراءات"
     }
   ],
+  "web.collections.addToCollection.title": [
+    {
+      "type": 0,
+      "value": "إضافة إلى مجموعة"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
@@ -2552,6 +2558,18 @@
       "value": "فشل الحذف"
     }
   ],
+  "web.common.toast.subtitles.resetPreferenceFailed": [
+    {
+      "type": 0,
+      "value": "فشلت إعادة تعيين تفضيل الترجمة"
+    }
+  ],
+  "web.common.toast.subtitles.savePreferenceFailed": [
+    {
+      "type": 0,
+      "value": "فشل حفظ تفضيل الترجمة"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -2574,6 +2592,30 @@
     {
       "type": 0,
       "value": "جارٍ تحميل المزيد"
+    }
+  ],
+  "web.detail.actions.addToCollection": [
+    {
+      "type": 0,
+      "value": "إضافة إلى مجموعة"
+    }
+  ],
+  "web.detail.actions.addToFavorites": [
+    {
+      "type": 0,
+      "value": "إضافة إلى المفضلة"
+    }
+  ],
+  "web.detail.actions.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "إضافة إلى قائمة المشاهدة"
+    }
+  ],
+  "web.detail.actions.browseSeries": [
+    {
+      "type": 0,
+      "value": "تصفح المسلسل"
     }
   ],
   "web.detail.actions.markSeasonUnwatched": [
@@ -2610,6 +2652,282 @@
     {
       "type": 0,
       "value": "وضع علامة كمشاهد"
+    }
+  ],
+  "web.detail.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "إجراءات أخرى"
+    }
+  ],
+  "web.detail.actions.play": [
+    {
+      "type": 0,
+      "value": "تشغيل"
+    }
+  ],
+  "web.detail.actions.playEpisode": [
+    {
+      "type": 0,
+      "value": "تشغيل الحلقة"
+    }
+  ],
+  "web.detail.actions.playFirstEpisode": [
+    {
+      "type": 0,
+      "value": "تشغيل الحلقة الأولى"
+    }
+  ],
+  "web.detail.actions.playFromBeginning": [
+    {
+      "type": 0,
+      "value": "التشغيل من البداية"
+    }
+  ],
+  "web.detail.actions.playNext": [
+    {
+      "type": 0,
+      "value": "تشغيل الحلقة التالية"
+    }
+  ],
+  "web.detail.actions.removeFromFavorites": [
+    {
+      "type": 0,
+      "value": "إزالة من المفضلة"
+    }
+  ],
+  "web.detail.actions.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "إزالة من قائمة المشاهدة"
+    }
+  ],
+  "web.detail.actions.resume": [
+    {
+      "type": 0,
+      "value": "استئناف"
+    }
+  ],
+  "web.detail.actions.resumeAt": [
+    {
+      "type": 0,
+      "value": "الاستئناف عند "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.detail.actions.startFromFirstEpisode": [
+    {
+      "type": 0,
+      "value": "البدء من الحلقة "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.actions.startWatchParty": [
+    {
+      "type": 0,
+      "value": "بدء Watch Party"
+    }
+  ],
+  "web.detail.audio.button": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.detail.audio.unknown": [
+    {
+      "type": 0,
+      "value": "غير معروف"
+    }
+  ],
+  "web.detail.badges.advisory": [
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.advisorySource": [
+    {
+      "type": 1,
+      "value": "source"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حلقتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.badges.seasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسم"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "موسمان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مواسم"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسمًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.boxSet.cardLabel": [
@@ -2791,6 +3109,60 @@
       "value": "total"
     }
   ],
+  "web.detail.breadcrumb.label": [
+    {
+      "type": 0,
+      "value": "مسار التنقل"
+    }
+  ],
+  "web.detail.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "التمرير لليسار"
+    }
+  ],
+  "web.detail.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "التمرير لليمين"
+    }
+  ],
+  "web.detail.castCrew.cast": [
+    {
+      "type": 0,
+      "value": "طاقم التمثيل"
+    }
+  ],
+  "web.detail.castCrew.creator": [
+    {
+      "type": 0,
+      "value": "المبتكر"
+    }
+  ],
+  "web.detail.castCrew.crew": [
+    {
+      "type": 0,
+      "value": "فريق العمل"
+    }
+  ],
+  "web.detail.castCrew.director": [
+    {
+      "type": 0,
+      "value": "المخرج"
+    }
+  ],
+  "web.detail.castCrew.writer": [
+    {
+      "type": 0,
+      "value": "الكاتب"
+    }
+  ],
+  "web.detail.castCrew.writers": [
+    {
+      "type": 0,
+      "value": "الكتّاب"
+    }
+  ],
   "web.detail.episodeCode": [
     {
       "type": 0,
@@ -2809,10 +3181,260 @@
       "value": "episode"
     }
   ],
+  "web.detail.episodes.heading": [
+    {
+      "type": 0,
+      "value": "الحلقات"
+    }
+  ],
+  "web.detail.episodes.moreEpisodes": [
+    {
+      "type": 0,
+      "value": "المزيد من الحلقات"
+    }
+  ],
   "web.detail.episodes.nowViewing": [
     {
       "type": 0,
       "value": "المعروضة الآن"
+    }
+  ],
+  "web.detail.episodes.numbered": [
+    {
+      "type": 0,
+      "value": "الحلقة "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.extras.heading": [
+    {
+      "type": 0,
+      "value": "الإضافات"
+    }
+  ],
+  "web.detail.extras.kind.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "كواليس"
+    }
+  ],
+  "web.detail.extras.kind.bloopers": [
+    {
+      "type": 0,
+      "value": "أخطاء التصوير"
+    }
+  ],
+  "web.detail.extras.kind.clip": [
+    {
+      "type": 0,
+      "value": "مقطع"
+    }
+  ],
+  "web.detail.extras.kind.deletedScene": [
+    {
+      "type": 0,
+      "value": "مشهد محذوف"
+    }
+  ],
+  "web.detail.extras.kind.featurette": [
+    {
+      "type": 0,
+      "value": "تقرير مصوّر"
+    }
+  ],
+  "web.detail.extras.kind.otherKind": [
+    {
+      "type": 0,
+      "value": "مادة إضافية"
+    }
+  ],
+  "web.detail.extras.kind.teaser": [
+    {
+      "type": 0,
+      "value": "إعلان تشويقي"
+    }
+  ],
+  "web.detail.extras.kind.trailer": [
+    {
+      "type": 0,
+      "value": "إعلان ترويجي"
+    }
+  ],
+  "web.detail.extras.kindGroup.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "كواليس"
+    }
+  ],
+  "web.detail.extras.kindGroup.bloopers": [
+    {
+      "type": 0,
+      "value": "أخطاء التصوير"
+    }
+  ],
+  "web.detail.extras.kindGroup.clip": [
+    {
+      "type": 0,
+      "value": "مقاطع"
+    }
+  ],
+  "web.detail.extras.kindGroup.deletedScene": [
+    {
+      "type": 0,
+      "value": "مشاهد محذوفة"
+    }
+  ],
+  "web.detail.extras.kindGroup.featurette": [
+    {
+      "type": 0,
+      "value": "تقارير مصوّرة"
+    }
+  ],
+  "web.detail.extras.kindGroup.otherKind": [
+    {
+      "type": 0,
+      "value": "أخرى"
+    }
+  ],
+  "web.detail.extras.kindGroup.teaser": [
+    {
+      "type": 0,
+      "value": "إعلانات تشويقية"
+    }
+  ],
+  "web.detail.extras.kindGroup.trailer": [
+    {
+      "type": 0,
+      "value": "إعلانات ترويجية"
+    }
+  ],
+  "web.detail.hero.typeSeries": [
+    {
+      "type": 0,
+      "value": "مسلسل"
+    }
+  ],
+  "web.detail.mediaInfo.audio": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.detail.mediaInfo.defaultBadge": [
+    {
+      "type": 0,
+      "value": "افتراضي"
+    }
+  ],
+  "web.detail.mediaInfo.embedded": [
+    {
+      "type": 0,
+      "value": "مضمّنة"
+    }
+  ],
+  "web.detail.mediaInfo.external": [
+    {
+      "type": 0,
+      "value": "خارجية"
+    }
+  ],
+  "web.detail.mediaInfo.forced": [
+    {
+      "type": 0,
+      "value": "إجبارية"
+    }
+  ],
+  "web.detail.mediaInfo.hearingImpairedShort": [
+    {
+      "type": 0,
+      "value": "لضعاف السمع"
+    }
+  ],
+  "web.detail.mediaInfo.row.bitrate": [
+    {
+      "type": 0,
+      "value": "معدل البت"
+    }
+  ],
+  "web.detail.mediaInfo.row.container": [
+    {
+      "type": 0,
+      "value": "الحاوية"
+    }
+  ],
+  "web.detail.mediaInfo.row.duration": [
+    {
+      "type": 0,
+      "value": "المدة"
+    }
+  ],
+  "web.detail.mediaInfo.row.edition": [
+    {
+      "type": 0,
+      "value": "الإصدار"
+    }
+  ],
+  "web.detail.mediaInfo.row.file": [
+    {
+      "type": 0,
+      "value": "الملف"
+    }
+  ],
+  "web.detail.mediaInfo.row.fileSize": [
+    {
+      "type": 0,
+      "value": "حجم الملف"
+    }
+  ],
+  "web.detail.mediaInfo.row.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "لضعاف السمع"
+    }
+  ],
+  "web.detail.mediaInfo.row.resolution": [
+    {
+      "type": 0,
+      "value": "الدقة"
+    }
+  ],
+  "web.detail.mediaInfo.video": [
+    {
+      "type": 0,
+      "value": "الفيديو"
+    }
+  ],
+  "web.detail.overview.revealHidden": [
+    {
+      "type": 0,
+      "value": "الوصف مخفي حتى تشاهد الحلقة. عرضه"
+    }
+  ],
+  "web.detail.page.itemLoadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذا العنصر"
+    }
+  ],
+  "web.detail.page.loadingDetails": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل تفاصيل العنصر"
+    }
+  ],
+  "web.detail.page.unavailableBody": [
+    {
+      "type": 0,
+      "value": "ربما أُزيل، أو ربما لا تملك صلاحية الوصول إليه."
+    }
+  ],
+  "web.detail.page.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "هذا العنصر غير متاح"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -2889,6 +3511,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.detail.seasons.heading": [
+    {
+      "type": 0,
+      "value": "المواسم"
+    }
+  ],
+  "web.detail.seasons.noEpisodes": [
+    {
+      "type": 0,
+      "value": "لا تتوفر حلقات لهذا الموسم بعد."
+    }
+  ],
   "web.detail.seasons.numbered": [
     {
       "type": 0,
@@ -2897,6 +3531,28 @@
     {
       "type": 1,
       "value": "season"
+    }
+  ],
+  "web.detail.seasons.seasonFallback": [
+    {
+      "type": 0,
+      "value": "الموسم"
+    }
+  ],
+  "web.detail.seasons.specials": [
+    {
+      "type": 0,
+      "value": "الحلقات الخاصة"
+    }
+  ],
+  "web.detail.seasons.totalCount": [
+    {
+      "type": 0,
+      "value": "الإجمالي "
+    },
+    {
+      "type": 1,
+      "value": "count"
     }
   ],
   "web.detail.seasons.watchedProgress": [
@@ -3011,6 +3667,114 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.cast": [
+    {
+      "type": 0,
+      "value": "طاقم التمثيل"
+    }
+  ],
+  "web.detail.sections.castAndCrew": [
+    {
+      "type": 0,
+      "value": "طاقم التمثيل والعمل"
+    }
+  ],
+  "web.detail.subtitles.button": [
+    {
+      "type": 0,
+      "value": "الترجمة"
+    }
+  ],
+  "web.detail.subtitles.forcedMarker": [
+    {
+      "type": 0,
+      "value": "(إجبارية)"
+    }
+  ],
+  "web.detail.subtitles.off": [
+    {
+      "type": 0,
+      "value": "معطّل"
+    }
+  ],
+  "web.detail.subtitles.resetToDefaults": [
+    {
+      "type": 0,
+      "value": "إعادة التعيين إلى افتراضيات الملف الشخصي"
+    }
+  ],
+  "web.detail.subtitles.sdhMarker": [
+    {
+      "type": 0,
+      "value": "(SDH)"
+    }
+  ],
+  "web.detail.subtitles.unknown": [
+    {
+      "type": 0,
+      "value": "غير معروف"
+    }
+  ],
+  "web.detail.tracks.auto": [
+    {
+      "type": 0,
+      "value": "تلقائي"
+    }
+  ],
+  "web.detail.tracks.autoSummary": [
+    {
+      "type": 0,
+      "value": "تلقائي: "
+    },
+    {
+      "type": 1,
+      "value": "summary"
+    }
+  ],
+  "web.detail.trailers.heading": [
+    {
+      "type": 0,
+      "value": "الإعلانات الترويجية والمزيد"
+    }
+  ],
+  "web.detail.trailers.official": [
+    {
+      "type": 0,
+      "value": "رسمي"
+    }
+  ],
+  "web.detail.trailers.playerDescription": [
+    {
+      "type": 0,
+      "value": "مشغّل فيديو الإعلان الترويجي"
+    }
+  ],
+  "web.detail.versions.fileIdFallback": [
+    {
+      "type": 0,
+      "value": "النسخة "
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.detail.versions.numbered": [
+    {
+      "type": 0,
+      "value": "النسخة "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.detail.versions.versionButton": [
+    {
+      "type": 0,
+      "value": "النسخة"
     }
   ],
   "web.home.continueWatching.episodeLabelWithTitle": [
@@ -3213,6 +3977,66 @@
       "value": "تمت المشاهدة"
     }
   ],
+  "web.item.dialog.fieldTitle": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "web.item.editMetadata.contentRating": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري"
+    }
+  ],
+  "web.item.editMetadata.countries": [
+    {
+      "type": 0,
+      "value": "الدول"
+    }
+  ],
+  "web.item.editMetadata.genres": [
+    {
+      "type": 0,
+      "value": "الأنواع"
+    }
+  ],
+  "web.item.editMetadata.networks": [
+    {
+      "type": 0,
+      "value": "الشبكات"
+    }
+  ],
+  "web.item.editMetadata.originalTitle": [
+    {
+      "type": 0,
+      "value": "العنوان الأصلي"
+    }
+  ],
+  "web.item.editMetadata.overview": [
+    {
+      "type": 0,
+      "value": "الملخص"
+    }
+  ],
+  "web.item.editMetadata.ratings": [
+    {
+      "type": 0,
+      "value": "التقييمات"
+    }
+  ],
+  "web.item.editMetadata.studios": [
+    {
+      "type": 0,
+      "value": "الاستوديوهات"
+    }
+  ],
+  "web.item.editMetadata.tagline": [
+    {
+      "type": 0,
+      "value": "الشعار"
+    }
+  ],
   "web.item.menu.addToFavorites": [
     {
       "type": 0,
@@ -3271,6 +4095,79 @@
     {
       "type": 0,
       "value": "العرض في التوصيات"
+    }
+  ],
+  "web.item.rating.label": [
+    {
+      "type": 0,
+      "value": "التقييم"
+    }
+  ],
+  "web.item.rating.stars": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لا نجوم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نجمة واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نجمتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " نجوم"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " نجمة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " نجمة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.library.browse.clearFilters": [
@@ -3759,6 +4656,18 @@
       "value": "مؤقت النوم"
     }
   ],
+  "web.player.tracks.resetAudioFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تعيين تفضيل الصوت"
+    }
+  ],
+  "web.player.tracks.saveAudioFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ تفضيل الصوت"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -3997,6 +4906,12 @@
     {
       "type": 0,
       "value": "تعذّر تحميل التوصيات."
+    }
+  ],
+  "web.recommendations.moreLikeThis": [
+    {
+      "type": 0,
+      "value": "عناوين مشابهة"
     }
   ],
   "web.recommendations.sectionCount": [
@@ -8117,10 +9032,110 @@
       "value": "تعذّر بدء التشغيل العشوائي."
     }
   ],
+  "web.ui.close": [
+    {
+      "type": 0,
+      "value": "إغلاق"
+    }
+  ],
   "web.ui.saving": [
     {
       "type": 0,
       "value": "جارٍ الحفظ..."
+    }
+  ],
+  "web.watchTogether.common.series": [
+    {
+      "type": 0,
+      "value": "مسلسل"
+    }
+  ],
+  "web.watchTogether.startSheet.seriesSeasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · لا مواسم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · موسم واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · موسمان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مواسم"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسمًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " موسم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.startSheet.title": [
+    {
+      "type": 0,
+      "value": "بدء Watch Party بهذا العنوان"
     }
   ]
 }

@@ -16,9 +16,6 @@ namespace Granary.Core.ViewModels;
 // reload after the player's cleanup), or a start or a watched mark elsewhere moves the Play pill, the progress and the blur.
 public sealed partial class ItemDetailViewModel
 {
-    /// <summary>The web's words in place of a hidden description (<c>DetailOverview.tsx</c>).</summary>
-    public const string OverviewHiddenText = "Description hidden until you watch. Show it";
-
     /// <summary>How long the page waits after a change elsewhere before it reads the viewer's state again: a burst is read once.</summary>
     public static readonly TimeSpan RefreshDelay = TimeSpan.FromMilliseconds(400);
 

@@ -1,5 +1,6 @@
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Detail;
 
@@ -9,10 +10,9 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static class DetailCredits
 {
+    // The jobs as the server names them, in English.
     private const string Director = "Director";
     private const string Creator = "Creator";
-    private const string Writers = "Writers";
-    private const string Cast = "Cast";
     private const int DirectorCards = 2;
     private const int WriterCards = 3;
 
@@ -28,17 +28,20 @@ public static class DetailCredits
         if (item.Type != CatalogItemTypes.Season)
         {
             var (leadJob, leadCredits) = Lead(item);
-            string leadRole = leadJob ?? Director;
-            var lead = CrewCards(leadCredits, leadRole, leadRole == Creator ? int.MaxValue : DirectorCards, serverBase);
+            bool creators = leadJob == Creator;
+            // The web's CREW_ROLE_CAPTION: the lead group is named by its role, each card captioned with it.
+            string leadRole = creators ? AppText.Get("web.detail.castCrew.creator") : AppText.Get("web.detail.castCrew.director");
+            var lead = CrewCards(leadCredits, leadRole, creators ? int.MaxValue : DirectorCards, serverBase);
             // A writer-director already has a card. Only the lead cards shown count: a third director still shows as a writer.
             var shown = lead.Select(p => Key(p.PersonId, p.Name)).ToHashSet(StringComparer.Ordinal);
             var writers = item.Crew.Where(c => c is not null && IsWriter(c) && !shown.Contains(Key(c.PersonId, c.Name)));
             groups.Add((leadRole, lead));
-            groups.Add((Writers, CrewCards([.. writers], "Writer", WriterCards, serverBase)));
+            groups.Add((AppText.Get("web.detail.castCrew.writers"),
+                CrewCards([.. writers], AppText.Get("web.detail.castCrew.writer"), WriterCards, serverBase)));
         }
         int castLimit = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series ? 12 : 20;
         // Not made unique, as the web's: an actor with two characters has a card for each.
-        groups.Add((Cast, [.. item.Cast
+        groups.Add((AppText.Get("web.detail.castCrew.cast"), [.. item.Cast
             .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name))
             .OrderBy(c => c.Order)
             .Take(castLimit)
@@ -65,7 +68,9 @@ public static class DetailCredits
     }
 
     /// <summary>"Cast &amp; Crew" when the row has crew cards, "Cast" otherwise.</summary>
-    public static string PeopleTitle(IReadOnlyList<DetailPerson> people) => people.Any(p => p.IsCrew) ? "Cast & Crew" : "Cast";
+    public static string PeopleTitle(IReadOnlyList<DetailPerson> people) => people.Any(p => p.IsCrew)
+        ? AppText.Get("web.detail.sections.castAndCrew")
+        : AppText.Get("web.detail.sections.cast");
 
     // Each person once, up to max cards, captioned with the group's role.
     private static List<DetailPerson> CrewCards(IReadOnlyList<CrewCredit> members, string role, int max, Uri serverBase)

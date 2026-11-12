@@ -71,11 +71,15 @@ public static class MediaCardFactory
         }, item);
     }
 
-    /// <summary>A season poster: "Staffel 3" with "4 of 8 episodes" and the season's progress.</summary>
+    /// <summary>
+    /// A season poster: "Staffel 3" with "4 of 8 episodes" and the season's progress; a season without a name of its own is
+    /// "Season 3" in the language on screen, as the web's SeasonCarousel names it (getSeasonDisplayTitle).
+    /// </summary>
     public static MediaCard Season(Season season, Uri serverBase)
     {
         int watched = season.UserData?.WatchedCount ?? 0;
-        return new MediaCard(season.ContentId, CatalogItemTypes.Season, season.Title)
+        return new MediaCard(season.ContentId, CatalogItemTypes.Season,
+            DetailText.SeasonDisplayTitle(season.SeasonNumber, season.Title, season.IsSpecials == true))
         {
             Shape = MediaCardShape.Poster,
             Caption = watched > 0 && watched < season.EpisodeCount

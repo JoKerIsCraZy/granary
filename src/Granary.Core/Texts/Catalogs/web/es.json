@@ -2019,6 +2019,12 @@
       "value": "Más acciones"
     }
   ],
+  "web.collections.addToCollection.title": [
+    {
+      "type": 0,
+      "value": "Añadir a una colección"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
@@ -2317,6 +2323,18 @@
       "value": "No se pudo eliminar"
     }
   ],
+  "web.common.toast.subtitles.resetPreferenceFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo restablecer la preferencia de subtítulos"
+    }
+  ],
+  "web.common.toast.subtitles.savePreferenceFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo guardar la preferencia de subtítulos"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -2339,6 +2357,30 @@
     {
       "type": 0,
       "value": "Cargando más"
+    }
+  ],
+  "web.detail.actions.addToCollection": [
+    {
+      "type": 0,
+      "value": "Añadir a una colección"
+    }
+  ],
+  "web.detail.actions.addToFavorites": [
+    {
+      "type": 0,
+      "value": "Añadir a favoritos"
+    }
+  ],
+  "web.detail.actions.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "Añadir a la lista para ver"
+    }
+  ],
+  "web.detail.actions.browseSeries": [
+    {
+      "type": 0,
+      "value": "Explorar la serie"
     }
   ],
   "web.detail.actions.markSeasonUnwatched": [
@@ -2375,6 +2417,218 @@
     {
       "type": 0,
       "value": "Marcar como visto"
+    }
+  ],
+  "web.detail.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "Más acciones"
+    }
+  ],
+  "web.detail.actions.play": [
+    {
+      "type": 0,
+      "value": "Reproducir"
+    }
+  ],
+  "web.detail.actions.playEpisode": [
+    {
+      "type": 0,
+      "value": "Reproducir episodio"
+    }
+  ],
+  "web.detail.actions.playFirstEpisode": [
+    {
+      "type": 0,
+      "value": "Reproducir el primer episodio"
+    }
+  ],
+  "web.detail.actions.playFromBeginning": [
+    {
+      "type": 0,
+      "value": "Reproducir desde el principio"
+    }
+  ],
+  "web.detail.actions.playNext": [
+    {
+      "type": 0,
+      "value": "Reproducir el siguiente"
+    }
+  ],
+  "web.detail.actions.removeFromFavorites": [
+    {
+      "type": 0,
+      "value": "Quitar de favoritos"
+    }
+  ],
+  "web.detail.actions.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "Quitar de la lista para ver"
+    }
+  ],
+  "web.detail.actions.resume": [
+    {
+      "type": 0,
+      "value": "Reanudar"
+    }
+  ],
+  "web.detail.actions.resumeAt": [
+    {
+      "type": 0,
+      "value": "Reanudar en "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.detail.actions.startFromFirstEpisode": [
+    {
+      "type": 0,
+      "value": "Empezar desde el episodio "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.actions.startWatchParty": [
+    {
+      "type": 0,
+      "value": "Iniciar una Watch Party"
+    }
+  ],
+  "web.detail.audio.button": [
+    {
+      "type": 0,
+      "value": "Audio"
+    }
+  ],
+  "web.detail.audio.unknown": [
+    {
+      "type": 0,
+      "value": "Desconocido"
+    }
+  ],
+  "web.detail.badges.advisory": [
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.advisorySource": [
+    {
+      "type": 1,
+      "value": "source"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episodio"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de episodios"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " episodios"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.badges.seasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " temporada"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de temporadas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " temporadas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.boxSet.cardLabel": [
@@ -2532,6 +2786,60 @@
       "value": " vistas"
     }
   ],
+  "web.detail.breadcrumb.label": [
+    {
+      "type": 0,
+      "value": "Ruta de navegación"
+    }
+  ],
+  "web.detail.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "Desplazar a la izquierda"
+    }
+  ],
+  "web.detail.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "Desplazar a la derecha"
+    }
+  ],
+  "web.detail.castCrew.cast": [
+    {
+      "type": 0,
+      "value": "Reparto"
+    }
+  ],
+  "web.detail.castCrew.creator": [
+    {
+      "type": 0,
+      "value": "Creación"
+    }
+  ],
+  "web.detail.castCrew.crew": [
+    {
+      "type": 0,
+      "value": "Equipo técnico"
+    }
+  ],
+  "web.detail.castCrew.director": [
+    {
+      "type": 0,
+      "value": "Dirección"
+    }
+  ],
+  "web.detail.castCrew.writer": [
+    {
+      "type": 0,
+      "value": "Guion"
+    }
+  ],
+  "web.detail.castCrew.writers": [
+    {
+      "type": 0,
+      "value": "Guion"
+    }
+  ],
   "web.detail.episodeCode": [
     {
       "type": 0,
@@ -2550,10 +2858,260 @@
       "value": "episode"
     }
   ],
+  "web.detail.episodes.heading": [
+    {
+      "type": 0,
+      "value": "Episodios"
+    }
+  ],
+  "web.detail.episodes.moreEpisodes": [
+    {
+      "type": 0,
+      "value": "Más episodios"
+    }
+  ],
   "web.detail.episodes.nowViewing": [
     {
       "type": 0,
       "value": "Viendo ahora"
+    }
+  ],
+  "web.detail.episodes.numbered": [
+    {
+      "type": 0,
+      "value": "Episodio "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.extras.heading": [
+    {
+      "type": 0,
+      "value": "Extras"
+    }
+  ],
+  "web.detail.extras.kind.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "Detrás de cámaras"
+    }
+  ],
+  "web.detail.extras.kind.bloopers": [
+    {
+      "type": 0,
+      "value": "Tomas falsas"
+    }
+  ],
+  "web.detail.extras.kind.clip": [
+    {
+      "type": 0,
+      "value": "Clip"
+    }
+  ],
+  "web.detail.extras.kind.deletedScene": [
+    {
+      "type": 0,
+      "value": "Escena eliminada"
+    }
+  ],
+  "web.detail.extras.kind.featurette": [
+    {
+      "type": 0,
+      "value": "Reportaje"
+    }
+  ],
+  "web.detail.extras.kind.otherKind": [
+    {
+      "type": 0,
+      "value": "Extra"
+    }
+  ],
+  "web.detail.extras.kind.teaser": [
+    {
+      "type": 0,
+      "value": "Teaser"
+    }
+  ],
+  "web.detail.extras.kind.trailer": [
+    {
+      "type": 0,
+      "value": "Tráiler"
+    }
+  ],
+  "web.detail.extras.kindGroup.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "Detrás de cámaras"
+    }
+  ],
+  "web.detail.extras.kindGroup.bloopers": [
+    {
+      "type": 0,
+      "value": "Tomas falsas"
+    }
+  ],
+  "web.detail.extras.kindGroup.clip": [
+    {
+      "type": 0,
+      "value": "Clips"
+    }
+  ],
+  "web.detail.extras.kindGroup.deletedScene": [
+    {
+      "type": 0,
+      "value": "Escenas eliminadas"
+    }
+  ],
+  "web.detail.extras.kindGroup.featurette": [
+    {
+      "type": 0,
+      "value": "Reportajes"
+    }
+  ],
+  "web.detail.extras.kindGroup.otherKind": [
+    {
+      "type": 0,
+      "value": "Otros"
+    }
+  ],
+  "web.detail.extras.kindGroup.teaser": [
+    {
+      "type": 0,
+      "value": "Teasers"
+    }
+  ],
+  "web.detail.extras.kindGroup.trailer": [
+    {
+      "type": 0,
+      "value": "Tráileres"
+    }
+  ],
+  "web.detail.hero.typeSeries": [
+    {
+      "type": 0,
+      "value": "Serie"
+    }
+  ],
+  "web.detail.mediaInfo.audio": [
+    {
+      "type": 0,
+      "value": "Audio"
+    }
+  ],
+  "web.detail.mediaInfo.defaultBadge": [
+    {
+      "type": 0,
+      "value": "Predeterminada"
+    }
+  ],
+  "web.detail.mediaInfo.embedded": [
+    {
+      "type": 0,
+      "value": "Incrustados"
+    }
+  ],
+  "web.detail.mediaInfo.external": [
+    {
+      "type": 0,
+      "value": "Externos"
+    }
+  ],
+  "web.detail.mediaInfo.forced": [
+    {
+      "type": 0,
+      "value": "Forzados"
+    }
+  ],
+  "web.detail.mediaInfo.hearingImpairedShort": [
+    {
+      "type": 0,
+      "value": "SDH"
+    }
+  ],
+  "web.detail.mediaInfo.row.bitrate": [
+    {
+      "type": 0,
+      "value": "Tasa de bits"
+    }
+  ],
+  "web.detail.mediaInfo.row.container": [
+    {
+      "type": 0,
+      "value": "Contenedor"
+    }
+  ],
+  "web.detail.mediaInfo.row.duration": [
+    {
+      "type": 0,
+      "value": "Duración"
+    }
+  ],
+  "web.detail.mediaInfo.row.edition": [
+    {
+      "type": 0,
+      "value": "Edición"
+    }
+  ],
+  "web.detail.mediaInfo.row.file": [
+    {
+      "type": 0,
+      "value": "Archivo"
+    }
+  ],
+  "web.detail.mediaInfo.row.fileSize": [
+    {
+      "type": 0,
+      "value": "Tamaño del archivo"
+    }
+  ],
+  "web.detail.mediaInfo.row.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "Para personas con discapacidad auditiva"
+    }
+  ],
+  "web.detail.mediaInfo.row.resolution": [
+    {
+      "type": 0,
+      "value": "Resolución"
+    }
+  ],
+  "web.detail.mediaInfo.video": [
+    {
+      "type": 0,
+      "value": "Video"
+    }
+  ],
+  "web.detail.overview.revealHidden": [
+    {
+      "type": 0,
+      "value": "Descripción oculta hasta que lo veas. Mostrarla"
+    }
+  ],
+  "web.detail.page.itemLoadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar este elemento"
+    }
+  ],
+  "web.detail.page.loadingDetails": [
+    {
+      "type": 0,
+      "value": "Cargando los detalles del elemento"
+    }
+  ],
+  "web.detail.page.unavailableBody": [
+    {
+      "type": 0,
+      "value": "Es posible que se haya eliminado o que no tengas acceso."
+    }
+  ],
+  "web.detail.page.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "Este elemento no está disponible"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -2602,6 +3160,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.detail.seasons.heading": [
+    {
+      "type": 0,
+      "value": "Temporadas"
+    }
+  ],
+  "web.detail.seasons.noEpisodes": [
+    {
+      "type": 0,
+      "value": "Aún no hay episodios disponibles para esta temporada."
+    }
+  ],
   "web.detail.seasons.numbered": [
     {
       "type": 0,
@@ -2610,6 +3180,28 @@
     {
       "type": 1,
       "value": "season"
+    }
+  ],
+  "web.detail.seasons.seasonFallback": [
+    {
+      "type": 0,
+      "value": "Temporada"
+    }
+  ],
+  "web.detail.seasons.specials": [
+    {
+      "type": 0,
+      "value": "Especiales"
+    }
+  ],
+  "web.detail.seasons.totalCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " en total"
     }
   ],
   "web.detail.seasons.watchedProgress": [
@@ -2680,6 +3272,114 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.cast": [
+    {
+      "type": 0,
+      "value": "Reparto"
+    }
+  ],
+  "web.detail.sections.castAndCrew": [
+    {
+      "type": 0,
+      "value": "Reparto y equipo"
+    }
+  ],
+  "web.detail.subtitles.button": [
+    {
+      "type": 0,
+      "value": "Subtítulos"
+    }
+  ],
+  "web.detail.subtitles.forcedMarker": [
+    {
+      "type": 0,
+      "value": "(Forzados)"
+    }
+  ],
+  "web.detail.subtitles.off": [
+    {
+      "type": 0,
+      "value": "Desactivados"
+    }
+  ],
+  "web.detail.subtitles.resetToDefaults": [
+    {
+      "type": 0,
+      "value": "Restablecer los valores predeterminados del perfil"
+    }
+  ],
+  "web.detail.subtitles.sdhMarker": [
+    {
+      "type": 0,
+      "value": "(SDH)"
+    }
+  ],
+  "web.detail.subtitles.unknown": [
+    {
+      "type": 0,
+      "value": "Desconocido"
+    }
+  ],
+  "web.detail.tracks.auto": [
+    {
+      "type": 0,
+      "value": "Automático"
+    }
+  ],
+  "web.detail.tracks.autoSummary": [
+    {
+      "type": 0,
+      "value": "Automático: "
+    },
+    {
+      "type": 1,
+      "value": "summary"
+    }
+  ],
+  "web.detail.trailers.heading": [
+    {
+      "type": 0,
+      "value": "Tráileres y más"
+    }
+  ],
+  "web.detail.trailers.official": [
+    {
+      "type": 0,
+      "value": "Oficial"
+    }
+  ],
+  "web.detail.trailers.playerDescription": [
+    {
+      "type": 0,
+      "value": "Reproductor de video del tráiler"
+    }
+  ],
+  "web.detail.versions.fileIdFallback": [
+    {
+      "type": 0,
+      "value": "Versión "
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.detail.versions.numbered": [
+    {
+      "type": 0,
+      "value": "Versión "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.detail.versions.versionButton": [
+    {
+      "type": 0,
+      "value": "Versión"
     }
   ],
   "web.home.continueWatching.episodeLabelWithTitle": [
@@ -2882,6 +3582,66 @@
       "value": "Visto"
     }
   ],
+  "web.item.dialog.fieldTitle": [
+    {
+      "type": 0,
+      "value": "Título"
+    }
+  ],
+  "web.item.editMetadata.contentRating": [
+    {
+      "type": 0,
+      "value": "Clasificación por edad"
+    }
+  ],
+  "web.item.editMetadata.countries": [
+    {
+      "type": 0,
+      "value": "Países"
+    }
+  ],
+  "web.item.editMetadata.genres": [
+    {
+      "type": 0,
+      "value": "Géneros"
+    }
+  ],
+  "web.item.editMetadata.networks": [
+    {
+      "type": 0,
+      "value": "Cadenas"
+    }
+  ],
+  "web.item.editMetadata.originalTitle": [
+    {
+      "type": 0,
+      "value": "Título original"
+    }
+  ],
+  "web.item.editMetadata.overview": [
+    {
+      "type": 0,
+      "value": "Sinopsis"
+    }
+  ],
+  "web.item.editMetadata.ratings": [
+    {
+      "type": 0,
+      "value": "Calificaciones"
+    }
+  ],
+  "web.item.editMetadata.studios": [
+    {
+      "type": 0,
+      "value": "Estudios"
+    }
+  ],
+  "web.item.editMetadata.tagline": [
+    {
+      "type": 0,
+      "value": "Eslogan"
+    }
+  ],
   "web.item.menu.addToFavorites": [
     {
       "type": 0,
@@ -2940,6 +3700,55 @@
     {
       "type": 0,
       "value": "Mostrar en recomendaciones"
+    }
+  ],
+  "web.item.rating.label": [
+    {
+      "type": 0,
+      "value": "Calificación"
+    }
+  ],
+  "web.item.rating.stars": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " estrella"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de estrellas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " estrellas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.library.browse.clearFilters": [
@@ -3401,6 +4210,18 @@
       "value": "Temporizador de apagado"
     }
   ],
+  "web.player.tracks.resetAudioFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo restablecer la preferencia de audio"
+    }
+  ],
+  "web.player.tracks.saveAudioFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo guardar la preferencia de audio"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -3599,6 +4420,12 @@
     {
       "type": 0,
       "value": "No se pudieron cargar las recomendaciones."
+    }
+  ],
+  "web.recommendations.moreLikeThis": [
+    {
+      "type": 0,
+      "value": "Más títulos similares"
     }
   ],
   "web.recommendations.sectionCount": [
@@ -7027,10 +7854,86 @@
       "value": "No se pudo iniciar la reproducción aleatoria."
     }
   ],
+  "web.ui.close": [
+    {
+      "type": 0,
+      "value": "Cerrar"
+    }
+  ],
   "web.ui.saving": [
     {
       "type": 0,
       "value": "Guardando..."
+    }
+  ],
+  "web.watchTogether.common.series": [
+    {
+      "type": 0,
+      "value": "Serie"
+    }
+  ],
+  "web.watchTogether.startSheet.seriesSeasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Serie · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " temporada"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Serie · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de temporadas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Serie · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " temporadas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.startSheet.title": [
+    {
+      "type": 0,
+      "value": "Iniciar una Watch Party con esto"
     }
   ]
 }

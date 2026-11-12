@@ -551,8 +551,8 @@ public sealed partial class TitleViewModel : ObservableObject
         Add(detail.ContentRating);
         if (isSeries)
         {
-            Add(detail.NumberOfSeasons is int seasons and > 0 ? DetailText.Count(seasons, "season", "seasons") : null);
-            Add(detail.NumberOfEpisodes is int episodes and > 0 ? DetailText.Count(episodes, "episode", "episodes") : null);
+            Add(DetailFacts.SeasonsBadge(detail.NumberOfSeasons));
+            Add(DetailFacts.EpisodesBadge(detail.NumberOfEpisodes));
             Add(detail.Status);
         }
         else

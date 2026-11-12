@@ -13,7 +13,6 @@
     xmlns:cards="using:Granary.Core.ViewModels.Cards"
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:local="using:Granary.App.Views"
-    xmlns:vm="using:Granary.Core.ViewModels"
     xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
@@ -132,7 +131,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Seasons" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.seasons.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind ViewModel.SeasonsTotalText, Mode=OneWay}"
                                        Style="{StaticResource SiloCaptionTextStyle}" FontSize="13" />
                         </Grid>
@@ -158,14 +157,14 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Episodes" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.episodes.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind ViewModel.EpisodesTotalText, Mode=OneWay}"
                                        Style="{StaticResource SiloCaptionTextStyle}" FontSize="13" />
                         </Grid>
                         <Border Padding="20" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}"
                                 BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1"
                                 Visibility="{x:Bind ViewModel.ShowsNoEpisodes, Mode=OneWay}">
-                            <TextBlock Text="{x:Bind vm:ItemDetailViewModel.NoEpisodesText}" Style="{StaticResource SiloBodyTextStyle}"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.seasons.noEpisodes')}" Style="{StaticResource SiloBodyTextStyle}"
                                        Foreground="{StaticResource SiloMutedBrush}" />
                         </Border>
                         <!-- The episodes with the places of those the library does not have among them (ItemDetailViewModel.Airings.cs). -->
@@ -198,7 +197,7 @@
                         </ItemsRepeater>
                     </StackPanel>
 
-                    <controls:MediaRow Title="More Episodes" ItemsSource="{x:Bind ViewModel.MoreEpisodes, Mode=OneWay}"
+                    <controls:MediaRow Title="{x:Bind t:AppText.Get('web.detail.episodes.moreEpisodes')}" ItemsSource="{x:Bind ViewModel.MoreEpisodes, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasMoreEpisodes, Mode=OneWay}" />
 
@@ -209,7 +208,7 @@
                     <controls:DetailExtrasSection Groups="{x:Bind ViewModel.ExtraGroups, Mode=OneWay}" PlayCommand="{x:Bind ViewModel.PlayExtraCommand}"
                                                   Visibility="{x:Bind ViewModel.HasExtras, Mode=OneWay}" />
 
-                    <controls:DetailShelf Title="Trailers &amp; More" Visibility="{x:Bind ViewModel.HasTrailers, Mode=OneWay}">
+                    <controls:DetailShelf Title="{x:Bind t:AppText.Get('web.detail.trailers.heading')}" Visibility="{x:Bind ViewModel.HasTrailers, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Trailers, Mode=OneWay}">
                                 <ItemsRepeater.Layout>
@@ -218,7 +217,7 @@
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailTrailer">
                                         <Button Style="{StaticResource SiloCardButtonStyle}" Click="OnTrailerClick" DataContext="{x:Bind}"
-                                                AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="Play trailer">
+                                                AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.detail.playTrailer')}">
                                             <controls:DetailTrailerCard Trailer="{x:Bind}" />
                                         </Button>
                                     </DataTemplate>
@@ -244,7 +243,7 @@
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" ExploreAllCommand="{x:Bind ViewModel.OpenBoxSetCommand}"
                                        Visibility="{x:Bind ViewModel.HasBoxSet, Mode=OneWay}" />
 
-                    <controls:MediaRow Title="More Like This" ItemsSource="{x:Bind ViewModel.Similar, Mode=OneWay}"
+                    <controls:MediaRow Title="{x:Bind t:AppText.Get('web.recommendations.moreLikeThis')}" ItemsSource="{x:Bind ViewModel.Similar, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasSimilar, Mode=OneWay}" />
                 </StackPanel>
@@ -252,11 +251,11 @@
         </ScrollViewer>
 
         <ProgressRing Grid.RowSpan="2" Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the title" />
+                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.page.loadingDetails')}" />
 
         <StackPanel Grid.RowSpan="2" MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.HasLoadError, Mode=OneWay}">
-            <TextBlock Text="Couldn't load this title" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.itemLoadFailed')}" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
                        AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="{x:Bind ViewModel.LoadErrorText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
@@ -266,11 +265,11 @@
 
         <StackPanel Grid.RowSpan="2" MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.IsNotFound, Mode=OneWay}">
-            <TextBlock Text="{x:Bind vm:ItemDetailViewModel.NotFoundTitle}" Style="{StaticResource SiloPageTitleTextStyle}"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.unavailableTitle')}" Style="{StaticResource SiloPageTitleTextStyle}"
                        TextAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
-            <TextBlock Text="{x:Bind vm:ItemDetailViewModel.NotFoundHint}" Style="{StaticResource SiloBodyTextStyle}"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.unavailableBody')}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
-            <Button HorizontalAlignment="Center" Content="Go back" Style="{StaticResource SiloSecondaryButtonStyle}"
+            <Button HorizontalAlignment="Center" Content="{x:Bind t:AppText.Get('common.back')}" Style="{StaticResource SiloSecondaryButtonStyle}"
                     Command="{x:Bind ViewModel.GoBackCommand}" Visibility="{x:Bind ViewModel.CanGoBack}" />
         </StackPanel>
     </Grid>
