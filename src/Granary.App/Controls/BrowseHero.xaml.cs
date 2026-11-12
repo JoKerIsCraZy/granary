@@ -412,10 +412,10 @@ public sealed partial class BrowseHero : UserControl
 
     private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width, Sizes.RestHeight);
 
-    // The backdrop takes its share of the new width, or all of it under the full hero.
+    // The backdrop takes the new width, all of it.
     private void OnWidthChanged(double width)
     {
-        BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width, Sizes);
+        BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width);
         PlacePicture();
         FollowWidth();
     }
@@ -472,14 +472,16 @@ public sealed partial class BrowseHero : UserControl
         var text = _textAt1080;
         Root.Height = sizes.RestHeight;
         BottomFade.Height = sizes.FadeHeight;
-        // The compact hero's backdrop fades into the page on its left; the full one's lies under the web's banner's fades.
-        SideFade.Fill = (Brush)Resources[sizes.IsFull ? "FullSideFade" : "CompactSideFade"];
         BottomFade.Fill = (Brush)Resources[sizes.IsFull ? "FullBottomFade" : "CompactBottomFade"];
-        Dim.Visibility = sizes.IsFull ? Visibility.Visible : Visibility.Collapsed;
         Heading.Height = sizes.HeadingHeight;
         Logo.MaxWidth = BrowseHeroLayout.Scaled(text.LogoWidth, sizes.Grow);
         HeadingText.FontSize = BrowseHeroLayout.Scaled(text.Name, sizes.Grow);
         Texts.MaxWidth = BrowseHeroLayout.Scaled(text.Width, sizes.Grow);
+        // The full hero's side fade is the web's banner's, over the left half of its width. The compact hero's is as wide
+        // as its text needs, whatever the hero's width: on a narrow window half the hero would end under the text.
+        SideFade.Fill = (Brush)Resources[sizes.IsFull ? "FullSideFade" : "CompactSideFade"];
+        SideFade.HorizontalAlignment = sizes.IsFull ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
+        SideFade.Width = sizes.IsFull ? double.NaN : BrowseHeroLayout.TextShadeWidth(Texts.Margin.Left + Texts.MaxWidth);
         // The compact hero's text hangs from the top; the full one's stands on its foot, as the web's banner's, and never
         // higher than the header has it.
         Texts.VerticalAlignment = sizes.TextBottom is null ? VerticalAlignment.Top : VerticalAlignment.Bottom;

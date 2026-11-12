@@ -417,8 +417,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
   the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
   shown again only makes its bitmap. Home's hero and banner take the same path for a hidden backdrop
-  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,100 px backdrop
-  is blurred by 2.8 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
+  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,660 px backdrop
+  is blurred by 1.9 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
   the thumbhash as a sharp backdrop would; a wider window does not make it again (`BrowseHeroLayout.StepFor`). The hero
   takes a title whose blur changed as a new picture, so a switch fades the backdrop over while the logo stays; a picture
   that becomes hidden is let go at once rather than faded over. Until the profile's switches are read
