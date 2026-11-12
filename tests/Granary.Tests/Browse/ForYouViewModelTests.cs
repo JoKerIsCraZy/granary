@@ -76,6 +76,36 @@ public sealed class ForYouViewModelTests
     }
 
     [Fact]
+    public async Task Backdrops_AreAskedForAsWideAsTheHeroDrawsThem()
+    {
+        var page = Create();
+        page.Hero.Window = (3840, 1560);
+
+        await page.ActivateAsync(isReturn: false);
+
+        Assert.Contains("backdrop_width=1568", _harness.Queries(DiscoverPath)[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AReturn_ReadsTheRowsAgain_OnlyWhenTheHeroNeedsItsBackdropsNotablyWider()
+    {
+        var page = Create();
+        page.Hero.Window = (1920, 1040);
+        await page.ActivateAsync(isReturn: false);
+
+        await page.ActivateAsync(isReturn: true);
+        Assert.Single(_harness.Queries(DiscoverPath));
+
+        // The window is much wider now, as it is after Hero size was set to Full.
+        page.Hero.Window = (3840, 1560);
+        await page.ActivateAsync(isReturn: true);
+
+        Assert.Equal(2, _harness.Queries(DiscoverPath).Count);
+        Assert.Contains("backdrop_width=1568", _harness.Queries(DiscoverPath)[1], StringComparison.Ordinal);
+        Assert.Equal(LibraryLoadState.Ready, page.State);
+    }
+
+    [Fact]
     public async Task ARowFromTheProfilesHistory_MakesThePagePersonal()
     {
         var page = await LoadedAsync();

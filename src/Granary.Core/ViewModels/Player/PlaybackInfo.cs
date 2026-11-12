@@ -185,12 +185,13 @@ public static class PlaybackInfo
         return version is null ? None : VideoRangeLabel(version) is { Length: > 0 } rangeLabel ? rangeLabel : "SDR";
     }
 
-    // An Atmos track whose title does not say so shows its family; otherwise its title, else the codec.
+    // An Atmos track whose title does not say so shows its family; otherwise its title, else the codec. The title says so
+    // with the word: "Atmospheric score" does not (web: formatOriginalAudioCodec with mentionsAtmos).
     private static string AudioCodec(WatchFileVersion version, WatchAudioTrack track)
     {
         string? title = track.Title?.Trim() is { Length: > 0 } own ? own : track.EmbeddedTitle?.Trim() is { Length: > 0 } embedded ? embedded : null;
         string family = TrackText.AudioCodec(track);
-        if (family.Contains("Atmos", StringComparison.Ordinal) && title?.Contains("atmos", StringComparison.OrdinalIgnoreCase) != true)
+        if (family.Contains("Atmos", StringComparison.Ordinal) && !TrackText.MentionsAtmos(title))
         {
             return family;
         }

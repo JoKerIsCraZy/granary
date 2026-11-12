@@ -285,7 +285,10 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 
     public SidebarSettingsViewModel Sidebar { get; }
 
-    /// <summary>The title preview at the top of Home, For You and Discover: Granary's own switch, for this profile on this PC.</summary>
+    /// <summary>
+    /// The title preview at the top of Home, For You and Discover and the hero's size: Granary's own switch and choice, for
+    /// this profile on this PC.
+    /// </summary>
     public TitlePreviewSettingsViewModel TitlePreview { get; }
 
     public void Dispose()

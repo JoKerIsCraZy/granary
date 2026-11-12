@@ -25,7 +25,7 @@
             </Button>
         </DataTemplate>
 
-        <!-- A poster setting's choice: the chosen one filled in the accent, as the web's ChoiceButtons. -->
+        <!-- A choice of a poster setting or of Hero size: the chosen one filled in the accent, as the web's ChoiceButtons. -->
         <DataTemplate x:Key="SettingsChoiceTemplate" x:DataType="settings:SettingsChoice">
             <Button Content="{x:Bind Label}" Style="{StaticResource SiloSettingsChoiceButtonStyle}" Command="{x:Bind PickCommand}"
                     Background="{x:Bind controls:BadgeSettingsLook.ChoiceFill(IsSelected), Mode=OneWay}"
@@ -382,14 +382,27 @@
         <!--
             Granary's own: the title preview at the top of Home, For You and Discover (BrowseHero) is Granary's, so Silo's
             clients have no such switch. Kept for this profile on this PC (BrowseHeroSetting). Home's banner, a row marked as
-            the hero on Silo's web, is not this switch's.
+            the hero on Silo's web, is not this switch's. Hero size is: it sets how tall the title preview and the banner are.
         -->
         <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.pages.title')}" Description="{x:Bind t:AppText.Get('granary.settings.pages.description')}">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}"
-                                  Description="{x:Bind t:AppText.Get('granary.settings.titlePreview.description')}">
-                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
-                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}" />
-            </controls:SettingsRow>
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.titlePreview.description')}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.heroSize.label')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.heroSize.description')}">
+                    <ItemsControl ItemsSource="{x:Bind TitlePreview.Sizes}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.heroSize.label')}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </controls:SettingsRow>
+            </StackPanel>
         </controls:SettingsGroup>
 
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->

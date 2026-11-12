@@ -675,8 +675,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
   buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
   needs something, while there is that (`ShowsButton`); a menu goes with its hidden button. A hidden button is off: the
-  page asks `PlayerBar.AllowsKey` before a key of one (`PlayerKey`: M, the volume keys, C, the chapter keys, P, F and a
-  double click; the minimized bar keeps its own Mute and the volume keys), Down opens `PlayerBar.MenuOnDown`, the first
+  page asks `PlayerBar.AllowsKey` before a key of one (`PlayerKey`: M, the volume keys, C, the chapter keys, P and F;
+  the minimized bar keeps its own Mute and the volume keys; a double click on the picture is no key of the Full screen
+  button's and switches full screen either way, as F11 does), Down opens `PlayerBar.MenuOnDown`, the first
   of the audio, subtitle and settings menus that shows, and the view model's own commands check `Bar` too (C, the chapter
   keys, opening Playback info, filling, opening the marker panel). Hidden, Playback info closes and Fill screen ends,
   as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)

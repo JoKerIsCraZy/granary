@@ -37,7 +37,7 @@ public sealed class ForYouHeroTests
         var page = await LoadedAsync();
 
         var shown = Assert.IsType<BrowseHeroTitle>(page.Hero.Shown);
-        Assert.Equal(("movie:heat-1995", "Heat", "1995"), (shown.Key, shown.Heading, shown.Meta));
+        Assert.Equal(("movie:heat-1995", "Heat", "1995 · Crime"), (shown.Key, shown.Heading, shown.Meta));
     }
 
     [Fact]
