@@ -1521,6 +1521,24 @@
       "value": "Filmreihe"
     }
   ],
+  "web.detail.boxSet.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "Beim Laden ist ein Fehler aufgetreten. Versuche es gleich erneut."
+    }
+  ],
+  "web.detail.boxSet.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "Diese Filmreihe konnte nicht geladen werden"
+    }
+  ],
+  "web.detail.boxSet.movies": [
+    {
+      "type": 0,
+      "value": "Filme"
+    }
+  ],
   "web.detail.boxSet.playTitle": [
     {
       "type": 1,
@@ -1535,6 +1553,18 @@
     {
       "type": 0,
       "value": "Dieser Film"
+    }
+  ],
+  "web.detail.boxSet.unavailableBody": [
+    {
+      "type": 0,
+      "value": "Filmreihen sind für diese Mediathek eventuell ausgeschaltet, oder es sind zu wenige ihrer Filme vorhanden."
+    }
+  ],
+  "web.detail.boxSet.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "Diese Filmreihe ist nicht verfügbar"
     }
   ],
   "web.detail.boxSet.watchedFraction": [
@@ -2039,6 +2069,154 @@
     {
       "type": 0,
       "value": "Speichern"
+    }
+  ],
+  "web.person.age": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " Jahr alt"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " Jahre alt"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.person.born": [
+    {
+      "type": 0,
+      "value": "Geboren am "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.person.died": [
+    {
+      "type": 0,
+      "value": "Gestorben am "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " (im Alter von "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.person.filmography": [
+    {
+      "type": 0,
+      "value": "Filmografie"
+    }
+  ],
+  "web.person.filterAll": [
+    {
+      "type": 0,
+      "value": "Alle"
+    }
+  ],
+  "web.person.filterMovies": [
+    {
+      "type": 0,
+      "value": "Filme"
+    }
+  ],
+  "web.person.filterSeries": [
+    {
+      "type": 0,
+      "value": "Serien"
+    }
+  ],
+  "web.person.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "Beim Laden ist ein Fehler aufgetreten. Versuche es gleich erneut."
+    }
+  ],
+  "web.person.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "Diese Person konnte nicht geladen werden"
+    }
+  ],
+  "web.person.queueing": [
+    {
+      "type": 0,
+      "value": "Wird eingereiht…"
+    }
+  ],
+  "web.person.refreshMetadata": [
+    {
+      "type": 0,
+      "value": "Metadaten aktualisieren"
+    }
+  ],
+  "web.person.refreshNow": [
+    {
+      "type": 0,
+      "value": "Jetzt aktualisieren"
+    }
+  ],
+  "web.person.refreshing": [
+    {
+      "type": 0,
+      "value": "Wird aktualisiert…"
+    }
+  ],
+  "web.person.toast.refreshQueued": [
+    {
+      "type": 0,
+      "value": "Aktualisierung der Person in Warteschlange"
+    }
+  ],
+  "web.person.toast.refreshed": [
+    {
+      "type": 0,
+      "value": "Metadaten der Person aktualisiert"
+    }
+  ],
+  "web.person.unavailableBody": [
+    {
+      "type": 0,
+      "value": "Die Person wurde möglicherweise aus dem Katalog entfernt, oder der Link ist falsch."
+    }
+  ],
+  "web.person.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "Diese Person ist nicht verfügbar"
     }
   ],
   "web.profiles.picker.documentTitle": [

@@ -237,7 +237,7 @@ public sealed class PersonViewModelTests
 
         await person.RefreshCommand.ExecuteAsync(null);
 
-        Assert.StartsWith("Refresh failed", person.RefreshNotice, StringComparison.Ordinal);
+        Assert.StartsWith("Refresh failed. ", person.RefreshNotice, StringComparison.Ordinal);
         Assert.True(person.RefreshFailed);
     }
 

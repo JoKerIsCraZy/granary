@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -15,17 +16,17 @@ public static class PersonFacts
         var died = Date(person.DeathDate);
         if (NonEmpty(person.BirthDate) is { } birth)
         {
-            facts.Add($"Born {Format(born, birth)}");
+            facts.Add(AppText.Get("web.person.born", ("date", Format(born, birth))));
             if (NonEmpty(person.DeathDate) is null && born is { } birthday)
             {
-                facts.Add($"{Age(birthday, today)} years old");
+                facts.Add(AppText.Get("web.person.age", ("age", Age(birthday, today))));
             }
         }
         if (NonEmpty(person.DeathDate) is { } death && NonEmpty(person.BirthDate) is not null)
         {
             facts.Add(born is { } birthday && died is { } deathday
-                ? $"Died {Format(died, death)} (age {Age(birthday, deathday)})"
-                : $"Died {Format(died, death)}");
+                ? AppText.Get("web.person.died", ("date", Format(died, death)), ("age", Age(birthday, deathday)))
+                : AppText.Get("granary.person.diedNoAge", ("date", Format(died, death))));
         }
         if (NonEmpty(person.Birthplace) is { } place)
         {

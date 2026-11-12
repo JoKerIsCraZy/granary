@@ -1672,6 +1672,24 @@
       "value": "سلسلة أفلام"
     }
   ],
+  "web.detail.boxSet.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.detail.boxSet.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل سلسلة الأفلام هذه"
+    }
+  ],
+  "web.detail.boxSet.movies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
   "web.detail.boxSet.playTitle": [
     {
       "type": 0,
@@ -1686,6 +1704,18 @@
     {
       "type": 0,
       "value": "هذا الفيلم"
+    }
+  ],
+  "web.detail.boxSet.unavailableBody": [
+    {
+      "type": 0,
+      "value": "قد تكون سلاسل الأفلام معطّلة في هذه المكتبة، أو أن عدد أفلامها الموجودة هنا قليل جدًا."
+    }
+  ],
+  "web.detail.boxSet.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "سلسلة الأفلام هذه غير متاحة"
     }
   ],
   "web.detail.boxSet.watchedFraction": [
@@ -2294,6 +2324,192 @@
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "web.person.age": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عام"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عام واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عامان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " أعوام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عامًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عام"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.person.born": [
+    {
+      "type": 0,
+      "value": "تاريخ الميلاد: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.person.died": [
+    {
+      "type": 0,
+      "value": "تاريخ الوفاة: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " (العمر: "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.person.filmography": [
+    {
+      "type": 0,
+      "value": "الأعمال"
+    }
+  ],
+  "web.person.filterAll": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.person.filterMovies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.person.filterSeries": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.person.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.person.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل بيانات هذا الشخص"
+    }
+  ],
+  "web.person.queueing": [
+    {
+      "type": 0,
+      "value": "جارٍ الإضافة إلى قائمة الانتظار…"
+    }
+  ],
+  "web.person.refreshMetadata": [
+    {
+      "type": 0,
+      "value": "تحديث البيانات الوصفية"
+    }
+  ],
+  "web.person.refreshNow": [
+    {
+      "type": 0,
+      "value": "تحديث الآن"
+    }
+  ],
+  "web.person.refreshing": [
+    {
+      "type": 0,
+      "value": "جارٍ التحديث..."
+    }
+  ],
+  "web.person.toast.refreshQueued": [
+    {
+      "type": 0,
+      "value": "أُضيف تحديث الشخص إلى قائمة الانتظار"
+    }
+  ],
+  "web.person.toast.refreshed": [
+    {
+      "type": 0,
+      "value": "تم تحديث البيانات الوصفية للشخص"
+    }
+  ],
+  "web.person.unavailableBody": [
+    {
+      "type": 0,
+      "value": "ربما أُزيل من الكتالوج، أو ربما يكون الرابط خاطئًا."
+    }
+  ],
+  "web.person.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "هذا الشخص غير متاح"
     }
   ],
   "web.profiles.picker.documentTitle": [

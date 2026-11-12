@@ -1470,6 +1470,24 @@
       "value": "ボックスセット"
     }
   ],
+  "web.detail.boxSet.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "読み込み中に問題が発生しました。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.detail.boxSet.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "このボックスセットを読み込めませんでした"
+    }
+  ],
+  "web.detail.boxSet.movies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
   "web.detail.boxSet.playTitle": [
     {
       "type": 1,
@@ -1484,6 +1502,18 @@
     {
       "type": 0,
       "value": "この映画"
+    }
+  ],
+  "web.detail.boxSet.unavailableBody": [
+    {
+      "type": 0,
+      "value": "このライブラリでボックスセットがオフになっているか、ライブラリにある映画が少なすぎる可能性があります。"
+    }
+  ],
+  "web.detail.boxSet.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "このボックスセットは利用できません"
     }
   ],
   "web.detail.boxSet.watchedFraction": [
@@ -1956,6 +1986,139 @@
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "web.person.age": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "歳"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.person.born": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "生まれ"
+    }
+  ],
+  "web.person.died": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "没（享年"
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "歳）"
+    }
+  ],
+  "web.person.filmography": [
+    {
+      "type": 0,
+      "value": "出演・参加作品"
+    }
+  ],
+  "web.person.filterAll": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.person.filterMovies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.person.filterSeries": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.person.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "読み込み中に問題が発生しました。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.person.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "この人物を読み込めませんでした"
+    }
+  ],
+  "web.person.queueing": [
+    {
+      "type": 0,
+      "value": "キューに追加中…"
+    }
+  ],
+  "web.person.refreshMetadata": [
+    {
+      "type": 0,
+      "value": "メタデータを更新"
+    }
+  ],
+  "web.person.refreshNow": [
+    {
+      "type": 0,
+      "value": "今すぐ更新"
+    }
+  ],
+  "web.person.refreshing": [
+    {
+      "type": 0,
+      "value": "更新中…"
+    }
+  ],
+  "web.person.toast.refreshQueued": [
+    {
+      "type": 0,
+      "value": "人物の更新をキューに追加しました"
+    }
+  ],
+  "web.person.toast.refreshed": [
+    {
+      "type": 0,
+      "value": "人物のメタデータを更新しました"
+    }
+  ],
+  "web.person.unavailableBody": [
+    {
+      "type": 0,
+      "value": "カタログから削除されたか、リンクが正しくない可能性があります。"
+    }
+  ],
+  "web.person.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "この人物は利用できません"
     }
   ],
   "web.profiles.picker.documentTitle": [

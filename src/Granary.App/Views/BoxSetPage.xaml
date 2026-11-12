@@ -114,14 +114,14 @@
                 </Grid>
 
                 <StackPanel Padding="48,8,48,56" Spacing="14">
-                    <TextBlock Text="Movies" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.detail.boxSet.movies')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Films, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" />
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
         <ProgressRing Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the box set" />
+                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.boxSet.loading')}" />
 
         <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}">

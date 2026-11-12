@@ -286,8 +286,21 @@ web.detail.boxSet.cardLabel
 web.detail.boxSet.continueTitle
 web.detail.boxSet.filmCount
 web.detail.boxSet.label
+
+# A box set's page and a person's page, in the words of the web's BoxSetPage and PersonDetail:
+# src/Granary.App/Views/BoxSetPage.xaml, PersonPage.xaml, and BoxSetViewModel.cs, PersonViewModel.cs and PersonFacts.cs
+# in src/Granary.Core/ViewModels.
+web.detail.boxSet.loadFailedBody
+web.detail.boxSet.loadFailedTitle
+web.detail.boxSet.movies
+
 web.detail.boxSet.playTitle
 web.detail.boxSet.thisFilm
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.boxSet.unavailableBody
+web.detail.boxSet.unavailableTitle
+
 web.detail.boxSet.watchedFraction
 web.detail.boxSet.watchedOf
 web.detail.episodeCode
@@ -354,6 +367,25 @@ web.library.page.unavailable
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.person.age
+web.person.born
+web.person.died
+web.person.filmography
+web.person.filterAll
+web.person.filterMovies
+web.person.filterSeries
+web.person.loadFailedBody
+web.person.loadFailedTitle
+web.person.queueing
+web.person.refreshMetadata
+web.person.refreshNow
+web.person.refreshing
+web.person.toast.refreshQueued
+web.person.toast.refreshed
+web.person.unavailableBody
+web.person.unavailableTitle
 
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
 # components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and

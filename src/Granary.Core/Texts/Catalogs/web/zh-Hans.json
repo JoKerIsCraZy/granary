@@ -1462,6 +1462,24 @@
       "value": "系列电影"
     }
   ],
+  "web.detail.boxSet.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "加载时出错。请稍后重试。"
+    }
+  ],
+  "web.detail.boxSet.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "无法加载此系列电影"
+    }
+  ],
+  "web.detail.boxSet.movies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
   "web.detail.boxSet.playTitle": [
     {
       "type": 0,
@@ -1476,6 +1494,18 @@
     {
       "type": 0,
       "value": "本片"
+    }
+  ],
+  "web.detail.boxSet.unavailableBody": [
+    {
+      "type": 0,
+      "value": "此媒体库可能已关闭系列电影，或其中的电影数量太少。"
+    }
+  ],
+  "web.detail.boxSet.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "此系列电影不可用"
     }
   ],
   "web.detail.boxSet.watchedFraction": [
@@ -1964,6 +1994,143 @@
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "web.person.age": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "岁"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.person.born": [
+    {
+      "type": 0,
+      "value": "生于"
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.person.died": [
+    {
+      "type": 0,
+      "value": "逝于"
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "（享年"
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "岁）"
+    }
+  ],
+  "web.person.filmography": [
+    {
+      "type": 0,
+      "value": "作品"
+    }
+  ],
+  "web.person.filterAll": [
+    {
+      "type": 0,
+      "value": "全部"
+    }
+  ],
+  "web.person.filterMovies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.person.filterSeries": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.person.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "加载时出了点问题。请稍后重试。"
+    }
+  ],
+  "web.person.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "无法加载此人物"
+    }
+  ],
+  "web.person.queueing": [
+    {
+      "type": 0,
+      "value": "正在加入队列……"
+    }
+  ],
+  "web.person.refreshMetadata": [
+    {
+      "type": 0,
+      "value": "刷新元数据"
+    }
+  ],
+  "web.person.refreshNow": [
+    {
+      "type": 0,
+      "value": "立即刷新"
+    }
+  ],
+  "web.person.refreshing": [
+    {
+      "type": 0,
+      "value": "正在刷新……"
+    }
+  ],
+  "web.person.toast.refreshQueued": [
+    {
+      "type": 0,
+      "value": "人物刷新已加入队列"
+    }
+  ],
+  "web.person.toast.refreshed": [
+    {
+      "type": 0,
+      "value": "人物元数据已刷新"
+    }
+  ],
+  "web.person.unavailableBody": [
+    {
+      "type": 0,
+      "value": "此人可能已从目录中移除，或链接有误。"
+    }
+  ],
+  "web.person.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "此人不可用"
     }
   ],
   "web.profiles.picker.documentTitle": [
