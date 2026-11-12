@@ -1,4 +1,5 @@
 using System.Numerics;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
@@ -66,6 +67,8 @@ public sealed partial class BrowseHero : UserControl
     public BrowseHero()
     {
         InitializeComponent();
+        // The web's eyebrow, in capitals as its CSS shows it.
+        EyebrowLabel.Text = AppText.Upper(AppText.Get("web.home.hero.eyebrow"));
         _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
             Texts.MaxWidth, Texts.Margin.Top);
         _eyebrowAt1080 = (Eyebrow.FontSize, Eyebrow.LineHeight, Eyebrow.Margin.Bottom);
@@ -243,13 +246,15 @@ public sealed partial class BrowseHero : UserControl
     // hero showed "FEATURED — NO." over its title, and its rows began the banner's room lower.
     private bool IsBanner => !string.IsNullOrEmpty(SlideNumber);
 
-    // The banner's eyebrow, read as the web's text ("Featured — No. 01"). The banner coming or going moves the rows.
+    // The banner's eyebrow, read as the web's two texts beside each other ("Featured — No. 01"). The banner coming or going
+    // moves the rows.
     private void ShowSlideNumber(string? number)
     {
         bool isBanner = !string.IsNullOrEmpty(number);
+        string slide = isBanner ? AppText.Get("web.home.hero.slideNumber", ("number", number)) : "";
         Eyebrow.Visibility = isBanner ? Visibility.Visible : Visibility.Collapsed;
-        EyebrowNumber.Text = isBanner ? "NO. " + number : "";
-        AutomationProperties.SetName(Eyebrow, isBanner ? "Featured — No. " + number : "");
+        EyebrowNumber.Text = AppText.Upper(slide);
+        AutomationProperties.SetName(Eyebrow, isBanner ? $"{AppText.Get("web.home.hero.eyebrow")} — {slide}" : "");
         FollowPageHeight(_page?.ActualHeight ?? double.NaN);
     }
 

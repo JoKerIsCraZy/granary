@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -75,11 +76,13 @@ public sealed partial class LibraryPage : Page
 
     public bool Not(bool value) => !value;
 
-    public string HeadingName(string libraryName) => libraryName.Length > 0 ? $"Library {libraryName}" : "Library";
+    public string HeadingName(string libraryName) => libraryName.Length > 0
+        ? AppText.Get("granary.library.headingName", ("name", libraryName))
+        : AppText.Get("web.library.page.titleFallback");
 
-    public string SortName(string label) => $"Sort by: {label}";
+    public string SortName(string label) => AppText.Get("granary.library.sortName", ("sort", label));
 
-    public string OrderName(string label) => $"Order: {label}";
+    public string OrderName(string label) => AppText.Get("granary.library.orderName", ("order", label));
 
     private void BuildSortMenu()
     {

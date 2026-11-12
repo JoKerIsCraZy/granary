@@ -175,8 +175,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
   their options read for the list with `GET /api/v2/catalog/filters?source=…`, and the applied ones as badges under the
-  bar as on the library page; another list starts unfiltered, and filters that leave nothing say "No titles match these
-  filters" with Clear filters), and the posters by window. A collection's page has the same Filters.
+  bar as on the library page; another list starts unfiltered, and filters that leave nothing say "No items match your
+  current filters." with Clear filters), and the posters by window. A collection's page has the same Filters.
   While the server keeps watchlist titles the library does not have (`requests_enabled` and `watchlist_titles_supported`),
   the watchlist has the web's line tabs (`SiloLineTabStyle`, as Requests'): In your library, the list; and Not in your
   library yet (`WatchlistTitlesViewModel`, the web's `WatchlistTitlesTab`) with its count in a pill and an amber dot
@@ -228,9 +228,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Date, Latest Episode Air Date and Latest Episode Added (a series library only), Year, Content Rating (A to Z), Duration,
   IMDb Rating, TMDB Rating, RT Critic Rating and RT Audience Rating (while the server shows that rating), Resolution,
   Bitrate, Progress, Date Viewed and Plays. The A–Z bar shows in Title order only. Filters (`CatalogFiltersButton`) opens
-  a 400 px flyout whose sections scroll between its heading and Clear / Apply, in the order and words of the web's filter
-  sheet: Genres, Decade (this decade back to the 1900s), Year From and Year To, Content Rating, Video Quality (4K, HDR,
-  DOVI), Original Language, Audio Language and Subtitle Language (by their English names) as pills that turn on and off,
+  a 400 px flyout whose sections scroll between its heading and Clear All / Apply, in the order and words of the web's
+  guided filters: Genres, Decade (this decade back to the 1900s), Year From and Year To ("e.g. 2000", "e.g. 2025"),
+  Content Rating, Video Quality (4K, HDR, DOVI), Original Language, Audio language and Subtitle language (the rule
+  builder's words; the languages by their English names) as pills that turn on and off,
   and Watch Status (Any, Unwatched, In Progress, Watched). A facet the library has no values for is left out. Values of
   one facet are alternatives, as in Silo's apps, and the facets all apply. The count is one per picked value, one for the
   year range and one for a watch status. Arrow keys move between the pills, Tab from one section to the next. Under the
@@ -286,7 +287,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   chosen one in the accent) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
   25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
   which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
-  the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE, watched ones marked. Unlike the web,
+  the air time on the viewer's clock, the web's PREMIERE / NEW SEASON / FINALE, watched ones marked. Unlike the web,
   a week with airings lists its empty days too, each with "Nothing scheduled." in a faint box, so picking one scrolls
   to its place instead of the top; a day picked in an empty week says "Nothing scheduled for …". An airing opens its series (a movie itself); airings have no card menu. An empty week names the
   other presets. The preset is kept while the app runs (the web keeps it in the browser).
@@ -361,8 +362,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
   under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
   or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
-  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and "No titles found"
-  shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
+  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and the web's "No items
+  found." shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
   web pages TMDB's twenty a page with Previous, "Page 1 of 2" and Next, even when the library's titles leave six of them;
   here the pages gather: a read takes TMDB's next pages until 20 titles came or 3 pages were read, and the grid's end
   coming into view reads on (Load more for the keyboard, a ring meanwhile), to TMDB's last page (at most 500). A title
@@ -401,7 +402,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     fold its new numbers.
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
     does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
-    logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
+    logo "S1 · E1 · Kein Zufall · 25 min · TV-14", where it sits and its length in the web hero's words); and the
+    overview, at most three lines 570 px wide. All of it comes with
     the rows; nothing is read for the hero.
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
     middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
@@ -629,7 +631,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
-    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
+    readers hear "S04E04 · Title, …, Now Viewing". The row opens scrolled at once so that card is in its middle, or as far
     as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
@@ -695,7 +697,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     hairline and a pixel inside it) and "THIS FILM" (10 px semibold capitals 0.14 em apart, on the page's dark at 85 %),
     centred with its top 32 px above the poster's foot; its corners keep their badges. While the card shows bottom badges
     (the profile's rating, say), the pill stands 4 px above them instead, a departure from the web, where the two overlap. Screen readers hear "Masterplan,
-    2026, this film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
+    2026, This film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
     clicking it stays on the page, and as in the apps it has no play disc, buttons or menu, since the page's own buttons
     hold its state. Another film opens its page. It is asked for only while one of the profile's libraries has box sets
     on, as the web asks. The row shows nothing while it loads, for a movie in no box set, and on a server without box sets

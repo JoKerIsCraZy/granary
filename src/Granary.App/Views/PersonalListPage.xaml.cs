@@ -74,7 +74,7 @@ public sealed partial class PersonalListPage : Page
             XamlRoot = XamlRoot,
             Title = ViewModel.RemovalTitle,
             Content = new TextBlock { Text = ViewModel.RemovalDescription, TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = "Remove",
+            PrimaryButtonText = AppText.Get("web.catalog.page.removeConfirm"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
@@ -93,21 +93,21 @@ public sealed partial class PersonalListPage : Page
     }
 
     /// <summary>"Not in your library yet, 3 titles, some need attention", as the web reads the tab out.</summary>
-    public string TitlesTabName(int count, bool needsAttention) => "Not in your library yet"
-        + (count > 0 ? $", {count.ToString(CultureInfo.InvariantCulture)} {(count == 1 ? "title" : "titles")}" : "")
-        + (needsAttention ? ", some need attention" : "");
+    public string TitlesTabName(int count, bool needsAttention) =>
+        AppText.Get("granary.watchlist.titlesTabName", ("count", count), ("attention", needsAttention ? "yes" : "no"));
 
-    public string CountText(int total) => total.ToString("N0", CultureInfo.InvariantCulture);
+    public string CountText(int total) => AppText.Number(total);
 
-    public string CountLabel(int total) => total == 1 ? "RESULT" : "RESULTS";
+    // The web's count beside the list's name: the number big, its noun small and in capitals as its CSS shows it.
+    public string CountLabel(int total) => AppText.Upper(AppText.Get("web.catalog.page.resultNoun", ("count", total)));
 
-    public string CountName(int total) => total == 1 ? "1 result" : $"{CountText(total)} results";
+    public string CountName(int total) => AppText.Get("web.catalog.page.resultCount", ("count", total), ("shown", CountText(total)));
 
-    public string ScopeName(string label) => $"Media: {label}";
+    public string ScopeName(string label) => AppText.Get("granary.lists.scopeName", ("scope", label));
 
-    public string SortName(string label) => $"Sort by: {label}";
+    public string SortName(string label) => AppText.Get("granary.library.sortName", ("sort", label));
 
-    public string OrderName(string label) => $"Order: {label}";
+    public string OrderName(string label) => AppText.Get("granary.library.orderName", ("order", label));
 
     private void BuildMenus()
     {

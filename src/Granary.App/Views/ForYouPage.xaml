@@ -27,7 +27,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="6">
-                        <TextBlock Text="For You" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.title')}" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
                         <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                    Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
@@ -37,10 +37,10 @@
                             BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" VerticalAlignment="Top"
                             Visibility="{x:Bind ViewModel.HasTasteProfile, Mode=OneWay}">
                         <StackPanel Spacing="16">
-                            <TextBlock Text="Your Taste Profile" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.tasteProfile')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
                                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
                             <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasTopGenres, Mode=OneWay}">
-                                <TextBlock Text="TOP GENRES" Style="{StaticResource SiloOverlineTextStyle}" />
+                                <TextBlock x:Name="TopGenresHeading" Style="{StaticResource SiloOverlineTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.TopGenres, Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <controls:WrapLayout />
@@ -56,7 +56,7 @@
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasFavoriteDirectors, Mode=OneWay}">
-                                <TextBlock Text="FAVORITE DIRECTORS" Style="{StaticResource SiloOverlineTextStyle}" />
+                                <TextBlock x:Name="FavoriteDirectorsHeading" Style="{StaticResource SiloOverlineTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.FavoriteDirectors, Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <controls:WrapLayout />
@@ -75,16 +75,16 @@
                 </Grid>
 
                 <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading recommendations" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.forYou.loading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="Failed to load recommendations." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.loadFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                TextAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryCommand}" />
                 </StackPanel>
                 <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="6" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="Nothing to show yet" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                    <TextBlock Text="Movies and series appear here once your libraries have titles you can watch." Style="{StaticResource SiloBodyTextStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.emptyTitle')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.recommendations.emptyBody')}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                 </StackPanel>
 

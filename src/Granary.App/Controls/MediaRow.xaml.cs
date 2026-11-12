@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -146,7 +147,10 @@ public sealed partial class MediaRow : UserControl
     // Instance helpers because x:Bind function bindings call them.
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
-    public string ExploreAllName(string title) => $"Explore all: {title}";
+    public string ExploreAllName(string title) => AppText.Get("web.catalog.carousel.exploreAllLabel", ("title", title));
+
+    /// <summary>The web's "Explore all", in capitals as Granary's row shows it.</summary>
+    public string ExploreAllText => AppText.Upper(AppText.Get("web.catalog.carousel.exploreAll"));
 
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 

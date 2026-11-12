@@ -23,6 +23,7 @@ public sealed partial class MediaCardView
         {
             FindName(nameof(Sleeves));
             FindName(nameof(BoxSetMarks));
+            BoxSetText.Text = BoxSetLabel;
         }
         if (isBoxSet != _isBoxSet)
         {

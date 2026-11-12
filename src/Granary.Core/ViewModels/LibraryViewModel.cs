@@ -8,6 +8,7 @@ using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -30,8 +31,10 @@ public enum LibraryTab
 /// </summary>
 public sealed partial class LibraryViewModel : ObservableObject
 {
-    public const string ShuffleNothingPlayable = "Nothing in this library can be played.";
-    public const string ShuffleFailed = "Couldn't start a shuffle. Try again.";
+    /// <summary>The web's words when a shuffle finds nothing to play (hooks/queries/shuffles.ts).</summary>
+    public static string ShuffleNothingPlayable => AppText.Get("shuffle.nothingToPlay");
+
+    public static string ShuffleFailed => AppText.Get("web.shuffle.startFailed");
 
     /// <summary>
     /// How long a visit may show what an earlier one loaded. Artwork URLs are presigned for a few hours
@@ -140,8 +143,10 @@ public sealed partial class LibraryViewModel : ObservableObject
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set before <see cref="ActivateAsync"/>.</summary>
     public double DisplayScale { get; set; } = 1;
 
-    /// <summary>"LIBRARY / FILME", as the web's eyebrow.</summary>
-    public string Breadcrumb => LibraryName.Length > 0 ? $"LIBRARY / {LibraryName.ToUpperInvariant()}" : "LIBRARY";
+    /// <summary>"LIBRARY / FILME", as the web's eyebrow and the library's name beside it, in capitals as its CSS shows them.</summary>
+    public string Breadcrumb => LibraryName.Length > 0
+        ? $"{AppText.Upper(AppText.Get("web.library.header.eyebrow"))} / {AppText.Upper(LibraryName)}"
+        : AppText.Upper(AppText.Get("web.library.header.eyebrow"));
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 

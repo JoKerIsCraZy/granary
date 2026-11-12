@@ -6,6 +6,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -32,11 +33,16 @@ public enum BoxSetPageState
 /// </summary>
 public sealed partial class BoxSetViewModel : ObservableObject
 {
-    public const string Overline = "BOX SET";
-    public const string UnavailableTitle = "This box set isn't available";
-    public const string UnavailableText = "Box sets may be turned off for this library, or too few of its movies are here.";
-    public const string FailedTitle = "Couldn't load this box set";
-    public const string FailedText = "Something went wrong while loading it. Try again in a moment.";
+    /// <summary>"BOX SET": the web's label over the name, in capitals as its CSS shows it (pages/BoxSetPage.tsx).</summary>
+    public static string Overline => AppText.Upper(AppText.Get("web.detail.boxSet.label"));
+
+    public static string UnavailableTitle => AppText.Get("web.detail.boxSet.unavailableTitle");
+
+    public static string UnavailableText => AppText.Get("web.detail.boxSet.unavailableBody");
+
+    public static string FailedTitle => AppText.Get("web.detail.boxSet.loadFailedTitle");
+
+    public static string FailedText => AppText.Get("web.detail.boxSet.loadFailedBody");
 
     /// <summary>How long the page waits after a change of the viewer's state before it reads again: a burst is read once.</summary>
     public static readonly TimeSpan RefreshDelay = TimeSpan.FromMilliseconds(400);

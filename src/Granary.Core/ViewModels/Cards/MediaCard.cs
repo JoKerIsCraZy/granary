@@ -1,3 +1,5 @@
+using Granary.Core.Texts;
+
 namespace Granary.Core.ViewModels.Cards;
 
 /// <summary>How a card is drawn: a 2:3 poster, or a 16:9 still/backdrop (Continue Watching, episodes).</summary>
@@ -104,15 +106,18 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? BoxSetFilms { get; init; }
 
-    /// <summary>The name screen readers announce for the whole card.</summary>
+    /// <summary>The name screen readers announce for the whole card: a box set's as the web's <c>BoxSetCard</c> words it.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
-            .Where(text => !string.IsNullOrEmpty(text)));
+        new[]
+        {
+            BoxSetFilms is { } films ? AppText.Get("web.detail.boxSet.cardLabel", ("title", Title), ("films", films)) : Title,
+            EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName,
+        }.Where(text => !string.IsNullOrEmpty(text)));
 
     private string? CurrentName => CurrentMark switch
     {
-        CurrentMark.NowViewing => "now viewing",
-        CurrentMark.ThisFilm => "this film",
+        CurrentMark.NowViewing => AppText.Get("web.detail.episodes.nowViewing"),
+        CurrentMark.ThisFilm => AppText.Get("web.detail.boxSet.thisFilm"),
         _ => null,
     };
 }

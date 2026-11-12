@@ -79,7 +79,7 @@ public sealed class SearchRequestToAddTests
         Assert.Equal(["Movie 10", "Movie 12"], Titles(search));
         Assert.True(search.ShowsRequests);
         Assert.Equal("Nothing in your library matches “zzz”.", search.Requests.Note);
-        // The section says it instead of "No titles found", and the empty library's "Titles" heading goes.
+        // The section says it instead of "No items found.", and the empty library's "Titles" heading goes.
         Assert.True(search.IsLibraryRescued);
         Assert.Equal("", search.StatusText);
         Assert.False(search.ShowsTitlesHeading);
@@ -125,7 +125,7 @@ public sealed class SearchRequestToAddTests
 
         Assert.Empty(_silo.To(RequestSearchPath));
         Assert.False(search.ShowsRequests);
-        Assert.Equal("No titles found for \"zzz\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class SearchRequestToAddTests
 
         Assert.Single(_silo.To(CatalogPath));
         Assert.Empty(_silo.To(RequestSearchPath));
-        Assert.Equal("No titles found for \"z\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
     }
 
     // The user's "Borat": six titles to add on TMDB's first page, and "Page 1 of 2" under a grid with room to spare.
@@ -224,7 +224,7 @@ public sealed class SearchRequestToAddTests
         await search.ActivateAsync("zzz");
 
         Assert.False(search.ShowsRequests);
-        Assert.Equal("No titles found for \"zzz\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
         Assert.False(search.HasError);
     }
 
@@ -325,7 +325,7 @@ public sealed class SearchRequestToAddTests
 
         Assert.False(search.ShowsRequests);
         Assert.False(search.IsLibraryRescued);
-        Assert.Equal("No titles found for \"zzz\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
     }
 
     [Fact]
@@ -347,7 +347,7 @@ public sealed class SearchRequestToAddTests
         release.SetResult();
         await searching;
         Assert.False(search.IsSearching);
-        Assert.Equal("No titles found for \"zzz\"", search.StatusText);
+        Assert.Equal("No items found.", search.StatusText);
     }
 
     [Fact]

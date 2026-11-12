@@ -380,7 +380,7 @@ public sealed partial class RequestsViewModel : ObservableObject
                 }
                 if (cards.Count > 0)
                 {
-                    DiscoverRows.Add(new RequestDiscoverRow(section.Title, cards, OpenCardCommand, ExploreAll(section), PointCardCommand));
+                    DiscoverRows.Add(new RequestDiscoverRow(SectionTitle.Shown(section), cards, OpenCardCommand, ExploreAll(section), PointCardCommand));
                 }
             }
             FollowRowsWithHero();
@@ -419,7 +419,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         {
             return null;
         }
-        var route = new RequestTitlesRouteParameter(section.Key, section.Title);
+        var route = new RequestTitlesRouteParameter(section.Key, SectionTitle.Shown(section));
         return new RelayCommand(() => _navigation.NavigateTo(AppRoute.RequestTitles, route));
     }
 

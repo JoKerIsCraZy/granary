@@ -5,13 +5,15 @@ using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// Replaces the account password, typically a temporary one that blocks every other call
-/// (docs/api-contract.md, 4.1). The limits come from the server's password capability; after the change
+/// (docs/api-contract.md, 4.1), in the words of the web's ChoosePassword page and, for the server's limits, its account
+/// settings' password form. The limits come from the server's password capability; after the change
 /// the session refreshes its tokens to lift the restriction. Passwords are never logged. The commands take
 /// no cancellation token: a cancellable toolkit command would cancel its running call when executed again.
 /// </summary>
@@ -36,6 +38,13 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
 
     [ObservableProperty]
     public partial string Explanation { get; private set; } = "";
+
+    /// <summary>The first box's label: "Temporary password" while the account has one, as the web's, else "Current password".</summary>
+    public string CurrentPasswordLabel => IsTemporary
+        ? AppText.Get("web.auth.choosePassword.temporaryPassword")
+        : AppText.Get("web.settings.account.password.current");
+
+    private bool IsTemporary => session.Account?.PasswordChangeRequired == true;
 
     /// <summary>The server's limits for the new password, for example "at least 8 characters".</summary>
     [ObservableProperty]
@@ -63,15 +72,16 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     [RelayCommand]
     private async Task LoadAsync()
     {
-        Explanation = session.Account?.PasswordChangeRequired == true
-            ? "Your account has a temporary password. Choose a new password to continue."
-            : "Choose a new password for your account.";
+        Explanation = IsTemporary
+            ? AppText.Get("web.auth.choosePassword.description", ("username", session.Account?.Username ?? ""))
+            : AppText.Get("granary.changePassword.explanation");
+        OnPropertyChanged(nameof(CurrentPasswordLabel));
         IsReady = false;
         HasLoadError = false;
         SetStatus("", isError: false);
         if (session.ActiveServer is not { } server)
         {
-            SetStatus("No server is selected.", isError: true);
+            SetStatus(AppText.Get("granary.changePassword.noServer"), isError: true);
             return;
         }
 
@@ -83,7 +93,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         {
             logger.LogWarning("Reading the password capability failed: {Failure}", ApiFailureText.Describe(ex));
             HasLoadError = true;
-            SetStatus("Could not read the password rules. " + DescribeLoadFailure(ex), isError: true);
+            SetStatus(DescribeLoadFailure(ex), isError: true);
         }
     }
 
@@ -106,7 +116,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         NewPassword = "";
         ConfirmPassword = "";
         IsBusy = true;
-        SetStatus("Changing the password…", isError: false);
+        SetStatus(AppText.Get("web.ui.saving"), isError: false);
         try
         {
             if (await TryChangeAsync(server, current, replacement))
@@ -134,7 +144,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         catch (Exception ex)
         {
             logger.LogWarning("Signing out failed: {Failure}", ApiFailureText.Describe(ex));
-            SetStatus("Could not sign out. Try again.", isError: true);
+            SetStatus(AppText.Get("granary.changePassword.signOutFailed"), isError: true);
         }
     }
 
@@ -143,14 +153,14 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         _capability = capability;
         if (capability.State != AvailableState)
         {
-            SetStatus("This server does not offer password changes. Ask the server administrator.", isError: true);
+            SetStatus(AppText.Get("granary.changePassword.unavailable"), isError: true);
             return;
         }
-        Requirements = $"Use at least {capability.MinimumPasswordLength} characters and at most "
-            + $"{capability.MaximumPasswordBytes} bytes (accented letters and symbols take two or more bytes each).";
+        Requirements = AppText.Get("web.settings.account.password.requirements", ("minimum", capability.MinimumPasswordLength),
+            ("minimum_text", AppText.Number(capability.MinimumPasswordLength)), ("maximum", capability.MaximumPasswordBytes));
         if (!capability.Allowed)
         {
-            SetStatus("The password of this account cannot be changed from this session.", isError: true);
+            SetStatus(AppText.Get("web.settings.account.password.error.unavailable"), isError: true);
             return;
         }
         IsReady = true;
@@ -161,28 +171,29 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     {
         if (_capability is not { } capability)
         {
-            return "The password rules are not loaded yet.";
+            return AppText.Get("granary.changePassword.rulesNotLoaded");
         }
         if (CurrentPassword.Length == 0)
         {
-            return "Enter your current password.";
+            return AppText.Get("granary.changePassword.enterCurrent");
         }
         // The server counts Unicode characters (code points), not UTF-16 units.
         if (NewPassword.EnumerateRunes().Count() < capability.MinimumPasswordLength)
         {
-            return $"The new password needs at least {capability.MinimumPasswordLength} characters.";
+            return AppText.Get("web.settings.account.password.error.tooShort", ("minimum", capability.MinimumPasswordLength),
+                ("minimum_text", AppText.Number(capability.MinimumPasswordLength)));
         }
         if (Encoding.UTF8.GetByteCount(NewPassword) > capability.MaximumPasswordBytes)
         {
-            return $"The new password is too long: at most {capability.MaximumPasswordBytes} bytes.";
+            return AppText.Get("web.settings.account.password.error.tooLong", ("maximum", capability.MaximumPasswordBytes));
         }
         if (!string.Equals(NewPassword, ConfirmPassword, StringComparison.Ordinal))
         {
-            return "The new passwords do not match.";
+            return AppText.Get("web.settings.account.password.error.mismatch");
         }
         if (string.Equals(NewPassword, CurrentPassword, StringComparison.Ordinal))
         {
-            return "Choose a password different from the current one.";
+            return AppText.Get("granary.changePassword.sameAsCurrent");
         }
         return null;
     }
@@ -193,7 +204,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         {
             await account.ChangePasswordAsync(server.BaseUri, current, replacement);
             logger.LogInformation("Account password changed");
-            SetStatus("Your password has been changed.", isError: false);
+            SetStatus(AppText.Get("web.auth.passwordRules.passwordChanged"), isError: false);
             return true;
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
@@ -214,8 +225,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         catch (Exception ex)
         {
             logger.LogWarning("Renewing the session after the password change failed: {Failure}", ApiFailureText.Describe(ex));
-            SetStatus("Your password has been changed, but the session could not be renewed. Sign in again with the new password.",
-                isError: true);
+            SetStatus(AppText.Get("web.auth.choosePassword.settleFailed"), isError: true);
         }
     }
 
@@ -225,25 +235,33 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         HasError = isError;
     }
 
+    // "Could not read the password rules." and why, as one sentence each.
     private static string DescribeLoadFailure(Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => ApiFailureText.TryAgainIn(api.RetryAfter),
-        SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The server answered with error {api.Status}.",
-        _ => ApiFailureText.ForTransport(ex),
+        SiloApiException { Status: 429, RetryAfter: { } wait } => AppText.Get("granary.changePassword.rulesTooManyRequests",
+            ("count", ApiFailureText.WholeMinutes(wait))),
+        SiloApiException { Status: 429 } => AppText.Get("granary.changePassword.rulesTooManyRequestsLater"),
+        SiloApiException { Status: 503 } => AppText.Get("granary.changePassword.rulesBusy"),
+        SiloApiException api => AppText.Get("granary.changePassword.rulesFailed", ("status", api.Status)),
+        // Not a Silo server's answer, as ApiFailureText.ForTransport tells it from a server that could not be reached.
+        System.Text.Json.JsonException or HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse }
+            => AppText.Get("granary.changePassword.rulesUnexpected"),
+        _ => AppText.Get("granary.changePassword.rulesUnreachable"),
     };
 
     private static string DescribeChangeFailure(Exception ex) => ex switch
     {
         // For example the temporary password again, or a password outside the limits.
-        SiloApiException { Status: 422 } api when HasErrorAt(api, "body.new_password") => "Choose a different password.",
-        SiloApiException { Status: 422 } api when HasErrorAt(api, "body.current_password") => "The current password is not right.",
-        SiloApiException { Status: 422 } => "The server did not accept the new password.",
-        SiloApiException { Status: 429 } api => "Too many attempts. " + ApiFailureText.TryAgainIn(api.RetryAfter),
-        SiloApiException { Status: 403 } => "The password of this account cannot be changed from this session.",
-        SiloApiException { Status: 409 } => "This account does not sign in with a password on this server.",
+        SiloApiException { Status: 422 } api when HasErrorAt(api, "body.new_password") => AppText.Get("granary.changePassword.chooseDifferent"),
+        SiloApiException { Status: 422 } api when HasErrorAt(api, "body.current_password") => AppText.Get("granary.changePassword.currentWrong"),
+        SiloApiException { Status: 422 } => AppText.Get("granary.changePassword.notAccepted"),
+        SiloApiException { Status: 429, RetryAfter: { } wait } => AppText.Get("granary.changePassword.tooManyAttempts",
+            ("count", ApiFailureText.WholeMinutes(wait))),
+        SiloApiException { Status: 429 } => AppText.Get("granary.changePassword.tooManyAttemptsLater"),
+        SiloApiException { Status: 403 } => AppText.Get("web.settings.account.password.error.unavailable"),
+        SiloApiException { Status: 409 } => AppText.Get("granary.changePassword.noPassword"),
         SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The password could not be changed (error {api.Status}).",
+        SiloApiException api => AppText.Get("granary.changePassword.failed", ("status", api.Status)),
         _ => ApiFailureText.ForTransport(ex),
     };
 

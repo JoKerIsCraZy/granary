@@ -749,7 +749,8 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   Both are absent when someone typed the title, and `title_args` is absent when the message has no placeholders. A
   translated interface shows the message filled from `title_args`, else `title`; English shows `title` as sent. An
   empty key counts as none (`silo-server/web/src/lib/sectionTitle.ts`). Granary reads them into `Section.TitleKey`
-  and `TitleArgs` and shows Home, library and Watch Party shelf rows by that rule (`SectionTitle`,
+  and `TitleArgs` and shows Home, library and Watch Party shelf rows by that rule, and For You's and Requests' Discover
+  rows alike (7.12, 7.15; `SectionTitle`,
   `AppText.ServerText`); the messages come from the web's catalogs (docs/release.md, "Translations"). `default_title_key` and `default_title_args` come only with a profile's section settings
   (`getProfileSectionSettings`), which Granary does not read. `getHomeCapabilities` reports `section_title_keys`,
   which is informational. Sources: `silo-server/internal/apiv2/library_views.go` (`SectionTitleKey`),
@@ -1089,9 +1090,13 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 
 ### 7.12 Recommendations (For You)
 
-- `GET /api/v2/recommendations/discover` (image size parameters) → `{ "items": [{ "type", "title", "kind"?, "key"?,
-  "items": CatalogItem[] }] }`. Rows of `type` `cluster` or `similar_users_liked` come from the profile's own
-  history (the web then calls the page personal). `kind` names the section that lists the row in full.
+- `GET /api/v2/recommendations/discover` (image size parameters) → `{ "items": [{ "type", "title", "title_key"?,
+  "title_args"?, "kind"?, "key"?, "items": CatalogItem[] }] }`. Rows of `type` `cluster` or `similar_users_liked` come
+  from the profile's own history (the web then calls the page personal). `kind` names the section that lists the row in
+  full. `title_key` and `title_args` follow the rule of a Home row's (7.1, "Title keys"): `home.section.forYou`,
+  `pickedFromYourHistory`, `becauseYouEnjoy` with `genres`, `profilesLikeYouEnjoyed`, `popularOnServer`,
+  `recentlyAdded`, `highlyRatedInLibrary` and `topGenre` with `genre` (`silo-server/internal/recommendations/titles.go`
+  at `0e95e55b6`); the section's answer below carries them too.
 - `GET /api/v2/recommendations/section/{kind}[?key=…]` → one such row, up to 60 cards (the default and maximum of `limit`). `kind` is one of
   `for-you-main`, `cluster`, `similar-users`, `popular`, `recently-added`, `top-rated`, `genre`; `key` is a cluster's
   index or a genre's name.
@@ -1172,7 +1177,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `estimated_completion_at`, `updated_at`), `targets`, `created_at`, `updated_at`.
 - `POST /api/v2/requests/{id}/cancel` with `{ "reason"? }` → the request; the owner can withdraw it while `outcome` is
   `active` and `status` is `pending`, or `approved` with no `targets` yet.
-- `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "page", "total_pages", "results": RequestMediaResult[] }] }`.
+- `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "title_key"?, "page", "total_pages", "results": RequestMediaResult[] }] }`.
+  `title_key` names a built-in row's default title while the row keeps it (`home.section.discoverTrendingMovies` and
+  the other `discover…` keys, never with values; `internal/requests/discoverrows/defaults.go` at `0e95e55b6`), as a Home
+  row's (7.1, "Title keys"); a row in full carries it too.
   `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `overview`, `poster_path`, `backdrop_path` (the
   Discover hero's picture, from TMDB at `w1280`), `availability` (`available` when the library has it),
   `library_content_id`, `in_watchlist`, `request` (`requestable`, `reason`, `status`, `state`, `following`,

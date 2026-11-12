@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -130,12 +131,14 @@ public static class DetailFacts
         return new DetailPlayAction(resume ? ResumeLabel : "Play", Blank(item.PlayContentId) ?? item.ContentId);
     }
 
-    /// <summary>The web's getWatchedActionLabel.</summary>
+    /// <summary>The web's getWatchedActionLabel (pages/ItemDetail/watchedState.ts).</summary>
     public static string WatchedLabel(string type, bool isWatched) => type switch
     {
-        CatalogItemTypes.Series => isWatched ? "Mark Series Unwatched" : "Mark Series Watched",
-        CatalogItemTypes.Season => isWatched ? "Mark Season Unwatched" : "Mark Season Watched",
-        _ => isWatched ? "Mark Unwatched" : "Mark Watched",
+        CatalogItemTypes.Series => isWatched
+            ? AppText.Get("web.detail.actions.markSeriesUnwatched") : AppText.Get("web.detail.actions.markSeriesWatched"),
+        CatalogItemTypes.Season => isWatched
+            ? AppText.Get("web.detail.actions.markSeasonUnwatched") : AppText.Get("web.detail.actions.markSeasonWatched"),
+        _ => isWatched ? AppText.Get("web.detail.actions.markUnwatched") : AppText.Get("web.detail.actions.markWatched"),
     };
 
     // How many genres the meta line names; the Info dialog lists them all.

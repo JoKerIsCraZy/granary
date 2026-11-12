@@ -97,7 +97,7 @@ public sealed class HomeHeroSpoilerTests
         var slide = home.Banner.Current!.Title;
         Assert.True(slide.BlursBackdrop);
         Assert.Null(slide.Overview);
-        Assert.Equal(("Lupin", "S1 E2 · Chapter e1"), (slide.Heading, slide.Meta));
+        Assert.Equal(("Lupin", "S1 · E2 · Chapter e1"), (slide.Heading, slide.Meta));
         Assert.Same(slide, home.HeroTitle);
     }
 

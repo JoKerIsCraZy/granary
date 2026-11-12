@@ -119,21 +119,21 @@
                         Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
                 <Button Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.ShuffleCommand}"
                         Visibility="{x:Bind ViewModel.CanShuffle, Mode=OneWay}"
-                        AutomationProperties.Name="Shuffle: open a random title" ToolTipService.ToolTip="Open a random title">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.shuffleName')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.library.shuffleTooltip')}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE8B1;" FontSize="14" />
-                        <TextBlock Text="Shuffle" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.library.header.shuffle')}" />
                     </StackPanel>
                 </Button>
                 <Border Background="#0FE8E8EC" BorderBrush="#9928282E" BorderThickness="1"
                         CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Padding="4">
                     <StackPanel Orientation="Horizontal" Spacing="2" XYFocusKeyboardNavigation="Enabled"
-                                AutomationProperties.Name="Library view">
-                        <RadioButton GroupName="LibraryTabs" Tag="Recommended" Content="Recommended" Style="{StaticResource LibraryTabStyle}"
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.library.header.tabsLabel')}">
+                        <RadioButton GroupName="LibraryTabs" Tag="Recommended" Content="{x:Bind t:AppText.Get('web.library.header.recommendedTab')}" Style="{StaticResource LibraryTabStyle}"
                                      IsChecked="{x:Bind ViewModel.IsRecommendedTab, Mode=OneWay}" Checked="OnTabChecked" />
-                        <RadioButton GroupName="LibraryTabs" Tag="Library" Content="Library" Style="{StaticResource LibraryTabStyle}"
+                        <RadioButton GroupName="LibraryTabs" Tag="Library" Content="{x:Bind t:AppText.Get('web.library.header.libraryTab')}" Style="{StaticResource LibraryTabStyle}"
                                      IsChecked="{x:Bind ViewModel.IsLibraryTab, Mode=OneWay}" Checked="OnTabChecked" />
-                        <RadioButton x:Name="CollectionsTabButton" GroupName="LibraryTabs" Tag="Collections" Content="Collections" Style="{StaticResource LibraryTabStyle}"
+                        <RadioButton x:Name="CollectionsTabButton" GroupName="LibraryTabs" Tag="Collections" Content="{x:Bind t:AppText.Get('web.library.header.collectionsTab')}" Style="{StaticResource LibraryTabStyle}"
                                      IsChecked="{x:Bind ViewModel.IsCollectionsTab, Mode=OneWay}" Checked="OnTabChecked" />
                     </StackPanel>
                 </Border>
@@ -148,12 +148,12 @@
             <!-- Page states -->
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                           Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center"
-                          AutomationProperties.Name="Loading the library" />
+                          AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.loading')}" />
             <StackPanel Visibility="{x:Bind ViewModel.IsUnavailable, Mode=OneWay}" Spacing="8" MaxWidth="480"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="This library is not available" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center"
+                <TextBlock Text="{x:Bind t:AppText.Get('granary.library.unavailableTitle')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center"
                            AutomationProperties.HeadingLevel="Level2" />
-                <TextBlock Text="It may be hidden or removed, or this profile can't see it." Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.library.page.unavailable')}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
             </StackPanel>
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" MaxWidth="480"
@@ -167,10 +167,10 @@
             <ScrollViewer x:Name="RecommendedScroller" Visibility="{x:Bind ShowTab(ViewModel.IsReady, ViewModel.IsRecommendedTab), Mode=OneWay}">
                 <StackPanel Padding="48,24,48,40">
                     <ProgressRing IsActive="{x:Bind ViewModel.Recommended.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Recommended.IsLoading, Mode=OneWay}"
-                                  Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading rows" />
+                                  Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.loadingRows')}" />
                     <TextBlock Visibility="{x:Bind ViewModel.Recommended.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
                                Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                               Text="Nothing to recommend here yet. All titles are in the Library tab." />
+                               Text="{x:Bind t:AppText.Get('granary.library.recommendedEmpty')}" />
                     <StackPanel Visibility="{x:Bind ViewModel.Recommended.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.Recommended.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
                         <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
@@ -226,15 +226,15 @@
                                                 AutomationProperties.Name="{x:Bind OrderName(ViewModel.Browse.OrderLabel), Mode=OneWay}">
                                     <DropDownButton.Flyout>
                                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                            <RadioMenuFlyoutItem Text="Ascending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortAscendingCommand}"
+                                            <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.ascending')}" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortAscendingCommand}"
                                                                  IsChecked="{x:Bind Not(ViewModel.Browse.IsDescending), Mode=OneWay}" />
-                                            <RadioMenuFlyoutItem Text="Descending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortDescendingCommand}"
+                                            <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.descending')}" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortDescendingCommand}"
                                                                  IsChecked="{x:Bind ViewModel.Browse.IsDescending, Mode=OneWay}" />
                                         </MenuFlyout>
                                     </DropDownButton.Flyout>
                                 </DropDownButton>
                                 <controls:CatalogFiltersButton x:Name="FiltersButton" Filters="{x:Bind ViewModel.Browse.Filters}"
-                                                               OptionsErrorText="Couldn't load the genres, ratings and languages of this library. The other filters still work." />
+                                                               OptionsErrorText="{x:Bind t:AppText.Get('granary.libraryFilters.optionsFailedLibrary')}" />
                                 <TextBlock Text="{x:Bind ViewModel.Browse.Grid.TotalText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                                            VerticalAlignment="Center" Margin="6,0,0,0" />
                             </StackPanel>
@@ -243,7 +243,7 @@
                         </StackPanel>
 
                         <ProgressRing IsActive="{x:Bind ViewModel.Browse.Grid.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Browse.Grid.IsLoading, Mode=OneWay}"
-                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.loadingTitles')}" />
                         <StackPanel Visibility="{x:Bind ViewModel.Browse.Grid.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.Browse.Grid.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
                             <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
@@ -251,13 +251,13 @@
                         </StackPanel>
                         <StackPanel Visibility="{x:Bind ShowBoth(ViewModel.Browse.Grid.IsEmpty, ViewModel.Browse.IsNarrowed), Mode=OneWay}"
                                     Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                            <TextBlock Text="No titles match these filters" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                            <Button Content="Clear filters" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.library.browse.noMatches')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                            <Button Content="{x:Bind t:AppText.Get('web.library.browse.clearFilters')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                                     Command="{x:Bind ViewModel.Browse.ClearFiltersCommand}" />
                         </StackPanel>
                         <TextBlock Visibility="{x:Bind ShowFirstOnly(ViewModel.Browse.Grid.IsEmpty, ViewModel.Browse.IsNarrowed), Mode=OneWay}"
                                    Margin="0,48" HorizontalAlignment="Center" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                                   Text="This library has no titles yet." />
+                                   Text="{x:Bind t:AppText.Get('web.library.empty.body')}" />
 
                         <controls:MediaGrid x:Name="BrowseGrid" ItemsSource="{x:Bind ViewModel.Browse.Grid.Cards, Mode=OneWay}"
                                             CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
@@ -268,7 +268,7 @@
                 <!-- Over the grid, not under it: a page that failed is wherever the user scrolled to. -->
                 <Border Visibility="{x:Bind ViewModel.Browse.Grid.HasPageError, Mode=OneWay}" Style="{StaticResource LibraryPageErrorStyle}">
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.library.browse.someItemsFailed')}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                         <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Browse.Grid.RetryPagesCommand}" />
                     </StackPanel>
                 </Border>
@@ -279,10 +279,10 @@
                 <StackPanel Padding="48,24,48,40">
                     <StackPanel Visibility="{x:Bind ViewModel.Collections.IsShelvesShown, Mode=OneWay}">
                         <ProgressRing IsActive="{x:Bind ViewModel.Collections.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Collections.IsLoading, Mode=OneWay}"
-                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
+                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.loadingCollections')}" />
                         <StackPanel Visibility="{x:Bind ViewModel.Collections.IsEmpty, Mode=OneWay}" Spacing="8" Margin="0,48" HorizontalAlignment="Center">
-                            <TextBlock Text="No collections yet" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Collections for this library will show up here." Style="{StaticResource SiloBodyTextStyle}"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.library.collections.emptyTitle')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.library.collections.emptyBody')}" Style="{StaticResource SiloBodyTextStyle}"
                                        Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" />
                         </StackPanel>
                         <StackPanel Visibility="{x:Bind ViewModel.Collections.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
@@ -306,7 +306,7 @@
                     <StackPanel Visibility="{x:Bind ViewModel.Collections.IsCollectionOpen, Mode=OneWay}" Spacing="24">
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <Button x:Name="BackToCollectionsButton" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Collections.CloseCommand}"
-                                    AutomationProperties.Name="Back to collections" ToolTipService.ToolTip="Back to collections">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.backToCollections')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.library.backToCollections')}">
                                 <FontIcon Glyph="&#xE72B;" FontSize="14" />
                             </Button>
                             <TextBlock Text="{x:Bind ViewModel.Collections.OpenCollectionTitle, Mode=OneWay}" Style="{StaticResource SiloPageTitleTextStyle}"
@@ -315,7 +315,7 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                         <ProgressRing IsActive="{x:Bind ViewModel.Collections.Items.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Collections.Items.IsLoading, Mode=OneWay}"
-                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                                      Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.library.loadingTitles')}" />
                         <StackPanel Visibility="{x:Bind ViewModel.Collections.Items.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.Collections.Items.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
                             <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
@@ -323,7 +323,7 @@
                         </StackPanel>
                         <TextBlock Visibility="{x:Bind ViewModel.Collections.Items.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
                                    Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                                   Text="This collection has no titles this profile can see." />
+                                   Text="{x:Bind t:AppText.Get('granary.library.collectionEmpty')}" />
                         <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Collections.Items.Cards, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
                                             ViewportCommand="{x:Bind ViewModel.Collections.Items.ShowViewportCommand}"
                                             Visibility="{x:Bind ViewModel.Collections.Items.IsReady, Mode=OneWay}" />
@@ -333,7 +333,7 @@
             <Border Visibility="{x:Bind ShowTab(ViewModel.Collections.Items.HasPageError, ViewModel.IsCollectionsTab), Mode=OneWay}"
                     Style="{StaticResource LibraryPageErrorStyle}">
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.library.browse.someItemsFailed')}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Collections.Items.RetryPagesCommand}" />
                 </StackPanel>
             </Border>

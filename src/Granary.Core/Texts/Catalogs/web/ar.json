@@ -1,4 +1,40 @@
 {
+  "catalog.sort.added": [
+    {
+      "type": 0,
+      "value": "تاريخ الإضافة"
+    }
+  ],
+  "catalog.sort.imdbRating": [
+    {
+      "type": 0,
+      "value": "تقييم IMDb"
+    }
+  ],
+  "catalog.sort.released": [
+    {
+      "type": 0,
+      "value": "تاريخ الإصدار"
+    }
+  ],
+  "catalog.sort.resolution": [
+    {
+      "type": 0,
+      "value": "الدقة"
+    }
+  ],
+  "catalog.sort.title": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "catalog.sort.year": [
+    {
+      "type": 0,
+      "value": "السنة"
+    }
+  ],
   "common.back": [
     {
       "type": 0,
@@ -89,6 +125,60 @@
     {
       "type": 0,
       "value": "متابعة المشاهدة"
+    }
+  ],
+  "home.section.discoverGenres": [
+    {
+      "type": 0,
+      "value": "الأنواع"
+    }
+  ],
+  "home.section.discoverNetworks": [
+    {
+      "type": 0,
+      "value": "الشبكات"
+    }
+  ],
+  "home.section.discoverOnAirSeries": [
+    {
+      "type": 0,
+      "value": "مسلسلات تُعرض حاليًا"
+    }
+  ],
+  "home.section.discoverPopularMovies": [
+    {
+      "type": 0,
+      "value": "الأفلام الشائعة"
+    }
+  ],
+  "home.section.discoverPopularSeries": [
+    {
+      "type": 0,
+      "value": "المسلسلات الشائعة"
+    }
+  ],
+  "home.section.discoverStudios": [
+    {
+      "type": 0,
+      "value": "الاستوديوهات"
+    }
+  ],
+  "home.section.discoverTrendingMovies": [
+    {
+      "type": 0,
+      "value": "الأفلام الرائجة"
+    }
+  ],
+  "home.section.discoverTrendingSeries": [
+    {
+      "type": 0,
+      "value": "المسلسلات الرائجة"
+    }
+  ],
+  "home.section.discoverUpcomingMovies": [
+    {
+      "type": 0,
+      "value": "الأفلام القادمة"
     }
   ],
   "home.section.forYou": [
@@ -761,6 +851,38 @@
       "value": "عرض شعار العنوان"
     }
   ],
+  "shuffle.nothingToPlay": [
+    {
+      "type": 0,
+      "value": "لا يوجد هنا ما يمكن تشغيله."
+    }
+  ],
+  "web.auth.choosePassword.description": [
+    {
+      "type": 0,
+      "value": "عيّن مسؤول كلمة مرور مؤقتة للحساب "
+    },
+    {
+      "type": 1,
+      "value": "username"
+    },
+    {
+      "type": 0,
+      "value": ". اختر كلمة مرورك الخاصة للمتابعة."
+    }
+  ],
+  "web.auth.choosePassword.settleFailed": [
+    {
+      "type": 0,
+      "value": "تم حفظ كلمة المرور الجديدة، لكن تسجيل الدخول لم يكتمل."
+    }
+  ],
+  "web.auth.choosePassword.temporaryPassword": [
+    {
+      "type": 0,
+      "value": "كلمة المرور المؤقتة"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -869,6 +991,36 @@
       "value": "كلمة المرور"
     }
   ],
+  "web.auth.passwordRules.chooseNewPassword": [
+    {
+      "type": 0,
+      "value": "اختر كلمة مرور جديدة"
+    }
+  ],
+  "web.auth.passwordRules.confirmNewPassword": [
+    {
+      "type": 0,
+      "value": "تأكيد كلمة المرور الجديدة"
+    }
+  ],
+  "web.auth.passwordRules.newPassword": [
+    {
+      "type": 0,
+      "value": "كلمة المرور الجديدة"
+    }
+  ],
+  "web.auth.passwordRules.passwordChanged": [
+    {
+      "type": 0,
+      "value": "تم تغيير كلمة المرور"
+    }
+  ],
+  "web.auth.passwordRules.savePassword": [
+    {
+      "type": 0,
+      "value": "حفظ كلمة المرور"
+    }
+  ],
   "web.auth.signIn": [
     {
       "type": 0,
@@ -881,10 +1033,1321 @@
       "value": "اسم المستخدم"
     }
   ],
+  "web.calendar.allLibraries": [
+    {
+      "type": 0,
+      "value": "كل المكتبات"
+    }
+  ],
+  "web.calendar.dayLabel": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    }
+  ],
+  "web.calendar.dayLabelWithEvents": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": " (به أحداث)"
+    }
+  ],
+  "web.calendar.emptyEverything": [
+    {
+      "type": 0,
+      "value": "لا شيء مجدول هذا الأسبوع."
+    }
+  ],
+  "web.calendar.emptyFollowing": [
+    {
+      "type": 0,
+      "value": "لا جديد قادم من المسلسلات التي تتابعها هذا الأسبوع."
+    }
+  ],
+  "web.calendar.emptyTrending": [
+    {
+      "type": 0,
+      "value": "لا شيء رائج هذا الأسبوع."
+    }
+  ],
+  "web.calendar.event.badge.digital": [
+    {
+      "type": 0,
+      "value": "رقمي"
+    }
+  ],
+  "web.calendar.event.badge.finale": [
+    {
+      "type": 0,
+      "value": "الحلقة الأخيرة"
+    }
+  ],
+  "web.calendar.event.badge.physical": [
+    {
+      "type": 0,
+      "value": "إصدار مادي"
+    }
+  ],
+  "web.calendar.event.badge.seasonPremiere": [
+    {
+      "type": 0,
+      "value": "موسم جديد"
+    }
+  ],
+  "web.calendar.event.badge.seriesPremiere": [
+    {
+      "type": 0,
+      "value": "العرض الأول"
+    }
+  ],
+  "web.calendar.event.episode": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.calendar.event.episodeTitled": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " - "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.calendar.event.movie": [
+    {
+      "type": 0,
+      "value": "فيلم"
+    }
+  ],
+  "web.calendar.event.season": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    }
+  ],
+  "web.calendar.event.seasonTitled": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.calendar.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ التحميل..."
+    }
+  ],
+  "web.calendar.nextWeek": [
+    {
+      "type": 0,
+      "value": "الأسبوع التالي"
+    }
+  ],
+  "web.calendar.nothingScheduledFor": [
+    {
+      "type": 0,
+      "value": "لا شيء مجدول في "
+    },
+    {
+      "type": 8,
+      "value": "day",
+      "children": [
+        {
+          "type": 1,
+          "value": "date"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.calendar.presetAll": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.calendar.presetFollowing": [
+    {
+      "type": 0,
+      "value": "المتابعة"
+    }
+  ],
+  "web.calendar.presetLabel": [
+    {
+      "type": 0,
+      "value": "عرض التقويم"
+    }
+  ],
+  "web.calendar.presetTrending": [
+    {
+      "type": 0,
+      "value": "الرائج"
+    }
+  ],
+  "web.calendar.previousWeek": [
+    {
+      "type": 0,
+      "value": "الأسبوع السابق"
+    }
+  ],
+  "web.calendar.showEverything": [
+    {
+      "type": 0,
+      "value": "عرض الكل"
+    }
+  ],
+  "web.calendar.title": [
+    {
+      "type": 0,
+      "value": "التقويم"
+    }
+  ],
+  "web.calendar.today": [
+    {
+      "type": 0,
+      "value": "اليوم"
+    }
+  ],
+  "web.calendar.todayButton": [
+    {
+      "type": 0,
+      "value": "اليوم"
+    }
+  ],
+  "web.calendar.weekOf": [
+    {
+      "type": 0,
+      "value": "أسبوع "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    }
+  ],
+  "web.catalog.carousel.exploreAll": [
+    {
+      "type": 0,
+      "value": "استكشاف الكل"
+    }
+  ],
+  "web.catalog.carousel.exploreAllLabel": [
+    {
+      "type": 0,
+      "value": "استكشاف كل "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.catalog.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "التمرير لليسار"
+    }
+  ],
+  "web.catalog.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "التمرير لليمين"
+    }
+  ],
+  "web.catalog.filters.badgeContentRating": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري: "
+    },
+    {
+      "type": 1,
+      "value": "rating"
+    }
+  ],
+  "web.catalog.filters.badgeGenre": [
+    {
+      "type": 0,
+      "value": "النوع: "
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.catalog.filters.badgeLanguage": [
+    {
+      "type": 0,
+      "value": "اللغة: "
+    },
+    {
+      "type": 1,
+      "value": "language"
+    }
+  ],
+  "web.catalog.filters.badgeWatch": [
+    {
+      "type": 0,
+      "value": "المشاهدة: "
+    },
+    {
+      "type": 5,
+      "value": "status",
+      "options": {
+        "watched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت المشاهدة"
+            }
+          ]
+        },
+        "unwatched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لم تتم المشاهدة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "قيد التقدم"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.catalog.filters.badgeYearFrom": [
+    {
+      "type": 0,
+      "value": "السنة: >= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.badgeYearRange": [
+    {
+      "type": 0,
+      "value": "السنة: "
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "–"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    }
+  ],
+  "web.catalog.filters.badgeYearTo": [
+    {
+      "type": 0,
+      "value": "السنة: <= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.clearAll": [
+    {
+      "type": 0,
+      "value": "مسح الكل"
+    }
+  ],
+  "web.catalog.filters.heading": [
+    {
+      "type": 0,
+      "value": "عوامل التصفية"
+    }
+  ],
+  "web.catalog.filters.locked": [
+    {
+      "type": 0,
+      "value": "عوامل التصفية مقفلة على هذا المصدر."
+    }
+  ],
+  "web.catalog.filters.open": [
+    {
+      "type": 0,
+      "value": "عوامل التصفية"
+    }
+  ],
+  "web.catalog.filters.removeBadge": [
+    {
+      "type": 0,
+      "value": "إزالة "
+    },
+    {
+      "type": 1,
+      "value": "filter"
+    }
+  ],
+  "web.catalog.grid.noItems": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على عناصر."
+    }
+  ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "يمسح هذا سجل مشاهدة العنصر وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصرين محددين."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عناصر محددة."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصرًا محددًا."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "يمسح هذا سجل مشاهدة المسلسل والحلقات التي شاهدتها وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات المشاهدة؟"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات المشاهدة المحددة؟"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات مشاهدة المسلسل؟"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لعنصرين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عناصر"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عنصرًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عنصر"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.letters.letterNoTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": "، لا توجد عناوين"
+    }
+  ],
+  "web.catalog.letters.letterTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوانان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.letters.numbersAndSymbols": [
+    {
+      "type": 0,
+      "value": "الأرقام والرموز"
+    }
+  ],
+  "web.catalog.letters.showing": [
+    {
+      "type": 0,
+      "value": "عرض العناوين تحت "
+    },
+    {
+      "type": 1,
+      "value": "letter"
+    }
+  ],
+  "web.catalog.letters.toolbar": [
+    {
+      "type": 0,
+      "value": "الانتقال إلى حرف"
+    }
+  ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "كل الوسائط"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "الحلقات"
+    }
+  ],
+  "web.catalog.mediaType.movies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.catalog.mediaType.moviesAndSeries": [
+    {
+      "type": 0,
+      "value": "الأفلام والمسلسلات"
+    }
+  ],
+  "web.catalog.mediaType.series": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.catalog.page.catalogFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل نتائج الكتالوج."
+    }
+  ],
+  "web.catalog.page.catalogSubtitle": [
+    {
+      "type": 0,
+      "value": "صفِّ الأرشيف حسب النوع أو الحقبة أو التقييم أو التصنيف."
+    }
+  ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "مسح"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "تم"
+    }
+  ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "المفضلة"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "الأفلام والمسلسلات التي أضفتها إلى المفضلة."
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "السجل"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "تؤدي إزالة العناصر إلى مسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "سجل المشاهدة"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "كل ما شاهدته مؤخرًا."
+    }
+  ],
+  "web.catalog.page.people": [
+    {
+      "type": 0,
+      "value": "الأشخاص"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "إزالة"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "إزالة المحدد"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتائج"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتائج"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultsFor": [
+    {
+      "type": 0,
+      "value": "نتائج «"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "»"
+    }
+  ],
+  "web.catalog.page.searchFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل نتائج البحث."
+    }
+  ],
+  "web.catalog.page.searchTitle": [
+    {
+      "type": 0,
+      "value": "البحث"
+    }
+  ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "تحديد"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "تحديد المحمّل"
+    }
+  ],
+  "web.catalog.page.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لا عناوين"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عنوان واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عنوانان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "قائمة المشاهدة"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "ما حفظته لمشاهدته لاحقًا."
+    }
+  ],
+  "web.catalog.search.scopeLabel": [
+    {
+      "type": 0,
+      "value": "نطاق البحث"
+    }
+  ],
+  "web.catalog.sort.ascending": [
+    {
+      "type": 0,
+      "value": "تصاعدي"
+    }
+  ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "ترتيب المجموعة"
+    }
+  ],
+  "web.catalog.sort.descending": [
+    {
+      "type": 0,
+      "value": "تنازلي"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "ترتيب القائمة"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "سجل المشاهدة"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "حذف…"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "مزيد من الإجراءات"
+    }
+  ],
+  "web.collections.builder.fieldAudioLanguage": [
+    {
+      "type": 0,
+      "value": "لغة الصوت"
+    }
+  ],
+  "web.collections.builder.fieldSubtitleLanguage": [
+    {
+      "type": 0,
+      "value": "لغة الترجمة"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "حذف"
+    }
+  ],
+  "web.collections.guidedRules.any": [
+    {
+      "type": 0,
+      "value": "أي"
+    }
+  ],
+  "web.collections.guidedRules.contentRating": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري"
+    }
+  ],
+  "web.collections.guidedRules.decade": [
+    {
+      "type": 0,
+      "value": "العقد"
+    }
+  ],
+  "web.collections.guidedRules.decadeOption": [
+    {
+      "type": 0,
+      "value": "عقد "
+    },
+    {
+      "type": 1,
+      "value": "decade"
+    }
+  ],
+  "web.collections.guidedRules.genres": [
+    {
+      "type": 0,
+      "value": "الأنواع"
+    }
+  ],
+  "web.collections.guidedRules.inProgress": [
+    {
+      "type": 0,
+      "value": "قيد التقدم"
+    }
+  ],
+  "web.collections.guidedRules.originalLanguage": [
+    {
+      "type": 0,
+      "value": "اللغة الأصلية"
+    }
+  ],
+  "web.collections.guidedRules.unwatched": [
+    {
+      "type": 0,
+      "value": "لم تتم المشاهدة"
+    }
+  ],
+  "web.collections.guidedRules.videoQuality": [
+    {
+      "type": 0,
+      "value": "جودة الفيديو"
+    }
+  ],
+  "web.collections.guidedRules.watchStatus": [
+    {
+      "type": 0,
+      "value": "حالة المشاهدة"
+    }
+  ],
+  "web.collections.guidedRules.watched": [
+    {
+      "type": 0,
+      "value": "تمت المشاهدة"
+    }
+  ],
+  "web.collections.guidedRules.yearFrom": [
+    {
+      "type": 0,
+      "value": "من سنة"
+    }
+  ],
+  "web.collections.guidedRules.yearFromPlaceholder": [
+    {
+      "type": 0,
+      "value": "مثال: 2000"
+    }
+  ],
+  "web.collections.guidedRules.yearTo": [
+    {
+      "type": 0,
+      "value": "إلى سنة"
+    }
+  ],
+  "web.collections.guidedRules.yearToPlaceholder": [
+    {
+      "type": 0,
+      "value": "مثال: 2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "حذف «"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "»؟"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "تعديل"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -917,6 +2380,178 @@
       "value": "أخرى"
     }
   ],
+  "web.common.format.runtime.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " س "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.common.format.runtime.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " د"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.sort.bitrate": [
+    {
+      "type": 0,
+      "value": "معدل البت"
+    }
+  ],
+  "web.common.sort.contentRating": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري"
+    }
+  ],
+  "web.common.sort.dateViewed": [
+    {
+      "type": 0,
+      "value": "تاريخ المشاهدة"
+    }
+  ],
+  "web.common.sort.duration": [
+    {
+      "type": 0,
+      "value": "المدة"
+    }
+  ],
+  "web.common.sort.latestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "آخر حلقة مضافة"
+    }
+  ],
+  "web.common.sort.latestEpisodeAirDate": [
+    {
+      "type": 0,
+      "value": "تاريخ عرض آخر حلقة"
+    }
+  ],
+  "web.common.sort.plays": [
+    {
+      "type": 0,
+      "value": "مرات التشغيل"
+    }
+  ],
+  "web.common.sort.progress": [
+    {
+      "type": 0,
+      "value": "التقدم"
+    }
+  ],
+  "web.common.sort.rtAudienceRating": [
+    {
+      "type": 0,
+      "value": "تقييم جمهور RT"
+    }
+  ],
+  "web.common.sort.rtCriticRating": [
+    {
+      "type": 0,
+      "value": "تقييم نقاد RT"
+    }
+  ],
+  "web.common.sort.tmdbRating": [
+    {
+      "type": 0,
+      "value": "تقييم TMDB"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "فشل الحذف"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -929,10 +2564,1157 @@
       "value": "الخادم لا يستجيب. حاول مرة أخرى بعد قليل."
     }
   ],
+  "web.common.ui.loadMore.button": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
+    }
+  ],
+  "web.common.ui.loadMore.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل المزيد"
+    }
+  ],
+  "web.detail.actions.markSeasonUnwatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة على الموسم كغير مشاهد"
+    }
+  ],
+  "web.detail.actions.markSeasonWatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة على الموسم كمشاهد"
+    }
+  ],
+  "web.detail.actions.markSeriesUnwatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة على المسلسل كغير مشاهد"
+    }
+  ],
+  "web.detail.actions.markSeriesWatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة على المسلسل كمشاهد"
+    }
+  ],
+  "web.detail.actions.markUnwatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة كغير مشاهد"
+    }
+  ],
+  "web.detail.actions.markWatched": [
+    {
+      "type": 0,
+      "value": "وضع علامة كمشاهد"
+    }
+  ],
+  "web.detail.boxSet.cardLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "، سلسلة أفلام تضم "
+    },
+    {
+      "type": 1,
+      "value": "films"
+    }
+  ],
+  "web.detail.boxSet.continueTitle": [
+    {
+      "type": 0,
+      "value": "متابعة · "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.detail.boxSet.filmCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لا أفلام"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "فيلم واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "فيلمان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " أفلام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " فيلمًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " فيلم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.boxSet.label": [
+    {
+      "type": 0,
+      "value": "سلسلة أفلام"
+    }
+  ],
+  "web.detail.boxSet.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.detail.boxSet.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل سلسلة الأفلام هذه"
+    }
+  ],
+  "web.detail.boxSet.movies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.detail.boxSet.playTitle": [
+    {
+      "type": 0,
+      "value": "تشغيل "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.detail.boxSet.thisFilm": [
+    {
+      "type": 0,
+      "value": "هذا الفيلم"
+    }
+  ],
+  "web.detail.boxSet.unavailableBody": [
+    {
+      "type": 0,
+      "value": "قد تكون سلاسل الأفلام معطّلة في هذه المكتبة، أو أن عدد أفلامها الموجودة هنا قليل جدًا."
+    }
+  ],
+  "web.detail.boxSet.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "سلسلة الأفلام هذه غير متاحة"
+    }
+  ],
+  "web.detail.boxSet.watchedFraction": [
+    {
+      "type": 0,
+      "value": "شوهد "
+    },
+    {
+      "type": 1,
+      "value": "played"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    }
+  ],
+  "web.detail.boxSet.watchedOf": [
+    {
+      "type": 0,
+      "value": "شوهد "
+    },
+    {
+      "type": 1,
+      "value": "played"
+    },
+    {
+      "type": 0,
+      "value": " من "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    }
+  ],
+  "web.detail.episodeCode": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.detail.episodes.nowViewing": [
+    {
+      "type": 0,
+      "value": "المعروضة الآن"
+    }
+  ],
+  "web.detail.seasons.episodeCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حلقة واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حلقتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.seasons.numbered": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    }
+  ],
+  "web.detail.seasons.watchedProgress": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من حلقة واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من حلقتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "watched"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.home.continueWatching.episodeLabelWithTitle": [
+    {
+      "type": 0,
+      "value": "الموسم "
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " الحلقة "
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " • "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.home.continueWatching.minutesLeft": [
+    {
+      "type": 0,
+      "value": "المتبقي: "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.home.continueWatching.nextEpisode": [
+    {
+      "type": 0,
+      "value": "الحلقة التالية"
+    }
+  ],
+  "web.home.dismiss.removeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إزالة العنصر"
+    }
+  ],
+  "web.home.hero.episodeIdentity": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.home.hero.eyebrow": [
+    {
+      "type": 0,
+      "value": "مميز"
+    }
+  ],
+  "web.home.hero.moreInfo": [
+    {
+      "type": 0,
+      "value": "مزيد من المعلومات"
+    }
+  ],
+  "web.home.hero.nextSlide": [
+    {
+      "type": 0,
+      "value": "الشريحة التالية"
+    }
+  ],
+  "web.home.hero.pauseSlideshow": [
+    {
+      "type": 0,
+      "value": "إيقاف عرض الشرائح مؤقتًا"
+    }
+  ],
+  "web.home.hero.play": [
+    {
+      "type": 0,
+      "value": "تشغيل"
+    }
+  ],
+  "web.home.hero.playSlideshow": [
+    {
+      "type": 0,
+      "value": "تشغيل عرض الشرائح"
+    }
+  ],
+  "web.home.hero.previousSlide": [
+    {
+      "type": 0,
+      "value": "الشريحة السابقة"
+    }
+  ],
+  "web.home.hero.runtimeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " س"
+    }
+  ],
+  "web.home.hero.runtimeHoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " س "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.home.hero.runtimeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.home.hero.slideNumber": [
+    {
+      "type": 0,
+      "value": "رقم "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل تخطيط الأقسام الآن."
+    }
+  ],
+  "web.home.page.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل الصفحة الرئيسية"
+    }
+  ],
+  "web.home.page.title": [
+    {
+      "type": 0,
+      "value": "الرئيسية"
+    }
+  ],
+  "web.home.sectionRow.seriesType": [
+    {
+      "type": 0,
+      "value": "مسلسل"
+    }
+  ],
+  "web.item.card.play": [
+    {
+      "type": 0,
+      "value": "تشغيل "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.item.card.watched": [
+    {
+      "type": 0,
+      "value": "تمت المشاهدة"
+    }
+  ],
+  "web.item.menu.addToFavorites": [
+    {
+      "type": 0,
+      "value": "إضافة إلى المفضلة"
+    }
+  ],
+  "web.item.menu.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "إضافة إلى قائمة المشاهدة"
+    }
+  ],
+  "web.item.menu.moreActions": [
+    {
+      "type": 0,
+      "value": "مزيد من الإجراءات"
+    }
+  ],
+  "web.item.menu.notInterested": [
+    {
+      "type": 0,
+      "value": "غير مهتم"
+    }
+  ],
+  "web.item.menu.playFromBeginning": [
+    {
+      "type": 0,
+      "value": "التشغيل من البداية"
+    }
+  ],
+  "web.item.menu.removeFromContinueWatching": [
+    {
+      "type": 0,
+      "value": "إزالة من متابعة المشاهدة"
+    }
+  ],
+  "web.item.menu.removeFromFavorites": [
+    {
+      "type": 0,
+      "value": "إزالة من المفضلة"
+    }
+  ],
+  "web.item.menu.removeFromNextUp": [
+    {
+      "type": 0,
+      "value": "إزالة من الحلقات التالية"
+    }
+  ],
+  "web.item.menu.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "إزالة من قائمة المشاهدة"
+    }
+  ],
+  "web.item.menu.showInRecommendations": [
+    {
+      "type": 0,
+      "value": "العرض في التوصيات"
+    }
+  ],
+  "web.library.browse.clearFilters": [
+    {
+      "type": 0,
+      "value": "مسح عوامل التصفية"
+    }
+  ],
+  "web.library.browse.noMatches": [
+    {
+      "type": 0,
+      "value": "لا توجد عناصر تطابق عوامل التصفية الحالية."
+    }
+  ],
+  "web.library.browse.someItemsFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل بعض العناصر."
+    }
+  ],
+  "web.library.collections.emptyBody": [
+    {
+      "type": 0,
+      "value": "ستظهر مجموعات هذه المكتبة هنا."
+    }
+  ],
+  "web.library.collections.emptyTitle": [
+    {
+      "type": 0,
+      "value": "لا توجد مجموعات بعد"
+    }
+  ],
+  "web.library.empty.body": [
+    {
+      "type": 0,
+      "value": "لا يوجد شيء في هذه المكتبة بعد."
+    }
+  ],
+  "web.library.header.collectionsTab": [
+    {
+      "type": 0,
+      "value": "المجموعات"
+    }
+  ],
+  "web.library.header.eyebrow": [
+    {
+      "type": 0,
+      "value": "المكتبة"
+    }
+  ],
+  "web.library.header.libraryTab": [
+    {
+      "type": 0,
+      "value": "المكتبة"
+    }
+  ],
+  "web.library.header.recommendedTab": [
+    {
+      "type": 0,
+      "value": "المقترحات"
+    }
+  ],
+  "web.library.header.shuffle": [
+    {
+      "type": 0,
+      "value": "عشوائي"
+    }
+  ],
+  "web.library.header.tabsLabel": [
+    {
+      "type": 0,
+      "value": "عرض المكتبة"
+    }
+  ],
+  "web.library.page.titleFallback": [
+    {
+      "type": 0,
+      "value": "المكتبة"
+    }
+  ],
+  "web.library.page.unavailable": [
+    {
+      "type": 0,
+      "value": "هذه المكتبة مخفية أو غير متاحة لحسابك."
+    }
+  ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "تصفّح استكشاف"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "أضف أفلامًا ومسلسلات من استكشاف إلى قائمة المشاهدة. ما لا تملكه المكتبة بعد ينتظر هنا حتى يصل."
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "لا شيء بانتظار المكتبة"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "العثور على المزيد في استكشاف"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "في مكتبتك"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذه العناوين."
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "ليست في مكتبتك بعد"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "تمت الموافقة · بانتظار التنزيل"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "بانتظار الموافقة"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "جارٍ التنزيل "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "يدرجه TMDB مرتين"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "يحتاج إلى مراجعة"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "لم يعد مدرجًا على TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "غير موجود على TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "غير مطلوب"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "غير مطلوب · يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "غير مطلوب · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · تمت الموافقة"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · بانتظار الموافقة"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "هذه العناوين ليست في المكتبة بعد، لذا لا يمكن تشغيلها. عندما يصل أحدها، ينتقل إلى «في مكتبتك»."
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "هذه العناوين ليست في المكتبة بعد، لذا لا يمكن تشغيلها. وقد طُلبت لك. عندما يصل أحدها، ينتقل إلى «في مكتبتك» ويصلك إشعار."
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "web.person.age": [
+    {
+      "type": 6,
+      "value": "age",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عام"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عام واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عامان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " أعوام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عامًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عام"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.person.born": [
+    {
+      "type": 0,
+      "value": "تاريخ الميلاد: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.person.died": [
+    {
+      "type": 0,
+      "value": "تاريخ الوفاة: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " (العمر: "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.person.filmography": [
+    {
+      "type": 0,
+      "value": "الأعمال"
+    }
+  ],
+  "web.person.filterAll": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.person.filterMovies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.person.filterSeries": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.person.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.person.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل بيانات هذا الشخص"
+    }
+  ],
+  "web.person.queueing": [
+    {
+      "type": 0,
+      "value": "جارٍ الإضافة إلى قائمة الانتظار…"
+    }
+  ],
+  "web.person.refreshMetadata": [
+    {
+      "type": 0,
+      "value": "تحديث البيانات الوصفية"
+    }
+  ],
+  "web.person.refreshNow": [
+    {
+      "type": 0,
+      "value": "تحديث الآن"
+    }
+  ],
+  "web.person.refreshing": [
+    {
+      "type": 0,
+      "value": "جارٍ التحديث..."
+    }
+  ],
+  "web.person.toast.refreshQueued": [
+    {
+      "type": 0,
+      "value": "أُضيف تحديث الشخص إلى قائمة الانتظار"
+    }
+  ],
+  "web.person.toast.refreshed": [
+    {
+      "type": 0,
+      "value": "تم تحديث البيانات الوصفية للشخص"
+    }
+  ],
+  "web.person.unavailableBody": [
+    {
+      "type": 0,
+      "value": "ربما أُزيل من الكتالوج، أو ربما يكون الرابط خاطئًا."
+    }
+  ],
+  "web.person.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "هذا الشخص غير متاح"
     }
   ],
   "web.player.audioMenu.trigger": [
@@ -1131,6 +3913,280 @@
       "value": "جارٍ التحقق..."
     }
   ],
+  "web.recommendations.emptyBody": [
+    {
+      "type": 0,
+      "value": "تظهر الأفلام والمسلسلات هنا بمجرد أن تحتوي مكتباتك على عناوين يمكنك مشاهدتها."
+    }
+  ],
+  "web.recommendations.emptyTitle": [
+    {
+      "type": 0,
+      "value": "لا يوجد ما يُعرض بعد"
+    }
+  ],
+  "web.recommendations.fallbackCluster": [
+    {
+      "type": 0,
+      "value": "مجموعة مخصصة"
+    }
+  ],
+  "web.recommendations.fallbackClusterKey": [
+    {
+      "type": 0,
+      "value": "مجموعة مخصصة "
+    },
+    {
+      "type": 1,
+      "value": "key"
+    }
+  ],
+  "web.recommendations.fallbackDefault": [
+    {
+      "type": 0,
+      "value": "التوصيات"
+    }
+  ],
+  "web.recommendations.fallbackGenre": [
+    {
+      "type": 0,
+      "value": "الأفضل في "
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.recommendations.fallbackGenrePicks": [
+    {
+      "type": 0,
+      "value": "اختيارات حسب النوع"
+    }
+  ],
+  "web.recommendations.fallbackPopular": [
+    {
+      "type": 0,
+      "value": "الأكثر شعبية على هذا الخادم"
+    }
+  ],
+  "web.recommendations.fallbackRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "المضاف مؤخرًا"
+    }
+  ],
+  "web.recommendations.fallbackSimilarUsers": [
+    {
+      "type": 0,
+      "value": "أعجب ملفات شخصية تشبهك"
+    }
+  ],
+  "web.recommendations.fallbackTopRated": [
+    {
+      "type": 0,
+      "value": "الأعلى تقييمًا في مكتبتك"
+    }
+  ],
+  "web.recommendations.favoriteDirectors": [
+    {
+      "type": 0,
+      "value": "المخرجون المفضلون"
+    }
+  ],
+  "web.recommendations.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل التوصيات."
+    }
+  ],
+  "web.recommendations.sectionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "لا عناوين"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عنوان واحد"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عنوانان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.recommendations.sectionEmptyBody": [
+    {
+      "type": 0,
+      "value": "شاهد المزيد من المحتوى وقيّمه لتظهر اختيارات في هذا القسم."
+    }
+  ],
+  "web.recommendations.sectionEmptyTitle": [
+    {
+      "type": 0,
+      "value": "لا يوجد شيء هنا بعد"
+    }
+  ],
+  "web.recommendations.sectionLoadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذا القسم."
+    }
+  ],
+  "web.recommendations.subtitleDefault": [
+    {
+      "type": 0,
+      "value": "عناوين عالية التقييم ومضافة مؤخرًا من مكتبتك. شاهد العناوين وقيّمها لتخصيص هذه الصفحة."
+    }
+  ],
+  "web.recommendations.subtitlePersonal": [
+    {
+      "type": 0,
+      "value": "اختيارات مخصصة بناءً على سجل مشاهدتك وتقييماتك."
+    }
+  ],
+  "web.recommendations.tasteProfile": [
+    {
+      "type": 0,
+      "value": "ملف ذوقك الشخصي"
+    }
+  ],
+  "web.recommendations.title": [
+    {
+      "type": 0,
+      "value": "لك"
+    }
+  ],
+  "web.recommendations.topGenres": [
+    {
+      "type": 0,
+      "value": "أبرز الأنواع"
+    }
+  ],
+  "web.requests.card.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "إضافة إلى قائمة المشاهدة"
+    }
+  ],
+  "web.requests.card.addToWatchlistFor": [
+    {
+      "type": 0,
+      "value": "إضافة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " إلى قائمة المشاهدة"
+    }
+  ],
+  "web.requests.card.onWatchlist": [
+    {
+      "type": 0,
+      "value": "في قائمة المشاهدة"
+    }
+  ],
+  "web.requests.card.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "إزالة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " من قائمة المشاهدة"
+    }
+  ],
+  "web.requests.results.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل المزيد من العناوين."
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "تمت الموافقة"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "قيد المعالجة"
+    }
+  ],
+  "web.requests.toAdd.heading": [
+    {
+      "type": 0,
+      "value": "طلب للإضافة"
+    }
+  ],
+  "web.search.boxSets": [
+    {
+      "type": 0,
+      "value": "سلاسل أفلام"
+    }
+  ],
   "web.search.label": [
     {
       "type": 0,
@@ -1141,6 +4197,274 @@
     {
       "type": 0,
       "value": "البحث عن أفلام ومسلسلات..."
+    }
+  ],
+  "web.search.searching": [
+    {
+      "type": 0,
+      "value": "جارٍ البحث..."
+    }
+  ],
+  "web.search.titles": [
+    {
+      "type": 0,
+      "value": "العناوين"
+    }
+  ],
+  "web.settings.account.password.current": [
+    {
+      "type": 0,
+      "value": "كلمة المرور الحالية"
+    }
+  ],
+  "web.settings.account.password.error.mismatch": [
+    {
+      "type": 0,
+      "value": "كلمتا المرور الجديدتان غير متطابقتين."
+    }
+  ],
+  "web.settings.account.password.error.tooLong": [
+    {
+      "type": 0,
+      "value": "يجب ألا تتجاوز كلمة المرور الجديدة "
+    },
+    {
+      "type": 1,
+      "value": "maximum"
+    },
+    {
+      "type": 0,
+      "value": " بايت."
+    }
+  ],
+  "web.settings.account.password.error.tooShort": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من "
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من "
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من حرفين على الأقل."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من "
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " أحرف على الأقل."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من "
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرفًا على الأقل."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يجب أن تتكون كلمة المرور الجديدة من "
+            },
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.account.password.error.unavailable": [
+    {
+      "type": 0,
+      "value": "تغيير كلمة المرور غير متاح لهذا الحساب."
+    }
+  ],
+  "web.settings.account.password.requirements": [
+    {
+      "type": 6,
+      "value": "minimum",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حرفان على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " أحرف على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرفًا على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minimum_text"
+            },
+            {
+              "type": 0,
+              "value": " حرف على الأقل وبحد أقصى "
+            },
+            {
+              "type": 1,
+              "value": "maximum"
+            },
+            {
+              "type": 0,
+              "value": " بايت."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.settings.cardOverlay.adjust": [
@@ -4785,6 +8109,18 @@
     {
       "type": 0,
       "value": "تجاهل التغييرات غير المحفوظة؟"
+    }
+  ],
+  "web.shuffle.startFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر بدء التشغيل العشوائي."
+    }
+  ],
+  "web.ui.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ..."
     }
   ]
 }

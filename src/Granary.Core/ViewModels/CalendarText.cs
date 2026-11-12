@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -42,11 +43,19 @@ internal static class CalendarText
         if (airing.Type is "episode" or "season_premiere" && airing.SeasonNumber is { } season)
         {
             string title = airing.EpisodeTitle is { Length: > 0 } name ? name : "";
-            return airing.EpisodeNumber is { } episode
-                ? $"S{season} · E{episode}{(title.Length > 0 ? " - " + title : "")}"
-                : $"Season {season}{(title.Length > 0 ? " · " + title : "")}";
+            if (airing.EpisodeNumber is { } episode)
+            {
+                // The numbers of a code stay in Latin digits in every language, as the web's codeNumber.
+                string s = season.ToString(English), e = episode.ToString(English);
+                return title.Length > 0
+                    ? AppText.Get("web.calendar.event.episodeTitled", ("season", s), ("episode", e), ("title", title))
+                    : AppText.Get("web.calendar.event.episode", ("season", s), ("episode", e));
+            }
+            return title.Length > 0
+                ? AppText.Get("web.calendar.event.seasonTitled", ("season", season), ("title", title))
+                : AppText.Get("web.calendar.event.season", ("season", season));
         }
-        return airing.Type == "movie" ? "Movie" : "";
+        return airing.Type == "movie" ? AppText.Get("web.calendar.event.movie") : "";
     }
 
     /// <summary>The airing's time on the viewer's clock, or the network's wall-clock time; null when neither is known.</summary>
@@ -61,13 +70,15 @@ internal static class CalendarText
             : null;
     }
 
-    /// <summary>"SERIES PREMIERE", "SEASON PREMIERE", "FINALE".</summary>
+    /// <summary>"PREMIERE", "NEW SEASON", "FINALE": the web's badges (lib/upcomingEventPresentation.ts), in capitals as its CSS shows them.</summary>
     public static string? Badge(IReadOnlyList<string> badges) => badges.FirstOrDefault() switch
     {
         null => null,
-        "series_premiere" => "SERIES PREMIERE",
-        "season_premiere" => "SEASON PREMIERE",
-        "finale" => "FINALE",
+        "series_premiere" => AppText.Upper(AppText.Get("web.calendar.event.badge.seriesPremiere")),
+        "season_premiere" => AppText.Upper(AppText.Get("web.calendar.event.badge.seasonPremiere")),
+        "finale" => AppText.Upper(AppText.Get("web.calendar.event.badge.finale")),
+        "digital" => AppText.Upper(AppText.Get("web.calendar.event.badge.digital")),
+        "physical" => AppText.Upper(AppText.Get("web.calendar.event.badge.physical")),
         var other => other.ToUpperInvariant(),
     };
 

@@ -10,6 +10,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts"
     xmlns:vm="using:Granary.Core.ViewModels">
 
     <UserControl.Resources>
@@ -31,7 +32,7 @@
     <Button x:Name="PillButton" Style="{StaticResource FiltersPillButtonStyle}" AutomationProperties.Name="{x:Bind FiltersName(Filters.ActiveCount), Mode=OneWay}">
         <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon Glyph="&#xE71C;" FontSize="14" />
-            <TextBlock Text="Filters" />
+            <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.filters.open')}" />
             <Border Visibility="{x:Bind Filters.HasActiveFilters, Mode=OneWay}" Background="{StaticResource SiloPrimaryBrush}"
                     CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinWidth="20" Height="20" Padding="6,0">
                 <TextBlock Text="{x:Bind CountText(Filters.ActiveCount), Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}"
@@ -46,23 +47,23 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Filters" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.filters.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <ScrollViewer x:Name="FiltersScroller" Grid.Row="1" Padding="0,0,14,0" XYFocusKeyboardNavigation="Enabled"
                                   HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Spacing="18">
                             <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasGenres, Mode=OneWay}">
-                                <TextBlock Text="Genres" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.guidedRules.genres')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.GenreOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Genres">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.guidedRules.genres')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Decade" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.guidedRules.decade')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.DecadeOptions}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Decade">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.guidedRules.decade')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
@@ -73,66 +74,68 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <NumberBox x:Name="YearFromBox" Header="Year From" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                <NumberBox x:Name="YearFromBox" Header="{x:Bind t:AppText.Get('web.collections.guidedRules.yearFrom')}"
+                                           PlaceholderText="{x:Bind t:AppText.Get('web.collections.guidedRules.yearFromPlaceholder')}" SpinButtonPlacementMode="Hidden"
                                            Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearFrom, Mode=TwoWay}" />
-                                <NumberBox x:Name="YearToBox" Grid.Column="1" Header="Year To" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                <NumberBox x:Name="YearToBox" Grid.Column="1" Header="{x:Bind t:AppText.Get('web.collections.guidedRules.yearTo')}"
+                                           PlaceholderText="{x:Bind t:AppText.Get('web.collections.guidedRules.yearToPlaceholder')}" SpinButtonPlacementMode="Hidden"
                                            Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearTo, Mode=TwoWay}" />
                             </Grid>
                             <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasRatings, Mode=OneWay}">
-                                <TextBlock Text="Content Rating" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.guidedRules.contentRating')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.RatingOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Content Rating">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.guidedRules.contentRating')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Video Quality" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.guidedRules.videoQuality')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.VideoQualityOptions}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Video Quality">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.guidedRules.videoQuality')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasOriginalLanguages, Mode=OneWay}">
-                                <TextBlock Text="Original Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.guidedRules.originalLanguage')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.OriginalLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Original Language">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.guidedRules.originalLanguage')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasAudioLanguages, Mode=OneWay}">
-                                <TextBlock Text="Audio Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.builder.fieldAudioLanguage')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.AudioLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Audio Language">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.builder.fieldAudioLanguage')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
                             <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasSubtitleLanguages, Mode=OneWay}">
-                                <TextBlock Text="Subtitle Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.builder.fieldSubtitleLanguage')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                 <ItemsRepeater ItemsSource="{x:Bind Filters.SubtitleLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
-                                               TabFocusNavigation="Once" AutomationProperties.Name="Subtitle Language">
+                                               TabFocusNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.builder.fieldSubtitleLanguage')}">
                                     <ItemsRepeater.Layout>
                                         <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
                                     </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </StackPanel>
-                            <ComboBox Header="Watch Status" HorizontalAlignment="Stretch" ItemsSource="{x:Bind vm:LibraryFiltersViewModel.WatchStatusChoices}"
+                            <ComboBox Header="{x:Bind t:AppText.Get('web.collections.guidedRules.watchStatus')}" HorizontalAlignment="Stretch" ItemsSource="{x:Bind vm:LibraryFiltersViewModel.WatchStatusChoices}"
                                       SelectedIndex="{x:Bind Filters.DraftWatchStatusIndex, Mode=TwoWay}" />
                             <TextBlock Visibility="{x:Bind Filters.HasOptionsError, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
                                        Text="{x:Bind OptionsErrorText, Mode=OneWay}" />
                         </StackPanel>
                     </ScrollViewer>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                        <Button Content="Clear" Style="{StaticResource FiltersPillButtonStyle}" Command="{x:Bind Filters.ClearCommand, Mode=OneWay}"
+                        <Button Content="{x:Bind t:AppText.Get('web.catalog.filters.clearAll')}" Style="{StaticResource FiltersPillButtonStyle}" Command="{x:Bind Filters.ClearCommand, Mode=OneWay}"
                                 Click="OnFilterActionClick" />
-                        <Button Content="Apply" Style="{StaticResource SiloPrimaryButtonStyle}" MinHeight="38" Padding="20,6"
+                        <Button Content="{x:Bind t:AppText.Get('granary.libraryFilters.apply')}" Style="{StaticResource SiloPrimaryButtonStyle}" MinHeight="38" Padding="20,6"
                                 Command="{x:Bind Filters.ApplyCommand, Mode=OneWay}" Click="OnFilterActionClick" />
                     </StackPanel>
                 </Grid>

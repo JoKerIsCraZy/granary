@@ -17,16 +17,16 @@
             <StackPanel Spacing="6">
                 <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
                            AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock Text="Refine the archive by type, era, rating, or genre." Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.catalogSubtitle')}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
             </StackPanel>
 
             <Border Padding="16" CornerRadius="8" Background="{StaticResource SiloSurfaceBrush}" BorderBrush="{StaticResource SiloBorderBrush}"
                     BorderThickness="1">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Filters" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.filters.heading')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
-                    <TextBlock Text="Filters are locked to this source." FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.filters.locked')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                                TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
@@ -35,7 +35,7 @@
                                 CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" />
 
             <ProgressRing Width="28" Height="28" HorizontalAlignment="Center" IsActive="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}"
-                          Visibility="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}" AutomationProperties.Name="Loading more" />
+                          Visibility="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.loadMore.loading')}" />
 
             <!-- Loading, empty and error; the status line is also announced. -->
             <StackPanel MaxWidth="440" Margin="0,24,0,0" HorizontalAlignment="Center" Spacing="14"

@@ -61,7 +61,7 @@
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
         <StackPanel>
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,120" HorizontalAlignment="Center" AutomationProperties.Name="Loading person" />
+                          Width="32" Height="32" Margin="0,120" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.person.loading')}" />
 
             <!-- "Couldn't load this person" with Retry, or "This person isn't available". -->
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="10" Margin="48,120" MaxWidth="440" HorizontalAlignment="Center">
@@ -135,21 +135,21 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Filmography" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" CharacterSpacing="-10"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.person.filmography')}" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" CharacterSpacing="-10"
                                    Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" AutomationProperties.Name="Show">
-                            <RadioButton x:Name="AllFilter" Content="All" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.person.filterName')}">
+                            <RadioButton x:Name="AllFilter" Content="{x:Bind t:AppText.Get('web.person.filterAll')}" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
                                          Tag="0" IsChecked="True" Checked="OnFilterChecked" />
-                            <RadioButton x:Name="MoviesFilter" Content="Movies" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
+                            <RadioButton x:Name="MoviesFilter" Content="{x:Bind t:AppText.Get('web.person.filterMovies')}" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
                                          Tag="1" Checked="OnFilterChecked" />
-                            <RadioButton x:Name="SeriesFilter" Content="Series" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
+                            <RadioButton x:Name="SeriesFilter" Content="{x:Bind t:AppText.Get('web.person.filterSeries')}" GroupName="Filmography" Style="{StaticResource FilmographyFilterStyle}"
                                          Tag="2" Checked="OnFilterChecked" />
                         </StackPanel>
                     </Grid>
 
                     <ProgressRing IsActive="{x:Bind ViewModel.IsFilmographyLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsFilmographyLoading, Mode=OneWay}"
-                                  Width="28" Height="28" Margin="0,24" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
-                    <TextBlock Text="No items found." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                                  Width="28" Height="28" Margin="0,24" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.person.loadingTitles')}" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.grid.noItems')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                HorizontalAlignment="Center" Margin="0,48" Visibility="{x:Bind ViewModel.IsFilmographyEmpty, Mode=OneWay}" />
                     <StackPanel Visibility="{x:Bind ViewModel.HasFilmographyError, Mode=OneWay}" Spacing="12" Margin="0,32" HorizontalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.FilmographyError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"

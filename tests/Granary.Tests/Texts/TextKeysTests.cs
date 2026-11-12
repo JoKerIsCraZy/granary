@@ -57,7 +57,7 @@ public sealed partial class TextKeysTests
     private static string Key(Match match) => match.Groups["cs"].Success ? match.Groups["cs"].Value : match.Groups["xaml"].Value;
 
     // Comment lines and XAML comments become blank, so a match spans only code and keeps its line number.
-    private static string WithoutComments(string code)
+    internal static string WithoutComments(string code)
     {
         string withoutLines = string.Join('\n', code.Split('\n')
             .Select(line => line.TrimStart().StartsWith("//", StringComparison.Ordinal) ? "" : line));

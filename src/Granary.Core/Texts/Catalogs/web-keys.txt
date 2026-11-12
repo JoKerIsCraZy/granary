@@ -7,6 +7,25 @@
 # src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
 # list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
 # had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
+# A library's page, in the words of the web's LibraryPage, its header, LibraryBrowse, LibraryCollections, the catalog
+# filter bar (components/catalog/CatalogFilterBar.tsx), its badges (catalogFilterBadges.ts, ActiveFilterBadges.tsx), its
+# letter bar (LetterBar.tsx), the sorts (lib/querySortOptions.ts) and the shuffle (hooks/queries/shuffles.ts):
+# src/Granary.App/Views/LibraryPage.xaml(.cs), src/Granary.App/Controls/AlphabetJumpBar.xaml.cs and
+# src/Granary.Core/ViewModels/Library*.cs. The filter flyout takes the web's guided filter words
+# (components/collections/CollectionGuidedRulesEditor.tsx, and the rule builder's for the audio and subtitle languages):
+# src/Granary.App/Controls/CatalogFiltersButton.xaml(.cs).
+catalog.sort.added
+catalog.sort.imdbRating
+catalog.sort.released
+catalog.sort.resolution
+catalog.sort.title
+catalog.sort.year
+
+# Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
+# src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
+# list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
+# had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
 common.back
 common.cancel
 common.changeServer
@@ -17,13 +36,24 @@ common.signOut
 common.tryAgain
 
 # The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
-# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs.
+# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs. For You's rows and Requests'
+# Discover rows (discover…) carry them too: RecommendationRow in RecommendationModels.cs and DiscoverSection in
+# src/Granary.Core/Api/Requests/RequestModels.cs, all shown through src/Granary.Core/ViewModels/SectionTitle.cs.
 home.section.becauseYouEnjoy
 home.section.becauseYouWatched
 home.section.becauseYouWatchedTitle
 home.section.continueListening
 home.section.continueReading
 home.section.continueWatching
+home.section.discoverGenres
+home.section.discoverNetworks
+home.section.discoverOnAirSeries
+home.section.discoverPopularMovies
+home.section.discoverPopularSeries
+home.section.discoverStudios
+home.section.discoverTrendingMovies
+home.section.discoverTrendingSeries
+home.section.discoverUpcomingMovies
 home.section.forYou
 home.section.hiddenGems
 home.section.highlyRatedInLibrary
@@ -138,6 +168,16 @@ settingsManifest.ui.theme_music_loop.description
 settingsManifest.ui.theme_music_loop.label
 settingsManifest.ui.title_art.label
 
+# More of a library page's words, as above under catalog.sort.added.
+shuffle.nothingToPlay
+
+# The password change after sign-in, as the web's ChoosePassword page (pages/ChoosePassword.tsx) and, for the server's
+# limits and refusals, its account settings' password form: src/Granary.App/Views/ChangePasswordPage.xaml and
+# src/Granary.Core/ViewModels/ChangePasswordViewModel.cs.
+web.auth.choosePassword.description
+web.auth.choosePassword.settleFailed
+web.auth.choosePassword.temporaryPassword
+
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
 # src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
@@ -158,11 +198,191 @@ web.auth.login.signingIn
 web.auth.loginSubtitle.default
 web.auth.oauthFailure.accountDisabled
 web.auth.password
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.auth.passwordRules.chooseNewPassword
+web.auth.passwordRules.confirmNewPassword
+web.auth.passwordRules.newPassword
+web.auth.passwordRules.passwordChanged
+web.auth.passwordRules.savePassword
 web.auth.signIn
 web.auth.username
 
+# Calendar, in the words of the web's Calendar page and its airings (lib/upcomingEventPresentation.ts):
+# src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and CalendarText.cs in src/Granary.Core/ViewModels.
+# The dates themselves stay in English for now.
+web.calendar.allLibraries
+web.calendar.dayLabel
+web.calendar.dayLabelWithEvents
+web.calendar.emptyEverything
+web.calendar.emptyFollowing
+web.calendar.emptyTrending
+web.calendar.event.badge.digital
+web.calendar.event.badge.finale
+web.calendar.event.badge.physical
+
+# A card's words, as the web's ItemCard, ContinueWatchingCard, SectionItemCard, BoxSetCard, CardWatchedBadge,
+# CardPlayOverlay, MediaItemMenu and a Requests card's watchlist toggle (components/requests): src/Granary.App/Controls/
+# MediaCardView.xaml(.cs) and src/Granary.Core/ViewModels/Cards/MediaCard.cs and MediaCardFactory.cs. The episode
+# and season cards and the runtime in the web's EpisodeCarousel words (lib/episodeCardLabels.ts, lib/mediaFormat.ts),
+# a box set's in lib/boxSets.ts (src/Granary.Core/ViewModels/BoxSetText.cs), the watched action as the web's
+# pages/ItemDetail/watchedState.ts (DetailFacts.WatchedLabel).
+web.calendar.event.badge.seasonPremiere
+
+# More of the calendar's words, as above.
+web.calendar.event.badge.seriesPremiere
+web.calendar.event.episode
+web.calendar.event.episodeTitled
+web.calendar.event.movie
+web.calendar.event.season
+web.calendar.event.seasonTitled
+web.calendar.loading
+web.calendar.nextWeek
+web.calendar.nothingScheduledFor
+web.calendar.presetAll
+web.calendar.presetFollowing
+web.calendar.presetLabel
+web.calendar.presetTrending
+web.calendar.previousWeek
+web.calendar.showEverything
+web.calendar.title
+web.calendar.today
+web.calendar.todayButton
+web.calendar.weekOf
+
+# A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
+# as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
+# src/Granary.App/Views/SectionPage.xaml and src/Granary.Core/ViewModels/SectionViewModel.cs.
+web.catalog.carousel.exploreAll
+web.catalog.carousel.exploreAllLabel
+web.catalog.carousel.scrollLeft
+web.catalog.carousel.scrollRight
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.badgeContentRating
+web.catalog.filters.badgeGenre
+web.catalog.filters.badgeLanguage
+web.catalog.filters.badgeWatch
+web.catalog.filters.badgeYearFrom
+web.catalog.filters.badgeYearRange
+web.catalog.filters.badgeYearTo
+web.catalog.filters.clearAll
+web.catalog.filters.heading
+web.catalog.filters.locked
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.open
+web.catalog.filters.removeBadge
+web.catalog.grid.noItems
+
+# Favorites, Watchlist, History and a collection's page, in the words of the web's catalog page for them (pages/Catalog.tsx,
+# components/catalog/CatalogFiltersPanel.tsx, History's removal dialog), its watchlist tabs and titles
+# (components/watchlist/WatchlistTabs.tsx, lib/watchlistTitles.ts) and its collection page actions
+# (components/collections/CollectionPageActions.tsx): src/Granary.App/Views/PersonalListPage.xaml(.cs),
+# src/Granary.Core/ViewModels/PersonalListViewModel*.cs and WatchlistTitleStatus.cs.
+web.catalog.history.dialogBody
+web.catalog.history.dialogBodySelected
+web.catalog.history.dialogBodyShow
+web.catalog.history.dialogTitle
+web.catalog.history.dialogTitleSelected
+web.catalog.history.dialogTitleShow
+web.catalog.history.removed
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.letters.letterNoTitles
+web.catalog.letters.letterTitles
+web.catalog.letters.numbersAndSymbols
+web.catalog.letters.showing
+web.catalog.letters.toolbar
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.mediaType.allMedia
+web.catalog.mediaType.episodes
+
+# Search, in the words of the web's catalog page for a search (pages/Catalog.tsx), its search scope (components/catalog/
+# SearchScopeChips.tsx), the global search's headings (components/GlobalSearch.tsx, boxsets/BoxSetSearchResults.tsx) and
+# Request to add (components/RequestToAddSection.tsx, RequestResultsGrid.tsx, LoadMoreOnScroll.tsx):
+# src/Granary.App/Views/SearchPage.xaml and src/Granary.Core/ViewModels/SearchViewModel.cs.
+web.catalog.mediaType.movies
+web.catalog.mediaType.moviesAndSeries
+web.catalog.mediaType.series
+web.catalog.page.catalogFailed
+web.catalog.page.catalogSubtitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.clearSelection
+
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.favorites
+web.catalog.page.favoritesSubtitle
+web.catalog.page.history
+web.catalog.page.historyBody
+web.catalog.page.historyHeading
+web.catalog.page.historySubtitle
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.catalog.page.people
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.removeConfirm
+web.catalog.page.removeSelected
+web.catalog.page.resultCount
+web.catalog.page.resultNoun
+web.catalog.page.resultsFor
+web.catalog.page.searchFailed
+web.catalog.page.searchTitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.select
+web.catalog.page.selectLoaded
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.page.titleCount
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.watchlist
+web.catalog.page.watchlistSubtitle
+web.catalog.search.scopeLabel
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.sort.ascending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.collectionOrder
+web.catalog.sort.descending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.listOrder
+web.catalog.sort.watchHistory
+web.collections.actions.delete
+web.collections.actions.moreActions
+web.collections.builder.fieldAudioLanguage
+web.collections.builder.fieldSubtitleLanguage
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.deleteDialog.delete
+web.collections.guidedRules.any
+web.collections.guidedRules.contentRating
+web.collections.guidedRules.decade
+web.collections.guidedRules.decadeOption
+web.collections.guidedRules.genres
+web.collections.guidedRules.inProgress
+web.collections.guidedRules.originalLanguage
+web.collections.guidedRules.unwatched
+web.collections.guidedRules.videoQuality
+web.collections.guidedRules.watchStatus
+web.collections.guidedRules.watched
+web.collections.guidedRules.yearFrom
+web.collections.guidedRules.yearFromPlaceholder
+web.collections.guidedRules.yearTo
+web.collections.guidedRules.yearToPlaceholder
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.pageActions.deleteTitle
+web.collections.pageActions.edit
 
 # A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
 # src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
@@ -172,14 +392,170 @@ web.common.devicePlatform.kind.tablet
 web.common.devicePlatform.kind.tv
 web.common.devicePlatform.kind.unknown
 
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.common.format.runtime.hoursMinutes
+web.common.format.runtime.minutes
+
+# More of a library page's words, as above under catalog.sort.added.
+web.common.sort.bitrate
+web.common.sort.contentRating
+web.common.sort.dateViewed
+web.common.sort.duration
+web.common.sort.latestEpisodeAdded
+web.common.sort.latestEpisodeAirDate
+web.common.sort.plays
+web.common.sort.progress
+web.common.sort.rtAudienceRating
+web.common.sort.rtCriticRating
+web.common.sort.tmdbRating
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.common.toast.collections.deleteFailed
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
 web.common.ui.loadError.generic
 web.common.ui.loadError.timeout
 
+# A grid that loads more, as the web's LoadMoreOnScroll: its button (Search's Request to add,
+# src/Granary.App/Views/SearchPage.xaml) and its spinner (src/Granary.App/Views/SectionPage.xaml).
+web.common.ui.loadMore.button
+web.common.ui.loadMore.loading
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.detail.actions.markSeasonUnwatched
+web.detail.actions.markSeasonWatched
+web.detail.actions.markSeriesUnwatched
+web.detail.actions.markSeriesWatched
+web.detail.actions.markUnwatched
+web.detail.actions.markWatched
+web.detail.boxSet.cardLabel
+web.detail.boxSet.continueTitle
+web.detail.boxSet.filmCount
+web.detail.boxSet.label
+
+# A box set's page and a person's page, in the words of the web's BoxSetPage and PersonDetail:
+# src/Granary.App/Views/BoxSetPage.xaml, PersonPage.xaml, and BoxSetViewModel.cs, PersonViewModel.cs and PersonFacts.cs
+# in src/Granary.Core/ViewModels.
+web.detail.boxSet.loadFailedBody
+web.detail.boxSet.loadFailedTitle
+web.detail.boxSet.movies
+web.detail.boxSet.playTitle
+web.detail.boxSet.thisFilm
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.boxSet.unavailableBody
+web.detail.boxSet.unavailableTitle
+web.detail.boxSet.watchedFraction
+web.detail.boxSet.watchedOf
+web.detail.episodeCode
+web.detail.episodes.nowViewing
+web.detail.seasons.episodeCount
+web.detail.seasons.numbered
+web.detail.seasons.watchedProgress
+web.home.continueWatching.episodeLabelWithTitle
+web.home.continueWatching.minutesLeft
+web.home.continueWatching.nextEpisode
+
+# Home, in the words of the web's Home page (pages/Home.tsx), its banner (components/HeroBanner.tsx, heroMetadata.ts)
+# and its card menu (components/MediaItemMenu.tsx, hooks/queries/homeDismissals.ts):
+# src/Granary.App/Views/HomePage.xaml(.cs), src/Granary.App/Controls/BrowseHero.xaml.cs and FeaturedBannerControls.xaml,
+# src/Granary.Core/ViewModels/HomeViewModel.cs, HomeRowViewModel.cs, FeaturedBannerViewModel.cs and BrowseHeroTitle.cs.
+web.home.dismiss.removeFailed
+web.home.hero.episodeIdentity
+web.home.hero.eyebrow
+web.home.hero.moreInfo
+web.home.hero.nextSlide
+web.home.hero.pauseSlideshow
+web.home.hero.play
+web.home.hero.playSlideshow
+web.home.hero.previousSlide
+web.home.hero.runtimeHours
+web.home.hero.runtimeHoursMinutes
+web.home.hero.runtimeMinutes
+web.home.hero.slideNumber
+web.home.page.loadFailedBody
+web.home.page.loadFailedTitle
+web.home.page.title
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
+# Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
+web.home.sectionRow.seriesType
+web.item.card.play
+web.item.card.watched
+web.item.menu.addToFavorites
+web.item.menu.addToWatchlist
+web.item.menu.moreActions
+web.item.menu.notInterested
+web.item.menu.playFromBeginning
+web.item.menu.removeFromContinueWatching
+web.item.menu.removeFromFavorites
+web.item.menu.removeFromNextUp
+web.item.menu.removeFromWatchlist
+web.item.menu.showInRecommendations
+
+# More of a library page's words, as above under catalog.sort.added.
+web.library.browse.clearFilters
+web.library.browse.noMatches
+web.library.browse.someItemsFailed
+web.library.collections.emptyBody
+web.library.collections.emptyTitle
+web.library.empty.body
+web.library.header.collectionsTab
+web.library.header.eyebrow
+web.library.header.libraryTab
+web.library.header.recommendedTab
+web.library.header.shuffle
+web.library.header.tabsLabel
+web.library.page.titleFallback
+web.library.page.unavailable
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.library.watchlist.browseDiscover
+web.library.watchlist.emptyBody
+web.library.watchlist.emptyTitle
+web.library.watchlist.findMore
+web.library.watchlist.inLibraryTab
+web.library.watchlist.loadFailed
+web.library.watchlist.notInLibraryTab
+web.library.watchlist.statusApprovedWaiting
+web.library.watchlist.statusAwaitingApproval
+web.library.watchlist.statusDownloading
+web.library.watchlist.statusListedTwice
+web.library.watchlist.statusNeedsAttention
+web.library.watchlist.statusNoLongerListed
+web.library.watchlist.statusNotOnTmdb
+web.library.watchlist.statusNotRequested
+web.library.watchlist.statusNotRequestedOut
+web.library.watchlist.statusNotRequestedReason
+web.library.watchlist.statusOut
+web.library.watchlist.statusOutApproved
+web.library.watchlist.statusOutAwaitingApproval
+web.library.watchlist.titlesHint
+web.library.watchlist.titlesHintRequested
+
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.person.age
+web.person.born
+web.person.died
+web.person.filmography
+web.person.filterAll
+web.person.filterMovies
+web.person.filterSeries
+web.person.loadFailedBody
+web.person.loadFailedTitle
+web.person.queueing
+web.person.refreshMetadata
+web.person.refreshNow
+web.person.refreshing
+web.person.toast.refreshQueued
+web.person.toast.refreshed
+web.person.unavailableBody
+web.person.unavailableTitle
 
 # The player's buttons, as the web's player names them (components/player): Label in
 # src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
@@ -205,10 +581,63 @@ web.profiles.pin.lockedMinutes
 web.profiles.pin.title
 web.profiles.pin.verifying
 
+# For You and a row of it in full, as the web's Recommendations and RecommendationsSection pages:
+# src/Granary.App/Views/ForYouPage.xaml(.cs), RecommendationSectionPage.xaml, and ForYouViewModel.cs and
+# RecommendationSectionViewModel.cs in src/Granary.Core/ViewModels.
+web.recommendations.emptyBody
+web.recommendations.emptyTitle
+web.recommendations.fallbackCluster
+web.recommendations.fallbackClusterKey
+web.recommendations.fallbackDefault
+web.recommendations.fallbackGenre
+web.recommendations.fallbackGenrePicks
+web.recommendations.fallbackPopular
+web.recommendations.fallbackRecentlyAdded
+web.recommendations.fallbackSimilarUsers
+web.recommendations.fallbackTopRated
+web.recommendations.favoriteDirectors
+web.recommendations.loadFailed
+web.recommendations.sectionCount
+web.recommendations.sectionEmptyBody
+web.recommendations.sectionEmptyTitle
+web.recommendations.sectionLoadFailed
+web.recommendations.subtitleDefault
+web.recommendations.subtitlePersonal
+web.recommendations.tasteProfile
+web.recommendations.title
+web.recommendations.topGenres
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.requests.card.addToWatchlist
+web.requests.card.addToWatchlistFor
+web.requests.card.onWatchlist
+web.requests.card.removeFromWatchlist
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.requests.results.loadMoreFailed
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.requests.status.approved
+web.requests.status.processing
+web.requests.toAdd.heading
+web.search.boxSets
+
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
 web.search.placeholderProminent
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.search.searching
+web.search.titles
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.settings.account.password.current
+web.settings.account.password.error.mismatch
+web.settings.account.password.error.tooLong
+web.settings.account.password.error.tooShort
+web.settings.account.password.error.unavailable
+web.settings.account.password.requirements
 
 # Settings, in the words of the web's settings pages (pages/settings) for the same settings: the sidebar of
 # src/Granary.App/Views/SettingsPage.xaml(.cs), as the web's UserSettingsSidebar and lib/userSettingsNav.ts, with its group
@@ -594,3 +1023,9 @@ web.shell.sidebar.yourStuff
 # editor in src/Granary.Core/ViewModels/Settings/MpvConfigEditorViewModel.cs.
 web.shell.unsavedChanges.discard
 web.shell.unsavedChanges.title
+
+# More of a library page's words, as above under catalog.sort.added.
+web.shuffle.startFailed
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.ui.saving

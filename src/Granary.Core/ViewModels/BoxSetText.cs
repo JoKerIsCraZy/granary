@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -7,7 +8,7 @@ namespace Granary.Core.ViewModels;
 public static class BoxSetText
 {
     /// <summary>"8 films", or "1 film".</summary>
-    public static string FilmCount(int count) => count == 1 ? "1 film" : string.Create(CultureInfo.InvariantCulture, $"{count} films");
+    public static string FilmCount(int count) => AppText.Get("web.detail.boxSet.filmCount", ("count", count));
 
     /// <summary>"2001 – 2011", one year when the box set spans one; null without a year.</summary>
     public static string? Years(CatalogBoxSetBase boxSet)
@@ -30,7 +31,7 @@ public static class BoxSetText
         {
             FilmCount(boxSet.MovieCount),
             Years(boxSet),
-            boxSet.PlayedCount > 0 ? string.Create(CultureInfo.InvariantCulture, $"{boxSet.PlayedCount} of {boxSet.MovieCount} watched") : null,
+            boxSet.PlayedCount > 0 ? AppText.Get("web.detail.boxSet.watchedOf", ("played", boxSet.PlayedCount), ("total", boxSet.MovieCount)) : null,
         }.OfType<string>()];
     }
 
@@ -54,6 +55,8 @@ public static class BoxSetText
         ArgumentNullException.ThrowIfNull(next);
         bool started = boxSet.PlayedCount > 0 && boxSet.PlayedCount < boxSet.MovieCount;
         bool resumes = next.PositionSeconds is > 0 && next.UserState?.Played != true;
-        return started || resumes ? $"Continue · {next.Title}" : $"Play {next.Title}";
+        return started || resumes
+            ? AppText.Get("web.detail.boxSet.continueTitle", ("title", next.Title))
+            : AppText.Get("web.detail.boxSet.playTitle", ("title", next.Title));
     }
 }

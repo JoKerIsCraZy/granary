@@ -136,7 +136,7 @@ public sealed class PersonalListHistoryTests
         await list.RemoveSelectedCommand.ExecuteAsync(null);
 
         Assert.True(list.RemovalFailed);
-        Assert.StartsWith("Failed to remove history.", list.RemovalNotice, StringComparison.Ordinal);
+        Assert.Equal("Failed to remove history. The server isn't responding. Try again in a moment.", list.RemovalNotice);
         Assert.True(list.Selection.IsActive);
         Assert.Equal(1, list.Selection.Count);
         Assert.False(list.IsRemoving);

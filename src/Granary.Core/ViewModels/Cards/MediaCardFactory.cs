@@ -2,6 +2,8 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
+using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Cards;
 
@@ -58,10 +60,11 @@ public static class MediaCardFactory
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
             Caption = item.ItemSource == ItemSources.NextUp
-                ? (premiere ? null : "Next Episode")
+                ? (premiere ? null : AppText.Get("web.home.continueWatching.nextEpisode"))
                 : TimeLeft(item.PositionSeconds, item.DurationSeconds),
-            CaptionBadge = premiere ? "NEW SEASON" : null,
-            CaptionBadgeName = premiere ? "new season" : null,
+            // The web's badge of a season premiere (lib/upcomingEventPresentation.ts), in capitals as its CSS shows it.
+            CaptionBadge = premiere ? AppText.Upper(AppText.Get("web.calendar.event.badge.seasonPremiere")) : null,
+            CaptionBadgeName = premiere ? AppText.Get("web.calendar.event.badge.seasonPremiere") : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
             ImageThumbhash = showsBackdrop ? item.BackdropThumbhash : item.PosterThumbhash,
             BlursImage = spoilers.HidesImage(item, showsBackdrop),
@@ -76,8 +79,9 @@ public static class MediaCardFactory
         {
             Shape = MediaCardShape.Poster,
             Caption = watched > 0 && watched < season.EpisodeCount
-                ? $"{watched} of {season.EpisodeCount} episodes"
-                : $"{season.EpisodeCount} {(season.EpisodeCount == 1 ? "episode" : "episodes")}",
+                ? AppText.Get("web.detail.seasons.watchedProgress", ("count", season.EpisodeCount), ("count_text", AppText.Number(season.EpisodeCount)),
+                    ("watched", AppText.Number(watched)))
+                : AppText.Get("web.detail.seasons.episodeCount", ("count", season.EpisodeCount), ("count_text", AppText.Number(season.EpisodeCount))),
             ImageUrl = ArtworkUrl.Resolve(serverBase, season.PosterUrl),
             ImageThumbhash = season.PosterThumbhash,
             // A season watched to the end keeps a full bar, green, as on the web.
@@ -95,9 +99,9 @@ public static class MediaCardFactory
     public static MediaCard Episode(Episode episode, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
         ArgumentNullException.ThrowIfNull(episode);
-        var meta = new[] { FormatDate(episode.AirDate), episode.Runtime > 0 ? $"{episode.Runtime}m" : null }.Where(s => s is not null);
+        var meta = new[] { FormatDate(episode.AirDate), DetailText.Runtime(episode.Runtime) }.Where(s => s is not null);
         return new MediaCard(episode.ContentId, CatalogItemTypes.Episode,
-            $"S{episode.SeasonNumber:00}E{episode.EpisodeNumber:00} · {episode.Title}")
+            $"{EpisodeCode(episode.SeasonNumber, episode.EpisodeNumber)} · {episode.Title}")
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = string.Join(" · ", meta) is { Length: > 0 } line ? line : null,
@@ -126,12 +130,12 @@ public static class MediaCardFactory
         ArgumentNullException.ThrowIfNull(boxSet);
         var poster = ArtworkUrl.Resolve(serverBase, boxSet.PosterUrl);
         string caption = boxSet.PlayedCount > 0
-            ? string.Create(CultureInfo.InvariantCulture, $"{boxSet.PlayedCount} / {boxSet.MovieCount} watched")
+            ? AppText.Get("web.detail.boxSet.watchedFraction", ("played", boxSet.PlayedCount), ("total", boxSet.MovieCount))
             : BoxSetText.Years(boxSet) ?? BoxSetText.FilmCount(boxSet.MovieCount);
         return new MediaCard($"{BoxSetType}:{boxSet.LibraryId}:{boxSet.Id}", BoxSetType, boxSet.Title)
         {
             Shape = MediaCardShape.Poster,
-            Subtitle = caption.ToUpperInvariant(),
+            Subtitle = AppText.Upper(caption),
             ImageUrl = poster ?? ArtworkUrl.Resolve(serverBase, boxSet.BackdropUrl),
             ImageThumbhash = poster is not null ? boxSet.PosterThumbhash : boxSet.BackdropThumbhash,
             Progress = boxSet.PlayedCount > 0 && boxSet.MovieCount > 0 ? Math.Min(1, (double)boxSet.PlayedCount / boxSet.MovieCount) : null,
@@ -195,7 +199,7 @@ public static class MediaCardFactory
     private static MediaCard Decorate(MediaCard card, CatalogItemBase item) => card with
     {
         Overlay = OverlayOf(item),
-        StatusBadge = item.Badges.Contains(ItemBadges.New) ? "NEW" : null,
+        StatusBadge = item.Badges.Contains(ItemBadges.New) ? AppText.Upper(AppText.Get("granary.card.new")) : null,
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
         // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
         IsWatched = item.UserState?.Played == true,
@@ -205,12 +209,14 @@ public static class MediaCardFactory
         PlayContentId = item.PlayContentId,
     };
 
-    // Web: "2021 SERIES" under a series, the year under a movie, "S1 E5" under an episode.
+    // Web: "2021 SERIES" under a series (the year beside its word, in capitals as its CSS shows them, as the web's
+    // SectionItemCard), the year under a movie, "S1 E5" under an episode.
     private static string? PosterSubtitle(CatalogItemBase item) => item.Type switch
     {
         CatalogItemTypes.Movie => YearText(item.Year),
-        CatalogItemTypes.Series => item.Year is > 0 ? $"{item.Year} SERIES" : "SERIES",
-        CatalogItemTypes.Season => item.SeasonNumber is { } season ? $"SEASON {season}" : null,
+        CatalogItemTypes.Series => AppText.Upper(item.Year is > 0 ? $"{YearText(item.Year)} {AppText.Get("web.home.sectionRow.seriesType")}"
+            : AppText.Get("web.home.sectionRow.seriesType")),
+        CatalogItemTypes.Season => item.SeasonNumber is { } season ? AppText.Upper(AppText.Get("web.detail.seasons.numbered", ("season", season))) : null,
         CatalogItemTypes.Episode => YearText(item.Year),
         _ => item.Year is > 0 ? $"{item.Year} {item.Type.ToUpperInvariant()}" : item.Type.ToUpperInvariant(),
     };
@@ -225,12 +231,17 @@ public static class MediaCardFactory
             return null;
         }
         bool hasSeriesTitle = !string.IsNullOrEmpty(item.SeriesTitle) && item.SeriesTitle != item.Title;
-        return (hasSeriesTitle ? item.SeriesTitle! : item.Title, hasSeriesTitle ? item.Title : null,
-            string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}"));
+        return (hasSeriesTitle ? item.SeriesTitle! : item.Title, hasSeriesTitle ? item.Title : null, EpisodeCode(season, episode));
     }
 
+    // "S04E01", in the web's words (lib/episodeCardLabels.ts): its numbers two digits, Latin in every language.
+    private static string EpisodeCode(int season, int episode) => AppText.Get("web.detail.episodeCode",
+        ("season", season.ToString("00", CultureInfo.InvariantCulture)), ("episode", episode.ToString("00", CultureInfo.InvariantCulture)));
+
     private static string? EpisodeLine(int? season, int? episode, string title) =>
-        season is { } s && episode is { } e ? $"Season {s} Episode {e} • {title}" : title;
+        season is { } s && episode is { } e
+            ? AppText.Get("web.home.continueWatching.episodeLabelWithTitle", ("season", s), ("episode", e), ("title", title))
+            : title;
 
     private static string? YearText(int? year) => year is > 0 ? year.Value.ToString(CultureInfo.InvariantCulture) : null;
 
@@ -241,7 +252,7 @@ public static class MediaCardFactory
             return null;
         }
         int minutes = (int)Math.Ceiling((duration.Value - position.Value) / 60);
-        return $"{minutes} min left";
+        return AppText.Get("web.home.continueWatching.minutesLeft", ("minutes", minutes));
     }
 
     private static double? ProgressOf(double? position, double? duration, bool played) =>

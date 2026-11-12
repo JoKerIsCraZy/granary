@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -24,8 +25,10 @@ public sealed partial class SectionViewModel(
 {
     public const int PageSize = 60;
 
-    internal const string EmptyText = "Nothing here yet";
-    internal const string GoneText = "This row is no longer available.";
+    /// <summary>The web's words for a catalog grid without titles (components/ItemGrid.tsx).</summary>
+    internal static string EmptyText => AppText.Get("web.catalog.grid.noItems");
+
+    internal static string GoneText => AppText.Get("granary.section.gone");
 
     private CancellationTokenSource? _run;
     private BrowseCardPager? _listing;
@@ -161,7 +164,7 @@ public sealed partial class SectionViewModel(
         }
 
         IsLoading = true;
-        ShowState(hasError: false, isEmpty: false, $"Loading {section.Title}");
+        ShowState(hasError: false, isEmpty: false, AppText.Get("granary.section.loading", ("title", section.Title)));
         try
         {
             var imageParameters = await BrowseArtwork.ParametersAsync(images, server, DisplayScale, logger, cancellationToken);
@@ -201,7 +204,7 @@ public sealed partial class SectionViewModel(
     private void ShowFailure(Exception ex)
     {
         logger.LogWarning("Loading a row's listing failed: {Failure}", ApiFailureText.Describe(ex));
-        ShowState(hasError: true, isEmpty: false, BrowseFailureText.Describe(ex, "This row could not be loaded right now.", GoneText));
+        ShowState(hasError: true, isEmpty: false, BrowseFailureText.Describe(ex, AppText.Get("web.catalog.page.catalogFailed"), GoneText));
     }
 
     private void ShowState(bool hasError, bool isEmpty, string status)

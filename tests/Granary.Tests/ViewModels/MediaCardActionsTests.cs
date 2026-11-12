@@ -369,8 +369,8 @@ public sealed class MediaCardActionsTests
         var episode = new MediaCard("episode-1", CatalogItemTypes.Episode, "Pilot") { PlayContentId = "episode-1", CurrentMark = CurrentMark.NowViewing };
         Assert.True(MediaCardActions.CanPlay(episode));
         Assert.True(MediaCardActions.CanMarkWatched(episode));
-        Assert.Equal("Heat, this film", own.AccessibleName);
-        Assert.Equal("Pilot, now viewing", episode.AccessibleName);
+        Assert.Equal("Heat, This film", own.AccessibleName);
+        Assert.Equal("Pilot, Now Viewing", episode.AccessibleName);
     }
 
     [Fact]

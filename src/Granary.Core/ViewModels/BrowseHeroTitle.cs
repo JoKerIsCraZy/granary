@@ -3,6 +3,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels;
@@ -12,7 +13,7 @@ namespace Granary.Core.ViewModels;
 /// one, a line of details, the overview and the backdrop behind them. An episode is headed by its series.
 /// </summary>
 /// <param name="Key">The title's content id: the same title loaded again is the same hero.</param>
-/// <param name="Meta">"2008 · 2h 32m · PG-13", an episode's "S1 E1 · Kein Zufall · 25m · TV-14"; empty when nothing is known.</param>
+/// <param name="Meta">"2008 · 2h 32m · PG-13", an episode's "S1 · E1 · Kein Zufall · 25 min · TV-14"; empty when nothing is known.</param>
 /// <param name="Overview">Null when there is none, or for an unwatched episode while the profile hides descriptions.</param>
 public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, string? Overview, Uri? LogoUrl, Uri? BackdropUrl, string? BackdropThumbhash)
 {
@@ -75,19 +76,33 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
     private const string BackdropSize = "w1280";
 
     // A movie its year, length and rating; a series its year and rating (its length is an episode's); an episode where it
-    // sits in its series, its own title, its length and rating.
+    // sits in its series, its own title, its length and rating. Where it sits and the length in the web hero's words
+    // (components/heroMetadata.ts).
     private static string MetaOf(CatalogItemBase item)
     {
         string? rating = item.ContentRating;
         string?[] parts = item.Type switch
         {
-            CatalogItemTypes.Episode => [EpisodeCode(item.SeasonNumber, item.EpisodeNumber), item.Title, DetailText.Runtime(item.Runtime), rating],
-            CatalogItemTypes.Movie => [DetailText.Year(item.Year), DetailText.Runtime(item.Runtime), rating],
+            CatalogItemTypes.Episode => [EpisodeCode(item.SeasonNumber, item.EpisodeNumber), item.Title, Runtime(item.Runtime), rating],
+            CatalogItemTypes.Movie => [DetailText.Year(item.Year), Runtime(item.Runtime), rating],
             _ => [DetailText.Year(item.Year), rating],
         };
         return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
     }
 
+    // The numbers of a code stay in Latin digits in every language, as the web's codeNumber.
     private static string? EpisodeCode(int? season, int? episode) =>
-        season is int s && episode is int e ? string.Create(CultureInfo.InvariantCulture, $"S{s} E{e}") : null;
+        season is int s && episode is int e
+            ? AppText.Get("web.home.hero.episodeIdentity",
+                ("season", s.ToString(CultureInfo.InvariantCulture)), ("episode", e.ToString(CultureInfo.InvariantCulture)))
+            : null;
+
+    // "2h 32m", "2h", "45 min".
+    private static string? Runtime(int? minutes) => minutes switch
+    {
+        null or <= 0 => null,
+        < 60 => AppText.Get("web.home.hero.runtimeMinutes", ("minutes", minutes.Value)),
+        _ when minutes.Value % 60 == 0 => AppText.Get("web.home.hero.runtimeHours", ("hours", minutes.Value / 60)),
+        _ => AppText.Get("web.home.hero.runtimeHoursMinutes", ("hours", minutes.Value / 60), ("minutes", minutes.Value % 60)),
+    };
 }

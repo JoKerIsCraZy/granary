@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,7 +56,7 @@ public sealed partial class CalendarPage : Page
     public static double DayDotOpacity(bool hasEvents) => hasEvents ? 1 : 0;
 
     // Instance method because x:Bind function bindings call it on the page.
-    public string LibraryName(SettingChoice library) => $"Library: {library.Label}";
+    public string LibraryName(SettingChoice library) => AppText.Get("granary.calendar.libraryName", ("library", library.Label));
 
     private static Brush Primary() => (Brush)Application.Current.Resources["SiloPrimaryBrush"];
 

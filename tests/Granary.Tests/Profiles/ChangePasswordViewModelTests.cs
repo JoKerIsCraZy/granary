@@ -58,9 +58,9 @@ public sealed class ChangePasswordViewModelTests
         await harness.ViewModel.LoadCommand.ExecuteAsync(null);
 
         Assert.True(harness.ViewModel.IsReady);
-        Assert.Contains("at least 8 characters", harness.ViewModel.Requirements, StringComparison.Ordinal);
-        Assert.Contains("at most 72 bytes", harness.ViewModel.Requirements, StringComparison.Ordinal);
-        Assert.Contains("temporary password", harness.ViewModel.Explanation, StringComparison.Ordinal);
+        Assert.Equal("At least 8 characters and no more than 72 bytes.", harness.ViewModel.Requirements);
+        Assert.Equal("An admin set a temporary password for alex. Choose your own to continue.", harness.ViewModel.Explanation);
+        Assert.Equal("Temporary password", harness.ViewModel.CurrentPasswordLabel);
         Assert.Equal("", harness.ViewModel.Status);
         var request = Assert.Single(harness.Silo.Sent);
         Assert.Equal("https://nas.example/silo/api/v2/account/password/capability", request.Uri.AbsoluteUri);
@@ -116,11 +116,11 @@ public sealed class ChangePasswordViewModelTests
 
     public static TheoryData<string, string, string, string> InvalidInput => new()
     {
-        { Temporary, "short", "short", "The new password needs at least 8 characters." },
+        { Temporary, "short", "short", "New password must be at least 8 characters." },
         // Four code points but eight UTF-16 units: the server counts code points.
-        { Temporary, "😀😀😀😀", "😀😀😀😀", "The new password needs at least 8 characters." },
-        { Temporary, new string('€', 25), new string('€', 25), "The new password is too long: at most 72 bytes." },
-        { Temporary, Replacement, Replacement + "!", "The new passwords do not match." },
+        { Temporary, "😀😀😀😀", "😀😀😀😀", "New password must be at least 8 characters." },
+        { Temporary, new string('€', 25), new string('€', 25), "New password must be at most 72 bytes." },
+        { Temporary, Replacement, Replacement + "!", "New passwords do not match." },
         { Replacement, Replacement, Replacement, "Choose a password different from the current one." },
     };
 
@@ -152,7 +152,7 @@ public sealed class ChangePasswordViewModelTests
         Assert.Equal("""{"current_password":"temp-pass-1","new_password":"margin fossil quench"}""", change.Body);
         Assert.Equal(SiloAuth.Account, change.Auth);
         Assert.Equal(["refresh-account"], harness.Session.Calls);
-        Assert.Equal("Your password has been changed.", harness.ViewModel.Status);
+        Assert.Equal("Password changed", harness.ViewModel.Status);
         Assert.False(harness.ViewModel.HasError);
         Assert.False(harness.ViewModel.IsBusy);
         AssertFieldsCleared(harness.ViewModel);
@@ -193,6 +193,36 @@ public sealed class ChangePasswordViewModelTests
         Assert.Empty(harness.Session.Calls);
     }
 
+    [Theory]
+    [InlineData(120, "Too many attempts. Try again in 2 minutes.")]
+    [InlineData(30, "Too many attempts. Try again in 1 minute.")]
+    [InlineData(null, "Too many attempts. Try again later.")]
+    public async Task Submit_RateLimited_SaysHowLongToWait_InOneSentence(int? seconds, string expected)
+    {
+        var harness = new Harness();
+        harness.Silo.On(HttpMethod.Post, PasswordPath,
+            ScriptedSilo.Problem(429, ProblemCodes.RateLimited, seconds is int s ? TimeSpan.FromSeconds(s) : null));
+        await harness.LoadAndFillAsync();
+
+        await harness.ViewModel.SubmitCommand.ExecuteAsync(null);
+
+        Assert.Equal(expected, harness.ViewModel.Status);
+    }
+
+    [Theory]
+    [InlineData(429, "Could not read the password rules. The server is receiving too many requests. Try again in 1 minute.")]
+    [InlineData(500, "Could not read the password rules (error 500).")]
+    public async Task Load_Refused_SaysWhyInOneSentence(int status, string expected)
+    {
+        var harness = new Harness();
+        harness.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Problem(status, ProblemCodes.RateLimited, TimeSpan.FromSeconds(45)));
+
+        await harness.ViewModel.LoadCommand.ExecuteAsync(null);
+
+        Assert.Equal(expected, harness.ViewModel.Status);
+        Assert.True(harness.ViewModel.HasLoadError);
+    }
+
     [Fact]
     public async Task Submit_NetworkError_ShowsAFriendlyMessage()
     {
@@ -218,7 +248,7 @@ public sealed class ChangePasswordViewModelTests
         await harness.ViewModel.SubmitCommand.ExecuteAsync(null);
 
         Assert.Equal(["refresh-account"], harness.Session.Calls);
-        Assert.Contains("Sign in again with the new password", harness.ViewModel.Status, StringComparison.Ordinal);
+        Assert.Equal("Your new password is saved, but signing you in did not finish.", harness.ViewModel.Status);
         Assert.True(harness.ViewModel.HasError);
     }
 
@@ -230,12 +260,12 @@ public sealed class ChangePasswordViewModelTests
         await harness.LoadAndFillAsync();
 
         Assert.False(harness.ViewModel.IsReady);
-        Assert.Contains("does not offer password changes", harness.ViewModel.Status, StringComparison.Ordinal);
+        Assert.Equal("This server does not offer password changes. Ask the server administrator.", harness.ViewModel.Status);
         Assert.False(harness.ViewModel.SubmitCommand.CanExecute(null));
     }
 
     [Theory]
-    [InlineData(403, "permission_denied", "The password of this account cannot be changed from this session.")]
+    [InlineData(403, "permission_denied", "Password changes are unavailable for this account.")]
     [InlineData(409, "conflict", "This account does not sign in with a password on this server.")]
     [InlineData(503, "dependency_unavailable", "The server is busy, try again.")]
     [InlineData(500, "internal_error", "The password could not be changed (error 500).")]

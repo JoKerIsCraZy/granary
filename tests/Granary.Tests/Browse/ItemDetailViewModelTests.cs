@@ -511,7 +511,7 @@ public sealed class ItemDetailViewModelTests
 
         Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2", "S03E03 · Chapter 3"], detail.MoreEpisodes.Select(c => c.Title));
         Assert.Equal([true, false, false], detail.MoreEpisodes.Select(c => c.IsCurrent));
-        Assert.Equal("S03E01 · Chapter 1, now viewing", detail.MoreEpisodes[0].AccessibleName);
+        Assert.Equal("S03E01 · Chapter 1, Now Viewing", detail.MoreEpisodes[0].AccessibleName);
         Assert.Equal("S03E02 · Chapter 2", detail.MoreEpisodes[1].AccessibleName);
     }
 
