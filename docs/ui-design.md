@@ -47,9 +47,9 @@ Buttons: `SiloPrimaryButtonStyle` (accent pill: Play, Resume), `SiloSecondaryBut
 Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL"). The title bar's
 own buttons are drawn as Windows' caption buttons: `SiloTitleBarButtonStyle` (Full screen) and
 `SiloTitleBarCloseButtonStyle` (Close in full screen, red under the pointer).
-Chips: `SiloChipStyle` (year, rating, runtime). `SiloAccentChipStyle` with `SiloAccentChipTextStyle` is the web's
-`QualityBadges` look for a file's quality ("1080P", "DD+ ATMOS"): the accent at 20 % round the accent at 10 %, radius 8,
-8 px in and about 22 high, 11 px semibold capitals in the accent.
+Chips: `SiloChipStyle` (year, rating, runtime), and `SiloAccentChipStyle` for one of them in the accent. `SiloQualityBadgeStyle`
+with `SiloQualityBadgeTextStyle` is the web's `QualityBadges` look for a file's quality ("1080P", "DD+ ATMOS"): the accent
+at 20 % round the accent at 10 %, radius 8, 8 px in and about 22 high, 11 px semibold capitals in the accent.
 
 The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
 seek track), `SiloPlayerPlayButtonStyle` (accent disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
@@ -496,7 +496,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
-    (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloAccentChipStyle`) for the file Play plays
+    (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
     "DV HDR10+", "DV HLG", "HDR10+", "HDR10", "HLG", "HDR"; none for SDR) and its best audio ("DD+ ATMOS",
     "TRUEHD ATMOS", "ATMOS", "TRUEHD", "DTS-HD", "DTS", "EAC3", "AAC", "FLAC"). The audio is the best of the file's

@@ -15,6 +15,9 @@ internal sealed partial class WrapPanel : Panel
 
     public double VerticalSpacing { get; set; } = 8;
 
+    // The widest line as last measured.
+    private double _measuredWidth;
+
     // Each child may take the whole width, so a long text wraps by itself before anything is cut.
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -22,12 +25,16 @@ internal sealed partial class WrapPanel : Panel
         {
             child.Measure(new Size(availableSize.Width, double.PositiveInfinity));
         }
-        return Place(availableSize.Width, arrange: false);
+        var size = Place(availableSize.Width, arrange: false);
+        _measuredWidth = size.Width;
+        return size;
     }
 
+    // The lines break as they were measured: the width given can be the measured one rounded down a fraction of a pixel,
+    // and a child that then no longer fitted its line would land under the measured height.
     protected override Size ArrangeOverride(Size finalSize)
     {
-        Place(finalSize.Width, arrange: true);
+        Place(Math.Max(finalSize.Width, _measuredWidth), arrange: true);
         return finalSize;
     }
 

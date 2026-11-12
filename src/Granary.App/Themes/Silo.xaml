@@ -299,12 +299,18 @@
         <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="Padding" Value="10,4" />
     </Style>
+    <!-- A chip in the accent colour among the others, as the request title page marks one (DetailHero.ChipStyle). -->
+    <Style x:Key="SiloAccentChipStyle" TargetType="Border" BasedOn="{StaticResource SiloChipStyle}">
+        <Setter Property="Background" Value="{StaticResource SiloPrimaryTint15Brush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloPrimaryTint60Brush}" />
+    </Style>
     <!--
         A file's quality in the accent colour, "1080P", "DV HDR10", "DD+ ATMOS", as the web's QualityBadges
         (bg-primary/10 text-primary border-primary/20 rounded-sm px-2 py-0.5): the accent at 20 % round the accent at 10 %,
-        radius 8 (the web's radius-sm), 8 px in and about 22 high, with 11 px semibold capitals in the accent.
+        radius 8 (the web's radius-sm), 8 px in and about 22 high, with 11 px semibold capitals in the accent. A style of its
+        own: the accent chip above is a pill among pills.
     -->
-    <Style x:Key="SiloAccentChipStyle" TargetType="Border">
+    <Style x:Key="SiloQualityBadgeStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SiloPrimaryTint10Brush}" />
         <Setter Property="BorderBrush" Value="{StaticResource SiloPrimaryTint20Brush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -312,7 +318,7 @@
         <Setter Property="Padding" Value="8,3" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style x:Key="SiloAccentChipTextStyle" TargetType="TextBlock">
+    <Style x:Key="SiloQualityBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="11" />

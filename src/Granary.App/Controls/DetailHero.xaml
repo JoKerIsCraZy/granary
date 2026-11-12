@@ -189,8 +189,8 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
-                            <Border Style="{StaticResource SiloAccentChipStyle}">
-                                <TextBlock Text="{x:Bind}" Style="{StaticResource SiloAccentChipTextStyle}" />
+                            <Border Style="{StaticResource SiloQualityBadgeStyle}">
+                                <TextBlock Text="{x:Bind}" Style="{StaticResource SiloQualityBadgeTextStyle}" />
                             </Border>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>

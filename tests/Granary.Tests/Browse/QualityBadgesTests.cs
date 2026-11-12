@@ -35,6 +35,22 @@ public sealed class QualityBadgesTests
         Assert.Equal(["1080P", "DD+ ATMOS"], Badges(episode, CatalogItemTypes.Episode));
     }
 
+    // versionRankingUtils.ts bestAttributes: the file's own codec comes first, then each track's; a file that names none
+    // still gets its best track's.
+    [Fact]
+    public void AFileThatNamesNoAudioCodec_ShowsItsBestTracks()
+    {
+        var file = new FileVersion
+        {
+            FileId = "1",
+            Resolution = "1080p",
+            CodecVideo = "h264",
+            AudioTracks = [new WatchAudioTrack { Codec = "aac", Channels = 2 }, new WatchAudioTrack { Codec = "truehd", Channels = 8 }],
+        };
+
+        Assert.Equal(["1080P", "TRUEHD"], Badges(file));
+    }
+
     // selectedMediaSummary.test.ts, "derives the video range label from the selected file's tracks": "DV HDR10".
     [Fact]
     public void ADolbyVisionFileWithTrueHdAtmos_ShowsAllThree_InTheWebsOrder()
