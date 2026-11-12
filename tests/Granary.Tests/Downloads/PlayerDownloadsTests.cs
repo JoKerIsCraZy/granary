@@ -367,4 +367,22 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         Assert.Empty(_fixture.Engine.Loaded);
         Assert.Empty(_fixture.Statuses);
     }
+
+    [Fact]
+    public async Task ThePlaybackInfo_SaysTheDownloadIsALocalFile_WithTheAudioTrackThatPlays()
+    {
+        _fixture.GoOffline();
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
+
+        player.TogglePlaybackInfoCommand.Execute(null);
+
+        var rows = player.PlaybackInfoSections.ToDictionary(s => s.Title, s => s.Rows.ToDictionary(r => r.Label, r => r.Value));
+        Assert.Equal(PlaybackInfo.LocalFile, rows["Player"]["Play method"]);
+        // The manifest's facts; the commentary is the track the download starts with.
+        Assert.Equal(("mkv", "H.264", "SDR", "AAC", "2"), (rows["Current Source File"]["Container"], rows["Current Source File"]["Video codec"],
+            rows["Current Source File"]["Video range type"], rows["Current Source File"]["Audio codec"], rows["Current Source File"]["Audio channels"]));
+    }
 }

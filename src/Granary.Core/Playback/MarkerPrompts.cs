@@ -72,6 +72,14 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
 public sealed record PlaybackStreamInfo(
     Api.Playback.PlaybackPlan Plan, Uri Url, Api.Playback.WatchFileVersion? Playing, Api.Playback.WatchFileVersion? Requested, int? AudioOrdinal);
 
+/// <summary>
+/// A file that plays from this PC, as the playback info shows it: a download, with what its manifest says of the file.
+/// </summary>
+/// <param name="FileSize">The media file's length in bytes; 0 when not known.</param>
+/// <param name="AudioCodec">The codec of the audio track that plays.</param>
+/// <param name="AudioChannels">That track's channels; 0 when not known.</param>
+public sealed record PlaybackLocalFile(string? Container, long FileSize, string? VideoCodec, bool Hdr, string? AudioCodec, int AudioChannels);
+
 /// <summary>A chapter of the playing file, in source seconds, with its picture when the server has one.</summary>
 public sealed record PlaybackChapter(string Title, double StartSeconds, double EndSeconds, Uri? ThumbnailUrl)
 {

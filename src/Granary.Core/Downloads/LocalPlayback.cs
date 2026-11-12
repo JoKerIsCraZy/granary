@@ -148,6 +148,17 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     public PlaybackStreamInfo? StreamInfo => null;
 
+    /// <summary>What the manifest says of the file, with the audio track that plays now.</summary>
+    public PlaybackLocalFile? LocalFile
+    {
+        get
+        {
+            var audio = AudioTrack is { } ordinal && ordinal >= 0 && ordinal < _manifest.AudioTracks.Count ? _manifest.AudioTracks[ordinal] : null;
+            return new PlaybackLocalFile(_manifest.Container, _manifest.FileSize > 0 ? _manifest.FileSize : _download.Record.ExpectedBytes,
+                _manifest.CodecVideo, _manifest.Hdr, audio?.Codec ?? _manifest.CodecAudio, audio?.Channels ?? 0);
+        }
+    }
+
     public PlayerTrickplay? Trickplay => null;
 
     public PlanChange PlanChange => PlanChange.None;
