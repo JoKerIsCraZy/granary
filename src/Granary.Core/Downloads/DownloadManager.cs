@@ -180,10 +180,14 @@ public sealed partial class DownloadManager
     /// </summary>
     public async Task DeleteAsync(string downloadId, CancellationToken cancellationToken)
     {
-        if (DownloadScope.Of(_session) is not { } scope)
+        if (DownloadScope.Of(_session) is { } scope)
         {
-            return;
+            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task DeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
+    {
         await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Download {DownloadId} was deleted from this PC", downloadId);
         _queue.Wake();
@@ -193,15 +197,26 @@ public sealed partial class DownloadManager
     /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
     /// as <see cref="DeleteAsync"/> deletes one, and answers how many went. The ids are the ones the viewer was asked about:
     /// a download that became watched after the question stays, and so does one that is no longer watched, or that plays now:
-    /// its file is never taken from under the player.
+    /// its file is never taken from under the player. They are the downloads of the profile that was active when the answer
+    /// came, also when another one becomes active while they go.
     /// </summary>
     public async Task<int> DeleteWatchedAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(downloadIds);
-        int deleted = 0;
-        foreach (var item in Items.Where(i => i.IsReclaimable && downloadIds.Contains(i.DownloadId)))
+        if (DownloadScope.Of(_session) is not { } scope)
         {
-            await DeleteAsync(item.DownloadId, cancellationToken).ConfigureAwait(false);
+            return 0;
+        }
+        int deleted = 0;
+        foreach (string downloadId in downloadIds)
+        {
+            // Looked at right before each delete, not once for all: a delete takes a while (its folder, the index), and one
+            // of the others can start playing meanwhile, or stop being watched as the server's progress is read.
+            if (_store.Find(scope, downloadId) is not { } download || !ItemOf(download, waitsForUnmetered: false).IsReclaimable)
+            {
+                continue;
+            }
+            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
             deleted++;
         }
         return deleted;

@@ -651,6 +651,77 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADownloadThatStartedPlayingWhileAnotherWasDeleted_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        IDisposable? play = null;
+        // The question is answered; while the first of the two goes, the viewer starts the other in the minimized player.
+        _h.Store.Changed += (_, _) =>
+        {
+            var left = new[] { "dl_1", "dl_2" }.Where(id => _h.Find(id) is not null).ToList();
+            if (left.Count == 1 && play is null)
+            {
+                play = _h.Playing.Enter(Scope7, left[0]);
+            }
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Each is looked at right before its delete: the one that plays now stays.
+        Assert.NotNull(play);
+        Assert.Single(new[] { "dl_1", "dl_2" }, id => _h.Find(id) is not null);
+        play.Dispose();
+    }
+
+    [Fact]
+    public async Task ADownloadTheServerStoppedCountingAsWatchedWhileAnotherWasDeleted_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var downloads = _h.NewManager();
+        bool said = false;
+        // While the first of the two goes, the read of the server's progress says the other is not watched after all.
+        _h.Store.Changed += (_, _) =>
+        {
+            var left = new[] { "dl_1", "dl_2" }.Where(id => _h.Find(id) is not null).ToList();
+            if (left.Count == 1 && !said)
+            {
+                said = true;
+                _h.Store.UpdateAsync(Scope7, left[0], r => r with { IsWatched = false }, Token).GetAwaiter().GetResult();
+            }
+        };
+
+        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+
+        Assert.Equal(1, deleted);
+        Assert.Single(new[] { "dl_1", "dl_2" }, id => _h.Find(id) is not null);
+    }
+
+    [Fact]
+    public async Task AProfileSwitchedToWhileTheWatchedDownloadsGo_DoesNotStopThem_NorLoseCount()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var downloads = _h.NewManager();
+        // The answer was about profile 7's downloads; profile 8 becomes the active one while the first goes.
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Session.ProfileId == "7" && (_h.Find("dl_1") is null || _h.Find("dl_2") is null))
+            {
+                _h.Session.ProfileId = "8";
+            }
+        };
+
+        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+
+        Assert.Equal(2, deleted);
+        Assert.Null(_h.Find("dl_1"));
+        Assert.Null(_h.Find("dl_2"));
+    }
+
+    [Fact]
     public async Task ATitleTheServerHasNotConfirmedAsWatched_IsNotSuggestedForDeletion()
     {
         // Left past nine tenths without the server: it starts over next time, but nothing says the server counts it as watched.
