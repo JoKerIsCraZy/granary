@@ -192,8 +192,8 @@ public sealed partial class LocalPlayback
             }
             catch (Exception ex)
             {
-                // A preference, not playback: whatever went wrong, the title plays on.
-                _logger.LogError(ex, "Saving the {Kind} setting failed unexpectedly", kind);
+                // A preference, not playback: whatever went wrong, the title plays on. Only its kind is logged.
+                _logger.LogError("Saving the {Kind} setting failed unexpectedly ({Failure})", kind, DownloadLog.Failure(ex));
             }
         }
     }

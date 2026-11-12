@@ -23,6 +23,11 @@ public sealed class MpvLogClassifierTests
     [InlineData("Failed to open \\\\nas\\media\\elena\\dl_1\\media.mkv.", "Failed to open …\\media.mkv.")]
     [InlineData("Can not open external file file:///C:/Users/elena/downloads/sub.srt.", "Can not open external file file:///…/sub.srt.")]
     [InlineData("AO: [wasapi] 48000Hz stereo 2ch float", "AO: [wasapi] 48000Hz stereo 2ch float")]
+    // An apostrophe in a folder's name does not end the path.
+    [InlineData("Cannot open file 'D:\\Elena's films\\dl_1\\media.mkv': No such file or directory", "Cannot open file '…\\media.mkv': No such file or directory")]
+    // A folder alone goes whole: its last part can be the Windows user's name.
+    [InlineData("Watching directory C:\\Users\\elena", "Watching directory …")]
+    [InlineData("Config dir: \"C:\\Users\\Elena Moreau\\AppData\\Roaming\\mpv\"", "Config dir: \"…\"")]
     public void Redact_KeepsALocalFilesName_ButNotItsFolder(string line, string expected)
     {
         // A download lies under the Windows user's folder, which names them; the file's name is enough to diagnose.

@@ -27,9 +27,14 @@ public static partial class MpvLogClassifier
     [GeneratedRegex(@"(https?://[^\s?#]+)\?[^\s#]*", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex UrlQuery();
 
-    // A Windows path up to a quote or the line's end: a drive's, a share's, or one in the extended form (\\?\).
-    [GeneratedRegex(@"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^'""\r\n]*", RegexOptions.CultureInvariant)]
+    // A Windows path up to a double quote or the line's end: a drive's, a share's, or one in the extended form (\\?\). It
+    // does not stop at an apostrophe, which a folder's name can hold; what follows the path on the line stays (WithoutFolder).
+    [GeneratedRegex(@"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^""\r\n]*", RegexOptions.CultureInvariant)]
     private static partial Regex LocalPath();
+
+    // A file's name at the start of a path's last part: anything, a dot and a short extension.
+    [GeneratedRegex(@"^[\\/][^\\/]*\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9])", RegexOptions.CultureInvariant)]
+    private static partial Regex FileName();
 
     public static MpvNetworkFailure Classify(string prefix, string text)
     {
@@ -65,10 +70,11 @@ public static partial class MpvLogClassifier
             ? "<redacted: line contained an Authorization header>"
             : LogRedactor.Redact(LocalPath().Replace(UrlQuery().Replace(text, "$1?…"), WithoutFolder));
 
-    // "C:\Videos\clip.mkv" as "…\clip.mkv".
+    // "C:\Videos\clip.mkv" as "…\clip.mkv", with what followed it on the line. A path that ends in no file's name is a
+    // folder, whose last part can be the Windows user's own: it goes whole.
     private static string WithoutFolder(Match path)
     {
-        int name = path.Value.LastIndexOfAny(['\\', '/']);
-        return "…" + path.Value[name..];
+        string last = path.Value[path.Value.LastIndexOfAny(['\\', '/'])..];
+        return FileName().IsMatch(last) ? "…" + last : "…";
     }
 }
