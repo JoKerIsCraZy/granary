@@ -140,6 +140,23 @@ public sealed class TextLanguageTests
         Assert.Equal("Because you enjoy true", TextFixtures.Language("en").Get("home.section.becauseYouEnjoy", [("genres", true)]));
     }
 
+    [Theory]
+    [InlineData("en", "1.2345", "1.235 seconds")]
+    [InlineData("en", "-1.2345", "-1.235 seconds")]
+    [InlineData("en", "1.0005", "1.001 seconds")]
+    [InlineData("en", "1234.5675", "1,234.568 seconds")]
+    [InlineData("en", "1.2344999", "1.234 seconds")]
+    [InlineData("de", "2.5005", "2,501 Sekunden")]
+    public void AGroupedNumber_RoundsAHalfAwayFromZero(string tag, string seconds, string expected)
+    {
+        // Intl.NumberFormat's default (roundingMode halfExpand), to three decimals: 1.2345 is 1.235, never 1.234.
+        decimal exact = decimal.Parse(seconds, System.Globalization.CultureInfo.InvariantCulture);
+        var language = TextFixtures.Language(tag);
+
+        Assert.Equal(expected, language.Get("player.seekInterval.choice", [("seconds", exact)]));
+        Assert.Equal(expected, language.Get("player.seekInterval.choice", [("seconds", (double)exact)]));
+    }
+
     [Fact]
     public void ANumberElement_IsGroupedInTheLanguagesCulture()
     {
@@ -287,6 +304,18 @@ public sealed class TextLanguageTests
         Assert.Equal($"لأنك تحب {Fsi}Drama{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", "Drama")]));
         Assert.Equal("لأنك تحب 42", arabic.Get("home.section.becauseYouEnjoy", [("genres", 42)]));
         Assert.Equal($"في {Fsi}3-4{Pdi} مجموعات", arabic.Get("web.collections.copy.inCollections", [("count", 3), ("count_text", "3-4")]));
+    }
+
+    [Theory]
+    [InlineData(-5, "-5")]
+    [InlineData(1.5, "1.5")]
+    public void InArabic_ANumberWithASignOrADecimalMark_IsIsolated_AsOnTheWeb(double number, string printed)
+    {
+        // The web prints a number value first and isolates what is not digits alone (format.ts, prepareValues: "A range
+        // or a signed number keeps its isolate, or Arabic text would reorder it"), so the printed text decides, not the type.
+        var arabic = TextFixtures.Language("ar");
+
+        Assert.Equal($"لأنك تحب {Fsi}{printed}{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", number)]));
     }
 
     [Fact]
