@@ -315,6 +315,27 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AReadBackThatSaysWhatTheDownloadsAlreadyHave_ChangesNothing()
+    {
+        await _h.AddPlayableAsync("dl_5", "ep_5", change: r => r with
+        {
+            ResumeMs = 600_000, ResumeAt = new DateTimeOffset(2026, 10, 1, 11, 30, 0, TimeSpan.Zero),
+        });
+        await _h.AddPlayableAsync("dl_7", "ep_7", episode: 7);
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            Listing(null, Row("ep_5", 600, "2026-10-01T11:30:00Z"), Row("ep_7", 300, "2026-10-01T11:00:00Z"))));
+        var sync = Sync();
+        int changes = 0;
+        _h.Store.Changed += (_, _) => Interlocked.Increment(ref changes);
+
+        await sync.FlushAsync(readBack: true, Token);
+
+        // Only the download whose position is new is written, and only it is told to the pages.
+        Assert.Equal(1, changes);
+        Assert.Equal(300_000, _h.Find("dl_7")!.Record.ResumeMs);
+    }
+
+    [Fact]
     public async Task TheReadBack_FollowsEveryPage_AndMarksWatched()
     {
         await _h.AddPlayableAsync("dl_5", "ep_5");

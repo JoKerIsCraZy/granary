@@ -284,7 +284,9 @@ public sealed class OfflineProgressSync : IDisposable
         catch (HttpRequestException ex) when (ex.HttpRequestError is HttpRequestError.ConnectionError or HttpRequestError.NameResolutionError
             or HttpRequestError.SecureConnectionError)
         {
-            // The request never left this PC.
+            // The request never left this PC: .NET names these three for a name that did not resolve, a connection that could
+            // not be made and a TLS handshake that failed. A connection that breaks once the request is on it comes as
+            // another error (ResponseEnded, or none named), which is held below.
             return SendOutcome.Later;
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
@@ -337,7 +339,7 @@ public sealed class OfflineProgressSync : IDisposable
         }
         foreach (var download in _store.In(scope))
         {
-            if (rows.TryGetValue(download.Record.MediaItemId, out var row) && double.IsFinite(row.PositionSeconds))
+            if (rows.TryGetValue(download.Record.MediaItemId, out var row) && double.IsFinite(row.PositionSeconds) && Changes(download.Record, row))
             {
                 await TakeAsync(scope, download.Record.DownloadId, row, cancellationToken).ConfigureAwait(false);
             }
@@ -347,9 +349,17 @@ public sealed class OfflineProgressSync : IDisposable
         _readAt = _time.GetTimestamp();
     }
 
+    // A row that says what the download already has, or is older than what this PC recorded, is no change: nothing is
+    // written and nobody who follows the downloads hears of it.
+    private static bool Changes(DownloadRecord record, ProgressListItem row) =>
+        !(record.ResumeAt is { } local && local > row.UpdatedAt)
+        && (record.ResumeMs != Milliseconds(row) || record.ResumeAt != row.UpdatedAt || record.IsWatched != row.Completed);
+
+    private static long Milliseconds(ProgressListItem row) => (long)Math.Round(Math.Max(0, row.PositionSeconds) * 1000);
+
     private async Task TakeAsync(DownloadScope scope, string downloadId, ProgressListItem row, CancellationToken cancellationToken)
     {
-        long positionMs = (long)Math.Round(Math.Max(0, row.PositionSeconds) * 1000);
+        long positionMs = Milliseconds(row);
         try
         {
             await _store.UpdateAsync(scope, downloadId, record => record.ResumeAt is { } local && local > row.UpdatedAt
