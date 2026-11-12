@@ -109,8 +109,10 @@ public sealed record DownloadRecord
     public DateTimeOffset? ResumeAt { get; init; }
 
     /// <summary>
-    /// The profile has watched it: it played to its end or past nine tenths on this PC, or the server says so (its
-    /// <c>completed</c>, which holds once the server's progress is read). The Downloads page suggests deleting such downloads.
+    /// The profile has watched it, for sure: it played to its end on this PC, or the server says so, as its progress was last
+    /// read (<c>completed</c>, and no position of a new watch on top). The Downloads page suggests deleting such downloads, so
+    /// a guess does not count: a play left past nine tenths starts over next time but is not watched here until the server,
+    /// whose threshold an admin sets, says it is; and a title that is being watched again is not, until that watch ends.
     /// </summary>
     public bool IsWatched { get; init; }
 

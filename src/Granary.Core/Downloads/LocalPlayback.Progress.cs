@@ -12,9 +12,10 @@ public sealed partial class LocalPlayback
     /// <summary>How often the position is recorded while the title plays.</summary>
     public static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(10);
 
-    // Past this much of its length a title counts as watched on this PC until the server says (the Apple app's
-    // defaultWatchedFraction, and the server's default threshold).
-    private const double WatchedFraction = 0.9;
+    // Left past this much of its length, a title starts over next time, as one the server counts as watched does (the Apple
+    // app's defaultWatchedFraction, and the server's default threshold). Whether it is watched is the server's to say: an
+    // admin can set another threshold (playback.watched_threshold).
+    private const double StartsOverFraction = 0.9;
 
     private readonly DownloadStore? _store;
     private readonly OfflineProgressQueue? _progress;
@@ -72,11 +73,16 @@ public sealed partial class LocalPlayback
         var record = _download.Record;
         double duration = DurationSeconds ?? _engineDuration ?? 0;
         long positionMs = (long)Math.Round(position * 1000);
-        bool watched = playedToTheEnd || (duration > 0 && position / duration > WatchedFraction);
+        bool startsOver = playedToTheEnd || (duration > 0 && position / duration > StartsOverFraction);
         var entry = queue.Record(record.Scope, record.MediaItemId, positionMs, (long)Math.Round(Math.Max(0, duration) * 1000));
-        // A watched title starts over next time, as the server sets its position back to 0.
-        long resumeMs = watched ? 0 : positionMs;
-        _records = KeepAsync(_records, r => r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = r.IsWatched || watched });
+        // As the server sets a watched title's position back to 0.
+        long resumeMs = startsOver ? 0 : positionMs;
+        // Watched for sure only at the title's end. Any other position is a watch under way, also of a title watched
+        // before: it is not offered for deletion in the middle of it. The server's word follows with the next read.
+        // A write that comes late, behind a slow disk, never lowers a newer position the server's read stored meanwhile.
+        _records = KeepAsync(_records, r => r.ResumeAt is { } kept && kept > entry.UpdatedAt
+            ? r
+            : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd });
         _sync?.FlushSoon(readBack: isFinal);
     }
 

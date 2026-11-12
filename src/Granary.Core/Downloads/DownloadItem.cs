@@ -4,7 +4,7 @@ namespace Granary.Core.Downloads;
 /// One download of the active profile as the pages show it: what it is, where it stands, and how far it got.
 /// <see cref="WaitsForUnmetered"/>: the connection is metered and Settings → Downloads does not allow downloads there.
 /// <see cref="PosterPath"/> is a film's poster or an episode's still, <see cref="SeriesPosterPath"/> an episode's series poster;
-/// each null until fetched. <see cref="IsWatched"/>: the profile has watched it, on this PC or as the server says.
+/// each null until fetched. <see cref="IsWatched"/>: the profile has watched it for sure (<see cref="DownloadRecord.IsWatched"/>).
 /// <see cref="IsPlaying"/>: a player of this app has it open now (<see cref="PlayingDownloads"/>).
 /// </summary>
 public sealed record DownloadItem(

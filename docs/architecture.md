@@ -1537,9 +1537,14 @@ device.
   takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
   position, the length and the time, in whole milliseconds, for the server.
 - **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine
-  tenths of it, is marked watched on this PC at once (`DownloadRecord.IsWatched`, the Apple app's latch) and resumes from
-  0, as the server sets a watched title's position back. The mark stays through a rewatch. The server's own threshold
-  decides in the end: its answer replaces the mark when the progress is read back. The Downloads page suggests deleting
+  tenths of it, resumes from 0 next time, as the server sets a watched title's position back (the Apple app's latch).
+  Whether it is watched (`DownloadRecord.IsWatched`) is another matter, since that mark is what gets a download
+  suggested for deletion: it is set only by a play that reached the title's end, or by the server, whose threshold an
+  admin sets (`playback.watched_threshold`), when its progress is read back: `completed` with the position at 0. A
+  play left past nine tenths is a guess and sets no mark; a server set to 95 % answers such a title with its position
+  and no `completed`, and the download then resumes there. A title that is watched again loses the mark with the first
+  position of the new watch, and the server's `completed`, which stays through a rewatch, does not bring it back while
+  the row holds a position: the mark returns when that watch ends. The Downloads page suggests deleting
   the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
   them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
   about that are still watched, each as a single delete goes. A download that plays is neither suggested nor deleted
@@ -1601,7 +1606,10 @@ device.
   something or the last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. A position on
   the way asks for no read. For each download the listing names, the later of the server's `updated_at` and the record's
   `ResumeAt` holds, the server's on a tie (the Apple app's `mergeProgress`): its position becomes `ResumeMs`, its time
-  `ResumeAt`, its `completed` `IsWatched`. That is how a position made on another device reaches a download, how an older
+  `ResumeAt`, and `IsWatched` whether it is `completed` with no position on top. This PC's own position holds only
+  while it still waits in the queue: once the server answered for it, the server's row is what became of it, also when
+  that row is older (the server keeps no position under `playback.min_resume_threshold` and answers success all the
+  same, so a title opened for a minute is still where it was). That is how a position made on another device reaches a download, how an older
   offline position never moves a newer one back (the entry went out with the time it was recorded, so the server kept its
   own), and how the server's word on watched arrives. A row that says what the download already has writes nothing and
   raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A

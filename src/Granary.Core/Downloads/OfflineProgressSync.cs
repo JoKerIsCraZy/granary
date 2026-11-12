@@ -347,8 +347,10 @@ public sealed class OfflineProgressSync : IDisposable
         _store.In(scope).Count > 0 && (sent || _readFor != scope || _time.GetElapsedTime(_readAt) >= ReadBackInterval);
 
     // The whole listing, then the downloads it names: the later of the server's position and this PC's holds, the server's
-    // on a tie, with its word on whether the title is watched (the Apple app's mergeProgress). A listing that breaks off
-    // changes nothing. A complete one also settles what still waits in the queue: a position the server has (its row is as
+    // on a tie, with its word on whether the title is watched (the Apple app's mergeProgress). This PC's holds only while
+    // it still waits to be sent: once the server answered for it, the server's row is what became of it, also an older one
+    // (a position too short for the server to keep, a title its threshold does not count as watched). A listing that
+    // breaks off changes nothing. A complete one also settles what still waits in the queue: a position the server has (its row is as
     // new, or newer) leaves, as one whose send was taken while its answer got lost; every other one is sent again.
     // Answers how many waiting positions the server turned out to have.
     private async Task<int> ReadBackAsync(Target target, CancellationToken cancellationToken)
@@ -396,7 +398,8 @@ public sealed class OfflineProgressSync : IDisposable
         }
         foreach (var download in _store.In(scope))
         {
-            if (rows.TryGetValue(download.Record.MediaItemId, out var row) && double.IsFinite(row.PositionSeconds) && Changes(download.Record, row))
+            if (rows.TryGetValue(download.Record.MediaItemId, out var row) && double.IsFinite(row.PositionSeconds) && !KeepsItsOwn(download.Record, row)
+                && Changes(download.Record, row))
             {
                 await TakeAsync(scope, download.Record.DownloadId, row, cancellationToken).ConfigureAwait(false);
             }
@@ -411,22 +414,30 @@ public sealed class OfflineProgressSync : IDisposable
         return settled;
     }
 
-    // A row that says what the download already has, or is older than what this PC recorded, is no change: nothing is
-    // written and nobody who follows the downloads hears of it.
+    // This PC recorded a newer position than the row's and the server has not answered for it yet: it is the later one.
+    private bool KeepsItsOwn(DownloadRecord record, ProgressListItem row) =>
+        record.ResumeAt is { } local && local > row.UpdatedAt && _queue.HasUnsent(record.Scope, record.MediaItemId);
+
+    // A row that says what the download already has is no change: nothing is written and nobody who follows the downloads
+    // hears of it.
     private static bool Changes(DownloadRecord record, ProgressListItem row) =>
-        !(record.ResumeAt is { } local && local > row.UpdatedAt)
-        && (record.ResumeMs != Milliseconds(row) || record.ResumeAt != row.UpdatedAt || record.IsWatched != row.Completed);
+        record.ResumeMs != Milliseconds(row) || record.ResumeAt != row.UpdatedAt || record.IsWatched != IsWatched(row);
 
     private static long Milliseconds(ProgressListItem row) => (long)Math.Round(Math.Max(0, row.PositionSeconds) * 1000);
+
+    // The server counts the title as watched and sets its position back to 0; "completed" stays through a later watch, whose
+    // position then stands beside it. Only the first is a title the viewer is through with (DownloadRecord.IsWatched).
+    private static bool IsWatched(ProgressListItem row) => row.Completed && Milliseconds(row) == 0;
 
     private async Task TakeAsync(DownloadScope scope, string downloadId, ProgressListItem row, CancellationToken cancellationToken)
     {
         long positionMs = Milliseconds(row);
         try
         {
-            await _store.UpdateAsync(scope, downloadId, record => record.ResumeAt is { } local && local > row.UpdatedAt
+            // Looked at again as it is written: a position the play recorded since then is the later one.
+            await _store.UpdateAsync(scope, downloadId, record => KeepsItsOwn(record, row)
                 ? record
-                : record with { ResumeMs = positionMs, ResumeAt = row.UpdatedAt, IsWatched = row.Completed }, cancellationToken).ConfigureAwait(false);
+                : record with { ResumeMs = positionMs, ResumeAt = row.UpdatedAt, IsWatched = IsWatched(row) }, cancellationToken).ConfigureAwait(false);
         }
         catch (KeyNotFoundException)
         {

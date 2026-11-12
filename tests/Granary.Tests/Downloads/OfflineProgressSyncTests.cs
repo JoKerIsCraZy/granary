@@ -515,15 +515,71 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AServerPositionOlderThanThisPCs_LeavesThisPCsAlone()
+    public async Task AServerPositionOlderThanOneThisPCStillHasToSend_LeavesThisPCsAlone()
     {
+        _h.Time.Advance(TimeSpan.FromHours(1));
         await _h.AddPlayableAsync(change: r => r with { ResumeMs = 3_000_000, ResumeAt = ManualTimeProvider.DefaultStart.AddHours(1) });
+        _queue.Record(Scope7, "ep_5", 3_000_000, 7_200_000);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
         _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 1200, "2026-10-01T12:00:00Z"))));
+
+        // The send fails; the server's progress is read all the same.
+        await Sync().FlushAsync(readBack: true, Token);
+
+        Assert.Single(Reads);
+        var record = _h.Find("dl_1")!.Record;
+        Assert.Equal((3_000_000L, ManualTimeProvider.DefaultStart.AddHours(1)), (record.ResumeMs, record.ResumeAt));
+        Assert.Single(_queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task APositionTheServerAnsweredForButDidNotKeep_GivesWayToWhatTheServerHas()
+    {
+        // A watched film, opened again for a minute: too short for the server to keep, so its row stays as it was.
+        _h.Time.Advance(TimeSpan.FromHours(1));
+        await _h.AddPlayableAsync(change: r => r with { ResumeMs = 60_000, ResumeAt = ManualTimeProvider.DefaultStart.AddHours(1), IsWatched = false });
+        _queue.Record(Scope7, "ep_5", 60_000, 7_200_000);
+        _h.Silo.On(HttpMethod.Get, ProgressPath,
+            ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 0, "2026-10-01T09:00:00Z", completed: true))));
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        // The server answered for the position: what it has now is what became of it. The film is still watched.
+        var record = _h.Find("dl_1")!.Record;
+        Assert.Equal((0L, true), (record.ResumeMs, record.IsWatched));
+        Assert.Empty(_queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task AServerWithAHigherWatchedThreshold_SaysTheTitleIsNotWatched_AndWhereItResumes()
+    {
+        // Left at 92 %: this PC lets it start over, and the server, set to 95 %, keeps the position and no watched mark.
+        await _h.AddPlayableAsync(change: r => r with { ResumeMs = 0, ResumeAt = ManualTimeProvider.DefaultStart });
+        _queue.Record(Scope7, "ep_5", 6_624_000, 7_200_000);
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 6624, "2026-10-01T12:00:00.000Z"))));
 
         await Sync().FlushAsync(readBack: true, Token);
 
         var record = _h.Find("dl_1")!.Record;
-        Assert.Equal((3_000_000L, ManualTimeProvider.DefaultStart.AddHours(1)), (record.ResumeMs, record.ResumeAt));
+        Assert.Equal((6_624_000L, false), (record.ResumeMs, record.IsWatched));
+    }
+
+    [Fact]
+    public async Task ATitleBeingWatchedAgain_IsNotWatched_UntilThatWatchEnds()
+    {
+        await _h.AddPlayableAsync(change: r => r with { IsWatched = true });
+        // The server keeps "completed" from the first watch, with the new watch's position beside it.
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            Listing(null, Row("ep_5", 1500, "2026-10-01T11:00:00Z", completed: true))),
+            ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 0, "2026-10-01T12:30:00Z", completed: true))));
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: true, Token);
+        Assert.Equal((1_500_000L, false), (_h.Find("dl_1")!.Record.ResumeMs, _h.Find("dl_1")!.Record.IsWatched));
+
+        _h.Time.Advance(OfflineProgressSync.ReadBackInterval);
+        await sync.FlushAsync(readBack: true, Token);
+        Assert.Equal((0L, true), (_h.Find("dl_1")!.Record.ResumeMs, _h.Find("dl_1")!.Record.IsWatched));
     }
 
     [Fact]

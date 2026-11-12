@@ -126,20 +126,45 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AStopPastNineTenths_CountsAsWatched_AndStaysSoThroughARewatch()
+    public async Task AStopPastNineTenths_StartsOverNextTime_ButIsNotWatchedUntilTheServerSaysSo()
     {
         _fixture.GoOffline();
         var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
         Frame(6600);
         await playback.StopAsync();
-        Assert.Equal((6_600_000L, 0L, true), (Entry.PositionMs, Record.ResumeMs, Record.IsWatched));
 
-        // Watched again from the start: it stays watched, and resumes where the rewatch got to.
+        // The server's threshold is an admin's setting: nine tenths here is a guess, good for where to start, not for
+        // suggesting the download's deletion.
+        Assert.Equal((6_600_000L, 0L, false), (Entry.PositionMs, Record.ResumeMs, Record.IsWatched));
+    }
+
+    [Fact]
+    public async Task AWatchedTitleThatIsWatchedAgain_IsNotWatched_WhileThatWatchIsUnderWay()
+    {
+        _fixture.GoOffline();
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { IsWatched = true });
         var again = await _fixture.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
         Frame(300);
         await again!.StopAsync();
 
-        Assert.Equal((300_000L, true), (Record.ResumeMs, Record.IsWatched));
+        // In the middle of a rewatch nobody wants it suggested for deletion; it resumes where the rewatch got to.
+        Assert.Equal((300_000L, false), (Record.ResumeMs, Record.IsWatched));
+    }
+
+    [Fact]
+    public async Task APositionWrittenLate_DoesNotLowerANewerOneTheServersReadStoredMeanwhile()
+    {
+        _fixture.GoOffline();
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        // Another device's later position reached the download while this play's own write still waits for the disk.
+        var later = ManualTimeProvider.DefaultStart.AddHours(2);
+        await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", r => r with { ResumeMs = 3_000_000, ResumeAt = later }, LocalPlaybackFixture.Token);
+        Frame(120);
+
+        await playback.StopAsync();
+
+        Assert.Equal((3_000_000L, later), (Record.ResumeMs, Record.ResumeAt));
     }
 
     [Fact]

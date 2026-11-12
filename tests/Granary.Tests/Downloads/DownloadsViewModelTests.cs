@@ -646,4 +646,19 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         Assert.NotNull(_h.Find("dl_1"));
         play!.Dispose();
     }
+
+    [Fact]
+    public async Task ATitleTheServerHasNotConfirmedAsWatched_IsNotSuggestedForDeletion()
+    {
+        // Left past nine tenths without the server: it starts over next time, but nothing says the server counts it as watched.
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { ResumeMs = 0, ResumeAt = ManualTimeProvider.DefaultStart });
+        var page = await AttachedAsync();
+
+        Assert.False(page.ShowsReclaim);
+
+        // The server's progress was read: it is watched.
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+
+        Assert.True(page.ShowsReclaim);
+    }
 }
