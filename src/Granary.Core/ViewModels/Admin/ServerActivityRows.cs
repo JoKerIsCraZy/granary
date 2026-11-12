@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -31,6 +32,41 @@ public static class ServerActivityText
 
     /// <summary>0 to 100; what is no number counts as 0.</summary>
     public static double ClampPercent(double value) => double.IsFinite(value) ? Math.Clamp(value, 0, 100) : 0;
+
+    /// <summary>"3 more scans queued" for the scans the panel does not list, "At least 475 more scans queued" when their number is a lower bound.</summary>
+    public static string MoreScans(int count, bool isLowerBound)
+    {
+        string more = string.Create(CultureInfo.InvariantCulture, $"{count:N0} more {(count == 1 ? "scan" : "scans")} queued");
+        return isLowerBound ? "At least " + more : more;
+    }
+
+    /// <summary>What a scan covers: "Full library", "Subtree" or "Single file"; a mode the web has no words for as the server names it.</summary>
+    public static string ScanMode(string mode) => mode switch
+    {
+        "library" => "Full library",
+        "subtree" => "Subtree",
+        "file" => "Single file",
+        _ => mode,
+    };
+
+    /// <summary>
+    /// How far a scan is, as the web's <c>formatScanProgress</c>: "Matching files · 1,200 / 4,800 (25%)" once it counts
+    /// files ("Processing files" when it does not say what it does), else what it says, else nothing.
+    /// </summary>
+    public static string ScanProgress(AdminScanResult? result)
+    {
+        if (result is null)
+        {
+            return "";
+        }
+        if (result.TotalFiles != 0 && result.FilesProcessed != 0)
+        {
+            double percent = Math.Clamp(Math.Round((double)result.FilesProcessed / result.TotalFiles * 100, MidpointRounding.AwayFromZero), 0, 100);
+            string message = string.IsNullOrEmpty(result.Message) ? "Processing files" : result.Message;
+            return string.Create(CultureInfo.InvariantCulture, $"{message} · {result.FilesProcessed:N0} / {result.TotalFiles:N0} ({percent:0}%)");
+        }
+        return result.Message ?? "";
+    }
 }
 
 /// <summary>The rows of the activity panel.</summary>
@@ -122,5 +158,53 @@ public sealed partial class ActivityTaskRow(string key) : ObservableObject
     {
         Name = task.Name.Length > 0 ? task.Name : task.Key;
         Progress = task.Progress;
+    }
+}
+
+/// <summary>
+/// A library scan, queued or running: the library, "Scanning…" or "Queued", what it covers ("Subtree · /media/tv/Dark")
+/// and, once it says so, how far it is.
+/// </summary>
+public sealed partial class ActivityScanRow(string id) : ObservableObject
+{
+    public string Id { get; } = id;
+
+    /// <summary>The library's name, or "Library #3" while it is not known.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ReadText))]
+    public partial string LibraryName { get; private set; } = "";
+
+    /// <summary>The scan runs: a spinner and "Scanning…". Otherwise it waits its turn: "Queued".</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsQueued), nameof(StatusText), nameof(ReadText))]
+    public partial bool IsRunning { get; private set; }
+
+    public bool IsQueued => !IsRunning;
+
+    public string StatusText => IsRunning ? "Scanning…" : "Queued";
+
+    /// <summary>"Full library", or "Subtree · /media/tv/Dark".</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ReadText))]
+    public partial string DetailText { get; private set; } = "";
+
+    /// <summary>"Matching files · 1,200 / 4,800 (25%)"; empty while the scan says nothing.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasProgressText), nameof(ReadText))]
+    public partial string ProgressText { get; private set; } = "";
+
+    public bool HasProgressText => ProgressText.Length > 0;
+
+    /// <summary>The row as one text for a screen reader.</summary>
+    public string ReadText => string.Join(", ", new[] { LibraryName, StatusText, DetailText, ProgressText }.Where(part => part.Length > 0));
+
+    internal void Show(AdminScanRun scan, FrozenDictionary<string, string>? libraryNames)
+    {
+        string library = scan.LibraryId.ToString(CultureInfo.InvariantCulture);
+        LibraryName = libraryNames is not null && libraryNames.TryGetValue(library, out string? name) && name.Length > 0 ? name : $"Library #{library}";
+        IsRunning = scan.IsRunning;
+        string mode = ServerActivityText.ScanMode(scan.Mode);
+        DetailText = string.IsNullOrEmpty(scan.Path) ? mode : $"{mode} · {scan.Path}";
+        ProgressText = ServerActivityText.ScanProgress(scan.Result);
     }
 }

@@ -2677,6 +2677,17 @@ What the indicator reads, each source by itself (a source the server does not of
   `task.updated`, as the web's `useTasksIncludingHidden`; the running ones (`state` `running`) show and count. The
   server sends `task.updated` at most every 250 ms per running task, and at once when one ends. The channel's snapshot
   and the frame's own task are not used: both lack the hidden workers or are one server's view.
+- **Scans** (`scans`): the stream alone, as the web's `useActiveScans`; the server has no list of active scans to read.
+  The channel's snapshot is an array of runs (the queued and running ones, 500 at most) and replaces what is known;
+  each event (`scan.accepted`, `scan.started`, `scan.progress`, `scan.completed`, `scan.failed`, `scan.cancelled`)
+  carries one run, which takes its place by `id`, joins the list while its `status` is `accepted` or `running`, or
+  leaves it. A run is `{ "id", "library_id" (a number), "mode" (`library`, `subtree`, `file`), "path"?, "trigger",
+  "status", "started_at"?, "completed_at"?, "error_message"?, "result"?: { "message"?, "total_files"?,
+  "files_processed"?, … } }`. With 500 runs known there may be more: the counts are then "at least". What was known
+  stays while the stream is away and until the next connection's snapshot. The libraries' names for the rows come from
+  `GET /api/v2/libraries` (7.16), read with each connection that was given the channel and once more for a scan of a
+  library the names do not hold. Sources: `silo-server/internal/events/scan_registry.go`,
+  `internal/api/handlers/events_ws.go` (`maxRealtimeScanSnapshotRuns`).
 
 Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
 or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until

@@ -22,3 +22,41 @@ public sealed record AdminTaskCollection
 {
     public IReadOnlyList<AdminTask> Items { get; init => field = value ?? []; } = [];
 }
+
+/// <summary>
+/// A library scan as the events stream's <c>scans</c> channel sends it: in the snapshot of the active ones and with every
+/// <c>scan.*</c> event. There is no list of them to read.
+/// </summary>
+public sealed record AdminScanRun
+{
+    public string Id { get; init => field = value ?? ""; } = "";
+
+    public long LibraryId { get; init; }
+
+    /// <summary>library, subtree or file.</summary>
+    public string Mode { get; init => field = value ?? ""; } = "";
+
+    /// <summary>The folder or file of a scan that is not the whole library's.</summary>
+    public string? Path { get; init; }
+
+    /// <summary>accepted (queued), running, completed, failed or cancelled.</summary>
+    public string Status { get; init => field = value ?? ""; } = "";
+
+    public AdminScanResult? Result { get; init; }
+
+    public bool IsRunning => Status == "running";
+
+    /// <summary>Queued or running: what the indicator shows and counts.</summary>
+    public bool IsActive => Status is "accepted" or "running";
+}
+
+/// <summary>How far a scan is, as far as the indicator says it.</summary>
+public sealed record AdminScanResult
+{
+    /// <summary>The server's words for what the scan does now.</summary>
+    public string? Message { get; init; }
+
+    public long TotalFiles { get; init; }
+
+    public long FilesProcessed { get; init; }
+}

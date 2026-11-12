@@ -17,6 +17,9 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     /// <summary>How long the stream may be without a connection before the button says so, as the web waits.</summary>
     public static readonly TimeSpan ConnectionProblemDelay = TimeSpan.FromSeconds(4);
 
+    /// <summary>The most scans the panel lists; the rest are counted in a line under them.</summary>
+    public const int MaxScanRows = 25;
+
     private readonly ServerActivity _activity;
     private readonly IUiDispatcher _dispatcher;
     private readonly ITimer _problem;
@@ -57,11 +60,21 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     public bool HasActivity => Total > 0;
 
-    /// <summary>The red count on the button: "3", or "99+".</summary>
-    public string BadgeText => ServerActivityText.Count(Total);
+    /// <summary>
+    /// The server's snapshot of the scans was full (<see cref="ServerActivity.ScanSnapshotLimit"/>): there may be more
+    /// scans than are known, so the counts with them in are the least there is.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BadgeText), nameof(Name), nameof(ScanCountText))]
+    public partial bool IsCountLowerBound { get; private set; }
+
+    /// <summary>The red count on the button: "3", "99+", or "12+" for at least twelve.</summary>
+    public string BadgeText => ServerActivityText.Count(Total, IsCountLowerBound);
 
     /// <summary>What a screen reader calls the button.</summary>
-    public string Name => Total > 0 ? $"Server activity: {Total} active" : "Server activity";
+    public string Name => Total == 0 ? "Server activity"
+        : IsCountLowerBound ? $"Server activity: at least {Total} active"
+        : $"Server activity: {Total} active";
 
     /// <summary>The stream has had no connection for <see cref="ConnectionProblemDelay"/>: a red dot on the button.</summary>
     [ObservableProperty]
@@ -74,8 +87,16 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     public bool HasConnectionText => ConnectionText.Length > 0;
 
-    /// <summary>Nothing is going on: the panel says so in place of its sections.</summary>
-    public bool IsEmpty => Total == 0;
+    /// <summary>
+    /// Nothing is going on: the panel says so in place of its sections. Not before the scans are known, which come with
+    /// the stream alone, as the web waits for them.
+    /// </summary>
+    public bool IsEmpty => Total == 0 && AreScansKnown;
+
+    /// <summary>The stream said which scans there are, or the server offers none.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty), nameof(HasSections))]
+    public partial bool AreScansKnown { get; private set; } = true;
 
     public bool HasSections => !IsEmpty;
 
@@ -118,6 +139,39 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     /// <summary>A row per running task, in the server's order.</summary>
     public ObservableCollection<ActivityTaskRow> Tasks { get; } = [];
 
+    /// <summary>The server gave the scans' channel.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoScans))]
+    public partial bool ShowsScans { get; private set; }
+
+    /// <summary>The scans queued or running.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasScans), nameof(HasNoScans), nameof(ScanCountText))]
+    public partial int ScanCount { get; private set; }
+
+    public bool HasScans => ScanCount > 0;
+
+    public bool HasNoScans => ShowsScans && !HasScans;
+
+    public string ScanCountText => ServerActivityText.Count(ScanCount, IsCountLowerBound);
+
+    /// <summary>The first <see cref="MaxScanRows"/> scans, in the stream's order.</summary>
+    public ObservableCollection<ActivityScanRow> Scans { get; } = [];
+
+    /// <summary>"3 more scans queued" under the rows, or "At least 475 more scans queued"; empty when every scan is listed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMoreScans))]
+    public partial string MoreScansText { get; private set; } = "";
+
+    public bool HasMoreScans => MoreScansText.Length > 0;
+
+    /// <summary>
+    /// In place of the rows: "No active scans" when the stream said so. Without a live stream nobody knows, so the line
+    /// names the connection instead ("Connecting…", "Disconnected").
+    /// </summary>
+    [ObservableProperty]
+    public partial string ScanEmptyText { get; private set; } = "";
+
     /// <summary>"View all" beside Streams was picked: the shell opens Admin → Activity.</summary>
     public event EventHandler? StreamsRequested;
 
@@ -146,7 +200,26 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         ShowsTasks = state.Tasks is not null;
         TaskCount = running.Count;
         ServerActivityRows.Sync(Tasks, running, task => task.Key, row => row.Key, task => new ActivityTaskRow(task.Key), (row, task) => row.Show(task));
-        Total = sessions.Count + running.Count;
+        int scans = ShowScans(state);
+        Total = sessions.Count + running.Count + scans;
+    }
+
+    // Answers how many scans count.
+    private int ShowScans(ServerActivityState state)
+    {
+        var active = (state.Scans ?? []).Where(scan => scan.IsActive).ToList();
+        ShowsScans = state.Channels.Contains(EventsChannels.Scans);
+        AreScansKnown = !ShowsScans || state.Scans is not null;
+        IsCountLowerBound = active.Count >= ServerActivity.ScanSnapshotLimit;
+        ScanCount = active.Count;
+        ServerActivityRows.Sync(Scans, [.. active.Take(MaxScanRows)], scan => scan.Id, row => row.Id, scan => new ActivityScanRow(scan.Id),
+            (row, scan) => row.Show(scan, state.LibraryNames));
+        int more = active.Count - Scans.Count;
+        MoreScansText = more > 0 ? ServerActivityText.MoreScans(more, IsCountLowerBound) : "";
+        ScanEmptyText = state.Scans is not null && state.Connection == EventsConnection.Live ? "No active scans"
+            : state.Connection == EventsConnection.Disconnected ? "Disconnected"
+            : "Connecting…";
+        return active.Count;
     }
 
     // The news comes on the stream's or a read's thread, in bursts: one look at the latest state per burst.

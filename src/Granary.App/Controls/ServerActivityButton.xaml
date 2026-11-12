@@ -91,6 +91,13 @@
             <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- A row's smaller lines: "Queued", "Subtree · /media/tv/Dark". -->
+        <Style x:Key="ActivityRowNoteStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
         <!-- "Running" beside a spinner, in the accent. -->
         <Style x:Key="ActivityRowWorkingStyle" TargetType="TextBlock" BasedOn="{StaticResource ActivityRowNumberStyle}">
             <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
@@ -148,6 +155,42 @@
                         <ProgressBar Value="{x:Bind ProgressValue, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
                                      Style="{StaticResource ActivityProgressBarStyle}" />
                     </StackPanel>
+                </controls:ReadingRow>
+            </Grid>
+        </DataTemplate>
+
+        <!--
+            A library scan: a spinner while it runs or the scan icon while it waits, the library with "Scanning…" or "Queued"
+            at the right, what it covers, and how far it is once it says so.
+        -->
+        <DataTemplate x:Key="ActivityScanRowTemplate" x:DataType="admin:ActivityScanRow">
+            <Grid>
+                <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" AutomationProperties.Name="{x:Bind ReadText, Mode=OneWay}">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="14" Height="14" Margin="0,2,0,0" VerticalAlignment="Top">
+                            <ProgressRing IsActive="{x:Bind IsRunning, Mode=OneWay}" Visibility="{x:Bind IsRunning, Mode=OneWay}"
+                                          Style="{StaticResource ActivitySpinnerStyle}" Width="14" Height="14" />
+                            <FontIcon Glyph="&#xEE6F;" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                      Visibility="{x:Bind IsQueued, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                        </Grid>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind LibraryName, Mode=OneWay}" Style="{StaticResource ActivityRowTextStyle}" />
+                                <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource ActivityRowNoteStyle}" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind DetailText, Mode=OneWay}" Style="{StaticResource ActivityRowNoteStyle}" />
+                            <TextBlock Text="{x:Bind ProgressText, Mode=OneWay}" Visibility="{x:Bind HasProgressText, Mode=OneWay}"
+                                       Style="{StaticResource ActivityRowNoteStyle}" Opacity="0.8" />
+                        </StackPanel>
+                    </Grid>
                 </controls:ReadingRow>
             </Grid>
         </DataTemplate>
@@ -231,6 +274,27 @@
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoTasks, Mode=OneWay}"
                                                              AutomationProperties.Name="No running tasks">
                                             <TextBlock Text="No running tasks" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                        </controls:ReadingRow>
+                                    </StackPanel>
+
+                                    <!-- Scans: the library scans queued or running, 25 of them at most and a line for the rest. -->
+                                    <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsScans, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                            <TextBlock Text="SCANS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                       AutomationProperties.Name="Scans" />
+                                            <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasScans, Mode=OneWay}">
+                                                <TextBlock Text="{x:Bind ViewModel.ScanCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.Scans}" ItemTemplate="{StaticResource ActivityScanRowTemplate}"
+                                                      IsTabStop="False" />
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasMoreScans, Mode=OneWay}"
+                                                             AutomationProperties.Name="{x:Bind ViewModel.MoreScansText, Mode=OneWay}">
+                                            <TextBlock Text="{x:Bind ViewModel.MoreScansText, Mode=OneWay}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                        </controls:ReadingRow>
+                                        <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoScans, Mode=OneWay}"
+                                                             AutomationProperties.Name="{x:Bind ViewModel.ScanEmptyText, Mode=OneWay}">
+                                            <TextBlock Text="{x:Bind ViewModel.ScanEmptyText, Mode=OneWay}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
                                 </StackPanel>

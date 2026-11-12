@@ -1280,6 +1280,15 @@ by `MainWindow.Activity.cs`.
   - **Tasks**: a row per running scheduled task with the server's name for it. Once the task says how far it is,
     "42%" (or "12.5%", never "100.0%" while it runs) at the right and a 6 px bar under the name; until then a spinner
     and "Running" in the accent. "No running tasks" without any.
+  - **Scans**: a row per library scan that is queued or running: a spinner (running) or the scan icon (queued), the
+    library's name ("Library #3" while it is not known) with "Scanning…" or "Queued" at the right, under it "Full
+    library", "Subtree" or "Single file" and " · " with the path where there is one, and once the scan counts files
+    "Matching files · 1,200 / 4,800 (25%)" ("Processing files" when it does not say what it does). 25 rows at most,
+    then "3 more scans queued". When the server's snapshot was full (500) there may be more scans than are known: the
+    section's count and the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity:
+    at least 500 active", and the line "At least 475 more scans queued". Without any: "No active scans" when the
+    stream said so; while it is away, "Connecting…" or "Disconnected", since scans are known from the stream alone
+    (the web says "No active scans" there too). The big "No active server activity" waits for the scans to be known.
   A section whose list the server does not offer is left out; a hairline parts the sections that show.
 - **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
   the page's top edge moves to it (a held key stops at the edge), Down or Left from it back to where focus was on the

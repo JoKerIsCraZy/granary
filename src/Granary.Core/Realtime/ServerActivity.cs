@@ -23,6 +23,15 @@ public sealed record ServerActivityState
 
     /// <summary>Every scheduled task, the idle ones too; null as <see cref="Sessions"/>.</summary>
     public IReadOnlyList<AdminTask>? Tasks { get; init; }
+
+    /// <summary>
+    /// The library scans the stream told of, the queued and running ones among them; null until a connection that was
+    /// given their channel said anything of them. They are known from the stream alone.
+    /// </summary>
+    public IReadOnlyList<AdminScanRun>? Scans { get; init; }
+
+    /// <summary>The libraries' names by id, for the scans' rows; null while they are not read.</summary>
+    public FrozenDictionary<string, string>? LibraryNames { get; init; }
 }
 
 /// <summary>
@@ -55,6 +64,7 @@ public sealed partial class ServerActivity : IDisposable
     private readonly Lock _gate = new();
     private readonly Reread _sessions;
     private readonly Reread _tasks;
+    private readonly Reread _libraries;
     private readonly Reread[] _rereads;
     private Following? _following;
     private long _feed;
@@ -79,7 +89,8 @@ public sealed partial class ServerActivity : IDisposable
                 return state => state with { Tasks = tasks };
             },
             state => state with { Tasks = null });
-        _rereads = [_sessions, _tasks];
+        _libraries = LibrariesSource();
+        _rereads = [_sessions, _tasks, _libraries];
     }
 
     public ServerActivityState State
@@ -171,6 +182,12 @@ public sealed partial class ServerActivity : IDisposable
                         return;
                     }
                     break;
+                case EventsFrameTypes.Snapshot when frame.Channel == EventsChannels.Scans && _state.Channels.Contains(EventsChannels.Scans):
+                    if (!ScansSnapshotLocked(frame))
+                    {
+                        return;
+                    }
+                    break;
                 default:
                     return;
             }
@@ -183,7 +200,8 @@ public sealed partial class ServerActivity : IDisposable
     private void SubscribedLocked(EventsFrame frame)
     {
         var channels = frame.Accepted.Intersect(EventsChannels.Admin).ToFrozenSet(StringComparer.Ordinal);
-        _state = _state with { Channels = channels };
+        // The scans known so far stay until this connection's snapshot replaces them; without the channel they are gone.
+        _state = _state with { Channels = channels, Scans = channels.Contains(EventsChannels.Scans) ? _state.Scans : null };
         foreach (var reread in _rereads)
         {
             reread.IsOff = !channels.Contains(reread.Channel);
@@ -212,6 +230,8 @@ public sealed partial class ServerActivity : IDisposable
             case EventsChannels.Tasks when frame.Event == TaskUpdated:
                 CueLocked(_tasks);
                 return false;
+            case EventsChannels.Scans:
+                return ScanEventLocked(frame);
             default:
                 return false;
         }
@@ -230,6 +250,7 @@ public sealed partial class ServerActivity : IDisposable
             reread.IsOff = false;
             reread.Window.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
+        _askedLibraries.Clear();
         return previous;
     }
 

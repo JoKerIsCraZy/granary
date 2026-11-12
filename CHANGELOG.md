@@ -10,9 +10,9 @@ release's section is what its update says it changes (docs/release.md).
 
 - **Server activity:** an administrator sees a button at the top right of every page while something is going on on
   the server, as on Silo's web, with the number of things on it. It opens a panel that counts the streams playing now
-  by play method and leads to Admin → Activity, and lists the scheduled tasks that run with their progress. In the
-  admin area the button is always there. It follows the server live and says so when the connection is away. With a
-  keyboard or a TV remote, Up at the top of a page reaches it.
+  by play method and leads to Admin → Activity, and lists the scheduled tasks that run with their progress and the
+  library scans that run or wait. In the admin area the button is always there. It follows the server live and says so
+  when the connection is away. With a keyboard or a TV remote, Up at the top of a page reaches it.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.

@@ -34,7 +34,7 @@ public sealed class ServerActivityViewModelTests : IDisposable
     }
 
     private static ServerActivityState Live(params AdminPlaybackSession[] sessions) =>
-        new() { Channels = Everything, Connection = EventsConnection.Live, Sessions = sessions };
+        new() { Channels = Everything, Connection = EventsConnection.Live, Sessions = sessions, Scans = [] };
 
     private static AdminPlaybackSession Session(string id, string method) => new() { SessionId = id, EffectivePlayMethod = method };
 
