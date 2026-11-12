@@ -23,7 +23,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
     public const string AllLibraries = "all";
 
     // The All pill, worded once in the language on screen; the pills find the pick by this instance.
-    private readonly SettingChoice All;
+    private readonly SettingChoice _all;
 
     private readonly LibraryPageApi _pages;
     private readonly INavigationService _navigation;
@@ -45,8 +45,8 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         _pages = pages;
         _navigation = navigation;
         _logger = logger;
-        All = new(AllLibraries, AppText.Get("web.collections.page.filterAll"));
-        SelectedLibrary = All;
+        _all = new(AllLibraries, AppText.Get("web.collections.page.filterAll"));
+        SelectedLibrary = _all;
     }
 
     public ObservableCollection<MediaCard> Cards { get; } = [];
@@ -86,7 +86,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         Clear();
         _server = server;
         _libraries = [.. list.Libraries.Where(l => l.LibraryId.Length > 0 && l.Collections.Count > 0)];
-        LibraryChoices = _libraries.Count > 1 ? [All, .. _libraries.Select(l => new SettingChoice(l.LibraryId, l.LibraryName))] : [];
+        LibraryChoices = _libraries.Count > 1 ? [_all, .. _libraries.Select(l => new SettingChoice(l.LibraryId, l.LibraryName))] : [];
         IsShown = _libraries.Count > 0;
         Refresh();
     }
@@ -107,7 +107,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         _libraryOf.Clear();
         Cards.Clear();
         LibraryChoices = [];
-        SelectedLibrary = All;
+        SelectedLibrary = _all;
         IsShown = false;
         CanLoadMore = false;
         IsLoadingMore = false;
