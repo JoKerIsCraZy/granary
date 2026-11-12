@@ -170,6 +170,9 @@ public sealed partial class BrowseHeroLayoutTests
 
             Assert.Equal(SizesBeforeTheChoice(height, banner), (sizes.RestHeight, sizes.CompactHeight, sizes.RowsTop, sizes.HeadingHeight,
                 sizes.CompactHeadingHeight, sizes.FadeHeight, sizes.Grow, sizes.TextGrow));
+            // Where the text and the banner's buttons stood before there was a choice: the text from the top, the buttons
+            // 26 px above the rows.
+            Assert.Equal(((double?)null, 26d), (sizes.TextBottom, sizes.ButtonsBottom));
         }
     }
 

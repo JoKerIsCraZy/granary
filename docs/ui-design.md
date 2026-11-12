@@ -401,7 +401,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
     - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
       height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from
-      a page 1152 px high, which a 3840 × 1600 screen's is). The rows begin under it, rather than 300 px down.
+      a page 1152 px high, which a 3840 × 1600 screen's is). The rows begin under it, rather than 300 px down. The web
+      takes 66 % of the browser window's height on a wide layout and 54 % on a narrow one; Granary takes 66 % of the
+      page's height at every width. On a page under about 580 px high the hero is at its least, 380 px, and a banner
+      slide with a long overview can lose its last line there.
     - Full's text stands at the hero's foot, as the web's `HeroBanner` has it (`lg:pb-16`): the overview, or the details
       of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
       Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,

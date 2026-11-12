@@ -49,7 +49,9 @@ public static class BrowseHeroLayout
 
     /// <summary>
     /// The full hero's share of the page's height, and its least and its most: the banner of Silo's web
-    /// (<c>HERO_BANNER_SIZE</c> in its <c>lib/design-system.ts</c>, "lg:h-[66vh] min-h-[380px] max-h-[760px]").
+    /// (<c>HERO_BANNER_SIZE</c> in its <c>lib/design-system.ts</c>, "h-[54vh] min-h-[380px] max-h-[760px] lg:h-[66vh]").
+    /// Granary takes the wide layout's 66 % at every width, a desktop window being wide, and of the page's height, which
+    /// is the window's without the title bar, where the web takes the browser window's.
     /// </summary>
     public const double FullShare = 0.66;
 
