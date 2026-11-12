@@ -401,6 +401,12 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 - A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
   text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
   caption while it shows; a recycled card without one shows the plain caption again.
+- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element and no handler to a
+  card: the caption has a fill without colour (one brush for all cards), so the card's own pointer handlers hear the
+  pointer there, and the line under it is found from its place among the text blocks. Core decides which lines to
+  underline and what a title line opens; the card sets `TextDecorations` on the lines that change and takes one of two
+  shared cursors. Only a card a pointer has come to while its title opens a series listens for presses and taps: it
+  handles the press on that line, so the button around it does not click, and opens the series on the tap.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the

@@ -104,6 +104,25 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? BoxSetFilms { get; init; }
 
+    /// <summary>
+    /// The lines under the artwork that are links of their own for the pointer, as on the web's card of this kind
+    /// (<see cref="CardLinks"/>). None for a card whose lines are plain text, as the web's season, episode, collection and
+    /// calendar cards.
+    /// </summary>
+    public CardLines Links { get; init; }
+
+    /// <summary>
+    /// What the title line opens when the title stands for something other than the card: the series of an episode's card,
+    /// as the web's <c>headingHref</c>. Null when the title is the card's own, and for an episode whose series is not known.
+    /// </summary>
+    public string? HeadingId { get; init; }
+
+    /// <summary>
+    /// The episode's title and its code are one link, as on the web's row card (<c>SectionItemCard</c>): the pointer over
+    /// either underlines both. A grid's card (<c>ItemCard</c>) links each by itself.
+    /// </summary>
+    public bool JoinsEpisodeLines { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
         new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }

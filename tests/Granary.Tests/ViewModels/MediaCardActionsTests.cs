@@ -225,6 +225,30 @@ public sealed class MediaCardActionsTests
     }
 
     [Fact]
+    public void AnEpisodeCardsTitleLine_OpensItsSeries()
+    {
+        var actions = Create();
+        var episode = new MediaCard("episode-tvdb-375921-1-1", CatalogItemTypes.Episode, "Lupin") { HeadingId = "series-tvdb-375921" };
+
+        Assert.True(actions.OpenHeading(episode));
+
+        var (route, parameter) = Assert.Single(_navigation.Navigations);
+        Assert.Equal(AppRoute.Item, route);
+        Assert.Equal("series-tvdb-375921", parameter);
+    }
+
+    [Fact]
+    public void ACardWhoseTitleStandsForItself_OpensNothingOfItsOwn()
+    {
+        // Its title line opens the card as a click on its artwork does: the page's own command.
+        var actions = Create();
+
+        Assert.False(actions.OpenHeading(Lupin));
+
+        Assert.Empty(_navigation.Navigations);
+    }
+
+    [Fact]
     public async Task MarkWatched_ShowsAtOnce_AndTellsTheServer()
     {
         _silo.On(HttpMethod.Post, "api/v2/watched/series-tvdb-375921", ScriptedSilo.NoContent());

@@ -83,6 +83,28 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered. A card
   drops its hover look as it leaves the screen, so a card that opened a title is not still hovered when you come back
   to the page; the pointer's next move over it shows the look again.
+  The lines under a card are links of their own for the pointer, as on the web's cards (`hover:underline`): the line
+  under the mouse is underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click
+  or tap on the title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where
+  the server names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
+  Which lines are links is the card's (`MediaCard.Links`, `CardLinks`), by its web twin:
+  - A library title's poster (`ItemCard`: grids, search, a person's titles, a box set's films): the title, an
+    episode's own title and the line under them (year, "S04E01"), each by itself. More Like This shows the same poster;
+    the web's card there (`RecommendationGrid`) has the title only, also a link.
+  - The same poster in a row (`SectionItemCard`: Home, a library's rows, For You): an episode's title and its code are
+    one link, so the pointer over either underlines both, also between them (`MediaCard.JoinsEpisodeLines`).
+  - A Continue Watching or Next Up card (`ContinueWatchingCard`): the title, the episode's line and the time left or
+    "Next Episode"; the last only as far as its text reaches, and never the "NEW SEASON" pill. A movie's year, a line
+    the web's card does not have, opens the movie as its other lines do.
+  - A box set's card (`BoxSetCard`), a title from TMDB on Requests and Discover (`RequestPosterCard`) and a watchlist
+    title (`WatchlistTitleCard`): the title and the line under it; a watchlist title's status is plain text.
+  - No links, as on the web, whose cards of these kinds underline nothing: a title page's seasons and episodes, More
+    Episodes, collections and the calendar. Nor on a card that opens nothing (a film's own card in its box set's row, a
+    TMDB title without a page), on the player's On Deck, where a click plays, and while a grid selects (History's
+    Select), where a click picks.
+  A line is a link over the whole width of the caption, as the web's block links. Underlining changes no size, so no
+  text moves. A card that is recycled, left by a click or shown again never keeps an underline: it goes with the
+  hover look.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
@@ -132,7 +154,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   archive by type, era, rating, or genre.", its panel "Filters are locked to this source.", and the cards as posters,
   Continue Watching too. No count: a section's total is only a lower bound.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
-  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. A card's ⋮ menu is the web's
+  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. The links under a card are for the mouse,
+  a pen and a finger only: for the keyboard, a remote and a screen reader the card stays one stop with one name, and
+  Enter opens the card itself. A card's ⋮ menu is the web's
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
   Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
