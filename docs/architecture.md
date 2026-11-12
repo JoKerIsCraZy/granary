@@ -1048,7 +1048,10 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   administrator's channels too and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
   disconnected), on to `ServerActivity`. The lane takes frames up to 1 MiB whole and cuts a larger one to its head
   (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
-  notification count live on (docs/api-contract.md, 12).
+  notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every
+  `sessions` and `tasks` frame, the preparation queue's but its progress readings) never has its payload kept: past
+  its first 4 KiB the socket drops the rest as it arrives (`FrameHeadFilter`, `EventsFrames.TakesWhole`), and a
+  shorter one is parsed without its `data`.
 - **`ServerActivity`** (Core, a singleton) keeps a `ServerActivityState`, a record that is replaced and never changed:
   the administrator's channels the server accepted, the connection's state, and each source's list or null (the
   streams, the tasks and the preparation queue are read; the scans come with the stream alone, with the libraries'

@@ -14,7 +14,7 @@ public sealed partial class ServerActivity
     /// </summary>
     public static readonly TimeSpan PreparationsRefresh = TimeSpan.FromSeconds(60);
 
-    private const string PreparationProgress = "download_preparation.progress";
+    private const string PreparationProgress = EventsFrames.PreparationProgress;
     private const string StorageChanged = "download_storage.changed";
 
     // Both functions run under the lock, where they also set the timer that reads the list again.

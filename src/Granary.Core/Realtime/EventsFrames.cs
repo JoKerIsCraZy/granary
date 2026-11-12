@@ -52,7 +52,8 @@ public static class EventsChannels
 
 /// <summary>
 /// A frame of the events stream. <see cref="Data"/> is the event's or snapshot's payload; <see cref="Accepted"/> and
-/// <see cref="Rejected"/> name the channels a <c>subscribed</c> frame took and turned down.
+/// <see cref="Rejected"/> name the channels a <c>subscribed</c> frame took and turned down, <see cref="Available"/> the
+/// ones a <c>hello</c> frame offers.
 /// </summary>
 public sealed record EventsFrame(string Type)
 {
@@ -61,15 +62,23 @@ public sealed record EventsFrame(string Type)
     /// <summary>The event's name: <c>user_state.changed</c>, <c>catalog.item.changed</c>, <c>notification.created</c>, …</summary>
     public string? Event { get; init; }
 
+    /// <summary>The payload; empty for a frame that is only a cue (<see cref="EventsFrames.IsCue"/>) or was cut.</summary>
     public JsonElement Data { get; init; }
+
+    /// <summary>
+    /// On a <c>hello</c> frame: the channels the server gives this connection (<c>available_channels</c>); null when it
+    /// names none.
+    /// </summary>
+    public IReadOnlyList<string>? Available { get; init; }
 
     public IReadOnlyList<string> Accepted { get; init; } = [];
 
     public IReadOnlyList<string> Rejected { get; init; } = [];
 
     /// <summary>
-    /// The frame was larger than the lane takes (<see cref="EventsLane.MaxFrameBytes"/>): only what its head names is
-    /// here, and <see cref="Data"/> is empty. It still says that its channel has news.
+    /// The lane did not take the frame whole: it was larger than <see cref="EventsLane.MaxFrameBytes"/>, or a long one
+    /// that is only a cue. Only what its head names is here, and <see cref="Data"/> is empty. It still says that its
+    /// channel has news.
     /// </summary>
     public bool IsCut { get; init; }
 
@@ -89,6 +98,9 @@ public sealed record EventsFrame(string Type)
 /// <summary>Reads the server's frames and writes the subscription.</summary>
 public static class EventsFrames
 {
+    /// <summary>A reading of how far one preparation job is: the one frame of its channel whose payload is used.</summary>
+    internal const string PreparationProgress = "download_preparation.progress";
+
     /// <summary><c>{ "type": "subscribe", "request_id", "channels" }</c>, sent once the server said hello.</summary>
     public static string Subscribe(IReadOnlyList<string> channels, string requestId)
     {
@@ -112,7 +124,7 @@ public static class EventsFrames
 
     /// <summary>
     /// The frame in <paramref name="text"/>; null for what is not one (not JSON, not an object, no type). A text that ends
-    /// before its JSON does is what the socket kept of a frame too large to take: it is read by what its head names
+    /// before its JSON does is what the socket kept of a frame it did not take whole: it is read by what its head names
     /// (<see cref="EventsFrame.IsCut"/>).
     /// </summary>
     public static EventsFrame? Parse(string text)
@@ -129,36 +141,63 @@ public static class EventsFrames
             {
                 return null;
             }
-            return new EventsFrame(type.GetString()!)
+            string kind = type.GetString()!;
+            string? channel = Member(root, "channel");
+            string? name = Member(root, "event");
+            return new EventsFrame(kind)
             {
-                Channel = Member(root, "channel"),
-                Event = Member(root, "event"),
-                // The document goes with this call: the payload is kept apart from it.
-                Data = root.TryGetProperty("data", out var data) ? data.Clone() : default,
+                Channel = channel,
+                Event = name,
+                // The document goes with this call: a payload that is used is kept apart from it.
+                Data = !IsCue(kind, channel, name) && root.TryGetProperty("data", out var data) ? data.Clone() : default,
                 Accepted = Accepted(root),
                 Rejected = Rejected(root),
+                Available = Available(root),
             };
         }
         catch (JsonException)
         {
-            return Head(text);
+            return Head(System.Text.Encoding.UTF8.GetBytes(text), out string? type, out string? channel, out string? name) && type is not null
+                ? new EventsFrame(type) { Channel = channel, Event = name, IsCut = true }
+                : null;
         }
     }
 
-    // The server writes type, channel and event before the payload, so the head of a cut frame names them. Read as a
-    // block that is not the last one, the reader stops where the text ends instead of failing; text that is wrong before
-    // that is no frame.
-    private static EventsFrame? Head(string text)
+    /// <summary>
+    /// A frame that only says its list changed: Granary reads the list from the server and never the frame's payload.
+    /// Every event and snapshot of <c>sessions</c> and <c>tasks</c>, and of <c>download_preparations</c> all but a
+    /// progress reading.
+    /// </summary>
+    public static bool IsCue(string? type, string? channel, string? name) =>
+        type is EventsFrameTypes.Event or EventsFrameTypes.Snapshot && channel switch
+        {
+            EventsChannels.Sessions or EventsChannels.Tasks => true,
+            EventsChannels.DownloadPreparations => name != PreparationProgress,
+            _ => false,
+        };
+
+    /// <summary>
+    /// Whether a frame that starts with <paramref name="head"/> is worth keeping whole: not when its head says it is
+    /// only a cue (<see cref="IsCue"/>). An administrator's <c>sessions.replaced</c> carries every running stream,
+    /// several hundred kilobytes each time one of them changes. A head that names nothing is kept.
+    /// </summary>
+    public static bool TakesWhole(ReadOnlySpan<byte> head) =>
+        !Head(head, out string? type, out string? channel, out string? name) || !IsCue(type, channel, name);
+
+    // The server writes type, channel and event before the payload, so the head of a frame names them. Read as a block
+    // that is not the last one, the reader stops where the bytes end instead of failing. False for what is wrong before
+    // that, and for a whole object, which is read as one.
+    private static bool Head(ReadOnlySpan<byte> utf8, out string? type, out string? channel, out string? name)
     {
-        string? type = null;
-        string? channel = null;
-        string? name = null;
+        type = null;
+        channel = null;
+        name = null;
         try
         {
-            var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(text), isFinalBlock: false, state: default);
+            var reader = new Utf8JsonReader(utf8, isFinalBlock: false, state: default);
             if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
             {
-                return null;
+                return false;
             }
             while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
             {
@@ -184,18 +223,19 @@ public static class EventsFrames
                         break;
                 }
             }
-            // An object that ended was whole, and whole JSON is read above: this one is something else.
-            if (reader.TokenType == JsonTokenType.EndObject && reader.CurrentDepth == 0)
-            {
-                return null;
-            }
+            return reader.TokenType != JsonTokenType.EndObject || reader.CurrentDepth != 0;
         }
         catch (JsonException)
         {
-            return null;
+            return false;
         }
-        return type is null ? null : new EventsFrame(type) { Channel = channel, Event = name, IsCut = true };
     }
+
+    // Null when the hello names no channels: an older server, or a connection it gives none.
+    private static List<string>? Available(JsonElement root) =>
+        root.TryGetProperty("available_channels", out var channels) && channels.ValueKind == JsonValueKind.Array
+            ? [.. channels.EnumerateArray().Where(entry => entry.ValueKind == JsonValueKind.String).Select(entry => entry.GetString()!)]
+            : null;
 
     private static List<string> Accepted(JsonElement root) =>
         root.TryGetProperty("channels", out var channels) && channels.ValueKind == JsonValueKind.Array

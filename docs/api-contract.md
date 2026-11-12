@@ -2505,6 +2505,13 @@ snapshot and every `sessions.replaced` carry up to 200 rows of the older row sha
 titles (0.4 MB), about 4 KB with long ones (0.8 MB), and titles have no upper bound. Granary reads those frames only
 as a cue to re-read `GET /admin/sessions`, so nothing is lost with the payload.
 
+For the same reason a frame that is only such a cue is never kept whole, whatever its size: every `event` and
+`snapshot` of `sessions` and `tasks`, and of `download_preparations` all but `download_preparation.progress`
+(`EventsFrames.IsCue`). Once such a frame is longer than its first 4 KiB, the socket asks what its head names and
+drops the rest as it arrives (`EventsFrames.TakesWhole`), so a `sessions.replaced` costs a 4 KiB buffer instead of the
+whole snapshot each time a stream changes; a shorter one is parsed without its `data`. Frames of every other channel
+are taken as before.
+
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
   later connection back after more than 5 s without one (the lane's first has no gap): one

@@ -22,11 +22,15 @@ public interface IRealtimeSocket : IAsyncDisposable
     Task<string?> ReceiveAsync(CancellationToken cancellationToken);
 }
 
+/// <summary>Says from the first bytes of a frame whether the rest of it is worth keeping.</summary>
+public delegate bool FrameHeadFilter(ReadOnlySpan<byte> head);
+
 /// <summary>
 /// A socket over <see cref="ClientWebSocket"/>. Frames above <c>maxFrameBytes</c> close it: 64 KiB by default, the
 /// playback control lane's limit. With <c>oversizeHeadBytes</c> the connection stays instead: the rest of such a frame is
 /// read and dropped, and its first bytes are handed on, which is no whole JSON any more (the events stream, where one
-/// frame may hold every running playback session).
+/// frame may hold every running playback session). With <c>takesWhole</c>, a frame longer than that head is first
+/// shown to it, and one it turns down is cut to its head the same way, however small: its payload is never kept.
 /// </summary>
 public sealed class WebSocketRealtimeSocket : IRealtimeSocket
 {
@@ -37,14 +41,20 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
     private readonly ClientWebSocket _socket = new();
     private readonly int _maxFrameBytes;
     private readonly int _oversizeHeadBytes;
+    private readonly FrameHeadFilter? _takesWhole;
 
-    public WebSocketRealtimeSocket(int maxFrameBytes = DefaultMaxFrameBytes, int oversizeHeadBytes = 0)
+    public WebSocketRealtimeSocket(int maxFrameBytes = DefaultMaxFrameBytes, int oversizeHeadBytes = 0, FrameHeadFilter? takesWhole = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxFrameBytes, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(oversizeHeadBytes);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(oversizeHeadBytes, maxFrameBytes);
+        if (takesWhole is not null && oversizeHeadBytes == 0)
+        {
+            throw new ArgumentException("A frame can only be judged by a head that is kept.", nameof(takesWhole));
+        }
         _maxFrameBytes = maxFrameBytes;
         _oversizeHeadBytes = oversizeHeadBytes;
+        _takesWhole = takesWhole;
         _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
     }
 
@@ -73,8 +83,9 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
         using var closing = cancellationToken.Register(() => _ = Task.Run(CloseAsync));
         var message = new ArrayBufferWriter<byte>();
         var chunk = new byte[4096];
-        // The frame grew past the limit: nothing more of it is kept.
-        bool oversize = false;
+        // The frame grew past the limit, or its head says it is not worth keeping: nothing more of it is kept.
+        bool cut = false;
+        bool judged = false;
         while (true)
         {
             var received = await _socket.ReceiveAsync(chunk, CancellationToken.None).ConfigureAwait(false);
@@ -82,18 +93,30 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
             {
                 return null;
             }
-            if (!oversize && message.WrittenCount + received.Count > _maxFrameBytes)
+            if (!cut && message.WrittenCount + received.Count > _maxFrameBytes)
             {
                 if (_oversizeHeadBytes == 0)
                 {
                     await _socket.CloseOutputAsync(WebSocketCloseStatus.MessageTooBig, null, cancellationToken).ConfigureAwait(false);
                     return null;
                 }
-                oversize = true;
+                cut = true;
+                // The head may still lie in the chunk that crossed the limit.
+                int missing = Math.Min(_oversizeHeadBytes - message.WrittenCount, received.Count);
+                if (missing > 0)
+                {
+                    message.Write(chunk.AsSpan(0, missing));
+                }
             }
-            if (!oversize)
+            else if (!cut)
             {
                 message.Write(chunk.AsSpan(0, received.Count));
+                // Asked once, as soon as the head is there and more of the frame is still to come.
+                if (!judged && _takesWhole is { } takesWhole && !received.EndOfMessage && message.WrittenCount >= _oversizeHeadBytes)
+                {
+                    judged = true;
+                    cut = !takesWhole(message.WrittenSpan[.._oversizeHeadBytes]);
+                }
             }
             if (received.EndOfMessage)
             {
@@ -102,7 +125,7 @@ public sealed class WebSocketRealtimeSocket : IRealtimeSocket
                 {
                     return "";
                 }
-                var kept = oversize ? message.WrittenSpan[..Math.Min(_oversizeHeadBytes, message.WrittenCount)] : message.WrittenSpan;
+                var kept = cut ? message.WrittenSpan[..Math.Min(_oversizeHeadBytes, message.WrittenCount)] : message.WrittenSpan;
                 return Encoding.UTF8.GetString(kept);
             }
         }

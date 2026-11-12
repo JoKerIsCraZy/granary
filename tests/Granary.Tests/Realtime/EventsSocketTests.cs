@@ -130,6 +130,82 @@ public sealed class EventsSocketTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ALongFrameThatIsOnlyACue_IsCutToItsHead_AndOneWhosePayloadIsUsedIsTakenWhole()
+    {
+        var token = TestContext.Current.CancellationToken;
+        var frames = new List<EventsFrame>();
+        var gotScans = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // The app's sockets, as CoreServiceCollectionExtensions makes them.
+        await using var lane = new EventsLane(new EventsApi(_silo.Http),
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes, EventsFrames.TakesWhole), TimeProvider.System,
+            _logs.For<EventsLane>());
+        lane.Follow(_server, ["catalog", "sessions", "scans"], frame =>
+        {
+            lock (frames)
+            {
+                frames.Add(frame);
+            }
+            if (frame.Channel == "scans")
+            {
+                gotScans.TrySetResult();
+            }
+        });
+        var context = await _listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10), token);
+        var accepted = await context.AcceptWebSocketAsync("silo.events.v2");
+        using var socket = accepted.WebSocket;
+        await SendAsync(socket, """{ "type": "hello", "schema_version": 1, "connection_id": "c1", "available_channels": ["catalog", "sessions", "scans"], "required_action": "subscribe" }""", token);
+        await ReceiveAsync(socket, token);
+        await SendAsync(socket, """{ "type": "subscribed", "request_id": "req-1", "channels": ["catalog", "sessions", "scans"] }""", token);
+
+        // 200 streams of about 1 KB each: well under what the lane takes whole, and nothing Granary reads.
+        string row = $$"""{"session_id":"s","media_title":"{{new string('t', 1000)}}"}""";
+        string rows = string.Join(",", Enumerable.Repeat(row, 200));
+        await SendAsync(socket, $$"""{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e1","timestamp":"t","data":[{{rows}}]}""", token);
+        // A short one of the same kind comes whole, without its payload.
+        await SendAsync(socket, """{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e2","timestamp":"t","data":[{"session_id":"s"}]}""", token);
+        // As long as the first, but its runs are what the indicator shows.
+        string run = $$"""{"id":"a","library_id":1,"mode":"subtree","path":"/media/{{new string('p', 1000)}}","trigger":"manual","status":"accepted"}""";
+        await SendAsync(socket, $$"""{"type":"snapshot","channel":"scans","timestamp":"t","data":[{{string.Join(",", Enumerable.Repeat(run, 200))}}]}""", token);
+        await gotScans.Task.WaitAsync(TimeSpan.FromSeconds(10), token);
+
+        lock (frames)
+        {
+            Assert.Equal([(null, false), ("sessions", true), ("sessions", false), ("scans", false)], frames.Select(f => (f.Channel, f.IsCut)));
+            Assert.Equal("sessions.replaced", frames[1].Event);
+            Assert.Equal(JsonValueKind.Undefined, frames[1].Data.ValueKind);
+            Assert.Equal(JsonValueKind.Undefined, frames[2].Data.ValueKind);
+            Assert.Equal(200, frames[3].Data.GetArrayLength());
+        }
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await lane.StopAsync();
+    }
+
+    [Fact]
+    public async Task AFrameThatCrossesASmallLimitInItsFirstBytes_StillComesWithItsHead()
+    {
+        var token = TestContext.Current.CancellationToken;
+        // The limit lies under what one read brings: the head is in the read that crosses it.
+        await using var client = new WebSocketRealtimeSocket(maxFrameBytes: 1024, oversizeHeadBytes: 512);
+        var connecting = client.ConnectAsync(new UriBuilder(_server) { Scheme = "ws", Path = "/x" }.Uri, ["p"], token);
+        var context = await _listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(10), token);
+        var accepted = await context.AcceptWebSocketAsync("p");
+        using var socket = accepted.WebSocket;
+        await connecting;
+        string frame = string.Concat(Enumerable.Range(0, 2048).Select(index => (char)('a' + (index % 26))));
+
+        await SendAsync(socket, frame, token);
+        await SendAsync(socket, "next", token);
+
+        Assert.Equal(frame[..512], await client.ReceiveAsync(token).WaitAsync(TimeSpan.FromSeconds(10), token));
+        // Nothing of the long frame is left in the way of the next one.
+        Assert.Equal("next", await client.ReceiveAsync(token).WaitAsync(TimeSpan.FromSeconds(10), token));
+    }
+
+    [Fact]
+    public void ASocketThatJudgesFrames_NeedsAHeadToJudgeBy() =>
+        Assert.Throws<ArgumentException>(() => new WebSocketRealtimeSocket(takesWhole: _ => true));
+
+    [Fact]
     public async Task ASocketWithoutAHead_ClosesOnAFrameTooLarge()
     {
         var token = TestContext.Current.CancellationToken;
