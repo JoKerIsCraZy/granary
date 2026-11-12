@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.IO;
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +26,7 @@ public sealed class KeptPlaybackSettings
     private readonly string _path;
     private readonly ISessionManager _session;
     private readonly ILogger<KeptPlaybackSettings> _logger;
+    private readonly DownloadStore? _downloads;
     private readonly Lock _gate = new();
 
     // Under the lock: each owner's batches by their keys, with the JSON they were kept as, to tell a change. What the file
@@ -38,12 +40,17 @@ public sealed class KeptPlaybackSettings
     private Task _latestSave = Task.CompletedTask;
     private bool _saveWaits;
 
-    public KeptPlaybackSettings(string path, ISessionManager session, ILogger<KeptPlaybackSettings> logger)
+    /// <param name="downloads">
+    /// Says which accounts are being signed out with their downloads (<see cref="DownloadStore.IsClearPending"/>): nothing is
+    /// kept for those meanwhile.
+    /// </param>
+    public KeptPlaybackSettings(string path, ISessionManager session, ILogger<KeptPlaybackSettings> logger, DownloadStore? downloads = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         _path = Path.GetFullPath(path);
         _session = session;
         _logger = logger;
+        _downloads = downloads;
     }
 
     /// <summary><c>playback-settings.json</c> in the data folder.</summary>
@@ -71,7 +78,11 @@ public sealed class KeptPlaybackSettings
             ? Key(server.Id, account.Id) + profile
             : null;
 
-    /// <summary>Keeps the server's answer to a batch of keys for <paramref name="owner"/> (<see cref="Owner"/>).</summary>
+    /// <summary>
+    /// Keeps the server's answer to a batch of keys for <paramref name="owner"/> (<see cref="Owner"/>), unless its account is
+    /// being signed out with its downloads: the sign-out forgets what is kept (<see cref="Remove"/>) while the account is
+    /// still signed in, and an answer that comes before the sign-in ends would keep it anew.
+    /// </summary>
     public void Keep(string owner, IReadOnlyList<string> keys, EffectiveSettings values)
     {
         ArgumentException.ThrowIfNullOrEmpty(owner);
@@ -81,6 +92,12 @@ public sealed class KeptPlaybackSettings
         string json = JsonSerializer.Serialize(values, KeptSettingsJsonContext.Default.EffectiveSettings);
         lock (_gate)
         {
+            // Asked under the lock: the sign-out marks its clear before it forgets, so an answer that saw no clear is
+            // kept before the forgetting, and goes with it.
+            if (IsBeingSignedOut(owner))
+            {
+                return;
+            }
             var owners = Loaded();
             if (!owners.TryGetValue(owner, out var batches))
             {
@@ -136,6 +153,12 @@ public sealed class KeptPlaybackSettings
 
     // Ids are the server's and Granary's own and hold no slash.
     private static string Key(string serverEntryId, string accountId) => serverEntryId + "/" + accountId + "/";
+
+    // The owner's account is being signed out, or its server removed, and the downloads go with it (DownloadSignOut): until
+    // that ended, whether it signed the account out or failed.
+    private bool IsBeingSignedOut(string owner) =>
+        _downloads is not null && owner.Split('/') is [var server, var account, var profile]
+        && _downloads.IsClearPending(new DownloadScope(server, account, profile));
 
     // Under the lock. The file is read at the first use; one that could not be read then is read again by the next write.
     private Dictionary<string, Dictionary<string, Kept>> Loaded()

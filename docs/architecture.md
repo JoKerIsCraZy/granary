@@ -1512,7 +1512,11 @@ while the server answers.
   title's subtitle preference is the title's own, since the server resolves
   it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
   the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
-  that takes the downloads, and a server's removal, forget the kept settings of those accounts.
+  that takes the downloads, and a server's removal, forget the kept settings of those accounts. The account is still
+  signed in then, while the server hears the deletes, and a settings read that answers in that time would keep them
+  anew: `Keep` keeps nothing for an account whose clear is under way (`DownloadStore.IsClearPending`, from `MarkCleared`
+  to `EndClear`; see "Signing out"). After a sign-out that failed the clear has ended, and the account's next read is
+  kept as ever.
 - **Where it starts.** Start over starts at 0. A resume starts where the profile left the title: the server's point when
   the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). This PC's own also holds while it has a position
   of the title the server has not answered for (`OfflineProgressQueue.HasUnsent`): that one is the newer, whatever the

@@ -40,7 +40,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
         _progress = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
         _settings = new(() => new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
-            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>()));
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>(), _h.Store));
     }
 
     public async ValueTask DisposeAsync()
@@ -242,6 +242,51 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.Single(_progress.Entries(OtherServer));
         Assert.DoesNotContain("mv_dl_1", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "offline-progress.json"), Token),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ASettingsAnswerThatComesWhileTheAccountIsSignedOut_IsNotKeptForIt()
+    {
+        await KeptAsync("dl_1");
+        var answer = new Granary.Core.Api.Settings.EffectiveSettings([], 2);
+        _settings.Value.Keep("srv1/1/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        // A read of the settings answers while the server hears the delete: the kept ones went already, and the account is
+        // still signed in.
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () =>
+        {
+            _settings.Value.Keep("srv1/1/7", ["a"], answer);
+            _settings.Value.Keep("srv1/1/8", ["b"], answer);
+            _settings.Value.Keep("srv1/2/7", ["a"], answer);
+            return ScriptedSilo.NoContent()();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _settings.Value.LatestSave;
+
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        Assert.Null(_settings.Value.Find("srv1/1/8", ["b"]));
+        // Another account's answer is that account's to keep.
+        Assert.NotNull(_settings.Value.Find("srv1/2/7", ["a"]));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "playback-settings.json"), Token),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AfterASignOutThatEndedWithTheAccountStillSignedIn_ItsSettingsAreKeptAgain()
+    {
+        var answer = new Granary.Core.Api.Settings.EffectiveSettings([], 1);
+
+        using (await NewSignOut().ClearAsync("srv1", "1", Token))
+        {
+            _settings.Value.Keep("srv1/1/7", ["a"], answer);
+            Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        }
+
+        // The sign-out failed, or another account's was not the one to sign out: the next play's read is kept as ever.
+        _settings.Value.Keep("srv1/1/7", ["a"], answer);
+        Assert.NotNull(_settings.Value.Find("srv1/1/7", ["a"]));
     }
 
     [Fact]
