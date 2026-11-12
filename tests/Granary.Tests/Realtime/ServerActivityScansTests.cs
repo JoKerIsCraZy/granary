@@ -126,11 +126,115 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""");
         await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "y", "timestamp": "t", "data": { "id": 7 } }""");
-        await _harness.PushedAsync(socket, """{ "type": "snapshot", "channel": "scans", "timestamp": "t", "data": { "runs": [] } }""");
-        // A snapshot too large to take is cut to its head and says nothing of its runs.
-        await _harness.PushedAsync(socket, """{"type":"snapshot","channel":"scans","timestamp":"t","data":[{"id":"q","library_id":1,"mode":"lib""");
+        // An event too large to take is cut to its head and says nothing of its run.
+        await _harness.PushedAsync(socket, """{"type":"event","channel":"scans","event":"scan.progress","event_id":"z","timestamp":"t","data":{"id":"a","library_id":1,"mode":"lib""");
 
         Assert.Equal([("a", "running")], Scans);
+        Assert.False(_harness.State.ScansMayBeMore);
+    }
+
+    [Theory]
+    // Too large to take: cut to its head.
+    [InlineData("""{"type":"snapshot","channel":"scans","timestamp":"t","data":[{"id":"q","library_id":1,"mode":"lib""")]
+    [InlineData("""{ "type": "snapshot", "channel": "scans", "timestamp": "t", "data": { "runs": [] } }""")]
+    [InlineData("""{ "type": "snapshot", "channel": "scans", "timestamp": "t", "data": null }""")]
+    public async Task ASnapshotThatCannotBeRead_LeavesTheScansUnknown_NotAsTheyWere(string snapshot)
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
+
+        await _harness.PushedAsync(socket, snapshot);
+
+        // Neither the list from before nor "none": nobody knows, and there may be some.
+        Assert.Null(_harness.State.Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+
+        // The runs the stream tells of from then on are the least there is, until a snapshot that can be read.
+        await _harness.PushedAsync(socket, Event("scan.started", Run("b", "running")));
+        Assert.Equal([("b", "running")], Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+        await _harness.PushedAsync(socket, Snapshot(Run("b", "running"), Run("c", "accepted")));
+        Assert.Equal(2, _harness.State.Scans!.Count);
+        Assert.False(_harness.State.ScansMayBeMore);
+    }
+
+    [Fact]
+    public async Task ALaterConnectionThatSendsNoSnapshot_ForgetsTheScansItCouldNotConfirm()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, Snapshot(Run("a", "running"), Run("b", "accepted")));
+        socket.Close();
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(1), "the wait before the next connection");
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+        await _harness.OpenedAsync(1, EventsChannels.Scans);
+        int changes = 0;
+        _harness.Activity.Changed += (_, _) => Interlocked.Increment(ref changes);
+
+        // "a" may have ended while the stream was away: its end is never sent again.
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait - TimeSpan.FromMilliseconds(1));
+        Assert.Equal(2, _harness.State.Scans!.Count);
+        _harness.Library.Clock.Advance(TimeSpan.FromMilliseconds(1));
+
+        Assert.Null(_harness.State.Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+        // The indicator hears of it (the libraries' names, read again meanwhile, may have told it more).
+        Assert.True(Volatile.Read(ref changes) >= 1);
+    }
+
+    [Fact]
+    public async Task AFirstConnectionThatSendsNoSnapshot_MayStillHaveScans()
+    {
+        await _harness.StartedAsync(EventsChannels.Scans);
+
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
+
+        Assert.Null(_harness.State.Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+    }
+
+    [Fact]
+    public async Task ASnapshotInTime_StopsTheWaitForIt()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
+
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait + ServerActivity.ScansSnapshotWait);
+
+        Assert.Equal([("a", "running")], Scans);
+        Assert.False(_harness.State.ScansMayBeMore);
+    }
+
+    [Fact]
+    public async Task AFullSnapshot_MayNotBeAllThereIs_UntilASnapshotThatIsNotFull()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, Snapshot([.. Enumerable.Range(0, ServerActivity.ScanSnapshotLimit).Select(index => Run("q" + index, "accepted"))]));
+        Assert.True(_harness.State.ScansMayBeMore);
+
+        // One of the known ones ends: the scan the snapshot left out is still there.
+        await _harness.PushedAsync(socket, Event("scan.cancelled", Run("q0", "cancelled")));
+        Assert.Equal(ServerActivity.ScanSnapshotLimit - 1, _harness.State.Scans!.Count);
+        Assert.True(_harness.State.ScansMayBeMore);
+
+        await _harness.PushedAsync(socket, Snapshot(Run("q1", "running"), Run("late", "accepted")));
+        Assert.False(_harness.State.ScansMayBeMore);
+    }
+
+    [Fact]
+    public async Task WithoutTheChannelOnALaterConnection_NothingIsLeftOfTheScans()
+    {
+        _harness.Library.Answer("api/v2/admin/sessions", AdminPayloads.NoSessions);
+        var socket = await _harness.StartedAsync(EventsChannels.Scans, EventsChannels.Sessions);
+        await _harness.PushedAsync(socket, Snapshot([.. Enumerable.Range(0, ServerActivity.ScanSnapshotLimit).Select(index => Run("q" + index, "accepted"))]));
+        socket.Close();
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(1), "the wait before the next connection");
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+
+        await _harness.OpenedAsync(1, EventsChannels.Sessions);
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
+
+        Assert.Null(_harness.State.Scans);
+        Assert.False(_harness.State.ScansMayBeMore);
     }
 
     [Fact]

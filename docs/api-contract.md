@@ -2710,8 +2710,17 @@ What the indicator reads, each source by itself (a source the server does not of
   carries one run, which takes its place by `id`, joins the list while its `status` is `accepted` or `running`, or
   leaves it. A run is `{ "id", "library_id" (a number), "mode" (`library`, `subtree`, `file`), "path"?, "trigger",
   "status", "started_at"?, "completed_at"?, "error_message"?, "result"?: { "message"?, "total_files"?,
-  "files_processed"?, … } }`. With 500 runs known there may be more: the counts are then "at least". What was known
-  stays while the stream is away and until the next connection's snapshot. The libraries' names for the rows come from
+  "files_processed"?, … } }`. A snapshot of 500 runs may leave some out: the counts are then "at least", and stay so
+  until a snapshot of fewer, however many of the known runs end meanwhile (the web judges by the number it knows at
+  the moment, so a run that ends makes its count exact again). What was known stays while the stream is away and
+  until the next connection's snapshot, which the server writes right after `subscribed`; when it has not come after
+  10 s (the server could not build it and sent an `error` frame), or cannot be read, the scans count as not known
+  rather than as they were, since an end that happened while the stream was away, or that the server dropped for a
+  slow reader (its hub keeps 64 events per connection), is never sent again. Not known means neither a list nor
+  "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
+  0.6 to 0.9 KB with its `result` (thirteen counters, `phase`, `message`, `current_scope`), plus its `path`, so 500 of
+  them are 0.15 to 0.5 MB; a snapshot passes the 1 MiB a frame may have (12) only with paths of about 1.5 KB on
+  average, and is then such a snapshot that cannot be read. The libraries' names for the rows come from
   `GET /api/v2/libraries` (7.16), read with each connection that was given the channel and once more for a scan of a
   library the names do not hold. Sources: `silo-server/internal/events/scan_registry.go`,
   `internal/api/handlers/events_ws.go` (`maxRealtimeScanSnapshotRuns`).

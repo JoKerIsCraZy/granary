@@ -30,6 +30,13 @@ public sealed record ServerActivityState
     /// </summary>
     public IReadOnlyList<AdminScanRun>? Scans { get; init; }
 
+    /// <summary>
+    /// There may be more scans than <see cref="Scans"/> holds: the last snapshot was full
+    /// (<see cref="ServerActivity.ScanSnapshotLimit"/>), or the connection's snapshot could not be read or never came.
+    /// It stays so until a snapshot that is whole says otherwise, however many of the known scans end meanwhile.
+    /// </summary>
+    public bool ScansMayBeMore { get; init; }
+
     /// <summary>The libraries' names by id, for the scans' rows; null while they are not read.</summary>
     public FrozenDictionary<string, string>? LibraryNames { get; init; }
 
@@ -71,6 +78,7 @@ public sealed partial class ServerActivity : IDisposable
     private readonly Reread _libraries;
     private readonly Reread _preparations;
     private readonly ITimer _preparationsDue;
+    private readonly ITimer _scansOverdue;
     private readonly Reread[] _rereads;
     private Following? _following;
     private long _feed;
@@ -98,6 +106,7 @@ public sealed partial class ServerActivity : IDisposable
         _libraries = LibrariesSource();
         _preparations = PreparationsSource();
         _preparationsDue = time.CreateTimer(_ => OnPreparationsDue(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _scansOverdue = time.CreateTimer(_ => OnScansOverdue(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _rereads = [_sessions, _tasks, _libraries, _preparations];
     }
 
@@ -123,6 +132,7 @@ public sealed partial class ServerActivity : IDisposable
             reread.Window.Dispose();
         }
         _preparationsDue.Dispose();
+        _scansOverdue.Dispose();
     }
 
     /// <summary>
@@ -222,8 +232,8 @@ public sealed partial class ServerActivity : IDisposable
     private void SubscribedLocked(EventsFrame frame)
     {
         var channels = frame.Accepted.Intersect(EventsChannels.Admin).ToFrozenSet(StringComparer.Ordinal);
-        // The scans known so far stay until this connection's snapshot replaces them; without the channel they are gone.
-        _state = _state with { Channels = channels, Scans = channels.Contains(EventsChannels.Scans) ? _state.Scans : null };
+        _state = _state with { Channels = channels };
+        ScansSubscribedLocked(channels.Contains(EventsChannels.Scans));
         foreach (var reread in _rereads)
         {
             // A list that was missing is asked for again with every connection.
@@ -279,6 +289,8 @@ public sealed partial class ServerActivity : IDisposable
         _askedLibraries.Clear();
         _readingsDuringRead.Clear();
         _preparationsDue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _awaitsScans = false;
+        _scansOverdue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         return previous;
     }
 
