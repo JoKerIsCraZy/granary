@@ -965,6 +965,142 @@
       "value": "No se encontraron elementos."
     }
   ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "Se borrarán el historial de visualización, el estado de visto y el progreso de reanudación de este elemento para este perfil."
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se borrarán el historial de visualización, el estado de visto y el progreso de reanudación de "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " elemento seleccionado para este perfil."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se borrarán el historial de visualización, el estado de visto y el progreso de reanudación de "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " de elementos seleccionados para este perfil."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se borrarán el historial de visualización, el estado de visto y el progreso de reanudación de "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " elementos seleccionados para este perfil."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "Se borrarán el historial de visualización, los episodios vistos y el progreso de reanudación de esta serie para este perfil."
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "¿Quitar los datos de visualización?"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "¿Quitar los datos de visualización seleccionados?"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "¿Quitar los datos de visualización de la serie?"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se quitaron los datos de reproducción"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se quitaron los datos de reproducción de "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de elementos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se quitaron los datos de reproducción de "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " elementos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.letters.letterNoTitles": [
     {
       "type": 1,
@@ -1051,6 +1187,18 @@
       "value": "Ir a la letra"
     }
   ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "Todo el contenido"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "Episodios"
+    }
+  ],
   "web.catalog.mediaType.movies": [
     {
       "type": 0,
@@ -1081,16 +1229,150 @@
       "value": "Filtra el archivo por tipo, época, calificación o género."
     }
   ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "Borrar"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "Listo"
     }
   ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "Películas y series que marcaste como favoritos."
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "Historial"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "Al quitar elementos se borran el historial de visualización, el estado de visto y el progreso de reanudación para este perfil."
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "Historial de visualización"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "Todo lo que viste recientemente."
+    }
+  ],
   "web.catalog.page.people": [
     {
       "type": 0,
       "value": "Personas"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "Quitar"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "Quitar seleccionados"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " resultado"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de resultados"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " resultados"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "resultado"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "de resultados"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "resultados"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.catalog.page.resultsFor": [
@@ -1117,6 +1399,18 @@
     {
       "type": 0,
       "value": "Buscar"
+    }
+  ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "Seleccionar"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "Seleccionar cargados"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -1165,6 +1459,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "Lista para ver"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "Lo que guardaste para ver más tarde."
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1177,10 +1483,40 @@
       "value": "Ascendente"
     }
   ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "Orden de la colección"
+    }
+  ],
   "web.catalog.sort.descending": [
     {
       "type": 0,
       "value": "Descendente"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "Orden de la lista"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "Historial de visualización"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "Eliminar…"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "Más acciones"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1193,6 +1529,12 @@
     {
       "type": 0,
       "value": "Idioma de los subtítulos"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "Eliminar"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1287,6 +1629,26 @@
     {
       "type": 0,
       "value": "p. ej., 2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "¿Eliminar “"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "”?"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "Editar"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -1417,6 +1779,12 @@
     {
       "type": 0,
       "value": "Calificación de TMDB"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo eliminar"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2128,6 +2496,174 @@
       "value": "Esta biblioteca está oculta o no está disponible para tu cuenta."
     }
   ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "Explorar Descubrir"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "Añade películas y series desde Descubrir a tu lista para ver. Las que la biblioteca aún no tiene esperan aquí hasta que lleguen."
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "Nada pendiente para la biblioteca"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "Buscar más en Descubrir"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "En tu biblioteca"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar estos títulos."
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "Aún no están en tu biblioteca"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "Aprobada · esperando una descarga"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "Pendiente de aprobación"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "Descargando "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "TMDB lo incluye dos veces"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "Requiere atención"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "Ya no figura en TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "No está en TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "Sin solicitar"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "Sin solicitar · estreno: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "Sin solicitar · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 0,
+      "value": "Estreno: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 0,
+      "value": "Estreno: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · aprobada"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "Estreno: "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · pendiente de aprobación"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "Estos títulos aún no están en la biblioteca, así que no se pueden reproducir. Cuando llegue uno, pasará a En tu biblioteca."
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "Estos títulos aún no están en la biblioteca, así que no se pueden reproducir. Se solicitaron por ti. Cuando llegue uno, pasará a En tu biblioteca y recibirás una notificación."
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -2631,6 +3167,18 @@
     {
       "type": 0,
       "value": "No se pudieron cargar más títulos."
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "Aprobada"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "Procesando"
     }
   ],
   "web.requests.toAdd.heading": [

@@ -48,17 +48,18 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top"
                             Visibility="{x:Bind ViewModel.IsOwnCollection, Mode=OneWay}">
                     <Button Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.EditCollectionCommand}"
-                            Visibility="{x:Bind ViewModel.CanEditCollection, Mode=OneWay}" AutomationProperties.Name="Edit">
+                            Visibility="{x:Bind ViewModel.CanEditCollection, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.pageActions.edit')}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE70F;" FontSize="13" />
-                            <TextBlock Text="Edit" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.pageActions.edit')}" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource SiloIconButtonStyle}" AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
+                    <Button Style="{StaticResource SiloIconButtonStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.actions.moreActions')}"
+                            ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.collections.actions.moreActions')}">
                         <FontIcon Glyph="&#xE712;" FontSize="16" />
                         <Button.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                <MenuFlyoutItem Text="Delete&#x2026;" Command="{x:Bind ViewModel.DeleteCollectionCommand}">
+                                <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.collections.actions.delete')}" Command="{x:Bind ViewModel.DeleteCollectionCommand}">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE74D;" />
                                     </MenuFlyoutItem.Icon>
@@ -85,14 +86,14 @@
             <!-- The watchlist's tabs: the list, and the titles the library doesn't have yet with their count and an amber dot. -->
             <Grid Visibility="{x:Bind ViewModel.ShowsTabs, Mode=OneWay}">
                 <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource SiloBorderBrush}" />
-                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="Watchlist view">
-                    <RadioButton GroupName="WatchlistTabs" Content="In your library" Style="{StaticResource SiloLineTabStyle}"
+                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.watchlist.tabsName')}">
+                    <RadioButton GroupName="WatchlistTabs" Content="{x:Bind t:AppText.Get('web.library.watchlist.inLibraryTab')}" Style="{StaticResource SiloLineTabStyle}"
                                  IsChecked="{x:Bind Not(ViewModel.IsTitlesTab), Mode=OneWay}" Checked="OnLibraryTabChecked" />
                     <RadioButton GroupName="WatchlistTabs" Style="{StaticResource SiloLineTabStyle}" IsChecked="{x:Bind ViewModel.IsTitlesTab, Mode=OneWay}"
                                  Checked="OnTitlesTabChecked"
                                  AutomationProperties.Name="{x:Bind TitlesTabName(ViewModel.Titles.Count, ViewModel.Titles.NeedsAttention), Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="Not in your library yet" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.library.watchlist.notInLibraryTab')}" />
                             <Border MinWidth="20" Height="20" Padding="6,0" CornerRadius="10" Background="#33FFFFFF"
                                     Visibility="{x:Bind ViewModel.Titles.HasCount, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.Titles.Count, Mode=OneWay}" FontSize="10" FontFamily="{StaticResource SiloFontSemiBold}"
@@ -133,9 +134,9 @@
                                         AutomationProperties.Name="{x:Bind OrderName(ViewModel.OrderLabel), Mode=OneWay}">
                             <DropDownButton.Flyout>
                                 <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                    <RadioMenuFlyoutItem Text="Ascending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
+                                    <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.ascending')}" GroupName="ListOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
                                                          IsChecked="{x:Bind Not(ViewModel.IsDescending), Mode=OneWay}" />
-                                    <RadioMenuFlyoutItem Text="Descending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
+                                    <RadioMenuFlyoutItem Text="{x:Bind t:AppText.Get('web.catalog.sort.descending')}" GroupName="ListOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
                                                          IsChecked="{x:Bind ViewModel.IsDescending, Mode=OneWay}" />
                                 </MenuFlyout>
                             </DropDownButton.Flyout>
@@ -162,29 +163,29 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Text="Watch History" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.historyHeading')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
                                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock Text="Removing items clears watch history, watched status, and resume progress for this profile." FontSize="13"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.historyBody')}" FontSize="13"
                                        Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <Button Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.StartSelectingCommand}"
-                                    Visibility="{x:Bind Unless(ViewModel.Selection.IsActive), Mode=OneWay}" AutomationProperties.Name="Select">
+                                    Visibility="{x:Bind Unless(ViewModel.Selection.IsActive), Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.page.select')}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE73A;" FontSize="13" />
-                                    <TextBlock Text="Select" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.select')}" />
                                 </StackPanel>
                             </Button>
                             <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.Selection.IsActive, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.Selection.CountText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
                                            Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.LiveSetting="Polite" />
-                                <Button Content="Select Loaded" Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.SelectLoadedCommand}" />
-                                <Button Content="Clear" Style="{StaticResource HistoryGhostButtonStyle}" Command="{x:Bind ViewModel.ClearSelectionCommand}" />
+                                <Button Content="{x:Bind t:AppText.Get('web.catalog.page.selectLoaded')}" Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.SelectLoadedCommand}" />
+                                <Button Content="{x:Bind t:AppText.Get('web.catalog.page.clearSelection')}" Style="{StaticResource HistoryGhostButtonStyle}" Command="{x:Bind ViewModel.ClearSelectionCommand}" />
                                 <Button Style="{StaticResource HistoryRemoveButtonStyle}" Click="OnRemoveSelectedClick"
-                                        IsEnabled="{x:Bind ViewModel.Selection.HasPicks, Mode=OneWay}" AutomationProperties.Name="Remove Selected">
+                                        IsEnabled="{x:Bind ViewModel.Selection.HasPicks, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.page.removeSelected')}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE74D;" FontSize="13" />
-                                        <TextBlock Text="Remove Selected" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.page.removeSelected')}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource HistoryGhostButtonStyle}" Command="{x:Bind ViewModel.StopSelectingCommand}"
@@ -203,19 +204,19 @@
                 </Border>
 
                 <ProgressRing IsActive="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.lists.loadingTitles')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.Grid.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                     <TextBlock Text="{x:Bind ViewModel.Grid.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.Grid.RetryCommand}" />
                 </StackPanel>
                 <TextBlock Visibility="{x:Bind FirstOnly(ViewModel.Grid.IsEmpty, ViewModel.IsNarrowed), Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
-                           Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" Text="Nothing here yet." />
+                           Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" Text="{x:Bind t:AppText.Get('web.catalog.grid.noItems')}" />
                 <!-- Filters that leave nothing: the library page's words, and the way back. -->
                 <StackPanel Visibility="{x:Bind Both(ViewModel.Grid.IsEmpty, ViewModel.IsNarrowed), Mode=OneWay}" Spacing="16" Margin="0,48"
                             HorizontalAlignment="Center">
-                    <TextBlock Text="No titles match these filters" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                    <Button Content="Clear filters" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.library.browse.noMatches')}" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                    <Button Content="{x:Bind t:AppText.Get('web.library.browse.clearFilters')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.ClearFiltersCommand}" />
                 </StackPanel>
 
@@ -225,7 +226,7 @@
                                     Visibility="{x:Bind ViewModel.Grid.IsReady, Mode=OneWay}" />
 
                 <StackPanel Visibility="{x:Bind ViewModel.Grid.HasPageError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-                    <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.library.browse.someItemsFailed')}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Grid.RetryPagesCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -233,12 +234,12 @@
             <!-- Not in your library yet: the web's WatchlistTitlesTab. -->
             <StackPanel Spacing="24" Visibility="{x:Bind ViewModel.ShowsTitles, Mode=OneWay}">
                 <ProgressRing IsActive="{x:Bind ViewModel.Titles.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Titles.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.lists.loadingTitles')}" />
 
                 <Border Visibility="{x:Bind ViewModel.Titles.HasError, Mode=OneWay}" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1"
                         CornerRadius="20" Padding="16,64">
                     <StackPanel Spacing="12" HorizontalAlignment="Center">
-                        <TextBlock Text="Could not load these titles." Style="{StaticResource SiloBodyTextStyle}" FontSize="16"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.library.watchlist.loadFailed')}" Style="{StaticResource SiloBodyTextStyle}" FontSize="16"
                                    FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" HorizontalAlignment="Center"
                                    AutomationProperties.LiveSetting="Assertive" />
                         <Button Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.Titles.RetryCommand}"
@@ -257,16 +258,16 @@
                     <StackPanel Spacing="12" Padding="16,64" HorizontalAlignment="Center">
                         <controls:BookmarkIcon Width="32" Height="32" HorizontalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}"
                                                AutomationProperties.AccessibilityView="Raw" />
-                        <TextBlock Text="Nothing waiting for the library" Style="{StaticResource SiloBodyTextStyle}" FontSize="16"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.library.watchlist.emptyTitle')}" Style="{StaticResource SiloBodyTextStyle}" FontSize="16"
                                    FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" HorizontalAlignment="Center" />
-                        <TextBlock Text="Add movies and series from Discover to your watchlist. The ones the library doesn’t have yet wait here until they arrive."
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.library.watchlist.emptyBody')}"
                                    Style="{StaticResource SiloBodyTextStyle}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" MaxWidth="448"
                                    TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
                         <Button Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.Titles.BrowseDiscoverCommand}"
-                                AutomationProperties.Name="Browse Discover">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.library.watchlist.browseDiscover')}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE909;" FontSize="14" />
-                                <TextBlock Text="Browse Discover" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.library.watchlist.browseDiscover')}" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -281,7 +282,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind ViewModel.Titles.Hint, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" FontSize="14"
                                    Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <HyperlinkButton Grid.Column="1" Content="Find more in Discover" VerticalAlignment="Center" Padding="4,2"
+                        <HyperlinkButton Grid.Column="1" Content="{x:Bind t:AppText.Get('web.library.watchlist.findMore')}" VerticalAlignment="Center" Padding="4,2"
                                          FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                          Foreground="{StaticResource SiloPrimaryBrush}" Command="{x:Bind ViewModel.Titles.BrowseDiscoverCommand}" />
                     </Grid>

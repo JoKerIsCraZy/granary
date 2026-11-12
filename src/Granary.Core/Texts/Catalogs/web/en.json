@@ -965,6 +965,103 @@
       "value": "No items found."
     }
   ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "This clears the item's watch history, watched status, and resume progress for this profile."
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " selected item will have its watch history, watched status, and resume progress cleared for this profile."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " selected items will have their watch history, watched status, and resume progress cleared for this profile."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "This clears the show's watch history, watched episodes, and resume progress for this profile."
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "Remove watch data?"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "Remove selected watch data?"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "Remove show watch data?"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Removed watch data"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Removed watch data for "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " items"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.letters.letterNoTitles": [
     {
       "type": 1,
@@ -1039,6 +1136,18 @@
       "value": "Jump to letter"
     }
   ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "All Media"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "Episodes"
+    }
+  ],
   "web.catalog.mediaType.movies": [
     {
       "type": 0,
@@ -1069,16 +1178,130 @@
       "value": "Refine the archive by type, era, rating, or genre."
     }
   ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "Clear"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "Done"
     }
   ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "Favorites"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "Movies and shows you've marked as favorites."
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "History"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "Removing items clears watch history, watched status, and resume progress for this profile."
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "Watch History"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "Everything you've recently watched."
+    }
+  ],
   "web.catalog.page.people": [
     {
       "type": 0,
       "value": "People"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "Remove"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "Remove Selected"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " result"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " results"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "result"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "results"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.catalog.page.resultsFor": [
@@ -1105,6 +1328,18 @@
     {
       "type": 0,
       "value": "Search"
+    }
+  ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "Select"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "Select Loaded"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -1141,6 +1376,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "Watchlist"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "Things you've saved to watch later."
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1153,10 +1400,40 @@
       "value": "Ascending"
     }
   ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "Collection Order"
+    }
+  ],
   "web.catalog.sort.descending": [
     {
       "type": 0,
       "value": "Descending"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "List Order"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "Watch History"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "Delete…"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "More actions"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1169,6 +1446,12 @@
     {
       "type": 0,
       "value": "Subtitle language"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "Delete"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1263,6 +1546,26 @@
     {
       "type": 0,
       "value": "e.g. 2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "Delete \""
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "\"?"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "Edit"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -1381,6 +1684,12 @@
     {
       "type": 0,
       "value": "TMDB Rating"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "Failed to delete"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2045,6 +2354,174 @@
       "value": "This library is hidden or unavailable for your account."
     }
   ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "Browse Discover"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "Add movies and series from Discover to your watchlist. The ones the library doesn’t have yet wait here until they arrive."
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "Nothing waiting for the library"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "Find more in Discover"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "In your library"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "Could not load these titles."
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "Not in your library yet"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "Approved · waiting for a download"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "Awaiting approval"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "Downloading "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "TMDB lists it twice"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "Needs attention"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "No longer listed on TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "Not on TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "Not requested"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "Not requested · out "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "Not requested · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 0,
+      "value": "Out "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 0,
+      "value": "Out "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · approved"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "Out "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · awaiting approval"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "These titles aren't in the library yet, so they can't be played. When one arrives, it moves to In your library."
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "These titles aren't in the library yet, so they can't be played. They've been requested for you. When one arrives, it moves to In your library and you get a notification."
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -2509,6 +2986,18 @@
     {
       "type": 0,
       "value": "Couldn’t load more titles."
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "Approved"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "Processing"
     }
   ],
   "web.requests.toAdd.heading": [

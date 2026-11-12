@@ -965,6 +965,87 @@
       "value": "未找到项目。"
     }
   ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "这会清除此个人资料中该项目的观看记录、已看状态和续播进度。"
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "将为此个人资料清除"
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": "个所选项目的观看记录、已看状态和续播进度。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "这会清除此个人资料中该剧集的观看记录、已看的集和续播进度。"
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "移除观看数据？"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "移除所选观看数据？"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "移除剧集观看数据？"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已移除"
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "项的观看数据"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.letters.letterNoTitles": [
     {
       "type": 1,
@@ -1031,6 +1112,18 @@
       "value": "跳转到字母"
     }
   ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "全部媒体"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "集"
+    }
+  ],
   "web.catalog.mediaType.movies": [
     {
       "type": 0,
@@ -1061,16 +1154,110 @@
       "value": "按类型、年代、评分或类别筛选片库。"
     }
   ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "清除"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "完成"
     }
   ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "收藏"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "你收藏的电影和剧集。"
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "历史记录"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "移除项目会清除此个人资料的观看记录、已看状态和续播进度。"
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "观看记录"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "你最近观看的所有内容。"
+    }
+  ],
   "web.catalog.page.people": [
     {
       "type": 0,
       "value": "人物"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "移除"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "移除所选"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "个结果"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "个结果"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.catalog.page.resultsFor": [
@@ -1099,6 +1286,18 @@
       "value": "搜索"
     }
   ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "选择"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "选择已加载项"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,
@@ -1121,6 +1320,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "待看清单"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "你保存以便稍后观看的内容。"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1133,10 +1344,40 @@
       "value": "升序"
     }
   ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "合集顺序"
+    }
+  ],
   "web.catalog.sort.descending": [
     {
       "type": 0,
       "value": "降序"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "列表顺序"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "观看记录"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "删除……"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "更多操作"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1149,6 +1390,12 @@
     {
       "type": 0,
       "value": "字幕语言"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "删除"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1243,6 +1490,26 @@
     {
       "type": 0,
       "value": "例如2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "删除“"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "”？"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "编辑"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -1349,6 +1616,12 @@
     {
       "type": 0,
       "value": "TMDB评分"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "删除失败"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -1990,6 +2263,170 @@
       "value": "此媒体库对你的账户隐藏或不可用。"
     }
   ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "浏览发现"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "从发现中将电影和剧集添加到你的待看清单。媒体库中还没有的内容会在这里等待，直到它们入库。"
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "没有等待入库的内容"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "在发现中查找更多"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "已在你的媒体库中"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载这些内容。"
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "尚未在你的媒体库中"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "已批准 · 等待下载"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "等待批准"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "正在下载"
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "TMDB重复收录了此作品"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "需要处理"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "TMDB上已不再收录"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "不在TMDB上"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "未请求"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "未请求 · "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "上映"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "未请求 · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "上映"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "上映 · 已批准"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "上映 · 等待批准"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "这些作品还不在媒体库中，因此无法播放。作品到达后，会移到在你的媒体库中。"
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "这些作品还不在媒体库中，因此无法播放。已为你请求这些作品。作品到达后，会移到在你的媒体库中，你也会收到通知。"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -2415,6 +2852,18 @@
     {
       "type": 0,
       "value": "无法加载更多作品。"
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "已批准"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "处理中"
     }
   ],
   "web.requests.toAdd.heading": [

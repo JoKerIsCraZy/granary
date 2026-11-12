@@ -965,6 +965,221 @@
       "value": "لم يُعثر على عناصر."
     }
   ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "يمسح هذا سجل مشاهدة العنصر وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصرين محددين."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عناصر محددة."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصرًا محددًا."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُمسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي لـ "
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": " عنصر محدد."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "يمسح هذا سجل مشاهدة المسلسل والحلقات التي شاهدتها وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات المشاهدة؟"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات المشاهدة المحددة؟"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "إزالة بيانات مشاهدة المسلسل؟"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لعنصرين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عناصر"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عنصرًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تمت إزالة بيانات المشاهدة لـ "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " عنصر"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.letters.letterNoTitles": [
     {
       "type": 1,
@@ -1087,6 +1302,18 @@
       "value": "الانتقال إلى حرف"
     }
   ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "كل الوسائط"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "الحلقات"
+    }
+  ],
   "web.catalog.mediaType.movies": [
     {
       "type": 0,
@@ -1117,16 +1344,210 @@
       "value": "صفِّ الأرشيف حسب النوع أو الحقبة أو التقييم أو التصنيف."
     }
   ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "مسح"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "تم"
     }
   ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "المفضلة"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "الأفلام والمسلسلات التي أضفتها إلى المفضلة."
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "السجل"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "تؤدي إزالة العناصر إلى مسح سجل المشاهدة وحالة المشاهدة وتقدّم الاستئناف في هذا الملف الشخصي."
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "سجل المشاهدة"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "كل ما شاهدته مؤخرًا."
+    }
+  ],
   "web.catalog.page.people": [
     {
       "type": 0,
       "value": "الأشخاص"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "إزالة"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "إزالة المحدد"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتائج"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " نتيجة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتائج"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نتيجة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.catalog.page.resultsFor": [
@@ -1153,6 +1574,18 @@
     {
       "type": 0,
       "value": "البحث"
+    }
+  ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "تحديد"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "تحديد المحمّل"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -1225,6 +1658,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "قائمة المشاهدة"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "ما حفظته لمشاهدته لاحقًا."
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1237,10 +1682,40 @@
       "value": "تصاعدي"
     }
   ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "ترتيب المجموعة"
+    }
+  ],
   "web.catalog.sort.descending": [
     {
       "type": 0,
       "value": "تنازلي"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "ترتيب القائمة"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "سجل المشاهدة"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "حذف…"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "مزيد من الإجراءات"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1253,6 +1728,12 @@
     {
       "type": 0,
       "value": "لغة الترجمة"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "حذف"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1347,6 +1828,26 @@
     {
       "type": 0,
       "value": "مثال: 2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "حذف «"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "»؟"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "تعديل"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -1513,6 +2014,12 @@
     {
       "type": 0,
       "value": "تقييم TMDB"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "فشل الحذف"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2320,6 +2827,174 @@
       "value": "هذه المكتبة مخفية أو غير متاحة لحسابك."
     }
   ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "تصفّح استكشاف"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "أضف أفلامًا ومسلسلات من استكشاف إلى قائمة المشاهدة. ما لا تملكه المكتبة بعد ينتظر هنا حتى يصل."
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "لا شيء بانتظار المكتبة"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "العثور على المزيد في استكشاف"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "في مكتبتك"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذه العناوين."
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "ليست في مكتبتك بعد"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "تمت الموافقة · بانتظار التنزيل"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "بانتظار الموافقة"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "جارٍ التنزيل "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "يدرجه TMDB مرتين"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "يحتاج إلى مراجعة"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "لم يعد مدرجًا على TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "غير موجود على TMDB"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "غير مطلوب"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "غير مطلوب · يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "غير مطلوب · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · تمت الموافقة"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "يصدر "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": " · بانتظار الموافقة"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "هذه العناوين ليست في المكتبة بعد، لذا لا يمكن تشغيلها. عندما يصل أحدها، ينتقل إلى «في مكتبتك»."
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "هذه العناوين ليست في المكتبة بعد، لذا لا يمكن تشغيلها. وقد طُلبت لك. عندما يصل أحدها، ينتقل إلى «في مكتبتك» ويصلك إشعار."
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -2914,6 +3589,18 @@
     {
       "type": 0,
       "value": "تعذّر تحميل المزيد من العناوين."
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "تمت الموافقة"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "قيد المعالجة"
     }
   ],
   "web.requests.toAdd.heading": [

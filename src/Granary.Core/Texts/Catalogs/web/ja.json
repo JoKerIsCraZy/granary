@@ -973,6 +973,83 @@
       "value": "アイテムが見つかりません。"
     }
   ],
+  "web.catalog.history.dialogBody": [
+    {
+      "type": 0,
+      "value": "このプロフィールにおける、このアイテムの視聴履歴、視聴済みステータス、再開位置をクリアします。"
+    }
+  ],
+  "web.catalog.history.dialogBodySelected": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "選択した"
+            },
+            {
+              "type": 1,
+              "value": "selected"
+            },
+            {
+              "type": 0,
+              "value": "件のアイテムについて、このプロフィールの視聴履歴、視聴済みステータス、再開位置がクリアされます。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.history.dialogBodyShow": [
+    {
+      "type": 0,
+      "value": "このプロフィールにおける、このシリーズの視聴履歴、視聴済みエピソード、再開位置をクリアします。"
+    }
+  ],
+  "web.catalog.history.dialogTitle": [
+    {
+      "type": 0,
+      "value": "視聴データを削除しますか？"
+    }
+  ],
+  "web.catalog.history.dialogTitleSelected": [
+    {
+      "type": 0,
+      "value": "選択した視聴データを削除しますか？"
+    }
+  ],
+  "web.catalog.history.dialogTitleShow": [
+    {
+      "type": 0,
+      "value": "シリーズの視聴データを削除しますか？"
+    }
+  ],
+  "web.catalog.history.removed": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "件の視聴データを削除しました"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.letters.letterNoTitles": [
     {
       "type": 1,
@@ -1035,6 +1112,18 @@
       "value": "文字へ移動"
     }
   ],
+  "web.catalog.mediaType.allMedia": [
+    {
+      "type": 0,
+      "value": "すべてのメディア"
+    }
+  ],
+  "web.catalog.mediaType.episodes": [
+    {
+      "type": 0,
+      "value": "エピソード"
+    }
+  ],
   "web.catalog.mediaType.movies": [
     {
       "type": 0,
@@ -1065,16 +1154,110 @@
       "value": "種類、年代、評価、ジャンルでアーカイブを絞り込みます。"
     }
   ],
+  "web.catalog.page.clearSelection": [
+    {
+      "type": 0,
+      "value": "クリア"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
       "value": "完了"
     }
   ],
+  "web.catalog.page.favorites": [
+    {
+      "type": 0,
+      "value": "お気に入り"
+    }
+  ],
+  "web.catalog.page.favoritesSubtitle": [
+    {
+      "type": 0,
+      "value": "お気に入りに登録した映画とシリーズです。"
+    }
+  ],
+  "web.catalog.page.history": [
+    {
+      "type": 0,
+      "value": "履歴"
+    }
+  ],
+  "web.catalog.page.historyBody": [
+    {
+      "type": 0,
+      "value": "アイテムを削除すると、このプロフィールの視聴履歴、視聴済みステータス、再開位置がクリアされます。"
+    }
+  ],
+  "web.catalog.page.historyHeading": [
+    {
+      "type": 0,
+      "value": "視聴履歴"
+    }
+  ],
+  "web.catalog.page.historySubtitle": [
+    {
+      "type": 0,
+      "value": "最近視聴したものすべてです。"
+    }
+  ],
   "web.catalog.page.people": [
     {
       "type": 0,
       "value": "人物"
+    }
+  ],
+  "web.catalog.page.removeConfirm": [
+    {
+      "type": 0,
+      "value": "削除"
+    }
+  ],
+  "web.catalog.page.removeSelected": [
+    {
+      "type": 0,
+      "value": "選択項目を削除"
+    }
+  ],
+  "web.catalog.page.resultCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "件の結果"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.page.resultNoun": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.catalog.page.resultsFor": [
@@ -1103,6 +1286,18 @@
       "value": "検索"
     }
   ],
+  "web.catalog.page.select": [
+    {
+      "type": 0,
+      "value": "選択"
+    }
+  ],
+  "web.catalog.page.selectLoaded": [
+    {
+      "type": 0,
+      "value": "読み込み済みを選択"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,
@@ -1125,6 +1320,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.catalog.page.watchlist": [
+    {
+      "type": 0,
+      "value": "ウォッチリスト"
+    }
+  ],
+  "web.catalog.page.watchlistSubtitle": [
+    {
+      "type": 0,
+      "value": "後で見るために保存した作品です。"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1137,10 +1344,40 @@
       "value": "昇順"
     }
   ],
+  "web.catalog.sort.collectionOrder": [
+    {
+      "type": 0,
+      "value": "コレクションの順序"
+    }
+  ],
   "web.catalog.sort.descending": [
     {
       "type": 0,
       "value": "降順"
+    }
+  ],
+  "web.catalog.sort.listOrder": [
+    {
+      "type": 0,
+      "value": "リストの順序"
+    }
+  ],
+  "web.catalog.sort.watchHistory": [
+    {
+      "type": 0,
+      "value": "視聴履歴"
+    }
+  ],
+  "web.collections.actions.delete": [
+    {
+      "type": 0,
+      "value": "削除…"
+    }
+  ],
+  "web.collections.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "その他の操作"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1153,6 +1390,12 @@
     {
       "type": 0,
       "value": "字幕言語"
+    }
+  ],
+  "web.collections.deleteDialog.delete": [
+    {
+      "type": 0,
+      "value": "削除"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1247,6 +1490,26 @@
     {
       "type": 0,
       "value": "例：2025"
+    }
+  ],
+  "web.collections.pageActions.deleteTitle": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "」を削除しますか？"
+    }
+  ],
+  "web.collections.pageActions.edit": [
+    {
+      "type": 0,
+      "value": "編集"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -1353,6 +1616,12 @@
     {
       "type": 0,
       "value": "TMDB評価"
+    }
+  ],
+  "web.common.toast.collections.deleteFailed": [
+    {
+      "type": 0,
+      "value": "削除できませんでした"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -1982,6 +2251,170 @@
       "value": "このライブラリは非表示になっているか、このアカウントでは利用できません。"
     }
   ],
+  "web.library.watchlist.browseDiscover": [
+    {
+      "type": 0,
+      "value": "ディスカバーを見る"
+    }
+  ],
+  "web.library.watchlist.emptyBody": [
+    {
+      "type": 0,
+      "value": "ディスカバーから映画やシリーズをウォッチリストに追加してください。ライブラリにまだないタイトルは、追加されるまでここで待機します。"
+    }
+  ],
+  "web.library.watchlist.emptyTitle": [
+    {
+      "type": 0,
+      "value": "ライブラリへの追加待ちはありません"
+    }
+  ],
+  "web.library.watchlist.findMore": [
+    {
+      "type": 0,
+      "value": "ディスカバーでさらに探す"
+    }
+  ],
+  "web.library.watchlist.inLibraryTab": [
+    {
+      "type": 0,
+      "value": "ライブラリにあり"
+    }
+  ],
+  "web.library.watchlist.loadFailed": [
+    {
+      "type": 0,
+      "value": "これらのタイトルを読み込めませんでした。"
+    }
+  ],
+  "web.library.watchlist.notInLibraryTab": [
+    {
+      "type": 0,
+      "value": "ライブラリにまだないもの"
+    }
+  ],
+  "web.library.watchlist.statusApprovedWaiting": [
+    {
+      "type": 0,
+      "value": "承認済み · ダウンロード待ち"
+    }
+  ],
+  "web.library.watchlist.statusAwaitingApproval": [
+    {
+      "type": 0,
+      "value": "承認待ち"
+    }
+  ],
+  "web.library.watchlist.statusDownloading": [
+    {
+      "type": 0,
+      "value": "ダウンロード中"
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.library.watchlist.statusListedTwice": [
+    {
+      "type": 0,
+      "value": "TMDBに重複して登録されています"
+    }
+  ],
+  "web.library.watchlist.statusNeedsAttention": [
+    {
+      "type": 0,
+      "value": "要確認"
+    }
+  ],
+  "web.library.watchlist.statusNoLongerListed": [
+    {
+      "type": 0,
+      "value": "TMDBに掲載されなくなりました"
+    }
+  ],
+  "web.library.watchlist.statusNotOnTmdb": [
+    {
+      "type": 0,
+      "value": "TMDBになし"
+    }
+  ],
+  "web.library.watchlist.statusNotRequested": [
+    {
+      "type": 0,
+      "value": "未リクエスト"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedOut": [
+    {
+      "type": 0,
+      "value": "未リクエスト · "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "公開"
+    }
+  ],
+  "web.library.watchlist.statusNotRequestedReason": [
+    {
+      "type": 0,
+      "value": "未リクエスト · "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.library.watchlist.statusOut": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "公開"
+    }
+  ],
+  "web.library.watchlist.statusOutApproved": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "公開 · 承認済み"
+    }
+  ],
+  "web.library.watchlist.statusOutAwaitingApproval": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "公開 · 承認待ち"
+    }
+  ],
+  "web.library.watchlist.titlesHint": [
+    {
+      "type": 0,
+      "value": "これらの作品はまだライブラリにないため、再生できません。追加されると「ライブラリ内」に移動します。"
+    }
+  ],
+  "web.library.watchlist.titlesHintRequested": [
+    {
+      "type": 0,
+      "value": "これらの作品はまだライブラリにないため、再生できません。自動的にリクエストされています。追加されると「ライブラリ内」に移動し、通知が届きます。"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -2395,6 +2828,18 @@
     {
       "type": 0,
       "value": "さらにタイトルを読み込めませんでした。"
+    }
+  ],
+  "web.requests.status.approved": [
+    {
+      "type": 0,
+      "value": "承認済み"
+    }
+  ],
+  "web.requests.status.processing": [
+    {
+      "type": 0,
+      "value": "処理中"
     }
   ],
   "web.requests.toAdd.heading": [

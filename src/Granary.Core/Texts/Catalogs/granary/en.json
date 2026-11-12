@@ -157,6 +157,12 @@
   "@granary.libraryFilters.optionsFailed": { "description": "The filters flyout of a list: the genres, content ratings and languages to filter by could not be read." },
   "granary.libraryFilters.optionsFailedLibrary": "Couldn't load the genres, ratings and languages of this library. The other filters still work.",
   "@granary.libraryFilters.optionsFailedLibrary": { "description": "A library's filters flyout: the library's genres, content ratings and languages to filter by could not be read." },
+  "granary.lists.loadingTitles": "Loading titles",
+  "@granary.lists.loadingTitles": { "description": "Favorites, Watchlist, History or a collection's page: what a screen reader says for the spinner while the titles load." },
+  "granary.lists.removeFailed": "{reason, select, denied {Failed to remove history. This profile isn't allowed to do this.} gone {Failed to remove history. These titles aren't available any more.} busy {Failed to remove history. The server isn't responding. Try again in a moment.} other {Failed to remove history. Try again.}}",
+  "@granary.lists.removeFailed": { "description": "History: picked titles' watch data could not be cleared, and why. reason: denied (the server refused this profile), gone (the titles are no longer there), busy (the server is busy or could not be reached), other. The first sentence is the web's web.catalog.history.removeFailed." },
+  "granary.lists.scopeName": "Media: {scope}",
+  "@granary.lists.scopeName": { "description": "Favorites, Watchlist, History or a collection's page: what a screen reader says for the media menu. {scope}: the media chosen, such as Movies & Series." },
   "granary.loadError.denied": "This profile isn't allowed to see this.",
   "@granary.loadError.denied": { "description": "Under a page or row that could not load because the server refused this profile (401 or 403). Granary's own: the web has no text for it." },
   "granary.loadError.gone": "This isn't available any more.",
@@ -336,5 +342,9 @@
   "granary.update.noticeHint": "Restart now, or it installs when you close Granary.",
   "@granary.update.noticeHint": { "description": "The notice of a downloaded update of Granary: the line under its title." },
   "granary.update.restartNow": "Restart now",
-  "@granary.update.restartNow": { "description": "The notice of a downloaded update of Granary: the button that restarts Granary into the new version." }
+  "@granary.update.restartNow": { "description": "The notice of a downloaded update of Granary: the button that restarts Granary into the new version." },
+  "granary.watchlist.tabsName": "Watchlist view",
+  "@granary.watchlist.tabsName": { "description": "The watchlist: what a screen reader says for its two tabs, In your library and Not in your library yet." },
+  "granary.watchlist.titlesTabName": "{count, plural, =0 {Not in your library yet} one {Not in your library yet, # title} other {Not in your library yet, # titles}}{attention, select, yes {, some need attention} other {}}",
+  "@granary.watchlist.titlesTabName": { "description": "The watchlist: what a screen reader says for the tab of titles the library does not have yet. count: how many; attention is yes when some need the viewer's attention (TMDB lost them)." }
 }

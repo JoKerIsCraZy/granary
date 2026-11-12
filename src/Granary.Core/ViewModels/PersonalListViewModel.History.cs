@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -33,15 +35,16 @@ public sealed partial class PersonalListViewModel
     public bool HasRemovalNotice => RemovalNotice.Length > 0;
 
     /// <summary>The question before removing: "Remove selected watch data?", or one title's.</summary>
-    public string RemovalTitle => Targets() is { Count: > 1 } ? "Remove selected watch data?"
-        : Targets() is [{ Scope: HistoryRemovalScopes.Show }] ? "Remove show watch data?"
-        : "Remove watch data?";
+    public string RemovalTitle => Targets() is { Count: > 1 } ? AppText.Get("web.catalog.history.dialogTitleSelected")
+        : Targets() is [{ Scope: HistoryRemovalScopes.Show }] ? AppText.Get("web.catalog.history.dialogTitleShow")
+        : AppText.Get("web.catalog.history.dialogTitle");
 
     public string RemovalDescription => Targets() switch
     {
-        { Count: > 1 } targets => $"{targets.Count} selected items will have their watch history, watched status, and resume progress cleared for this profile.",
-        [{ Scope: HistoryRemovalScopes.Show }] => "This clears the show's watch history, watched episodes, and resume progress for this profile.",
-        _ => "This clears the item's watch history, watched status, and resume progress for this profile.",
+        { Count: > 1 } targets => AppText.Get("web.catalog.history.dialogBodySelected", ("count", targets.Count),
+            ("selected", AppText.Number(targets.Count))),
+        [{ Scope: HistoryRemovalScopes.Show }] => AppText.Get("web.catalog.history.dialogBodyShow"),
+        _ => AppText.Get("web.catalog.history.dialogBody"),
     };
 
     [RelayCommand]
@@ -75,7 +78,7 @@ public sealed partial class PersonalListViewModel
         {
             await _catalog.RemoveHistoryAsync(server.BaseUri, targets);
             RemovalFailed = false;
-            RemovalNotice = targets.Count == 1 ? "Removed watch data" : $"Removed watch data for {targets.Count} items";
+            RemovalNotice = AppText.Get("web.catalog.history.removed", ("count", targets.Count));
             Selection.Stop();
             // Continue Watching, Next Up and watched marks change with it.
             _changes?.Report();
@@ -85,7 +88,14 @@ public sealed partial class PersonalListViewModel
         {
             _logger.LogWarning(ex, "Could not remove watch history");
             RemovalFailed = true;
-            RemovalNotice = "Failed to remove history. " + LibraryErrors.Describe(ex);
+            // The web's "Failed to remove history" with why, as one sentence for each reason.
+            RemovalNotice = AppText.Get("granary.lists.removeFailed", ("reason", ex switch
+            {
+                SiloApiException { Status: 401 or 403 } => "denied",
+                SiloApiException { Status: 404 } => "gone",
+                SiloApiException { Status: 429 or 503 } or HttpRequestException or OperationCanceledException => "busy",
+                _ => "other",
+            }));
         }
         finally
         {

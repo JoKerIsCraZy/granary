@@ -194,12 +194,29 @@ web.catalog.filters.removeBadge
 
 web.catalog.grid.noItems
 
+# Favorites, Watchlist, History and a collection's page, in the words of the web's catalog page for them (pages/Catalog.tsx,
+# components/catalog/CatalogFiltersPanel.tsx, History's removal dialog), its watchlist tabs and titles
+# (components/watchlist/WatchlistTabs.tsx, lib/watchlistTitles.ts) and its collection page actions
+# (components/collections/CollectionPageActions.tsx): src/Granary.App/Views/PersonalListPage.xaml(.cs),
+# src/Granary.Core/ViewModels/PersonalListViewModel*.cs and WatchlistTitleStatus.cs.
+web.catalog.history.dialogBody
+web.catalog.history.dialogBodySelected
+web.catalog.history.dialogBodyShow
+web.catalog.history.dialogTitle
+web.catalog.history.dialogTitleSelected
+web.catalog.history.dialogTitleShow
+web.catalog.history.removed
+
 # More of a library page's words, as above under catalog.sort.added.
 web.catalog.letters.letterNoTitles
 web.catalog.letters.letterTitles
 web.catalog.letters.numbersAndSymbols
 web.catalog.letters.showing
 web.catalog.letters.toolbar
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.mediaType.allMedia
+web.catalog.mediaType.episodes
 
 # Search, in the words of the web's catalog page for a search (pages/Catalog.tsx), its search scope (components/catalog/
 # SearchScopeChips.tsx), the global search's headings (components/GlobalSearch.tsx, boxsets/BoxSetSearchResults.tsx) and
@@ -212,25 +229,66 @@ web.catalog.mediaType.series
 web.catalog.page.catalogFailed
 web.catalog.page.catalogSubtitle
 
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.clearSelection
+
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.favorites
+web.catalog.page.favoritesSubtitle
+web.catalog.page.history
+web.catalog.page.historyBody
+web.catalog.page.historyHeading
+web.catalog.page.historySubtitle
+
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.catalog.page.people
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.removeConfirm
+web.catalog.page.removeSelected
+web.catalog.page.resultCount
+web.catalog.page.resultNoun
+
 web.catalog.page.resultsFor
 web.catalog.page.searchFailed
 web.catalog.page.searchTitle
 
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.select
+web.catalog.page.selectLoaded
+
 # More of a library page's words, as above under catalog.sort.added.
 web.catalog.page.titleCount
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.watchlist
+web.catalog.page.watchlistSubtitle
 
 web.catalog.search.scopeLabel
 
 # More of a library page's words, as above under catalog.sort.added.
 web.catalog.sort.ascending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.collectionOrder
+
 web.catalog.sort.descending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.listOrder
+web.catalog.sort.watchHistory
+web.collections.actions.delete
+web.collections.actions.moreActions
+
 web.collections.builder.fieldAudioLanguage
 web.collections.builder.fieldSubtitleLanguage
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.deleteDialog.delete
+
 web.collections.guidedRules.any
 web.collections.guidedRules.contentRating
 web.collections.guidedRules.decade
@@ -246,6 +304,10 @@ web.collections.guidedRules.yearFrom
 web.collections.guidedRules.yearFromPlaceholder
 web.collections.guidedRules.yearTo
 web.collections.guidedRules.yearToPlaceholder
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.pageActions.deleteTitle
+web.collections.pageActions.edit
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.common.format.runtime.hoursMinutes
@@ -263,6 +325,9 @@ web.common.sort.progress
 web.common.sort.rtAudienceRating
 web.common.sort.rtCriticRating
 web.common.sort.tmdbRating
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.common.toast.collections.deleteFailed
 
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
@@ -365,6 +430,30 @@ web.library.header.tabsLabel
 web.library.page.titleFallback
 web.library.page.unavailable
 
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.library.watchlist.browseDiscover
+web.library.watchlist.emptyBody
+web.library.watchlist.emptyTitle
+web.library.watchlist.findMore
+web.library.watchlist.inLibraryTab
+web.library.watchlist.loadFailed
+web.library.watchlist.notInLibraryTab
+web.library.watchlist.statusApprovedWaiting
+web.library.watchlist.statusAwaitingApproval
+web.library.watchlist.statusDownloading
+web.library.watchlist.statusListedTwice
+web.library.watchlist.statusNeedsAttention
+web.library.watchlist.statusNoLongerListed
+web.library.watchlist.statusNotOnTmdb
+web.library.watchlist.statusNotRequested
+web.library.watchlist.statusNotRequestedOut
+web.library.watchlist.statusNotRequestedReason
+web.library.watchlist.statusOut
+web.library.watchlist.statusOutApproved
+web.library.watchlist.statusOutAwaitingApproval
+web.library.watchlist.titlesHint
+web.library.watchlist.titlesHintRequested
+
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
 
@@ -435,6 +524,11 @@ web.requests.card.removeFromWatchlist
 
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.requests.results.loadMoreFailed
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.requests.status.approved
+web.requests.status.processing
+
 web.requests.toAdd.heading
 web.search.boxSets
 
