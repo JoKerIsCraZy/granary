@@ -117,6 +117,13 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                         _reads.Remove(download.Folder);
                     }
                 }
+                // Whoever waited may have given up on it: what it failed with is looked at here, so it is logged and never
+                // an exception nobody observed. Only its kind: the message can name the folder.
+                if (done.Exception is { } failure)
+                {
+                    logger.LogWarning("Reading the folder of download {DownloadId} failed unexpectedly ({Failure})", download.Record.DownloadId,
+                        DownloadLog.Failure(failure.GetBaseException()));
+                }
             }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
             return read;
         }

@@ -201,4 +201,28 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
         Assert.NotNull(played);
         await played.DisposeAsync();
     }
+
+    [Fact]
+    public async Task AFolderReadThatFailsAfterItsPlayGaveUp_IsLogged_NotLeftUnobserved()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var held = new ManualResetEventSlim();
+        using var reading = new ManualResetEventSlim();
+        _fixture.Playbacks.Reading = () =>
+        {
+            reading.Set();
+            held.Wait(TimeSpan.FromSeconds(10));
+            throw new InvalidOperationException("boom in a folder");
+        };
+
+        var start = TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+        _fixture.Harness.Time.Advance(DownloadPlaybacks.ReadBudget);
+        Assert.Null(await start.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+        held.Set();
+
+        await DownloadHarness.Until(() => _fixture.Harness.Logs.All.Contains("Reading the folder of download dl_1 failed unexpectedly", StringComparison.Ordinal),
+            "the failed read was logged");
+        Assert.DoesNotContain("boom in a folder", _fixture.Harness.Logs.All, StringComparison.Ordinal);
+    }
 }
