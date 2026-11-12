@@ -1,8 +1,9 @@
 namespace Granary.Core.Api;
 
 /// <summary>
-/// A write made for one profile was about to go out while its server acts as another profile, or as none: it was not
-/// sent, so it cannot change the other profile's data (<see cref="SiloRequestOptions.Profile"/>).
+/// A write made for one profile was about to go out while its server acts as another profile, as none, or for another
+/// account (<see cref="SiloRequestOptions.Account"/>): it was not sent, so it cannot change the other profile's data
+/// (<see cref="SiloRequestOptions.Profile"/>).
 /// </summary>
 public sealed class ProfileChangedException : Exception
 {

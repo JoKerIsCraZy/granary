@@ -1561,7 +1561,12 @@ device.
   than a minute.
 - **Sending.** `OfflineProgressSync` runs one flush at a time on the thread pool. It sends only the active profile's
   entries, as that profile (`ProgressSyncApi`, `SiloRequestOptions.Profile`), so another profile's wait until it is used
-  again, also behind a PIN. A flush claims up to 100 pending entries, sends them, and takes the answer as api-contract
+  again, also behind a PIN. A run belongs to the session it began for: the server, the account and the profile are
+  read once, and before every batch and every page of the read the run looks whether they are still the active ones,
+  and ends when not. A run can last minutes, and a sign-out followed by another account's sign-in fits into that; the
+  profile ids are the server's and need not differ between accounts. For a change between that look and the send, the
+  requests are bound to the account as well as the profile (`SiloRequestOptions.Account`): the authentication handler
+  refuses one whose server is signed in as another account (`ProfileChangedException`), as it refuses another profile. A flush claims up to 100 pending entries, sends them, and takes the answer as api-contract
   14.7 lists it. An entry leaves the queue only when the server answered for it with success, will never take it (the
   title is gone for the profile, or the request itself is wrong), or is known to have it (Reading back). Every other
   one is pending again and goes with the retry `RetryInterval` (5 minutes) on: an item the server failed on, a server

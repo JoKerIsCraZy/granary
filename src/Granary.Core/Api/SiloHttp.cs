@@ -91,6 +91,27 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// As the <c>SendAsProfileAsync</c> that answers JSON, bound to account <paramref name="accountId"/> as well
+    /// (<see cref="SiloRequestOptions.Account"/>): what was kept for one account's profile while it was away never goes out
+    /// under another account signed in on the same server.
+    /// </summary>
+    public async Task<TResponse> SendAsAccountProfileAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, string accountId,
+        string profileId, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As <c>GetAsProfileAsync</c>, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task<TResponse> GetAsAccountProfileAsync<TResponse>(Uri server, string path, string accountId, string profileId,
+        JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId, accountId);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>As the bodiless 204 <c>SendAsProfileAsync</c>, for a write that answers JSON.</summary>
     public async Task<TResponse> SendAsProfileAsync<TResponse>(HttpMethod method, Uri server, string path, string profileId,
         JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
@@ -242,12 +263,17 @@ public sealed class SiloHttp(HttpClient http)
         return request;
     }
 
-    // Bound to the one profile it may be sent as (SiloRequestOptions.Profile).
-    private static HttpRequestMessage CreateAsProfile(HttpMethod method, Uri server, string path, string profileId)
+    // Bound to the one profile it may be sent as (SiloRequestOptions.Profile), and to its account when one is named.
+    private static HttpRequestMessage CreateAsProfile(HttpMethod method, Uri server, string path, string profileId, string? accountId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
         var request = Create(method, server, path, SiloAuth.Profile);
         request.SetProfile(profileId);
+        if (accountId is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+            request.SetAccount(accountId);
+        }
         return request;
     }
 

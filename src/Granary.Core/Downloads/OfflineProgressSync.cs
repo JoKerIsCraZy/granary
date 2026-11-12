@@ -11,8 +11,9 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// Sends what was watched from this PC to the server and reads the server's progress back (docs/architecture.md, "Offline
 /// progress"; docs/api-contract.md, 14.7), as Silo's Apple app does (<c>DownloadManager.flushProgressQueue</c> and
-/// <c>refreshWatchState</c>); the Android app sends none. Only the active profile's entries go, bound to that profile, so
-/// another profile's wait until it is used again. Once the server took positions, the pages that show where the viewer
+/// <c>refreshWatchState</c>); the Android app sends none. Only the active profile's entries go, bound to that account and
+/// profile, so another profile's wait until it is used again. A run belongs to the session it began for: once another
+/// server, account or profile is the active one, it sends and reads nothing more. Once the server took positions, the pages that show where the viewer
 /// left off are told (<see cref="ViewerStateChanges"/>), as a stream's stop tells them.
 /// </summary>
 /// <remarks>
@@ -212,16 +213,33 @@ public sealed class OfflineProgressSync : IDisposable
         }
     }
 
+    // Whose positions the session would send now, and where to: the server's entry is read once, so its id and its address
+    // are the same server's. Null unless the session is ready with a server, an account and a profile.
+    private Target? Acting()
+    {
+        var server = _session.ActiveServer;
+        return _session.State == SessionState.Ready && server is not null && _session.Account is { } account
+            && _session.ProfileId is { Length: > 0 } profile
+            ? new Target(new DownloadScope(server.Id, account.Id, profile), server.BaseUri)
+            : null;
+    }
+
+    // The session is still the one the run began for. Asked before every request: a run can take minutes (batches, up to a
+    // hundred pages), and a sign-out and another sign-in fit into that. The request itself is bound to the account and the
+    // profile as well, for a change between this look and the send (SiloRequestOptions.Account, .Profile).
+    private bool IsStill(Target target) => Acting() == target;
+
     private async Task RunAsync(bool readBack, CancellationToken cancellationToken)
     {
-        if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer?.BaseUri is not { } server)
+        if (Acting() is not { } target)
         {
             return;
         }
+        var (scope, server) = target;
         // The downloads are read once per run of the app; a run before that waits for them.
         await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
         bool sent = false;
-        while (true)
+        while (IsStill(target))
         {
             var batch = _queue.Claim(scope, MaxBatch);
             if (batch.Count == 0)
@@ -254,7 +272,7 @@ public sealed class OfflineProgressSync : IDisposable
         {
             TellThePages();
         }
-        if (readBack && IsReadBackDue(scope, sent) && await ReadBackAsync(server, scope, cancellationToken).ConfigureAwait(false) > 0 && !sent)
+        if (readBack && IsReadBackDue(scope, sent) && await ReadBackAsync(target, cancellationToken).ConfigureAwait(false) > 0 && !sent)
         {
             // The server had taken positions whose answer never came: it has them all the same.
             TellThePages();
@@ -286,7 +304,7 @@ public sealed class OfflineProgressSync : IDisposable
         var body = new ProgressSyncBody([.. batch.Select(e => new ProgressSyncItem(e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt))]);
         try
         {
-            var result = await _api.SyncAsync(server, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
+            var result = await _api.SyncAsync(server, scope.AccountId, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
             if (result.Items.Count != batch.Count || result.Items.Where((item, index) => item.MediaItemId is { } id && id != batch[index].MediaItemId).Any())
             {
                 // An answer that is not for what was sent says nothing sure about any of it.
@@ -333,15 +351,21 @@ public sealed class OfflineProgressSync : IDisposable
     // changes nothing. A complete one also settles what still waits in the queue: a position the server has (its row is as
     // new, or newer) leaves, as one whose send was taken while its answer got lost; every other one is sent again.
     // Answers how many waiting positions the server turned out to have.
-    private async Task<int> ReadBackAsync(Uri server, DownloadScope scope, CancellationToken cancellationToken)
+    private async Task<int> ReadBackAsync(Target target, CancellationToken cancellationToken)
     {
+        var (scope, server) = target;
         var rows = new Dictionary<string, ProgressListItem>(StringComparer.Ordinal);
         try
         {
             string? cursor = null;
             for (int page = 0; ; page++)
             {
-                var listing = await _api.ListAsync(server, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
+                if (!IsStill(target))
+                {
+                    _logger.LogInformation("Another server, account or profile became the active one while the progress was read; nothing is taken from it");
+                    return 0;
+                }
+                var listing = await _api.ListAsync(server, scope.AccountId, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
                 foreach (var row in listing.Items)
                 {
                     if (row.MediaItemId is { Length: > 0 } id && (!rows.TryGetValue(id, out var known) || row.UpdatedAt > known.UpdatedAt))
@@ -364,6 +388,10 @@ public sealed class OfflineProgressSync : IDisposable
         catch (Exception ex) when (ex is ProfileChangedException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             _logger.LogInformation("The server's progress could not be read ({Failure}); this PC keeps what it has", ApiFailureText.Describe(ex));
+            return 0;
+        }
+        if (!IsStill(target))
+        {
             return 0;
         }
         foreach (var download in _store.In(scope))
@@ -418,6 +446,9 @@ public sealed class OfflineProgressSync : IDisposable
             _retry = _time.CreateTimer(_ => FlushSoon(readBack: true), null, RetryInterval, Timeout.InfiniteTimeSpan);
         }
     }
+
+    /// <summary>The session a run began for: whose positions it sends, and the server they go to.</summary>
+    private sealed record Target(DownloadScope Scope, Uri Server);
 
     /// <summary>
     /// What a send did: the entries that leave the queue (every other one of its batch is sent again), whether the server took

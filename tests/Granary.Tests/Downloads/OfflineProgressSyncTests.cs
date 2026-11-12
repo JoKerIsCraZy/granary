@@ -80,7 +80,7 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
         var sent = Assert.Single(Sends);
         Assert.Equal("""{"items":[{"media_item_id":"ep_5","position_ms":1830500,"duration_ms":7200000,"updated_at":"2026-10-01T12:00:00+00:00"}]}""", sent.Body);
-        Assert.Equal("7", sent.AsProfile);
+        Assert.Equal(("1", "7"), (sent.AsAccount, sent.AsProfile));
         Assert.Empty(_queue.Entries(Scope7));
         // A send alone asks for nothing back.
         Assert.Empty(Reads);
@@ -429,6 +429,59 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAccountSignedInWhileTheSendWasMade_GetsNoneOfTheOthersPositions()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        // Another account is signed in on the server by the time the request goes out, and its profile has the same id.
+        _h.Silo.ActingAccount = () => "2";
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        Assert.Empty(_h.Silo.Sent);
+        Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
+    }
+
+    [Fact]
+    public async Task ARun_SendsNoFurtherBatch_OnceAnotherAccountIsTheActiveOne()
+    {
+        foreach (int n in Enumerable.Range(0, 130))
+        {
+            _queue.Record(Scope7, "ep_" + n, 10_000, 0);
+        }
+        var first = Answered([.. Enumerable.Range(0, 100).Select(n => "ep_" + n)]);
+        _h.Silo.On(HttpMethod.Post, SyncPath, () =>
+        {
+            // While the first batch is answered, the viewer signs out and another account signs in; its profile is 7 too.
+            _h.Session.Account = _h.Session.Account! with { Id = "2" };
+            return first();
+        });
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        // The thirty that were left are account 1's: they wait for it, and nothing is read as the other account.
+        Assert.Single(Sends);
+        Assert.Empty(Reads);
+        Assert.Equal(30, _queue.Entries(Scope7).Count);
+        Assert.All(_queue.Entries(Scope7), e => Assert.Equal(OfflineProgressState.Pending, e.State));
+    }
+
+    [Fact]
+    public async Task ARead_FollowsNoFurtherPage_AndTakesNothing_OnceAnotherServerIsTheActiveOne()
+    {
+        await _h.AddPlayableAsync();
+        _h.Silo.OnUrl(HttpMethod.Get, ProgressPath, (_, _) =>
+        {
+            _h.Session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example/silo"));
+            return ScriptedSilo.Json(HttpStatusCode.OK, Listing("c2", Row("ep_5", 600, "2026-10-01T13:30:00Z")))();
+        });
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        Assert.Single(Reads);
+        Assert.Null(_h.Find("dl_1")!.Record.ResumeMs);
+    }
+
+    [Fact]
     public async Task MoreThanAHundredEntries_GoInBatches()
     {
         foreach (int n in Enumerable.Range(0, 130))
@@ -522,7 +575,7 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
         Assert.Equal(2, Reads.Count);
         Assert.Contains("limit=200", Reads[0].Uri.Query, StringComparison.Ordinal);
-        Assert.All(Reads, r => Assert.Equal("7", r.AsProfile));
+        Assert.All(Reads, r => Assert.Equal(("1", "7"), (r.AsAccount, r.AsProfile)));
         Assert.Equal((600_000L, false), (_h.Find("dl_5")!.Record.ResumeMs, _h.Find("dl_5")!.Record.IsWatched));
         Assert.Equal((0L, true), (_h.Find("dl_7")!.Record.ResumeMs, _h.Find("dl_7")!.Record.IsWatched));
     }

@@ -2924,7 +2924,8 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 A download played from this PC opens no playback session (docs/architecture.md, "Playing a download"), so its progress
 goes through the two operations the server has for it (`silo-server/docs/downloads-api.md`, section 7;
 `silo-server/internal/apiv2/progress.go`, `internal/api/handlers/progress.go`). `Api/Downloads/ProgressSyncApi`; both
-are sent as the profile the progress belongs to. Silo's Apple app uses them the same way; the Android app sends no
+are sent as the account and the profile the progress belongs to, and not at all once another account or profile is
+signed in on that server (`SiloRequestOptions.Account`, `.Profile`). Silo's Apple app uses them the same way; the Android app sends no
 progress of a download.
 
 - `POST /api/v2/sync/progress` (profile) with `{ "items": [{ "media_item_id", "position_ms", "duration_ms", "updated_at" }] }`,

@@ -41,6 +41,12 @@ public sealed class AuthenticationHandler(
             logger.LogInformation("A write made for another profile was not sent");
             throw new ProfileChangedException();
         }
+        if (auth == SiloAuth.Profile && request.GetAccount() is { } account && session?.Account?.Id != account)
+        {
+            // Another account signed in on this server meanwhile; its profile may carry the same id.
+            logger.LogInformation("A write made for another account's profile was not sent");
+            throw new ProfileChangedException();
+        }
         if (server is null || session is null)
         {
             // Without credentials the server answers 401, and the caller gets exactly that.
