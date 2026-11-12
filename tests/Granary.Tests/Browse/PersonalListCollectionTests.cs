@@ -91,7 +91,7 @@ public sealed class PersonalListCollectionTests
 
         await list.DeleteCollectionCommand.ExecuteAsync(null);
 
-        Assert.Equal(("Delete \u201CRainy days\u201D?", "This can't be undone.", "Delete"), Assert.Single(_confirmation.Asked));
+        Assert.Equal(("Delete \"Rainy days\"?", "This can't be undone.", "Delete"), Assert.Single(_confirmation.Asked));
         Assert.Equal("\"r1\"", Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, CollectionPath)).IfMatch);
         Assert.Equal([AppRoute.Collections], _harness.Navigation.Sections);
     }
