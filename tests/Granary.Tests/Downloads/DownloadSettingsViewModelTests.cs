@@ -131,6 +131,18 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public void KeepWatched_IsOffByDefault_AndSaves()
+    {
+        var settings = Settings();
+        Assert.False(settings.KeepWatched);
+
+        settings.KeepWatched = true;
+
+        Assert.True(_h.Preferences.KeepWatched);
+        Assert.True(Settings().KeepWatched);
+    }
+
+    [Fact]
     public async Task DefaultQuality_ListsOriginalAndThePresets()
     {
         var settings = Settings();
@@ -196,6 +208,8 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
         public string DefaultQuality => DownloadQualities.Original;
 
+        public bool KeepWatched => false;
+
         public event EventHandler? Changed
         {
             add { }
@@ -209,5 +223,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public Task SetDownloadsOnMeteredAsync(bool allowed) => Task.CompletedTask;
 
         public Task SetDefaultQualityAsync(string quality) => Task.CompletedTask;
+
+        public Task SetKeepWatchedAsync(bool keep) => Task.CompletedTask;
     }
 }

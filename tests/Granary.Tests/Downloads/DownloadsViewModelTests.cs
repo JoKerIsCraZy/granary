@@ -332,6 +332,120 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task WatchedDownloads_AreSuggestedForDeletion()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+        // Not whole yet, or no longer on the server (it could not be downloaded again): neither counts.
+        await AddFilmAsync("dl_3", "Arriving Movie", DownloadState.Downloading, 7 * GB, r => r with { IsWatched = true });
+        await AddFilmAsync("dl_4", "Revoked Movie", size: 7 * GB, change: r => r with { IsWatched = true, IsNoLongerAvailable = true });
+
+        var page = await AttachedAsync();
+
+        Assert.True(page.ShowsReclaim);
+        Assert.Equal("Free up 3.0 GB · 2 watched", page.ReclaimText);
+    }
+
+    [Fact]
+    public async Task WithoutWatchedDownloads_NothingIsSuggested()
+    {
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+
+        var page = await AttachedAsync();
+
+        Assert.False(page.ShowsReclaim);
+        Assert.False(page.ReclaimCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task KeepWatched_HidesTheSuggestion_AtOnce()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        Assert.True(page.ShowsReclaim);
+
+        await _h.Preferences.SetKeepWatchedAsync(true);
+        Assert.False(page.ShowsReclaim);
+
+        await _h.Preferences.SetKeepWatchedAsync(false);
+        Assert.True(page.ShowsReclaim);
+    }
+
+    [Fact]
+    public async Task ADownloadThatBecomesWatched_IsSuggested_WithoutThePageBeingMadeAgain()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB);
+        var page = await AttachedAsync();
+        var sections = page.Sections;
+
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+
+        Assert.Equal("Free up 2.0 GB · 1 watched", page.ReclaimText);
+        Assert.True(page.ShowsReclaim);
+        Assert.Same(sections, page.Sections);
+    }
+
+    [Fact]
+    public async Task TheSuggestion_DeletesOnlyAfterTheQuestion()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+        var page = await AttachedAsync(_h.StartQueue());
+        _confirmation.Answer = false;
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal(("Free up space?", "Delete 2 watched downloads and free 3.0 GB?", "Delete"), Assert.Single(_confirmation.Asked));
+        Assert.Equal(3, Rows(page).Count());
+
+        _confirmation.Answer = true;
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal(["dl_2"], Rows(page).Select(r => r.DownloadId));
+        Assert.Null(_h.Find("dl_1"));
+        Assert.Null(_h.Find("dl_15"));
+        Assert.False(page.ShowsReclaim);
+        // The server hears of each, once its files are gone.
+        await Until(() => _h.Silo.Sent.Count(r => r.Method == HttpMethod.Delete) == 2, "both deletes reached the server");
+    }
+
+    [Fact]
+    public async Task OneWatchedDownload_IsAskedAboutInTheSingular()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        _confirmation.Answer = false;
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal("Delete 1 watched download and free 2.0 GB?", _confirmation.Asked[0].Message);
+    }
+
+    [Fact]
+    public async Task ADownloadThatStoppedBeingWatchedWhileTheQuestionWasOpen_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_3", "Later Movie", size: GB);
+        var page = await AttachedAsync();
+        // While the question is open the server's word arrives: one is not watched after all, and another became watched.
+        _confirmation.WhileAsking = async () =>
+        {
+            await _h.Store.UpdateAsync(Scope7, "dl_2", r => r with { IsWatched = false }, Token);
+            await _h.Store.UpdateAsync(Scope7, "dl_3", r => r with { IsWatched = true }, Token);
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Only what the question named and is still watched goes.
+        Assert.Null(_h.Find("dl_1"));
+        Assert.NotNull(_h.Find("dl_2"));
+        Assert.NotNull(_h.Find("dl_3"));
+    }
+
+    [Fact]
     public async Task ARow_OpensItsTitlesPage()
     {
         await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");

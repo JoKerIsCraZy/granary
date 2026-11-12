@@ -38,6 +38,24 @@ public sealed class JsonDownloadPreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task KeepWatched_IsOffByDefault_AndStays()
+    {
+        var preferences = Create();
+        Assert.False(preferences.KeepWatched);
+        int changes = 0;
+        preferences.Changed += (_, _) => changes++;
+
+        await preferences.SetKeepWatchedAsync(true);
+
+        Assert.Equal(1, changes);
+        Assert.Contains("\"keep_watched\": true", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.True(Create().KeepWatched);
+        // A file from before the setting says nothing of it.
+        await File.WriteAllTextAsync(FilePath, "{ \"downloads_on_metered\": true }", Token);
+        Assert.False(Create().KeepWatched);
+    }
+
+    [Fact]
     public async Task Changes_StayAtTheNextStart()
     {
         var preferences = Create();

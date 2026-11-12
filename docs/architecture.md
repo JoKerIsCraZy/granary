@@ -1534,7 +1534,10 @@ device.
 - **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine
   tenths of it, is marked watched on this PC at once (`DownloadRecord.IsWatched`, the Apple app's latch) and resumes from
   0, as the server sets a watched title's position back. The mark stays through a rewatch. The server's own threshold
-  decides in the end: its answer replaces the mark when the progress is read back.
+  decides in the end: its answer replaces the mark when the progress is read back. The Downloads page suggests deleting
+  the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
+  them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
+  about that are still watched, each as a single delete goes.
 - **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
   (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending, on its
   way (`Sending`, claimed by a send) or held. Every change is made under one lock and holds at once; the file follows,

@@ -175,6 +175,23 @@ public sealed partial class DownloadManager
         _queue.Wake();
     }
 
+    /// <summary>
+    /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
+    /// as <see cref="DeleteAsync"/> deletes one, and answers how many went. The ids are the ones the viewer was asked about:
+    /// a download that became watched after the question stays, and so does one that is no longer watched.
+    /// </summary>
+    public async Task<int> DeleteWatchedAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(downloadIds);
+        int deleted = 0;
+        foreach (var item in Items.Where(i => i.IsReclaimable && downloadIds.Contains(i.DownloadId)))
+        {
+            await DeleteAsync(item.DownloadId, cancellationToken).ConfigureAwait(false);
+            deleted++;
+        }
+        return deleted;
+    }
+
     private async Task ChangeAsync(DownloadScope scope, string downloadId, Func<DownloadRecord, DownloadRecord> change)
     {
         try
@@ -193,7 +210,7 @@ public sealed partial class DownloadManager
         return new DownloadItem(record.DownloadId, record.MediaItemId, record.Title, record.SeriesId, record.SeriesTitle, record.SeasonNumber,
             record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable, download.FilesMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
-            record.MediaFileId, ArtworkPath(download, "series_poster"));
+            record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

@@ -3,7 +3,8 @@
     The active profile's downloads on this PC. The web has no such page: it is laid out as Granary's list pages
     (PersonalListPage), in the apps' words. The space they use and the space left; then the films, and each series with its
     poster by season, a row per download: its artwork, title, status and size, a bar while it comes, one Pause, Resume or
-    Retry button and Delete. The page is cached and follows the downloads only while it shows.
+    Retry button, or Play once it is whole, and Delete. Above them, while the profile has watched downloads and does not keep
+    them, the suggestion to free up space. The page is cached and follows the downloads only while it shows.
 -->
 <Page
     x:Class="Granary.App.Views.DownloadsPage"
@@ -22,6 +23,12 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="FontSize" Value="13" />
         </Style>
+        <!-- History's outline button, for the suggestion's one action. -->
+        <Style x:Key="DownloadStripButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
     </Page.Resources>
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
@@ -32,6 +39,25 @@
                 <TextBlock Text="{x:Bind ViewModel.SpaceText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" />
             </StackPanel>
+
+            <!--
+                Watched downloads can go: how much that frees and how many, in the Apple app's words, in History's panel
+                look. The button asks first (DownloadsViewModel.ReclaimCommand); Settings → Downloads → Keep watched
+                downloads hides the panel.
+            -->
+            <Border Visibility="{x:Bind ViewModel.ShowsReclaim, Mode=OneWay}" CornerRadius="16" Padding="16" Background="#E61C1C20"
+                    BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind ViewModel.ReclaimText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" FontSize="14"
+                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Button Grid.Column="1" Content="Free up space" Style="{StaticResource DownloadStripButtonStyle}" VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.ReclaimCommand}" />
+                </Grid>
+            </Border>
 
             <!-- Nothing here yet: a dashed box, as the list pages' empty watchlist tab. -->
             <Grid Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}">
@@ -133,6 +159,12 @@
                                                                             ToolTipService.ToolTip="{x:Bind PrimaryActionLabel, Mode=OneWay}"
                                                                             AutomationProperties.Name="{x:Bind PrimaryActionLabel, Mode=OneWay}" Loaded="OnPrimaryButtonLoaded">
                                                                         <FontIcon Glyph="{x:Bind views:DownloadsPage.ActionGlyph(PrimaryAction), Mode=OneWay}" FontSize="13" />
+                                                                    </Button>
+                                                                    <!-- Play, once the download is whole: in the transfer button's place, which has gone by then. -->
+                                                                    <Button Grid.Column="2" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
+                                                                            Command="{x:Bind PlayCommand}" Visibility="{x:Bind CanPlay, Mode=OneWay}"
+                                                                            ToolTipService.ToolTip="Play" AutomationProperties.Name="Play">
+                                                                        <FontIcon Glyph="&#xE768;" FontSize="13" />
                                                                     </Button>
                                                                     <Button Grid.Column="3" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
                                                                             Tag="{x:Bind}" Click="OnDeleteClick" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete">

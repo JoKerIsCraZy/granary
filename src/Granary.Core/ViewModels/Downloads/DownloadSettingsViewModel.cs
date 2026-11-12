@@ -10,7 +10,8 @@ namespace Granary.Core.ViewModels.Downloads;
 /// <summary>
 /// Settings → Downloads, this PC's own choices (<see cref="IDownloadPreferences"/>), each saved as it is made: the folder new
 /// downloads go to, with Change and Open; downloads on metered connections, off by default as both apps have it (Wi-Fi only);
-/// and the quality the download dialog starts on, labelled as the apps label presets. A folder is taken only when Granary can
+/// the quality the download dialog starts on, labelled as the apps label presets; and Keep watched downloads, off by default as
+/// both apps have it, which only hides the Downloads page's suggestion to free up space. A folder is taken only when Granary can
 /// write there, which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
 public sealed partial class DownloadSettingsViewModel : ObservableObject
@@ -39,6 +40,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         _dispatcher = dispatcher;
         Folder = preferences.Folder;
         DownloadsOnMetered = preferences.DownloadsOnMetered;
+        KeepWatched = preferences.KeepWatched;
         ShowQualities();
     }
 
@@ -49,6 +51,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     /// <summary>Downloads run on a metered connection, such as a phone's hotspot.</summary>
     [ObservableProperty]
     public partial bool DownloadsOnMetered { get; set; }
+
+    /// <summary>Watched downloads are not suggested for deletion on the Downloads page.</summary>
+    [ObservableProperty]
+    public partial bool KeepWatched { get; set; }
 
     /// <summary>Original and every preset, best first: "Original", "10 Mbps · up to 1080p".</summary>
     [ObservableProperty]
@@ -125,6 +131,14 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         {
             // Never fails: a save that does not work is logged, and the choice holds for this run.
             _ = _preferences.SetDownloadsOnMeteredAsync(value);
+        }
+    }
+
+    partial void OnKeepWatchedChanged(bool value)
+    {
+        if (value != _preferences.KeepWatched)
+        {
+            _ = _preferences.SetKeepWatchedAsync(value);
         }
     }
 

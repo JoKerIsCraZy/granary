@@ -1,5 +1,6 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
@@ -25,7 +26,9 @@ public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewMo
 /// themselves; the sections are made again only when downloads come, go or move, so a row and its buttons stay put while the
 /// viewer pauses or resumes it. The free space is read off the UI thread, when the page shows and when a download comes,
 /// goes or finishes; a read that fails or takes longer than <see cref="DiskSpaceReads.Timeout"/> leaves it unknown, and the
-/// top then says only the space used.
+/// top then says only the space used. Above the list it suggests deleting the watched downloads to free up space, as both
+/// apps do (the Apple app's "Free up 3.0 GB · 2 watched", the Android app's question), unless Settings → Downloads keeps
+/// watched downloads; nothing is deleted without the question.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -33,6 +36,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public const string EmptyText = "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it without your Silo server.";
     public const string FilmsTitle = "Films";
     public const string SpecialsTitle = "Specials";
+    public const string ReclaimTitle = "Free up space?";
+    public const string ReclaimAction = "Delete";
 
     private static readonly StringComparer TitleOrder = StringComparer.CurrentCultureIgnoreCase;
 
@@ -56,6 +61,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly Dictionary<string, DownloadRowViewModel> _rows = new(StringComparer.Ordinal);
     private List<Shape> _shapes = [];
     private int _completed;
+    private IReadOnlyList<DownloadItem> _reclaimable = [];
     private long _used;
     private long? _free;
     private int _reads;
@@ -84,6 +90,18 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial bool IsEmpty { get; private set; }
 
+    /// <summary>
+    /// The profile has watched downloads on this PC and Settings → Downloads does not keep them: the page suggests deleting
+    /// them (<see cref="ReclaimText"/>, <see cref="ReclaimCommand"/>).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ReclaimCommand))]
+    public partial bool ShowsReclaim { get; private set; }
+
+    /// <summary>"Free up 3.0 GB · 2 watched", the Apple app's line; empty without a suggestion.</summary>
+    [ObservableProperty]
+    public partial string ReclaimText { get; private set; } = "";
+
     /// <summary>The last read of the free space; done once <see cref="SpaceText"/> shows it.</summary>
     public Task SpaceRead { get; private set; } = Task.CompletedTask;
 
@@ -103,7 +121,31 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             _progressed.Clear();
         }
         _downloads.Changed += OnChanged;
+        // Keep watched downloads, switched in Settings while the page stays in memory, shows at once.
+        _preferences.Changed += OnChanged;
         Show(readSpace: true);
+    }
+
+    /// <summary>
+    /// Asks whether the watched downloads may go, in the Android app's words, and deletes them on a yes: the ones the question
+    /// counted that are still watched then.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(ShowsReclaim))]
+    private async Task ReclaimAsync()
+    {
+        var asked = _reclaimable;
+        if (asked.Count == 0)
+        {
+            return;
+        }
+        string count = asked.Count.ToString(CultureInfo.InvariantCulture);
+        string message = asked.Count == 1
+            ? $"Delete 1 watched download and free {Size(asked.Sum(i => i.ExpectedBytes))}?"
+            : $"Delete {count} watched downloads and free {Size(asked.Sum(i => i.ExpectedBytes))}?";
+        if (await _confirmation.AskAsync(ReclaimTitle, message, ReclaimAction))
+        {
+            await _downloads.DeleteWatchedAsync([.. asked.Select(i => i.DownloadId)], CancellationToken.None);
+        }
     }
 
     /// <summary>The page was left: it stops following the downloads, which hold it no longer.</summary>
@@ -114,6 +156,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             _attached = false;
         }
         _downloads.Changed -= OnChanged;
+        _preferences.Changed -= OnChanged;
     }
 
     public void Dispose() => Detach();
@@ -203,6 +246,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             IsEmpty = Sections.Count == 0;
         }
         _used = _downloads.BytesUsed();
+        ShowReclaim(items);
         if (reread)
         {
             ReadSpace();
@@ -211,6 +255,16 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         {
             ShowSpace();
         }
+    }
+
+    // What the suggestion counts: the watched downloads that are whole on this PC, unless the viewer keeps them.
+    private void ShowReclaim(IReadOnlyList<DownloadItem> items)
+    {
+        _reclaimable = _preferences.KeepWatched ? [] : [.. items.Where(i => i.IsReclaimable)];
+        ReclaimText = _reclaimable.Count == 0
+            ? ""
+            : $"Free up {Size(_reclaimable.Sum(i => i.ExpectedBytes))} · {_reclaimable.Count.ToString(CultureInfo.InvariantCulture)} watched";
+        ShowsReclaim = _reclaimable.Count > 0;
     }
 
     // Transfers that went further: only their rows and the space used.
