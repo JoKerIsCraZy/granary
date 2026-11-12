@@ -251,7 +251,8 @@ public static class MediaCardFactory
         {
             return null;
         }
-        int minutes = (int)Math.Ceiling((duration.Value - position.Value) / 60);
+        // To the nearest minute, a half up, as the web's ContinueWatchingCard.tsx rounds it (Math.round) and Silo's apps show it.
+        int minutes = (int)Math.Round((duration.Value - position.Value) / 60, MidpointRounding.AwayFromZero);
         return AppText.Get("web.home.continueWatching.minutesLeft", ("minutes", minutes));
     }
 

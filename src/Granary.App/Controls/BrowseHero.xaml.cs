@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -21,7 +22,9 @@ namespace Granary.App.Controls;
 /// compact header of the logo and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title
 /// shows only its backdrop's blur. An unwatched episode's still, while the profile hides those, shows blurred as the web's
 /// <c>HeroBanner</c> (<see cref="BrowseHeroTitle.BlursBackdrop"/>, <see cref="BackdropLayer"/>), and its overview not at all.
-/// On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
+/// On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>). Set to
+/// <see cref="BrowseHeroSize.Full"/> (<see cref="Size"/>; Settings → Navigation &amp; Cards → Hero size) it is as tall as the
+/// banner of Silo's web: the rows begin under it, and its text stands at its foot and goes up with the rows into the header.
 /// Showing Home's banner (<see cref="SlideNumber"/>), it says which slide over the name and begins the rows lower, for the
 /// banner's buttons. The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
 /// With the title preview off (Settings → Navigation &amp; Cards, <see cref="BrowseHeroSetting"/>) the page gives it no title
@@ -37,16 +40,24 @@ public sealed partial class BrowseHero : UserControl
         DependencyProperty.Register(nameof(SlideNumber), typeof(string), typeof(BrowseHero),
             new PropertyMetadata(null, (sender, e) => ((BrowseHero)sender).ShowSlideNumber(e.NewValue as string)));
 
+    public static readonly DependencyProperty SizeProperty =
+        DependencyProperty.Register(nameof(Size), typeof(BrowseHeroSize), typeof(BrowseHero),
+            new PropertyMetadata(BrowseHeroSize.Compact, (sender, _) => ((BrowseHero)sender).FollowPageHeight()));
+
     public static readonly DependencyProperty SizesProperty =
         DependencyProperty.Register(nameof(Sizes), typeof(BrowseHeroSizes), typeof(BrowseHero), new PropertyMetadata(BrowseHeroLayout.For(0)));
 
     private const int LogoDecodeWidth = 400;
+    // A rating's mark beside its score, as the web's RatingEntry sets them: 12 px beside 14 px. The score is the line's size.
+    private const double RatingMarkShare = 12d / 14;
     private static readonly TimeSpan Crossfade = TimeSpan.FromMilliseconds(350);
     private static readonly TimeSpan LogoFade = TimeSpan.FromMilliseconds(200);
 
     private readonly BackdropLayer[] _layers;
     private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
+    // The backdrop's box, which cuts off what of the picture is over its edges.
+    private readonly RectangleGeometry _pictureClip = new();
     // The text's sizes as the markup gives them, for a 1080 px window; a taller one grows them.
     private readonly (double LogoWidth, double Name, double Meta, double Overview, double OverviewLine, double OverviewWidth, double Width, double Top) _textAt1080;
     private readonly (double Size, double Line, double Gap) _eyebrowAt1080;
@@ -55,8 +66,8 @@ public sealed partial class BrowseHero : UserControl
     private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
-    // The title whose pictures show, and whether its backdrop is blurred.
-    private (string Key, bool Blurs)? _picturesOf;
+    // The title whose pictures show, whether its backdrop is blurred and which one it is (BrowseHeroTitle.Pictures).
+    private (string Key, bool Blurs, string? Backdrop)? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
@@ -72,6 +83,7 @@ public sealed partial class BrowseHero : UserControl
         _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
             Texts.MaxWidth, Texts.Margin.Top);
         _eyebrowAt1080 = (Eyebrow.FontSize, Eyebrow.LineHeight, Eyebrow.Margin.Bottom);
+        Pictures.Clip = _pictureClip;
         ApplySizes(Sizes);
         _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
@@ -84,6 +96,9 @@ public sealed partial class BrowseHero : UserControl
         _fadeDone.IsRepeating = false;
         WeakTick.Subscribe(_fadeDone, this, static hero => hero.FinishFade());
         SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
+        // Another title's text is another height, and the full hero's text has another way up to the header. Only a number
+        // of the fold changes here, nothing of the layout.
+        Texts.SizeChanged += (_, _) => SetFoldNumbers();
         // A title shown while the page was out of the window gets its pictures now that it is in it. The page's height sets
         // the hero's.
         Loaded += (_, _) =>
@@ -109,6 +124,16 @@ public sealed partial class BrowseHero : UserControl
     {
         get => (string?)GetValue(SlideNumberProperty);
         set => SetValue(SlideNumberProperty, value);
+    }
+
+    /// <summary>
+    /// Compact, Granary's own sizes, or Full, as tall as the banner of Silo's web: the profile's choice in Settings, which the
+    /// page hands on as it shows.
+    /// </summary>
+    public BrowseHeroSize Size
+    {
+        get => (BrowseHeroSize)GetValue(SizeProperty);
+        set => SetValue(SizeProperty, value);
     }
 
     /// <summary>The hero's sizes on its page now, for the page's rows (<see cref="RowsViewMargin"/>, <see cref="RowsPadding"/>).</summary>
@@ -178,6 +203,8 @@ public sealed partial class BrowseHero : UserControl
 
         SetFoldNumbers();
 
+        ElementCompositionPreview.SetIsTranslationEnabled(Texts, true);
+        Visual(Texts).StartAnimation("Translation.Y", Expression("Texts.Translation.Y"));
         Visual(Heading).StartAnimation("Scale", Expression("Heading.Scale"));
         foreach (var text in new UIElement[] { MetaText, OverviewText })
         {
@@ -194,14 +221,15 @@ public sealed partial class BrowseHero : UserControl
         fade.StartAnimation("Scale", Expression("Fade.Scale"));
     }
 
-    // The fold's numbers for the hero's sizes now; the bottom fade shrinks toward its own bottom.
+    // The fold's numbers for the hero's sizes and its text's height now; the bottom fade shrinks toward its own bottom.
     private void SetFoldNumbers()
     {
         if (_fold is not { } fold)
         {
             return;
         }
-        foreach (var (name, value) in BrowseHeroLayout.ParametersFor(Sizes))
+        double lift = BrowseHeroLayout.TextLift(Sizes, Texts.ActualHeight, Texts.Margin.Top);
+        foreach (var (name, value) in BrowseHeroLayout.ParametersFor(Sizes, lift))
         {
             fold.InsertScalar(name, value);
         }
@@ -235,11 +263,22 @@ public sealed partial class BrowseHero : UserControl
         }
         Visibility = Visibility.Visible;
         HeadingText.Text = title.Heading;
-        MetaText.Text = title.Meta;
-        MetaText.Visibility = title.Meta.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowDetails(title);
         OverviewText.Text = title.Overview ?? "";
         OverviewText.Visibility = title.Overview is null ? Visibility.Collapsed : Visibility.Visible;
         ShowPictures();
+    }
+
+    // The line of details: what comes before its rating, the rating's mark and score in their own type, and the rest. A line
+    // without a rating is all in the first run. It is read whole, as it would be written ("2006 · IMDb 8.4 · Drama · TV-PG").
+    private void ShowDetails(BrowseHeroTitle title)
+    {
+        MetaLead.Text = title.MetaBeforeRating;
+        MetaMark.Text = title.Rating?.Name ?? "";
+        MetaScore.Text = title.Rating is { } rating ? " " + rating.Display : "";
+        MetaTail.Text = title.MetaAfterRating;
+        AutomationProperties.SetName(MetaText, title.Meta);
+        MetaText.Visibility = title.Meta.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // Whether the hero shows Home's banner. x:Bind hands a string property "" for null, so empty means none too: the card
@@ -255,7 +294,7 @@ public sealed partial class BrowseHero : UserControl
         Eyebrow.Visibility = isBanner ? Visibility.Visible : Visibility.Collapsed;
         EyebrowNumber.Text = AppText.Upper(slide);
         AutomationProperties.SetName(Eyebrow, isBanner ? $"{AppText.Get("web.home.hero.eyebrow")} — {slide}" : "");
-        FollowPageHeight(_page?.ActualHeight ?? double.NaN);
+        FollowPageHeight();
     }
 
     // The logo and the backdrop of the title shown. Only while the hero is in the window: a cached page shows its title
@@ -264,7 +303,8 @@ public sealed partial class BrowseHero : UserControl
     // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
     // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
     // are being set follows them, rather than starting over from within. The same title with its backdrop blurred now, or
-    // no longer (a spoiler switch, the episode started), keeps its logo and fades its backdrop over.
+    // no longer (a spoiler switch, the episode started), or with another backdrop (a wider one, after its page asked for
+    // them again), keeps its logo and fades its backdrop over.
     private void ShowPictures()
     {
         if (_showingPictures)
@@ -290,7 +330,7 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    private static (string Key, bool Blurs) PicturesOf(BrowseHeroTitle title) => (title.Key, title.BlursBackdrop);
+    private static (string Key, bool Blurs, string? Backdrop) PicturesOf(BrowseHeroTitle title) => title.Pictures;
 
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)
@@ -377,11 +417,24 @@ public sealed partial class BrowseHero : UserControl
 
     private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width, Sizes.RestHeight);
 
-    // The backdrop takes its share of the new width.
+    // The backdrop takes its share of the new width, or all of it under the full hero.
     private void OnWidthChanged(double width)
     {
         BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width, Sizes);
+        PlacePicture();
         FollowWidth();
+    }
+
+    // The picture fills the box, showing its upper part; what is over the box's edges is cut off.
+    private void PlacePicture()
+    {
+        double width = BackdropBox.Width;
+        var place = BrowseHeroLayout.PlaceBackdrop(width, Sizes.RestHeight);
+        Picture.Width = place.Width;
+        Picture.Height = place.Height;
+        Canvas.SetLeft(Picture, place.Left);
+        Canvas.SetTop(Picture, place.Top);
+        _pictureClip.Rect = new Rect(0, 0, double.IsFinite(width) ? Math.Max(0, width) : 0, Sizes.RestHeight);
     }
 
     // The page the hero is on: its height sets the hero's sizes. It must be the page's own full-height grid: a parent sized
@@ -399,12 +452,15 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    // A page of another height (in steps, BrowseHeroLayout.For), or the banner come or gone: the hero takes its sizes, the
-    // backdrop its box (decoded again when it grew notably), the fold its new numbers and where it counts as folded, and the
-    // page lays its rows under it again (Sizes).
+    // The banner come or gone, or another size chosen: the sizes for the page's height as it is, if it is known yet.
+    private void FollowPageHeight() => FollowPageHeight(_page?.ActualHeight ?? double.NaN);
+
+    // A page of another height (in steps, BrowseHeroLayout.For), the banner come or gone, or another size chosen: the hero
+    // takes its sizes, the backdrop its box (decoded again when it grew notably), the fold its new numbers and where it
+    // counts as folded, and the page lays its rows under it again (Sizes).
     private void FollowPageHeight(double height)
     {
-        var sizes = BrowseHeroLayout.For(height, banner: IsBanner);
+        var sizes = BrowseHeroLayout.For(height, banner: IsBanner, Size);
         if (sizes == Sizes)
         {
             return;
@@ -421,12 +477,20 @@ public sealed partial class BrowseHero : UserControl
         var text = _textAt1080;
         Root.Height = sizes.RestHeight;
         BottomFade.Height = sizes.FadeHeight;
+        // The compact hero's backdrop fades into the page on its left; the full one's lies under the web's banner's fades.
+        SideFade.Fill = (Brush)Resources[sizes.IsFull ? "FullSideFade" : "CompactSideFade"];
+        BottomFade.Fill = (Brush)Resources[sizes.IsFull ? "FullBottomFade" : "CompactBottomFade"];
+        Dim.Visibility = sizes.IsFull ? Visibility.Visible : Visibility.Collapsed;
         Heading.Height = sizes.HeadingHeight;
         Logo.MaxWidth = BrowseHeroLayout.Scaled(text.LogoWidth, sizes.Grow);
         HeadingText.FontSize = BrowseHeroLayout.Scaled(text.Name, sizes.Grow);
         Texts.MaxWidth = BrowseHeroLayout.Scaled(text.Width, sizes.Grow);
-        Texts.Margin = Texts.Margin with { Top = BrowseHeroLayout.Scaled(text.Top, sizes.Grow) };
+        // The compact hero's text hangs from the top; the full one's stands on its foot, as the web's banner's, and never
+        // higher than the header has it.
+        Texts.VerticalAlignment = sizes.TextBottom is null ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+        Texts.Margin = Texts.Margin with { Top = BrowseHeroLayout.Scaled(text.Top, sizes.Grow), Bottom = sizes.TextBottom ?? 0 };
         MetaText.FontSize = BrowseHeroLayout.Scaled(text.Meta, sizes.TextGrow);
+        MetaMark.FontSize = BrowseHeroLayout.Scaled(text.Meta * RatingMarkShare, sizes.TextGrow);
         OverviewText.FontSize = BrowseHeroLayout.Scaled(text.Overview, sizes.TextGrow);
         OverviewText.LineHeight = BrowseHeroLayout.Scaled(text.OverviewLine, sizes.TextGrow);
         OverviewText.MaxWidth = BrowseHeroLayout.Scaled(text.OverviewWidth, sizes.Grow);

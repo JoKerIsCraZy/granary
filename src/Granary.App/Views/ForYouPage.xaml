@@ -17,7 +17,7 @@
 
     <Grid>
         <!-- Behind the rows: they scroll under the compact header and are cut off at its edge. -->
-        <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" HeadingLevel="None" />
+        <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" Size="{x:Bind ViewModel.Hero.Size, Mode=OneWay}" HeadingLevel="None" />
 
         <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.HasTitle, Hero.Sizes), Mode=OneWay}">
             <StackPanel Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.HasTitle, Hero.Sizes), Mode=OneWay}" Spacing="32">

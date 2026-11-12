@@ -140,6 +140,8 @@
     <SolidColorBrush x:Key="SiloBorderBrush" Color="{StaticResource SiloBorderColor}" />
     <SolidColorBrush x:Key="SiloForegroundBrush" Color="{StaticResource SiloForegroundColor}" />
     <SolidColorBrush x:Key="SiloMutedBrush" Color="{StaticResource SiloMutedColor}" />
+    <!-- A rating's mark in a line of muted text: the web's opacity-75 (RatingEntry). -->
+    <SolidColorBrush x:Key="SiloMutedTint75Brush" Color="{StaticResource SiloMutedColor}" Opacity="0.75" />
     <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
     <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
@@ -153,6 +155,7 @@
     -->
     <SolidColorBrush x:Key="SiloPrimaryHoverBrush" Color="{StaticResource SiloPrimaryHoverColor}" />
     <SolidColorBrush x:Key="SiloPrimaryPressedBrush" Color="{StaticResource SiloPrimaryPressedColor}" />
+    <SolidColorBrush x:Key="SiloPrimaryTint10Brush" Color="#1AE8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26E8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint20Brush" Color="#33E8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint40Brush" Color="#66E8E8EC" />
@@ -298,10 +301,31 @@
         <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="Padding" Value="10,4" />
     </Style>
-    <!-- Technical chips in the accent colour: "1080P", "EAC3". -->
+    <!-- A chip in the accent colour among the others, as the request title page marks one (DetailHero.ChipStyle). -->
     <Style x:Key="SiloAccentChipStyle" TargetType="Border" BasedOn="{StaticResource SiloChipStyle}">
         <Setter Property="Background" Value="{StaticResource SiloPrimaryTint15Brush}" />
         <Setter Property="BorderBrush" Value="{StaticResource SiloPrimaryTint60Brush}" />
+    </Style>
+    <!--
+        A file's quality in the accent colour, "1080P", "DV HDR10", "DD+ ATMOS", as the web's QualityBadges
+        (bg-primary/10 text-primary border-primary/20 rounded-sm px-2 py-0.5): the accent at 20 % round the accent at 10 %,
+        radius 8 (the web's radius-sm), 8 px in and about 22 high, with 11 px semibold capitals in the accent. A style of its
+        own: the accent chip above is a pill among pills.
+    -->
+    <Style x:Key="SiloQualityBadgeStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SiloPrimaryTint10Brush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloPrimaryTint20Brush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="SiloQualityBadgeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="CharacterSpacing" Value="25" />
+        <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
     </Style>
 
     <!--

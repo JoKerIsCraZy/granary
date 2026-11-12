@@ -565,6 +565,45 @@ public sealed class ItemDetailPrePlayTests
         Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(ItemDetailPayloads.EpisodeId)), Played);
     }
 
+    // The web's QualityBadges show selectedMediaSummary, which follows its Version picker (MovieContent.tsx).
+    [Fact]
+    public async Task TheQualityBadges_AreTheChosenFiles_AndFollowTheVersionPicker()
+    {
+        var detail = await LoadAsync();
+        Assert.Equal(["1080P", "DTS"], detail.QualityBadges);
+        Assert.True(detail.HasQualityBadges);
+
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+
+        Assert.Equal(["2160P", "HDR10", "DTS"], detail.QualityBadges);
+    }
+
+    [Fact]
+    public async Task AnAudioPick_LeavesTheQualityBadgesAsTheyAre()
+    {
+        var detail = await LoadAsync();
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+        var badges = detail.QualityBadges;
+
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[2]);
+
+        // The same list, so the hero does not make its badges again.
+        Assert.Same(badges, detail.QualityBadges);
+    }
+
+    [Fact]
+    public async Task AnEpisode_HasQualityBadges_AndASeriesNone()
+    {
+        var detail = await _fixture.Episode().LoadAsync(ItemDetailPayloads.EpisodeId);
+        Assert.Equal(["2160P", "HDR", "TRUEHD"], detail.QualityBadges);
+
+        _fixture.Series();
+        await detail.LoadCommand.ExecuteAsync(ItemDetailPayloads.SeriesId);
+
+        Assert.Empty(detail.QualityBadges);
+        Assert.False(detail.HasQualityBadges);
+    }
+
     [Fact]
     public async Task AnotherTitle_StartsWithoutPicks()
     {
