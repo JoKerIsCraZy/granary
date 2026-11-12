@@ -733,6 +733,55 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
         Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
     }
 
+    [Theory]
+    [InlineData("""{ "items": [ ROW ] }""")]
+    [InlineData("""{ "items": [ ROW ], "page": { "has_more": true } }""")]
+    [InlineData("""{ "items": [ ROW ], "page": { "has_more": true, "next_cursor": "" } }""")]
+    public async Task AListingThatDoesNotSayItIsComplete_ChangesNothing(string answer)
+    {
+        await _h.AddPlayableAsync();
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+        // A row that would both move the download and settle the waiting position, were the listing whole.
+        _h.Silo.On(HttpMethod.Get, ProgressPath,
+            ScriptedSilo.Json(HttpStatusCode.OK, answer.Replace("ROW", Row("ep_5", 600, "2026-10-01T13:30:00Z"), StringComparison.Ordinal)));
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        // More rows may follow that it does not give a way to: nothing is taken, and nothing that waits is let go.
+        Assert.Null(_h.Find("dl_1")!.Record.ResumeMs);
+        Assert.Single(_queue.Entries(Scope7));
+        Assert.Contains("did not end", _h.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AStopWhosePositionWentWithTheLastRecord_StillLearnsWhetherTheTitleIsWatchedNow()
+    {
+        await _h.AddPlayableAsync();
+        var sync = Sync();
+        await sync.FlushAsync(readBack: true, Token);
+        Assert.Single(Reads);
+
+        // The play's last record goes while it plays, and asks for nothing back.
+        _queue.Record(Scope7, "ep_5", 6_800_000, 7_200_000);
+        await sync.FlushAsync(readBack: false, Token);
+        Assert.Single(Reads);
+
+        // The viewer pauses and stops there: the stop has nothing new to send, a minute after the last read. The server,
+        // whose threshold an admin set, counts the title as watched.
+        _h.Silo.On(HttpMethod.Get, ProgressPath,
+            ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 0, "2026-10-01T12:00:00.000Z", completed: true))));
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await sync.FlushAsync(readBack: true, Token);
+
+        Assert.Equal(2, Reads.Count);
+        Assert.True(_h.Find("dl_1")!.Record.IsWatched);
+
+        // Read once for it: the next stop without a send waits for the ten minutes again.
+        await sync.FlushAsync(readBack: true, Token);
+        Assert.Equal(2, Reads.Count);
+    }
+
     [Fact]
     public async Task WithoutDownloads_NothingIsReadBack()
     {

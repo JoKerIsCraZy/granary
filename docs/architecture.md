@@ -1645,7 +1645,11 @@ device.
   (`RealtimeEvents.EchoWindow`, or "while this app plays") and reloads nothing a second time.
 - **Reading back.** After a flush, the server's whole progress listing is read (every page) when the caller wanted it
   (the stop, the start, a session or connection change, a retry), the profile has downloads, and either the flush sent
-  something or the last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. A position on
+  something, or a flush before it did and no read followed (the position a title is left at usually goes with the play's
+  last record, which asks for no read, so the stop's own flush sends nothing and still wants the server's word), or the
+  last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. The listing counts as whole
+  only when a page says so (`has_more: false`): an answer without its `page`, or one that names more and gives no
+  cursor, is taken for one that broke off. A position on
   the way asks for no read. For each download the listing names, the later of the server's `updated_at` and the record's
   `ResumeAt` holds, the server's on a tie (the Apple app's `mergeProgress`): its position becomes `ResumeMs`, its time
   `ResumeAt`, and `IsWatched` whether it is `completed` with no position on top. This PC's own position holds only

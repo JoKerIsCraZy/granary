@@ -72,9 +72,11 @@ public sealed class OfflineProgressSync : IDisposable
     // run for the whole HTTP timeout, and the player asks for a flush every ten seconds.
     private Task? _waiting;
 
-    // Only a run touches these: whose progress was read last, and when.
+    // Only a run touches these: whose progress was read last, and when; and whose positions the server took since without
+    // a read of what it made of them.
     private DownloadScope? _readFor;
     private long _readAt;
+    private DownloadScope? _sentUnreadFor;
 
     public OfflineProgressSync(OfflineProgressQueue queue, ProgressSyncApi api, DownloadStore store, ISessionManager session, INetworkLink network,
         ViewerStateChanges changes, TimeProvider time, ILogger<OfflineProgressSync> logger)
@@ -278,6 +280,7 @@ public sealed class OfflineProgressSync : IDisposable
         }
         if (sent)
         {
+            _sentUnreadFor = scope;
             TellThePages();
         }
         if (readBack && IsReadBackDue(scope, sent) && await ReadBackAsync(target, cancellationToken).ConfigureAwait(false) > 0 && !sent)
@@ -388,10 +391,12 @@ public sealed class OfflineProgressSync : IDisposable
         }
     }
 
-    // Wanted, and worth a listing: the profile has downloads to bring up to date, and either this run sent something the
-    // server may have judged, or the last read is another profile's or old enough.
+    // Wanted, and worth a listing: the profile has downloads to bring up to date, and either this run, or one before it
+    // that asked for no read, sent something the server may have judged, or the last read is another profile's or old
+    // enough. The run before matters at a stop: the position the title was left at went with the play's last record, so
+    // the stop's own flush sends nothing, and it is still the stop that wants to know whether the title is watched now.
     private bool IsReadBackDue(DownloadScope scope, bool sent) =>
-        _store.In(scope).Count > 0 && (sent || _readFor != scope || _time.GetElapsedTime(_readAt) >= ReadBackInterval);
+        _store.In(scope).Count > 0 && (sent || _sentUnreadFor == scope || _readFor != scope || _time.GetElapsedTime(_readAt) >= ReadBackInterval);
 
     // The whole listing, then the downloads it names: the later of the server's position and this PC's holds, the server's
     // on a tie, with its word on whether the title is watched (the Apple app's mergeProgress). This PC's holds only while
@@ -422,11 +427,13 @@ public sealed class OfflineProgressSync : IDisposable
                         rows[id] = row;
                     }
                 }
-                if (listing.Page is not { HasMore: true, NextCursor: { Length: > 0 } next })
+                if (listing.Page is { HasMore: false })
                 {
                     break;
                 }
-                if (next == cursor || page + 1 >= MaxPages)
+                // Complete only when a page says so: an answer without its page member, or one that names more pages and no
+                // cursor to them, may hold back later rows, and what waits in the queue is settled against the whole listing.
+                if (listing.Page is not { NextCursor: { Length: > 0 } next } || next == cursor || page + 1 >= MaxPages)
                 {
                     _logger.LogWarning("The server's progress listing did not end; nothing is taken from it");
                     return 0;
@@ -459,6 +466,7 @@ public sealed class OfflineProgressSync : IDisposable
         }
         _readFor = scope;
         _readAt = _time.GetTimestamp();
+        _sentUnreadFor = null;
         return settled;
     }
 
