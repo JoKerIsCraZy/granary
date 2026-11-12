@@ -1621,6 +1621,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
+  Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the
+  arrows: on it every arrow sets the volume, and a remote could not go on to the buttons beside it. A remote sets the
+  volume with its own volume keys, M mutes, and Up and Down set it where Settings gives them the volume. For the move the
+  slider is taken out of the tab stops, at every display scale; a rectangle for the arrows to leave out
+  (`FindNextElementOptions.ExclusionRect`) held only at 100 %, since WinUI scales it and not the bounds it compares it
+  with, so on a TV at 150 % focus landed on the slider (`FocusRectangleTests`).
   A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown

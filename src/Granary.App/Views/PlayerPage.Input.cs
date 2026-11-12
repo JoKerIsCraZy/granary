@@ -7,7 +7,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core;
 using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
@@ -377,16 +376,28 @@ public sealed partial class PlayerPage
         }
         _movesThroughControls = true;
         RestartHideTimer();
-        // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
-        // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
-        var options = new FindNextElementOptions { SearchRoot = this };
-        if (VolumeSlider.Visibility == Visibility.Visible && VolumeSlider.ActualWidth > 0)
-        {
-            options.ExclusionRect = VolumeSlider.TransformToVisual(null)
-                .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
-        }
-        FocusManager.TryMoveFocus(direction, options);
+        MoveFocusPastVolumeSlider(direction);
         return true;
+    }
+
+    // The arrows pass the volume slider by: on it every arrow would change the volume, and no remote could get past it to
+    // the buttons beside it. Tab still reaches it; a remote sets the volume with its own volume keys, with M, or with Up
+    // and Down where the settings give them the volume. For the move the slider is no stop at all. Its place is not
+    // handed over as FindNextElementOptions.ExclusionRect: WinUI multiplies that rectangle by the display's scale and
+    // holds it against bounds it has divided by the scale, so at any scale but 100 % (a TV's 150 %) it lay somewhere else
+    // and the slider took the focus (FocusRectangleTests).
+    private void MoveFocusPastVolumeSlider(FocusNavigationDirection direction)
+    {
+        bool wasTabStop = VolumeSlider.IsTabStop;
+        VolumeSlider.IsTabStop = false;
+        try
+        {
+            FocusManager.TryMoveFocus(direction, new FindNextElementOptions { SearchRoot = this });
+        }
+        finally
+        {
+            VolumeSlider.IsTabStop = wasTabStop;
+        }
     }
 
     // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
