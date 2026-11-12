@@ -29,8 +29,8 @@ public sealed partial class LocalPlayback : IServerPlayback
     /// <summary>How long the stop waits for the server to take the last position; a slower send goes on by itself.</summary>
     public static readonly TimeSpan StopSendBudget = TimeSpan.FromSeconds(3);
 
-    /// <summary>What the player says when the file on this PC will not play.</summary>
-    public const string CannotPlay = "This download can't be played. Delete it and download it again.";
+    /// <summary>What the player says, beside Retry, when the file on this PC will not play.</summary>
+    public const string CannotPlay = "This download can't be played. Try again, or delete it and download it again.";
 
     // An end this close to the title's length is its end; an earlier one is a file that breaks off.
     private const double EndTolerance = 30;

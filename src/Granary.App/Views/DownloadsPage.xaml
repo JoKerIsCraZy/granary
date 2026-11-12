@@ -4,7 +4,7 @@
     (PersonalListPage), in the apps' words. The space they use and the space left; then the films, and each series with its
     poster by season, a row per download: its artwork, title, status and size, a bar while it comes, one Pause, Resume or
     Retry button, or Play once it is whole, and Delete. Above them, while the profile has watched downloads and does not keep
-    them, the suggestion to free up space. The page is cached and follows the downloads only while it shows.
+    them, the Android app's Reclaim Watched. The page is cached and follows the downloads only while it shows.
 -->
 <Page
     x:Class="Granary.App.Views.DownloadsPage"
@@ -23,7 +23,7 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="FontSize" Value="13" />
         </Style>
-        <!-- History's outline button, for the suggestion's one action. -->
+        <!-- History's outline button, for Reclaim Watched. -->
         <Style x:Key="DownloadStripButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="Padding" Value="12,4" />
@@ -41,23 +41,12 @@
             </StackPanel>
 
             <!--
-                Watched downloads can go: how much that frees and how many, in the Apple app's words, in History's panel
-                look. The button asks first (DownloadsViewModel.ReclaimCommand); Settings → Downloads → Keep watched
-                downloads hides the panel.
+                Watched downloads can go: the Android app's button, by its name (DownloadsViewModel.ReclaimTitle). It asks
+                first, with how many they are and what they free (ReclaimCommand); Settings → Downloads → Keep watched
+                downloads hides it.
             -->
-            <Border Visibility="{x:Bind ViewModel.ShowsReclaim, Mode=OneWay}" CornerRadius="16" Padding="16" Background="#E61C1C20"
-                    BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1">
-                <Grid ColumnSpacing="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{x:Bind ViewModel.ReclaimText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" FontSize="14"
-                               VerticalAlignment="Center" TextWrapping="Wrap" />
-                    <Button Grid.Column="1" Content="Free up space" Style="{StaticResource DownloadStripButtonStyle}" VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.ReclaimCommand}" />
-                </Grid>
-            </Border>
+            <Button Visibility="{x:Bind ViewModel.ShowsReclaim, Mode=OneWay}" Content="Reclaim Watched"
+                    Style="{StaticResource DownloadStripButtonStyle}" HorizontalAlignment="Left" Command="{x:Bind ViewModel.ReclaimCommand}" />
 
             <!-- Nothing here yet: a dashed box, as the list pages' empty watchlist tab. -->
             <Grid Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}">

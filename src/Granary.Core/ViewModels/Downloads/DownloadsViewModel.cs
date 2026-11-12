@@ -26,9 +26,9 @@ public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewMo
 /// themselves; the sections are made again only when downloads come, go or move, so a row and its buttons stay put while the
 /// viewer pauses or resumes it. The free space is read off the UI thread, when the page shows and when a download comes,
 /// goes or finishes; a read that fails or takes longer than <see cref="DiskSpaceReads.Timeout"/> leaves it unknown, and the
-/// top then says only the space used. Above the list it suggests deleting the watched downloads to free up space, as both
-/// apps do (the Apple app's "Free up 3.0 GB · 2 watched", the Android app's question), unless Settings → Downloads keeps
-/// watched downloads; nothing is deleted without the question.
+/// top then says only the space used. Above the list it offers to delete the watched downloads to free up space, as both
+/// apps do, in the Android app's words throughout (its Reclaim Watched button, the dialog of that name, its question and
+/// its Reclaim), unless Settings → Downloads keeps watched downloads; nothing is deleted without the question.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -36,8 +36,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public const string EmptyText = "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it without your Silo server.";
     public const string FilmsTitle = "Films";
     public const string SpecialsTitle = "Specials";
-    public const string ReclaimTitle = "Free up space?";
-    public const string ReclaimAction = "Delete";
+    /// <summary>The button on the page and the title of its question (Android's <c>downloads_reclaim_watched</c>).</summary>
+    public const string ReclaimTitle = "Reclaim Watched";
+
+    /// <summary>The question's yes (Android's <c>downloads_reclaim_confirm</c>).</summary>
+    public const string ReclaimAction = "Reclaim";
 
     private static readonly StringComparer TitleOrder = StringComparer.CurrentCultureIgnoreCase;
 
@@ -91,16 +94,12 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public partial bool IsEmpty { get; private set; }
 
     /// <summary>
-    /// The profile has watched downloads on this PC and Settings → Downloads does not keep them: the page suggests deleting
-    /// them (<see cref="ReclaimText"/>, <see cref="ReclaimCommand"/>).
+    /// The profile has watched downloads on this PC and Settings → Downloads does not keep them: the page offers to delete
+    /// them (<see cref="ReclaimTitle"/>, <see cref="ReclaimCommand"/>).
     /// </summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ReclaimCommand))]
     public partial bool ShowsReclaim { get; private set; }
-
-    /// <summary>"Free up 3.0 GB · 2 watched", the Apple app's line; empty without a suggestion.</summary>
-    [ObservableProperty]
-    public partial string ReclaimText { get; private set; } = "";
 
     /// <summary>The last read of the free space; done once <see cref="SpaceText"/> shows it.</summary>
     public Task SpaceRead { get; private set; } = Task.CompletedTask;
@@ -127,8 +126,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Asks whether the watched downloads may go, in the Android app's words, and deletes them on a yes: the ones the question
-    /// counted that are still watched then.
+    /// Asks whether the watched downloads may go, in the Android app's words (<c>downloads_reclaim_message</c>: how many, and
+    /// the space their files take), and deletes them on a yes: the ones the question counted that are still watched then.
     /// </summary>
     [RelayCommand(CanExecute = nameof(ShowsReclaim))]
     private async Task ReclaimAsync()
@@ -257,13 +256,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
     }
 
-    // What the suggestion counts: the watched downloads that are whole on this PC, unless the viewer keeps them.
+    // What the question counts: the watched downloads that are whole on this PC, unless the viewer keeps them. Their size is
+    // the media files', as both apps count it; the subtitles and pictures kept beside them go too.
     private void ShowReclaim(IReadOnlyList<DownloadItem> items)
     {
         _reclaimable = _preferences.KeepWatched ? [] : [.. items.Where(i => i.IsReclaimable)];
-        ReclaimText = _reclaimable.Count == 0
-            ? ""
-            : $"Free up {Size(_reclaimable.Sum(i => i.ExpectedBytes))} · {_reclaimable.Count.ToString(CultureInfo.InvariantCulture)} watched";
         ShowsReclaim = _reclaimable.Count > 0;
     }
 

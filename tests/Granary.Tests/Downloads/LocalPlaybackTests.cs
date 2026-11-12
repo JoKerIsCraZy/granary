@@ -301,7 +301,7 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "unrecognized file format"));
 
-        Assert.Equal(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "This download can't be played. Delete it and download it again.", CanRetry: true),
+        Assert.Equal(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "This download can't be played. Try again, or delete it and download it again.", CanRetry: true),
             playback!.Status);
         Assert.DoesNotContain(_fixture.Silo.Sent, r => r.Uri.AbsolutePath.Contains("/playback/", StringComparison.Ordinal));
     }

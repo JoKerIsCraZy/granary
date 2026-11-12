@@ -1515,8 +1515,8 @@ while the server answers.
   that streams as before. The previous episode is the one
   before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
   the device; Android plays a next episode from its download when the server named it. On Deck stays the server's.
-- **A file that will not play.** The player says "This download can't be played. Delete it and download it again." with
-  Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
+- **A file that will not play.** The player says "This download can't be played. Try again, or delete it and download
+  it again." with Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
   again."; Apple: its error wall with Retry). A file that ends more than 30 s before its length (the player's own reading
   of it, else the manifest's) is such a file, not the title's end: it is not marked watched and nothing plays next, as the
   Apple app says "The downloaded video file ends early." Where the viewer got to is kept either way.

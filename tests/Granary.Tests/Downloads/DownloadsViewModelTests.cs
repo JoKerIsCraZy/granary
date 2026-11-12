@@ -342,9 +342,12 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await AddFilmAsync("dl_4", "Revoked Movie", size: 7 * GB, change: r => r with { IsWatched = true, IsNoLongerAvailable = true });
 
         var page = await AttachedAsync();
+        _confirmation.Answer = false;
 
         Assert.True(page.ShowsReclaim);
-        Assert.Equal("Free up 3.0 GB · 2 watched", page.ReclaimText);
+        await page.ReclaimCommand.ExecuteAsync(null);
+        // Two of them, and the space their files take: not the one that still arrives, nor the one the server no longer has.
+        Assert.Equal("Delete 2 watched downloads and free 3.0 GB?", Assert.Single(_confirmation.Asked).Message);
     }
 
     [Fact]
@@ -381,7 +384,6 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
 
-        Assert.Equal("Free up 2.0 GB · 1 watched", page.ReclaimText);
         Assert.True(page.ShowsReclaim);
         Assert.Same(sections, page.Sections);
     }
@@ -397,7 +399,8 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         await page.ReclaimCommand.ExecuteAsync(null);
 
-        Assert.Equal(("Free up space?", "Delete 2 watched downloads and free 3.0 GB?", "Delete"), Assert.Single(_confirmation.Asked));
+        // The Android app's words, whole: its dialog's title, its question and its yes.
+        Assert.Equal(("Reclaim Watched", "Delete 2 watched downloads and free 3.0 GB?", "Reclaim"), Assert.Single(_confirmation.Asked));
         Assert.Equal(3, Rows(page).Count());
 
         _confirmation.Answer = true;

@@ -223,14 +223,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   and under it, muted, the space they use and the space left on the drive of the downloads folder ("12.0 GB used · 200.0 GB
   free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
   download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
-  without your Silo server.". While the profile has watched downloads that are whole on this PC, a panel in History's
-  look (16 px corners, dark glass, a hairline) says how much deleting them frees and how many they are, the Apple app's
-  line ("Free up 3.0 GB · 2 watched"), with an outline button "Free up space" on the right. The button asks first, in the
-  Android app's words ("Free up space?", "Delete 2 watched downloads and free 3.0 GB?", "Delete 1 watched download and
-  free 2.0 GB?" for one; Delete); a yes deletes the downloads the question counted that are still watched, as Delete
-  deletes one. Watched is the server's word once its progress was read, and before that a title played to its end or past
-  nine tenths on this PC. A download the server no longer has is never counted: it could not be downloaded again.
-  Settings → Downloads → Keep watched downloads hides the panel. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
+  without your Silo server.". While the profile has watched downloads that are whole on this PC, an outline
+  button "Reclaim Watched" (History's outline button, at the left) stands above the list. The words are the Android
+  app's throughout: the button and the title of its question ("Reclaim Watched"), the question ("Delete 2 watched
+  downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its yes ("Reclaim"). The size is
+  the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
+  Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
+  on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
+  being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
+  one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
+  hides the button. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
   semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
   or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
   the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
@@ -1272,8 +1274,8 @@ says why above the sections.
   phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
   your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
-  settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space."): on, the Downloads page
-  suggests nothing. Each saves on this PC at once (`download-settings.json`).
+  settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
+  finished."): on, the Downloads page suggests nothing. Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
@@ -1391,8 +1393,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
   are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
   rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
-  sync. A file that will not play shows the failed screen with Granary's own "This download can't be played. Delete it
-  and download it again." and Retry.
+  sync. A file that will not play shows the failed screen with Granary's own "This download can't be played. Try
+  again, or delete it and download it again." and Retry: the words name what the button beside them does.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
