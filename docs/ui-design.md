@@ -1589,7 +1589,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
-  second while it waits.
+  250 ms while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
   cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
