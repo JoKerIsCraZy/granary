@@ -3,6 +3,7 @@ using System.Text.Json;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Settings;
 using Granary.Core.Overlays;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -371,6 +372,36 @@ public sealed class CardOverlaySettingsTests
         rows.Single(row => row.Id == "resolution_hdr").IsEnabled = true;
         await overlays.Working;
 
-        Assert.Equal(BadgeRowViewModel.SuppressedHint, rows.Single(row => row.Id == "hdr").Hint);
+        Assert.Equal("Hidden while the combined Resolution + HDR badge is on.", rows.Single(row => row.Id == "hdr").Hint);
+    }
+
+    [Fact]
+    public async Task OnlyShowStatus_SaysItsDataIsStillToCome_AsOnTheWeb()
+    {
+        var overlays = Create();
+        await overlays.StartAsync();
+        using var page = new BadgeSettingsViewModel(overlays);
+        var rows = page.Groups.SelectMany(g => g.Rows).ToList();
+
+        Assert.Equal("Populated by metadata plugins (TMDB/TVDB updates pending)", rows.Single(row => row.Id == "show_status").Hint);
+        Assert.Null(rows.Single(row => row.Id == "edition").Hint);
+    }
+
+    [Fact]
+    public async Task TheSettingsPage_SpeaksTheLanguageOnScreen()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        var overlays = Create();
+        await overlays.StartAsync();
+        using var page = new BadgeSettingsViewModel(overlays);
+        var tech = page.Groups[0];
+
+        tech.Rows.Single(row => row.Id == "resolution_hdr").IsEnabled = true;
+        await overlays.Working;
+
+        Assert.Equal(["Medieninfo", "Bewertungen & Freigaben", "Inhalts-Metadaten", "Status & Auszeichnungen"], page.Groups.Select(g => g.Title));
+        Assert.Equal("Alle aus", page.Groups[1].OnText);
+        Assert.Equal($"{tech.Rows.Count(row => row.IsEnabled)} von {tech.Rows.Count} ein", tech.OnText);
+        Assert.Equal("Ausgeblendet, solange das kombinierte Badge „Auflösung + HDR“ eingeschaltet ist.", tech.Rows.Single(row => row.Id == "hdr").Hint);
     }
 }

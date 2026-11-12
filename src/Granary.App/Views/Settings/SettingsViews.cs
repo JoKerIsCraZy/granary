@@ -309,7 +309,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = BadgeSettingsViewModel.ResetTitle,
             Content = BadgeSettingsViewModel.ResetText,
-            PrimaryButtonText = "Reset badges",
+            PrimaryButtonText = BadgeSettingsViewModel.ResetLabel,
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
