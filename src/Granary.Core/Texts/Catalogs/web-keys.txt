@@ -95,10 +95,19 @@ home.section.trendingThisWeek
 
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
-# src/Granary.Core/ViewModels/SignInViewModel.cs.
+# src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
+# src/Granary.Core/ViewModels/DeviceSignInViewModel.cs, and the address line in
+# src/Granary.App/Controls/DeviceSignInPanel.xaml.cs.
+web.auth.login.device.continueOnPhone
+web.auth.login.device.denied
 web.auth.login.device.description
+web.auth.login.device.failed
+web.auth.login.device.generatingCode
+web.auth.login.device.goToAndEnter
 web.auth.login.device.showQrCode
+web.auth.login.device.signedIn
 web.auth.login.device.title
+web.auth.login.device.waiting
 web.auth.login.heading
 web.auth.login.signingIn
 web.auth.loginSubtitle.default

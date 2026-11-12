@@ -515,10 +515,54 @@
       "value": "Trending This Week"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continue on your phone."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "Approval was denied. Start a new code to try again."
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "Scan a code, sign in there, and approve this device."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Device sign-in failed"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Generating code..."
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Or go to "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " and enter"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -527,10 +571,22 @@
       "value": "Show QR code"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Signed in. Loading profiles..."
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "Use your phone instead"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Waiting for approval on your phone..."
     }
   ],
   "web.auth.login.heading": [

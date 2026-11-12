@@ -515,10 +515,54 @@
       "value": "Em alta nesta semana"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continue no seu celular."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "A aprovação foi recusada. Gere um novo código para tentar novamente."
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "Escaneie um código, entre na sua conta por lá e aprove este dispositivo."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Não foi possível entrar pelo dispositivo"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Gerando código…"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Ou acesse "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " e digite"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -527,10 +571,22 @@
       "value": "Mostrar código QR"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Conectado. Carregando perfis…"
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "Usar o celular em vez disso"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Aguardando aprovação no seu celular…"
     }
   ],
   "web.auth.login.heading": [

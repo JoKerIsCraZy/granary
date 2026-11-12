@@ -515,10 +515,54 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continuez sur votre téléphone."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "L’approbation a été refusée. Générez un nouveau code pour réessayer."
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "Scannez un code, connectez-vous sur votre téléphone, puis approuvez cet appareil."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Échec de la connexion avec l’appareil"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Génération du code…"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Ou accédez à "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " et saisissez"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -527,10 +571,22 @@
       "value": "Afficher le code QR"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Connexion réussie. Chargement des profils…"
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "Utiliser plutôt votre téléphone"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "En attente d’approbation sur votre téléphone…"
     }
   ],
   "web.auth.login.heading": [

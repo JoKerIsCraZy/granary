@@ -515,10 +515,54 @@
       "value": "本周热门"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "请在手机上继续。"
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "批准被拒绝。请生成新代码后重试。"
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "扫描二维码，在手机上登录，然后批准此设备。"
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "设备登录失败"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "正在生成代码……"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "或前往"
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "并输入"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -527,10 +571,22 @@
       "value": "显示二维码"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "已登录。正在加载个人资料……"
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "改用手机登录"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "正在等待手机上的批准……"
     }
   ],
   "web.auth.login.heading": [

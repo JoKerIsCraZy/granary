@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 using static Granary.Tests.Auth.DeviceSignInFakeServer;
@@ -44,10 +45,20 @@ public sealed class DeviceSignInViewModelTests : IAsyncDisposable
         Assert.Equal("4821 7730", _viewModel.UserCode);
         Assert.Equal("silo.example.org/activate", _viewModel.VerificationText);
         Assert.Equal("https://silo.example.org/activate?code=48217730", _viewModel.QrPayload);
-        Assert.Equal("Waiting for approval…", _viewModel.StatusText);
+        Assert.Equal("Waiting for approval on your phone...", _viewModel.StatusText);
         string expiry = ManualTimeProvider.DefaultStart.AddSeconds(900).ToString("t", CultureInfo.CurrentCulture);
         Assert.Equal($"Valid until {expiry}", _viewModel.ExpiryText);
         Assert.False(_viewModel.CanRetry);
+    }
+
+    [Fact]
+    public void TheAddressLine_MarksTheAddress_ForThePanelToBrighten()
+    {
+        // DeviceSignInPanel draws the run tagged "address" in the foreground colour, as the web's login does.
+        var runs = AppText.Runs("web.auth.login.device.goToAndEnter", ("url", "silo.example.org/activate"));
+
+        Assert.Equal("Or go to silo.example.org/activate and enter", string.Concat(runs.Select(run => run.Text)));
+        Assert.Equal("silo.example.org/activate", Assert.Single(runs, run => run.Tags.Contains("address")).Text);
     }
 
     [Fact]
@@ -73,7 +84,7 @@ public sealed class DeviceSignInViewModelTests : IAsyncDisposable
         await _viewModel.Running.WaitAsync(HangGuard, Ct);
 
         Assert.Equal(DeviceSignInStatus.Approved, _viewModel.Status);
-        Assert.Equal("Signed in.", _viewModel.StatusText);
+        Assert.Equal("Signed in. Loading profiles...", _viewModel.StatusText);
         Assert.False(_viewModel.IsActive);
         Assert.False(_viewModel.IsWaiting);
         Assert.False(_viewModel.HasCode);
@@ -109,7 +120,7 @@ public sealed class DeviceSignInViewModelTests : IAsyncDisposable
         await _viewModel.Running.WaitAsync(HangGuard, Ct);
 
         Assert.Equal(DeviceSignInStatus.Denied, _viewModel.Status);
-        Assert.Equal("The sign-in was declined.", _viewModel.StatusText);
+        Assert.Equal("Approval was denied. Start a new code to try again.", _viewModel.StatusText);
         Assert.True(_viewModel.CanRetry);
         Assert.True(_viewModel.RetryCommand.CanExecute(null));
 

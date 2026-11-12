@@ -523,10 +523,54 @@
       "value": "Diese Woche im Trend"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Fahre auf deinem Smartphone fort."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "Die Freigabe wurde abgelehnt. Erstelle einen neuen Code, um es erneut zu versuchen."
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "Scanne einen Code, melde dich dort an und gib dieses Gerät frei."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Anmeldung per Gerät fehlgeschlagen"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Code wird erstellt…"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Oder öffne "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " und gib diesen Code ein:"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -535,10 +579,22 @@
       "value": "QR-Code anzeigen"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Angemeldet. Profile werden geladen…"
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "Stattdessen dein Smartphone verwenden"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Warte auf Freigabe auf deinem Smartphone…"
     }
   ],
   "web.auth.login.heading": [

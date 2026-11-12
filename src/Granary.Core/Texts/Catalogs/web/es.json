@@ -515,10 +515,54 @@
       "value": "Tendencias de esta semana"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continúa en tu teléfono."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "Se rechazó la aprobación. Genera un código nuevo para volver a intentarlo."
+    }
+  ],
   "web.auth.login.device.description": [
     {
       "type": 0,
       "value": "Escanea un código, inicia sesión allí y aprueba este dispositivo."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "No se pudo iniciar sesión con el dispositivo"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Generando código..."
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "O ve a "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " y escribe"
     }
   ],
   "web.auth.login.device.showQrCode": [
@@ -527,10 +571,22 @@
       "value": "Mostrar código QR"
     }
   ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Sesión iniciada. Cargando perfiles..."
+    }
+  ],
   "web.auth.login.device.title": [
     {
       "type": 0,
       "value": "Usa tu teléfono en su lugar"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Esperando la aprobación en tu teléfono..."
     }
   ],
   "web.auth.login.heading": [
