@@ -150,6 +150,30 @@ public sealed class PlaybackInfoTests
         Assert.Equal(method, Rows(PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0), "Player")["Play method"]);
     }
 
+    // playback-info.test.ts, "names Atmos for a source track whose title is the codec's long name": the profile tells
+    // Atmos, and "Atmospheric" in a title is not the word.
+    [Theory]
+    [InlineData("ATSC A/52B (AC-3, E-AC-3)", "Dolby Digital Plus + Dolby Atmos", "DD+ Atmos")]
+    [InlineData("ATSC A/52B (AC-3, E-AC-3)", null, "ATSC A/52B (AC-3, E-AC-3)")]
+    [InlineData("Atmospheric score", "Dolby Digital Plus + Dolby Atmos", "DD+ Atmos")]
+    [InlineData("EAC3 Dolby Digital Plus + Dolby Atmos", null, "EAC3 Dolby Digital Plus + Dolby Atmos")]
+    [InlineData(null, "Dolby Digital Plus + Dolby Atmos", "DD+ Atmos")]
+    [InlineData(null, null, "EAC3")]
+    public void TheSourceFilesAudio_NamesAtmos_WhenItsTitleDoesNot(string? title, string? profile, string shown)
+    {
+        var file = Hd with
+        {
+            CodecAudio = "eac3",
+            AudioTracks = [new WatchAudioTrack { Codec = "eac3", Title = title, Profile = profile, Channels = 6, Default = true }],
+        };
+        var stream = new PlaybackStreamInfo(Plan(PlaybackDeliveries.OriginalHttp, StreamProtocols.HttpProgressive),
+            new Uri("http://silo.local/api/v2/stream/s"), file, file, AudioOrdinal: 0);
+
+        var sections = PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0);
+
+        Assert.Equal(shown, Rows(sections, "Current Source File")["Audio codec"]);
+    }
+
     [Fact]
     public void ADirectPlayAfterAnEditionFallback_SaysWhichFileWasAskedFor()
     {

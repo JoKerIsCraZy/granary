@@ -53,7 +53,10 @@ public sealed partial class HomePage : Page, IStartupContent
         {
             Scroller.ChangeView(null, 0, null, disableAnimation: true);
         }
-        ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
+        // The frame's root: the page's own is not there yet on its first visit.
+        var root = Frame?.XamlRoot ?? XamlRoot;
+        ViewModel.DisplayScale = root?.RasterizationScale ?? 1;
+        ViewModel.Hero.Window = root is null ? default : (root.Size.Width, root.Size.Height);
         ViewModel.Banner.IsMotionReduced = !new UISettings().AnimationsEnabled;
         _isShown = true;
         Hero.Resume();

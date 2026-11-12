@@ -63,6 +63,86 @@ public sealed class PlayerCursorTests
         Assert.True(_cursor.IsHidden);
     }
 
+    // The page sees the mouse only where its moves reach it: not over an open menu, another window in front, or off the
+    // window. So the place it saw the mouse last can be an old one, and a pointer event without a move, as the framework
+    // sends when the page changes under a still pointer, must not be measured against it.
+    [Fact]
+    public void APointerEventWhereTheCursorHid_IsNoMove_ThoughTheMouseWasSeenLastElsewhere()
+    {
+        _cursor.RestsAt(100, 100);
+        Assert.True(_cursor.Moves(300, 100, Scale));
+        _time.Advance(TimeSpan.FromSeconds(5));
+
+        // The mouse went on to 360, 100 unseen (over a menu), and rests there as the controls hide.
+        _cursor.ControlsHidden(isOverPicture: true, restsAt: (360, 100));
+        _time.Advance(TimeSpan.FromSeconds(30));
+
+        Assert.False(_cursor.Moves(360, 100, Scale));
+        Assert.True(_cursor.IsHidden);
+        Assert.True(_cursor.Moves(363, 100, Scale));
+    }
+
+    [Fact]
+    public void ACursorThatHidLater_OverThePicture_RestsWhereItHid()
+    {
+        _cursor.RestsAt(100, 100);
+        _cursor.ControlsHidden(isOverPicture: false);
+        _time.Advance(TimeSpan.FromSeconds(2));
+
+        Assert.True(_cursor.LooksAgain(isOverPicture: true, restsAt: (500, 400)));
+        _time.Advance(TimeSpan.FromSeconds(30));
+
+        Assert.False(_cursor.Moves(500, 400, Scale));
+        Assert.True(_cursor.IsHidden);
+    }
+
+    [Fact]
+    public void AMoveThatShowsTheCursor_SaysHowFarAndHowLongSinceTheMouseWasSeen()
+    {
+        _cursor.RestsAt(100, 100);
+        _cursor.ControlsHidden(isOverPicture: true);
+        _time.Advance(TimeSpan.FromSeconds(42));
+
+        Assert.True(_cursor.Moves(103, 104, Scale));
+
+        Assert.Equal((5.0, TimeSpan.FromSeconds(42)), (_cursor.LastMove.Distance, _cursor.LastMove.SinceSeen));
+    }
+
+    // A hand's move comes as several events: the time the mouse lay still is the time before the first of them, not the
+    // few milliseconds between the last two.
+    [Fact]
+    public void AMoveInSeveralSteps_SaysHowLongTheMouseLayStillBeforeIt()
+    {
+        _cursor.RestsAt(100, 100);
+        _cursor.ControlsHidden(isOverPicture: true);
+        _time.Advance(TimeSpan.FromSeconds(42));
+
+        Assert.False(_cursor.Moves(101, 100, Scale));
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        Assert.True(_cursor.Moves(102, 100, Scale));
+
+        Assert.Equal(TimeSpan.FromSeconds(42), _cursor.LastMove.SinceSeen);
+    }
+
+    // What tells a hand from a knock on the desk: how far the mouse went on while the cursor showed.
+    [Fact]
+    public void WhileTheCursorShows_TheWayTheMouseWent_AddsUp_FromTheMoveThatBroughtItBack()
+    {
+        _cursor.RestsAt(100, 100);
+        Assert.True(_cursor.Moves(400, 100, Scale));
+        _cursor.ControlsHidden(isOverPicture: true, restsAt: (400, 100));
+        _time.Advance(TimeSpan.FromSeconds(10));
+
+        Assert.True(_cursor.Moves(403, 100, Scale));
+        Assert.Equal(3, _cursor.Travelled);
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        _cursor.Moves(403, 140, Scale);
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        _cursor.Moves(433, 140, Scale);
+
+        Assert.Equal(73, _cursor.Travelled);
+    }
+
     [Fact]
     public void AMove_AfterThePlayerOpens_IsARealOne()
     {

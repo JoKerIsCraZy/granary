@@ -17,7 +17,7 @@ The greys are a step darker than the web's (`#141417`, `#1C1C20`, `#232328`, `#2
 app; the steps between them stay the web's. Gradients that fade to the page name `SiloBackgroundColor` rather than repeat it.
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
-| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint15/20/40/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
+| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint10/15/20/40/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
 | `SiloDestructiveBrush` | `#EF4444` | The web's `destructive`: errors, and actions that delete or end something. Never the accent: it stays red whatever the server's accent. |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
 | `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
@@ -47,7 +47,9 @@ Buttons: `SiloPrimaryButtonStyle` (accent pill: Play, Resume), `SiloSecondaryBut
 Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL"). The title bar's
 own buttons are drawn as Windows' caption buttons: `SiloTitleBarButtonStyle` (Full screen) and
 `SiloTitleBarCloseButtonStyle` (Close in full screen, red under the pointer).
-Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EAC3).
+Chips: `SiloChipStyle` (year, rating, runtime), and `SiloAccentChipStyle` for one of them in the accent. `SiloQualityBadgeStyle`
+with `SiloQualityBadgeTextStyle` is the web's `QualityBadges` look for a file's quality ("1080P", "DD+ ATMOS"): the accent
+at 20 % round the accent at 10 %, radius 8, 8 px in and about 22 high, 11 px semibold capitals in the accent.
 
 The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
 seek track), `SiloPlayerPlayButtonStyle` (accent disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
@@ -415,16 +417,73 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     switch's: a row marked as the hero on the web still shows as the banner. Focus still starts on the first row's first
     card. It is kept on this PC for each server and profile (`browse-hero.json` in the data directory, the profiles that
     turned it off); a page takes a change the next time it shows.
-  - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
+  - Hero size (Settings → Navigation & Cards → Pages; `BrowseHeroSetting.Size`, `BrowseHeroSize`), Compact by default,
+    sets how tall this hero is: on Home, For You and Discover alike, and for both things it shows, the title preview and
+    the slides of Home's banner. With Title preview at the top off, only Home's banner is left to follow it. Granary's own
+    choice, kept beside the switch in `browse-hero.json` (`hidden_for` and `full_for`: the profiles that turned the
+    preview off, and those that chose Full; a file without `full_for` means Compact). A page takes a change the next time
+    it shows.
+  - The backdrop fills its box showing its upper part, as the web's heroes place theirs (`object-[center_20%]`): a fifth
+    of what the box cuts off its height goes at the top, the rest at the bottom, and its sides are cut evenly
+    (`BrowseHeroLayout.PlaceBackdrop`, `BackdropFocus`). Cut around its middle, the box took the heads of most
+    backdrops. An `Image` can only be cut around its top, middle or bottom, so the picture's layers have the picture's
+    own size and lie in a clipped `Canvas` (`BrowseHero.PlacePicture`).
+  - The compact hero's backdrop takes the right 65 % of the page, at most two and a half times the hero's height, and
+    fades into the page toward the text. The full hero's runs over its whole width, as the web's banner's, under the
+    web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`) and dimmed a tenth, as the web's
+    `brightness(0.9)`. The web's ambient glow and its faint vignette are left out.
+  - Home and For You ask the server for backdrops as wide as the hero draws them in the window
+    (`BrowseHeroViewModel.Window`, `BrowseHeroLayout.BackdropDrawnWidth`, `ImageSizes.WithDrawnBackdrop`), as the web's
+    `lib/artworkWidths.ts` does for its banner: 1280 px, as every page asks, looked soft over a wide hero. Every row
+    is asked the same, since any card's title can be the hero's. A width within 5 % of a size the server keeps takes
+    that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
+    its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
+    as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
+    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
+    its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
+    - Compact is the hero as the points below describe it: the first row shows without scrolling.
+    - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
+      height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from
+      a page 1152 px high, which a 3840 × 1600 screen's is). The rows begin under it, rather than 300 px down. The web
+      takes 66 % of the browser window's height on a wide layout and 54 % on a narrow one; Granary takes 66 % of the
+      page's height at every width. On a page under about 580 px high the hero is at its least, 380 px, and a banner
+      slide with a long overview can lose its last line there.
+    - Full's text stands at the hero's foot, as the web's `HeroBanner` has it (`lg:pb-16`): the overview, or the details
+      of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
+      Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,
+      the rail and the pause button level beside them, and the text ends 28 px over the buttons (the web's `mb-7`).
+    - Everything else is Compact's on the same page: the logo, the type, the backdrop's share and fades, and the compact
+      header. The backdrop still covers the right 65 % of the page, so a window narrower than about 2.7 times the hero's
+      height cuts a 16:9 picture's sides (a 1440 × 900 window shows three quarters of its width).
+    - Full folds into the same compact header over its longer way, the hero's height less the header's (536 px of
+      scrolling on a 1080 px window's page). The text goes up with the rows themselves until it is where the header has
+      it, and stays (`BrowseHeroLayout.TextLift`, from the text's height now); meanwhile the logo shrinks, the overview
+      fades and the backdrop shortens as in Compact, its foot on the first row's top all the way. The banner's buttons
+      scroll up under the header with the rows.
+  - Its sizes below are Compact's on a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
     the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
     logo and the text block grow half as much (on 3840 × 1600: header 185, logo 98 high and 492 wide), and the details
     and the overview a quarter (18 and 17 px). A page of another height lays the hero out again and gives the running
     fold its new numbers.
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
-    does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
-    logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
+    does not load); a 16 px grey line of details; and the overview, at most three lines 570 px wide. All of it comes with
     the rows; nothing is read for the hero.
+  - The details, one line that is cut with an ellipsis, in the order of the web's `formatHeroMetadata`
+    (`components/heroMetadata.ts`): a movie's year, length, rating, genres and certificate
+    ("2008 · 2h 32m · IMDb 9.0 · Action · Crime · PG-13"), and a series' the same without a length, which is an
+    episode's ("2006 · IMDb 8.4 · Drama · Crime · TV-PG"). What a title lacks is left out.
+    - The rating is the one the web's `primaryCardRating` picks: IMDb's, or TMDB's when there is no IMDb score
+      (`CardRating.Primary`; a score counts over 0 up to 10, with one decimal place as a card's badge rounds it). It shows
+      as the web's `RatingEntry`: the source's mark in smaller semi-bold type at 75 % (14 px beside the line's 16), then
+      the score in bold. Both marks are text, "IMDb" as on the web and "TMDB" where the web has TMDB's logo; Granary
+      draws every rating's source as text.
+    - The genres are the first two, trimmed and each named once; the certificate is in capitals.
+    - An episode, under its series' logo, reads "S1 E1 · Kein Zufall · 25m · TV-14": where it sits, its own title (which
+      the web's line leaves out), its length and certificate, and neither rating nor genres, as on the web.
+    - A title of Discover keeps its own line ("2026 · Movie · Pending").
+    - A screen reader reads the line whole, "2006 · IMDb 8.4 · Drama · Crime · TV-PG".
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
     middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
     wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
@@ -450,7 +509,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     shows at once; after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not
     one per card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while
     the rows still have them. Another profile starts afresh, and so does the hero after a banner went.
-  - The rows begin 300 px down (348 under a banner). Scrolling them folds the hero into a compact 150 px header that stays
+  - The rows begin 300 px down (348 under a banner; under a Full hero, at its foot). Scrolling them folds the hero into a compact 150 px header that stays
     at the top and cuts the rows off at its edge: over the first 150 px of scrolling (198 under a banner) the logo shrinks
     to 45 px, the details move up under it, the overview fades and the backdrop shortens to the header. It follows the
     scroll on the compositor (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A
@@ -469,9 +528,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     setting for it; Title preview at the top (above) does not touch it.
   - What a slide shows: the web's eyebrow over the name, "FEATURED — NO. 01" (11.5 px semibold, tracked, white at 62 %,
     FEATURED at 92 %, read as "Featured — No. 01"), then the hero's logo or name, its details and overview, and its
-    backdrop. The rows begin 48 px lower than under the card hero, and the room between the compact header and the first
+    backdrop. The rows begin 48 px lower than under the card hero (not under a Full hero, which holds the buttons itself:
+    Hero size, above), and the room between the compact header and the first
     row holds the buttons, which scroll up under the header with the rows: the Play pill in the accent and the glass More Info pill
-    (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row; on the right, level with them,
+    (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row (64 px under a Full hero); on the right, level with them,
     "01 —— 05" (11 px monospaced, tracked, white at 68 %, the slide's number white), a 144 × 2 px rail that fills over
     the slide's 8 s, and a 28 px pause button ("Pause slideshow" / "Play slideshow"). The arrows ("Previous slide",
     "Next slide": the 36 px glass discs of PageBack) stand 8 px in from the page's sides, half way down the banner, and
@@ -516,13 +576,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
+    (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
+    (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
+    "DV HDR10+", "DV HLG", "HDR10+", "HDR10", "HLG", "HDR"; none for SDR) and its best audio ("DD+ ATMOS",
+    "TRUEHD ATMOS", "ATMOS", "TRUEHD", "DTS-HD", "DTS", "EAC3", "AAC", "FLAC"). The audio is the best of the file's
+    tracks, not the one that will play: among tracks of one family the one that names Atmos (in its codec, profile or
+    titles) gives the badge. As on the web, a resolution or an audio family it does not rank (4320p; AC3, Opus, MP3) has
+    no badge. Another pick in the Version picker changes them (`QualityBadges` in Core, `ItemDetailViewModel.QualityBadges`).
+    They stand 12 px after the text and 8 apart, centred on its line; where the line leaves no room they go under it
+    together (`WrapPanel`). A series or a season has none, as on the web. A screen reader reads each badge after the line.
   - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, Download and Delete download, then
     Start a Watch Party below a line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode has ⋮ with
     Download and Start a Watch Party, a season with Download season and Start a Watch Party; ⋮ shows while any of its items
-    does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+    does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a line of
+    Granary's own (the web has none), kept beside the quality badges for the video codec and the size they do not say.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
     playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
@@ -1112,10 +1183,12 @@ says why above the sections.
   buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
   badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Pages, Granary's
-  own group since Silo's clients have no such switch (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
+  own group since Silo's clients have no such settings (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
   of Home, For You and Discover, for this profile on this PC.", with Title preview at the top ("Home, For You and
-  Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, saved on
-  this PC at once and taken by each page the next time it shows (Home's hero, above). Then Sidebar, with
+  Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, and
+  Hero size ("Compact shows the first row without scrolling. Full is as tall as on Silo's web."), Compact or Full as
+  choice buttons, Compact by default; both saved on this PC at once and taken by each page the next time it shows
+  (Home's hero, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
@@ -1412,8 +1485,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the title cannot be sought and on the Playing Next screen the keys pass on. A jump shows the controls as a skip does; in
   a Watch Party it is a seek like any other, asked of the room, and a guest's is refused with the web's words. They work
   in the full player, the mini view and the minimized bar, taken before the focused control: on the picture, the seek
-  bar, the volume slider (which keeps the plain arrows) or a button, also while a remote's arrows move between the
-  controls.
+  bar, the volume slider or a button, also while a remote's arrows move between the controls. The slider keeps the plain
+  arrows for the volume while it has the focus from Tab or a click; while a remote's arrows move between the controls,
+  they move on from it too.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
   title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
   with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are
@@ -1657,11 +1731,20 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
-  second while it waits.
+  250 ms while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
   cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
   the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
+  Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
+  moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
+  While the cursor is hidden, a look every 250 ms checks that Windows still draws the hidden one over the picture. A
+  tester's log showed Windows drawing its arrow there all the same, at once or after a while, with WinUI answering
+  `WM_SETCURSOR` with the arrow though the page's cursor was the blank one. So the look asks the window again, and when
+  the arrow stays, sets the blank cursor past WinUI (`SetCursor` with `BlankCursor.Handle`), which holds until the
+  mouse's next move. The log says what brought a hidden cursor back (how far the mouse moved and how
+  long it had lain still, or a finger or pen), how far the mouse went while the cursor showed (a hand goes hundreds of
+  pixels, a knock on the desk a few), and when Windows drew its arrow by itself.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
@@ -1683,6 +1766,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
+  Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the
+  arrows: on it every arrow sets the volume, and a remote could not go on to the buttons beside it. A remote sets the
+  volume with its own volume keys, M mutes, and Up and Down set it where Settings gives them the volume. For the move the
+  slider is taken out of the tab stops, at every display scale; a rectangle for the arrows to leave out
+  (`FindNextElementOptions.ExclusionRect`) held only at 100 %, since WinUI scales it and not the bounds it compares it
+  with, so on a TV at 150 % focus landed on the slider (`FocusRectangleTests`).
   A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown
@@ -1699,8 +1788,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (also while the title loads or after it failed, where they otherwise always set it); the minimized bar keeps its own
   Mute, and there M and the volume keys still work. Subtitles hidden: C does nothing; a subtitle that shows stays.
   Chapters hidden: Ctrl+Left and Ctrl+Right do nothing. Mini view hidden: P does nothing, so in the mini view P no
-  longer leaves it; Esc and its own button still do. Full screen hidden: F and a double click
-  on the picture do nothing; F11, the window's, still switches. Playback info hidden: its panel closes and does not
+  longer leaves it; Esc and its own button still do. Full screen hidden: F does nothing; a double
+  click on the picture and F11, the window's, still switch. Playback info hidden: its panel closes and does not
   open. Fill screen hidden: the whole picture shows again. Edit markers hidden: the marker panel does not open; one that
   is open stays, with its draft, until it is saved or closed. Sleep timer hidden: a running timer ends. Audio, Subtitles
   and Playback settings hidden: Down never opens their menu. Playback settings hidden: speed, audio delay, version and

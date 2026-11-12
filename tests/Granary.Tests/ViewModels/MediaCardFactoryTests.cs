@@ -108,6 +108,33 @@ public sealed class MediaCardFactoryTests
         Assert.Null(card.ImageUrl);
     }
 
+    // The web rounds the time left to the nearest minute (ContinueWatchingCard.tsx: Math.round), as Silo's apps show it.
+    [Theory]
+    [InlineData(3000 - (36.4 * 60), "36 min left")]
+    [InlineData(3000 - (36.5 * 60), "37 min left")]
+    [InlineData(3000 - (36.6 * 60), "37 min left")]
+    [InlineData(3000 - 20, "0 min left")]
+    public void TheTimeLeft_IsRoundedToTheNearestMinute_AsOnTheWeb(double position, string expected)
+    {
+        var episode = new CatalogItem
+        {
+            ContentId = "ep-1",
+            Type = CatalogItemTypes.Episode,
+            Title = "Schulanfang",
+            SeriesTitle = "ted",
+            SeasonNumber = 1,
+            EpisodeNumber = 1,
+            PositionSeconds = position,
+            DurationSeconds = 3000,
+            ItemSource = ItemSources.InProgress,
+        };
+        var section = new Section { Id = "cw", SectionType = SectionTypes.ContinueWatching, Title = "Continue Watching" };
+
+        var card = MediaCardFactory.ForSection(section, episode, Server);
+
+        Assert.Equal(expected, card.Caption);
+    }
+
     [Fact]
     public void ContinueWatchingEpisode_IsALandscapeCardWithTimeLeft()
     {

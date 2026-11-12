@@ -10,7 +10,7 @@ namespace Granary.Core.ViewModels;
 /// card pointed at shows at once; after that a card has to keep the pointer for <see cref="SettleTime"/>, so moving across a
 /// row loads no backdrop for every card on the way. Until a card is pointed at, the first card of the first row; a reload
 /// keeps the title while its rows still have it, and the pointer leaving the rows keeps the last one. With the title preview
-/// off (<see cref="IsOn"/>) it shows nothing.
+/// off (<see cref="IsOn"/>) it shows nothing. It also holds the hero's <see cref="Size"/> for the page, Home's banner included.
 /// </summary>
 public sealed partial class BrowseHeroViewModel : ObservableObject
 {
@@ -33,6 +33,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _setting = setting;
+        TakeSize();
     }
 
     /// <summary>The title shown; null while the page has no cards, and while the title preview is off.</summary>
@@ -53,10 +54,33 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     public bool IsOn => _setting?.IsShown != false;
 
     /// <summary>
+    /// How tall the page's hero is, Home's banner too: Settings → Navigation &amp; Cards → Hero size
+    /// (<see cref="BrowseHeroSetting.Size"/>), as the page last took it (<see cref="TakeSize"/>). Whether the title preview is
+    /// on does not matter to it.
+    /// </summary>
+    [ObservableProperty]
+    public partial BrowseHeroSize Size { get; private set; }
+
+    /// <summary>
+    /// The window's size in view pixels, as the page gives it when it shows; (0, 0) while it is not known. The hero's
+    /// backdrop is asked for as wide as it is drawn there (<see cref="BackdropWidth"/>).
+    /// </summary>
+    public (double Width, double Height) Window { get; set; }
+
+    /// <summary>How wide the hero draws its backdrop in the <see cref="Window"/>, at its <see cref="Size"/>; 0 while not known.</summary>
+    internal double BackdropWidth => BrowseHeroLayout.BackdropDrawnWidth(Window.Width, Window.Height, Size);
+
+    /// <summary>
     /// The title preview was turned on or off since the hero last took its page's rows: the page gives them again as it shows,
     /// so a change in Settings applies there on the next visit.
     /// </summary>
     internal bool MissedSwitch => _tookRowsOn != IsOn;
+
+    /// <summary>
+    /// Takes the acting profile's hero size: as the page shows, so a change in Settings applies there on the next visit, and
+    /// with its rows, which another profile brings.
+    /// </summary>
+    internal void TakeSize() => Size = _setting?.Size ?? BrowseHeroSize.Compact;
 
     /// <summary>
     /// The pointer or the keyboard came to a card of <paramref name="item"/>, on <paramref name="server"/>; an unwatched
@@ -77,6 +101,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     /// </summary>
     internal void Follow(IReadOnlyList<CatalogItemBase> items, Uri? server, EpisodeSpoilers spoilers)
     {
+        TakeSize();
         if (!IsOn)
         {
             TurnOff();
@@ -100,6 +125,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     /// </summary>
     internal void Follow(IReadOnlyList<BrowseHeroTitle> titles)
     {
+        TakeSize();
         if (!IsOn)
         {
             TurnOff();

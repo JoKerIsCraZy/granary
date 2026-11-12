@@ -184,6 +184,7 @@ public sealed partial class RequestsViewModel : ObservableObject
             _hearsCards = true;
             _cardActions.RequestAnswered += OnCardRequestAnswered;
         }
+        Hero.TakeSize();
         if (Hero.MissedSwitch)
         {
             // The title preview was turned on or off while the page was away.

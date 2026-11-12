@@ -7,7 +7,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core;
 using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
@@ -16,7 +15,7 @@ namespace Granary.App.Views;
 
 // The keyboard map of the web player (docs/api-contract.md, 13.5), the chapter keys of Silo's macOS app, and clicks on the
 // picture. A key that belongs to a button Settings → Playback → Player buttons hides does nothing (Allows); F11 is the
-// window's and always works.
+// window's and always works, and so does a double click on the picture, which is no key of the button's.
 public sealed partial class PlayerPage
 {
     // A second click within this time makes a double click, so the first click's play or pause waits for it.
@@ -377,16 +376,28 @@ public sealed partial class PlayerPage
         }
         _movesThroughControls = true;
         RestartHideTimer();
-        // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
-        // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
-        var options = new FindNextElementOptions { SearchRoot = this };
-        if (VolumeSlider.Visibility == Visibility.Visible && VolumeSlider.ActualWidth > 0)
-        {
-            options.ExclusionRect = VolumeSlider.TransformToVisual(null)
-                .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
-        }
-        FocusManager.TryMoveFocus(direction, options);
+        MoveFocusPastVolumeSlider(direction);
         return true;
+    }
+
+    // The arrows pass the volume slider by: on it every arrow would change the volume, and no remote could get past it to
+    // the buttons beside it. Tab still reaches it; a remote sets the volume with its own volume keys, with M, or with Up
+    // and Down where the settings give them the volume. For the move the slider is no stop at all. Its place is not
+    // handed over as FindNextElementOptions.ExclusionRect: WinUI multiplies that rectangle by the display's scale and
+    // holds it against bounds it has divided by the scale, so at any scale but 100 % (a TV's 150 %) it lay somewhere else
+    // and the slider took the focus (FocusRectangleTests).
+    private void MoveFocusPastVolumeSlider(FocusNavigationDirection direction)
+    {
+        bool wasTabStop = VolumeSlider.IsTabStop;
+        VolumeSlider.IsTabStop = false;
+        try
+        {
+            FocusManager.TryMoveFocus(direction, new FindNextElementOptions { SearchRoot = this });
+        }
+        finally
+        {
+            VolumeSlider.IsTabStop = wasTabStop;
+        }
     }
 
     // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
@@ -481,9 +492,7 @@ public sealed partial class PlayerPage
             TogglePause();
         }
         _clickToggled = false;
-        if (Allows(PlayerKey.FullScreen))
-        {
-            ToggleFullScreen();
-        }
+        // Also with the Full screen button hidden in Settings: hiding it takes its key F, not the way into full screen.
+        ToggleFullScreen();
     }
 }

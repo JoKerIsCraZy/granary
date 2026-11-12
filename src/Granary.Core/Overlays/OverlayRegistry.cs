@@ -238,11 +238,17 @@ public static class OverlayRegistry
 
     private static string? VideoCodecIcon(string? value) => string.IsNullOrEmpty(value) ? null : value == "AV1" ? "av1" : "film";
 
+    /// <summary>
+    /// A score out of 10 with one decimal place, "7.5", as the web's <c>formatOutOfTen</c>: halves round away from zero, as
+    /// the server's own <c>display</c> does, so a card never reads differently from its title's page.
+    /// </summary>
+    public static string OutOfTen(double score) => (Math.Round(score * 10, MidpointRounding.AwayFromZero) / 10).ToString("0.0", English);
+
     // "IMDb 7.5", "RT 92%".
     private static string? Rating(string mark, double? value, bool outOfHundred) => value is { } score
         ? outOfHundred
             ? $"{mark} {Math.Round(score, MidpointRounding.AwayFromZero).ToString(English)}%"
-            : $"{mark} {(Math.Round(score * 10, MidpointRounding.AwayFromZero) / 10).ToString("0.0", English)}"
+            : $"{mark} {OutOfTen(score)}"
         : null;
 
     private static string? Runtime(int? minutes) => minutes is int m and > 0

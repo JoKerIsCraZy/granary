@@ -24,7 +24,7 @@
             </Button>
         </DataTemplate>
 
-        <!-- A poster setting's choice: the chosen one filled in the accent, as the web's ChoiceButtons. -->
+        <!-- A choice of a poster setting or of Hero size: the chosen one filled in the accent, as the web's ChoiceButtons. -->
         <DataTemplate x:Key="SettingsChoiceTemplate" x:DataType="settings:SettingsChoice">
             <Button Content="{x:Bind Label}" Style="{StaticResource SiloSettingsChoiceButtonStyle}" Command="{x:Bind PickCommand}"
                     Background="{x:Bind controls:BadgeSettingsLook.ChoiceFill(IsSelected), Mode=OneWay}"
@@ -377,14 +377,27 @@
         <!--
             Granary's own: the title preview at the top of Home, For You and Discover (BrowseHero) is Granary's, so Silo's
             clients have no such switch. Kept for this profile on this PC (BrowseHeroSetting). Home's banner, a row marked as
-            the hero on Silo's web, is not this switch's.
+            the hero on Silo's web, is not this switch's. Hero size is: it sets how tall the title preview and the banner are.
         -->
         <controls:SettingsGroup Title="Pages" Description="The top of Home, For You and Discover, for this profile on this PC.">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Title preview at the top"
-                                  Description="Home, For You and Discover open with a large picture of the title you point at. Off, they start with the rows.">
-                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
-                              AutomationProperties.Name="Title preview at the top" />
-            </controls:SettingsRow>
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Title preview at the top"
+                                      Description="Home, For You and Discover open with a large picture of the title you point at. Off, they start with the rows.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
+                                  AutomationProperties.Name="Title preview at the top" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Hero size"
+                                      Description="Compact shows the first row without scrolling. Full is as tall as on Silo's web.">
+                    <ItemsControl ItemsSource="{x:Bind TitlePreview.Sizes}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
+                                  AutomationProperties.Name="Hero size">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </controls:SettingsRow>
+            </StackPanel>
         </controls:SettingsGroup>
 
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->

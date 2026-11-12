@@ -13,17 +13,42 @@ release's section is what its update says it changes (docs/release.md).
   they take. Downloads wait on a metered connection unless Settings → Downloads allows them, and carry on where they
   stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
   server has to allow downloads.
+- **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
+  Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
+  Version picker.
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
+- **Hero size:** Settings → Navigation & Cards → Pages has a new choice. Full makes the picture at the top of Home, For
+  You and Discover as tall as on Silo's web, with the rows under it; Compact, as before, shows the first row without
+  scrolling.
+
+### Changed
+
+- The details under the logo at the top of Home and For You name the title's IMDb rating (TMDB's without one) and its
+  first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
+- A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
+  Player buttons, as F11 does.
 
 ### Fixed
 
+- The picture at the top of Home, For You and Discover shows its upper part, as on Silo's web, where it was cut around
+  its middle and took the heads off many pictures. With Hero size set to Full it runs over the whole width, as on the
+  web.
+- That picture is sharp on a wide window: Home and For You fetch it as wide as it is shown, where it was always 1280
+  pixels wide.
 - A Next Up card says Next Episode, as on Silo's web.
+- Playback info names a Dolby Atmos track also when its title only holds a word such as "Atmospheric".
+- A Continue Watching card's time left is rounded to the nearest minute, as on Silo's web and apps, where it could say a
+  minute more.
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
-  also when the mouse lies still.
+  also when the mouse lies still. It no longer comes back by itself when the mouse did not move, nor stays when Windows
+  draws its arrow over the picture all the same.
+- With a TV remote, the arrows in the player go past the volume slider again on a display scaled above 100 %, such as a
+  TV at 150 %. There focus stopped on the slider, every arrow changed the volume, and the buttons beside it (audio,
+  subtitles and the rest) were out of reach.
 
 ## [0.3.1] - 2026-11-09
 
