@@ -28,6 +28,9 @@ public enum OfflineProgressOutcome
     Later,
 }
 
+/// <summary>The server's progress in a title as a complete read of it says: when it was recorded, and where.</summary>
+public readonly record struct KnownProgress(DateTimeOffset UpdatedAt, long PositionMs);
+
 /// <summary>A position a download played from this PC recorded, for the profile it was recorded as.</summary>
 /// <param name="UpdatedAt">When it was recorded, in whole milliseconds: the server keeps the later of two positions.</param>
 public sealed record OfflineProgressEntry(DownloadScope Scope, string MediaItemId, long PositionMs, long DurationMs, DateTimeOffset UpdatedAt,
@@ -211,18 +214,18 @@ public sealed class OfflineProgressQueue
     }
 
     /// <summary>
-    /// Lets go of the profile's pending entries the server is known to have: <paramref name="serverTimes"/> is when the
-    /// server's progress in each title was recorded, as a complete read of it says, and a time at or after the entry's means
-    /// the server has that position or a newer one, so a send would change nothing. Answers how many went.
+    /// Lets go of the profile's pending entries the server is known to have: <paramref name="server"/> is the server's
+    /// progress in each title, as a complete read of it says. A time at or after the entry's means the server has that
+    /// position or a newer one, so a send would change nothing. Answers how many went.
     /// </summary>
-    public int DropKnown(DownloadScope scope, IReadOnlyDictionary<string, DateTimeOffset> serverTimes)
+    public int DropKnown(DownloadScope scope, IReadOnlyDictionary<string, KnownProgress> server)
     {
         ArgumentNullException.ThrowIfNull(scope);
-        ArgumentNullException.ThrowIfNull(serverTimes);
+        ArgumentNullException.ThrowIfNull(server);
         lock (_gate)
         {
             int gone = Loaded().RemoveAll(e => e.Scope == scope && e.State == OfflineProgressState.Pending
-                && serverTimes.TryGetValue(e.MediaItemId, out var there) && there >= e.UpdatedAt);
+                && server.TryGetValue(e.MediaItemId, out var there) && Has(there, e));
             if (gone > 0)
             {
                 Save();
@@ -230,6 +233,16 @@ public sealed class OfflineProgressQueue
             return gone;
         }
     }
+
+    // The server has the entry's position, or a newer one. A server on SQLite keeps times in whole seconds
+    // (silo-server/internal/userdb/progress.go formats them as RFC 3339 without a fraction, and compares that text), so the
+    // entry's own row comes back up to a second older than the entry. A row at exactly the entry's second, on a whole
+    // second, with the entry's very position is that entry; with any other position it may be an older one of the same
+    // second, and the entry is sent, which costs a request and loses nothing.
+    private static bool Has(KnownProgress there, OfflineProgressEntry entry) =>
+        there.UpdatedAt >= entry.UpdatedAt
+        || (there.UpdatedAt.Ticks % TimeSpan.TicksPerSecond == 0 && there.PositionMs == entry.PositionMs
+            && there.UpdatedAt.UtcTicks == entry.UpdatedAt.UtcTicks - entry.UpdatedAt.UtcTicks % TimeSpan.TicksPerSecond);
 
     /// <summary>
     /// Takes every entry of the scopes <paramref name="match"/> names out of the queue and its file, whatever its state: a

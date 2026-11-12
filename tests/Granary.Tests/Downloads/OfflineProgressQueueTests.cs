@@ -140,11 +140,11 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         queue.Record(Scope7, "ep_not_there", 1000, 0);
         queue.Record(Scope8, "ep_same", 1000, 0);
 
-        int gone = queue.DropKnown(Scope7, new Dictionary<string, DateTimeOffset>
+        int gone = queue.DropKnown(Scope7, new Dictionary<string, KnownProgress>
         {
-            ["ep_same"] = at,
-            ["ep_newer_there"] = at.AddMinutes(5),
-            ["ep_older_there"] = at.AddMilliseconds(-1),
+            ["ep_same"] = new(at, 1000),
+            ["ep_newer_there"] = new(at.AddMinutes(5), 99_000),
+            ["ep_older_there"] = new(at.AddMilliseconds(-1), 1000),
         });
 
         // The server's row at or after the entry's time says it has the position, or a newer one: a send would change nothing.
@@ -155,13 +155,39 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public void AServerThatKeepsWholeSeconds_IsKnownToHaveAnEntry_OnlyByItsSecondAndItsVeryPosition()
+    {
+        var queue = Open();
+        _time.Advance(TimeSpan.FromMilliseconds(800));
+        var second = ManualTimeProvider.DefaultStart;
+        queue.Record(Scope7, "ep_mine", 61_500, 0);
+        queue.Record(Scope7, "ep_older_in_the_second", 61_500, 0);
+        queue.Record(Scope7, "ep_exact_clock", 61_500, 0);
+        queue.Record(Scope7, "ep_second_before", 61_500, 0);
+
+        int gone = queue.DropKnown(Scope7, new Dictionary<string, KnownProgress>
+        {
+            // The entry's own row, as a server on SQLite lists it: the time cut to the second, the same position.
+            ["ep_mine"] = new(second, 61_500),
+            // Another position of that second: it may be an older one, so the entry is still sent.
+            ["ep_older_in_the_second"] = new(second, 60_000),
+            // A server that keeps fractions is compared exactly: 300 ms is before 800 ms.
+            ["ep_exact_clock"] = new(second.AddMilliseconds(300), 61_500),
+            ["ep_second_before"] = new(second.AddSeconds(-1), 61_500),
+        });
+
+        Assert.Equal(1, gone);
+        Assert.Equal(["ep_older_in_the_second", "ep_exact_clock", "ep_second_before"], queue.Entries(Scope7).Select(e => e.MediaItemId));
+    }
+
+    [Fact]
     public void AnEntryOnItsWay_IsNotTakenByWhatTheServerSaid()
     {
         var queue = Open();
         queue.Record(Scope7, "ep_5", 1000, 0);
         var batch = queue.Claim(Scope7, 10);
 
-        queue.DropKnown(Scope7, new Dictionary<string, DateTimeOffset> { ["ep_5"] = ManualTimeProvider.DefaultStart });
+        queue.DropKnown(Scope7, new Dictionary<string, KnownProgress> { ["ep_5"] = new(ManualTimeProvider.DefaultStart, 1000) });
 
         // Its own answer says what becomes of it.
         Assert.Equal(batch, queue.Entries(Scope7));

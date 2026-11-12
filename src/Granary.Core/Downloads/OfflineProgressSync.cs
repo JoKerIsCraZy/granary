@@ -451,7 +451,8 @@ public sealed class OfflineProgressSync : IDisposable
                 await TakeAsync(scope, download.Record.DownloadId, row, cancellationToken).ConfigureAwait(false);
             }
         }
-        int settled = _queue.DropKnown(scope, rows.ToDictionary(row => row.Key, row => row.Value.UpdatedAt, StringComparer.Ordinal));
+        int settled = _queue.DropKnown(scope,
+            rows.ToDictionary(row => row.Key, row => new KnownProgress(row.Value.UpdatedAt, Milliseconds(row.Value)), StringComparer.Ordinal));
         if (settled > 0)
         {
             _logger.LogInformation("The server already had {Count} position(s) that waited on this PC", settled);
