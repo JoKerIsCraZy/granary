@@ -70,7 +70,8 @@ public sealed partial class BrowseHeroSetting : ObservableObject
             _dispatcher.Post(() => OnPropertyChanged(nameof(IsShown)));
             return Task.CompletedTask;
         }
-        if (shown == IsShown)
+        // Weighed for the profile read above: the session is not read a second time, where another profile could be acting.
+        if (shown == !_hiddenFor.Contains(key))
         {
             return Task.CompletedTask;
         }
@@ -85,7 +86,8 @@ public sealed partial class BrowseHeroSetting : ObservableObject
     /// </summary>
     public Task SetSizeAsync(BrowseHeroSize size)
     {
-        if (Key() is not { } key || size == Size)
+        // Weighed for the profile read here: the session is not read a second time, where another profile could be acting.
+        if (Key() is not { } key || (size == BrowseHeroSize.Full) == _fullFor.Contains(key))
         {
             return Task.CompletedTask;
         }
