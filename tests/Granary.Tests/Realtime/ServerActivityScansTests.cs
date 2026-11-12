@@ -182,14 +182,34 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AFirstConnectionThatSendsNoSnapshot_MayStillHaveScans()
+    public async Task AFirstConnectionThatSendsNoSnapshot_KnowsOfNoScan_AndSaysNoMore()
     {
         await _harness.StartedAsync(EventsChannels.Scans);
 
         _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
 
+        // Nothing says a scan runs: a server that sends no snapshot must not keep the indicator up for good.
         Assert.Null(_harness.State.Scans);
-        Assert.True(_harness.State.ScansMayBeMore);
+        Assert.False(_harness.State.ScansMayBeMore);
+    }
+
+    [Fact]
+    public async Task ScansThatMayStillRun_AreForgotten_ByTheConnectionAfter()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
+        for (int connection = 1; connection <= 2; connection++)
+        {
+            (connection == 1 ? socket : _harness.Socket(connection - 1)).Close();
+            await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(1), "the wait before the next connection");
+            _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+            await _harness.OpenedAsync(connection, EventsChannels.Scans);
+            _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
+
+            // The first connection without a snapshot still thinks of "a"; the next has nothing left to think of.
+            Assert.Null(_harness.State.Scans);
+            Assert.Equal(connection == 1, _harness.State.ScansMayBeMore);
+        }
     }
 
     [Fact]

@@ -1058,8 +1058,9 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   names read for their rows). The server
   is the only judge of who is an acting administrator: nothing is read before a `subscribed` frame accepted a channel,
   and `access_changed` empties the state until the next one. The scans a new connection inherits are a guess until
-  its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s, leaves them not known
-  (`Scans` null and `ScansMayBeMore`), and a snapshot of the server's full 500 keeps `ScansMayBeMore` until a
+  its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s while a scan of the
+  last connection may still run, leaves them not known (`Scans` null and `ScansMayBeMore`), for that connection only;
+  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
   smaller one, so neither a stale list nor a count that scans ending made "exact" is shown. The lists are read over REST when the stream says they
   changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
   5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or

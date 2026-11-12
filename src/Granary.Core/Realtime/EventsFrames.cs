@@ -182,7 +182,10 @@ public static class EventsFrames
     /// several hundred kilobytes each time one of them changes. A head that names nothing is kept.
     /// </summary>
     public static bool TakesWhole(ReadOnlySpan<byte> head) =>
-        !Head(head, out string? type, out string? channel, out string? name) || !IsCue(type, channel, name);
+        !Head(head, out string? type, out string? channel, out string? name)
+        || !IsCue(type, channel, name)
+        // An event of the preparations whose name the head does not hold may be the progress, which is read.
+        || (type == EventsFrameTypes.Event && channel == EventsChannels.DownloadPreparations && name is null);
 
     // The server writes type, channel and event before the payload, so the head of a frame names them. Read as a block
     // that is not the last one, the reader stops where the bytes end instead of failing. False for what is wrong before

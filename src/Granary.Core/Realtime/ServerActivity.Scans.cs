@@ -45,12 +45,13 @@ public sealed partial class ServerActivity
         state => state with { LibraryNames = null });
 
     // A connection that was given the scans sends their snapshot next: what is known so far stays until it comes, but
-    // not for longer than ScansSnapshotWait. Without the channel the scans are gone.
+    // not for longer than ScansSnapshotWait. Without the channel the scans are gone. So is a "there may be more" with no
+    // scan known to go with it: it was the last connection's, and this one says anew what it knows.
     private void ScansSubscribedLocked(bool given)
     {
         _awaitsScans = given;
         _scansOverdue.Change(given ? ScansSnapshotWait : Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        if (!given)
+        if (!given || _state.Scans is null)
         {
             _state = _state with { Scans = null, ScansMayBeMore = false };
         }
@@ -82,7 +83,11 @@ public sealed partial class ServerActivity
                 return;
             }
             _awaitsScans = false;
-            if (!ScansUnknownLocked())
+            // Scans that ran when the last connection ended may still run, and their end is never sent again: there may
+            // be some. With none known to run, a snapshot that does not come is no sign of a scan, and must not keep
+            // the indicator up on a server that sends none.
+            bool mayRun = _state.Scans?.Any(scan => scan.IsActive) == true;
+            if (mayRun ? !ScansUnknownLocked() : !ScansForgottenLocked())
             {
                 return;
             }
@@ -100,6 +105,17 @@ public sealed partial class ServerActivity
             return false;
         }
         _state = _state with { Scans = null, ScansMayBeMore = true };
+        return true;
+    }
+
+    // The scans are not known, and nothing says there are any. True when the state changed.
+    private bool ScansForgottenLocked()
+    {
+        if (_state.Scans is null && !_state.ScansMayBeMore)
+        {
+            return false;
+        }
+        _state = _state with { Scans = null, ScansMayBeMore = false };
         return true;
     }
 
