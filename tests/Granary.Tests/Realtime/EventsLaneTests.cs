@@ -372,7 +372,7 @@ public sealed class EventsLaneTests
 
         await lane.Running.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(0, SocketCount);
-        Assert.Equal([EventsConnection.Connecting, EventsConnection.Disconnected], Connections());
+        Assert.Equal([EventsConnection.Connecting, EventsConnection.Ended], Connections());
     }
 
     [Fact]

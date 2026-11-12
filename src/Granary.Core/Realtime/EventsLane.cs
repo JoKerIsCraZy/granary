@@ -16,6 +16,9 @@ public enum EventsConnection
 
     /// <summary>The connection ended or could not be made; the next one is tried after a wait.</summary>
     Disconnected,
+
+    /// <summary>The server sends no events (its ticket answered 404 or 501): the lane has stopped and tries no more.</summary>
+    Ended,
 }
 
 /// <summary>
@@ -166,7 +169,7 @@ public sealed class EventsLane : IAsyncDisposable
             catch (SiloApiException ex) when (ex.Status is 404 or 501)
             {
                 _logger.LogInformation("The server sends no events ({Status})", ex.Status);
-                listener.Connection(EventsConnection.Disconnected);
+                listener.Connection(EventsConnection.Ended);
                 return;
             }
             catch (Exception ex) when (ex is SiloApiException or HttpRequestException or WebSocketException or InvalidDataException

@@ -162,14 +162,26 @@ public sealed partial class ServerActivity : IDisposable
     /// <summary>How the connection of <paramref name="feed"/> stands.</summary>
     internal void Connection(long feed, EventsConnection connection)
     {
+        Following? previous = null;
         lock (_gate)
         {
-            if (feed != _feed || _following is null || _state.Connection == connection)
+            if (feed != _feed || _following is not { } following || _state.Connection == connection)
             {
                 return;
             }
-            _state = _state with { Connection = connection };
+            if (connection == EventsConnection.Ended)
+            {
+                // The stream has stopped for good (a server set back to one without events): what it told of would
+                // never be put right again, so nothing of it stays, and no answer on its way counts.
+                previous = StartOverLocked(following.Server);
+                _state = ServerActivityState.None with { Connection = connection };
+            }
+            else
+            {
+                _state = _state with { Connection = connection };
+            }
         }
+        previous?.Cancel();
         Notify();
     }
 

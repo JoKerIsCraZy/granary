@@ -1,6 +1,7 @@
 using Granary.Core.Auth;
 using Granary.Core.Realtime;
 using Granary.Tests.Playback;
+using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Realtime;
 
@@ -110,6 +111,23 @@ public sealed class ServerActivityTests : IAsyncDisposable
         socket.Close(4001);
         await _harness.OpenedAsync(1, EventsChannels.Sessions);
         Assert.True(_harness.State.IsAvailable);
+    }
+
+    [Fact]
+    public async Task AServerThatStopsSendingEvents_LeavesNothingOfItsActivity()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions, EventsChannels.Scans);
+        Assert.True(_harness.State.IsAvailable);
+
+        // The server was set back to one without events: the next ticket is not there, and the lane ends for good.
+        _harness.Library.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.Problem(404, "not_found"));
+        socket.Close();
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(1), "the wait before the next connection");
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+
+        await ServerPlaybackFixture.Until(() => _harness.State.Connection == EventsConnection.Ended, "the lane ended");
+        Assert.False(_harness.State.IsAvailable);
+        Assert.Null(_harness.State.Scans);
     }
 
     [Fact]
