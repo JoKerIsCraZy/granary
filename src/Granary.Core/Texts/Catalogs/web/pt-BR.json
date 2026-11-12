@@ -658,5 +658,119 @@
       "type": 0,
       "value": "Salvar"
     }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "Perfis"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (protegido por PIN)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "Quem está assistindo?"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "PIN incorreto"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "Muitos PINs incorretos. Tente novamente mais tarde."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Muitos PINs incorretos. Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minuto."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Muitos PINs incorretos. Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutos."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Muitos PINs incorretos. Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minutos."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "Digite o PIN de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "Verificando…"
+    }
   ]
 }

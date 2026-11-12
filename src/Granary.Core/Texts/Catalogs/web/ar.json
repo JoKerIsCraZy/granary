@@ -658,5 +658,159 @@
       "type": 0,
       "value": "حفظ"
     }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "الملفات الشخصية"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (محمي برمز PIN)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "من يشاهد؟"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "رمز PIN غير صحيح"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى لاحقًا."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد دقيقتين."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقائق."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقةً."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "أدخل رمز PIN لـ "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "جارٍ التحقق..."
+    }
   ]
 }

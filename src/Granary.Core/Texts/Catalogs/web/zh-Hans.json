@@ -658,5 +658,91 @@
       "type": 0,
       "value": "保存"
     }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "个人资料"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "（受PIN保护）"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "谁在观看？"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "PIN不正确"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "PIN错误次数过多。请稍后重试。"
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "PIN错误次数过多。请在"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分钟后重试。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "输入"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "的PIN"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "正在验证……"
+    }
   ]
 }

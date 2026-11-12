@@ -127,3 +127,17 @@ web.common.ui.loadError.timeout
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
+# components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
+# PinLockout in src/Granary.Core/ViewModels/ProfilePickerViewModel.cs, and AccessibleName in
+# src/Granary.Core/ViewModels/ProfileItemViewModel.cs.
+web.profiles.picker.documentTitle
+web.profiles.picker.pinProtected
+web.profiles.picker.title
+web.profiles.pin.incorrect
+web.profiles.pin.label
+web.profiles.pin.lockedLater
+web.profiles.pin.lockedMinutes
+web.profiles.pin.title
+web.profiles.pin.verifying

@@ -50,7 +50,7 @@ public sealed class ProfileItemViewModelTests
         var locked = open with { HasPin = true };
 
         Assert.Equal("Laura", open.AccessibleName);
-        Assert.Equal("Laura, protected by a PIN", locked.AccessibleName);
+        Assert.Equal("Laura (PIN protected)", locked.AccessibleName);
         Assert.Equal(locked.AccessibleName, locked.ToString());
         Assert.Equal("M", (locked with { Name = "mia" }).Initials);
     }

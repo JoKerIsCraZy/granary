@@ -7,6 +7,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -29,7 +30,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     /// </summary>
     public const int PinLength = 4;
 
-    internal const string WrongPin = "That PIN is not right.";
+    internal static string WrongPin => AppText.Get("web.profiles.pin.incorrect");
 
     private readonly ProfilesApi _profiles;
     private readonly ISessionManager _session;
@@ -85,7 +86,10 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     [ObservableProperty]
     public partial string PinError { get; private set; } = "";
 
-    public string PinPromptTitle => PinProfile is { } profile ? $"Enter the PIN for {profile.Name}" : "Enter the PIN";
+    // Without a profile only while the dialog closes.
+    public string PinPromptTitle => PinProfile is { } profile
+        ? AppText.Get("web.profiles.pin.title", ("name", profile.Name))
+        : AppText.Get("granary.profiles.pin.titleNoName");
 
     public static bool IsCompletePin([NotNullWhen(true)] string? pin) => pin is { Length: PinLength } && pin.All(char.IsAsciiDigit);
 
@@ -132,7 +136,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
         if (!IsCompletePin(pin))
         {
-            PinError = $"Enter all {PinLength} digits of the PIN.";
+            PinError = AppText.Get("granary.profiles.pin.allDigits", ("count", PinLength));
             return;
         }
         if (!ListBelongsToActiveServer(out var server))
@@ -181,7 +185,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             await LoadProfilesAsync();
             if (!HasLoadError && Profiles.Count > 0)
             {
-                Status = "That profile has changed. Choose it again.";
+                Status = AppText.Get("granary.profiles.changed");
             }
         }
         else
@@ -203,7 +207,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         {
             IsLoading = false;
             ShowList([], null);
-            SetStatus("No server is selected.", isLoadError: false);
+            SetStatus(AppText.Get("granary.profiles.noServer"), isLoadError: false);
             return;
         }
 
@@ -219,7 +223,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             ShowList([.. collection.Items.Select(p => ProfileItemViewModel.From(p, server.BaseUri))], server.Id);
             if (Profiles.Count == 0)
             {
-                SetStatus("This account has no profiles yet.", isLoadError: false);
+                SetStatus(AppText.Get("granary.profiles.empty"), isLoadError: false);
             }
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
@@ -256,7 +260,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             if (string.IsNullOrEmpty(verification.ProfileToken))
             {
                 _logger.LogWarning("PIN check for profile {ProfileId} was valid but carried no profile token", profileId);
-                return new PinOutcome(null, "The server did not confirm the PIN. Try again.", false);
+                return new PinOutcome(null, AppText.Get("granary.profiles.pin.unconfirmed"), false);
             }
             return new PinOutcome(verification.ProfileToken, null, false);
         }
@@ -290,7 +294,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         catch (Exception ex)
         {
             _logger.LogWarning("Selecting profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
-            SetStatus("Could not open the profile. Try again.", isLoadError: false);
+            SetStatus(AppText.Get("granary.profiles.openFailed"), isLoadError: false);
         }
         finally
         {
@@ -348,19 +352,30 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
 
     private static string DescribeListFailure(Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => "The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
+        SiloApiException { Status: 429 } api => ApiFailureText.TooManyRequests(api.RetryAfter),
         SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The server could not list the profiles (error {api.Status}).",
+        SiloApiException api => AppText.Get("granary.profiles.listFailed", ("status", api.Status)),
         _ => ApiFailureText.ForTransport(ex),
     };
 
     private static string DescribePinFailure(Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => "Too many attempts. " + ApiFailureText.TryAgainIn(api.RetryAfter),
+        SiloApiException { Status: 429 } api => PinLockout(api.RetryAfter),
         SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The PIN could not be checked (error {api.Status}).",
+        SiloApiException api => AppText.Get("granary.profiles.pin.checkFailed", ("status", api.Status)),
         _ => ApiFailureText.ForTransport(ex),
     };
+
+    // A PIN check refused with 429 locks the profile for a while, in the web's words (components/profiles/pinLockout.ts).
+    private static string PinLockout(TimeSpan? retryAfter)
+    {
+        if (retryAfter is not { } delay)
+        {
+            return AppText.Get("web.profiles.pin.lockedLater");
+        }
+        int minutes = Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes));
+        return AppText.Get("web.profiles.pin.lockedMinutes", ("count", minutes), ("count_text", minutes));
+    }
 
     public void Dispose()
     {
@@ -371,14 +386,37 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     private readonly record struct PinOutcome(string? ProfileToken, string? Error, bool ProfileChanged);
 }
 
-/// <summary>User-facing wording and log-safe summaries for failed API calls in the sign-in view models.</summary>
+/// <summary>
+/// User-facing wording and log-safe summaries for failed API calls in the sign-in view models; Home, detail, the player and
+/// the password change use the wording too.
+/// </summary>
 internal static class ApiFailureText
 {
-    public const string Busy = "The server is busy, try again.";
-    public const string Unreachable = "Could not reach the server. Check the connection and try again.";
-    public const string Unexpected = "The server sent an answer this app does not understand.";
+    public static string Busy => AppText.Get("granary.apiFailure.busy");
 
-    /// <summary>"Try again in N minutes." from a <c>Retry-After</c> delay, rounded up to whole minutes.</summary>
+    public static string Unreachable => AppText.Get("granary.apiFailure.unreachable");
+
+    public static string Unexpected => AppText.Get("granary.apiFailure.unexpected");
+
+    /// <summary>
+    /// "The server is receiving too many requests. Try again in N minutes." as one message, from a <c>Retry-After</c>
+    /// delay rounded up to whole minutes.
+    /// </summary>
+    public static string TooManyRequests(TimeSpan? retryAfter)
+    {
+        if (retryAfter is not { } delay)
+        {
+            return AppText.Get("granary.apiFailure.tooManyRequestsLater");
+        }
+        int minutes = Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes));
+        return AppText.Get("granary.apiFailure.tooManyRequests", ("count", minutes));
+    }
+
+    /// <summary>
+    /// "Try again in N minutes." from a <c>Retry-After</c> delay, rounded up to whole minutes, for the callers that still
+    /// put it after a sentence of their own (detail, playback, the password change); in English until they have whole
+    /// messages.
+    /// </summary>
     public static string TryAgainIn(TimeSpan? retryAfter)
     {
         if (retryAfter is not { } delay)

@@ -670,5 +670,107 @@
       "type": 0,
       "value": "Speichern"
     }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "Profile"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (PIN-geschützt)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "Wer schaut?"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "Falsche PIN"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "Zu viele falsche PINs. Versuche es später erneut."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Zu viele falsche PINs. Versuche es in "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Minute erneut."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Zu viele falsche PINs. Versuche es in "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Minuten erneut."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "PIN für "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " eingeben"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "Wird überprüft …"
+    }
   ]
 }

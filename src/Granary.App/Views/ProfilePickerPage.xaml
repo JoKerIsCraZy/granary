@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock
-            Text="Who is watching?"
+            Text="{x:Bind t:AppText.Get('web.profiles.picker.title')}"
             HorizontalAlignment="Center"
             Style="{StaticResource TitleLargeTextBlockStyle}"
             AutomationProperties.HeadingLevel="Level1" />
@@ -39,13 +39,13 @@
             Grid.Row="2"
             VerticalAlignment="Top"
             IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-            AutomationProperties.Name="Loading profiles" />
+            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.profiles.loading')}" />
 
         <GridView
             x:Name="ProfileGrid"
             Grid.Row="2"
             HorizontalAlignment="Center"
-            AutomationProperties.Name="Profiles"
+            AutomationProperties.Name="{x:Bind t:AppText.Get('web.profiles.picker.documentTitle')}"
             ContainerContentChanging="OnProfileContainerContentChanging"
             IsItemClickEnabled="True"
             ItemClick="OnProfileClick"
@@ -88,10 +88,10 @@
             Closed="OnPinDialogClosed"
             Opened="OnPinDialogOpened">
             <StackPanel MinWidth="320" Spacing="12">
-                <TextBlock Text="This profile is protected by a 4-digit PIN." TextWrapping="Wrap" />
+                <TextBlock Text="{x:Bind t:AppText.Get('granary.profiles.pin.description')}" TextWrapping="Wrap" />
                 <PasswordBox
                     x:Name="PinBox"
-                    Header="PIN"
+                    Header="{x:Bind t:AppText.Get('web.profiles.pin.label')}"
                     InputScope="NumericPin"
                     KeyDown="OnPinBoxKeyDown"
                     MaxLength="4"
@@ -99,7 +99,7 @@
                 <ProgressBar
                     IsIndeterminate="True"
                     Visibility="{x:Bind ViewModel.IsVerifyingPin, Mode=OneWay}"
-                    AutomationProperties.Name="Checking the PIN" />
+                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.profiles.pin.verifying')}" />
                 <!-- Cleared before every check, so each error reopens the bar and is announced. -->
                 <InfoBar
                     IsClosable="False"
