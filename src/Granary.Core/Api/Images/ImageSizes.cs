@@ -24,11 +24,12 @@ public sealed record ImageSizes(int? Poster = null, int? Backdrop = null, int? L
     public const double RungSlack = 0.05;
 
     /// <summary>
-    /// The widest backdrop a hero asks for: the widest size the server keeps (silo-server
+    /// The widest backdrop asked for on a hero's account: the widest size the server keeps (silo-server
     /// <c>internal/artworkkey/artworkkey.go</c>, <c>VariantWidths</c>). Past it the server answers the original, up to
     /// 3840 px wide and several times the bytes. The web takes that for its banner on a very wide window; Granary does
     /// not, because its hero shows the title of any card, so every row's backdrops come at the hero's width, the wide
-    /// cards' among them.
+    /// cards' among them. (Backdrops asked for wider anyway, <see cref="Default"/> at a display scale of 300 %, stay as
+    /// they are.)
     /// </summary>
     public const int WidestHeroBackdrop = 2560;
 

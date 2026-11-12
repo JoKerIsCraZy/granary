@@ -256,7 +256,8 @@ public sealed class HomeViewModelTests
         _silo.Map(SectionsPath, Sections(Section("lazy", "genre", 1)));
         _silo.Map(SectionsPath + "/lazy/items", Serialize(Section("lazy", "genre", 1, Item("m1"))));
         var home = Create();
-        // A 3840 x 1600 window: the compact hero's backdrop is 1650 px wide there, and 5 % narrower will do.
+        // A window 3840 px wide and 1560 high inside: the compact hero's backdrop is 1650 px wide there, and 5 % narrower
+        // will do.
         home.Hero.Window = (3840, 1560);
 
         await home.ActivateAsync();
@@ -266,6 +267,38 @@ public sealed class HomeViewModelTests
         Assert.Equal("1568", list.Query("backdrop_width"));
         Assert.Equal("342", list.Query("poster_width"));
         Assert.Equal(list.Uri.Query, row.Uri.Query);
+    }
+
+    [Fact]
+    public async Task AHeroThatNeedsItsBackdropsNotablyWider_LoadsTheRowsAgain_BehindTheOnesShown()
+    {
+        _silo.Map(SectionsPath, Sections(Section("r", "genre", 1, Item("m1"))));
+        var home = Create();
+        home.Hero.Window = (1920, 1040);
+        await home.ActivateAsync();
+        Assert.Equal("1280", Assert.Single(_silo.To(SectionsPath)).Query("backdrop_width"));
+
+        // The window is much wider on the next visit, as it is after Hero size was set to Full.
+        home.Hero.Window = (3840, 1560);
+        await home.ActivateAsync();
+
+        Assert.Equal(["1280", "1568"], _silo.To(SectionsPath).Select(request => request.Query("backdrop_width")));
+        Assert.Single(home.Rows);
+    }
+
+    [Fact]
+    public async Task AHeroALittleWider_KeepsTheRows()
+    {
+        _silo.Map(SectionsPath, Sections(Section("r", "genre", 1, Item("m1"))));
+        var home = Create();
+        home.Hero.Window = (3840, 1560);
+        await home.ActivateAsync();
+
+        // 1650 px against 1700: the pictures shown are 3 % narrower than drawn, which nobody sees.
+        home.Hero.Window = (3840, 1608);
+        await home.ActivateAsync();
+
+        Assert.Single(_silo.To(SectionsPath));
     }
 
     [Fact]

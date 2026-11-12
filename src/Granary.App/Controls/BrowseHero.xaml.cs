@@ -53,6 +53,8 @@ public sealed partial class BrowseHero : UserControl
     private readonly BackdropLayer[] _layers;
     private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
+    // The backdrop's box, which cuts off what of the picture is over its edges.
+    private readonly RectangleGeometry _pictureClip = new();
     // The text's sizes as the markup gives them, for a 1080 px window; a taller one grows them.
     private readonly (double LogoWidth, double Name, double Meta, double Overview, double OverviewLine, double OverviewWidth, double Width, double Top) _textAt1080;
     private readonly (double Size, double Line, double Gap) _eyebrowAt1080;
@@ -76,6 +78,7 @@ public sealed partial class BrowseHero : UserControl
         _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
             Texts.MaxWidth, Texts.Margin.Top);
         _eyebrowAt1080 = (Eyebrow.FontSize, Eyebrow.LineHeight, Eyebrow.Margin.Bottom);
+        Pictures.Clip = _pictureClip;
         ApplySizes(Sizes);
         _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
@@ -412,7 +415,7 @@ public sealed partial class BrowseHero : UserControl
         Picture.Height = place.Height;
         Canvas.SetLeft(Picture, place.Left);
         Canvas.SetTop(Picture, place.Top);
-        Pictures.Clip = new RectangleGeometry { Rect = new Rect(0, 0, double.IsFinite(width) ? Math.Max(0, width) : 0, Sizes.RestHeight) };
+        _pictureClip.Rect = new Rect(0, 0, double.IsFinite(width) ? Math.Max(0, width) : 0, Sizes.RestHeight);
     }
 
     // The page the hero is on: its height sets the hero's sizes. It must be the page's own full-height grid: a parent sized

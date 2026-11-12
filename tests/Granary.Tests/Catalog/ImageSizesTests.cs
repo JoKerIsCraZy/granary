@@ -103,6 +103,9 @@ public sealed class ImageSizesTests
     public void For_KnowsAPhotosSizesAsProfile_AndLeavesAWidthWithoutListedSizesAlone()
     {
         Assert.Equal("photo_width=500", new ImageSizes(Photo: 600).For(Available).ToString());
+        // A poster at a display scale of 300 %: the widest poster the server keeps is 1000 px.
+        Assert.Equal(new KeyValuePair<string, string>("poster_width", "1000"), ImageSizes.Default.ScaledBy(3).For(Available).Values[0]);
+        Assert.Equal("poster_width=1300", new ImageSizes(Poster: 1300).For(Available).ToString());
         Assert.Equal("poster_width=1100",
             new ImageSizes(Poster: 1100).For(Available with { Widths = new Dictionary<string, ImageSizeWidths>() }).ToString());
     }

@@ -78,6 +78,23 @@ public sealed class BrowseHeroFullLayoutTests
         Assert.Equal(new BackdropPlace(width, height, left, top), BrowseHeroLayout.PlaceBackdrop(boxWidth, boxHeight));
     }
 
+    [Fact]
+    public void ABackdrop_CoversItsBox_WhateverTheBoxesSize()
+    {
+        for (double boxWidth = 300; boxWidth <= 3900; boxWidth += 37)
+        {
+            for (double boxHeight = 150; boxHeight <= 760; boxHeight += 61)
+            {
+                var place = BrowseHeroLayout.PlaceBackdrop(boxWidth, boxHeight);
+
+                Assert.True(place.Left <= 0 && place.Top <= 0 && place.Left + place.Width >= boxWidth && place.Top + place.Height >= boxHeight,
+                    $"{boxWidth} x {boxHeight}: {place}");
+                // The picture keeps its shape to within the pixel its size is rounded up by.
+                Assert.InRange(place.Width - place.Height * 16 / 9, -2, 2);
+            }
+        }
+    }
+
     [Theory]
     [InlineData(0, 440)]
     [InlineData(1000, 0)]

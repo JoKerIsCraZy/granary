@@ -49,6 +49,17 @@ public sealed class ForYouViewModelTests
     }
 
     [Fact]
+    public async Task Backdrops_AreAskedForAsWideAsTheHeroDrawsThem()
+    {
+        var page = Create();
+        page.Hero.Window = (3840, 1560);
+
+        await page.ActivateAsync(isReturn: false);
+
+        Assert.Contains("backdrop_width=1568", _harness.Queries(DiscoverPath)[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ARowFromTheProfilesHistory_MakesThePagePersonal()
     {
         var page = await LoadedAsync();

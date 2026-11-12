@@ -58,6 +58,8 @@ public sealed partial class HomeViewModel : ObservableObject
     private (bool IsReady, string? ServerId, string? ProfileId)? _shownFor;
     private DateTimeOffset? _loadedAt;
     private long _loadedVersion;
+    // How wide the rows shown asked for their backdrops (BrowseArtwork.BackdropAsked).
+    private int _loadedBackdrop;
     private bool _isActive;
     private bool _isReportingOwnChange;
 
@@ -293,8 +295,11 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             return Loading;
         }
+        // Also when the hero draws its backdrop notably wider than the rows asked for it: Hero size was set to Full, or the
+        // window is much wider than on the last visit, and the pictures shown would be soft.
         bool isStale = _loadedAt is not { } loadedAt || _time.GetUtcNow() - loadedAt >= StaleAfter
-            || _loadedVersion != (_changes?.Version ?? 0);
+            || _loadedVersion != (_changes?.Version ?? 0)
+            || BrowseHeroLayout.DecodesAgain(_loadedBackdrop, BrowseArtwork.BackdropAsked(DisplayScale, Hero.BackdropWidth));
         return isStale ? Loading = LoadAsync(quietly: !HasError && HasContent) : Task.CompletedTask;
     }
 
@@ -334,7 +339,10 @@ public sealed partial class HomeViewModel : ObservableObject
         }
         try
         {
-            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken, Hero.BackdropWidth);
+            double heroWidth = Hero.BackdropWidth;
+            // Taken with the asking, not with the answer: a load that fails is not tried again for its width alone.
+            _loadedBackdrop = BrowseArtwork.BackdropAsked(DisplayScale, heroWidth);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken, heroWidth);
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
             var fetched = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();

@@ -18,12 +18,10 @@ internal static class BrowseArtwork
         ImageParameterCache images, ServerEntry server, double displayScale, ILogger logger, CancellationToken cancellationToken,
         double heroBackdropWidth = 0)
     {
-        double scale = double.IsFinite(displayScale) && displayScale > 0 ? displayScale : 1;
         ImageParameters parameters;
         try
         {
-            var sizes = ImageSizes.Default.ScaledBy(scale).WithDrawnBackdrop(heroBackdropWidth * scale);
-            parameters = await images.GetAsync(server, sizes, cancellationToken);
+            parameters = await images.GetAsync(server, Sizes(displayScale, heroBackdropWidth), cancellationToken);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
@@ -33,5 +31,18 @@ internal static class BrowseArtwork
         // A newer load may have taken over while the sizes were read.
         cancellationToken.ThrowIfCancellationRequested();
         return parameters;
+    }
+
+    /// <summary>
+    /// How wide, in device pixels, <see cref="ParametersAsync"/> asks for backdrops at <paramref name="displayScale"/> for a
+    /// hero drawing them <paramref name="heroBackdropWidth"/> wide: a page remembers it with its rows, to load them again
+    /// once its hero needs them notably wider.
+    /// </summary>
+    public static int BackdropAsked(double displayScale, double heroBackdropWidth) => Sizes(displayScale, heroBackdropWidth).Backdrop ?? 0;
+
+    private static ImageSizes Sizes(double displayScale, double heroBackdropWidth)
+    {
+        double scale = double.IsFinite(displayScale) && displayScale > 0 ? displayScale : 1;
+        return ImageSizes.Default.ScaledBy(scale).WithDrawnBackdrop(heroBackdropWidth * scale);
     }
 }
