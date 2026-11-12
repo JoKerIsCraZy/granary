@@ -14,10 +14,17 @@ public sealed partial class AccentTintTests
         string theme = File.ReadAllText(Path.Combine(RepositoryFiles.Root, "src", "Granary.App", "Themes", "Silo.xaml"));
         string painter = File.ReadAllText(Path.Combine(RepositoryFiles.Root, "src", "Granary.App", "Themes", "AccentPainter.cs"));
         var tints = TintKey().Matches(theme).Select(match => match.Groups[1].Value).Distinct().ToList();
+        // The list itself, and that it is the one painted with the accent: a tint's name elsewhere in the file would not do.
+        var list = PrimaryKeyList().Match(painter);
 
         Assert.NotEmpty(tints);
-        Assert.All(tints, tint => Assert.Contains($"\"{tint}\"", painter, StringComparison.Ordinal));
+        Assert.True(list.Success, "AccentPainter.PrimaryKeys was not found");
+        Assert.All(tints, tint => Assert.Contains($"\"{tint}\"", list.Groups[1].Value, StringComparison.Ordinal));
+        Assert.Contains("Paint(dictionaries, PrimaryKeys, palette.Primary);", painter, StringComparison.Ordinal);
     }
+
+    [GeneratedRegex(@"PrimaryKeys\s*=\s*\[(.*?)\];", RegexOptions.Singleline)]
+    private static partial Regex PrimaryKeyList();
 
     [GeneratedRegex("""x:Key="(SiloPrimaryTint\d+Brush)"\s""")]
     private static partial Regex TintKey();
