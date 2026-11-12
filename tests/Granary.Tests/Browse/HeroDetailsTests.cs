@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;
@@ -77,7 +78,7 @@ public sealed class HeroDetailsTests
 
         var title = Of(episode);
 
-        Assert.Equal("S1 E1 · Kein Zufall · 25m · tv-14", title.Meta);
+        Assert.Equal("S1 E1 · Kein Zufall · 25m · TV-14", title.Meta);
         Assert.Null(title.Rating);
     }
 
@@ -109,6 +110,21 @@ public sealed class HeroDetailsTests
     public void AFullTen_IsARating()
     {
         Assert.Equal("2006 · IMDb 10.0 · Drama · Crime · TV-PG", Of(Series() with { RatingImdb = 10 }).Meta);
+    }
+
+    [Fact]
+    public void TheLine_ReadsTheSame_WhereACommaIsTheDecimalSign()
+    {
+        var culture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+        try
+        {
+            Assert.Equal("2006 · IMDb 8.4 · Drama · Crime · TV-PG", Of(Series()).Meta);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
     }
 
     [Fact]
