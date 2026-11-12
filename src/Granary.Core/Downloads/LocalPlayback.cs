@@ -306,6 +306,8 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     public async ValueTask DisposeAsync()
     {
+        // Also one let go without a stop: nothing of it acts on the engine or records a position from here on.
+        _stopping = true;
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
         StopAudioDelay();

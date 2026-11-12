@@ -1521,7 +1521,8 @@ while the server answers.
   of it, else the manifest's) is such a file, not the title's end: it is not marked watched and nothing plays next, as the
   Apple app says "The downloaded video file ends early." Where the viewer got to is kept either way.
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
-  name and drops its folder, which lies under the Windows user's own folder and names them.
+  name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no file's
+  name, a folder, goes whole.
 
 ### Offline progress
 
@@ -1566,7 +1567,8 @@ device.
   `ResumeAt` holds, the server's on a tie (the Apple app's `mergeProgress`): its position becomes `ResumeMs`, its time
   `ResumeAt`, its `completed` `IsWatched`. That is how a position made on another device reaches a download, how an older
   offline position never moves a newer one back (the entry went out with the time it was recorded, so the server kept its
-  own), and how the server's word on watched arrives. A listing that breaks off changes nothing. A complete one lets the
+  own), and how the server's word on watched arrives. A row that says what the download already has writes nothing and
+  raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A complete one lets the
   profile's held entries go: what the server has is known. A row missing from the listing changes nothing, since the
   listing is live.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record,

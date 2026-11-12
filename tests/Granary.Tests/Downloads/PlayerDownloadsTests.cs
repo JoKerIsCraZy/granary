@@ -242,6 +242,53 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APlayerThatGoesWhileADownloadsFolderIsRead_StartsNothing()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var held = new ManualResetEventSlim();
+        using var reading = new ManualResetEventSlim();
+        var player = NewPlayer();
+        _fixture.Playbacks.Reading = () =>
+        {
+            reading.Set();
+            held.Wait(TimeSpan.FromSeconds(10));
+        };
+
+        var start = player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+        player.Dispose();
+        held.Set();
+        await start.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+        Assert.Empty(_fixture.Engine.Loaded);
+        Assert.Empty(_streams);
+        // Neither the page's player nor the playback it never started listens to the engine any more.
+        Assert.False(_fixture.Engine.HasSubscribers);
+    }
+
+    [Fact]
+    public async Task Retry_AfterAFileThatWouldNotPlay_TriesTheFileAgain_WithANewPlayback()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "unrecognized file format"));
+        Assert.Equal((PlayerPhase.Failed, LocalPlayback.CannotPlay, true), (player.Phase, player.ErrorMessage, player.CanRetry));
+
+        await player.RetryCommand.ExecuteAsync(null);
+        Frame(0);
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.All(_fixture.Engine.Loaded, load => Assert.True(load.Url.IsFile));
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Empty(_streams);
+        // The playback that failed is let go: a change of the audio delay reaches the engine once, through the new one.
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms", ScriptedSilo.NoContent());
+        player.ChangeAudioDelay(PlayerViewModel.AudioDelayStepMs);
+        Assert.Equal(0.05, _fixture.Engine.AudioDelay, 3);
+    }
+
+    [Fact]
     public async Task AStartThatWaitedForTheFolder_GivesWayToANewerStart()
     {
         await _fixture.Harness.AddPlayableAsync();
