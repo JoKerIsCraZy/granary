@@ -1652,8 +1652,15 @@ device.
   and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
   not go by then is in the file, and the next start sends it.
 - **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
-  and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`), unsent: they name what was
-  watched and when, and would otherwise lie in the data folder for up to 90 days. A play still open then records
+  and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and
+  when, and would otherwise lie in the data folder for up to 90 days. First what can still be sent is sent: the active
+  profile's entries, when it is a profile of that server and account, in one flush within the budget the sign-out has
+  for the server's deletes (`DeleteBudget`, shared with them). Another profile's entries cannot go out as this one, and
+  another account's or server's not at all, so those are lost, as are the active profile's when the server does not
+  take them in time. A question that is asked anyway says so, after a first try to send (`SendBudget`, 3 s): "Progress
+  in 2 titles is not on your Silo server yet and is lost with it." (`UnsentNote`), after the downloads' sentence in the
+  sign-out's question, in Settings → Devices' question, and in the question before removing a server, which is asked
+  whatever the downloads. A sign-out that asks nothing today (no downloads) still asks nothing. A play still open then records
   nothing more (`DownloadStore.IsClearedSince`). A sign-in that expired keeps them, as it keeps the downloads, and they
   go once the account is signed in again.
 

@@ -626,8 +626,8 @@ internal static class ServerDialogs
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
 
-    // "2 downloads (3.0 GB) on this PC are deleted with it.", null for none. The removal takes them whatever the read gave, so
-    // a read that failed says they go without a count.
+    // "2 downloads (3.0 GB) on this PC are deleted with it.", and how many titles' progress is not on the server yet; null for
+    // none. The removal takes them whatever the read gave, so a read that failed says they go without a count.
     private static async Task<string?> DownloadsNoteAsync(string serverId)
     {
         if (App.Services.GetService<DownloadSignOut>() is not { } downloads)
@@ -636,7 +636,7 @@ internal static class ServerDialogs
         }
         try
         {
-            return DownloadSignOut.Note(await downloads.SummarizeAsync(serverId, null, CancellationToken.None));
+            return await downloads.RemoveNoteAsync(serverId, CancellationToken.None);
         }
         catch (Exception ex)
         {

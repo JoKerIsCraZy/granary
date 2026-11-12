@@ -22,20 +22,28 @@ public sealed record DownloadSummary(int? Count, long? Bytes);
 /// asked first, with how many go and the space they take, as the Apple app's sign-out asks; the rows, the index entries and
 /// the deletes still to send go, and their transfers stop; the server hears the deletes of the active profile's entries, within
 /// <see cref="DeleteBudget"/>; then the sign-out, while the folders go beside it. The positions watched from this PC that still
-/// wait to be sent (<see cref="OfflineProgressQueue"/>) go with them, unsent: nothing of what the account watched stays behind. A drive or a share that does not answer holds the question
+/// wait to be sent (<see cref="OfflineProgressQueue"/>) are sent first where the server takes them (the active profile's,
+/// within the same budget), and what could not go is forgotten with the downloads: nothing of what the account watched stays
+/// behind. A question that is asked anyway says how many titles' progress that is. A drive or a share that does not answer holds the question
 /// up for at most <see cref="SummaryBudget"/>, and the sign-out for at most <see cref="StoreBudget"/> more. Only a sign-out the
 /// viewer asks for comes here: a sign-in that expired, which the authentication handler ends by itself, keeps the downloads,
 /// as the Android app does.
 /// </summary>
 public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISessionManager session, ICredentialStore credentials,
     IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger, OfflineProgressQueue? progress = null,
-    Playback.KeptPlaybackSettings? settings = null)
+    Playback.KeptPlaybackSettings? settings = null, OfflineProgressSync? sync = null)
 {
     /// <summary>What a question before signing out says when the account signed in is not known: its downloads stay.</summary>
     public const string KeptNote = "Downloads on this PC are kept.";
 
     /// <summary>The longest the server's deletes may hold a sign-out up; the files go whether it answered or not.</summary>
     public static readonly TimeSpan DeleteBudget = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// The longest a question waits for the positions that still wait to be sent, so it can say what is lost; a server that
+    /// cannot be reached fails at once, and one that does not answer holds the question up no longer than this.
+    /// </summary>
+    public static readonly TimeSpan SendBudget = TimeSpan.FromSeconds(3);
 
     /// <summary>
     /// The longest the question before a sign-out waits for the downloads and their size, as the pages wait for the free space:
@@ -127,10 +135,81 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// (<see cref="AccountOfAsync"/>): the <see cref="Note"/> of that account's, or, when the account is not known,
     /// <see cref="KeptNote"/> while the server has any here; null when there is nothing to say.
     /// </summary>
+    /// <remarks>
+    /// For a question that is asked whatever the downloads: with an account known, it also says how many titles' progress
+    /// was watched here and is not on the server yet (<see cref="UnsentNote"/>), after one try to send it.
+    /// </remarks>
     public async Task<string?> SignOutNoteAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
         var summary = await SummarizeAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
-        return accountId is not null ? Note(summary) : summary.Count is 0 ? null : KeptNote;
+        if (accountId is null)
+        {
+            return summary.Count is 0 ? null : KeptNote;
+        }
+        return Join(Note(summary), await UnsentAfterASendAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// What the question before removing a server says: the <see cref="Note"/> of every account's downloads there, and how
+    /// many titles' progress is not on the server yet (<see cref="UnsentNote"/>), after one try to send it; null when there is
+    /// nothing to say.
+    /// </summary>
+    public async Task<string?> RemoveNoteAsync(string serverEntryId, CancellationToken cancellationToken)
+    {
+        var summary = await SummarizeAsync(serverEntryId, null, cancellationToken).ConfigureAwait(false);
+        return Join(Note(summary), await UnsentAfterASendAsync(serverEntryId, null, cancellationToken).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// What a question says of progress watched from this PC that the server does not have: "Progress in 2 titles is not on
+    /// your Silo server yet and is lost with it."; null for none.
+    /// </summary>
+    public static string? UnsentNote(int titles) => titles switch
+    {
+        <= 0 => null,
+        1 => "Progress in 1 title is not on your Silo server yet and is lost with it.",
+        _ => string.Create(CultureInfo.InvariantCulture, $"Progress in {titles} titles is not on your Silo server yet and is lost with it."),
+    };
+
+    private static string? Join(string? first, string? second) => first is null ? second : second is null ? first : first + " " + second;
+
+    // What still waits after one try to send it, as the question's sentence. The try is the active profile's only: another
+    // profile's positions, and another account's or server's, cannot go out as this one.
+    private async Task<string?> UnsentAfterASendAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    {
+        if (progress is null)
+        {
+            return null;
+        }
+        await TrySendAsync(serverEntryId, accountId, SendBudget, cancellationToken).ConfigureAwait(false);
+        return UnsentNote(progress.Count(scope => Matches(scope, serverEntryId, accountId)));
+    }
+
+    // One send of what the active profile watched here and has not sent, when it is a profile of that server and account and
+    // has any. Whatever comes of it, the caller goes on: a server that does not answer costs the budget at most.
+    private async Task TrySendAsync(string serverEntryId, string? accountId, TimeSpan budget, CancellationToken cancellationToken)
+    {
+        using var timeout = new CancellationTokenSource(budget, time);
+        await TrySendAsync(serverEntryId, accountId, budget, timeout.Token, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task TrySendAsync(string serverEntryId, string? accountId, TimeSpan budget, CancellationToken withinBudget,
+        CancellationToken cancellationToken)
+    {
+        if (sync is null || progress is null || DownloadScope.Of(session) is not { } scope || !Matches(scope, serverEntryId, accountId)
+            || progress.Count(owner => owner == scope) == 0)
+        {
+            return;
+        }
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, withinBudget);
+        try
+        {
+            await sync.FlushAsync(readBack: false, linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("The positions watched from this PC were not sent within {Seconds} s before the sign-out", budget.TotalSeconds);
+        }
     }
 
     /// <summary>
@@ -181,12 +260,19 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     // ClearAsync's work once the clear is marked.
     private async Task TakeOffAsync(long generation, string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
-        // What was watched there and not sent yet names titles and times. It could only go out as that account, which is
-        // signed out now, or to that server, which is removed; a play still open records nothing more (LocalPlayback).
+        bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
+        // One budget for all the server hears before the sign-out: what was watched, then the deletes.
+        using var serverBudget = new CancellationTokenSource(DeleteBudget, time);
+        if (loaded)
+        {
+            // What the active profile watched here and has not sent goes now, while it still can: this sign-in ends next.
+            await TrySendAsync(serverEntryId, accountId, DeleteBudget, serverBudget.Token, cancellationToken).ConfigureAwait(false);
+        }
+        // What could not go names titles and times. It could only go out as that account, which is signed out now, or to
+        // that server, which is removed; a play still open records nothing more (LocalPlayback).
         progress?.Remove(scope => Matches(scope, serverEntryId, accountId));
         // The settings kept for a play without the server have no download left to serve.
         settings?.Remove(serverEntryId, accountId);
-        bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
         var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), generation, CancellationToken.None);
@@ -197,7 +283,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             {
                 if (deletes is not null)
                 {
-                    await TellTheServerAsync(deletes, cancellationToken).ConfigureAwait(false);
+                    await TellTheServerAsync(deletes, serverBudget.Token, cancellationToken).ConfigureAwait(false);
                 }
                 await WaitForIndexAsync(removal, cancellationToken).ConfigureAwait(false);
                 waited = true;
@@ -257,10 +343,13 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         return true;
     }
 
+    // No downloads, no question, as before there was progress to send: the sign-out sends what it can either way. A question
+    // that is asked says what of it will be lost.
     private async Task<bool> ConfirmAsync(ServerEntry server, string? accountId, CancellationToken cancellationToken) =>
         accountId is null
         || Note(await SummarizeAsync(server.Id, accountId, cancellationToken)) is not { } note
-        || await confirmation.AskAsync($"Sign out of {server.Name}?", note, "Sign out");
+        || await confirmation.AskAsync($"Sign out of {server.Name}?",
+            Join(note, await UnsentAfterASendAsync(server.Id, accountId, cancellationToken))!, "Sign out");
 
     private async Task<bool> LoadWithinAsync(TimeSpan budget, CancellationToken cancellationToken)
     {
@@ -334,10 +423,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     // The server's deletes, one at a time, as that profile: one the server refuses for itself does not stop the others; no
     // answer, a sign-in it no longer takes, a busy server, a profile switch or the end of the budget stops them all, since the
     // next ones would fare no better.
-    private async Task TellTheServerAsync(ServerDeletes deletes, CancellationToken cancellationToken)
+    private async Task TellTheServerAsync(ServerDeletes deletes, CancellationToken withinBudget, CancellationToken cancellationToken)
     {
-        using var budget = new CancellationTokenSource(DeleteBudget, time);
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, budget.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, withinBudget);
         foreach (string id in deletes.Ids)
         {
             try

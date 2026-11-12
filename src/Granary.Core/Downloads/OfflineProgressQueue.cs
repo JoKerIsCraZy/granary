@@ -133,6 +133,16 @@ public sealed class OfflineProgressQueue
         }
     }
 
+    /// <summary>How many entries the scopes <paramref name="match"/> names still have here: titles whose progress is not on the server yet.</summary>
+    public int Count(Func<DownloadScope, bool> match)
+    {
+        ArgumentNullException.ThrowIfNull(match);
+        lock (_gate)
+        {
+            return Loaded().Count(e => match(e.Scope));
+        }
+    }
+
     /// <summary>The profile recorded a position of the title here that the server has not answered for: waiting or on its way.</summary>
     public bool HasUnsent(DownloadScope scope, string mediaItemId)
     {

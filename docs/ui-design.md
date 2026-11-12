@@ -1241,7 +1241,8 @@ says why above the sections.
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
   it signs Granary out of the server and back to sign-in, and the question ends with the downloads that go along when the
-  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."). "No other signed-in sessions." when there are none, "Load more
+  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."), and of progress watched from this
+  PC that could not be sent ("Progress in 2 titles is not on your Silo server yet and is lost with it."). "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
   management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
@@ -1262,7 +1263,9 @@ says why above the sections.
   (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
   server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
   line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
-  "Any downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
+  "Any downloads on this PC are deleted with it." when not even they can be read in time), then, when progress watched
+  from this PC could not be sent to the server, "Progress in 2 titles is not on your Silo server yet and is lost with
+  it." (the sign-out's question ends with the same sentence), Remove and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
   keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in

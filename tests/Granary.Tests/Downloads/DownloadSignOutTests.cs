@@ -45,6 +45,11 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_sync is not null)
+        {
+            _sync.Dispose();
+            await _sync.LatestRun;
+        }
         await _progress.LatestSave;
         if (_settings.IsValueCreated)
         {
@@ -55,8 +60,21 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
     private readonly Lazy<Granary.Core.Playback.KeptPlaybackSettings> _settings;
 
-    private DownloadSignOut NewSignOut() =>
-        new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress, _settings.Value);
+    private const string SyncPath = "api/v2/sync/progress";
+
+    private OfflineProgressSync? _sync;
+
+    private DownloadSignOut NewSignOut()
+    {
+        _sync ??= new OfflineProgressSync(_progress, new Granary.Core.Api.Downloads.ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network,
+            new Granary.Core.Playback.ViewerStateChanges(new Granary.Core.Playback.PlaybackStops()), _h.Time, _h.Logs.For<OfflineProgressSync>());
+        return new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress, _settings.Value, _sync);
+    }
+
+    private IReadOnlyList<SentRequest> PositionsSent => _h.Silo.SentTo(HttpMethod.Post, SyncPath);
+
+    private void ServerTakesPositions(params string[] items) => _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK,
+        "{ \"items\": [" + string.Join(",", items.Select((id, index) => $$"""{ "index": {{index}}, "media_item_id": "{{id}}", "status": "success" }""")) + "] }"));
 
     // A completed download with its file on the disk.
     private async Task<StoredDownload> KeptAsync(string id, DownloadScope? scope = null)
@@ -203,10 +221,16 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         _progress.Record(OtherServer, "ep_5", 60_000, 0);
         _settings.Value.Keep("srv1/1/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
         _settings.Value.Keep("srv1/2/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        // The server cannot be reached: nothing of it can be sent before it goes.
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
         using var servers = await ServersAsync();
 
         await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
         await _progress.LatestSave;
+
+        // The question, asked for the download, also says what else is lost: the account's progress in two titles.
+        Assert.Equal("1 download (1.5 MB) on this PC is deleted with it. Progress in 2 titles is not on your Silo server yet and is lost with it.",
+            Assert.Single(_confirm.Asked).Message);
 
         // The settings kept for its plays without the server go too.
         Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
@@ -221,12 +245,91 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task SigningOut_SendsWhatTheActiveProfileWatchedHere_BeforeItForgetsIt()
+    {
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _progress.Record(Scope8, "ep_5", 60_000, 0);
+        ServerTakesPositions("mv_dl_1");
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // Profile 7's position went, as account 1 and profile 7, before the question and before the sign-in ended.
+        var sent = Assert.Single(PositionsSent);
+        Assert.Equal(("1", "7"), (sent.AsAccount, sent.AsProfile));
+        Assert.Contains("\"position_ms\":60000", sent.Body, StringComparison.Ordinal);
+        // Profile 8's cannot go as profile 7: the question says that one title's progress is lost.
+        Assert.Equal("1 download (1.5 MB) on this PC is deleted with it. Progress in 1 title is not on your Silo server yet and is lost with it.",
+            Assert.Single(_confirm.Asked).Message);
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(Scope8));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
+    public async Task SigningOutWithoutDownloads_AsksNothing_AndStillSendsWhatItCanFirst()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        bool signedOutWhenSent = true;
+        _h.Silo.On(HttpMethod.Post, SyncPath, () =>
+        {
+            signedOutWhenSent = _h.Session.Calls.Count > 0;
+            return ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "index": 0, "media_item_id": "ep_5", "status": "success" } ] }""")();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // No question where there was none; the position is on the server, not lost without a word.
+        Assert.Empty(_confirm.Asked);
+        Assert.Single(PositionsSent);
+        Assert.False(signedOutWhenSent);
+        Assert.Empty(_progress.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task SigningOutOfAnotherServer_SendsNothingAsTheAccountInUse()
+    {
+        await _credentials.SetAsync("srv2", SignedIn("5"), Token);
+        var there = new DownloadScope("srv2", "5", "7");
+        await KeptAsync("dl_x", there);
+        _progress.Record(there, "ep_5", 60_000, 0);
+        _progress.Record(Scope7, "ep_9", 60_000, 0);
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv2"));
+
+        // Its positions could only go out as that account, which is not the one in use: they are lost, and the question
+        // said so. The active profile's own are neither sent for it nor touched.
+        Assert.Empty(PositionsSent);
+        Assert.EndsWith("Progress in 1 title is not on your Silo server yet and is lost with it.", Assert.Single(_confirm.Asked).Message, StringComparison.Ordinal);
+        Assert.Empty(_progress.Entries(there));
+        Assert.Single(_progress.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task TheRemoveQuestion_NamesTheProgressThatIsLost_AlsoWithoutDownloads()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_6", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+
+        string? note = await NewSignOut().RemoveNoteAsync("srv1", Token);
+
+        Assert.Equal("Progress in 3 titles is not on your Silo server yet and is lost with it.", note);
+        Assert.Null(await NewSignOut().RemoveNoteAsync("srv2", Token));
+    }
+
+    [Fact]
     public async Task RemovingAServer_TakesEveryAccountsUnsentPositionsThere()
     {
         var otherAccount = new DownloadScope("srv1", "2", "7");
         _progress.Record(Scope7, "ep_5", 60_000, 0);
         _progress.Record(otherAccount, "ep_5", 60_000, 0);
         _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(503, "unavailable"));
         using var servers = await ServersAsync();
 
         await servers.RemoveCommand.ExecuteAsync(Item(servers, "srv1"));
