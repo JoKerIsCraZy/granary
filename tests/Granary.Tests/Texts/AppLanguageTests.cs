@@ -35,6 +35,12 @@ public sealed class AppLanguageTests
     [InlineData("zh-Hans-CN", "zh-Hans")]
     [InlineData("zh-hans-hk", "zh-Hans")]
     [InlineData("en-US-u-nu-arab", "en")]
+    [InlineData("de-u-nu", "de")]
+    [InlineData("de-1996", "de")]
+    [InlineData("de-Latn-DE-1996-u-nu-latn", "de")]
+    [InlineData("de-u-co-phonebk-x-priv", "de")]
+    [InlineData("de-x-a", "de")]
+    [InlineData("de-x-ab-u", "de")]
     public void ATag_MatchesTheShippedLanguageOfItsLanguageAndScript(string tag, string expected)
     {
         Assert.Equal(expected, AppLanguage.Match(tag));
@@ -57,6 +63,28 @@ public sealed class AppLanguageTests
     [InlineData(null)]
     public void ATag_OfAnotherLanguageOrScript_MatchesNone(string? tag)
     {
+        Assert.Null(AppLanguage.Match(tag));
+    }
+
+    [Theory]
+    [InlineData("de-u")]
+    [InlineData("de-DE-u")]
+    [InlineData("zh-u")]
+    [InlineData("de-a")]
+    [InlineData("de-a-b")]
+    [InlineData("de-x")]
+    [InlineData("de-x-toolongsubtag")]
+    [InlineData("de-u-nu-u-ca")]
+    [InlineData("de-1996-1996")]
+    [InlineData("de-1996-xy")]
+    [InlineData("de-DE-xy")]
+    [InlineData("de-DE-DE")]
+    [InlineData("de-abc")]
+    [InlineData("de--u")]
+    public void AMalformedTag_MatchesNone_AsIntlLocaleRefusesIt(string tag)
+    {
+        // The web maximizes a tag with Intl.Locale, which throws for these, and then matches nothing (appLocale.ts,
+        // maximized): an extension or private use without a subtag, a repeated singleton or variant, a stray subtag.
         Assert.Null(AppLanguage.Match(tag));
     }
 
