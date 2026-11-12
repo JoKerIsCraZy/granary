@@ -446,10 +446,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (`BrowseHeroLayout.PlaceBackdrop`, `BackdropFocus`). Cut around its middle, the box took the heads of most
     backdrops. An `Image` can only be cut around its top, middle or bottom, so the picture's layers have the picture's
     own size and lie in a clipped `Canvas` (`BrowseHero.PlacePicture`).
-  - The compact hero's backdrop takes the right 65 % of the page, at most two and a half times the hero's height, and
-    fades into the page toward the text. The full hero's runs over its whole width, as the web's banner's, under the
-    web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`) and dimmed a tenth, as the web's
-    `brightness(0.9)`. The web's ambient glow and its faint vignette are left out.
+  - It runs over the hero's whole width at either size, as the web's banner's, from the sidebar's edge
+    (`BrowseHeroLayout.BackdropBoxWidth`), dimmed a tenth, as the web's `brightness(0.9)`. Compact is the lower hero, so
+    it shows less of the picture's height: on a 1920 × 1080 window (a page 1660 px wide) the picture is 1660 × 934 px,
+    of which Compact shows 440 px, from 99 px down, and Full 686 px. On a window much wider than 16:9 either hero shows
+    a strip of it (3580 × 643 px of 3580 × 2014 in Compact on a 3840 × 1600 screen, 3580 × 760 in Full), and a page
+    wider than 2560 px stretches the widest picture asked for (below). A page narrower than the hero's height needs at
+    16:9 cuts the picture's sides evenly (Compact's 440 px on a page under 783 px wide).
+  - Full lies under the web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`); Compact under its own
+    (the backdrop's point below). The web's ambient glow and its faint vignette are left out.
   - Home and For You ask the server for backdrops as wide as the hero draws them in the window
     (`BrowseHeroViewModel.Window`, `BrowseHeroLayout.BackdropDrawnWidth`, `ImageSizes.WithDrawnBackdrop`), as the web's
     `lib/artworkWidths.ts` does for its banner: 1280 px, as every page asks, looked soft over a wide hero. Every row
@@ -457,7 +462,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
     its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
     as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
-    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    that needs its backdrops over 15 % wider than they were asked for (a much wider window). The
     hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
     its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
@@ -471,9 +476,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
       Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,
       the rail and the pause button level beside them, and the text ends 28 px over the buttons (the web's `mb-7`).
-    - Everything else is Compact's on the same page: the logo, the type, the backdrop's share and fades, and the compact
-      header. The backdrop still covers the right 65 % of the page, so a window narrower than about 2.7 times the hero's
-      height cuts a 16:9 picture's sides (a 1440 × 900 window shows three quarters of its width).
+    - Everything else is Compact's on the same page: the logo, the type, the picture and how wide it is, and the compact
+      header.
     - Full folds into the same compact header over its longer way, the hero's height less the header's (536 px of
       scrolling on a 1080 px window's page). The text goes up with the rows themselves until it is where the header has
       it, and stays (`BrowseHeroLayout.TextLift`, from the text's height now); meanwhile the logo shrinks, the overview
@@ -502,13 +506,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       the web's line leaves out), its length and certificate, and neither rating nor genres, as on the web.
     - A title of Discover keeps its own line ("2026 · Movie · Pending").
     - A screen reader reads the line whole, "2006 · IMDb 8.4 · Drama · Crime · TV-PG".
-  - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
-    middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
-    wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
-    2560 × 1080 window, 1608 × 643 px on 3840 × 1600; a 1920 × 1080 window's box is just under the limit). A new
-    title's backdrop shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath
-    until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
-    where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
+  - The backdrop runs over the page's whole width, from the top to behind the first row (440 px), behind the text, and
+    fades into the page toward the rows over the lower 55 % of its height. The text hangs from the top, clear of the
+    bottom fade that Full's text stands in, so a side shade alone keeps it readable on a bright picture, and it is
+    measured on the text rather than on the hero's width (`BrowseHeroLayout.TextShadeWidth`, `TextShadeReach`): the
+    values of the web's `.hero-gradient-left`, 88 % of the page's colour at the left edge and 58 % where the text block
+    ends (688 px in), then 22 % and clear three eighths and three quarters of that further (clear from 1204 px), which
+    falls as gently as Full's on a 1080 px window. It is as wide on any page: the right quarter of a 1920 × 1080
+    window's picture is clear of it, and a page narrower than it is shaded to its right edge. A new title's backdrop
+    shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath until then; a
+    title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs where the box's
+    shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
     Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
   - Spoilers, as the web's `HeroBanner` ([episode spoilers](api-contract.md#663-episode-spoilers)): a banner slide of an
     episode neither played nor started shows its backdrop blurred while the profile hides unwatched episode images, when

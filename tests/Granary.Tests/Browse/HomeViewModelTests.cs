@@ -256,15 +256,14 @@ public sealed class HomeViewModelTests
         _silo.Map(SectionsPath, Sections(Section("lazy", "genre", 1)));
         _silo.Map(SectionsPath + "/lazy/items", Serialize(Section("lazy", "genre", 1, Item("m1"))));
         var home = Create();
-        // A window 3840 px wide and 1560 high inside: the compact hero's backdrop is 1650 px wide there, and 5 % narrower
-        // will do.
-        home.Hero.Window = (3840, 1560);
+        // A window 1920 px wide: the hero's backdrop is as wide there, and 5 % narrower will do.
+        home.Hero.Window = (1920, 1040);
 
         await home.ActivateAsync();
 
         var list = Assert.Single(_silo.To(SectionsPath));
         var row = Assert.Single(_silo.To(SectionsPath + "/lazy/items"));
-        Assert.Equal("1568", list.Query("backdrop_width"));
+        Assert.Equal("1824", list.Query("backdrop_width"));
         Assert.Equal("342", list.Query("poster_width"));
         Assert.Equal(list.Uri.Query, row.Uri.Query);
     }
@@ -276,13 +275,13 @@ public sealed class HomeViewModelTests
         var home = Create();
         home.Hero.Window = (1920, 1040);
         await home.ActivateAsync();
-        Assert.Equal("1280", Assert.Single(_silo.To(SectionsPath)).Query("backdrop_width"));
+        Assert.Equal("1824", Assert.Single(_silo.To(SectionsPath)).Query("backdrop_width"));
 
-        // The window is much wider on the next visit, as it is after Hero size was set to Full.
+        // The window is much wider on the next visit: its hero takes the widest size the server keeps.
         home.Hero.Window = (3840, 1560);
         await home.ActivateAsync();
 
-        Assert.Equal(["1280", "1568"], _silo.To(SectionsPath).Select(request => request.Query("backdrop_width")));
+        Assert.Equal(["1824", "2432"], _silo.To(SectionsPath).Select(request => request.Query("backdrop_width")));
         Assert.Single(home.Rows);
     }
 
@@ -305,11 +304,11 @@ public sealed class HomeViewModelTests
     {
         _silo.Map(SectionsPath, Sections(Section("r", "genre", 1, Item("m1"))));
         var home = Create();
-        home.Hero.Window = (3840, 1560);
+        home.Hero.Window = (1920, 1040);
         await home.ActivateAsync();
 
-        // 1650 px against 1700: the pictures shown are 3 % narrower than drawn, which nobody sees.
-        home.Hero.Window = (3840, 1608);
+        // 1920 px against 1980: the pictures shown are 3 % narrower than drawn, which nobody sees.
+        home.Hero.Window = (1980, 1040);
         await home.ActivateAsync();
 
         Assert.Single(_silo.To(SectionsPath));
@@ -320,7 +319,7 @@ public sealed class HomeViewModelTests
     {
         _silo.Map(SectionsPath, Sections());
         var home = Create();
-        home.Hero.Window = (1920, 1040);
+        home.Hero.Window = (1280, 680);
 
         await home.ActivateAsync();
 

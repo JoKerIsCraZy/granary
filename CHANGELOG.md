@@ -36,6 +36,9 @@ release's section is what its update says it changes (docs/release.md).
   first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
   Player buttons, as F11 does.
+- With Hero size set to Compact, the picture at the top of Home, For You and Discover runs over the whole width too,
+  behind the title and its text, where it filled only the right part. It is darkened behind the text, which stays
+  readable on a bright picture. The hero is as low as before, so it shows less of the picture's height than Full.
 
 ### Fixed
 

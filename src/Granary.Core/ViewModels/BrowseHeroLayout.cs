@@ -1,3 +1,5 @@
+using Granary.Core.Api.Images;
+
 namespace Granary.Core.ViewModels;
 
 /// <summary>
@@ -32,14 +34,13 @@ public static class BrowseHeroLayout
     /// <summary>How much lower the rows begin under Home's banner on such a page, for its Play and More Info.</summary>
     public const double BannerRoom = 48;
 
-    /// <summary>The backdrop's share of the hero's width, from the right.</summary>
-    public const double BackdropShare = 0.65;
-
     /// <summary>
-    /// The backdrop box's widest shape: on a wide window it is narrowed from the left, so a backdrop is not blown up into a
-    /// strip (on a 1080 px window the box is just under it).
+    /// How far the compact hero's shade reaches, in the text's own reach from the hero's left edge: the text hangs from the
+    /// top, clear of the bottom fade the full hero's text stands in, so the side shade alone keeps it readable. It holds
+    /// the full hero's 88 % to 58 % of the page's colour over the text and is clear three quarters of the text's reach
+    /// further, which is as gentle a fall as the full hero's on a 1080 px window (<see cref="TextShadeWidth"/>).
     /// </summary>
-    public const double MaxBackdropAspect = 2.5;
+    public const double TextShadeReach = 1.75;
 
     /// <summary>The logo's (or name's) height at rest on such a page; 45 px compact.</summary>
     public const double HeadingHeight = 80;
@@ -167,15 +168,17 @@ public static class BrowseHeroLayout
     public static double Scaled(double size, double grow) => Round(size * grow);
 
     /// <summary>
-    /// The backdrop box's width on a page <paramref name="pageWidth"/> wide: its share, but never wider than
-    /// <see cref="MaxBackdropAspect"/> times the hero's height. The full hero's backdrop runs over its whole width, as the
-    /// web's banner's.
+    /// The backdrop box's width on a page <paramref name="pageWidth"/> wide: the hero's whole width at either size, as the
+    /// web's banner's. The compact hero is lower, so it shows less of the picture's height than the full one.
     /// </summary>
-    public static double BackdropBoxWidth(double pageWidth, BrowseHeroSizes sizes)
-    {
-        ArgumentNullException.ThrowIfNull(sizes);
-        return sizes.IsFull ? Round(pageWidth) : Round(Math.Min(pageWidth * BackdropShare, sizes.RestHeight * MaxBackdropAspect));
-    }
+    public static double BackdropBoxWidth(double pageWidth) => Round(pageWidth);
+
+    /// <summary>
+    /// How wide the compact hero's shade is, from its left edge, over text that ends <paramref name="textRight"/> from there
+    /// (<see cref="TextShadeReach"/>); none while that is not known.
+    /// </summary>
+    public static double TextShadeWidth(double textRight) =>
+        textRight > 0 && double.IsFinite(textRight) ? Round(textRight * TextShadeReach) : 0;
 
     /// <summary>
     /// Where a backdrop lies in a box <paramref name="boxWidth"/> by <paramref name="boxHeight"/> it fills: as wide as the box,
@@ -207,7 +210,7 @@ public static class BrowseHeroLayout
             return 0;
         }
         var sizes = For(windowHeight, banner: false, size);
-        return BackdropDecodeWidth(BackdropBoxWidth(windowWidth, sizes), sizes.RestHeight);
+        return FillWidth(BackdropBoxWidth(windowWidth), sizes.RestHeight);
     }
 
     /// <summary>
@@ -254,10 +257,15 @@ public static class BrowseHeroLayout
 
     /// <summary>
     /// How wide to decode a backdrop filling a box <paramref name="boxWidth"/> by <paramref name="boxHeight"/> (the hero's,
-    /// Search's): as wide as the box, or as wide as the box's height needs at the picture's shape; 0 while the width is not
-    /// known.
+    /// Search's): as wide as the box, or as wide as the box's height needs at the picture's shape, and never wider than the
+    /// widest picture the server gives (<see cref="ImageSizes.WidestHeroBackdrop"/>): past that a decode only takes memory.
+    /// 0 while the width is not known.
     /// </summary>
-    public static int BackdropDecodeWidth(double boxWidth, double boxHeight) => boxWidth > 0
+    public static int BackdropDecodeWidth(double boxWidth, double boxHeight) =>
+        Math.Min(ImageSizes.WidestHeroBackdrop, FillWidth(boxWidth, boxHeight));
+
+    // How wide a backdrop is drawn to fill a box: the box's width, or what its height needs at the picture's shape.
+    private static int FillWidth(double boxWidth, double boxHeight) => boxWidth > 0
         ? (int)Math.Ceiling(Math.Max(boxWidth, double.IsFinite(boxHeight) && boxHeight > 0 ? boxHeight * BackdropAspect : 0))
         : 0;
 
@@ -298,7 +306,7 @@ public sealed record BrowseHeroSizes(double RestHeight, double CompactHeight, do
     /// <summary>How far the rows scroll before the hero is compact.</summary>
     public double CollapseDistance => RowsTop - CompactHeight;
 
-    /// <summary>The hero is the full one (<see cref="BrowseHeroSize.Full"/>): its backdrop runs over its whole width, under the web's fades.</summary>
+    /// <summary>The hero is the full one (<see cref="BrowseHeroSize.Full"/>): its text stands at its foot, under the fades of the web's banner.</summary>
     public bool IsFull => TextBottom is not null;
 }
 

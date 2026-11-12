@@ -54,11 +54,11 @@ public sealed class BrowseHeroFullLayoutTests
     [Theory]
     [InlineData(1664, 1040)]
     [InlineData(800, 700)]
-    // A 3840 x 1600 window: the compact hero's box stops at two and a half times its height, the full one's does not.
+    // A 3840 x 1600 window.
     [InlineData(3580, 1552)]
     public void TheFullHerosBackdrop_RunsOverItsWholeWidth_AsTheWebsBanner(double pageWidth, double pageHeight)
     {
-        Assert.Equal(pageWidth, BrowseHeroLayout.BackdropBoxWidth(pageWidth, Full(pageHeight)));
+        Assert.Equal(pageWidth, BrowseHeroLayout.BackdropBoxWidth(pageWidth));
         Assert.True(Full(pageHeight).IsFull);
         Assert.False(BrowseHeroLayout.For(pageHeight).IsFull);
     }
@@ -107,14 +107,17 @@ public sealed class BrowseHeroFullLayoutTests
     }
 
     [Theory]
-    // A 1920 x 1040 window: the compact hero's box is 1100 wide, the full one's the window's.
-    [InlineData(1920, 1040, BrowseHeroSize.Compact, 1100)]
+    // A window 1280, 1920, 2560 and 3840 px wide: the picture is the window's width in either hero.
+    [InlineData(1280, 680, BrowseHeroSize.Compact, 1280)]
+    [InlineData(1920, 1040, BrowseHeroSize.Compact, 1920)]
     [InlineData(1920, 1040, BrowseHeroSize.Full, 1920)]
-    // A 3840 x 1560 one.
-    [InlineData(3840, 1560, BrowseHeroSize.Compact, 1650)]
+    [InlineData(2560, 1400, BrowseHeroSize.Compact, 2560)]
+    [InlineData(3840, 1560, BrowseHeroSize.Compact, 3840)]
     [InlineData(3840, 1560, BrowseHeroSize.Full, 3840)]
-    // A narrow, tall one: the hero's height cuts the picture's sides, so it is drawn wider than the window.
+    // A narrow, tall one: the hero's height cuts the picture's sides, so it is drawn wider than the window, and wider in
+    // the taller hero.
     [InlineData(1000, 1200, BrowseHeroSize.Full, 1352)]
+    [InlineData(700, 1200, BrowseHeroSize.Compact, 904)]
     [InlineData(0, 1040, BrowseHeroSize.Full, 0)]
     [InlineData(double.NaN, 1040, BrowseHeroSize.Full, 0)]
     [InlineData(1920, double.NaN, BrowseHeroSize.Full, 1920)]
