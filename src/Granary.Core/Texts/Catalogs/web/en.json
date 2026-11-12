@@ -5,10 +5,22 @@
       "value": "Date Added"
     }
   ],
+  "catalog.sort.author": [
+    {
+      "type": 0,
+      "value": "Author"
+    }
+  ],
   "catalog.sort.imdbRating": [
     {
       "type": 0,
       "value": "IMDb Rating"
+    }
+  ],
+  "catalog.sort.narrator": [
+    {
+      "type": 0,
+      "value": "Narrator"
     }
   ],
   "catalog.sort.released": [
@@ -21,6 +33,12 @@
     {
       "type": 0,
       "value": "Resolution"
+    }
+  ],
+  "catalog.sort.series": [
+    {
+      "type": 0,
+      "value": "Series"
     }
   ],
   "catalog.sort.title": [
@@ -855,6 +873,16 @@
     {
       "type": 0,
       "value": "Nothing here can be played."
+    }
+  ],
+  "web.admin.homeRows.restore.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Library "
+    },
+    {
+      "type": 1,
+      "value": "id"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -1888,6 +1916,138 @@
       "value": "Things you've saved to watch later."
     }
   ],
+  "web.catalog.rules.amount": [
+    {
+      "type": 0,
+      "value": "Amount"
+    }
+  ],
+  "web.catalog.rules.condition": [
+    {
+      "type": 0,
+      "value": "Condition"
+    }
+  ],
+  "web.catalog.rules.field": [
+    {
+      "type": 0,
+      "value": "Field"
+    }
+  ],
+  "web.catalog.rules.fieldEpisodeTitle": [
+    {
+      "type": 0,
+      "value": "Episode title"
+    }
+  ],
+  "web.catalog.rules.fieldLastRead": [
+    {
+      "type": 0,
+      "value": "Last read"
+    }
+  ],
+  "web.catalog.rules.fieldRead": [
+    {
+      "type": 0,
+      "value": "Read"
+    }
+  ],
+  "web.catalog.rules.no": [
+    {
+      "type": 0,
+      "value": "No"
+    }
+  ],
+  "web.catalog.rules.notEditable": [
+    {
+      "type": 0,
+      "value": "Not editable here"
+    }
+  ],
+  "web.catalog.rules.notEditableLabel": [
+    {
+      "type": 0,
+      "value": "Rule not editable here"
+    }
+  ],
+  "web.catalog.rules.pickOne": [
+    {
+      "type": 0,
+      "value": "Pick one"
+    }
+  ],
+  "web.catalog.rules.pickValue": [
+    {
+      "type": 0,
+      "value": "Pick a value"
+    }
+  ],
+  "web.catalog.rules.rangeFrom": [
+    {
+      "type": 0,
+      "value": "From"
+    }
+  ],
+  "web.catalog.rules.rangeTo": [
+    {
+      "type": 0,
+      "value": "To"
+    }
+  ],
+  "web.catalog.rules.remove": [
+    {
+      "type": 0,
+      "value": "Remove"
+    }
+  ],
+  "web.catalog.rules.removeRule": [
+    {
+      "type": 0,
+      "value": "Remove rule"
+    }
+  ],
+  "web.catalog.rules.unit": [
+    {
+      "type": 0,
+      "value": "Unit"
+    }
+  ],
+  "web.catalog.rules.unitDays": [
+    {
+      "type": 0,
+      "value": "days"
+    }
+  ],
+  "web.catalog.rules.unitMonths": [
+    {
+      "type": 0,
+      "value": "months"
+    }
+  ],
+  "web.catalog.rules.unitWeeks": [
+    {
+      "type": 0,
+      "value": "weeks"
+    }
+  ],
+  "web.catalog.rules.unitYears": [
+    {
+      "type": 0,
+      "value": "years"
+    }
+  ],
+  "web.catalog.rules.value": [
+    {
+      "type": 0,
+      "value": "Value"
+    }
+  ],
+  "web.catalog.rules.yes": [
+    {
+      "type": 0,
+      "value": "Yes"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1936,10 +2096,326 @@
       "value": "More actions"
     }
   ],
+  "web.collections.addToCollection.added": [
+    {
+      "type": 0,
+      "value": "Added"
+    }
+  ],
+  "web.collections.addToCollection.createAndAdd": [
+    {
+      "type": 0,
+      "value": "Create and add"
+    }
+  ],
+  "web.collections.addToCollection.createFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't make the collection"
+    }
+  ],
+  "web.collections.addToCollection.find": [
+    {
+      "type": 0,
+      "value": "Find one of your collections"
+    }
+  ],
+  "web.collections.addToCollection.firstHelp": [
+    {
+      "type": 0,
+      "value": "Name it and "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " goes straight in. You can add more titles and change the order later."
+    }
+  ],
+  "web.collections.addToCollection.firstTitle": [
+    {
+      "type": 0,
+      "value": "Start your first collection"
+    }
+  ],
+  "web.collections.addToCollection.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't load your collections"
+    }
+  ],
+  "web.collections.addToCollection.loading": [
+    {
+      "type": 0,
+      "value": "Loading collections…"
+    }
+  ],
+  "web.collections.addToCollection.namePlaceholder": [
+    {
+      "type": 0,
+      "value": "e.g. Ghibli Night"
+    }
+  ],
+  "web.collections.addToCollection.newManual": [
+    {
+      "type": 0,
+      "value": "New manual collection"
+    }
+  ],
+  "web.collections.addToCollection.noMatches": [
+    {
+      "type": 0,
+      "value": "No collections match \""
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "\"."
+    }
+  ],
+  "web.collections.addToCollection.removed": [
+    {
+      "type": 0,
+      "value": "Removed"
+    }
+  ],
+  "web.collections.admin.editCollection": [
+    {
+      "type": 0,
+      "value": "Edit collection"
+    }
+  ],
+  "web.collections.builder.facetPlaceholder": [
+    {
+      "type": 5,
+      "value": "facet",
+      "options": {
+        "genre": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a genre"
+            }
+          ]
+        },
+        "studio": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a studio"
+            }
+          ]
+        },
+        "network": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a network"
+            }
+          ]
+        },
+        "country": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a country"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a rating"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.builder.fieldActor": [
+    {
+      "type": 0,
+      "value": "Actor"
+    }
+  ],
+  "web.collections.builder.fieldAdded": [
+    {
+      "type": 0,
+      "value": "Added"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
       "value": "Audio language"
+    }
+  ],
+  "web.collections.builder.fieldBitrate": [
+    {
+      "type": 0,
+      "value": "Bitrate"
+    }
+  ],
+  "web.collections.builder.fieldContentRating": [
+    {
+      "type": 0,
+      "value": "Content rating"
+    }
+  ],
+  "web.collections.builder.fieldCountry": [
+    {
+      "type": 0,
+      "value": "Country"
+    }
+  ],
+  "web.collections.builder.fieldDecade": [
+    {
+      "type": 0,
+      "value": "Decade"
+    }
+  ],
+  "web.collections.builder.fieldDirector": [
+    {
+      "type": 0,
+      "value": "Director"
+    }
+  ],
+  "web.collections.builder.fieldDolbyVision": [
+    {
+      "type": 0,
+      "value": "Dolby Vision"
+    }
+  ],
+  "web.collections.builder.fieldFavorited": [
+    {
+      "type": 0,
+      "value": "Favorited"
+    }
+  ],
+  "web.collections.builder.fieldGenre": [
+    {
+      "type": 0,
+      "value": "Genre"
+    }
+  ],
+  "web.collections.builder.fieldHdr": [
+    {
+      "type": 0,
+      "value": "HDR"
+    }
+  ],
+  "web.collections.builder.fieldInProgress": [
+    {
+      "type": 0,
+      "value": "In progress"
+    }
+  ],
+  "web.collections.builder.fieldInWatchlist": [
+    {
+      "type": 0,
+      "value": "In watchlist"
+    }
+  ],
+  "web.collections.builder.fieldLastAirDate": [
+    {
+      "type": 0,
+      "value": "Latest episode aired"
+    }
+  ],
+  "web.collections.builder.fieldLastWatched": [
+    {
+      "type": 0,
+      "value": "Last watched"
+    }
+  ],
+  "web.collections.builder.fieldLatestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "Latest episode added"
+    }
+  ],
+  "web.collections.builder.fieldNetwork": [
+    {
+      "type": 0,
+      "value": "Network"
+    }
+  ],
+  "web.collections.builder.fieldOriginalLanguage": [
+    {
+      "type": 0,
+      "value": "Original language"
+    }
+  ],
+  "web.collections.builder.fieldProducer": [
+    {
+      "type": 0,
+      "value": "Producer"
+    }
+  ],
+  "web.collections.builder.fieldRatingImdb": [
+    {
+      "type": 0,
+      "value": "IMDb rating"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtAudience": [
+    {
+      "type": 0,
+      "value": "RT audience score"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtCritic": [
+    {
+      "type": 0,
+      "value": "RT critic score"
+    }
+  ],
+  "web.collections.builder.fieldRatingTmdb": [
+    {
+      "type": 0,
+      "value": "TMDB rating"
+    }
+  ],
+  "web.collections.builder.fieldReleaseDate": [
+    {
+      "type": 0,
+      "value": "Release date"
+    }
+  ],
+  "web.collections.builder.fieldResolution": [
+    {
+      "type": 0,
+      "value": "Resolution"
+    }
+  ],
+  "web.collections.builder.fieldRuntime": [
+    {
+      "type": 0,
+      "value": "Duration"
+    }
+  ],
+  "web.collections.builder.fieldShowTitle": [
+    {
+      "type": 0,
+      "value": "Show title"
+    }
+  ],
+  "web.collections.builder.fieldStatus": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
+  "web.collections.builder.fieldStudio": [
+    {
+      "type": 0,
+      "value": "Studio"
     }
   ],
   "web.collections.builder.fieldSubtitleLanguage": [
@@ -1948,10 +2424,1454 @@
       "value": "Subtitle language"
     }
   ],
+  "web.collections.builder.fieldTitle": [
+    {
+      "type": 0,
+      "value": "Title"
+    }
+  ],
+  "web.collections.builder.fieldType": [
+    {
+      "type": 0,
+      "value": "Type"
+    }
+  ],
+  "web.collections.builder.fieldWatched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.collections.builder.fieldWriter": [
+    {
+      "type": 0,
+      "value": "Writer"
+    }
+  ],
+  "web.collections.builder.fieldYear": [
+    {
+      "type": 0,
+      "value": "Year"
+    }
+  ],
+  "web.collections.builder.groupFile": [
+    {
+      "type": 0,
+      "value": "File"
+    }
+  ],
+  "web.collections.builder.groupLibrary": [
+    {
+      "type": 0,
+      "value": "Library"
+    }
+  ],
+  "web.collections.builder.groupPeople": [
+    {
+      "type": 0,
+      "value": "People"
+    }
+  ],
+  "web.collections.builder.groupTitle": [
+    {
+      "type": 0,
+      "value": "Title"
+    }
+  ],
+  "web.collections.builder.groupYou": [
+    {
+      "type": 0,
+      "value": "You"
+    }
+  ],
+  "web.collections.builder.opAbove": [
+    {
+      "type": 0,
+      "value": "is above"
+    }
+  ],
+  "web.collections.builder.opAfter": [
+    {
+      "type": 0,
+      "value": "is after"
+    }
+  ],
+  "web.collections.builder.opAtLeast": [
+    {
+      "type": 0,
+      "value": "is at least"
+    }
+  ],
+  "web.collections.builder.opAtMost": [
+    {
+      "type": 0,
+      "value": "is at most"
+    }
+  ],
+  "web.collections.builder.opBefore": [
+    {
+      "type": 0,
+      "value": "is before"
+    }
+  ],
+  "web.collections.builder.opBeginsWith": [
+    {
+      "type": 0,
+      "value": "begins with"
+    }
+  ],
+  "web.collections.builder.opBelow": [
+    {
+      "type": 0,
+      "value": "is below"
+    }
+  ],
+  "web.collections.builder.opBetween": [
+    {
+      "type": 0,
+      "value": "is between"
+    }
+  ],
+  "web.collections.builder.opContains": [
+    {
+      "type": 0,
+      "value": "contains"
+    }
+  ],
+  "web.collections.builder.opEndsWith": [
+    {
+      "type": 0,
+      "value": "ends with"
+    }
+  ],
+  "web.collections.builder.opInLast": [
+    {
+      "type": 0,
+      "value": "is in the last"
+    }
+  ],
+  "web.collections.builder.opIs": [
+    {
+      "type": 0,
+      "value": "is"
+    }
+  ],
+  "web.collections.builder.opIsNot": [
+    {
+      "type": 0,
+      "value": "is not"
+    }
+  ],
+  "web.collections.builder.opNotContains": [
+    {
+      "type": 0,
+      "value": "does not contain"
+    }
+  ],
+  "web.collections.builder.opNotInLast": [
+    {
+      "type": 0,
+      "value": "is not in the last"
+    }
+  ],
+  "web.collections.builder.statusMatched": [
+    {
+      "type": 0,
+      "value": "matched"
+    }
+  ],
+  "web.collections.builder.statusPending": [
+    {
+      "type": 0,
+      "value": "pending"
+    }
+  ],
+  "web.collections.builder.statusUnmatched": [
+    {
+      "type": 0,
+      "value": "unmatched"
+    }
+  ],
+  "web.collections.builder.typeMovies": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.collections.builder.typeShows": [
+    {
+      "type": 0,
+      "value": "Shows"
+    }
+  ],
+  "web.collections.builder.unitKbps": [
+    {
+      "type": 0,
+      "value": "kbps"
+    }
+  ],
+  "web.collections.builder.unitMinutes": [
+    {
+      "type": 0,
+      "value": "min"
+    }
+  ],
+  "web.collections.copy.addToCollectionFootnote": [
+    {
+      "type": 0,
+      "value": "Only manual collections take titles by hand. Ticking saves right away."
+    }
+  ],
+  "web.collections.copy.allMyLibraries": [
+    {
+      "type": 0,
+      "value": "All my libraries"
+    }
+  ],
+  "web.collections.copy.allMyLibrariesInSentence": [
+    {
+      "type": 0,
+      "value": "all my libraries"
+    }
+  ],
+  "web.collections.copy.allYourLibraries": [
+    {
+      "type": 0,
+      "value": "All your libraries"
+    }
+  ],
+  "web.collections.copy.cantBeUndone": [
+    {
+      "type": 0,
+      "value": "This can't be undone."
+    }
+  ],
+  "web.collections.copy.conflictTitle": [
+    {
+      "type": 0,
+      "value": "This collection changed since you opened it."
+    }
+  ],
+  "web.collections.copy.createdButNotAdded": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Created, but couldn't add "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Created, but couldn't add "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.fieldDescription": [
+    {
+      "type": 0,
+      "value": "Description"
+    }
+  ],
+  "web.collections.copy.fieldLibraries": [
+    {
+      "type": 0,
+      "value": "Libraries"
+    }
+  ],
+  "web.collections.copy.fieldLimit": [
+    {
+      "type": 0,
+      "value": "Max titles"
+    }
+  ],
+  "web.collections.copy.fieldName": [
+    {
+      "type": 0,
+      "value": "Name"
+    }
+  ],
+  "web.collections.copy.fieldOrder": [
+    {
+      "type": 0,
+      "value": "Order"
+    }
+  ],
+  "web.collections.copy.fieldRules": [
+    {
+      "type": 0,
+      "value": "Rules"
+    }
+  ],
+  "web.collections.copy.fieldShowOnly": [
+    {
+      "type": 0,
+      "value": "Show only"
+    }
+  ],
+  "web.collections.copy.goodForManualPersonal": [
+    {
+      "type": 0,
+      "value": "a director's best, movie night, a watch order."
+    }
+  ],
+  "web.collections.copy.goodForSmart": [
+    {
+      "type": 0,
+      "value": "90s comedies, unwatched 4K, Christmas movies."
+    }
+  ],
+  "web.collections.copy.inCollections": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "=0": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Not in a collection yet"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "In "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " collection"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "In "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " collections"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.inThisCollection": [
+    {
+      "type": 0,
+      "value": "In this collection"
+    }
+  ],
+  "web.collections.copy.kindSentenceManual": [
+    {
+      "type": 0,
+      "value": "You pick the titles and put them in order."
+    }
+  ],
+  "web.collections.copy.kindSentenceSmart": [
+    {
+      "type": 0,
+      "value": "Titles that match your rules. It fills itself and keeps up as titles are added."
+    }
+  ],
+  "web.collections.copy.lookPoster": [
+    {
+      "type": 5,
+      "value": "state",
+      "options": {
+        "awaitingCollage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a collage once its titles have posters"
+            }
+          ]
+        },
+        "collage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a collage of its titles"
+            }
+          ]
+        },
+        "new": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a new image"
+            }
+          ]
+        },
+        "saved": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: an image"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: none"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.copy.madeButNotAdded": [
+    {
+      "type": 0,
+      "value": "Made "
+    },
+    {
+      "type": 1,
+      "value": "collection"
+    },
+    {
+      "type": 0,
+      "value": ", but couldn't add "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.manualTitleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Manual · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Manual · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.nameItThenCreate": [
+    {
+      "type": 0,
+      "value": "Name it, then create it."
+    }
+  ],
+  "web.collections.copy.newCollection": [
+    {
+      "type": 0,
+      "value": "New collection"
+    }
+  ],
+  "web.collections.copy.newCollectionHelpPersonal": [
+    {
+      "type": 0,
+      "value": "What decides what's in it? Only you can change it. Next you'll name it, fill it and choose who sees it."
+    }
+  ],
+  "web.collections.copy.newCollectionNext": [
+    {
+      "type": 0,
+      "value": "Next: name it and fill it in, on its own page."
+    }
+  ],
+  "web.collections.copy.noLimit": [
+    {
+      "type": 0,
+      "value": "No limit"
+    }
+  ],
+  "web.collections.copy.noPoster": [
+    {
+      "type": 0,
+      "value": "No poster"
+    }
+  ],
+  "web.collections.copy.notCreatedYet": [
+    {
+      "type": 0,
+      "value": "Not created yet"
+    }
+  ],
+  "web.collections.copy.notSaved": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": " not saved"
+    }
+  ],
+  "web.collections.copy.orderHelp": [
+    {
+      "type": 0,
+      "value": "A profile that picks its own sort while browsing keeps that choice."
+    }
+  ],
+  "web.collections.copy.personalDeleteDescriptionShared": [
+    {
+      "type": 0,
+      "value": "It's removed for you and every profile you share it with. This can't be undone."
+    }
+  ],
+  "web.collections.copy.personalRulesNote": [
+    {
+      "type": 0,
+      "value": "“All my libraries” follows the libraries this profile can see. Rules about you, like Watched, are offered only here."
+    }
+  ],
+  "web.collections.copy.personalTabHelp": [
+    {
+      "type": 0,
+      "value": "For you and anyone you share it with"
+    }
+  ],
+  "web.collections.copy.posterAwaitsCollage": [
+    {
+      "type": 0,
+      "value": "A collage once its titles have posters"
+    }
+  ],
+  "web.collections.copy.posterIsCollage": [
+    {
+      "type": 0,
+      "value": "Collage of its titles"
+    }
+  ],
+  "web.collections.copy.previewEmpty": [
+    {
+      "type": 0,
+      "value": "No titles match yet"
+    }
+  ],
+  "web.collections.copy.previewEmptyHelp": [
+    {
+      "type": 0,
+      "value": "You can still save. Titles that match later join on their own."
+    }
+  ],
+  "web.collections.copy.previewFailed": [
+    {
+      "type": 0,
+      "value": "The preview didn't load. You can still save."
+    }
+  ],
+  "web.collections.copy.previewLive": [
+    {
+      "type": 0,
+      "value": "Live preview"
+    }
+  ],
+  "web.collections.copy.previewMatches": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " title matches"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " titles match"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.removedTitle": [
+    {
+      "type": 0,
+      "value": "Removed "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.rulesCaption": [
+    {
+      "type": 0,
+      "value": "Titles that match are in the collection. New matches join on their own."
+    }
+  ],
+  "web.collections.copy.saveFailedWithError": [
+    {
+      "type": 0,
+      "value": "Couldn't save · "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.collections.copy.showOnTabLabel": [
+    {
+      "type": 0,
+      "value": "Show on the Collections tab"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesHelp": [
+    {
+      "type": 0,
+      "value": "Every profile on this account sees it, minus titles it can't access. Nobody else on the server can see it."
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesLabel": [
+    {
+      "type": 0,
+      "value": "Show to other profiles"
+    }
+  ],
+  "web.collections.copy.slotPoster": [
+    {
+      "type": 0,
+      "value": "Poster"
+    }
+  ],
+  "web.collections.copy.smartCreateHint": [
+    {
+      "type": 1,
+      "value": "matches"
+    },
+    {
+      "type": 0,
+      "value": " now. New ones join on their own."
+    }
+  ],
+  "web.collections.copy.smartCreateHintNone": [
+    {
+      "type": 0,
+      "value": "Nothing matches yet. Titles that match later join on their own."
+    }
+  ],
+  "web.collections.copy.smartUpdatesItself": [
+    {
+      "type": 0,
+      "value": "Updates itself as titles are added"
+    }
+  ],
+  "web.collections.copy.storedSortLine": [
+    {
+      "type": 0,
+      "value": "A saved default sort, "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": ", wins over this Order."
+    }
+  ],
+  "web.collections.copy.titlesAlreadySaved": [
+    {
+      "type": 0,
+      "value": "Titles are already saved."
+    }
+  ],
+  "web.collections.copy.titlesCaptionCreate": [
+    {
+      "type": 0,
+      "value": "Pick titles now. They're added when you press Create collection."
+    }
+  ],
+  "web.collections.copy.titlesCaptionPersonal": [
+    {
+      "type": 0,
+      "value": "In the order you see them. Titles save as you add, remove or drag them."
+    }
+  ],
+  "web.collections.copy.titlesEmpty": [
+    {
+      "type": 0,
+      "value": "No titles yet. Search above to add the first."
+    }
+  ],
+  "web.collections.copy.titlesReadyToAdd": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title ready to add"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles ready to add"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.titlesSaved": [
+    {
+      "type": 0,
+      "value": "Saved"
+    }
+  ],
+  "web.collections.copy.unshareConsequence": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": " loses it, including rows they made from it."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": " lose it, including rows they made from it."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.unshareConsequenceOthers": [
+    {
+      "type": 0,
+      "value": "Other profiles lose it, including rows they made from it."
+    }
+  ],
+  "web.collections.copy.unshareWarning": [
+    {
+      "type": 0,
+      "value": "When you save, "
+    },
+    {
+      "type": 1,
+      "value": "consequence"
+    }
+  ],
   "web.collections.deleteDialog.delete": [
     {
       "type": 0,
       "value": "Delete"
+    }
+  ],
+  "web.collections.details.content": [
+    {
+      "type": 0,
+      "value": "Content"
+    }
+  ],
+  "web.collections.details.descriptionLabel": [
+    {
+      "type": 1,
+      "value": "field"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "muted",
+      "children": [
+        {
+          "type": 0,
+          "value": "Optional"
+        }
+      ]
+    }
+  ],
+  "web.collections.details.label": [
+    {
+      "type": 0,
+      "value": "Name and description"
+    }
+  ],
+  "web.collections.details.showOnlyHelp": [
+    {
+      "type": 0,
+      "value": "Hides titles while browsing, for example the ones you've finished. Nothing is removed."
+    }
+  ],
+  "web.collections.details.watchState": [
+    {
+      "type": 0,
+      "value": "Watch state"
+    }
+  ],
+  "web.collections.displayFilters.media.all": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.displayFilters.media.movie": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.collections.displayFilters.media.series": [
+    {
+      "type": 0,
+      "value": "Shows"
+    }
+  ],
+  "web.collections.displayFilters.watch.all": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.displayFilters.watch.unwatched": [
+    {
+      "type": 0,
+      "value": "Unwatched"
+    }
+  ],
+  "web.collections.displayFilters.watch.watched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.collections.editor.backToCollections": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.collections.editor.conflictFields": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": " changed in both places."
+    }
+  ],
+  "web.collections.editor.conflictSaveAgain": [
+    {
+      "type": 0,
+      "value": "Save again to keep your changes."
+    }
+  ],
+  "web.collections.editor.createCollection": [
+    {
+      "type": 0,
+      "value": "Create collection"
+    }
+  ],
+  "web.collections.editor.keepMine": [
+    {
+      "type": 0,
+      "value": "Keep mine"
+    }
+  ],
+  "web.collections.editor.rowLinkLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    }
+  ],
+  "web.collections.editor.rulesHeading": [
+    {
+      "type": 0,
+      "value": "Rules"
+    }
+  ],
+  "web.collections.editor.useTheirs": [
+    {
+      "type": 0,
+      "value": "Use theirs"
+    }
+  ],
+  "web.collections.editorHeader.open": [
+    {
+      "type": 0,
+      "value": "Open"
+    }
+  ],
+  "web.collections.editorPage.allCollections": [
+    {
+      "type": 0,
+      "value": "All collections"
+    }
+  ],
+  "web.collections.editorPage.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "Couldn't load this collection"
+    }
+  ],
+  "web.collections.editorPage.loading": [
+    {
+      "type": 0,
+      "value": "Loading collection editor…"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonal": [
+    {
+      "type": 0,
+      "value": "This collection isn't available"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonalHelp": [
+    {
+      "type": 0,
+      "value": "It may have been deleted, or you may not have access to it."
+    }
+  ],
+  "web.collections.fields.artworkPreview": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster preview"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Backdrop preview"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkRemovedOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The poster is removed when you save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The backdrop is removed when you save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSaveFailed": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Couldn't save the poster. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Couldn't save the backdrop. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSavesOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The new poster saves when you press Save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The new backdrop saves when you press Save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.changeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Change poster"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Change backdrop"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.clear": [
+    {
+      "type": 0,
+      "value": "Clear"
+    }
+  ],
+  "web.collections.fields.clearStoredSort": [
+    {
+      "type": 0,
+      "value": "Clear the saved default sort, "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.collections.fields.collage": [
+    {
+      "type": 0,
+      "value": "Collage"
+    }
+  ],
+  "web.collections.fields.direction": [
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "za": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        },
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Newest first"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Oldest first"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Highest first"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Lowest first"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.directionLabel": [
+    {
+      "type": 0,
+      "value": "Direction"
+    }
+  ],
+  "web.collections.fields.imageLink": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster image link"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Backdrop image link"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.maxTitlesSuffix": [
+    {
+      "type": 0,
+      "value": "max titles"
+    }
+  ],
+  "web.collections.fields.order": [
+    {
+      "type": 0,
+      "value": "Order"
+    }
+  ],
+  "web.collections.fields.pasteALink": [
+    {
+      "type": 0,
+      "value": "Paste a link…"
+    }
+  ],
+  "web.collections.fields.removeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Remove poster"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Remove backdrop"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortAlphabetical": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortBy": [
+    {
+      "type": 0,
+      "value": "Sort by"
+    }
+  ],
+  "web.collections.fields.sortWithDirection": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "newest first"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "oldest first"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "highest first"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "lowest first"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.uploadImage": [
+    {
+      "type": 0,
+      "value": "Upload image…"
+    }
+  ],
+  "web.collections.fields.useLink": [
+    {
+      "type": 0,
+      "value": "Use link"
+    }
+  ],
+  "web.collections.fields.useTheCollage": [
+    {
+      "type": 0,
+      "value": "Use the collage"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -2048,6 +3968,346 @@
       "value": "e.g. 2025"
     }
   ],
+  "web.collections.list.syncFailed": [
+    {
+      "type": 0,
+      "value": "Sync failed"
+    }
+  ],
+  "web.collections.list.syncingNow": [
+    {
+      "type": 0,
+      "value": "Syncing now"
+    }
+  ],
+  "web.collections.look.change": [
+    {
+      "type": 0,
+      "value": "Change"
+    }
+  ],
+  "web.collections.look.heading": [
+    {
+      "type": 0,
+      "value": "Look"
+    }
+  ],
+  "web.collections.manual.add": [
+    {
+      "type": 0,
+      "value": "Add"
+    }
+  ],
+  "web.collections.manual.addFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't add "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.addTitle": [
+    {
+      "type": 0,
+      "value": "Add a title"
+    }
+  ],
+  "web.collections.manual.heading": [
+    {
+      "type": 0,
+      "value": "Titles"
+    }
+  ],
+  "web.collections.manual.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't load the titles."
+    }
+  ],
+  "web.collections.manual.moveTitle": [
+    {
+      "type": 0,
+      "value": "Move "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.noMatches": [
+    {
+      "type": 0,
+      "value": "No titles match."
+    }
+  ],
+  "web.collections.manual.pagedNote": [
+    {
+      "type": 0,
+      "value": "Showing up to 200 titles. Reordering is available when the whole collection fits on one page."
+    }
+  ],
+  "web.collections.manual.reloadFromStart": [
+    {
+      "type": 0,
+      "value": "Reload from start"
+    }
+  ],
+  "web.collections.manual.removeFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.removeTitle": [
+    {
+      "type": 0,
+      "value": "Remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.restoreFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't put back "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.saving": [
+    {
+      "type": 0,
+      "value": "Saving…"
+    }
+  ],
+  "web.collections.manual.searchFailed": [
+    {
+      "type": 0,
+      "value": "The search didn't work."
+    }
+  ],
+  "web.collections.manual.searching": [
+    {
+      "type": 0,
+      "value": "Searching…"
+    }
+  ],
+  "web.collections.manual.showAll": [
+    {
+      "type": 0,
+      "value": "Show all "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.collections.manual.showFewer": [
+    {
+      "type": 0,
+      "value": "Show fewer"
+    }
+  ],
+  "web.collections.manual.tryAgainSentence": [
+    {
+      "type": 0,
+      "value": "Try again."
+    }
+  ],
+  "web.collections.manual.typeLabel": [
+    {
+      "type": 5,
+      "value": "type",
+      "options": {
+        "movie": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Movie"
+            }
+          ]
+        },
+        "series": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Show"
+            }
+          ]
+        },
+        "season": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Season"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Episode"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.manual.undo": [
+    {
+      "type": 0,
+      "value": "Undo"
+    }
+  ],
+  "web.collections.metaLine.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.newPicker.goodFor": [
+    {
+      "type": 0,
+      "value": "Good for"
+    }
+  ],
+  "web.collections.page.filterAll": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.page.filterLabel": [
+    {
+      "type": 0,
+      "value": "Show"
+    }
+  ],
+  "web.collections.page.loadMore": [
+    {
+      "type": 0,
+      "value": "Load more"
+    }
+  ],
+  "web.collections.page.stopSharing": [
+    {
+      "type": 0,
+      "value": "Stop sharing"
+    }
+  ],
+  "web.collections.page.stopSharingTitle": [
+    {
+      "type": 0,
+      "value": "Stop sharing "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.collections.page.subtitle": [
+    {
+      "type": 0,
+      "value": "Yours and the server's."
+    }
+  ],
+  "web.collections.page.subtitleShared": [
+    {
+      "type": 0,
+      "value": "Yours, the ones other profiles share with you, and the server's."
+    }
+  ],
+  "web.collections.page.title": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.collections.page.wallMine": [
+    {
+      "type": 0,
+      "value": "Your collections"
+    }
+  ],
+  "web.collections.page.wallServer": [
+    {
+      "type": 0,
+      "value": "Server collections"
+    }
+  ],
+  "web.collections.page.wallShared": [
+    {
+      "type": 0,
+      "value": "Shared with me"
+    }
+  ],
   "web.collections.pageActions.deleteTitle": [
     {
       "type": 0,
@@ -2066,6 +4326,104 @@
     {
       "type": 0,
       "value": "Edit"
+    }
+  ],
+  "web.collections.personalOwnership.anotherProfile": [
+    {
+      "type": 0,
+      "value": "Another profile"
+    }
+  ],
+  "web.collections.posterCard.byOwner": [
+    {
+      "type": 0,
+      "value": "by "
+    },
+    {
+      "type": 1,
+      "value": "owner"
+    }
+  ],
+  "web.collections.preview.matchingTitles": [
+    {
+      "type": 0,
+      "value": "Matching titles"
+    }
+  ],
+  "web.collections.preview.showing": [
+    {
+      "type": 0,
+      "value": "showing "
+    },
+    {
+      "type": 1,
+      "value": "shown"
+    }
+  ],
+  "web.collections.scope.changedWhileEditing": [
+    {
+      "type": 0,
+      "value": "This collection changed while you were editing. Reload it and review your changes before saving again."
+    }
+  ],
+  "web.collections.tags.shared": [
+    {
+      "type": 0,
+      "value": "Shared"
+    }
+  ],
+  "web.collections.toast.addFailed": [
+    {
+      "type": 0,
+      "value": "Failed to add to collection"
+    }
+  ],
+  "web.collections.toast.notShared": [
+    {
+      "type": 0,
+      "value": "Only you see it now"
+    }
+  ],
+  "web.collections.toast.removeItemFailed": [
+    {
+      "type": 0,
+      "value": "Failed to remove item"
+    }
+  ],
+  "web.collections.toast.sharedWithProfiles": [
+    {
+      "type": 0,
+      "value": "Shown to other profiles"
+    }
+  ],
+  "web.collections.toast.sharingFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't change sharing"
+    }
+  ],
+  "web.collections.types.kindManual": [
+    {
+      "type": 0,
+      "value": "Manual"
+    }
+  ],
+  "web.collections.types.kindSmart": [
+    {
+      "type": 0,
+      "value": "Smart"
+    }
+  ],
+  "web.collections.types.kindSynced": [
+    {
+      "type": 0,
+      "value": "Synced list"
+    }
+  ],
+  "web.collections.whereItShows.heading": [
+    {
+      "type": 0,
+      "value": "Where it shows"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -2220,6 +4578,12 @@
     {
       "type": 0,
       "value": "Failed to delete"
+    }
+  ],
+  "web.common.toast.collections.deleted": [
+    {
+      "type": 0,
+      "value": "Collection deleted"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2544,6 +4908,519 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.home.addRow.libraries": [
+    {
+      "type": 0,
+      "value": "Libraries"
+    }
+  ],
+  "web.home.addRow.rules.addAndGroup": [
+    {
+      "type": 0,
+      "value": "Add an “and” group"
+    }
+  ],
+  "web.home.addRow.rules.addOrGroup": [
+    {
+      "type": 0,
+      "value": "Add an “or” group"
+    }
+  ],
+  "web.home.addRow.rules.addRule": [
+    {
+      "type": 0,
+      "value": "Add rule"
+    }
+  ],
+  "web.home.addRow.rules.groupMatchLabel": [
+    {
+      "type": 0,
+      "value": "How group "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "'s rules combine"
+    }
+  ],
+  "web.home.addRow.rules.groupSentence": [
+    {
+      "type": 8,
+      "value": "join",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "titles that match"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "match",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "of these:"
+        }
+      ]
+    }
+  ],
+  "web.home.addRow.rules.howGroupsCombine": [
+    {
+      "type": 0,
+      "value": "How the groups combine"
+    }
+  ],
+  "web.home.addRow.rules.howRulesCombine": [
+    {
+      "type": 0,
+      "value": "How the rules combine"
+    }
+  ],
+  "web.home.addRow.rules.joinAnd": [
+    {
+      "type": 0,
+      "value": "and"
+    }
+  ],
+  "web.home.addRow.rules.joinOr": [
+    {
+      "type": 0,
+      "value": "or"
+    }
+  ],
+  "web.home.addRow.rules.kindOfTitles": [
+    {
+      "type": 0,
+      "value": "Kind of titles"
+    }
+  ],
+  "web.home.addRow.rules.matchAll": [
+    {
+      "type": 0,
+      "value": "all"
+    }
+  ],
+  "web.home.addRow.rules.matchAny": [
+    {
+      "type": 0,
+      "value": "any"
+    }
+  ],
+  "web.home.addRow.rules.noRulesCollectionYet": [
+    {
+      "type": 0,
+      "value": "No rules yet. Add one to choose which titles it holds."
+    }
+  ],
+  "web.home.addRow.rules.removeGroup": [
+    {
+      "type": 0,
+      "value": "Remove group "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.addRow.rules.scopeAll": [
+    {
+      "type": 0,
+      "value": "all titles"
+    }
+  ],
+  "web.home.addRow.rules.scopeAudiobook": [
+    {
+      "type": 0,
+      "value": "audiobooks"
+    }
+  ],
+  "web.home.addRow.rules.scopeEbook": [
+    {
+      "type": 0,
+      "value": "ebooks"
+    }
+  ],
+  "web.home.addRow.rules.scopeEpisode": [
+    {
+      "type": 0,
+      "value": "episodes"
+    }
+  ],
+  "web.home.addRow.rules.scopeManga": [
+    {
+      "type": 0,
+      "value": "manga"
+    }
+  ],
+  "web.home.addRow.rules.scopeMovie": [
+    {
+      "type": 0,
+      "value": "movies"
+    }
+  ],
+  "web.home.addRow.rules.scopeSeries": [
+    {
+      "type": 0,
+      "value": "shows"
+    }
+  ],
+  "web.home.addRow.rules.scopeVideo": [
+    {
+      "type": 0,
+      "value": "movies and shows"
+    }
+  ],
+  "web.home.addRow.rules.sentenceAll": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentenceNamed": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from the"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 6,
+          "value": "count",
+          "options": {
+            "one": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "library"
+                }
+              ]
+            },
+            "other": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "libraries"
+                }
+              ]
+            }
+          },
+          "offset": 0,
+          "pluralType": "cardinal"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentencePicked": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from the"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.whatCollectionShows": [
+    {
+      "type": 0,
+      "value": "What the collection shows"
+    }
+  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,
@@ -2738,6 +5615,18 @@
     {
       "type": 0,
       "value": "Watched"
+    }
+  ],
+  "web.item.images.tooLarge": [
+    {
+      "type": 0,
+      "value": "Images can be at most 10 MiB"
+    }
+  ],
+  "web.item.images.wrongType": [
+    {
+      "type": 0,
+      "value": "Choose a JPEG, PNG or WebP image"
     }
   ],
   "web.item.menu.addToFavorites": [
@@ -3246,6 +6135,110 @@
     {
       "type": 0,
       "value": "Sleep timer"
+    }
+  ],
+  "web.profiles.libraries.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " library"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " libraries"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Library"
+    }
+  ],
+  "web.profiles.librarySelect.more": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " more"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " more"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.pair": [
+    {
+      "type": 1,
+      "value": "first"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "second"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -6516,6 +9509,12 @@
       "value": "Your Stuff"
     }
   ],
+  "web.shell.unsavedChanges.description": [
+    {
+      "type": 0,
+      "value": "This page has edits that were never saved. Leaving now throws them away."
+    }
+  ],
   "web.shell.unsavedChanges.discard": [
     {
       "type": 0,
@@ -6532,6 +9531,12 @@
     {
       "type": 0,
       "value": "Couldn't start shuffle."
+    }
+  ],
+  "web.ui.personSearch.placeholder": [
+    {
+      "type": 0,
+      "value": "Search people..."
     }
   ],
   "web.ui.saving": [

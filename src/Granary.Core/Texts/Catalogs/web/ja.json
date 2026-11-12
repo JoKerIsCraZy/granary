@@ -5,10 +5,22 @@
       "value": "追加日"
     }
   ],
+  "catalog.sort.author": [
+    {
+      "type": 0,
+      "value": "著者"
+    }
+  ],
   "catalog.sort.imdbRating": [
     {
       "type": 0,
       "value": "IMDb評価"
+    }
+  ],
+  "catalog.sort.narrator": [
+    {
+      "type": 0,
+      "value": "ナレーター"
     }
   ],
   "catalog.sort.released": [
@@ -21,6 +33,12 @@
     {
       "type": 0,
       "value": "解像度"
+    }
+  ],
+  "catalog.sort.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
     }
   ],
   "catalog.sort.title": [
@@ -855,6 +873,16 @@
     {
       "type": 0,
       "value": "再生できる項目がありません。"
+    }
+  ],
+  "web.admin.homeRows.restore.libraryFallback": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    },
+    {
+      "type": 1,
+      "value": "id"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -1832,6 +1860,138 @@
       "value": "後で見るために保存した作品です。"
     }
   ],
+  "web.catalog.rules.amount": [
+    {
+      "type": 0,
+      "value": "数量"
+    }
+  ],
+  "web.catalog.rules.condition": [
+    {
+      "type": 0,
+      "value": "条件"
+    }
+  ],
+  "web.catalog.rules.field": [
+    {
+      "type": 0,
+      "value": "フィールド"
+    }
+  ],
+  "web.catalog.rules.fieldEpisodeTitle": [
+    {
+      "type": 0,
+      "value": "エピソードのタイトル"
+    }
+  ],
+  "web.catalog.rules.fieldLastRead": [
+    {
+      "type": 0,
+      "value": "最終読書日"
+    }
+  ],
+  "web.catalog.rules.fieldRead": [
+    {
+      "type": 0,
+      "value": "既読"
+    }
+  ],
+  "web.catalog.rules.no": [
+    {
+      "type": 0,
+      "value": "いいえ"
+    }
+  ],
+  "web.catalog.rules.notEditable": [
+    {
+      "type": 0,
+      "value": "ここでは編集できません"
+    }
+  ],
+  "web.catalog.rules.notEditableLabel": [
+    {
+      "type": 0,
+      "value": "ここでは編集できないルール"
+    }
+  ],
+  "web.catalog.rules.pickOne": [
+    {
+      "type": 0,
+      "value": "1つ選択"
+    }
+  ],
+  "web.catalog.rules.pickValue": [
+    {
+      "type": 0,
+      "value": "値を選択"
+    }
+  ],
+  "web.catalog.rules.rangeFrom": [
+    {
+      "type": 0,
+      "value": "開始"
+    }
+  ],
+  "web.catalog.rules.rangeTo": [
+    {
+      "type": 0,
+      "value": "終了"
+    }
+  ],
+  "web.catalog.rules.remove": [
+    {
+      "type": 0,
+      "value": "削除"
+    }
+  ],
+  "web.catalog.rules.removeRule": [
+    {
+      "type": 0,
+      "value": "ルールを削除"
+    }
+  ],
+  "web.catalog.rules.unit": [
+    {
+      "type": 0,
+      "value": "単位"
+    }
+  ],
+  "web.catalog.rules.unitDays": [
+    {
+      "type": 0,
+      "value": "日"
+    }
+  ],
+  "web.catalog.rules.unitMonths": [
+    {
+      "type": 0,
+      "value": "か月"
+    }
+  ],
+  "web.catalog.rules.unitWeeks": [
+    {
+      "type": 0,
+      "value": "週"
+    }
+  ],
+  "web.catalog.rules.unitYears": [
+    {
+      "type": 0,
+      "value": "年"
+    }
+  ],
+  "web.catalog.rules.value": [
+    {
+      "type": 0,
+      "value": "値"
+    }
+  ],
+  "web.catalog.rules.yes": [
+    {
+      "type": 0,
+      "value": "はい"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1880,10 +2040,326 @@
       "value": "その他の操作"
     }
   ],
+  "web.collections.addToCollection.added": [
+    {
+      "type": 0,
+      "value": "追加済み"
+    }
+  ],
+  "web.collections.addToCollection.createAndAdd": [
+    {
+      "type": 0,
+      "value": "作成して追加"
+    }
+  ],
+  "web.collections.addToCollection.createFailed": [
+    {
+      "type": 0,
+      "value": "コレクションを作成できませんでした"
+    }
+  ],
+  "web.collections.addToCollection.find": [
+    {
+      "type": 0,
+      "value": "コレクションを検索"
+    }
+  ],
+  "web.collections.addToCollection.firstHelp": [
+    {
+      "type": 0,
+      "value": "名前を付けると、"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "がすぐに追加されます。タイトルの追加や順序の変更は後からできます。"
+    }
+  ],
+  "web.collections.addToCollection.firstTitle": [
+    {
+      "type": 0,
+      "value": "最初のコレクションを作成"
+    }
+  ],
+  "web.collections.addToCollection.loadFailed": [
+    {
+      "type": 0,
+      "value": "コレクションを読み込めませんでした"
+    }
+  ],
+  "web.collections.addToCollection.loading": [
+    {
+      "type": 0,
+      "value": "コレクションを読み込み中…"
+    }
+  ],
+  "web.collections.addToCollection.namePlaceholder": [
+    {
+      "type": 0,
+      "value": "例：ジブリナイト"
+    }
+  ],
+  "web.collections.addToCollection.newManual": [
+    {
+      "type": 0,
+      "value": "新しい手動コレクション"
+    }
+  ],
+  "web.collections.addToCollection.noMatches": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "」に一致するコレクションはありません。"
+    }
+  ],
+  "web.collections.addToCollection.removed": [
+    {
+      "type": 0,
+      "value": "削除済み"
+    }
+  ],
+  "web.collections.admin.editCollection": [
+    {
+      "type": 0,
+      "value": "コレクションを編集"
+    }
+  ],
+  "web.collections.builder.facetPlaceholder": [
+    {
+      "type": 5,
+      "value": "facet",
+      "options": {
+        "genre": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ジャンルを選択"
+            }
+          ]
+        },
+        "studio": {
+          "value": [
+            {
+              "type": 0,
+              "value": "スタジオを選択"
+            }
+          ]
+        },
+        "network": {
+          "value": [
+            {
+              "type": 0,
+              "value": "放送局を選択"
+            }
+          ]
+        },
+        "country": {
+          "value": [
+            {
+              "type": 0,
+              "value": "国を選択"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "年齢制限を選択"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.builder.fieldActor": [
+    {
+      "type": 0,
+      "value": "俳優"
+    }
+  ],
+  "web.collections.builder.fieldAdded": [
+    {
+      "type": 0,
+      "value": "追加日"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
       "value": "音声言語"
+    }
+  ],
+  "web.collections.builder.fieldBitrate": [
+    {
+      "type": 0,
+      "value": "ビットレート"
+    }
+  ],
+  "web.collections.builder.fieldContentRating": [
+    {
+      "type": 0,
+      "value": "年齢制限"
+    }
+  ],
+  "web.collections.builder.fieldCountry": [
+    {
+      "type": 0,
+      "value": "国"
+    }
+  ],
+  "web.collections.builder.fieldDecade": [
+    {
+      "type": 0,
+      "value": "年代"
+    }
+  ],
+  "web.collections.builder.fieldDirector": [
+    {
+      "type": 0,
+      "value": "監督"
+    }
+  ],
+  "web.collections.builder.fieldDolbyVision": [
+    {
+      "type": 0,
+      "value": "Dolby Vision"
+    }
+  ],
+  "web.collections.builder.fieldFavorited": [
+    {
+      "type": 0,
+      "value": "お気に入り"
+    }
+  ],
+  "web.collections.builder.fieldGenre": [
+    {
+      "type": 0,
+      "value": "ジャンル"
+    }
+  ],
+  "web.collections.builder.fieldHdr": [
+    {
+      "type": 0,
+      "value": "HDR"
+    }
+  ],
+  "web.collections.builder.fieldInProgress": [
+    {
+      "type": 0,
+      "value": "視聴中"
+    }
+  ],
+  "web.collections.builder.fieldInWatchlist": [
+    {
+      "type": 0,
+      "value": "ウォッチリスト内"
+    }
+  ],
+  "web.collections.builder.fieldLastAirDate": [
+    {
+      "type": 0,
+      "value": "最新エピソードの放送日"
+    }
+  ],
+  "web.collections.builder.fieldLastWatched": [
+    {
+      "type": 0,
+      "value": "最終視聴日"
+    }
+  ],
+  "web.collections.builder.fieldLatestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "最新エピソードの追加日"
+    }
+  ],
+  "web.collections.builder.fieldNetwork": [
+    {
+      "type": 0,
+      "value": "放送局"
+    }
+  ],
+  "web.collections.builder.fieldOriginalLanguage": [
+    {
+      "type": 0,
+      "value": "オリジナル言語"
+    }
+  ],
+  "web.collections.builder.fieldProducer": [
+    {
+      "type": 0,
+      "value": "プロデューサー"
+    }
+  ],
+  "web.collections.builder.fieldRatingImdb": [
+    {
+      "type": 0,
+      "value": "IMDb評価"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtAudience": [
+    {
+      "type": 0,
+      "value": "RT観客スコア"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtCritic": [
+    {
+      "type": 0,
+      "value": "RT批評家スコア"
+    }
+  ],
+  "web.collections.builder.fieldRatingTmdb": [
+    {
+      "type": 0,
+      "value": "TMDB評価"
+    }
+  ],
+  "web.collections.builder.fieldReleaseDate": [
+    {
+      "type": 0,
+      "value": "公開日"
+    }
+  ],
+  "web.collections.builder.fieldResolution": [
+    {
+      "type": 0,
+      "value": "解像度"
+    }
+  ],
+  "web.collections.builder.fieldRuntime": [
+    {
+      "type": 0,
+      "value": "再生時間"
+    }
+  ],
+  "web.collections.builder.fieldShowTitle": [
+    {
+      "type": 0,
+      "value": "シリーズ名"
+    }
+  ],
+  "web.collections.builder.fieldStatus": [
+    {
+      "type": 0,
+      "value": "ステータス"
+    }
+  ],
+  "web.collections.builder.fieldStudio": [
+    {
+      "type": 0,
+      "value": "スタジオ"
     }
   ],
   "web.collections.builder.fieldSubtitleLanguage": [
@@ -1892,10 +2368,1374 @@
       "value": "字幕言語"
     }
   ],
+  "web.collections.builder.fieldTitle": [
+    {
+      "type": 0,
+      "value": "タイトル"
+    }
+  ],
+  "web.collections.builder.fieldType": [
+    {
+      "type": 0,
+      "value": "種類"
+    }
+  ],
+  "web.collections.builder.fieldWatched": [
+    {
+      "type": 0,
+      "value": "視聴済み"
+    }
+  ],
+  "web.collections.builder.fieldWriter": [
+    {
+      "type": 0,
+      "value": "脚本家"
+    }
+  ],
+  "web.collections.builder.fieldYear": [
+    {
+      "type": 0,
+      "value": "年"
+    }
+  ],
+  "web.collections.builder.groupFile": [
+    {
+      "type": 0,
+      "value": "ファイル"
+    }
+  ],
+  "web.collections.builder.groupLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.collections.builder.groupPeople": [
+    {
+      "type": 0,
+      "value": "人物"
+    }
+  ],
+  "web.collections.builder.groupTitle": [
+    {
+      "type": 0,
+      "value": "タイトル"
+    }
+  ],
+  "web.collections.builder.groupYou": [
+    {
+      "type": 0,
+      "value": "自分"
+    }
+  ],
+  "web.collections.builder.opAbove": [
+    {
+      "type": 0,
+      "value": "が次より大きい"
+    }
+  ],
+  "web.collections.builder.opAfter": [
+    {
+      "type": 0,
+      "value": "が次より後"
+    }
+  ],
+  "web.collections.builder.opAtLeast": [
+    {
+      "type": 0,
+      "value": "が次以上"
+    }
+  ],
+  "web.collections.builder.opAtMost": [
+    {
+      "type": 0,
+      "value": "が次以下"
+    }
+  ],
+  "web.collections.builder.opBefore": [
+    {
+      "type": 0,
+      "value": "が次より前"
+    }
+  ],
+  "web.collections.builder.opBeginsWith": [
+    {
+      "type": 0,
+      "value": "が次で始まる"
+    }
+  ],
+  "web.collections.builder.opBelow": [
+    {
+      "type": 0,
+      "value": "が次より小さい"
+    }
+  ],
+  "web.collections.builder.opBetween": [
+    {
+      "type": 0,
+      "value": "が次の範囲内"
+    }
+  ],
+  "web.collections.builder.opContains": [
+    {
+      "type": 0,
+      "value": "が次を含む"
+    }
+  ],
+  "web.collections.builder.opEndsWith": [
+    {
+      "type": 0,
+      "value": "が次で終わる"
+    }
+  ],
+  "web.collections.builder.opInLast": [
+    {
+      "type": 0,
+      "value": "が次の期間内"
+    }
+  ],
+  "web.collections.builder.opIs": [
+    {
+      "type": 0,
+      "value": "が次と一致"
+    }
+  ],
+  "web.collections.builder.opIsNot": [
+    {
+      "type": 0,
+      "value": "が次と一致しない"
+    }
+  ],
+  "web.collections.builder.opNotContains": [
+    {
+      "type": 0,
+      "value": "が次を含まない"
+    }
+  ],
+  "web.collections.builder.opNotInLast": [
+    {
+      "type": 0,
+      "value": "が次の期間外"
+    }
+  ],
+  "web.collections.builder.statusMatched": [
+    {
+      "type": 0,
+      "value": "一致済み"
+    }
+  ],
+  "web.collections.builder.statusPending": [
+    {
+      "type": 0,
+      "value": "保留中"
+    }
+  ],
+  "web.collections.builder.statusUnmatched": [
+    {
+      "type": 0,
+      "value": "未一致"
+    }
+  ],
+  "web.collections.builder.typeMovies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.collections.builder.typeShows": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.collections.builder.unitKbps": [
+    {
+      "type": 0,
+      "value": "kbps"
+    }
+  ],
+  "web.collections.builder.unitMinutes": [
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.collections.copy.addToCollectionFootnote": [
+    {
+      "type": 0,
+      "value": "タイトルを手動で追加できるのは手動コレクションだけです。チェックするとすぐに保存されます。"
+    }
+  ],
+  "web.collections.copy.allMyLibraries": [
+    {
+      "type": 0,
+      "value": "自分のすべてのライブラリ"
+    }
+  ],
+  "web.collections.copy.allMyLibrariesInSentence": [
+    {
+      "type": 0,
+      "value": "自分のすべてのライブラリ"
+    }
+  ],
+  "web.collections.copy.allYourLibraries": [
+    {
+      "type": 0,
+      "value": "すべてのライブラリ"
+    }
+  ],
+  "web.collections.copy.cantBeUndone": [
+    {
+      "type": 0,
+      "value": "この操作は元に戻せません。"
+    }
+  ],
+  "web.collections.copy.conflictTitle": [
+    {
+      "type": 0,
+      "value": "開いた後にこのコレクションが変更されました。"
+    }
+  ],
+  "web.collections.copy.createdButNotAdded": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "作成しましたが、"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のタイトルを追加できませんでした"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.fieldDescription": [
+    {
+      "type": 0,
+      "value": "説明"
+    }
+  ],
+  "web.collections.copy.fieldLibraries": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.collections.copy.fieldLimit": [
+    {
+      "type": 0,
+      "value": "最大タイトル数"
+    }
+  ],
+  "web.collections.copy.fieldName": [
+    {
+      "type": 0,
+      "value": "名前"
+    }
+  ],
+  "web.collections.copy.fieldOrder": [
+    {
+      "type": 0,
+      "value": "並び順"
+    }
+  ],
+  "web.collections.copy.fieldRules": [
+    {
+      "type": 0,
+      "value": "ルール"
+    }
+  ],
+  "web.collections.copy.fieldShowOnly": [
+    {
+      "type": 0,
+      "value": "表示対象"
+    }
+  ],
+  "web.collections.copy.goodForManualPersonal": [
+    {
+      "type": 0,
+      "value": "監督の代表作、映画の夜、視聴順など。"
+    }
+  ],
+  "web.collections.copy.goodForSmart": [
+    {
+      "type": 0,
+      "value": "90年代のコメディ、未視聴の4K、クリスマス映画など。"
+    }
+  ],
+  "web.collections.copy.inCollections": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "=0": {
+          "value": [
+            {
+              "type": 0,
+              "value": "まだコレクションに含まれていません"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のコレクションに含まれています"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.inThisCollection": [
+    {
+      "type": 0,
+      "value": "このコレクションに追加済み"
+    }
+  ],
+  "web.collections.copy.kindSentenceManual": [
+    {
+      "type": 0,
+      "value": "タイトルを自分で選んで並べます。"
+    }
+  ],
+  "web.collections.copy.kindSentenceSmart": [
+    {
+      "type": 0,
+      "value": "ルールに一致するタイトルが自動で追加され、新しいタイトルにも追従します。"
+    }
+  ],
+  "web.collections.copy.lookPoster": [
+    {
+      "type": 5,
+      "value": "state",
+      "options": {
+        "awaitingCollage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター：タイトルにポスターが揃うとコラージュ"
+            }
+          ]
+        },
+        "collage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター：タイトルのコラージュ"
+            }
+          ]
+        },
+        "new": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター：新しい画像"
+            }
+          ]
+        },
+        "saved": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター：画像あり"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター：なし"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.copy.madeButNotAdded": [
+    {
+      "type": 1,
+      "value": "collection"
+    },
+    {
+      "type": 0,
+      "value": "を作成しましたが、"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を追加できませんでした"
+    }
+  ],
+  "web.collections.copy.manualTitleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "手動・"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "タイトル"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.nameItThenCreate": [
+    {
+      "type": 0,
+      "value": "名前を付けてから作成してください。"
+    }
+  ],
+  "web.collections.copy.newCollection": [
+    {
+      "type": 0,
+      "value": "新しいコレクション"
+    }
+  ],
+  "web.collections.copy.newCollectionHelpPersonal": [
+    {
+      "type": 0,
+      "value": "内容を何で決めますか？変更できるのは自分だけです。次に、名前を付けて内容を追加し、表示する相手を選びます。"
+    }
+  ],
+  "web.collections.copy.newCollectionNext": [
+    {
+      "type": 0,
+      "value": "次に、専用のページで名前を付けて内容を追加します。"
+    }
+  ],
+  "web.collections.copy.noLimit": [
+    {
+      "type": 0,
+      "value": "上限なし"
+    }
+  ],
+  "web.collections.copy.noPoster": [
+    {
+      "type": 0,
+      "value": "ポスターなし"
+    }
+  ],
+  "web.collections.copy.notCreatedYet": [
+    {
+      "type": 0,
+      "value": "未作成"
+    }
+  ],
+  "web.collections.copy.notSaved": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": "は未保存"
+    }
+  ],
+  "web.collections.copy.orderHelp": [
+    {
+      "type": 0,
+      "value": "閲覧中に独自の並べ替えを選んだプロフィールでは、その選択が保持されます。"
+    }
+  ],
+  "web.collections.copy.personalDeleteDescriptionShared": [
+    {
+      "type": 0,
+      "value": "自分と共有先のすべてのプロフィールから削除されます。この操作は元に戻せません。"
+    }
+  ],
+  "web.collections.copy.personalRulesNote": [
+    {
+      "type": 0,
+      "value": "「すべてのライブラリ」は、このプロフィールが閲覧できるライブラリに従います。「視聴済み」など自分に関するルールはここでのみ使用できます。"
+    }
+  ],
+  "web.collections.copy.personalTabHelp": [
+    {
+      "type": 0,
+      "value": "自分と共有先のユーザー向け"
+    }
+  ],
+  "web.collections.copy.posterAwaitsCollage": [
+    {
+      "type": 0,
+      "value": "タイトルにポスターが揃うとコラージュになります"
+    }
+  ],
+  "web.collections.copy.posterIsCollage": [
+    {
+      "type": 0,
+      "value": "タイトルのコラージュ"
+    }
+  ],
+  "web.collections.copy.previewEmpty": [
+    {
+      "type": 0,
+      "value": "一致するタイトルはまだありません"
+    }
+  ],
+  "web.collections.copy.previewEmptyHelp": [
+    {
+      "type": 0,
+      "value": "このまま保存できます。後で一致したタイトルは自動的に追加されます。"
+    }
+  ],
+  "web.collections.copy.previewFailed": [
+    {
+      "type": 0,
+      "value": "プレビューを読み込めませんでした。このまま保存できます。"
+    }
+  ],
+  "web.collections.copy.previewLive": [
+    {
+      "type": 0,
+      "value": "ライブプレビュー"
+    }
+  ],
+  "web.collections.copy.previewMatches": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": "タイトルが一致"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.removedTitle": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を外しました"
+    }
+  ],
+  "web.collections.copy.rulesCaption": [
+    {
+      "type": 0,
+      "value": "一致するタイトルがコレクションに含まれます。新たに一致したタイトルは自動的に追加されます。"
+    }
+  ],
+  "web.collections.copy.saveFailedWithError": [
+    {
+      "type": 0,
+      "value": "保存できませんでした · "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.collections.copy.showOnTabLabel": [
+    {
+      "type": 0,
+      "value": "コレクションタブに表示"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesHelp": [
+    {
+      "type": 0,
+      "value": "このアカウントのすべてのプロフィールに表示されます（アクセスできないタイトルを除く）。サーバーの他のユーザーには表示されません。"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesLabel": [
+    {
+      "type": 0,
+      "value": "他のプロフィールに表示"
+    }
+  ],
+  "web.collections.copy.slotPoster": [
+    {
+      "type": 0,
+      "value": "ポスター"
+    }
+  ],
+  "web.collections.copy.smartCreateHint": [
+    {
+      "type": 0,
+      "value": "現在"
+    },
+    {
+      "type": 1,
+      "value": "matches"
+    },
+    {
+      "type": 0,
+      "value": "。新しいタイトルは自動的に加わります。"
+    }
+  ],
+  "web.collections.copy.smartCreateHintNone": [
+    {
+      "type": 0,
+      "value": "まだ一致するタイトルはありません。今後一致したタイトルは自動的に加わります。"
+    }
+  ],
+  "web.collections.copy.smartUpdatesItself": [
+    {
+      "type": 0,
+      "value": "タイトルの追加に合わせて自動更新"
+    }
+  ],
+  "web.collections.copy.storedSortLine": [
+    {
+      "type": 0,
+      "value": "保存済みのデフォルトの並べ替え（"
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": "）がこの順序より優先されます。"
+    }
+  ],
+  "web.collections.copy.titlesAlreadySaved": [
+    {
+      "type": 0,
+      "value": "タイトルは保存済みです。"
+    }
+  ],
+  "web.collections.copy.titlesCaptionCreate": [
+    {
+      "type": 0,
+      "value": "今タイトルを選んでください。「コレクションを作成」を押すと追加されます。"
+    }
+  ],
+  "web.collections.copy.titlesCaptionPersonal": [
+    {
+      "type": 0,
+      "value": "表示されている順序です。タイトルは追加したり外したり、ドラッグしたりするたびに保存されます。"
+    }
+  ],
+  "web.collections.copy.titlesEmpty": [
+    {
+      "type": 0,
+      "value": "まだタイトルがありません。上で検索して最初のタイトルを追加してください。"
+    }
+  ],
+  "web.collections.copy.titlesReadyToAdd": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のタイトルを追加できます"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.titlesSaved": [
+    {
+      "type": 0,
+      "value": "保存済み"
+    }
+  ],
+  "web.collections.copy.unshareConsequence": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "は、このコレクションから作成した行も含めて利用できなくなります。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.unshareConsequenceOthers": [
+    {
+      "type": 0,
+      "value": "他のプロフィールは、このコレクションから作成した行も含めて利用できなくなります。"
+    }
+  ],
+  "web.collections.copy.unshareWarning": [
+    {
+      "type": 0,
+      "value": "保存すると、"
+    },
+    {
+      "type": 1,
+      "value": "consequence"
+    }
+  ],
   "web.collections.deleteDialog.delete": [
     {
       "type": 0,
       "value": "削除"
+    }
+  ],
+  "web.collections.details.content": [
+    {
+      "type": 0,
+      "value": "コンテンツ"
+    }
+  ],
+  "web.collections.details.descriptionLabel": [
+    {
+      "type": 1,
+      "value": "field"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "muted",
+      "children": [
+        {
+          "type": 0,
+          "value": "任意"
+        }
+      ]
+    }
+  ],
+  "web.collections.details.label": [
+    {
+      "type": 0,
+      "value": "名前と説明"
+    }
+  ],
+  "web.collections.details.showOnlyHelp": [
+    {
+      "type": 0,
+      "value": "閲覧時にタイトルを非表示にします（視聴済みのものなど）。何も削除されません。"
+    }
+  ],
+  "web.collections.details.watchState": [
+    {
+      "type": 0,
+      "value": "視聴状態"
+    }
+  ],
+  "web.collections.displayFilters.media.all": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.collections.displayFilters.media.movie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.collections.displayFilters.media.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.collections.displayFilters.watch.all": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.collections.displayFilters.watch.unwatched": [
+    {
+      "type": 0,
+      "value": "未視聴"
+    }
+  ],
+  "web.collections.displayFilters.watch.watched": [
+    {
+      "type": 0,
+      "value": "視聴済み"
+    }
+  ],
+  "web.collections.editor.backToCollections": [
+    {
+      "type": 0,
+      "value": "コレクション"
+    }
+  ],
+  "web.collections.editor.conflictFields": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": "が両方で変更されました。"
+    }
+  ],
+  "web.collections.editor.conflictSaveAgain": [
+    {
+      "type": 0,
+      "value": "変更を保持するには、もう一度保存してください。"
+    }
+  ],
+  "web.collections.editor.createCollection": [
+    {
+      "type": 0,
+      "value": "コレクションを作成"
+    }
+  ],
+  "web.collections.editor.keepMine": [
+    {
+      "type": 0,
+      "value": "自分の変更を保持"
+    }
+  ],
+  "web.collections.editor.rowLinkLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "、"
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    }
+  ],
+  "web.collections.editor.rulesHeading": [
+    {
+      "type": 0,
+      "value": "ルール"
+    }
+  ],
+  "web.collections.editor.useTheirs": [
+    {
+      "type": 0,
+      "value": "相手の変更を使用"
+    }
+  ],
+  "web.collections.editorHeader.open": [
+    {
+      "type": 0,
+      "value": "開く"
+    }
+  ],
+  "web.collections.editorPage.allCollections": [
+    {
+      "type": 0,
+      "value": "すべてのコレクション"
+    }
+  ],
+  "web.collections.editorPage.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "このコレクションを読み込めませんでした"
+    }
+  ],
+  "web.collections.editorPage.loading": [
+    {
+      "type": 0,
+      "value": "コレクションエディターを読み込んでいます…"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonal": [
+    {
+      "type": 0,
+      "value": "このコレクションは利用できません"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonalHelp": [
+    {
+      "type": 0,
+      "value": "削除されたか、アクセス権がない可能性があります。"
+    }
+  ],
+  "web.collections.fields.artworkPreview": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスターのプレビュー"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景画像のプレビュー"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkRemovedOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "保存するとポスターが削除されます。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "元に戻す"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "保存すると背景画像が削除されます。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "元に戻す"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSaveFailed": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスターを保存できませんでした。"
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景画像を保存できませんでした。"
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSavesOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新しいポスターは「保存」を押すと保存されます。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "元に戻す"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新しい背景画像は「保存」を押すと保存されます。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "元に戻す"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.changeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスターを変更"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景画像を変更"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.clear": [
+    {
+      "type": 0,
+      "value": "クリア"
+    }
+  ],
+  "web.collections.fields.clearStoredSort": [
+    {
+      "type": 0,
+      "value": "保存済みのデフォルトの並び順（"
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": "）をクリア"
+    }
+  ],
+  "web.collections.fields.collage": [
+    {
+      "type": 0,
+      "value": "コラージュ"
+    }
+  ],
+  "web.collections.fields.direction": [
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "za": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        },
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新しい順"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "古い順"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "高い順"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "低い順"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.directionLabel": [
+    {
+      "type": 0,
+      "value": "順序"
+    }
+  ],
+  "web.collections.fields.imageLink": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスター画像のリンク"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景画像のリンク"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.maxTitlesSuffix": [
+    {
+      "type": 0,
+      "value": "タイトル（最大）"
+    }
+  ],
+  "web.collections.fields.order": [
+    {
+      "type": 0,
+      "value": "並び順"
+    }
+  ],
+  "web.collections.fields.pasteALink": [
+    {
+      "type": 0,
+      "value": "リンクを貼り付け…"
+    }
+  ],
+  "web.collections.fields.removeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ポスターを削除"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景画像を削除"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortAlphabetical": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortBy": [
+    {
+      "type": 0,
+      "value": "並べ替え"
+    }
+  ],
+  "web.collections.fields.sortWithDirection": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "、"
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "新しい順"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "古い順"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "高い順"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "低い順"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.uploadImage": [
+    {
+      "type": 0,
+      "value": "画像をアップロード…"
+    }
+  ],
+  "web.collections.fields.useLink": [
+    {
+      "type": 0,
+      "value": "リンクを使用"
+    }
+  ],
+  "web.collections.fields.useTheCollage": [
+    {
+      "type": 0,
+      "value": "コラージュを使用"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1992,6 +3832,318 @@
       "value": "例：2025"
     }
   ],
+  "web.collections.list.syncFailed": [
+    {
+      "type": 0,
+      "value": "同期失敗"
+    }
+  ],
+  "web.collections.list.syncingNow": [
+    {
+      "type": 0,
+      "value": "同期中"
+    }
+  ],
+  "web.collections.look.change": [
+    {
+      "type": 0,
+      "value": "変更"
+    }
+  ],
+  "web.collections.look.heading": [
+    {
+      "type": 0,
+      "value": "外観"
+    }
+  ],
+  "web.collections.manual.add": [
+    {
+      "type": 0,
+      "value": "追加"
+    }
+  ],
+  "web.collections.manual.addFailed": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を追加できませんでした。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.addTitle": [
+    {
+      "type": 0,
+      "value": "タイトルを追加"
+    }
+  ],
+  "web.collections.manual.heading": [
+    {
+      "type": 0,
+      "value": "タイトル"
+    }
+  ],
+  "web.collections.manual.loadFailed": [
+    {
+      "type": 0,
+      "value": "タイトルを読み込めませんでした。"
+    }
+  ],
+  "web.collections.manual.moveTitle": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を移動"
+    }
+  ],
+  "web.collections.manual.noMatches": [
+    {
+      "type": 0,
+      "value": "一致するタイトルがありません。"
+    }
+  ],
+  "web.collections.manual.pagedNote": [
+    {
+      "type": 0,
+      "value": "最大200件のタイトルを表示しています。コレクション全体が1ページに収まる場合に並べ替えができます。"
+    }
+  ],
+  "web.collections.manual.reloadFromStart": [
+    {
+      "type": 0,
+      "value": "最初から再読み込み"
+    }
+  ],
+  "web.collections.manual.removeFailed": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を削除できませんでした。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.removeTitle": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を削除"
+    }
+  ],
+  "web.collections.manual.restoreFailed": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "を元に戻せませんでした。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.saving": [
+    {
+      "type": 0,
+      "value": "保存中…"
+    }
+  ],
+  "web.collections.manual.searchFailed": [
+    {
+      "type": 0,
+      "value": "検索できませんでした。"
+    }
+  ],
+  "web.collections.manual.searching": [
+    {
+      "type": 0,
+      "value": "検索中…"
+    }
+  ],
+  "web.collections.manual.showAll": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "件をすべて表示"
+    }
+  ],
+  "web.collections.manual.showFewer": [
+    {
+      "type": 0,
+      "value": "表示を減らす"
+    }
+  ],
+  "web.collections.manual.tryAgainSentence": [
+    {
+      "type": 0,
+      "value": "もう一度お試しください。"
+    }
+  ],
+  "web.collections.manual.typeLabel": [
+    {
+      "type": 5,
+      "value": "type",
+      "options": {
+        "movie": {
+          "value": [
+            {
+              "type": 0,
+              "value": "映画"
+            }
+          ]
+        },
+        "series": {
+          "value": [
+            {
+              "type": 0,
+              "value": "シリーズ"
+            }
+          ]
+        },
+        "season": {
+          "value": [
+            {
+              "type": 0,
+              "value": "シーズン"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "エピソード"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.manual.undo": [
+    {
+      "type": 0,
+      "value": "元に戻す"
+    }
+  ],
+  "web.collections.metaLine.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.newPicker.goodFor": [
+    {
+      "type": 0,
+      "value": "おすすめ："
+    }
+  ],
+  "web.collections.page.filterAll": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.collections.page.filterLabel": [
+    {
+      "type": 0,
+      "value": "表示"
+    }
+  ],
+  "web.collections.page.loadMore": [
+    {
+      "type": 0,
+      "value": "さらに読み込む"
+    }
+  ],
+  "web.collections.page.stopSharing": [
+    {
+      "type": 0,
+      "value": "共有を停止"
+    }
+  ],
+  "web.collections.page.stopSharingTitle": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の共有を停止しますか？"
+    }
+  ],
+  "web.collections.page.subtitle": [
+    {
+      "type": 0,
+      "value": "自分のコレクションとサーバーのコレクションです。"
+    }
+  ],
+  "web.collections.page.subtitleShared": [
+    {
+      "type": 0,
+      "value": "自分のコレクション、ほかのプロフィールから共有されたコレクション、サーバーのコレクションです。"
+    }
+  ],
+  "web.collections.page.title": [
+    {
+      "type": 0,
+      "value": "コレクション"
+    }
+  ],
+  "web.collections.page.wallMine": [
+    {
+      "type": 0,
+      "value": "自分のコレクション"
+    }
+  ],
+  "web.collections.page.wallServer": [
+    {
+      "type": 0,
+      "value": "サーバーのコレクション"
+    }
+  ],
+  "web.collections.page.wallShared": [
+    {
+      "type": 0,
+      "value": "自分に共有されたコレクション"
+    }
+  ],
   "web.collections.pageActions.deleteTitle": [
     {
       "type": 0,
@@ -2010,6 +4162,104 @@
     {
       "type": 0,
       "value": "編集"
+    }
+  ],
+  "web.collections.personalOwnership.anotherProfile": [
+    {
+      "type": 0,
+      "value": "別のプロフィール"
+    }
+  ],
+  "web.collections.posterCard.byOwner": [
+    {
+      "type": 0,
+      "value": "作成者："
+    },
+    {
+      "type": 1,
+      "value": "owner"
+    }
+  ],
+  "web.collections.preview.matchingTitles": [
+    {
+      "type": 0,
+      "value": "一致するタイトル"
+    }
+  ],
+  "web.collections.preview.showing": [
+    {
+      "type": 1,
+      "value": "shown"
+    },
+    {
+      "type": 0,
+      "value": "件を表示中"
+    }
+  ],
+  "web.collections.scope.changedWhileEditing": [
+    {
+      "type": 0,
+      "value": "編集中にこのコレクションが変更されました。再読み込みして変更内容を確認してから、もう一度保存してください。"
+    }
+  ],
+  "web.collections.tags.shared": [
+    {
+      "type": 0,
+      "value": "共有中"
+    }
+  ],
+  "web.collections.toast.addFailed": [
+    {
+      "type": 0,
+      "value": "コレクションに追加できませんでした"
+    }
+  ],
+  "web.collections.toast.notShared": [
+    {
+      "type": 0,
+      "value": "自分だけに表示されるようになりました"
+    }
+  ],
+  "web.collections.toast.removeItemFailed": [
+    {
+      "type": 0,
+      "value": "アイテムを外せませんでした"
+    }
+  ],
+  "web.collections.toast.sharedWithProfiles": [
+    {
+      "type": 0,
+      "value": "他のプロフィールに表示されます"
+    }
+  ],
+  "web.collections.toast.sharingFailed": [
+    {
+      "type": 0,
+      "value": "共有設定を変更できませんでした"
+    }
+  ],
+  "web.collections.types.kindManual": [
+    {
+      "type": 0,
+      "value": "手動"
+    }
+  ],
+  "web.collections.types.kindSmart": [
+    {
+      "type": 0,
+      "value": "スマート"
+    }
+  ],
+  "web.collections.types.kindSynced": [
+    {
+      "type": 0,
+      "value": "同期リスト"
+    }
+  ],
+  "web.collections.whereItShows.heading": [
+    {
+      "type": 0,
+      "value": "表示場所"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -2152,6 +4402,12 @@
     {
       "type": 0,
       "value": "削除できませんでした"
+    }
+  ],
+  "web.common.toast.collections.deleted": [
+    {
+      "type": 0,
+      "value": "コレクションを削除しました"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2437,6 +4693,429 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.home.addRow.libraries": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.home.addRow.rules.addAndGroup": [
+    {
+      "type": 0,
+      "value": "「かつ」グループを追加"
+    }
+  ],
+  "web.home.addRow.rules.addOrGroup": [
+    {
+      "type": 0,
+      "value": "「または」グループを追加"
+    }
+  ],
+  "web.home.addRow.rules.addRule": [
+    {
+      "type": 0,
+      "value": "ルールを追加"
+    }
+  ],
+  "web.home.addRow.rules.groupMatchLabel": [
+    {
+      "type": 0,
+      "value": "グループ"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "のルールの組み合わせ方"
+    }
+  ],
+  "web.home.addRow.rules.groupSentence": [
+    {
+      "type": 8,
+      "value": "join",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "次の条件の"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "match",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "に一致するタイトル："
+        }
+      ]
+    }
+  ],
+  "web.home.addRow.rules.howGroupsCombine": [
+    {
+      "type": 0,
+      "value": "グループの組み合わせ方"
+    }
+  ],
+  "web.home.addRow.rules.howRulesCombine": [
+    {
+      "type": 0,
+      "value": "ルールの組み合わせ方"
+    }
+  ],
+  "web.home.addRow.rules.joinAnd": [
+    {
+      "type": 0,
+      "value": "かつ"
+    }
+  ],
+  "web.home.addRow.rules.joinOr": [
+    {
+      "type": 0,
+      "value": "または"
+    }
+  ],
+  "web.home.addRow.rules.kindOfTitles": [
+    {
+      "type": 0,
+      "value": "タイトルの種類"
+    }
+  ],
+  "web.home.addRow.rules.matchAll": [
+    {
+      "type": 0,
+      "value": "すべて"
+    }
+  ],
+  "web.home.addRow.rules.matchAny": [
+    {
+      "type": 0,
+      "value": "いずれか"
+    }
+  ],
+  "web.home.addRow.rules.noRulesCollectionYet": [
+    {
+      "type": 0,
+      "value": "ルールはまだありません。ルールを追加して、含める作品を選択してください。"
+    }
+  ],
+  "web.home.addRow.rules.removeGroup": [
+    {
+      "type": 0,
+      "value": "グループ"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "を削除"
+    }
+  ],
+  "web.home.addRow.rules.scopeAll": [
+    {
+      "type": 0,
+      "value": "すべてのタイトル"
+    }
+  ],
+  "web.home.addRow.rules.scopeAudiobook": [
+    {
+      "type": 0,
+      "value": "オーディオブック"
+    }
+  ],
+  "web.home.addRow.rules.scopeEbook": [
+    {
+      "type": 0,
+      "value": "電子書籍"
+    }
+  ],
+  "web.home.addRow.rules.scopeEpisode": [
+    {
+      "type": 0,
+      "value": "エピソード"
+    }
+  ],
+  "web.home.addRow.rules.scopeManga": [
+    {
+      "type": 0,
+      "value": "マンガ"
+    }
+  ],
+  "web.home.addRow.rules.scopeMovie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.home.addRow.rules.scopeSeries": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.home.addRow.rules.scopeVideo": [
+    {
+      "type": 0,
+      "value": "映画とシリーズ"
+    }
+  ],
+  "web.home.addRow.rules.sentenceAll": [
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "の"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "を表示"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "次の条件の"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "に一致："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentenceNamed": [
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 6,
+          "value": "count",
+          "options": {
+            "other": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "ライブラリの"
+                }
+              ]
+            }
+          },
+          "offset": 0,
+          "pluralType": "cardinal"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "を表示"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "次の条件の"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "に一致："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentencePicked": [
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "の"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "を表示"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "次の条件の"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "に一致："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.whatCollectionShows": [
+    {
+      "type": 0,
+      "value": "コレクションに表示する内容"
+    }
+  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,
@@ -2635,6 +5314,18 @@
     {
       "type": 0,
       "value": "視聴済み"
+    }
+  ],
+  "web.item.images.tooLarge": [
+    {
+      "type": 0,
+      "value": "画像は10 MiB以下にしてください"
+    }
+  ],
+  "web.item.images.wrongType": [
+    {
+      "type": 0,
+      "value": "JPEG、PNG、WebPのいずれかの画像を選択してください"
     }
   ],
   "web.item.menu.addToFavorites": [
@@ -3124,6 +5815,82 @@
     {
       "type": 0,
       "value": "スリープタイマー"
+    }
+  ],
+  "web.profiles.libraries.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ライブラリ"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.libraryFallback": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.profiles.librarySelect.more": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": "、ほか"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.pair": [
+    {
+      "type": 1,
+      "value": "first"
+    },
+    {
+      "type": 0,
+      "value": "、"
+    },
+    {
+      "type": 1,
+      "value": "second"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -6102,6 +8869,12 @@
       "value": "マイコンテンツ"
     }
   ],
+  "web.shell.unsavedChanges.description": [
+    {
+      "type": 0,
+      "value": "このページには保存されていない編集があります。今移動すると、編集内容は破棄されます。"
+    }
+  ],
   "web.shell.unsavedChanges.discard": [
     {
       "type": 0,
@@ -6118,6 +8891,12 @@
     {
       "type": 0,
       "value": "シャッフルを開始できませんでした。"
+    }
+  ],
+  "web.ui.personSearch.placeholder": [
+    {
+      "type": 0,
+      "value": "人物を検索..."
     }
   ],
   "web.ui.saving": [

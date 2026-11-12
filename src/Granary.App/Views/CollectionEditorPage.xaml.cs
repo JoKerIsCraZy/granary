@@ -4,7 +4,6 @@ using Granary.App.Controls;
 using Granary.Core.Abstractions;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels.Collections;
-using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Input;
@@ -12,6 +11,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
 using Windows.UI.Core;
@@ -34,21 +34,13 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         BackToCollectionsCommand = new RelayCommand(() => App.Services.GetRequiredService<INavigationService>().ShowSection(AppRoute.Collections));
         InitializeComponent();
         FollowLook();
+        ShowDescriptionLabel();
     }
 
     public CollectionEditorViewModel ViewModel { get; }
 
     /// <summary>"‹ Collections" and Cancel: the Collections section, as the web's link to the list.</summary>
     public ICommand BackToCollectionsCommand { get; }
-
-    public IReadOnlyList<SettingChoice> WatchChoices => CollectionEditorViewModel.WatchChoices;
-
-    public IReadOnlyList<SettingChoice> MediaChoices => CollectionEditorViewModel.MediaChoices;
-
-    public IReadOnlyList<SettingChoice> Scopes => CollectionRuleFields.Scopes;
-
-    // Static because x:Bind in the rule template reads them on the type.
-    public static IReadOnlyList<SettingChoice> InLastUnits => CollectionRuleFields.InLastUnits;
 
     public static BitmapImage? PreviewPoster(Uri? url) => Artwork.Load(url, PreviewPosterWidth);
 
@@ -60,8 +52,8 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
     public static BitmapImage? Poster(Uri? url) => Artwork.Load(url, PosterWidth);
 
     public string OrderHint(bool canMove) => canMove
-        ? "Your order. Drag titles, or focus one and press Alt+Up or Alt+Down, to change it."
-        : "Your order.";
+        ? AppText.Get("granary.collections.editor.orderHintMovable", ("up", "Alt+Up"), ("down", "Alt+Down"))
+        : AppText.Get("granary.collections.editor.orderHint");
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -102,9 +94,9 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
             var dialog = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "Discard unsaved changes?",
-                Content = new TextBlock { Text = "This page has edits that were never saved. Leaving now throws them away.", TextWrapping = TextWrapping.Wrap },
-                PrimaryButtonText = "Discard",
+                Title = AppText.Get("web.shell.unsavedChanges.title"),
+                Content = new TextBlock { Text = AppText.Get("web.shell.unsavedChanges.description"), TextWrapping = TextWrapping.Wrap },
+                PrimaryButtonText = AppText.Get("web.shell.unsavedChanges.discard"),
                 CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
@@ -136,9 +128,9 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
             var dialog = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = $"Delete “{ViewModel.HeaderTitle}”?",
+                Title = AppText.Get("web.collections.pageActions.deleteTitle", ("name", ViewModel.HeaderTitle)),
                 Content = new TextBlock { Text = CollectionEditorText.DeleteDescription(ViewModel.IsSavedShared), TextWrapping = TextWrapping.Wrap },
-                PrimaryButtonText = "Delete",
+                PrimaryButtonText = AppText.Get("web.collections.deleteDialog.delete"),
                 CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
@@ -196,7 +188,7 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
     private void OnLibrariesMenuOpening(object? sender, object e)
     {
         LibrariesMenu.Items.Clear();
-        var all = new ToggleMenuFlyoutItem { Text = "All my libraries", IsChecked = ViewModel.Rules.Libraries.All(l => !l.IsPicked) };
+        var all = new ToggleMenuFlyoutItem { Text = AppText.Get("web.collections.copy.allMyLibraries"), IsChecked = ViewModel.Rules.Libraries.All(l => !l.IsPicked) };
         all.Click += (_, _) =>
         {
             foreach (var library in ViewModel.Rules.Libraries)
@@ -242,6 +234,25 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         {
             // async void callers: nothing may escape. A failed people search just suggests nothing.
             Log(ex, "A rule's suggestions could not be read");
+        }
+    }
+
+    // "Description Optional": the web's label, its "Optional" muted, built from the message so each language orders it.
+    private void ShowDescriptionLabel()
+    {
+        var muted = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SiloMutedBrush"];
+        var regular = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["SiloFontRegular"];
+        DescriptionLabel.Inlines.Clear();
+        foreach (var run in AppText.Runs("web.collections.details.descriptionLabel", ("field", AppText.Get("web.collections.copy.fieldDescription"))))
+        {
+            var inline = new Run { Text = run.Text };
+            if (run.Tags.Contains("muted"))
+            {
+                inline.Foreground = muted;
+                inline.FontFamily = regular;
+                inline.FontWeight = Microsoft.UI.Text.FontWeights.Normal;
+            }
+            DescriptionLabel.Inlines.Add(inline);
         }
     }
 

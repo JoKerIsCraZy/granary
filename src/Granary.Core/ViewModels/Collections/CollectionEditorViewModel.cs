@@ -54,16 +54,29 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         _navigation = navigation;
         _time = time;
         _logger = logger;
+        // Built once, in the language on screen: the boxes find their picks in these lists.
+        WatchChoices =
+        [
+            new(CollectionShowOnly.All, AppText.Get("web.collections.displayFilters.watch.all")),
+            new(CollectionShowOnly.Unwatched, AppText.Get("web.collections.displayFilters.watch.unwatched")),
+            new(CollectionShowOnly.Watched, AppText.Get("web.collections.displayFilters.watch.watched")),
+        ];
+        MediaChoices =
+        [
+            new(CollectionShowOnly.All, AppText.Get("web.collections.displayFilters.media.all")),
+            new(CollectionShowOnly.Movies, AppText.Get("web.collections.displayFilters.media.movie")),
+            new(CollectionShowOnly.Shows, AppText.Get("web.collections.displayFilters.media.series")),
+        ];
         Watch = WatchChoices[0];
         Media = MediaChoices[0];
         Rules.Changed += OnRulesChanged;
     }
 
-    public static IReadOnlyList<SettingChoice> WatchChoices { get; } =
-        [new(CollectionShowOnly.All, "All"), new(CollectionShowOnly.Unwatched, "Unwatched"), new(CollectionShowOnly.Watched, "Watched")];
+    /// <summary>Show only's watch state: All, Unwatched or Watched.</summary>
+    public IReadOnlyList<SettingChoice> WatchChoices { get; }
 
-    public static IReadOnlyList<SettingChoice> MediaChoices { get; } =
-        [new(CollectionShowOnly.All, "All"), new(CollectionShowOnly.Movies, "Movies"), new(CollectionShowOnly.Shows, "Shows")];
+    /// <summary>Show only's content: All, Movies or Shows.</summary>
+    public IReadOnlyList<SettingChoice> MediaChoices { get; }
 
     /// <summary>The collection once it exists; null while a new one is made.</summary>
     [ObservableProperty]
@@ -74,8 +87,16 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsLoading), nameof(HasLoadError), nameof(IsReady))]
     public partial LibraryLoadState State { get; private set; }
 
+    /// <summary>Why the collection can't be edited: "Couldn't load this collection", or empty.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLoadErrorTitle))]
+    public partial string LoadErrorTitle { get; private set; } = "";
+
+    /// <summary>What to do about it, or why.</summary>
     [ObservableProperty]
     public partial string LoadError { get; private set; } = "";
+
+    public bool HasLoadErrorTitle => LoadErrorTitle.Length > 0;
 
     [ObservableProperty]
     public partial string Name { get; set; } = "";
@@ -156,7 +177,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         : new(Name.Trim(), Description.Trim(), new CollectionShowOnly(Watch.Value, Media.Value), IsShared, OnCollectionsTab);
 
     /// <summary>The fields the save bar names: the draft's that changed, then a staged poster.</summary>
-    public IReadOnlyList<string> ChangedFields => IsNew ? [] : [.. Draft.ChangedFrom(_saved), .. IsPosterStaged ? ["Poster"] : Array.Empty<string>()];
+    public IReadOnlyList<string> ChangedFields => IsNew ? [] : [.. Draft.ChangedFrom(_saved), .. IsPosterStaged ? [CollectionDraft.PosterField] : Array.Empty<string>()];
 
     /// <summary>Leaving now would lose something: a changed field, or for a new collection anything at all.</summary>
     public bool HasUnsavedChanges => !_deleted && (IsNew ? !Draft.SameAs(_saved) || Titles.Count > 0 || IsPosterStaged : ChangedFields.Count > 0);
@@ -173,9 +194,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         : Titles.Count > 0 ? CollectionEditorText.TitlesReadyToAdd(Titles.Count)
         : "";
 
-    // As the web's CollectionEditor: "Try again" after a failed save, else "Save".
-    public string SaveLabel => IsSaving ? (IsNew ? "Creating..." : "Saving...")
-        : HasSaveError ? AppText.Get("common.tryAgain") : IsNew ? "Create collection" : AppText.Get("common.save");
+    // As the web's CollectionEditor and SaveBar: "Saving..." while it goes, "Try again" after a failed save, else "Save".
+    public string SaveLabel => IsSaving ? AppText.Get("web.ui.saving")
+        : HasSaveError ? AppText.Get("common.tryAgain") : IsNew ? AppText.Get("web.collections.editor.createCollection") : AppText.Get("common.save");
 
     public IReadOnlyList<string> OtherProfiles { get; private set; } = [];
 
@@ -321,7 +342,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             }
             else
             {
-                DeleteError = LibraryErrors.Describe(ex) is { Length: > 0 } why ? why : "Failed to delete";
+                DeleteError = LibraryErrors.Describe(ex) is { Length: > 0 } why ? why : AppText.Get("web.common.toast.collections.deleteFailed");
             }
         }
     }
@@ -364,7 +385,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             var read = await _collections.GetAsync(server, id);
             if (read.Value.CreatorProfileId != _session.ProfileId || !(read.Value.IsManual || read.Value.IsSmart))
             {
-                LoadError = "Only the profile that made this collection can change it here.";
+                LoadErrorTitle = "";
+                LoadError = AppText.Get("granary.collections.editor.notYours");
                 State = LibraryLoadState.Error;
                 return;
             }
@@ -379,9 +401,12 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not load a collection to edit");
-            LoadError = ex is SiloApiException { Status: 404 }
-                ? "This collection isn't available. It may have been deleted, or you may not have access to it."
-                : "Couldn't load this collection. " + LibraryErrors.Describe(ex);
+            // As the web's editor page: what happened, then why or what to do.
+            bool gone = ex is SiloApiException { Status: 404 };
+            LoadErrorTitle = gone
+                ? AppText.Get("web.collections.editorPage.notFoundPersonal")
+                : AppText.Get("web.collections.editorPage.loadFailedTitle");
+            LoadError = gone ? AppText.Get("web.collections.editorPage.notFoundPersonalHelp") : LibraryErrors.Describe(ex);
             State = LibraryLoadState.Error;
         }
     }
@@ -523,7 +548,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     }
 
     // A smart collection's libraries, rules and saved sort, as the save bar names them.
-    private static readonly string[] SmartFields = ["Libraries", "Rules", "Order"];
+    private static readonly string[] SmartFields = [CollectionDraft.LibrariesField, CollectionDraft.RulesField, CollectionDraft.OrderField];
 
     // Builds the Rules card from a draft, with the libraries to pick from.
     private void ShowRules(CollectionDraft draft)
@@ -539,7 +564,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     }
 
     private static string Failure(Exception ex) =>
-        ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Couldn't save · " + LibraryErrors.Describe(ex);
+        ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale
+            : AppText.Get("web.collections.copy.saveFailedWithError", ("error", LibraryErrors.Describe(ex)));
 
     // After a title changed, the collection's version did too: reads it again. Fields not touched here take what the
     // server has; touched ones stay as typed.

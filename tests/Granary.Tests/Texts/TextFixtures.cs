@@ -21,6 +21,7 @@ internal static class TextFixtures
           "web.collections.templateGallery.listKind": [{"type": 5, "value": "kind", "options": {"movie": {"value": [{"type": 0, "value": "Movies"}]}, "other": {"value": [{"type": 0, "value": "TV"}]}}}],
           "web.audiobooks.player.narratedBy": [{"type": 0, "value": "Narrated by "}, {"type": 8, "value": "name", "children": [{"type": 1, "value": "narrator"}]}],
           "web.collections.starterPacks.newCount": [{"type": 8, "value": "b", "children": [{"type": 1, "value": "count"}]}, {"type": 0, "value": " new"}],
+          "web.home.addRow.rules.groupSentence": [{"type":8,"value":"join","children":[]},{"type":0,"value":" "},{"type":8,"value":"w","children":[{"type":0,"value":"titles that match"}]},{"type":0,"value":" "},{"type":8,"value":"match","children":[]},{"type":0,"value":" "},{"type":8,"value":"w","children":[{"type":0,"value":"of these:"}]}],
           "web.collections.fields.dayOrdinal": [{"type": 5, "value": "day", "options": {"1": {"value": [{"type": 0, "value": "1st"}]}, "2": {"value": [{"type": 0, "value": "2nd"}]}, "3": {"value": [{"type": 0, "value": "3rd"}]}, "21": {"value": [{"type": 0, "value": "21st"}]}, "22": {"value": [{"type": 0, "value": "22nd"}]}, "23": {"value": [{"type": 0, "value": "23rd"}]}, "31": {"value": [{"type": 0, "value": "31st"}]}, "other": {"value": [{"type": 1, "value": "day"}, {"type": 0, "value": "th"}]}}}]
         }
         """;

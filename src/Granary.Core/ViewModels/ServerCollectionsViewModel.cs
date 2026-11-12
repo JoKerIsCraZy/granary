@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,8 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
 {
     public const string AllLibraries = "all";
 
-    private static readonly SettingChoice All = new(AllLibraries, "All");
+    // The All pill, worded once in the language on screen; the pills find the pick by this instance.
+    private readonly SettingChoice All;
 
     private readonly LibraryPageApi _pages;
     private readonly INavigationService _navigation;
@@ -43,6 +45,8 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         _pages = pages;
         _navigation = navigation;
         _logger = logger;
+        All = new(AllLibraries, AppText.Get("web.collections.page.filterAll"));
+        SelectedLibrary = All;
     }
 
     public ObservableCollection<MediaCard> Cards { get; } = [];
@@ -52,7 +56,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
     public partial IReadOnlyList<SettingChoice> LibraryChoices { get; private set; } = [];
 
     [ObservableProperty]
-    public partial SettingChoice SelectedLibrary { get; set; } = All;
+    public partial SettingChoice SelectedLibrary { get; set; }
 
     /// <summary>The section shows only while some library has server collections.</summary>
     [ObservableProperty]
@@ -212,7 +216,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         }
         IsLoadingMore = inView.Any(l => _loading.Contains(l.LibraryId));
         var failed = inView.Where(l => _failed.Contains(l.LibraryId)).Select(l => l.LibraryName).ToList();
-        FailureText = failed.Count == 0 ? "" : $"Couldn't load every collection in {string.Join(", ", failed)}.";
+        FailureText = failed.Count == 0 ? "" : AppText.Get("granary.collections.libraryFailed", ("count", failed.Count), ("libraries", TextList.And(failed)));
     }
 
     // The collections a library adds to its first few, once its whole list is read and asked for.

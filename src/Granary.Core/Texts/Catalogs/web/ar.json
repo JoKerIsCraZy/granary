@@ -5,10 +5,22 @@
       "value": "تاريخ الإضافة"
     }
   ],
+  "catalog.sort.author": [
+    {
+      "type": 0,
+      "value": "المؤلف"
+    }
+  ],
   "catalog.sort.imdbRating": [
     {
       "type": 0,
       "value": "تقييم IMDb"
+    }
+  ],
+  "catalog.sort.narrator": [
+    {
+      "type": 0,
+      "value": "الراوي"
     }
   ],
   "catalog.sort.released": [
@@ -21,6 +33,12 @@
     {
       "type": 0,
       "value": "الدقة"
+    }
+  ],
+  "catalog.sort.series": [
+    {
+      "type": 0,
+      "value": "السلسلة"
     }
   ],
   "catalog.sort.title": [
@@ -855,6 +873,16 @@
     {
       "type": 0,
       "value": "لا يوجد هنا ما يمكن تشغيله."
+    }
+  ],
+  "web.admin.homeRows.restore.libraryFallback": [
+    {
+      "type": 0,
+      "value": "المكتبة "
+    },
+    {
+      "type": 1,
+      "value": "id"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -2170,6 +2198,138 @@
       "value": "ما حفظته لمشاهدته لاحقًا."
     }
   ],
+  "web.catalog.rules.amount": [
+    {
+      "type": 0,
+      "value": "العدد"
+    }
+  ],
+  "web.catalog.rules.condition": [
+    {
+      "type": 0,
+      "value": "الشرط"
+    }
+  ],
+  "web.catalog.rules.field": [
+    {
+      "type": 0,
+      "value": "الحقل"
+    }
+  ],
+  "web.catalog.rules.fieldEpisodeTitle": [
+    {
+      "type": 0,
+      "value": "عنوان الحلقة"
+    }
+  ],
+  "web.catalog.rules.fieldLastRead": [
+    {
+      "type": 0,
+      "value": "آخر قراءة"
+    }
+  ],
+  "web.catalog.rules.fieldRead": [
+    {
+      "type": 0,
+      "value": "مقروء"
+    }
+  ],
+  "web.catalog.rules.no": [
+    {
+      "type": 0,
+      "value": "لا"
+    }
+  ],
+  "web.catalog.rules.notEditable": [
+    {
+      "type": 0,
+      "value": "غير قابلة للتعديل هنا"
+    }
+  ],
+  "web.catalog.rules.notEditableLabel": [
+    {
+      "type": 0,
+      "value": "قاعدة غير قابلة للتعديل هنا"
+    }
+  ],
+  "web.catalog.rules.pickOne": [
+    {
+      "type": 0,
+      "value": "اختر واحدًا"
+    }
+  ],
+  "web.catalog.rules.pickValue": [
+    {
+      "type": 0,
+      "value": "اختر قيمة"
+    }
+  ],
+  "web.catalog.rules.rangeFrom": [
+    {
+      "type": 0,
+      "value": "من"
+    }
+  ],
+  "web.catalog.rules.rangeTo": [
+    {
+      "type": 0,
+      "value": "إلى"
+    }
+  ],
+  "web.catalog.rules.remove": [
+    {
+      "type": 0,
+      "value": "إزالة"
+    }
+  ],
+  "web.catalog.rules.removeRule": [
+    {
+      "type": 0,
+      "value": "إزالة القاعدة"
+    }
+  ],
+  "web.catalog.rules.unit": [
+    {
+      "type": 0,
+      "value": "الوحدة"
+    }
+  ],
+  "web.catalog.rules.unitDays": [
+    {
+      "type": 0,
+      "value": "أيام"
+    }
+  ],
+  "web.catalog.rules.unitMonths": [
+    {
+      "type": 0,
+      "value": "أشهر"
+    }
+  ],
+  "web.catalog.rules.unitWeeks": [
+    {
+      "type": 0,
+      "value": "أسابيع"
+    }
+  ],
+  "web.catalog.rules.unitYears": [
+    {
+      "type": 0,
+      "value": "سنوات"
+    }
+  ],
+  "web.catalog.rules.value": [
+    {
+      "type": 0,
+      "value": "القيمة"
+    }
+  ],
+  "web.catalog.rules.yes": [
+    {
+      "type": 0,
+      "value": "نعم"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -2218,10 +2378,326 @@
       "value": "مزيد من الإجراءات"
     }
   ],
+  "web.collections.addToCollection.added": [
+    {
+      "type": 0,
+      "value": "تمت الإضافة"
+    }
+  ],
+  "web.collections.addToCollection.createAndAdd": [
+    {
+      "type": 0,
+      "value": "إنشاء وإضافة"
+    }
+  ],
+  "web.collections.addToCollection.createFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إنشاء المجموعة"
+    }
+  ],
+  "web.collections.addToCollection.find": [
+    {
+      "type": 0,
+      "value": "ابحث في مجموعاتك"
+    }
+  ],
+  "web.collections.addToCollection.firstHelp": [
+    {
+      "type": 0,
+      "value": "سمِّها وسيُضاف "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " إليها مباشرةً. يمكنك إضافة المزيد من العناوين وتغيير الترتيب لاحقًا."
+    }
+  ],
+  "web.collections.addToCollection.firstTitle": [
+    {
+      "type": 0,
+      "value": "ابدأ مجموعتك الأولى"
+    }
+  ],
+  "web.collections.addToCollection.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل مجموعاتك"
+    }
+  ],
+  "web.collections.addToCollection.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل المجموعات…"
+    }
+  ],
+  "web.collections.addToCollection.namePlaceholder": [
+    {
+      "type": 0,
+      "value": "مثلًا: ليلة Ghibli"
+    }
+  ],
+  "web.collections.addToCollection.newManual": [
+    {
+      "type": 0,
+      "value": "مجموعة يدوية جديدة"
+    }
+  ],
+  "web.collections.addToCollection.noMatches": [
+    {
+      "type": 0,
+      "value": "لا توجد مجموعات تطابق «"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "»."
+    }
+  ],
+  "web.collections.addToCollection.removed": [
+    {
+      "type": 0,
+      "value": "تمت الإزالة"
+    }
+  ],
+  "web.collections.admin.editCollection": [
+    {
+      "type": 0,
+      "value": "تعديل المجموعة"
+    }
+  ],
+  "web.collections.builder.facetPlaceholder": [
+    {
+      "type": 5,
+      "value": "facet",
+      "options": {
+        "genre": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اختر نوعًا"
+            }
+          ]
+        },
+        "studio": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اختر استوديو"
+            }
+          ]
+        },
+        "network": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اختر شبكة"
+            }
+          ]
+        },
+        "country": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اختر دولة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اختر تصنيفًا عمريًا"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.builder.fieldActor": [
+    {
+      "type": 0,
+      "value": "الممثل"
+    }
+  ],
+  "web.collections.builder.fieldAdded": [
+    {
+      "type": 0,
+      "value": "تاريخ الإضافة"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
       "value": "لغة الصوت"
+    }
+  ],
+  "web.collections.builder.fieldBitrate": [
+    {
+      "type": 0,
+      "value": "معدل البت"
+    }
+  ],
+  "web.collections.builder.fieldContentRating": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري"
+    }
+  ],
+  "web.collections.builder.fieldCountry": [
+    {
+      "type": 0,
+      "value": "الدولة"
+    }
+  ],
+  "web.collections.builder.fieldDecade": [
+    {
+      "type": 0,
+      "value": "العقد"
+    }
+  ],
+  "web.collections.builder.fieldDirector": [
+    {
+      "type": 0,
+      "value": "المخرج"
+    }
+  ],
+  "web.collections.builder.fieldDolbyVision": [
+    {
+      "type": 0,
+      "value": "Dolby Vision"
+    }
+  ],
+  "web.collections.builder.fieldFavorited": [
+    {
+      "type": 0,
+      "value": "في المفضلة"
+    }
+  ],
+  "web.collections.builder.fieldGenre": [
+    {
+      "type": 0,
+      "value": "النوع"
+    }
+  ],
+  "web.collections.builder.fieldHdr": [
+    {
+      "type": 0,
+      "value": "HDR"
+    }
+  ],
+  "web.collections.builder.fieldInProgress": [
+    {
+      "type": 0,
+      "value": "قيد المشاهدة"
+    }
+  ],
+  "web.collections.builder.fieldInWatchlist": [
+    {
+      "type": 0,
+      "value": "في قائمة المشاهدة"
+    }
+  ],
+  "web.collections.builder.fieldLastAirDate": [
+    {
+      "type": 0,
+      "value": "تاريخ عرض أحدث حلقة"
+    }
+  ],
+  "web.collections.builder.fieldLastWatched": [
+    {
+      "type": 0,
+      "value": "آخر مشاهدة"
+    }
+  ],
+  "web.collections.builder.fieldLatestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "تاريخ إضافة أحدث حلقة"
+    }
+  ],
+  "web.collections.builder.fieldNetwork": [
+    {
+      "type": 0,
+      "value": "الشبكة"
+    }
+  ],
+  "web.collections.builder.fieldOriginalLanguage": [
+    {
+      "type": 0,
+      "value": "اللغة الأصلية"
+    }
+  ],
+  "web.collections.builder.fieldProducer": [
+    {
+      "type": 0,
+      "value": "المنتج"
+    }
+  ],
+  "web.collections.builder.fieldRatingImdb": [
+    {
+      "type": 0,
+      "value": "تقييم IMDb"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtAudience": [
+    {
+      "type": 0,
+      "value": "تقييم جمهور RT"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtCritic": [
+    {
+      "type": 0,
+      "value": "تقييم نقاد RT"
+    }
+  ],
+  "web.collections.builder.fieldRatingTmdb": [
+    {
+      "type": 0,
+      "value": "تقييم TMDB"
+    }
+  ],
+  "web.collections.builder.fieldReleaseDate": [
+    {
+      "type": 0,
+      "value": "تاريخ الإصدار"
+    }
+  ],
+  "web.collections.builder.fieldResolution": [
+    {
+      "type": 0,
+      "value": "الدقة"
+    }
+  ],
+  "web.collections.builder.fieldRuntime": [
+    {
+      "type": 0,
+      "value": "المدة"
+    }
+  ],
+  "web.collections.builder.fieldShowTitle": [
+    {
+      "type": 0,
+      "value": "اسم المسلسل"
+    }
+  ],
+  "web.collections.builder.fieldStatus": [
+    {
+      "type": 0,
+      "value": "الحالة"
+    }
+  ],
+  "web.collections.builder.fieldStudio": [
+    {
+      "type": 0,
+      "value": "الاستوديو"
     }
   ],
   "web.collections.builder.fieldSubtitleLanguage": [
@@ -2230,10 +2706,1790 @@
       "value": "لغة الترجمة"
     }
   ],
+  "web.collections.builder.fieldTitle": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "web.collections.builder.fieldType": [
+    {
+      "type": 0,
+      "value": "نوع المحتوى"
+    }
+  ],
+  "web.collections.builder.fieldWatched": [
+    {
+      "type": 0,
+      "value": "تمت المشاهدة"
+    }
+  ],
+  "web.collections.builder.fieldWriter": [
+    {
+      "type": 0,
+      "value": "الكاتب"
+    }
+  ],
+  "web.collections.builder.fieldYear": [
+    {
+      "type": 0,
+      "value": "السنة"
+    }
+  ],
+  "web.collections.builder.groupFile": [
+    {
+      "type": 0,
+      "value": "الملف"
+    }
+  ],
+  "web.collections.builder.groupLibrary": [
+    {
+      "type": 0,
+      "value": "المكتبة"
+    }
+  ],
+  "web.collections.builder.groupPeople": [
+    {
+      "type": 0,
+      "value": "الأشخاص"
+    }
+  ],
+  "web.collections.builder.groupTitle": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "web.collections.builder.groupYou": [
+    {
+      "type": 0,
+      "value": "أنت"
+    }
+  ],
+  "web.collections.builder.opAbove": [
+    {
+      "type": 0,
+      "value": "أكبر من"
+    }
+  ],
+  "web.collections.builder.opAfter": [
+    {
+      "type": 0,
+      "value": "بعد"
+    }
+  ],
+  "web.collections.builder.opAtLeast": [
+    {
+      "type": 0,
+      "value": "لا يقل عن"
+    }
+  ],
+  "web.collections.builder.opAtMost": [
+    {
+      "type": 0,
+      "value": "لا يزيد على"
+    }
+  ],
+  "web.collections.builder.opBefore": [
+    {
+      "type": 0,
+      "value": "قبل"
+    }
+  ],
+  "web.collections.builder.opBeginsWith": [
+    {
+      "type": 0,
+      "value": "يبدأ بالنص"
+    }
+  ],
+  "web.collections.builder.opBelow": [
+    {
+      "type": 0,
+      "value": "أقل من"
+    }
+  ],
+  "web.collections.builder.opBetween": [
+    {
+      "type": 0,
+      "value": "بين"
+    }
+  ],
+  "web.collections.builder.opContains": [
+    {
+      "type": 0,
+      "value": "يحتوي على"
+    }
+  ],
+  "web.collections.builder.opEndsWith": [
+    {
+      "type": 0,
+      "value": "ينتهي بالنص"
+    }
+  ],
+  "web.collections.builder.opInLast": [
+    {
+      "type": 0,
+      "value": "خلال آخر"
+    }
+  ],
+  "web.collections.builder.opIs": [
+    {
+      "type": 0,
+      "value": "هو"
+    }
+  ],
+  "web.collections.builder.opIsNot": [
+    {
+      "type": 0,
+      "value": "ليس"
+    }
+  ],
+  "web.collections.builder.opNotContains": [
+    {
+      "type": 0,
+      "value": "لا يحتوي على"
+    }
+  ],
+  "web.collections.builder.opNotInLast": [
+    {
+      "type": 0,
+      "value": "ليس خلال آخر"
+    }
+  ],
+  "web.collections.builder.statusMatched": [
+    {
+      "type": 0,
+      "value": "مطابق"
+    }
+  ],
+  "web.collections.builder.statusPending": [
+    {
+      "type": 0,
+      "value": "قيد الانتظار"
+    }
+  ],
+  "web.collections.builder.statusUnmatched": [
+    {
+      "type": 0,
+      "value": "غير مطابق"
+    }
+  ],
+  "web.collections.builder.typeMovies": [
+    {
+      "type": 0,
+      "value": "أفلام"
+    }
+  ],
+  "web.collections.builder.typeShows": [
+    {
+      "type": 0,
+      "value": "مسلسلات"
+    }
+  ],
+  "web.collections.builder.unitKbps": [
+    {
+      "type": 0,
+      "value": "kbps"
+    }
+  ],
+  "web.collections.builder.unitMinutes": [
+    {
+      "type": 0,
+      "value": "د"
+    }
+  ],
+  "web.collections.copy.addToCollectionFootnote": [
+    {
+      "type": 0,
+      "value": "المجموعات اليدوية وحدها تقبل إضافة العناوين يدويًا. يُحفظ التحديد فورًا."
+    }
+  ],
+  "web.collections.copy.allMyLibraries": [
+    {
+      "type": 0,
+      "value": "كل مكتباتي"
+    }
+  ],
+  "web.collections.copy.allMyLibrariesInSentence": [
+    {
+      "type": 0,
+      "value": "كل مكتباتي"
+    }
+  ],
+  "web.collections.copy.allYourLibraries": [
+    {
+      "type": 0,
+      "value": "كل مكتباتك"
+    }
+  ],
+  "web.collections.copy.cantBeUndone": [
+    {
+      "type": 0,
+      "value": "لا يمكن التراجع عن هذا."
+    }
+  ],
+  "web.collections.copy.conflictTitle": [
+    {
+      "type": 0,
+      "value": "تغيّرت هذه المجموعة منذ فتحتها."
+    }
+  ],
+  "web.collections.copy.createdButNotAdded": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة عنوانين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تم الإنشاء، لكن تعذّرت إضافة "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.fieldDescription": [
+    {
+      "type": 0,
+      "value": "الوصف"
+    }
+  ],
+  "web.collections.copy.fieldLibraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.collections.copy.fieldLimit": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى للعناوين"
+    }
+  ],
+  "web.collections.copy.fieldName": [
+    {
+      "type": 0,
+      "value": "الاسم"
+    }
+  ],
+  "web.collections.copy.fieldOrder": [
+    {
+      "type": 0,
+      "value": "الترتيب"
+    }
+  ],
+  "web.collections.copy.fieldRules": [
+    {
+      "type": 0,
+      "value": "القواعد"
+    }
+  ],
+  "web.collections.copy.fieldShowOnly": [
+    {
+      "type": 0,
+      "value": "العرض فقط"
+    }
+  ],
+  "web.collections.copy.goodForManualPersonal": [
+    {
+      "type": 0,
+      "value": "أفضل أعمال مخرج، ليلة أفلام، ترتيب مشاهدة."
+    }
+  ],
+  "web.collections.copy.goodForSmart": [
+    {
+      "type": 0,
+      "value": "أفلام كوميدية من التسعينيات، 4K غير مُشاهَد، أفلام عيد الميلاد."
+    }
+  ],
+  "web.collections.copy.inCollections": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "=0": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ليس في أي مجموعة بعد"
+            }
+          ]
+        },
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مجموعة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مجموعة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في مجموعتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مجموعات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مجموعةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "في "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مجموعة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.inThisCollection": [
+    {
+      "type": 0,
+      "value": "في هذه المجموعة"
+    }
+  ],
+  "web.collections.copy.kindSentenceManual": [
+    {
+      "type": 0,
+      "value": "تختار العناوين بنفسك وترتّبها."
+    }
+  ],
+  "web.collections.copy.kindSentenceSmart": [
+    {
+      "type": 0,
+      "value": "عناوين تطابق قواعدك. تمتلئ تلقائيًا وتواكب العناوين المضافة."
+    }
+  ],
+  "web.collections.copy.lookPoster": [
+    {
+      "type": 5,
+      "value": "state",
+      "options": {
+        "awaitingCollage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملصق: صورة مجمّعة بعد أن تحصل عناوينها على ملصقات"
+            }
+          ]
+        },
+        "collage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملصق: صورة مجمّعة من عناوينها"
+            }
+          ]
+        },
+        "new": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملصق: صورة جديدة"
+            }
+          ]
+        },
+        "saved": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملصق: صورة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملصق: لا شيء"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.copy.madeButNotAdded": [
+    {
+      "type": 0,
+      "value": "تم إنشاء "
+    },
+    {
+      "type": 1,
+      "value": "collection"
+    },
+    {
+      "type": 0,
+      "value": "، لكن تعذّرت إضافة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.manualTitleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · عنوانان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يدوية · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.nameItThenCreate": [
+    {
+      "type": 0,
+      "value": "سمّها، ثم أنشئها."
+    }
+  ],
+  "web.collections.copy.newCollection": [
+    {
+      "type": 0,
+      "value": "مجموعة جديدة"
+    }
+  ],
+  "web.collections.copy.newCollectionHelpPersonal": [
+    {
+      "type": 0,
+      "value": "ما الذي يحدّد محتواها؟ أنت وحدك من يمكنه تغييرها. بعد ذلك ستسمّيها وتملؤها وتختار من يراها."
+    }
+  ],
+  "web.collections.copy.newCollectionNext": [
+    {
+      "type": 0,
+      "value": "التالي: سمّها واملأها، في صفحتها الخاصة."
+    }
+  ],
+  "web.collections.copy.noLimit": [
+    {
+      "type": 0,
+      "value": "بلا حد"
+    }
+  ],
+  "web.collections.copy.noPoster": [
+    {
+      "type": 0,
+      "value": "بلا ملصق"
+    }
+  ],
+  "web.collections.copy.notCreatedYet": [
+    {
+      "type": 0,
+      "value": "لم تُنشأ بعد"
+    }
+  ],
+  "web.collections.copy.notSaved": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": ": غير محفوظ"
+    }
+  ],
+  "web.collections.copy.orderHelp": [
+    {
+      "type": 0,
+      "value": "الملف الشخصي الذي يختار فرزه الخاص أثناء التصفح يحتفظ بذلك الاختيار."
+    }
+  ],
+  "web.collections.copy.personalDeleteDescriptionShared": [
+    {
+      "type": 0,
+      "value": "ستُزال لك ولكل ملف شخصي تشاركها معه. لا يمكن التراجع عن ذلك."
+    }
+  ],
+  "web.collections.copy.personalRulesNote": [
+    {
+      "type": 0,
+      "value": "«كل مكتباتي» يتبع المكتبات التي يراها هذا الملف الشخصي. القواعد المتعلقة بك، مثل «تمت المشاهدة»، متاحة هنا فقط."
+    }
+  ],
+  "web.collections.copy.personalTabHelp": [
+    {
+      "type": 0,
+      "value": "لك ولكل من تشاركها معه"
+    }
+  ],
+  "web.collections.copy.posterAwaitsCollage": [
+    {
+      "type": 0,
+      "value": "صورة مجمّعة بعد أن تحصل عناوينها على ملصقات"
+    }
+  ],
+  "web.collections.copy.posterIsCollage": [
+    {
+      "type": 0,
+      "value": "صورة مجمّعة من عناوينها"
+    }
+  ],
+  "web.collections.copy.previewEmpty": [
+    {
+      "type": 0,
+      "value": "لا توجد عناوين مطابقة بعد"
+    }
+  ],
+  "web.collections.copy.previewEmptyHelp": [
+    {
+      "type": 0,
+      "value": "لا يزال بإمكانك الحفظ. العناوين التي تطابق لاحقًا تنضم تلقائيًا."
+    }
+  ],
+  "web.collections.copy.previewFailed": [
+    {
+      "type": 0,
+      "value": "لم تُحمَّل المعاينة. لا يزال بإمكانك الحفظ."
+    }
+  ],
+  "web.collections.copy.previewLive": [
+    {
+      "type": 0,
+      "value": "معاينة مباشرة"
+    }
+  ],
+  "web.collections.copy.previewMatches": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عنوان مطابق"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عنوان مطابق"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عنوانان مطابقان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عناوين مطابقة"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا مطابقًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " عنوان مطابق"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.removedTitle": [
+    {
+      "type": 0,
+      "value": "تمت إزالة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.rulesCaption": [
+    {
+      "type": 0,
+      "value": "العناوين المطابقة موجودة في المجموعة. تنضم المطابقات الجديدة تلقائيًا."
+    }
+  ],
+  "web.collections.copy.saveFailedWithError": [
+    {
+      "type": 0,
+      "value": "تعذّر الحفظ · "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.collections.copy.showOnTabLabel": [
+    {
+      "type": 0,
+      "value": "العرض في علامة تبويب المجموعات"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesHelp": [
+    {
+      "type": 0,
+      "value": "يراها كل ملف شخصي في هذا الحساب، باستثناء العناوين التي لا يمكنه الوصول إليها. لا يمكن لأي شخص آخر على الخادم رؤيتها."
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesLabel": [
+    {
+      "type": 0,
+      "value": "العرض للملفات الشخصية الأخرى"
+    }
+  ],
+  "web.collections.copy.slotPoster": [
+    {
+      "type": 0,
+      "value": "الملصق"
+    }
+  ],
+  "web.collections.copy.smartCreateHint": [
+    {
+      "type": 1,
+      "value": "matches"
+    },
+    {
+      "type": 0,
+      "value": " الآن. تنضم العناوين الجديدة تلقائيًا."
+    }
+  ],
+  "web.collections.copy.smartCreateHintNone": [
+    {
+      "type": 0,
+      "value": "لا توجد عناوين مطابقة بعد. تنضم العناوين التي تطابق لاحقًا تلقائيًا."
+    }
+  ],
+  "web.collections.copy.smartUpdatesItself": [
+    {
+      "type": 0,
+      "value": "تتحدّث تلقائيًا مع إضافة العناوين"
+    }
+  ],
+  "web.collections.copy.storedSortLine": [
+    {
+      "type": 0,
+      "value": "يتقدّم الفرز الافتراضي المحفوظ، "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": "، على إعداد «الترتيب» هذا."
+    }
+  ],
+  "web.collections.copy.titlesAlreadySaved": [
+    {
+      "type": 0,
+      "value": "العناوين محفوظة بالفعل."
+    }
+  ],
+  "web.collections.copy.titlesCaptionCreate": [
+    {
+      "type": 0,
+      "value": "اختر العناوين الآن. تُضاف عند الضغط على «إنشاء المجموعة»."
+    }
+  ],
+  "web.collections.copy.titlesCaptionPersonal": [
+    {
+      "type": 0,
+      "value": "بالترتيب الذي تراها به. تُحفظ العناوين عند إضافتها أو إزالتها أو سحبها."
+    }
+  ],
+  "web.collections.copy.titlesEmpty": [
+    {
+      "type": 0,
+      "value": "لا عناوين بعد. ابحث أعلاه لإضافة أول عنوان."
+    }
+  ],
+  "web.collections.copy.titlesReadyToAdd": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان جاهز للإضافة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان جاهز للإضافة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "عنوانان جاهزان للإضافة"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عناوين جاهزة للإضافة"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا جاهزًا للإضافة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " عنوان جاهز للإضافة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.titlesSaved": [
+    {
+      "type": 0,
+      "value": "تم الحفظ"
+    }
+  ],
+  "web.collections.copy.unshareConsequence": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشأوها منها."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشأها منها."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشآها منها."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشأوها منها."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشأوها منها."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "يفقدها "
+            },
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "، بما في ذلك الصفوف التي أنشأوها منها."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.unshareConsequenceOthers": [
+    {
+      "type": 0,
+      "value": "تفقدها الملفات الشخصية الأخرى، بما في ذلك الصفوف التي أنشأتها منها."
+    }
+  ],
+  "web.collections.copy.unshareWarning": [
+    {
+      "type": 0,
+      "value": "عند الحفظ، "
+    },
+    {
+      "type": 1,
+      "value": "consequence"
+    }
+  ],
   "web.collections.deleteDialog.delete": [
     {
       "type": 0,
       "value": "حذف"
+    }
+  ],
+  "web.collections.details.content": [
+    {
+      "type": 0,
+      "value": "المحتوى"
+    }
+  ],
+  "web.collections.details.descriptionLabel": [
+    {
+      "type": 1,
+      "value": "field"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "muted",
+      "children": [
+        {
+          "type": 0,
+          "value": "اختياري"
+        }
+      ]
+    }
+  ],
+  "web.collections.details.label": [
+    {
+      "type": 0,
+      "value": "الاسم والوصف"
+    }
+  ],
+  "web.collections.details.showOnlyHelp": [
+    {
+      "type": 0,
+      "value": "يخفي العناوين أثناء التصفح، مثل التي أنهيت مشاهدتها. لا يُحذف أي شيء."
+    }
+  ],
+  "web.collections.details.watchState": [
+    {
+      "type": 0,
+      "value": "حالة المشاهدة"
+    }
+  ],
+  "web.collections.displayFilters.media.all": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.collections.displayFilters.media.movie": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.collections.displayFilters.media.series": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.collections.displayFilters.watch.all": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.collections.displayFilters.watch.unwatched": [
+    {
+      "type": 0,
+      "value": "لم تتم مشاهدته"
+    }
+  ],
+  "web.collections.displayFilters.watch.watched": [
+    {
+      "type": 0,
+      "value": "تمت مشاهدته"
+    }
+  ],
+  "web.collections.editor.backToCollections": [
+    {
+      "type": 0,
+      "value": "المجموعات"
+    }
+  ],
+  "web.collections.editor.conflictFields": [
+    {
+      "type": 0,
+      "value": "تغيّر "
+    },
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": " في كلا المكانين."
+    }
+  ],
+  "web.collections.editor.conflictSaveAgain": [
+    {
+      "type": 0,
+      "value": "احفظ مرة أخرى للاحتفاظ بتغييراتك."
+    }
+  ],
+  "web.collections.editor.createCollection": [
+    {
+      "type": 0,
+      "value": "إنشاء مجموعة"
+    }
+  ],
+  "web.collections.editor.keepMine": [
+    {
+      "type": 0,
+      "value": "الاحتفاظ بقيمي"
+    }
+  ],
+  "web.collections.editor.rowLinkLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    }
+  ],
+  "web.collections.editor.rulesHeading": [
+    {
+      "type": 0,
+      "value": "القواعد"
+    }
+  ],
+  "web.collections.editor.useTheirs": [
+    {
+      "type": 0,
+      "value": "استخدام قيمهم"
+    }
+  ],
+  "web.collections.editorHeader.open": [
+    {
+      "type": 0,
+      "value": "فتح"
+    }
+  ],
+  "web.collections.editorPage.allCollections": [
+    {
+      "type": 0,
+      "value": "كل المجموعات"
+    }
+  ],
+  "web.collections.editorPage.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل هذه المجموعة"
+    }
+  ],
+  "web.collections.editorPage.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل محرر المجموعة…"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonal": [
+    {
+      "type": 0,
+      "value": "هذه المجموعة غير متاحة"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonalHelp": [
+    {
+      "type": 0,
+      "value": "ربما حُذفت، أو ربما لا تملك صلاحية الوصول إليها."
+    }
+  ],
+  "web.collections.fields.artworkPreview": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "معاينة الملصق"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "معاينة صورة الخلفية"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkRemovedOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ستتم إزالة الملصق عند الحفظ. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "تراجع"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ستتم إزالة صورة الخلفية عند الحفظ. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "تراجع"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSaveFailed": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تعذّر حفظ الملصق. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تعذّر حفظ صورة الخلفية. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSavesOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "سيُحفظ الملصق الجديد عند الضغط على «حفظ». "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "تراجع"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ستُحفظ صورة الخلفية الجديدة عند الضغط على «حفظ». "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "تراجع"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.changeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تغيير الملصق"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تغيير صورة الخلفية"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.clear": [
+    {
+      "type": 0,
+      "value": "مسح"
+    }
+  ],
+  "web.collections.fields.clearStoredSort": [
+    {
+      "type": 0,
+      "value": "مسح الفرز الافتراضي المحفوظ، "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.collections.fields.collage": [
+    {
+      "type": 0,
+      "value": "صورة مجمّعة"
+    }
+  ],
+  "web.collections.fields.direction": [
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أ–ي"
+            }
+          ]
+        },
+        "za": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ي–أ"
+            }
+          ]
+        },
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأحدث أولًا"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأقدم أولًا"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأعلى أولًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأدنى أولًا"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.directionLabel": [
+    {
+      "type": 0,
+      "value": "الاتجاه"
+    }
+  ],
+  "web.collections.fields.imageLink": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رابط صورة الملصق"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رابط صورة الخلفية"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.maxTitlesSuffix": [
+    {
+      "type": 0,
+      "value": "عنوانًا كحد أقصى"
+    }
+  ],
+  "web.collections.fields.order": [
+    {
+      "type": 0,
+      "value": "الترتيب"
+    }
+  ],
+  "web.collections.fields.pasteALink": [
+    {
+      "type": 0,
+      "value": "لصق رابط…"
+    }
+  ],
+  "web.collections.fields.removeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "إزالة الملصق"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "إزالة صورة الخلفية"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortAlphabetical": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "أ–ي"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ي–أ"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortBy": [
+    {
+      "type": 0,
+      "value": "الفرز حسب"
+    }
+  ],
+  "web.collections.fields.sortWithDirection": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأحدث أولًا"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأقدم أولًا"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأعلى أولًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الأدنى أولًا"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.uploadImage": [
+    {
+      "type": 0,
+      "value": "رفع صورة…"
+    }
+  ],
+  "web.collections.fields.useLink": [
+    {
+      "type": 0,
+      "value": "استخدام الرابط"
+    }
+  ],
+  "web.collections.fields.useTheCollage": [
+    {
+      "type": 0,
+      "value": "استخدام الصورة المجمّعة"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -2330,6 +4586,398 @@
       "value": "مثال: 2025"
     }
   ],
+  "web.collections.list.syncFailed": [
+    {
+      "type": 0,
+      "value": "فشلت المزامنة"
+    }
+  ],
+  "web.collections.list.syncingNow": [
+    {
+      "type": 0,
+      "value": "جارٍ المزامنة الآن"
+    }
+  ],
+  "web.collections.look.change": [
+    {
+      "type": 0,
+      "value": "تغيير"
+    }
+  ],
+  "web.collections.look.heading": [
+    {
+      "type": 0,
+      "value": "المظهر"
+    }
+  ],
+  "web.collections.manual.add": [
+    {
+      "type": 0,
+      "value": "إضافة"
+    }
+  ],
+  "web.collections.manual.addFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إضافة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.addTitle": [
+    {
+      "type": 0,
+      "value": "إضافة عنوان"
+    }
+  ],
+  "web.collections.manual.heading": [
+    {
+      "type": 0,
+      "value": "العناوين"
+    }
+  ],
+  "web.collections.manual.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل العناوين."
+    }
+  ],
+  "web.collections.manual.moveTitle": [
+    {
+      "type": 0,
+      "value": "نقل "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.noMatches": [
+    {
+      "type": 0,
+      "value": "لا توجد عناوين مطابقة."
+    }
+  ],
+  "web.collections.manual.pagedNote": [
+    {
+      "type": 0,
+      "value": "يُعرض ما يصل إلى 200 عنوان. تتوفر إعادة الترتيب عندما تتسع المجموعة كاملة في صفحة واحدة."
+    }
+  ],
+  "web.collections.manual.reloadFromStart": [
+    {
+      "type": 0,
+      "value": "إعادة التحميل من البداية"
+    }
+  ],
+  "web.collections.manual.removeFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إزالة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.removeTitle": [
+    {
+      "type": 0,
+      "value": "إزالة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.restoreFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.saving": [
+    {
+      "type": 0,
+      "value": "جارٍ الحفظ…"
+    }
+  ],
+  "web.collections.manual.searchFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إجراء البحث."
+    }
+  ],
+  "web.collections.manual.searching": [
+    {
+      "type": 0,
+      "value": "جارٍ البحث…"
+    }
+  ],
+  "web.collections.manual.showAll": [
+    {
+      "type": 0,
+      "value": "عرض الكل ("
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.collections.manual.showFewer": [
+    {
+      "type": 0,
+      "value": "عرض أقل"
+    }
+  ],
+  "web.collections.manual.tryAgainSentence": [
+    {
+      "type": 0,
+      "value": "حاول مرة أخرى."
+    }
+  ],
+  "web.collections.manual.typeLabel": [
+    {
+      "type": 5,
+      "value": "type",
+      "options": {
+        "movie": {
+          "value": [
+            {
+              "type": 0,
+              "value": "فيلم"
+            }
+          ]
+        },
+        "series": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مسلسل"
+            }
+          ]
+        },
+        "season": {
+          "value": [
+            {
+              "type": 0,
+              "value": "موسم"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حلقة"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.manual.undo": [
+    {
+      "type": 0,
+      "value": "تراجع"
+    }
+  ],
+  "web.collections.metaLine.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوانان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عناوين"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوانًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " عنوان"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.newPicker.goodFor": [
+    {
+      "type": 0,
+      "value": "يناسب"
+    }
+  ],
+  "web.collections.page.filterAll": [
+    {
+      "type": 0,
+      "value": "الكل"
+    }
+  ],
+  "web.collections.page.filterLabel": [
+    {
+      "type": 0,
+      "value": "عرض"
+    }
+  ],
+  "web.collections.page.loadMore": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد"
+    }
+  ],
+  "web.collections.page.stopSharing": [
+    {
+      "type": 0,
+      "value": "إيقاف المشاركة"
+    }
+  ],
+  "web.collections.page.stopSharingTitle": [
+    {
+      "type": 0,
+      "value": "إيقاف مشاركة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "؟"
+    }
+  ],
+  "web.collections.page.subtitle": [
+    {
+      "type": 0,
+      "value": "مجموعاتك ومجموعات الخادم."
+    }
+  ],
+  "web.collections.page.subtitleShared": [
+    {
+      "type": 0,
+      "value": "مجموعاتك، والمجموعات التي تشاركها معك ملفات شخصية أخرى، ومجموعات الخادم."
+    }
+  ],
+  "web.collections.page.title": [
+    {
+      "type": 0,
+      "value": "المجموعات"
+    }
+  ],
+  "web.collections.page.wallMine": [
+    {
+      "type": 0,
+      "value": "مجموعاتك"
+    }
+  ],
+  "web.collections.page.wallServer": [
+    {
+      "type": 0,
+      "value": "مجموعات الخادم"
+    }
+  ],
+  "web.collections.page.wallShared": [
+    {
+      "type": 0,
+      "value": "تمت مشاركتها معي"
+    }
+  ],
   "web.collections.pageActions.deleteTitle": [
     {
       "type": 0,
@@ -2348,6 +4996,104 @@
     {
       "type": 0,
       "value": "تعديل"
+    }
+  ],
+  "web.collections.personalOwnership.anotherProfile": [
+    {
+      "type": 0,
+      "value": "ملف شخصي آخر"
+    }
+  ],
+  "web.collections.posterCard.byOwner": [
+    {
+      "type": 0,
+      "value": "بواسطة "
+    },
+    {
+      "type": 1,
+      "value": "owner"
+    }
+  ],
+  "web.collections.preview.matchingTitles": [
+    {
+      "type": 0,
+      "value": "العناوين المطابقة"
+    }
+  ],
+  "web.collections.preview.showing": [
+    {
+      "type": 0,
+      "value": "يُعرض "
+    },
+    {
+      "type": 1,
+      "value": "shown"
+    }
+  ],
+  "web.collections.scope.changedWhileEditing": [
+    {
+      "type": 0,
+      "value": "تغيّرت هذه المجموعة أثناء تعديلك لها. أعد تحميلها وراجع تغييراتك قبل الحفظ مرة أخرى."
+    }
+  ],
+  "web.collections.tags.shared": [
+    {
+      "type": 0,
+      "value": "مشتركة"
+    }
+  ],
+  "web.collections.toast.addFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت الإضافة إلى المجموعة"
+    }
+  ],
+  "web.collections.toast.notShared": [
+    {
+      "type": 0,
+      "value": "أصبحت مرئية لك وحدك الآن"
+    }
+  ],
+  "web.collections.toast.removeItemFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إزالة العنصر"
+    }
+  ],
+  "web.collections.toast.sharedWithProfiles": [
+    {
+      "type": 0,
+      "value": "أصبحت ظاهرة للملفات الشخصية الأخرى"
+    }
+  ],
+  "web.collections.toast.sharingFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تغيير المشاركة"
+    }
+  ],
+  "web.collections.types.kindManual": [
+    {
+      "type": 0,
+      "value": "يدوية"
+    }
+  ],
+  "web.collections.types.kindSmart": [
+    {
+      "type": 0,
+      "value": "ذكية"
+    }
+  ],
+  "web.collections.types.kindSynced": [
+    {
+      "type": 0,
+      "value": "قائمة متزامنة"
+    }
+  ],
+  "web.collections.whereItShows.heading": [
+    {
+      "type": 0,
+      "value": "أماكن الظهور"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -2550,6 +5296,12 @@
     {
       "type": 0,
       "value": "فشل الحذف"
+    }
+  ],
+  "web.common.toast.collections.deleted": [
+    {
+      "type": 0,
+      "value": "تم حذف المجموعة"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -3013,6 +5765,537 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.home.addRow.libraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.home.addRow.rules.addAndGroup": [
+    {
+      "type": 0,
+      "value": "إضافة مجموعة «و»"
+    }
+  ],
+  "web.home.addRow.rules.addOrGroup": [
+    {
+      "type": 0,
+      "value": "إضافة مجموعة «أو»"
+    }
+  ],
+  "web.home.addRow.rules.addRule": [
+    {
+      "type": 0,
+      "value": "إضافة قاعدة"
+    }
+  ],
+  "web.home.addRow.rules.groupMatchLabel": [
+    {
+      "type": 0,
+      "value": "طريقة الجمع بين قواعد المجموعة "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.addRow.rules.groupSentence": [
+    {
+      "type": 8,
+      "value": "join",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "العناوين التي تطابق"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "match",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "من هذه:"
+        }
+      ]
+    }
+  ],
+  "web.home.addRow.rules.howGroupsCombine": [
+    {
+      "type": 0,
+      "value": "طريقة الجمع بين المجموعات"
+    }
+  ],
+  "web.home.addRow.rules.howRulesCombine": [
+    {
+      "type": 0,
+      "value": "طريقة الجمع بين القواعد"
+    }
+  ],
+  "web.home.addRow.rules.joinAnd": [
+    {
+      "type": 0,
+      "value": "و"
+    }
+  ],
+  "web.home.addRow.rules.joinOr": [
+    {
+      "type": 0,
+      "value": "أو"
+    }
+  ],
+  "web.home.addRow.rules.kindOfTitles": [
+    {
+      "type": 0,
+      "value": "نوع العناوين"
+    }
+  ],
+  "web.home.addRow.rules.matchAll": [
+    {
+      "type": 0,
+      "value": "كلًّا"
+    }
+  ],
+  "web.home.addRow.rules.matchAny": [
+    {
+      "type": 0,
+      "value": "أيًّا"
+    }
+  ],
+  "web.home.addRow.rules.noRulesCollectionYet": [
+    {
+      "type": 0,
+      "value": "لا قواعد بعد. أضف قاعدة لاختيار العناوين التي تضمها."
+    }
+  ],
+  "web.home.addRow.rules.removeGroup": [
+    {
+      "type": 0,
+      "value": "إزالة المجموعة "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.addRow.rules.scopeAll": [
+    {
+      "type": 0,
+      "value": "كل العناوين"
+    }
+  ],
+  "web.home.addRow.rules.scopeAudiobook": [
+    {
+      "type": 0,
+      "value": "الكتب الصوتية"
+    }
+  ],
+  "web.home.addRow.rules.scopeEbook": [
+    {
+      "type": 0,
+      "value": "الكتب الإلكترونية"
+    }
+  ],
+  "web.home.addRow.rules.scopeEpisode": [
+    {
+      "type": 0,
+      "value": "الحلقات"
+    }
+  ],
+  "web.home.addRow.rules.scopeManga": [
+    {
+      "type": 0,
+      "value": "المانغا"
+    }
+  ],
+  "web.home.addRow.rules.scopeMovie": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.home.addRow.rules.scopeSeries": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.home.addRow.rules.scopeVideo": [
+    {
+      "type": 0,
+      "value": "الأفلام والمسلسلات"
+    }
+  ],
+  "web.home.addRow.rules.sentenceAll": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "عرض"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "من"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "التي تطابق"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "من هذه:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentenceNamed": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "عرض"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "من "
+        },
+        {
+          "type": 6,
+          "value": "count",
+          "options": {
+            "zero": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبات"
+                }
+              ]
+            },
+            "one": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبة"
+                }
+              ]
+            },
+            "two": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبتي"
+                }
+              ]
+            },
+            "few": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبات"
+                }
+              ]
+            },
+            "many": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبات"
+                }
+              ]
+            },
+            "other": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "مكتبات"
+                }
+              ]
+            }
+          },
+          "offset": 0,
+          "pluralType": "cardinal"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "التي تطابق"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "من هذه:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentencePicked": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "عرض"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "من"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "التي تطابق"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "من هذه:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.whatCollectionShows": [
+    {
+      "type": 0,
+      "value": "ما تعرضه المجموعة"
+    }
+  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,
@@ -3211,6 +6494,18 @@
     {
       "type": 0,
       "value": "تمت المشاهدة"
+    }
+  ],
+  "web.item.images.tooLarge": [
+    {
+      "type": 0,
+      "value": "يجب ألا يتجاوز حجم الصورة 10 MiB"
+    }
+  ],
+  "web.item.images.wrongType": [
+    {
+      "type": 0,
+      "value": "اختر صورة بتنسيق JPEG أو PNG أو WebP"
     }
   ],
   "web.item.menu.addToFavorites": [
@@ -3757,6 +7052,234 @@
     {
       "type": 0,
       "value": "مؤقت النوم"
+    }
+  ],
+  "web.profiles.libraries.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "مكتبتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " مكتبة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.libraryFallback": [
+    {
+      "type": 0,
+      "value": "مكتبة"
+    }
+  ],
+  "web.profiles.librarySelect.more": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخرى"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخرى"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخريان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخرى"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخرى"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أخرى"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.pair": [
+    {
+      "type": 1,
+      "value": "first"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "second"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -8099,6 +11622,12 @@
       "value": "محتواك"
     }
   ],
+  "web.shell.unsavedChanges.description": [
+    {
+      "type": 0,
+      "value": "تحتوي هذه الصفحة على تعديلات لم تُحفظ. ستؤدي المغادرة الآن إلى فقدانها."
+    }
+  ],
   "web.shell.unsavedChanges.discard": [
     {
       "type": 0,
@@ -8115,6 +11644,12 @@
     {
       "type": 0,
       "value": "تعذّر بدء التشغيل العشوائي."
+    }
+  ],
+  "web.ui.personSearch.placeholder": [
+    {
+      "type": 0,
+      "value": "البحث عن أشخاص..."
     }
   ],
   "web.ui.saving": [

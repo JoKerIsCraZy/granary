@@ -17,22 +17,22 @@
         </Border>
 
         <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                      Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
+                      Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.addToCollection.loading')}" />
         <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="10">
-            <TextBlock Text="Couldn't load your collections" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
+            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.addToCollection.loadFailed')}" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
             <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
         </StackPanel>
 
         <!-- None yet: the first one, named here. -->
         <StackPanel Visibility="{x:Bind ViewModel.HasNoCollections, Mode=OneWay}" Spacing="6">
-            <TextBlock Text="Start your first collection" FontSize="15" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.addToCollection.firstTitle')}" FontSize="15" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                        Foreground="{StaticResource SiloForegroundBrush}" />
             <TextBlock Text="{x:Bind ViewModel.FirstCollectionText, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
         </StackPanel>
 
         <StackPanel Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" Spacing="8">
-            <TextBox Text="{x:Bind ViewModel.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Find one of your collections"
-                     AutomationProperties.Name="Find one of your collections" CornerRadius="8" />
+            <TextBox Text="{x:Bind ViewModel.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{x:Bind t:AppText.Get('web.collections.addToCollection.find')}"
+                     AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.addToCollection.find')}" CornerRadius="8" />
             <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shown}">
                     <ItemsRepeater.Layout>
@@ -60,7 +60,7 @@
                                         <TextBlock Text="{x:Bind Flash, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                                                    Visibility="{x:Bind HasFlash, Mode=OneWay}" />
                                         <Border Background="#1FFFFFFF" CornerRadius="8" Padding="7,1,7,2" Visibility="{x:Bind IsShared}">
-                                            <TextBlock Text="Shared" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.tags.shared')}" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
                                         </Border>
                                     </StackPanel>
                                 </Grid>
@@ -75,22 +75,22 @@
 
         <!-- A new manual collection with the title in it. -->
         <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
-            <TextBlock Text="New manual collection" FontSize="13" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.addToCollection.newManual')}" FontSize="13" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                        Foreground="{StaticResource SiloForegroundBrush}" />
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{x:Bind ViewModel.NewName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. Ghibli Night"
-                         AutomationProperties.Name="New manual collection" CornerRadius="8" />
-                <Button Grid.Column="1" Content="Create and add" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.CreateCommand}" />
+                <TextBox Text="{x:Bind ViewModel.NewName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{x:Bind t:AppText.Get('web.collections.addToCollection.namePlaceholder')}"
+                         AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.addToCollection.newManual')}" CornerRadius="8" />
+                <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('web.collections.addToCollection.createAndAdd')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.CreateCommand}" />
             </Grid>
         </StackPanel>
 
         <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" FontSize="13" TextWrapping="Wrap"
                    Foreground="{StaticResource SiloDestructiveBrush}" />
-        <TextBlock Text="Only manual collections take titles by hand. Ticking saves right away." FontSize="12" TextWrapping="Wrap"
+        <TextBlock Text="{x:Bind t:AppText.Get('web.collections.copy.addToCollectionFootnote')}" FontSize="12" TextWrapping="Wrap"
                    Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" />
         <TextBlock Text="{x:Bind ViewModel.FooterText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                    Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" />

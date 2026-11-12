@@ -261,7 +261,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   description not saved · Titles are already saved." with Discard and Save. Titles save as they change; the rest at
   the version it was read at, merged when it changed elsewhere, with Use theirs / Keep mine for a field changed in both
   places. Leaving with something not saved asks "Discard unsaved changes?". A Smart collection has Rules instead of
-  Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:", one line
+  Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:" (its boxes
+  where the language's sentence puts them; the libraries box names one library, two as "Movies, Kids", or more as
+  "Movies +2 more", as the web's library picker), one line
   per rule (field, condition, and a value control that fits: text, number with its unit, a range, Yes/No, a list, a
   facet or person with suggestions, a date or "in the last 30 days"), later groups joined by "and" or "or", Add rule and
   Add an "or" group; a rule these controls can't show reads "Not editable here" and stays as saved until removed. Then
@@ -270,7 +272,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   still save."). Before Create the save bar says how many match now; the meta line adds "Updates itself as titles are
   added". Last comes Look, while the server takes artwork: closed, one line with the poster's thumbnail, "Poster: a
   collage of its titles" (an image, a new image, a collage once its titles have posters, none) and Change; open, the
-  112 px tile with its pencil menu (Upload image… for a JPEG, PNG or WebP of 10 MB at most, Paste a link… with the
+  112 px tile with its pencil menu (Upload image… for a JPEG, PNG or WebP of 10 MiB at most, Paste a link… with the
   "Poster image link" box, Use the collage or Remove poster), the caption, and "The new poster saves when you press
   Save." with Undo. The poster is part of the draft ("Poster not saved"); it saves after the collection, and one that
   fails stays with "Couldn't save the poster. …" and Retry while the card opens by itself. After a save without a

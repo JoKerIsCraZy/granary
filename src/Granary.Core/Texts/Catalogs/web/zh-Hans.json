@@ -5,10 +5,22 @@
       "value": "添加日期"
     }
   ],
+  "catalog.sort.author": [
+    {
+      "type": 0,
+      "value": "作者"
+    }
+  ],
   "catalog.sort.imdbRating": [
     {
       "type": 0,
       "value": "IMDb评分"
+    }
+  ],
+  "catalog.sort.narrator": [
+    {
+      "type": 0,
+      "value": "朗读者"
     }
   ],
   "catalog.sort.released": [
@@ -21,6 +33,12 @@
     {
       "type": 0,
       "value": "分辨率"
+    }
+  ],
+  "catalog.sort.series": [
+    {
+      "type": 0,
+      "value": "系列"
     }
   ],
   "catalog.sort.title": [
@@ -855,6 +873,16 @@
     {
       "type": 0,
       "value": "这里没有可播放的内容。"
+    }
+  ],
+  "web.admin.homeRows.restore.libraryFallback": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    },
+    {
+      "type": 1,
+      "value": "id"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -1832,6 +1860,138 @@
       "value": "你保存以便稍后观看的内容。"
     }
   ],
+  "web.catalog.rules.amount": [
+    {
+      "type": 0,
+      "value": "数量"
+    }
+  ],
+  "web.catalog.rules.condition": [
+    {
+      "type": 0,
+      "value": "条件"
+    }
+  ],
+  "web.catalog.rules.field": [
+    {
+      "type": 0,
+      "value": "字段"
+    }
+  ],
+  "web.catalog.rules.fieldEpisodeTitle": [
+    {
+      "type": 0,
+      "value": "集标题"
+    }
+  ],
+  "web.catalog.rules.fieldLastRead": [
+    {
+      "type": 0,
+      "value": "上次阅读"
+    }
+  ],
+  "web.catalog.rules.fieldRead": [
+    {
+      "type": 0,
+      "value": "已读"
+    }
+  ],
+  "web.catalog.rules.no": [
+    {
+      "type": 0,
+      "value": "否"
+    }
+  ],
+  "web.catalog.rules.notEditable": [
+    {
+      "type": 0,
+      "value": "无法在此编辑"
+    }
+  ],
+  "web.catalog.rules.notEditableLabel": [
+    {
+      "type": 0,
+      "value": "无法在此编辑的规则"
+    }
+  ],
+  "web.catalog.rules.pickOne": [
+    {
+      "type": 0,
+      "value": "选择一项"
+    }
+  ],
+  "web.catalog.rules.pickValue": [
+    {
+      "type": 0,
+      "value": "选择值"
+    }
+  ],
+  "web.catalog.rules.rangeFrom": [
+    {
+      "type": 0,
+      "value": "从"
+    }
+  ],
+  "web.catalog.rules.rangeTo": [
+    {
+      "type": 0,
+      "value": "到"
+    }
+  ],
+  "web.catalog.rules.remove": [
+    {
+      "type": 0,
+      "value": "移除"
+    }
+  ],
+  "web.catalog.rules.removeRule": [
+    {
+      "type": 0,
+      "value": "移除规则"
+    }
+  ],
+  "web.catalog.rules.unit": [
+    {
+      "type": 0,
+      "value": "单位"
+    }
+  ],
+  "web.catalog.rules.unitDays": [
+    {
+      "type": 0,
+      "value": "天"
+    }
+  ],
+  "web.catalog.rules.unitMonths": [
+    {
+      "type": 0,
+      "value": "个月"
+    }
+  ],
+  "web.catalog.rules.unitWeeks": [
+    {
+      "type": 0,
+      "value": "周"
+    }
+  ],
+  "web.catalog.rules.unitYears": [
+    {
+      "type": 0,
+      "value": "年"
+    }
+  ],
+  "web.catalog.rules.value": [
+    {
+      "type": 0,
+      "value": "值"
+    }
+  ],
+  "web.catalog.rules.yes": [
+    {
+      "type": 0,
+      "value": "是"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1880,10 +2040,326 @@
       "value": "更多操作"
     }
   ],
+  "web.collections.addToCollection.added": [
+    {
+      "type": 0,
+      "value": "已添加"
+    }
+  ],
+  "web.collections.addToCollection.createAndAdd": [
+    {
+      "type": 0,
+      "value": "创建并添加"
+    }
+  ],
+  "web.collections.addToCollection.createFailed": [
+    {
+      "type": 0,
+      "value": "无法创建合集"
+    }
+  ],
+  "web.collections.addToCollection.find": [
+    {
+      "type": 0,
+      "value": "查找你的合集"
+    }
+  ],
+  "web.collections.addToCollection.firstHelp": [
+    {
+      "type": 0,
+      "value": "取个名字，"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "就会直接加入。你之后可以添加更多影片并调整顺序。"
+    }
+  ],
+  "web.collections.addToCollection.firstTitle": [
+    {
+      "type": 0,
+      "value": "创建你的第一个合集"
+    }
+  ],
+  "web.collections.addToCollection.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载你的合集"
+    }
+  ],
+  "web.collections.addToCollection.loading": [
+    {
+      "type": 0,
+      "value": "正在加载合集……"
+    }
+  ],
+  "web.collections.addToCollection.namePlaceholder": [
+    {
+      "type": 0,
+      "value": "例如：吉卜力之夜"
+    }
+  ],
+  "web.collections.addToCollection.newManual": [
+    {
+      "type": 0,
+      "value": "新建手动合集"
+    }
+  ],
+  "web.collections.addToCollection.noMatches": [
+    {
+      "type": 0,
+      "value": "没有与“"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "”匹配的合集。"
+    }
+  ],
+  "web.collections.addToCollection.removed": [
+    {
+      "type": 0,
+      "value": "已移除"
+    }
+  ],
+  "web.collections.admin.editCollection": [
+    {
+      "type": 0,
+      "value": "编辑合集"
+    }
+  ],
+  "web.collections.builder.facetPlaceholder": [
+    {
+      "type": 5,
+      "value": "facet",
+      "options": {
+        "genre": {
+          "value": [
+            {
+              "type": 0,
+              "value": "选择类型"
+            }
+          ]
+        },
+        "studio": {
+          "value": [
+            {
+              "type": 0,
+              "value": "选择制片公司"
+            }
+          ]
+        },
+        "network": {
+          "value": [
+            {
+              "type": 0,
+              "value": "选择电视网"
+            }
+          ]
+        },
+        "country": {
+          "value": [
+            {
+              "type": 0,
+              "value": "选择国家/地区"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "选择年龄分级"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.builder.fieldActor": [
+    {
+      "type": 0,
+      "value": "演员"
+    }
+  ],
+  "web.collections.builder.fieldAdded": [
+    {
+      "type": 0,
+      "value": "添加日期"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
       "value": "音频语言"
+    }
+  ],
+  "web.collections.builder.fieldBitrate": [
+    {
+      "type": 0,
+      "value": "比特率"
+    }
+  ],
+  "web.collections.builder.fieldContentRating": [
+    {
+      "type": 0,
+      "value": "年龄分级"
+    }
+  ],
+  "web.collections.builder.fieldCountry": [
+    {
+      "type": 0,
+      "value": "国家/地区"
+    }
+  ],
+  "web.collections.builder.fieldDecade": [
+    {
+      "type": 0,
+      "value": "年代"
+    }
+  ],
+  "web.collections.builder.fieldDirector": [
+    {
+      "type": 0,
+      "value": "导演"
+    }
+  ],
+  "web.collections.builder.fieldDolbyVision": [
+    {
+      "type": 0,
+      "value": "Dolby Vision"
+    }
+  ],
+  "web.collections.builder.fieldFavorited": [
+    {
+      "type": 0,
+      "value": "已收藏"
+    }
+  ],
+  "web.collections.builder.fieldGenre": [
+    {
+      "type": 0,
+      "value": "类型"
+    }
+  ],
+  "web.collections.builder.fieldHdr": [
+    {
+      "type": 0,
+      "value": "HDR"
+    }
+  ],
+  "web.collections.builder.fieldInProgress": [
+    {
+      "type": 0,
+      "value": "观看中"
+    }
+  ],
+  "web.collections.builder.fieldInWatchlist": [
+    {
+      "type": 0,
+      "value": "在待看清单中"
+    }
+  ],
+  "web.collections.builder.fieldLastAirDate": [
+    {
+      "type": 0,
+      "value": "最新一集播出日期"
+    }
+  ],
+  "web.collections.builder.fieldLastWatched": [
+    {
+      "type": 0,
+      "value": "上次观看"
+    }
+  ],
+  "web.collections.builder.fieldLatestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "最新一集添加日期"
+    }
+  ],
+  "web.collections.builder.fieldNetwork": [
+    {
+      "type": 0,
+      "value": "电视网"
+    }
+  ],
+  "web.collections.builder.fieldOriginalLanguage": [
+    {
+      "type": 0,
+      "value": "原始语言"
+    }
+  ],
+  "web.collections.builder.fieldProducer": [
+    {
+      "type": 0,
+      "value": "制片人"
+    }
+  ],
+  "web.collections.builder.fieldRatingImdb": [
+    {
+      "type": 0,
+      "value": "IMDb评分"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtAudience": [
+    {
+      "type": 0,
+      "value": "烂番茄观众评分"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtCritic": [
+    {
+      "type": 0,
+      "value": "烂番茄影评人评分"
+    }
+  ],
+  "web.collections.builder.fieldRatingTmdb": [
+    {
+      "type": 0,
+      "value": "TMDB评分"
+    }
+  ],
+  "web.collections.builder.fieldReleaseDate": [
+    {
+      "type": 0,
+      "value": "上映日期"
+    }
+  ],
+  "web.collections.builder.fieldResolution": [
+    {
+      "type": 0,
+      "value": "分辨率"
+    }
+  ],
+  "web.collections.builder.fieldRuntime": [
+    {
+      "type": 0,
+      "value": "时长"
+    }
+  ],
+  "web.collections.builder.fieldShowTitle": [
+    {
+      "type": 0,
+      "value": "剧集标题"
+    }
+  ],
+  "web.collections.builder.fieldStatus": [
+    {
+      "type": 0,
+      "value": "状态"
+    }
+  ],
+  "web.collections.builder.fieldStudio": [
+    {
+      "type": 0,
+      "value": "制片公司"
     }
   ],
   "web.collections.builder.fieldSubtitleLanguage": [
@@ -1892,10 +2368,1370 @@
       "value": "字幕语言"
     }
   ],
+  "web.collections.builder.fieldTitle": [
+    {
+      "type": 0,
+      "value": "标题"
+    }
+  ],
+  "web.collections.builder.fieldType": [
+    {
+      "type": 0,
+      "value": "类别"
+    }
+  ],
+  "web.collections.builder.fieldWatched": [
+    {
+      "type": 0,
+      "value": "已观看"
+    }
+  ],
+  "web.collections.builder.fieldWriter": [
+    {
+      "type": 0,
+      "value": "编剧"
+    }
+  ],
+  "web.collections.builder.fieldYear": [
+    {
+      "type": 0,
+      "value": "年份"
+    }
+  ],
+  "web.collections.builder.groupFile": [
+    {
+      "type": 0,
+      "value": "文件"
+    }
+  ],
+  "web.collections.builder.groupLibrary": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.collections.builder.groupPeople": [
+    {
+      "type": 0,
+      "value": "演职人员"
+    }
+  ],
+  "web.collections.builder.groupTitle": [
+    {
+      "type": 0,
+      "value": "作品"
+    }
+  ],
+  "web.collections.builder.groupYou": [
+    {
+      "type": 0,
+      "value": "你"
+    }
+  ],
+  "web.collections.builder.opAbove": [
+    {
+      "type": 0,
+      "value": "高于"
+    }
+  ],
+  "web.collections.builder.opAfter": [
+    {
+      "type": 0,
+      "value": "晚于"
+    }
+  ],
+  "web.collections.builder.opAtLeast": [
+    {
+      "type": 0,
+      "value": "不低于"
+    }
+  ],
+  "web.collections.builder.opAtMost": [
+    {
+      "type": 0,
+      "value": "不高于"
+    }
+  ],
+  "web.collections.builder.opBefore": [
+    {
+      "type": 0,
+      "value": "早于"
+    }
+  ],
+  "web.collections.builder.opBeginsWith": [
+    {
+      "type": 0,
+      "value": "开头是"
+    }
+  ],
+  "web.collections.builder.opBelow": [
+    {
+      "type": 0,
+      "value": "低于"
+    }
+  ],
+  "web.collections.builder.opBetween": [
+    {
+      "type": 0,
+      "value": "介于"
+    }
+  ],
+  "web.collections.builder.opContains": [
+    {
+      "type": 0,
+      "value": "包含"
+    }
+  ],
+  "web.collections.builder.opEndsWith": [
+    {
+      "type": 0,
+      "value": "结尾是"
+    }
+  ],
+  "web.collections.builder.opInLast": [
+    {
+      "type": 0,
+      "value": "在最近"
+    }
+  ],
+  "web.collections.builder.opIs": [
+    {
+      "type": 0,
+      "value": "是"
+    }
+  ],
+  "web.collections.builder.opIsNot": [
+    {
+      "type": 0,
+      "value": "不是"
+    }
+  ],
+  "web.collections.builder.opNotContains": [
+    {
+      "type": 0,
+      "value": "不包含"
+    }
+  ],
+  "web.collections.builder.opNotInLast": [
+    {
+      "type": 0,
+      "value": "不在最近"
+    }
+  ],
+  "web.collections.builder.statusMatched": [
+    {
+      "type": 0,
+      "value": "已匹配"
+    }
+  ],
+  "web.collections.builder.statusPending": [
+    {
+      "type": 0,
+      "value": "待匹配"
+    }
+  ],
+  "web.collections.builder.statusUnmatched": [
+    {
+      "type": 0,
+      "value": "未匹配"
+    }
+  ],
+  "web.collections.builder.typeMovies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.collections.builder.typeShows": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.collections.builder.unitKbps": [
+    {
+      "type": 0,
+      "value": "kbps"
+    }
+  ],
+  "web.collections.builder.unitMinutes": [
+    {
+      "type": 0,
+      "value": "分钟"
+    }
+  ],
+  "web.collections.copy.addToCollectionFootnote": [
+    {
+      "type": 0,
+      "value": "只有手动合集可以手动添加作品。勾选后立即保存。"
+    }
+  ],
+  "web.collections.copy.allMyLibraries": [
+    {
+      "type": 0,
+      "value": "我的所有媒体库"
+    }
+  ],
+  "web.collections.copy.allMyLibrariesInSentence": [
+    {
+      "type": 0,
+      "value": "我的所有媒体库"
+    }
+  ],
+  "web.collections.copy.allYourLibraries": [
+    {
+      "type": 0,
+      "value": "你的所有媒体库"
+    }
+  ],
+  "web.collections.copy.cantBeUndone": [
+    {
+      "type": 0,
+      "value": "此操作无法撤消。"
+    }
+  ],
+  "web.collections.copy.conflictTitle": [
+    {
+      "type": 0,
+      "value": "此合集在你打开后已更改。"
+    }
+  ],
+  "web.collections.copy.createdButNotAdded": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已创建，但无法添加"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "部作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.fieldDescription": [
+    {
+      "type": 0,
+      "value": "描述"
+    }
+  ],
+  "web.collections.copy.fieldLibraries": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.collections.copy.fieldLimit": [
+    {
+      "type": 0,
+      "value": "最多作品数"
+    }
+  ],
+  "web.collections.copy.fieldName": [
+    {
+      "type": 0,
+      "value": "名称"
+    }
+  ],
+  "web.collections.copy.fieldOrder": [
+    {
+      "type": 0,
+      "value": "顺序"
+    }
+  ],
+  "web.collections.copy.fieldRules": [
+    {
+      "type": 0,
+      "value": "规则"
+    }
+  ],
+  "web.collections.copy.fieldShowOnly": [
+    {
+      "type": 0,
+      "value": "仅显示"
+    }
+  ],
+  "web.collections.copy.goodForManualPersonal": [
+    {
+      "type": 0,
+      "value": "导演代表作、电影之夜、观看顺序。"
+    }
+  ],
+  "web.collections.copy.goodForSmart": [
+    {
+      "type": 0,
+      "value": "90年代喜剧、未看的4K、圣诞电影。"
+    }
+  ],
+  "web.collections.copy.inCollections": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "=0": {
+          "value": [
+            {
+              "type": 0,
+              "value": "尚未加入合集"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已在"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个合集中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.inThisCollection": [
+    {
+      "type": 0,
+      "value": "已在此合集中"
+    }
+  ],
+  "web.collections.copy.kindSentenceManual": [
+    {
+      "type": 0,
+      "value": "由你挑选作品并排列顺序。"
+    }
+  ],
+  "web.collections.copy.kindSentenceSmart": [
+    {
+      "type": 0,
+      "value": "符合你规则的作品。它会自动填充，并随作品添加而更新。"
+    }
+  ],
+  "web.collections.copy.lookPoster": [
+    {
+      "type": 5,
+      "value": "state",
+      "options": {
+        "awaitingCollage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报：作品有海报后生成拼贴"
+            }
+          ]
+        },
+        "collage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报：作品拼贴"
+            }
+          ]
+        },
+        "new": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报：新图片"
+            }
+          ]
+        },
+        "saved": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报：一张图片"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报：无"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.copy.madeButNotAdded": [
+    {
+      "type": 0,
+      "value": "已创建"
+    },
+    {
+      "type": 1,
+      "value": "collection"
+    },
+    {
+      "type": 0,
+      "value": "，但无法添加"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.manualTitleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "手动 · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "部作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.nameItThenCreate": [
+    {
+      "type": 0,
+      "value": "先命名，再创建。"
+    }
+  ],
+  "web.collections.copy.newCollection": [
+    {
+      "type": 0,
+      "value": "新建合集"
+    }
+  ],
+  "web.collections.copy.newCollectionHelpPersonal": [
+    {
+      "type": 0,
+      "value": "由什么决定其中的内容？只有你可以更改它。接下来你将为它命名、填充内容并选择谁能看到它。"
+    }
+  ],
+  "web.collections.copy.newCollectionNext": [
+    {
+      "type": 0,
+      "value": "下一步：在它自己的页面上命名并填充内容。"
+    }
+  ],
+  "web.collections.copy.noLimit": [
+    {
+      "type": 0,
+      "value": "无限制"
+    }
+  ],
+  "web.collections.copy.noPoster": [
+    {
+      "type": 0,
+      "value": "无海报"
+    }
+  ],
+  "web.collections.copy.notCreatedYet": [
+    {
+      "type": 0,
+      "value": "尚未创建"
+    }
+  ],
+  "web.collections.copy.notSaved": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": "未保存"
+    }
+  ],
+  "web.collections.copy.orderHelp": [
+    {
+      "type": 0,
+      "value": "浏览时自行选择排序的个人资料会保留该选择。"
+    }
+  ],
+  "web.collections.copy.personalDeleteDescriptionShared": [
+    {
+      "type": 0,
+      "value": "它将从你和你共享的每个个人资料中移除。此操作无法撤销。"
+    }
+  ],
+  "web.collections.copy.personalRulesNote": [
+    {
+      "type": 0,
+      "value": "“我的所有媒体库”会跟随此个人资料可见的媒体库。与你相关的规则（如已观看）仅在此处提供。"
+    }
+  ],
+  "web.collections.copy.personalTabHelp": [
+    {
+      "type": 0,
+      "value": "供你和你共享的人查看"
+    }
+  ],
+  "web.collections.copy.posterAwaitsCollage": [
+    {
+      "type": 0,
+      "value": "作品有海报后生成拼贴"
+    }
+  ],
+  "web.collections.copy.posterIsCollage": [
+    {
+      "type": 0,
+      "value": "作品拼贴"
+    }
+  ],
+  "web.collections.copy.previewEmpty": [
+    {
+      "type": 0,
+      "value": "暂无匹配的作品"
+    }
+  ],
+  "web.collections.copy.previewEmptyHelp": [
+    {
+      "type": 0,
+      "value": "你仍然可以保存。之后匹配的作品会自动加入。"
+    }
+  ],
+  "web.collections.copy.previewFailed": [
+    {
+      "type": 0,
+      "value": "预览未能加载。你仍然可以保存。"
+    }
+  ],
+  "web.collections.copy.previewLive": [
+    {
+      "type": 0,
+      "value": "实时预览"
+    }
+  ],
+  "web.collections.copy.previewMatches": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": "部作品匹配"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.removedTitle": [
+    {
+      "type": 0,
+      "value": "已移除"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.rulesCaption": [
+    {
+      "type": 0,
+      "value": "匹配的作品会在合集中。新匹配的作品会自动加入。"
+    }
+  ],
+  "web.collections.copy.saveFailedWithError": [
+    {
+      "type": 0,
+      "value": "无法保存 · "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.collections.copy.showOnTabLabel": [
+    {
+      "type": 0,
+      "value": "在合集标签页上显示"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesHelp": [
+    {
+      "type": 0,
+      "value": "此账户上的每个个人资料都能看到它，但无权访问的作品除外。服务器上的其他人都看不到它。"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesLabel": [
+    {
+      "type": 0,
+      "value": "向其他个人资料显示"
+    }
+  ],
+  "web.collections.copy.slotPoster": [
+    {
+      "type": 0,
+      "value": "海报"
+    }
+  ],
+  "web.collections.copy.smartCreateHint": [
+    {
+      "type": 0,
+      "value": "当前"
+    },
+    {
+      "type": 1,
+      "value": "matches"
+    },
+    {
+      "type": 0,
+      "value": "。新的作品会自动加入。"
+    }
+  ],
+  "web.collections.copy.smartCreateHintNone": [
+    {
+      "type": 0,
+      "value": "暂无匹配的作品。之后匹配的作品会自动加入。"
+    }
+  ],
+  "web.collections.copy.smartUpdatesItself": [
+    {
+      "type": 0,
+      "value": "添加作品时自动更新"
+    }
+  ],
+  "web.collections.copy.storedSortLine": [
+    {
+      "type": 0,
+      "value": "已保存的默认排序（"
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": "）优先于此排序。"
+    }
+  ],
+  "web.collections.copy.titlesAlreadySaved": [
+    {
+      "type": 0,
+      "value": "作品已保存。"
+    }
+  ],
+  "web.collections.copy.titlesCaptionCreate": [
+    {
+      "type": 0,
+      "value": "现在选择作品。点按创建合集时会添加它们。"
+    }
+  ],
+  "web.collections.copy.titlesCaptionPersonal": [
+    {
+      "type": 0,
+      "value": "按你看到的顺序排列。添加、移除或拖动作品时会自动保存。"
+    }
+  ],
+  "web.collections.copy.titlesEmpty": [
+    {
+      "type": 0,
+      "value": "还没有作品。在上方搜索以添加第一部。"
+    }
+  ],
+  "web.collections.copy.titlesReadyToAdd": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "部作品待添加"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.titlesSaved": [
+    {
+      "type": 0,
+      "value": "已保存"
+    }
+  ],
+  "web.collections.copy.unshareConsequence": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": "将失去它，包括用它创建的行。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.unshareConsequenceOthers": [
+    {
+      "type": 0,
+      "value": "其他个人资料将失去它，包括用它创建的行。"
+    }
+  ],
+  "web.collections.copy.unshareWarning": [
+    {
+      "type": 0,
+      "value": "保存后，"
+    },
+    {
+      "type": 1,
+      "value": "consequence"
+    }
+  ],
   "web.collections.deleteDialog.delete": [
     {
       "type": 0,
       "value": "删除"
+    }
+  ],
+  "web.collections.details.content": [
+    {
+      "type": 0,
+      "value": "内容"
+    }
+  ],
+  "web.collections.details.descriptionLabel": [
+    {
+      "type": 1,
+      "value": "field"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "muted",
+      "children": [
+        {
+          "type": 0,
+          "value": "可选"
+        }
+      ]
+    }
+  ],
+  "web.collections.details.label": [
+    {
+      "type": 0,
+      "value": "名称和描述"
+    }
+  ],
+  "web.collections.details.showOnlyHelp": [
+    {
+      "type": 0,
+      "value": "浏览时隐藏作品，例如你已看完的作品。不会移除任何内容。"
+    }
+  ],
+  "web.collections.details.watchState": [
+    {
+      "type": 0,
+      "value": "观看状态"
+    }
+  ],
+  "web.collections.displayFilters.media.all": [
+    {
+      "type": 0,
+      "value": "全部"
+    }
+  ],
+  "web.collections.displayFilters.media.movie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.collections.displayFilters.media.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.collections.displayFilters.watch.all": [
+    {
+      "type": 0,
+      "value": "全部"
+    }
+  ],
+  "web.collections.displayFilters.watch.unwatched": [
+    {
+      "type": 0,
+      "value": "未观看"
+    }
+  ],
+  "web.collections.displayFilters.watch.watched": [
+    {
+      "type": 0,
+      "value": "已观看"
+    }
+  ],
+  "web.collections.editor.backToCollections": [
+    {
+      "type": 0,
+      "value": "合集"
+    }
+  ],
+  "web.collections.editor.conflictFields": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": "在两处都有更改。"
+    }
+  ],
+  "web.collections.editor.conflictSaveAgain": [
+    {
+      "type": 0,
+      "value": "再次保存以保留你的更改。"
+    }
+  ],
+  "web.collections.editor.createCollection": [
+    {
+      "type": 0,
+      "value": "创建合集"
+    }
+  ],
+  "web.collections.editor.keepMine": [
+    {
+      "type": 0,
+      "value": "保留我的"
+    }
+  ],
+  "web.collections.editor.rowLinkLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "，"
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    }
+  ],
+  "web.collections.editor.rulesHeading": [
+    {
+      "type": 0,
+      "value": "规则"
+    }
+  ],
+  "web.collections.editor.useTheirs": [
+    {
+      "type": 0,
+      "value": "使用对方的"
+    }
+  ],
+  "web.collections.editorHeader.open": [
+    {
+      "type": 0,
+      "value": "打开"
+    }
+  ],
+  "web.collections.editorPage.allCollections": [
+    {
+      "type": 0,
+      "value": "所有合集"
+    }
+  ],
+  "web.collections.editorPage.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "无法加载此合集"
+    }
+  ],
+  "web.collections.editorPage.loading": [
+    {
+      "type": 0,
+      "value": "正在加载合集编辑器……"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonal": [
+    {
+      "type": 0,
+      "value": "此合集不可用"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonalHelp": [
+    {
+      "type": 0,
+      "value": "它可能已被删除，或者你可能无权访问。"
+    }
+  ],
+  "web.collections.fields.artworkPreview": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报预览"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景图预览"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkRemovedOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "保存时将移除海报。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "撤销"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "保存时将移除背景图。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "撤销"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSaveFailed": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "无法保存海报。"
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "无法保存背景图。"
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSavesOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "按保存后将保存新海报。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "撤销"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "按保存后将保存新背景图。"
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "撤销"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.changeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "更换海报"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "更换背景图"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.clear": [
+    {
+      "type": 0,
+      "value": "清除"
+    }
+  ],
+  "web.collections.fields.clearStoredSort": [
+    {
+      "type": 0,
+      "value": "清除已保存的默认排序："
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.collections.fields.collage": [
+    {
+      "type": 0,
+      "value": "拼贴图"
+    }
+  ],
+  "web.collections.fields.direction": [
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "za": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        },
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最新优先"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最早优先"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最高优先"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最低优先"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.directionLabel": [
+    {
+      "type": 0,
+      "value": "排序方向"
+    }
+  ],
+  "web.collections.fields.imageLink": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "海报图片链接"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "背景图片链接"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.maxTitlesSuffix": [
+    {
+      "type": 0,
+      "value": "个作品上限"
+    }
+  ],
+  "web.collections.fields.order": [
+    {
+      "type": 0,
+      "value": "排序"
+    }
+  ],
+  "web.collections.fields.pasteALink": [
+    {
+      "type": 0,
+      "value": "粘贴链接……"
+    }
+  ],
+  "web.collections.fields.removeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "移除海报"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "移除背景图"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortAlphabetical": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortBy": [
+    {
+      "type": 0,
+      "value": "排序方式"
+    }
+  ],
+  "web.collections.fields.sortWithDirection": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "，"
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最新优先"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最早优先"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最高优先"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最低优先"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.uploadImage": [
+    {
+      "type": 0,
+      "value": "上传图片……"
+    }
+  ],
+  "web.collections.fields.useLink": [
+    {
+      "type": 0,
+      "value": "使用链接"
+    }
+  ],
+  "web.collections.fields.useTheCollage": [
+    {
+      "type": 0,
+      "value": "使用拼贴图"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -1992,6 +3828,338 @@
       "value": "例如2025"
     }
   ],
+  "web.collections.list.syncFailed": [
+    {
+      "type": 0,
+      "value": "同步失败"
+    }
+  ],
+  "web.collections.list.syncingNow": [
+    {
+      "type": 0,
+      "value": "正在同步"
+    }
+  ],
+  "web.collections.look.change": [
+    {
+      "type": 0,
+      "value": "更改"
+    }
+  ],
+  "web.collections.look.heading": [
+    {
+      "type": 0,
+      "value": "外观"
+    }
+  ],
+  "web.collections.manual.add": [
+    {
+      "type": 0,
+      "value": "添加"
+    }
+  ],
+  "web.collections.manual.addFailed": [
+    {
+      "type": 0,
+      "value": "无法添加"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.addTitle": [
+    {
+      "type": 0,
+      "value": "添加作品"
+    }
+  ],
+  "web.collections.manual.heading": [
+    {
+      "type": 0,
+      "value": "作品"
+    }
+  ],
+  "web.collections.manual.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载作品。"
+    }
+  ],
+  "web.collections.manual.moveTitle": [
+    {
+      "type": 0,
+      "value": "移动"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.noMatches": [
+    {
+      "type": 0,
+      "value": "没有匹配的作品。"
+    }
+  ],
+  "web.collections.manual.pagedNote": [
+    {
+      "type": 0,
+      "value": "最多显示200部作品。整个合集能在一页内显示时才可重新排序。"
+    }
+  ],
+  "web.collections.manual.reloadFromStart": [
+    {
+      "type": 0,
+      "value": "从头重新加载"
+    }
+  ],
+  "web.collections.manual.removeFailed": [
+    {
+      "type": 0,
+      "value": "无法移除"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.removeTitle": [
+    {
+      "type": 0,
+      "value": "移除"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.restoreFailed": [
+    {
+      "type": 0,
+      "value": "无法恢复"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.saving": [
+    {
+      "type": 0,
+      "value": "正在保存……"
+    }
+  ],
+  "web.collections.manual.searchFailed": [
+    {
+      "type": 0,
+      "value": "搜索失败。"
+    }
+  ],
+  "web.collections.manual.searching": [
+    {
+      "type": 0,
+      "value": "正在搜索……"
+    }
+  ],
+  "web.collections.manual.showAll": [
+    {
+      "type": 0,
+      "value": "显示全部"
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "项"
+    }
+  ],
+  "web.collections.manual.showFewer": [
+    {
+      "type": 0,
+      "value": "收起"
+    }
+  ],
+  "web.collections.manual.tryAgainSentence": [
+    {
+      "type": 0,
+      "value": "请重试。"
+    }
+  ],
+  "web.collections.manual.typeLabel": [
+    {
+      "type": 5,
+      "value": "type",
+      "options": {
+        "movie": {
+          "value": [
+            {
+              "type": 0,
+              "value": "电影"
+            }
+          ]
+        },
+        "series": {
+          "value": [
+            {
+              "type": 0,
+              "value": "剧集"
+            }
+          ]
+        },
+        "season": {
+          "value": [
+            {
+              "type": 0,
+              "value": "季"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "单集"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.manual.undo": [
+    {
+      "type": 0,
+      "value": "撤销"
+    }
+  ],
+  "web.collections.metaLine.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "部作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.newPicker.goodFor": [
+    {
+      "type": 0,
+      "value": "适合"
+    }
+  ],
+  "web.collections.page.filterAll": [
+    {
+      "type": 0,
+      "value": "全部"
+    }
+  ],
+  "web.collections.page.filterLabel": [
+    {
+      "type": 0,
+      "value": "显示"
+    }
+  ],
+  "web.collections.page.loadMore": [
+    {
+      "type": 0,
+      "value": "加载更多"
+    }
+  ],
+  "web.collections.page.stopSharing": [
+    {
+      "type": 0,
+      "value": "停止共享"
+    }
+  ],
+  "web.collections.page.stopSharingTitle": [
+    {
+      "type": 0,
+      "value": "停止共享"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "？"
+    }
+  ],
+  "web.collections.page.subtitle": [
+    {
+      "type": 0,
+      "value": "你的合集和服务器的合集。"
+    }
+  ],
+  "web.collections.page.subtitleShared": [
+    {
+      "type": 0,
+      "value": "你的合集、其他个人资料与你共享的合集，以及服务器的合集。"
+    }
+  ],
+  "web.collections.page.title": [
+    {
+      "type": 0,
+      "value": "合集"
+    }
+  ],
+  "web.collections.page.wallMine": [
+    {
+      "type": 0,
+      "value": "你的合集"
+    }
+  ],
+  "web.collections.page.wallServer": [
+    {
+      "type": 0,
+      "value": "服务器合集"
+    }
+  ],
+  "web.collections.page.wallShared": [
+    {
+      "type": 0,
+      "value": "与我共享"
+    }
+  ],
   "web.collections.pageActions.deleteTitle": [
     {
       "type": 0,
@@ -2010,6 +4178,112 @@
     {
       "type": 0,
       "value": "编辑"
+    }
+  ],
+  "web.collections.personalOwnership.anotherProfile": [
+    {
+      "type": 0,
+      "value": "其他个人资料"
+    }
+  ],
+  "web.collections.posterCard.byOwner": [
+    {
+      "type": 0,
+      "value": "由"
+    },
+    {
+      "type": 1,
+      "value": "owner"
+    },
+    {
+      "type": 0,
+      "value": "创建"
+    }
+  ],
+  "web.collections.preview.matchingTitles": [
+    {
+      "type": 0,
+      "value": "匹配的标题"
+    }
+  ],
+  "web.collections.preview.showing": [
+    {
+      "type": 0,
+      "value": "显示"
+    },
+    {
+      "type": 1,
+      "value": "shown"
+    },
+    {
+      "type": 0,
+      "value": "个"
+    }
+  ],
+  "web.collections.scope.changedWhileEditing": [
+    {
+      "type": 0,
+      "value": "你编辑期间此合集已更改。请重新加载并检查你的更改，然后再次保存。"
+    }
+  ],
+  "web.collections.tags.shared": [
+    {
+      "type": 0,
+      "value": "已共享"
+    }
+  ],
+  "web.collections.toast.addFailed": [
+    {
+      "type": 0,
+      "value": "无法添加到合集"
+    }
+  ],
+  "web.collections.toast.notShared": [
+    {
+      "type": 0,
+      "value": "现在只有你能看到"
+    }
+  ],
+  "web.collections.toast.removeItemFailed": [
+    {
+      "type": 0,
+      "value": "无法移除项目"
+    }
+  ],
+  "web.collections.toast.sharedWithProfiles": [
+    {
+      "type": 0,
+      "value": "已向其他个人资料显示"
+    }
+  ],
+  "web.collections.toast.sharingFailed": [
+    {
+      "type": 0,
+      "value": "无法更改共享设置"
+    }
+  ],
+  "web.collections.types.kindManual": [
+    {
+      "type": 0,
+      "value": "手动"
+    }
+  ],
+  "web.collections.types.kindSmart": [
+    {
+      "type": 0,
+      "value": "智能"
+    }
+  ],
+  "web.collections.types.kindSynced": [
+    {
+      "type": 0,
+      "value": "同步列表"
+    }
+  ],
+  "web.collections.whereItShows.heading": [
+    {
+      "type": 0,
+      "value": "显示位置"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -2152,6 +4426,12 @@
     {
       "type": 0,
       "value": "删除失败"
+    }
+  ],
+  "web.common.toast.collections.deleted": [
+    {
+      "type": 0,
+      "value": "合集已删除"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -2441,6 +4721,429 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.home.addRow.libraries": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.home.addRow.rules.addAndGroup": [
+    {
+      "type": 0,
+      "value": "添加“且”组"
+    }
+  ],
+  "web.home.addRow.rules.addOrGroup": [
+    {
+      "type": 0,
+      "value": "添加“或”组"
+    }
+  ],
+  "web.home.addRow.rules.addRule": [
+    {
+      "type": 0,
+      "value": "添加规则"
+    }
+  ],
+  "web.home.addRow.rules.groupMatchLabel": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "组规则的组合方式"
+    }
+  ],
+  "web.home.addRow.rules.groupSentence": [
+    {
+      "type": 8,
+      "value": "join",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "符合以下"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "match",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "规则的作品："
+        }
+      ]
+    }
+  ],
+  "web.home.addRow.rules.howGroupsCombine": [
+    {
+      "type": 0,
+      "value": "各组的组合方式"
+    }
+  ],
+  "web.home.addRow.rules.howRulesCombine": [
+    {
+      "type": 0,
+      "value": "规则的组合方式"
+    }
+  ],
+  "web.home.addRow.rules.joinAnd": [
+    {
+      "type": 0,
+      "value": "且"
+    }
+  ],
+  "web.home.addRow.rules.joinOr": [
+    {
+      "type": 0,
+      "value": "或"
+    }
+  ],
+  "web.home.addRow.rules.kindOfTitles": [
+    {
+      "type": 0,
+      "value": "作品类型"
+    }
+  ],
+  "web.home.addRow.rules.matchAll": [
+    {
+      "type": 0,
+      "value": "全部"
+    }
+  ],
+  "web.home.addRow.rules.matchAny": [
+    {
+      "type": 0,
+      "value": "任一"
+    }
+  ],
+  "web.home.addRow.rules.noRulesCollectionYet": [
+    {
+      "type": 0,
+      "value": "还没有规则。添加一条规则来选择它包含哪些作品。"
+    }
+  ],
+  "web.home.addRow.rules.removeGroup": [
+    {
+      "type": 0,
+      "value": "移除第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "组"
+    }
+  ],
+  "web.home.addRow.rules.scopeAll": [
+    {
+      "type": 0,
+      "value": "全部作品"
+    }
+  ],
+  "web.home.addRow.rules.scopeAudiobook": [
+    {
+      "type": 0,
+      "value": "有声书"
+    }
+  ],
+  "web.home.addRow.rules.scopeEbook": [
+    {
+      "type": 0,
+      "value": "电子书"
+    }
+  ],
+  "web.home.addRow.rules.scopeEpisode": [
+    {
+      "type": 0,
+      "value": "单集"
+    }
+  ],
+  "web.home.addRow.rules.scopeManga": [
+    {
+      "type": 0,
+      "value": "漫画"
+    }
+  ],
+  "web.home.addRow.rules.scopeMovie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.home.addRow.rules.scopeSeries": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.home.addRow.rules.scopeVideo": [
+    {
+      "type": 0,
+      "value": "电影和剧集"
+    }
+  ],
+  "web.home.addRow.rules.sentenceAll": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "显示"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "中的"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "需符合以下"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "规则："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentenceNamed": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "显示"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 6,
+          "value": "count",
+          "options": {
+            "other": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "媒体库中的"
+                }
+              ]
+            }
+          },
+          "offset": 0,
+          "pluralType": "cardinal"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "需符合以下"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "规则："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentencePicked": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "显示"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "中的"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "需符合以下"
+                }
+              ]
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "规则："
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.whatCollectionShows": [
+    {
+      "type": 0,
+      "value": "合集显示的内容"
+    }
+  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,
@@ -2647,6 +5350,18 @@
     {
       "type": 0,
       "value": "已观看"
+    }
+  ],
+  "web.item.images.tooLarge": [
+    {
+      "type": 0,
+      "value": "图片最大为10 MiB"
+    }
+  ],
+  "web.item.images.wrongType": [
+    {
+      "type": 0,
+      "value": "请选择JPEG、PNG或WebP图片"
     }
   ],
   "web.item.menu.addToFavorites": [
@@ -3140,6 +5855,78 @@
     {
       "type": 0,
       "value": "睡眠定时器"
+    }
+  ],
+  "web.profiles.libraries.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个媒体库"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.libraryFallback": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.profiles.librarySelect.more": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": "及另外"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.pair": [
+    {
+      "type": 1,
+      "value": "first"
+    },
+    {
+      "type": 0,
+      "value": "、"
+    },
+    {
+      "type": 1,
+      "value": "second"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -6146,6 +8933,12 @@
       "value": "我的内容"
     }
   ],
+  "web.shell.unsavedChanges.description": [
+    {
+      "type": 0,
+      "value": "此页面有尚未保存的更改。现在离开将丢弃这些更改。"
+    }
+  ],
   "web.shell.unsavedChanges.discard": [
     {
       "type": 0,
@@ -6162,6 +8955,12 @@
     {
       "type": 0,
       "value": "无法开始随机播放。"
+    }
+  ],
+  "web.ui.personSearch.placeholder": [
+    {
+      "type": 0,
+      "value": "搜索人物……"
     }
   ],
   "web.ui.saving": [

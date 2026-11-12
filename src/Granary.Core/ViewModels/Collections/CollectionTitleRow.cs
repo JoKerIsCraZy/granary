@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Collections;
 
@@ -35,9 +36,9 @@ public sealed partial class CollectionTitleRow : ObservableObject
     [ObservableProperty]
     public partial int Number { get; internal set; }
 
-    public string RemoveName => $"Remove {Title}";
+    public string RemoveName => AppText.Get("web.collections.manual.removeTitle", ("title", Title));
 
-    public string MoveName => $"Move {Title}";
+    public string MoveName => AppText.Get("web.collections.manual.moveTitle", ("title", Title));
 
     internal CollectionTitleRow At(long position) => new(Id, Title, Meta, PosterUrl, position, RemoveCommand);
 }
@@ -72,7 +73,7 @@ public sealed partial class CollectionSearchResult : ObservableObject
 
     public bool CanAdd => !IsIn;
 
-    public string ActionText => IsIn ? "In this collection" : "Add";
+    public string ActionText => IsIn ? AppText.Get("web.collections.copy.inThisCollection") : AppText.Get("web.collections.manual.add");
 
-    public string AccessibleName => $"{Title}, {Meta}";
+    public string AccessibleName => Meta.Length == 0 ? Title : AppText.Get("web.collections.editor.rowLinkLabel", ("title", Title), ("meta", Meta));
 }

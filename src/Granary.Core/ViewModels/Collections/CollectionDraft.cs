@@ -21,20 +21,34 @@ public sealed record CollectionDraft(string Name, string Description, Collection
 
     public bool IsSmart => Kind == PersonalCollectionTypes.Smart;
 
+    // The fields by name, as the save bar and the conflict banner list them; their words come from
+    // CollectionEditorText.FieldLabel when they are shown.
+    public const string NameField = "name";
+    public const string DescriptionField = "description";
+    public const string LibrariesField = "libraries";
+    public const string RulesField = "rules";
+    public const string OrderField = "order";
+    public const string ShowOnlyField = "showOnly";
+    public const string SharedField = "shared";
+    public const string CollectionsTabField = "collectionsTab";
+
+    /// <summary>Not a draft field: a poster staged in the Look card, which the save bar names last.</summary>
+    public const string PosterField = "poster";
+
     /// <summary>The fields in the order the save bar and the conflict banner name them, read for comparing and set from another draft.</summary>
-    private static readonly IReadOnlyList<(string Label, Func<CollectionDraft, object> Get, Func<CollectionDraft, CollectionDraft, CollectionDraft> Take)> Fields =
+    private static readonly IReadOnlyList<(string Field, Func<CollectionDraft, object> Get, Func<CollectionDraft, CollectionDraft, CollectionDraft> Take)> Fields =
     [
-        ("Name", d => d.Name, (d, from) => d with { Name = from.Name }),
-        ("Description", d => d.Description, (d, from) => d with { Description = from.Description }),
-        ("Libraries", d => d.Rules?.LibrariesKey() ?? "",
+        (NameField, d => d.Name, (d, from) => d with { Name = from.Name }),
+        (DescriptionField, d => d.Description, (d, from) => d with { Description = from.Description }),
+        (LibrariesField, d => d.Rules?.LibrariesKey() ?? "",
             (d, from) => d.Rules is null ? d : d with { Rules = d.Rules with { LibraryIds = from.Rules?.LibraryIds ?? [] } }),
         // The rules' libraries count once, as Libraries.
-        ("Rules", d => d.Rules?.RulesKey() ?? "",
+        (RulesField, d => d.Rules?.RulesKey() ?? "",
             (d, from) => d.Rules is null || from.Rules is null ? d : d with { Rules = from.Rules with { LibraryIds = d.Rules.LibraryIds } }),
-        ("Order", d => d.SortConfig, (d, from) => d with { SortConfig = from.SortConfig }),
-        ("Show only", d => d.ShowOnly, (d, from) => d with { ShowOnly = from.ShowOnly }),
-        ("Show to other profiles", d => d.IsShared, (d, from) => d with { IsShared = from.IsShared }),
-        ("Show on the Collections tab", d => d.OnCollectionsTab, (d, from) => d with { OnCollectionsTab = from.OnCollectionsTab }),
+        (OrderField, d => d.SortConfig, (d, from) => d with { SortConfig = from.SortConfig }),
+        (ShowOnlyField, d => d.ShowOnly, (d, from) => d with { ShowOnly = from.ShowOnly }),
+        (SharedField, d => d.IsShared, (d, from) => d with { IsShared = from.IsShared }),
+        (CollectionsTabField, d => d.OnCollectionsTab, (d, from) => d with { OnCollectionsTab = from.OnCollectionsTab }),
     ];
 
     public static CollectionDraft Of(PersonalCollection collection) => collection.IsSmart
@@ -43,16 +57,16 @@ public sealed record CollectionDraft(string Name, string Description, Collection
         : new(collection.Name, collection.Description, CollectionShowOnly.Read(collection.DisplayQueryDefinition), collection.IsShared,
             collection.IncludeInServerCollections);
 
-    /// <summary>The labels of the fields that differ from <paramref name="other"/>, in the save bar's order.</summary>
+    /// <summary>The fields that differ from <paramref name="other"/>, by name, in the save bar's order.</summary>
     public IReadOnlyList<string> ChangedFrom(CollectionDraft other) =>
-        [.. Fields.Where(f => !Equals(f.Get(this), f.Get(other))).Select(f => f.Label)];
+        [.. Fields.Where(f => !Equals(f.Get(this), f.Get(other))).Select(f => f.Field)];
 
     /// <summary>The same in every field the editor saves (record equality would compare the rules' lists by reference).</summary>
     public bool SameAs(CollectionDraft other) => Kind == other.Kind && ChangedFrom(other).Count == 0;
 
-    /// <summary>This draft with the fields named by <paramref name="labels"/> taken from <paramref name="from"/>.</summary>
-    public CollectionDraft Taking(CollectionDraft from, IEnumerable<string> labels) =>
-        labels.Aggregate(this, (draft, label) => Fields.FirstOrDefault(f => f.Label == label) is { Take: { } take } ? take(draft, from) : draft);
+    /// <summary>This draft with the fields named in <paramref name="fields"/> taken from <paramref name="from"/>.</summary>
+    public CollectionDraft Taking(CollectionDraft from, IEnumerable<string> fields) =>
+        fields.Aggregate(this, (draft, field) => Fields.FirstOrDefault(f => f.Field == field) is { Take: { } take } ? take(draft, from) : draft);
 
     public PersonalCollectionUpdate ToUpdate() => IsSmart
         ? new()
@@ -102,7 +116,7 @@ public sealed record CollectionDraft(string Name, string Description, Collection
     {
         var conflicts = new List<string>();
         var merged = theirs;
-        foreach (var (label, get, take) in Fields)
+        foreach (var (field, get, take) in Fields)
         {
             object was = get(original);
             object ours = get(mine);
@@ -113,7 +127,7 @@ public sealed record CollectionDraft(string Name, string Description, Collection
             }
             if (!Equals(server, was))
             {
-                conflicts.Add(label);
+                conflicts.Add(field);
             }
             merged = take(merged, mine);
         }

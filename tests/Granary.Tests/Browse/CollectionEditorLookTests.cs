@@ -120,7 +120,7 @@ public sealed class CollectionEditorLookTests
 
         Assert.True(editor.UsePosterFile(Png, "ghibli.png", "image/png"));
         Assert.Equal("Poster: a new image", editor.LookSummary);
-        Assert.Equal(["Poster"], editor.ChangedFields);
+        Assert.Equal([CollectionDraft.PosterField], editor.ChangedFields);
         Assert.Equal("Poster not saved", editor.SaveBarMessage);
         Assert.Equal("The new poster saves when you press Save.", editor.StagedPosterText);
         Assert.Same(Png, editor.PosterPreviewImage);
@@ -132,7 +132,7 @@ public sealed class CollectionEditorLookTests
         Assert.Equal([HttpMethod.Patch, HttpMethod.Put], Writes());
         Assert.Contains("filename=ghibli.png", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, PosterPath)).Body, StringComparison.Ordinal);
         Assert.False(editor.IsPosterStaged);
-        Assert.DoesNotContain("Poster", editor.ChangedFields);
+        Assert.DoesNotContain(CollectionDraft.PosterField, editor.ChangedFields);
         Assert.Equal("Poster: an image", editor.LookSummary);
     }
 
@@ -181,7 +181,7 @@ public sealed class CollectionEditorLookTests
 
         Assert.False(editor.IsNew);
         Assert.True(editor.HasPosterError);
-        Assert.Equal(["Poster"], editor.ChangedFields);
+        Assert.Equal([CollectionDraft.PosterField], editor.ChangedFields);
 
         await editor.SaveCommand.ExecuteAsync(null);
 
@@ -303,9 +303,9 @@ public sealed class CollectionEditorLookTests
         var editor = await EditAsync();
 
         Assert.False(editor.UsePosterFile(Png, "ghibli.gif", "image/gif"));
-        Assert.Equal("Choose a JPEG, PNG or WebP image.", editor.PosterPickError);
+        Assert.Equal("Choose a JPEG, PNG or WebP image", editor.PosterPickError);
         Assert.False(editor.UsePosterFile(new byte[CollectionsApi.PosterMaxBytes + 1], "big.jpg", "image/jpeg"));
-        Assert.Equal("Choose an image of 10 MB or less.", editor.PosterPickError);
+        Assert.Equal("Images can be at most 10 MiB", editor.PosterPickError);
         Assert.False(editor.IsPosterStaged);
     }
 
@@ -339,7 +339,7 @@ public sealed class CollectionEditorLookTests
         Assert.StartsWith("Couldn't save the poster. ", editor.PosterErrorText, StringComparison.Ordinal);
         Assert.True(editor.IsLookOpen);
         Assert.False(editor.HasSaveError);
-        Assert.Equal(["Poster"], editor.ChangedFields);
+        Assert.Equal([CollectionDraft.PosterField], editor.ChangedFields);
 
         await editor.SaveCommand.ExecuteAsync(null);
 

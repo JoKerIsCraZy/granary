@@ -33,22 +33,22 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Collections" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.collections.page.title')}" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
                     <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
                 <!-- The web's New collection in the accent at the title's right. -->
                 <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Click="OnNewCollectionClick"
-                        AutomationProperties.Name="New collection">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.copy.newCollection')}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE710;" FontSize="12" />
-                        <TextBlock Text="New collection" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.collections.copy.newCollection')}" />
                     </StackPanel>
                 </Button>
             </Grid>
 
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.addToCollection.loading')}" />
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
                 <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
@@ -64,22 +64,22 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="Your collections" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.page.wallMine')}" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Text="{x:Bind ViewModel.OwnCountText, Mode=OneWay}" Style="{StaticResource SectionNoteStyle}" />
                         </StackPanel>
-                        <TextBlock Grid.Column="1" Text="Only you can change these" Style="{StaticResource SectionNoteStyle}"
+                        <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('granary.collections.ownNote')}" Style="{StaticResource SectionNoteStyle}"
                                    Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
                     </Grid>
                     <!-- None yet: the web's dashed card that makes the first. -->
                     <Button Width="150" Height="225" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="12" HorizontalAlignment="Left"
                             HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                             Click="OnNewCollectionClick" Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}"
-                            AutomationProperties.Name="New collection">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.copy.newCollection')}">
                         <Grid>
                             <Rectangle RadiusX="12" RadiusY="12" Stroke="{StaticResource SiloBorderBrush}" StrokeThickness="1.5" StrokeDashArray="4,3" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                                 <FontIcon Glyph="&#xE710;" FontSize="16" Foreground="{StaticResource SiloMutedBrush}" />
-                                <TextBlock Text="New collection" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.collections.copy.newCollection')}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" />
                             </StackPanel>
                         </Grid>
                     </Button>
@@ -92,7 +92,7 @@
                         <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
                                    Foreground="{x:Bind NoticeBrush(ViewModel.NoticeFailed), Mode=OneWay}" />
                         <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.DismissNoticeCommand}"
-                                AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notice.dismiss')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.notice.dismiss')}">
                             <FontIcon Glyph="&#xE711;" FontSize="11" />
                         </Button>
                     </StackPanel>
@@ -108,10 +108,10 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="Shared with me" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.collections.page.wallShared')}" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Text="{x:Bind ViewModel.SharedCountText, Mode=OneWay}" Style="{StaticResource SectionNoteStyle}" />
                         </StackPanel>
-                        <TextBlock Grid.Column="1" Text="Read-only. Other profiles on this account made these." Style="{StaticResource SectionNoteStyle}" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('granary.collections.sharedNote')}" Style="{StaticResource SectionNoteStyle}" />
                     </Grid>
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shared}">
                         <ItemsRepeater.ItemTemplate>
@@ -136,7 +136,7 @@
 
                 <!-- Server collections: All | Filme | Serien, then every collection of the picked library. -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ServerSectionShown(ViewModel.Server.IsShown, ViewModel.HasServerError), Mode=OneWay}">
-                    <TextBlock Text="Server collections" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.collections.page.wallServer')}" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasServerError, Mode=OneWay}">
                         <TextBlock Text="{x:Bind ViewModel.ServerErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                         <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
@@ -144,13 +144,13 @@
                     <controls:PillChoices ItemsSource="{x:Bind ViewModel.Server.LibraryChoices, Mode=OneWay}"
                                           SelectedItem="{x:Bind ViewModel.Server.SelectedLibrary, Mode=TwoWay}"
                                           Visibility="{x:Bind HasPills(ViewModel.Server.LibraryChoices), Mode=OneWay}"
-                                          AutomationProperties.Name="Library" />
+                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.collections.page.filterLabel')}" />
                     <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Server.Cards}" CardInvokedCommand="{x:Bind ViewModel.Server.OpenCommand}"
                                         ViewportCommand="{x:Bind ViewModel.Server.ShowViewportCommand}" />
                     <ProgressRing IsActive="{x:Bind ViewModel.Server.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Server.IsLoadingMore, Mode=OneWay}"
-                                  Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more collections" />
+                                  Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.loadMore.loading')}" />
                     <!-- Scrolling to the end presses it; it stays for the keyboard. -->
-                    <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('web.collections.page.loadMore')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.Server.LoadMoreCommand}"
                             Visibility="{x:Bind ViewModel.Server.CanLoadMore, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Server.HasFailure, Mode=OneWay}">

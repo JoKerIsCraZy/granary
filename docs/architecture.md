@@ -334,7 +334,10 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
 - **The API** (`AppText`): in XAML a static function with a constant key,
   `Text="{x:Bind t:AppText.Get('common.cancel')}"` with `xmlns:t="using:Granary.Core.Texts"`, and with up to two values
   `AppText.Get('key', 'name', ViewModel.Value)` (x:Bind tells overloads apart only by their number of arguments); in C#
-  `AppText.Get(key, ("count", n), …)` and `AppText.Runs(…)`; `AppText.Upper` writes a text in capitals by the
+  `AppText.Get(key, ("count", n), …)` and `AppText.Runs(…)`, which keeps an empty tag (`<match></match>`) as an empty
+  run where the web puts a control, so `SentencePanel` (Granary.App) can place boxes where a language's sentence has
+  them; `TextList.And` lists names ("Maya, Leo and Sam") by Granary's list patterns, as the web's `joinNames` does with
+  `Intl.ListFormat`; `AppText.Upper` writes a text in capitals by the
   language's rules where the web upper-cases it in CSS, as the sidebar's section names. The class is not called
   `Texts`: inside `Granary.Core` that name is the namespace. The process has one language, which the app applies (`AppText.Apply`); until then, and
   in tests, it is English. A test that needs another language calls `AppText.Use(language)`, which holds for its own

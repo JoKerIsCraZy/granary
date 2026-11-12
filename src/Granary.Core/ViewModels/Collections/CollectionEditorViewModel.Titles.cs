@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -70,15 +71,15 @@ public sealed partial class CollectionEditorViewModel
     public partial string FailedText { get; private set; } = "";
 
     public string TitlesCaption => IsNew
-        ? "Pick titles now. They're added when you press Create collection."
-        : "In the order you see them. Titles save as you add, remove or drag them.";
+        ? AppText.Get("web.collections.copy.titlesCaptionCreate")
+        : AppText.Get("web.collections.copy.titlesCaptionPersonal");
 
     /// <summary>"3 titles" in the header; a smart collection's "Updates itself as titles are added" after its count.</summary>
     public string MetaLine => IsSmart
         ? IsNew ? SmartUpdatesItself : $"{CollectionEditorText.Titles(_itemCount)} \u00B7 {SmartUpdatesItself}"
         : CollectionEditorText.Titles(TitlesCapped ? Math.Max(_itemCount, Titles.Count) : Titles.Count);
 
-    private const string SmartUpdatesItself = "Updates itself as titles are added";
+    private static string SmartUpdatesItself => AppText.Get("web.collections.copy.smartUpdatesItself");
 
     public bool IsTitlesEmpty => Titles.Count == 0 && TitlesState is not (LibraryLoadState.Loading or LibraryLoadState.Error);
 
@@ -94,7 +95,9 @@ public sealed partial class CollectionEditorViewModel
 
     public bool CanShowAll => Titles.Count > ShownLimit;
 
-    public string ShowAllText => ShowsAllTitles ? "Show fewer" : $"Show all {Titles.Count}";
+    public string ShowAllText => ShowsAllTitles
+        ? AppText.Get("web.collections.manual.showFewer")
+        : AppText.Get("web.collections.manual.showAll", ("count", Titles.Count));
 
     public bool ShowsReorderHint => CanReorder && Titles.Count > 1;
 
@@ -128,7 +131,7 @@ public sealed partial class CollectionEditorViewModel
             return;
         }
         long position = Math.Max(_maxPosition + 1, TitlesCapped ? _itemCount : 0);
-        TitlesStatus = "Saving…";
+        TitlesStatus = AppText.Get("web.collections.manual.saving");
         try
         {
             await _collections.AddItemAsync(server.BaseUri, id, result.Id, position);
@@ -137,7 +140,7 @@ public sealed partial class CollectionEditorViewModel
             {
                 Titles.Add(new CollectionTitleRow(result.Id, result.Title, result.Meta, result.PosterUrl, position, RemoveTitleCommand));
             }
-            TitlesStatus = "Saved";
+            TitlesStatus = AppText.Get("web.collections.copy.titlesSaved");
             TitlesChanged();
             await AfterTitlesWrittenAsync(server.BaseUri, id);
         }
@@ -145,7 +148,7 @@ public sealed partial class CollectionEditorViewModel
         {
             _logger.LogWarning(ex, "Could not add a title to a collection");
             TitlesStatus = "";
-            TitlesError = $"Couldn't add {result.Title}. {Why(ex)}";
+            TitlesError = AppText.Get("web.collections.manual.addFailed", ("title", result.Title), ("detail", Why(ex)));
         }
     }
 
@@ -175,13 +178,13 @@ public sealed partial class CollectionEditorViewModel
         {
             return;
         }
-        TitlesStatus = "Saving…";
+        TitlesStatus = AppText.Get("web.collections.manual.saving");
         try
         {
             await _collections.RemoveItemAsync(server.BaseUri, id, row.Id);
             Titles.Remove(row);
             OfferUndo(row, index);
-            TitlesStatus = "Saved";
+            TitlesStatus = AppText.Get("web.collections.copy.titlesSaved");
             TitlesChanged();
             await AfterTitlesWrittenAsync(server.BaseUri, id);
         }
@@ -189,7 +192,7 @@ public sealed partial class CollectionEditorViewModel
         {
             _logger.LogWarning(ex, "Could not remove a title from a collection");
             TitlesStatus = "";
-            TitlesError = $"Couldn't remove {row.Title}. {Why(ex)}";
+            TitlesError = AppText.Get("web.collections.manual.removeFailed", ("title", row.Title), ("detail", Why(ex)));
         }
     }
 
@@ -219,12 +222,12 @@ public sealed partial class CollectionEditorViewModel
             return;
         }
         var removed = (Row: row, Index: index);
-        TitlesStatus = "Saving…";
+        TitlesStatus = AppText.Get("web.collections.manual.saving");
         try
         {
             await _collections.AddItemAsync(server.BaseUri, id, removed.Row.Id, removed.Row.Position);
             Titles.Insert(Math.Min(index, Titles.Count), removed.Row);
-            TitlesStatus = "Saved";
+            TitlesStatus = AppText.Get("web.collections.copy.titlesSaved");
             TitlesChanged();
             await AfterTitlesWrittenAsync(server.BaseUri, id);
         }
@@ -232,7 +235,7 @@ public sealed partial class CollectionEditorViewModel
         {
             _logger.LogWarning(ex, "Could not put a title back in a collection");
             TitlesStatus = "";
-            TitlesError = $"Couldn't put back {removed.Row.Title}. {Why(ex)}";
+            TitlesError = AppText.Get("web.collections.manual.restoreFailed", ("title", removed.Row.Title), ("detail", Why(ex)));
         }
     }
 
@@ -392,13 +395,13 @@ public sealed partial class CollectionEditorViewModel
         {
             return;
         }
-        TitlesStatus = "Saving…";
+        TitlesStatus = AppText.Get("web.collections.manual.saving");
         try
         {
             _orderVersion ??= (await _collections.GetOrderAsync(server.BaseUri, collection)).Version;
             var saved = await _collections.SetOrderAsync(server.BaseUri, collection, _orderVersion, ids);
             _orderVersion = saved.Version;
-            TitlesStatus = "Saved";
+            TitlesStatus = AppText.Get("web.collections.copy.titlesSaved");
             await RefreshVersionAsync(server.BaseUri);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
@@ -407,8 +410,8 @@ public sealed partial class CollectionEditorViewModel
             TitlesStatus = "";
             await LoadTitlesAsync();
             TitlesError = ex is SiloApiException { Status: 412 }
-                ? "The order changed elsewhere. It's shown as it is now."
-                : $"Couldn't save the order. {Why(ex)}";
+                ? AppText.Get("granary.collections.editor.orderChangedElsewhere")
+                : AppText.Get("granary.collections.editor.orderSaveFailed", ("detail", Why(ex)));
         }
     }
 
@@ -445,7 +448,7 @@ public sealed partial class CollectionEditorViewModel
     {
         ClearRemoved();
         _removed = (row, index);
-        RemovedText = $"Removed {row.Title}";
+        RemovedText = AppText.Get("web.collections.copy.removedTitle", ("title", row.Title));
         var run = new CancellationTokenSource();
         _removedRun = run;
         _ = ForgetRemovedAsync(run.Token);
@@ -480,7 +483,9 @@ public sealed partial class CollectionEditorViewModel
     private void ShowFailedAdds(List<CollectionTitleRow> failed)
     {
         _failed = failed;
-        FailedText = failed.Count == 0 ? "" : $"Created, but couldn't add {CollectionEditorText.Titles(failed.Count)}";
+        FailedText = failed.Count == 0
+            ? ""
+            : AppText.Get("web.collections.copy.createdButNotAdded", ("count", failed.Count), ("count_text", AppText.Number(failed.Count)));
     }
 
     // The list, the numbers, and everything that counts the titles.
@@ -525,5 +530,5 @@ public sealed partial class CollectionEditorViewModel
         }
     }
 
-    private static string Why(Exception ex) => ex is SiloApiException ? LibraryErrors.Describe(ex) : "Try again.";
+    private static string Why(Exception ex) => ex is SiloApiException ? LibraryErrors.Describe(ex) : AppText.Get("web.collections.manual.tryAgainSentence");
 }
