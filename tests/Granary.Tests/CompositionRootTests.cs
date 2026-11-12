@@ -66,6 +66,17 @@ public sealed class CompositionRootTests
         // The Downloads page and Settings → Downloads make theirs outside the container, which would keep a disposable one.
         using var downloads = ActivatorUtilities.CreateInstance<DownloadsViewModel>(provider);
         Assert.NotNull(ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(provider));
+        // A title on this PC plays from it, and the next episode can come from this PC too.
+        Assert.Same(provider.GetRequiredService<DownloadPlaybacks>(), provider.GetRequiredService<DownloadPlaybacks>());
+        Assert.IsType<DownloadUpNext>(provider.GetRequiredService<IUpNextSource>());
+        var record = new DownloadRecord
+        {
+            DownloadId = "dl_1", Scope = new DownloadScope("srv1", "1", "7"), MediaItemId = "mv_1", Title = "Example Movie", Quality = "original",
+            State = DownloadState.Completed, MediaFile = "media.mkv",
+        };
+        var media = new LocalMedia(new StoredDownload(record, Path.Combine(Path.GetTempPath(), "granary-tests", "none"), FilesMissing: false),
+            Granary.Core.Api.Downloads.OfflineManifest.Read("""{ "download_id": "dl_1", "content_id": "mv_1" }"""u8), new HashSet<string>());
+        Assert.NotNull(provider.GetRequiredService<Func<LocalMedia, LocalPlayback>>()(media));
     }
 
     [Fact]

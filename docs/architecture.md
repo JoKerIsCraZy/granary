@@ -1504,6 +1504,14 @@ while the server answers.
   (`SetValueAsProfileAsync`), when a server was signed in as the title started; a save that does not arrive is logged and
   the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
   followed while the title plays, as a stream follows it.
+- **The next episode.** `DownloadUpNext` is the player's `IUpNextSource`, over the server's `UpNextSource`. The server's
+  answer comes first, so a series goes on in its order; the episode it names starts through `PlayAsync` as any title, so
+  it plays from this PC when it is downloaded too and streams when it is not. When the server names none within
+  `DownloadUpNext.ServerBudget` (5 s of the `TimeProvider`), as without a connection, the active profile's finished
+  downloads of the series answer: the next by season and episode after the playing one (the specials only from a
+  special), with its title and no still; an episode that is not on this PC is passed over. The previous episode is the one
+  before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
+  the device; Android plays a next episode from its download when the server named it. On Deck stays the server's.
 - **A file that will not play.** The player says "This download can't be played. Delete it and download it again." with
   Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
   again."; Apple: its error wall with Retry).

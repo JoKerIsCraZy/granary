@@ -193,6 +193,30 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task WithoutTheServer_TheNextDownloadedEpisode_PlaysFromThisPCToo()
+    {
+        _fixture.GoOffline();
+        foreach (string path in new[] { "api/v2/catalog/series/sr_1/seasons/1/episodes", "api/v2/catalog/series/sr_1/seasons", "api/v2/watch/ep_7" })
+        {
+            _fixture.Silo.On(HttpMethod.Get, path, ScriptedSilo.NetworkError());
+        }
+        await _fixture.Harness.AddPlayableAsync();
+        var next = await _fixture.Harness.AddPlayableAsync("dl_7", "ep_7", episode: 7, change: r => r with { Title = "Chapter Seven" });
+        var upNext = new DownloadUpNext(
+            new UpNextSource(new CatalogApi(_fixture.Silo.Http), _fixture.Harness.Session, _fixture.Harness.Logs.For<UpNextSource>()),
+            _fixture.Harness.Store, _fixture.Harness.Session, _fixture.Harness.Time);
+        using var player = NewPlayer(upNext);
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
+        await DownloadHarness.Until(() => player.HasNextEpisode, "the next episode is known");
+
+        await player.PlayNextEpisodeCommand.ExecuteAsync(null);
+
+        Assert.Equal(next.MediaPath, _fixture.Engine.Loaded[^1].Url.LocalPath);
+        Assert.Empty(_streams);
+    }
+
+    [Fact]
     public async Task AFilePlayedDirectly_WhileADownloadsFolderIsStillRead_CountsAsPlaying()
     {
         await _fixture.Harness.AddPlayableAsync();
