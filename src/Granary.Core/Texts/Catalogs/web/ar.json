@@ -29,6 +29,12 @@
       "value": "حفظ"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,

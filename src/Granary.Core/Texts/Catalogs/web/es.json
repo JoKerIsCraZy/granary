@@ -29,6 +29,12 @@
       "value": "Guardar"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Cerrar sesión"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,

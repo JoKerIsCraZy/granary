@@ -569,9 +569,9 @@ internal static class ServerDialogs
         {
             XamlRoot = root,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-            Title = $"Remove {server.Name}?",
-            Content = "Granary signs out of this server and forgets it. You can add it again later.",
-            PrimaryButtonText = "Remove",
+            Title = AppText.Get("granary.servers.removeDialog.title", ("name", server.Name)),
+            Content = AppText.Get("granary.servers.removeDialog.body"),
+            PrimaryButtonText = AppText.Get("granary.servers.removeDialog.confirm"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };

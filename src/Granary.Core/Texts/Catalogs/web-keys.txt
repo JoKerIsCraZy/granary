@@ -4,12 +4,14 @@
 
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
 # src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
-# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs).
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
+# list (src/Granary.App/Views/ServersPage.xaml).
 common.back
 common.cancel
 common.done
 common.retry
 common.save
+common.signOut
 common.tryAgain
 
 # The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):

@@ -29,6 +29,12 @@
       "value": "Speichern"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Abmelden"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,

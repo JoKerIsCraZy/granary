@@ -29,6 +29,12 @@
       "value": "Enregistrer"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Se déconnecter"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,

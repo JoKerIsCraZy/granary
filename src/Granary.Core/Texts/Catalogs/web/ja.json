@@ -29,6 +29,12 @@
       "value": "保存"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "サインアウト"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,

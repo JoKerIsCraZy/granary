@@ -29,6 +29,12 @@
       "value": "Save"
     }
   ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Sign out"
+    }
+  ],
   "common.tryAgain": [
     {
       "type": 0,
