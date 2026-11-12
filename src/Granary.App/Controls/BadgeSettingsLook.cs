@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -30,18 +31,19 @@ public static class BadgeSettingsLook
 
     public static Brush DefaultRing(bool isSelected) => isSelected ? Accent() : new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
 
-    public static string AdjustName(string label) => "Adjust " + label;
+    public static string AdjustName(string label) => AppText.Get("web.settings.cardOverlay.adjustLabel", ("badge", label));
 
-    public static string MoveUpName(string label) => $"Move {label} up";
+    public static string MoveUpName(string label) => AppText.Get("web.settings.interface.moveUp", ("label", label));
 
-    public static string MoveDownName(string label) => $"Move {label} down";
+    public static string MoveDownName(string label) => AppText.Get("web.settings.interface.moveDown", ("label", label));
 
-    public static string ShowName(string label) => "Show " + label;
+    public static string ShowName(string label) => AppText.Get("granary.settings.show", ("label", label));
 
     // A category's chevron: down while folded, up while open.
     public static string Chevron(bool isExpanded) => isExpanded ? "\uE70E" : "\uE70D";
 
-    public static string Folded(bool isExpanded) => isExpanded ? "Expanded" : "Collapsed";
+    public static string Folded(bool isExpanded) =>
+        isExpanded ? AppText.Get("granary.settings.expanded") : AppText.Get("granary.settings.collapsed");
 
     private static Brush Accent() => (Brush)Application.Current.Resources["SiloPrimaryBrush"];
 }

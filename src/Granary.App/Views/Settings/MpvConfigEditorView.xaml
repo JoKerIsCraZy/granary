@@ -17,15 +17,16 @@
 
     <StackPanel>
         <Button x:Name="BackButton" Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="0,4" Click="OnCancelClick"
-                AutomationProperties.Name="Back to Playback">
+                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.editor.back')}">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <FontIcon Glyph="&#xE72B;" FontSize="12" />
-                <TextBlock Text="Playback" FontSize="14" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.playback.title')}" FontSize="14" />
             </StackPanel>
         </Button>
+        <!-- The file's name: not a text. -->
         <TextBlock Margin="0,12,0,0" Text="mpv.conf" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,24" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="Your own mpv options for this PC, in mpv's syntax. Profiles, includes and comments stay as you write them. A change applies from the next title you play." />
+                   Text="{x:Bind t:AppText.Get('granary.settings.mpv.editor.lead')}" />
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.Message), Mode=OneWay}" Severity="Error" IsClosable="False"
                  Message="{x:Bind ViewModel.Message, Mode=OneWay}" Margin="0,0,0,16" />
 
@@ -39,7 +40,7 @@
                  AutomationProperties.Name="mpv.conf" />
 
         <StackPanel Margin="0,16,0,0" Spacing="6">
-            <TextBlock Text="Check" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
+            <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.mpv.editor.check')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
             <ItemsControl ItemsSource="{x:Bind ViewModel.Notes, Mode=OneWay}" IsTabStop="False" AutomationProperties.LiveSetting="Polite">
                 <ItemsControl.ItemTemplate>
@@ -53,7 +54,7 @@
         <StackPanel Margin="0,24,0,0" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
             <Button x:Name="CancelButton" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnCancelClick" />
             <Button x:Name="SaveButton" Content="{x:Bind t:AppText.Get('common.save')}" Style="{StaticResource SiloPrimaryButtonStyle}" controls:Pill.IsEnabled="False" CornerRadius="8"
-                    MinHeight="36" Padding="20,0" FontSize="14" Click="OnSaveClick" AutomationProperties.Name="Save mpv.conf"
+                    MinHeight="36" Padding="20,0" FontSize="14" Click="OnSaveClick" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.editor.saveName')}"
                     IsEnabled="{x:Bind ViewModel.CanSave, Mode=OneWay}" />
         </StackPanel>
     </StackPanel>

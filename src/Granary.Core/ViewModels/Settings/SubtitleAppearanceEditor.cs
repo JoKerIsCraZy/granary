@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -13,15 +14,28 @@ public sealed record ColorSwatch(string Hex, string Label, bool IsSelected);
 /// </summary>
 public sealed partial class SubtitleAppearanceEditor : ObservableObject
 {
-    // web/src/lib/subtitleAppearance.ts.
-    private static readonly (string Hex, string Label)[] FontColors =
+    // web/src/lib/subtitleAppearance.ts, named in the language on screen as they are shown.
+    private static readonly (string Hex, Func<string> Label)[] FontColors =
     [
-        ("#ffffff", "White"), ("#facc15", "Yellow"), ("#22c55e", "Green"), ("#06b6d4", "Cyan"), ("#d946ef", "Magenta"), ("#ef4444", "Red"),
-        ("#3b82f6", "Blue"), ("#9ca3af", "Gray"), ("#000000", "Black"),
+        ("#ffffff", () => AppText.Get("web.settings.subtitleOptions.fontColor.white")),
+        ("#facc15", () => AppText.Get("web.settings.subtitleOptions.fontColor.yellow")),
+        ("#22c55e", () => AppText.Get("web.settings.subtitleOptions.fontColor.green")),
+        ("#06b6d4", () => AppText.Get("web.settings.subtitleOptions.fontColor.cyan")),
+        ("#d946ef", () => AppText.Get("web.settings.subtitleOptions.fontColor.magenta")),
+        ("#ef4444", () => AppText.Get("web.settings.subtitleOptions.fontColor.red")),
+        ("#3b82f6", () => AppText.Get("web.settings.subtitleOptions.fontColor.blue")),
+        ("#9ca3af", () => AppText.Get("web.settings.subtitleOptions.fontColor.gray")),
+        ("#000000", () => AppText.Get("web.settings.subtitleOptions.fontColor.black")),
     ];
 
-    private static readonly (string Hex, string Label)[] BackgroundColors =
-        [("#000000", "Black"), ("#374151", "Dark Gray"), ("#1e3a5f", "Navy"), ("#7f1d1d", "Dark Red"), ("#14532d", "Dark Green")];
+    private static readonly (string Hex, Func<string> Label)[] BackgroundColors =
+    [
+        ("#000000", () => AppText.Get("web.settings.subtitleOptions.backgroundColor.black")),
+        ("#374151", () => AppText.Get("web.settings.subtitleOptions.backgroundColor.darkGray")),
+        ("#1e3a5f", () => AppText.Get("web.settings.subtitleOptions.backgroundColor.navy")),
+        ("#7f1d1d", () => AppText.Get("web.settings.subtitleOptions.backgroundColor.darkRed")),
+        ("#14532d", () => AppText.Get("web.settings.subtitleOptions.backgroundColor.darkGreen")),
+    ];
 
     private bool _showing;
 
@@ -34,15 +48,35 @@ public sealed partial class SubtitleAppearanceEditor : ObservableObject
     public static SubtitleAppearance WebDefault { get; } = SubtitleAppearance.Default with { Background = SubtitleBackground.Box };
 
     public IReadOnlyList<SettingChoice> FontSizeChoices { get; } =
-        [new("small", "Small"), new("medium", "Medium"), new("large", "Large"), new("xlarge", "X-Large"), new("xxlarge", "XX-Large")];
+    [
+        new("small", AppText.Get("web.settings.subtitleOptions.fontSize.small")),
+        new("medium", AppText.Get("web.settings.subtitleOptions.fontSize.medium")),
+        new("large", AppText.Get("web.settings.subtitleOptions.fontSize.large")),
+        new("xlarge", AppText.Get("web.settings.subtitleOptions.fontSize.xLarge")),
+        new("xxlarge", AppText.Get("web.settings.subtitleOptions.fontSize.xxLarge")),
+    ];
 
     public IReadOnlyList<SettingChoice> FontFamilyChoices { get; } =
-        [new(SubtitleAppearance.SansSerif, "Sans-serif"), new(SubtitleAppearance.Serif, "Serif"), new(SubtitleAppearance.Monospace, "Monospace")];
+    [
+        new(SubtitleAppearance.SansSerif, AppText.Get("web.settings.subtitleOptions.fontFamily.sansSerif")),
+        new(SubtitleAppearance.Serif, AppText.Get("web.settings.subtitleOptions.fontFamily.serif")),
+        new(SubtitleAppearance.Monospace, AppText.Get("web.settings.subtitleOptions.fontFamily.monospace")),
+    ];
 
     public IReadOnlyList<SettingChoice> BackgroundStyleChoices { get; } =
-        [new("box", "Box"), new("shadow", "Drop Shadow"), new("outline", "Outline"), new("none", "None")];
+    [
+        new("box", AppText.Get("web.settings.subtitleOptions.backgroundStyle.box")),
+        new("shadow", AppText.Get("web.settings.subtitleOptions.backgroundStyle.dropShadow")),
+        new("outline", AppText.Get("web.settings.subtitleOptions.backgroundStyle.outline")),
+        new("none", AppText.Get("web.settings.subtitleOptions.backgroundStyle.none")),
+    ];
 
-    public IReadOnlyList<SettingChoice> PositionChoices { get; } = [new("bottom", "Bottom"), new("lower-third", "Lower Third"), new("top", "Top")];
+    public IReadOnlyList<SettingChoice> PositionChoices { get; } =
+    [
+        new("bottom", AppText.Get("web.settings.subtitleOptions.position.bottom")),
+        new("lower-third", AppText.Get("web.settings.subtitleOptions.position.lowerThird")),
+        new("top", AppText.Get("web.settings.subtitleOptions.position.top")),
+    ];
 
     [ObservableProperty]
     public partial SubtitleAppearance Appearance { get; private set; } = WebDefault;
@@ -114,8 +148,8 @@ public sealed partial class SubtitleAppearanceEditor : ObservableObject
 
     public void PickBackgroundColor(string hex) => Edit(Appearance with { BackgroundColor = hex });
 
-    private static IReadOnlyList<ColorSwatch> Swatches((string Hex, string Label)[] palette, string selected) =>
-        [.. palette.Select(c => new ColorSwatch(c.Hex, c.Label, string.Equals(c.Hex, selected, StringComparison.OrdinalIgnoreCase)))];
+    private static IReadOnlyList<ColorSwatch> Swatches((string Hex, Func<string> Label)[] palette, string selected) =>
+        [.. palette.Select(c => new ColorSwatch(c.Hex, c.Label(), string.Equals(c.Hex, selected, StringComparison.OrdinalIgnoreCase)))];
 
     private void Edit(SubtitleAppearance appearance)
     {

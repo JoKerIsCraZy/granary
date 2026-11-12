@@ -3,6 +3,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Overlays;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -20,16 +21,15 @@ public sealed record BadgeColorChoice(string Hex, string Label, bool IsSelected,
 /// </summary>
 public sealed partial class BadgeSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string ResetTitle = "Reset badges?";
-    public const string ResetText = "Your badge choices are cleared, and this profile follows your server's badge settings from then on.";
+    public static string ResetTitle => AppText.Get("web.settings.cardOverlay.resetBadgesConfirmTitle");
 
-    private static readonly (OverlayCategory Category, string Title, string Description)[] Categories =
-    [
-        (OverlayCategory.Tech, "Media Info", "Technical details from your media files."),
-        (OverlayCategory.Ratings, "Ratings & Certifications", "Scores from external sources and content ratings."),
-        (OverlayCategory.Metadata, "Content Metadata", "Information about the content itself."),
-        (OverlayCategory.Ribbons, "Status & Awards", "Series lifecycle, request status and award badges. Some require upcoming data sources."),
-    ];
+    public static string ResetText => AppText.Get("web.settings.cardOverlay.resetBadgesConfirmDescription");
+
+    /// <summary>The question's button, and Reset's name for screen readers.</summary>
+    public static string ResetLabel => AppText.Get("web.settings.cardOverlay.resetBadges");
+
+    private static readonly OverlayCategory[] Categories =
+        [OverlayCategory.Tech, OverlayCategory.Ratings, OverlayCategory.Metadata, OverlayCategory.Ribbons];
 
     private readonly CardOverlaySettings _settings;
     private readonly Dictionary<string, BadgeRowViewModel> _rows = new(StringComparer.Ordinal);
@@ -106,7 +106,8 @@ public sealed partial class BadgeSettingsViewModel : ObservableObject, IDisposab
     {
         var prefs = _settings.Prefs;
         Styles = [.. OverlayPreset.All.Select(preset =>
-            new BadgeStyleChoice(preset.Id, preset.Label, preset.Description, preset.Id == prefs.Preset, PickStyleCommand))];
+            new BadgeStyleChoice(preset.Id, BadgeSettingsText.PresetLabel(preset.Id), BadgeSettingsText.PresetDescription(preset.Id),
+                preset.Id == prefs.Preset, PickStyleCommand))];
 
         var offered = OverlayRegistry.All.Where(_settings.IsOffered).ToList();
         string offeredKey = string.Join(",", offered.Select(def => def.Id));
@@ -122,8 +123,8 @@ public sealed partial class BadgeSettingsViewModel : ObservableObject, IDisposab
         {
             _offeredKey = offeredKey;
             Groups = [.. Categories
-                .Select(category => new BadgeGroupViewModel(category.Title, category.Description,
-                    [.. offered.Where(def => def.Category == category.Category).Select(def => _rows[def.Id])]))
+                .Select(category => new BadgeGroupViewModel(BadgeSettingsText.CategoryTitle(category), BadgeSettingsText.CategoryDescription(category),
+                    [.. offered.Where(def => def.Category == category).Select(def => _rows[def.Id])]))
                 .Where(group => group.Rows.Count > 0)];
         }
         foreach (var group in Groups)
@@ -156,21 +157,21 @@ public sealed partial class BadgeGroupViewModel(string title, string description
     internal void Count()
     {
         int on = Rows.Count(row => row.IsEnabled);
-        OnText = on == 0 ? "None on" : $"{on} of {Rows.Count} on";
+        OnText = on == 0
+            ? AppText.Get("web.settings.cardOverlay.noneOn")
+            : AppText.Get("web.settings.cardOverlay.someOn", ("on", on), ("total", Rows.Count));
     }
 }
 
 /// <summary>A badge's switch, and behind Adjust its corner, colour and icon.</summary>
 public sealed partial class BadgeRowViewModel : ObservableObject
 {
-    public const string SuppressedHint = "Hidden while the combined Resolution + HDR badge is on.";
+    public static string SuppressedHint => BadgeSettingsText.SuppressedHint;
 
-    /// <summary>The web's badge colours (lib/overlays/presets.ts, ACCENT_PALETTE).</summary>
-    public static readonly IReadOnlyList<(string Hex, string Label)> Palette =
+    /// <summary>The web's badge colours (lib/overlays/presets.ts, ACCENT_PALETTE), named by <see cref="BadgeSettingsText.ColorName"/>.</summary>
+    public static readonly IReadOnlyList<string> Palette =
     [
-        ("#f5c518", "Gold"), ("#fa320a", "Tomato"), ("#f97316", "Orange"), ("#f59e0b", "Amber"), ("#10b981", "Emerald"),
-        ("#06b6d4", "Cyan"), ("#3b82f6", "Blue"), ("#6366f1", "Indigo"), ("#8b5cf6", "Violet"), ("#ec4899", "Pink"),
-        ("#64748b", "Slate"), ("#ffffff", "White"),
+        "#f5c518", "#fa320a", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899", "#64748b", "#ffffff",
     ];
 
     private readonly BadgeSettingsViewModel _owner;
@@ -186,9 +187,9 @@ public sealed partial class BadgeRowViewModel : ObservableObject
 
     public string Id => _def.Id;
 
-    public string Label => _def.Label;
+    public string Label => BadgeSettingsText.Label(Id);
 
-    public string Description => _def.Description;
+    public string Description => BadgeSettingsText.Description(Id);
 
     public bool CanShowIcon => _def.IconCapable;
 
@@ -246,10 +247,10 @@ public sealed partial class BadgeRowViewModel : ObservableObject
         {
             _showing = false;
         }
-        Hint = item.Enabled && prefs.IsSuppressed(Id) ? SuppressedHint : _def.AvailabilityNote;
+        Hint = item.Enabled && prefs.IsSuppressed(Id) ? SuppressedHint : BadgeSettingsText.AvailabilityNote(Id);
         Position = item.Position;
         string? color = item.AccentColor?.ToLowerInvariant();
-        Swatches = [.. Palette.Select(swatch => new BadgeColorChoice(swatch.Hex, swatch.Label, swatch.Hex == color, PickColorCommand))];
+        Swatches = [.. Palette.Select(hex => new BadgeColorChoice(hex, BadgeSettingsText.ColorName(hex), hex == color, PickColorCommand))];
         IsDefaultColor = color is null;
     }
 

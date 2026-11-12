@@ -6,6 +6,7 @@ using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Settings;
@@ -18,9 +19,6 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class DevicesViewModel : ObservableObject, IDisposable
 {
-    // As the web's device list groups them, by how recently each was used.
-    private static readonly string[] GroupTitles = ["Using now", "This week", "Earlier"];
-
     private readonly ISessionManager _session;
     private readonly DevicesApi _devices;
     private readonly SettingsApi _settings;
@@ -175,7 +173,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
         ShowsSessions = sees != false;
         if (sees is null)
         {
-            SessionsMessage = "Couldn't load sessions. Try again.";
+            SessionsMessage = AppText.Get("web.settings.sessions.loadFailed");
             CanRetrySessions = true;
             return;
         }
@@ -183,7 +181,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
         {
             return;
         }
-        SessionsMessage = "Loading sessions…";
+        SessionsMessage = AppText.Get("web.settings.sessions.loading");
         try
         {
             var capabilities = await _devices.GetSessionCapabilitiesAsync(server, cancellationToken);
@@ -193,7 +191,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
             }
             if (!capabilities.Available)
             {
-                SessionsMessage = "Signed-in session management is unavailable on this server.";
+                SessionsMessage = AppText.Get("web.settings.signedInSessions.unavailable");
                 return;
             }
             var page = await _devices.ListSessionsAsync(server, null, cancellationToken);
@@ -216,7 +214,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
             }
             _logger.LogWarning("The sign-ins could not be read: {Failure}", ApiFailureText.Describe(ex));
             ClearSessions();
-            SessionsMessage = "Couldn't load sessions. Try again.";
+            SessionsMessage = AppText.Get("web.settings.sessions.loadFailed");
             CanRetrySessions = true;
         }
     }
@@ -282,7 +280,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
             }
             _logger.LogWarning("The devices could not be read: {Failure}", ApiFailureText.Describe(ex));
             DeviceGroups.Clear();
-            DevicesMessage = "Couldn't load your devices. Try again.";
+            DevicesMessage = AppText.Get("granary.settings.devices.loadFailed");
         }
         _devicesRead = true;
         OnPropertyChanged(nameof(HasNoDevices));
@@ -331,10 +329,18 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
         foreach (var group in devices.Select(d => (Device: d, Current: d.IsCurrentDevice || d.DeviceId == _identity.DeviceId))
                      .GroupBy(d => GroupOf(d.Device, d.Current, now)).OrderBy(g => g.Key))
         {
-            DeviceGroups.Add(new UserDeviceGroup(GroupTitles[group.Key],
+            DeviceGroups.Add(new UserDeviceGroup(GroupTitle(group.Key),
                 [.. group.Select(d => new UserDeviceRow(d.Device, d.Current, now) { CanRename = CanRename })]));
         }
     }
+
+    // As the web's device list names them, by how recently each was used.
+    private static string GroupTitle(int group) => group switch
+    {
+        0 => AppText.Get("web.settings.deviceList.group.current"),
+        1 => AppText.Get("web.settings.deviceList.group.week"),
+        _ => AppText.Get("web.settings.deviceList.group.earlier"),
+    };
 
     private static int GroupOf(UserDevice device, bool current, DateTimeOffset now) =>
         current ? 0 : device.LastSeenAt is { } seen && now - seen < TimeSpan.FromDays(7) ? 1 : 2;

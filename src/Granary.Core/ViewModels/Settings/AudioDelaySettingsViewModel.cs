@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Settings;
@@ -19,7 +20,7 @@ public sealed partial class AudioDelaySettingsViewModel : ObservableObject, IDis
     public const int StepMs = 50;
 
     /// <summary>Why the slider is off, in the words of the Devices page's failed reads.</summary>
-    public const string LoadFailedText = "Couldn't load your audio sync offset. Try again.";
+    public static string LoadFailedText => AppText.Get("granary.settings.playback.audioSyncLoadFailed");
 
     private readonly AudioDelay _delay;
     private readonly ILogger<AudioDelaySettingsViewModel> _logger;
@@ -44,7 +45,8 @@ public sealed partial class AudioDelaySettingsViewModel : ObservableObject, IDis
     public partial double Milliseconds { get; set; }
 
     /// <summary>"-250 milliseconds", as the web's slider reads out the value and the setting's unit.</summary>
-    public string ValueText => string.Create(CultureInfo.InvariantCulture, $"{(int)Milliseconds} milliseconds");
+    public string ValueText => AppText.Get("web.settings.value.milliseconds", ("count", (int)Milliseconds),
+        ("value", ((int)Milliseconds).ToString(CultureInfo.InvariantCulture)));
 
     /// <summary>This device's value was read: until then the slider is off, so it cannot replace a value it never saw.</summary>
     [ObservableProperty]

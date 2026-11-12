@@ -1,4 +1,5 @@
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Player;
 
@@ -23,7 +24,8 @@ internal sealed class MpvConfigCheck(MpvEngineOptions options) : IMpvConfigCheck
         if (MpvConfigText.Refusal(entries.Where(e => e.Option != Include), kept) is { } reason)
         {
             // Nothing else of the file matters then.
-            notes.Add($"This file would not be used: it {reason}.");
+            // The reason in English, as the log and Settings' line on how mpv.conf fared have it.
+            notes.Add(AppText.Get("granary.settings.mpv.editor.notUsed", ("reason", "it " + reason)));
         }
         else
         {
@@ -35,13 +37,13 @@ internal sealed class MpvConfigCheck(MpvEngineOptions options) : IMpvConfigCheck
                 // At the top it holds from the start; in a profile only once that profile applies.
                 string? profile = set.All(e => e.Profile is not null) ? set.First().Profile : null;
                 notes.Add(profile is null
-                    ? $"Granary keeps its own {set.Key}."
-                    : $"Granary keeps its own {set.Key}, which the profile {profile} sets.");
+                    ? AppText.Get("granary.settings.mpv.editor.keeps", ("option", set.Key))
+                    : AppText.Get("granary.settings.mpv.editor.keepsFromProfile", ("option", set.Key), ("profile", profile)));
             }
         }
         if (entries.Any(e => e.Option == Include))
         {
-            notes.Add("Granary checks the files it includes only when the player starts.");
+            notes.Add(AppText.Get("granary.settings.mpv.editor.includes"));
         }
         return notes;
     }

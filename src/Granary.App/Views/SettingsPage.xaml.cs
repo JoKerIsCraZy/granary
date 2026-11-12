@@ -1,9 +1,11 @@
 using Granary.App.Views.Settings;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -30,6 +32,20 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard
     {
         Sidebar = App.Services.GetRequiredService<SidebarViewModel>();
         InitializeComponent();
+        AutomationProperties.SetName(this, AppText.Get("web.settings.sidebar.title"));
+        NameGroup(PlaybackGroup, Pages, AppText.Get("web.settings.nav.group.playback"));
+        NameGroup(AppearanceGroup, AppearancePages, AppText.Get("web.settings.nav.group.appearance"));
+        NameGroup(AccountGroup, AccountPages, AppText.Get("web.settings.nav.group.account"));
+        NameGroup(AppGroup, AppPages, AppText.Get("granary.settings.nav.group.app"));
+    }
+
+    // A group's heading in capitals, as the web's CSS shows it, and its name as written for screen readers, which name its
+    // list by it too.
+    private static void NameGroup(TextBlock heading, ListView pages, string name)
+    {
+        heading.Text = AppText.Upper(name);
+        AutomationProperties.SetName(heading, name);
+        AutomationProperties.SetName(pages, name);
     }
 
     /// <summary>The profile the settings belong to, as the app's sidebar names it.</summary>

@@ -454,6 +454,9 @@ public sealed class TitlePageSettingsTests
     [InlineData("profile", false,
         "Title art is off on every device signed into this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again.",
         true, true)]
+    [InlineData("profile", true,
+        "Title art is on on every device signed into this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again.",
+        true, true)]
     public async Task ThePage_SaysWhoseTitleArtChoiceApplies(string source, bool titleArt, string note, bool boxed, bool offersDefault)
     {
         _harness.Answer(EffectivePath, Answer(titleArt: titleArt, titleArtSource: source));
