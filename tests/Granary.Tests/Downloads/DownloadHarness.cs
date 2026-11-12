@@ -139,6 +139,39 @@ internal sealed class DownloadHarness : IAsyncDisposable
         return await Store.AddAsync(change is null ? record : change(record), Token);
     }
 
+    /// <summary>The file a finished download's subtitle <c>external:0</c> is kept in.</summary>
+    public static string SubtitleFile => DownloadPaths.SubtitleName("external:0", "srt");
+
+    /// <summary>
+    /// A finished download of episode <paramref name="episode"/> of "Example Series", season 1, as its folder holds it: the
+    /// media file, the guide's manifest (<see cref="DownloadPayloads.Manifest"/>, written for episode 5), its subtitle and its still.
+    /// </summary>
+    public async Task<StoredDownload> AddPlayableAsync(string id = "dl_1", string mediaItemId = "ep_5", int episode = 5, int season = 1,
+        Func<DownloadRecord, DownloadRecord>? change = null)
+    {
+        var download = await AddAsync(id, DownloadState.Completed, mediaItemId: mediaItemId, change: record =>
+        {
+            var playable = record with
+            {
+                Title = "Chapter Five",
+                SeriesId = "sr_1",
+                SeriesTitle = "Example Series",
+                SeasonNumber = season,
+                EpisodeNumber = episode,
+                MediaFileId = "4567",
+                MediaFile = "media.mkv",
+                ArtworkFiles = new Dictionary<string, string> { ["poster"] = "poster.jpg" },
+                SubtitleRevisions = new Dictionary<string, string> { ["external:0"] = "r1" },
+            };
+            return change is null ? playable : change(playable);
+        });
+        File.WriteAllBytes(Path.Combine(download.Folder, "media.mkv"), [1, 2, 3]);
+        File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest(id));
+        File.WriteAllBytes(Path.Combine(download.Folder, SubtitleFile), SubtitleBytes);
+        File.WriteAllBytes(Path.Combine(download.Folder, "poster.jpg"), PosterBytes);
+        return download;
+    }
+
     /// <summary>The manifest of <paramref name="id"/> for <paramref name="size"/> bytes, its artwork and its subtitle.</summary>
     public void ServeAssets(string id, long size = 3000, string subtitleRevision = "r1")
     {
@@ -291,6 +324,9 @@ internal sealed class DownloadHarness : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>Another store over the same index, not read yet, as at Granary's start.</summary>
+    public DownloadStore UnreadStore() => NewStore();
 
     private DownloadStore NewStore() => new(IndexPath, Preferences, Time, Logs.For<DownloadStore>());
 }

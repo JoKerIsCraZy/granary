@@ -99,6 +99,15 @@ public sealed record DownloadRecord
 
     public DateTimeOffset CreatedAt { get; init; }
 
+    /// <summary>
+    /// Where the viewer left it, in milliseconds: what a play from this PC recorded last, or the server's position when that is
+    /// newer (<see cref="ResumeAt"/>). Null until either is known.
+    /// </summary>
+    public long? ResumeMs { get; init; }
+
+    /// <summary>When <see cref="ResumeMs"/> was recorded, on this PC or as the server says; the newer of two positions wins.</summary>
+    public DateTimeOffset? ResumeAt { get; init; }
+
     /// <summary>When the manifest was last read from the server.</summary>
     public DateTimeOffset? ManifestReadAt { get; init; }
 

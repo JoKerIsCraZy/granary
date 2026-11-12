@@ -46,6 +46,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     // This PC's own player choices, such as the Sleep button, the time left and the volume; without them, as in tests that
     // leave them out, the defaults hold (the button shows, the duration, mpv's volume) and nothing is kept.
     private readonly IPlaybackDevicePreferences? _devicePreferences;
+    // The downloads on this PC, which play before the server's stream does; without them, as in tests that leave them out,
+    // every server title streams.
+    private readonly global::Granary.Core.Downloads.DownloadPlaybacks? _downloads;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -54,6 +57,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private PlaybackSnapshot _engineState = PlaybackSnapshot.Idle;
     private double? _seekTarget;
     private long _seekTargetAt;
+    // Counts the starts: one that waited for a download's folder goes on only while it is still the latest.
+    private int _starts;
 
     public PlayerViewModel(
         IPlaybackEngine engine,
@@ -72,7 +77,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         EpisodeSpoilerSettings? spoilers = null,
         IPlayerButtonsLayout? buttons = null,
         AudioDelay? audioDelay = null,
-        IPlaybackDevicePreferences? devicePreferences = null)
+        IPlaybackDevicePreferences? devicePreferences = null,
+        global::Granary.Core.Downloads.DownloadPlaybacks? downloads = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -99,6 +105,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _buttons = buttons;
         FollowButtons();
         _devicePreferences = devicePreferences;
+        _downloads = downloads;
         ShowsTimeLeft = devicePreferences?.TimeLeft == true;
         TakeKeptVolume();
         _engine.StateChanged += OnStateChanged;
@@ -229,6 +236,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         EndWatchParty();
         _request = request;
+        int start = ++_starts;
+        // A start before this one that still waits for its playback is no longer the title.
+        _awaitsPlayback = false;
         // A seek on its way belongs to the title before.
         _seekTarget = null;
         ErrorMessage = "";
@@ -253,7 +263,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             StartDirect(direct);
             return;
         }
-        var playback = _serverPlaybacks();
+        if (await CreatePlaybackAsync(request, start) is not { } playback)
+        {
+            return;
+        }
         _playback = playback;
         _playing = _stops.Playing();
         HasSubtitleMenu = true;
@@ -273,6 +286,53 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         await playback.StartAsync(request, CancellationToken.None);
     }
+
+    // A title whose download is on this PC plays from it (DownloadPlaybacks); every other one, and a download whose folder
+    // cannot be read, streams. Null when the viewer left or started another title while the folder was read.
+    private async Task<IServerPlayback?> CreatePlaybackAsync(PlayRequest request, int start)
+    {
+        if (_downloads is null)
+        {
+            return _serverPlaybacks();
+        }
+        IServerPlayback? local = null;
+        _awaitsPlayback = true;
+        try
+        {
+            local = await _downloads.TryCreateAsync(request, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            // Only the kind: a file error's message holds the folder, with the Windows user's name.
+            _logger.LogError("Looking for the title's download failed unexpectedly ({Failure}); it streams", ex.GetType().Name);
+        }
+        if (start != _starts)
+        {
+            // A newer start waits for its own playback, or has it.
+            if (local is not null)
+            {
+                await local.DisposeAsync();
+            }
+            return null;
+        }
+        _awaitsPlayback = false;
+        if (!HasLeft)
+        {
+            return local ?? _serverPlaybacks();
+        }
+        if (local is not null)
+        {
+            await local.DisposeAsync();
+        }
+        return null;
+    }
+
+    // A server title's playback is being made (its download's folder is read): the engine may still report the title before.
+    private bool _awaitsPlayback;
+
+    // A file or URL played directly, with no playback of its own: the engine's state alone says what it does. Not while a
+    // server title's playback is still being made.
+    private bool PlaysDirectly => _playback is null && !_awaitsPlayback;
 
     /// <summary>The viewer's pick in the audio menu: it plays at once and is saved for the series.</summary>
     public void SelectAudio(int ordinal) => _playback?.SelectAudio(ordinal);
@@ -555,7 +615,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _engineState = state;
         ShowEngineState();
         // A direct source plays as soon as the engine does; a server playback says so itself.
-        if (_playback is null && state.HasStarted && Phase == PlayerPhase.Preparing)
+        if (PlaysDirectly && state.HasStarted && Phase == PlayerPhase.Preparing)
         {
             Phase = PlayerPhase.Playing;
             PauseIfSleptWhileLoading();
@@ -577,7 +637,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         DurationSeconds = _playback?.DurationSeconds ?? (state.Duration is { } duration ? duration.TotalSeconds + offset : 0);
         ShowEngineVolume(state);
-        CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
+        CanSeek = state.IsLoaded && state.HasStarted && (PlaysDirectly || _playback?.Status.Phase == ServerPlaybackPhase.Playing);
         FollowBuffered(state, offset);
         FollowMarkers(state);
         ShowMarkerEdit();
@@ -591,7 +651,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
     {
         // A server playback decides itself what an end means (a rejected token is reloaded, not shown).
-        if (_playback is not null)
+        if (!PlaysDirectly)
         {
             return;
         }

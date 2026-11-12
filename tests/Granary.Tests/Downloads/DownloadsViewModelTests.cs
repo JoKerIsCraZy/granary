@@ -343,6 +343,24 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADownloadedRow_OffersPlay_WhichStartsThePlayerWhereTheProfileLeftIt()
+    {
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        await AddFilmAsync("dl_m1", "Example Movie", DownloadState.Downloading);
+        var page = await AttachedAsync();
+        var row = Row(page, "dl_15");
+
+        Assert.True(row.CanPlay);
+        Assert.False(Row(page, "dl_m1").CanPlay);
+        Assert.False(Row(page, "dl_m1").PlayCommand.CanExecute(null));
+        row.PlayCommand.Execute(null);
+
+        var (route, parameter) = Assert.Single(_navigation.Navigations);
+        Assert.Equal(AppRoute.Player, route);
+        Assert.Equal(Granary.Core.Playback.PlayRequest.Resume("ep_dl_15"), parameter);
+    }
+
+    [Fact]
     public async Task NoDownloads_SaysHowToGetSome()
     {
         var page = await AttachedAsync();

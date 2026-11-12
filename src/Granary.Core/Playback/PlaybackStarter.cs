@@ -307,18 +307,22 @@ public sealed class PlaybackStarter(
     public static (string Title, string Subtitle) Titles(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
-        if (detail.Type != WatchItemTypes.Episode)
-        {
-            return (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "");
-        }
-        string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode
+        return detail.Type != WatchItemTypes.Episode
+            ? (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "")
+            : EpisodeTitles(detail.Title, detail.SeriesTitle, detail.SeasonNumber, detail.EpisodeNumber);
+    }
+
+    /// <summary>An episode's two lines: its series and "S1 · E5 — Episode"; without a series, its own title and "S1 · E5".</summary>
+    public static (string Title, string Subtitle) EpisodeTitles(string episodeTitle, string? seriesTitle, int? seasonNumber, int? episodeNumber)
+    {
+        string code = seasonNumber is { } season && episodeNumber is { } episode
             ? string.Create(CultureInfo.InvariantCulture, $"S{season} · E{episode}")
             : "";
-        if (string.IsNullOrWhiteSpace(detail.SeriesTitle))
+        if (string.IsNullOrWhiteSpace(seriesTitle))
         {
-            return (detail.Title, code);
+            return (episodeTitle, code);
         }
-        return (detail.SeriesTitle, string.Join(" — ", new[] { code, detail.Title }.Where(p => p.Length > 0)));
+        return (seriesTitle, string.Join(" — ", new[] { code, episodeTitle }.Where(p => p.Length > 0)));
     }
 
     /// <summary>A failed call worded for the viewer, and whether trying again can help.</summary>

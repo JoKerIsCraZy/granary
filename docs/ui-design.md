@@ -1375,6 +1375,13 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   from. Full screen is the whole window's (see Full screen): leaving the player stops playback and ends the mini view,
   whichever way it is left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change), but keeps full screen;
   the page under it shows again, and the next title opens in full screen too (see Full screen, The next title).
+- **A download** plays in the same player, from the file on this PC (docs/architecture.md, "Playing a download"): the
+  title, the seek bar with its chapters and marked parts, the skip pills, the audio and subtitle menus (the subtitle files
+  kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
+  are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
+  rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
+  sync. A file that will not play shows the failed screen with Granary's own "This download can't be played. Delete it
+  and download it again." and Retry.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px

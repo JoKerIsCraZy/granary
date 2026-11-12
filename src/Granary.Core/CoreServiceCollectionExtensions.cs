@@ -331,6 +331,9 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
+        // A title whose download is on this PC plays from it: the player asks before it streams.
+        services.AddSingleton<Func<LocalMedia, LocalPlayback>>(sp => media => ActivatorUtilities.CreateInstance<LocalPlayback>(sp, media));
+        services.AddSingleton<DownloadPlaybacks>();
     }
 
     // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,

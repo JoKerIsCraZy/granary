@@ -55,30 +55,43 @@ public sealed record PlaybackMediaInfo(string Title, string Subtitle, Uri? Artwo
         if (detail.Type != WatchItemTypes.Episode)
         {
             bool isMovie = detail.Type == WatchItemTypes.Movie;
-            return new(detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "", artwork)
-            {
-                Kind = isMovie ? PlaybackMediaKind.Movie : PlaybackMediaKind.Other,
-                Year = detail.Year,
-                CatalogId = isMovie ? NullIfBlank(detail.ContentId) : null,
-            };
+            return OfTitle(detail.Title, detail.Year, isMovie, isMovie ? detail.ContentId : null, artwork);
         }
-        string title = string.IsNullOrWhiteSpace(detail.Title) && detail.EpisodeNumber is { } number
+        return OfEpisode(detail.Title, detail.SeriesTitle, detail.SeasonNumber, detail.EpisodeNumber, detail.Year, detail.SeriesId, artwork);
+    }
+
+    /// <summary>A movie (<paramref name="isMovie"/>) or another Silo title that is no episode, its year under its title.</summary>
+    /// <param name="catalogId">The movie's own catalog id; none for another title.</param>
+    public static PlaybackMediaInfo OfTitle(string title, int? year, bool isMovie, string? catalogId, Uri? artwork) =>
+        new(title, year?.ToString(CultureInfo.InvariantCulture) ?? "", artwork)
+        {
+            Kind = isMovie ? PlaybackMediaKind.Movie : PlaybackMediaKind.Other,
+            Year = year,
+            CatalogId = NullIfBlank(catalogId),
+        };
+
+    /// <summary>An episode: its own title ("Episode 3" without one) over its series and number.</summary>
+    /// <param name="seriesId">The series' catalog id.</param>
+    public static PlaybackMediaInfo OfEpisode(string? episodeTitle, string? seriesTitle, int? seasonNumber, int? episodeNumber, int? year,
+        string? seriesId, Uri? artwork)
+    {
+        string title = string.IsNullOrWhiteSpace(episodeTitle) && episodeNumber is { } number
             ? string.Create(CultureInfo.InvariantCulture, $"Episode {number}")
-            : detail.Title;
+            : episodeTitle ?? "";
         // The player's own code ("S1 · E5"), after the series as the apps write it.
-        string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode
+        string code = seasonNumber is { } season && episodeNumber is { } episode
             ? string.Create(CultureInfo.InvariantCulture, $"S{season} · E{episode}")
             : "";
-        string subtitle = string.Join(" — ", new[] { detail.SeriesTitle ?? "", code }.Where(part => part.Length > 0));
+        string subtitle = string.Join(" — ", new[] { seriesTitle ?? "", code }.Where(part => part.Length > 0));
         return new(title, subtitle, artwork)
         {
             Kind = PlaybackMediaKind.Episode,
-            SeriesTitle = NullIfBlank(detail.SeriesTitle),
-            SeasonNumber = detail.SeasonNumber,
-            EpisodeNumber = detail.EpisodeNumber,
-            EpisodeTitle = NullIfBlank(detail.Title),
-            Year = detail.Year,
-            CatalogId = NullIfBlank(detail.SeriesId),
+            SeriesTitle = NullIfBlank(seriesTitle),
+            SeasonNumber = seasonNumber,
+            EpisodeNumber = episodeNumber,
+            EpisodeTitle = NullIfBlank(episodeTitle),
+            Year = year,
+            CatalogId = NullIfBlank(seriesId),
         };
     }
 

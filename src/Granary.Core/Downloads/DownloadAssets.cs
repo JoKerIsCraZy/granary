@@ -101,13 +101,12 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         for (int index = 0; index < manifest.Subtitles.Count; index++)
         {
             var subtitle = manifest.Subtitles[index];
-            if (DownloadsApi.AssetPath(record.DownloadId, subtitle.FetchUrl) is not { } path)
+            if (DownloadsApi.AssetPath(record.DownloadId, subtitle.FetchUrl) is not { } path
+                || SubtitleFile(record.DownloadId, subtitle) is not (string reference, string name))
             {
                 logger.LogWarning("Subtitle {Index} of download {DownloadId} is not this download's; it is left out", index, record.DownloadId);
                 continue;
             }
-            string reference = Uri.UnescapeDataString(path[(path.LastIndexOf('/') + 1)..]);
-            string name = DownloadPaths.SubtitleName(reference, subtitle.Format);
             string? known = record.SubtitleRevisions.GetValueOrDefault(reference);
             bool there = File.Exists(Path.Combine(download.Folder, name));
             if (there && (subtitle.Revision is null || subtitle.Revision == known))
@@ -131,6 +130,21 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
             }
         }
         return revisions;
+    }
+
+    /// <summary>
+    /// A manifest's subtitle as the folder keeps it: its reference (<c>external:0</c>, the last part of its address) and its
+    /// file's name (<see cref="DownloadPaths.SubtitleName"/>); null for one that is not this download's (<see cref="DownloadsApi.AssetPath"/>).
+    /// </summary>
+    public static (string Reference, string Name)? SubtitleFile(string downloadId, OfflineSubtitle subtitle)
+    {
+        ArgumentNullException.ThrowIfNull(subtitle);
+        if (DownloadsApi.AssetPath(downloadId, subtitle.FetchUrl) is not { } path)
+        {
+            return null;
+        }
+        string reference = Uri.UnescapeDataString(path[(path.LastIndexOf('/') + 1)..]);
+        return (reference, DownloadPaths.SubtitleName(reference, subtitle.Format));
     }
 
     // One asset into the folder under the name its answer gives it; null when it did not come. A profile change or a stop ends

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Downloads;
@@ -102,6 +103,11 @@ public sealed partial class DownloadRowViewModel : ObservableObject
         _ => "",
     };
 
+    /// <summary>The download is whole and its files are there: the row has Play.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PlayCommand))]
+    public partial bool CanPlay { get; private set; }
+
     /// <summary>What the row shows now.</summary>
     internal DownloadItem Item { get; private set; }
 
@@ -121,6 +127,7 @@ public sealed partial class DownloadRowViewModel : ObservableObject
         PosterPath = item.PosterPath ?? "";
         StatusText = DownloadText.Status(item);
         Progress = item.Progress;
+        CanPlay = item.IsPlayable;
         // A download whose files are gone, or that the server no longer has, can only be deleted.
         bool usable = !item.FilesMissing && !item.IsNoLongerAvailable;
         bool running = item.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading;
@@ -157,6 +164,13 @@ public sealed partial class DownloadRowViewModel : ObservableObject
             await _downloads.DeleteAsync(DownloadId, CancellationToken.None);
         }
     }
+
+    /// <summary>
+    /// Plays the download from this PC, from where the profile left it (the apps' Play on a download's row). The player
+    /// finds the download itself, as for any start of the title (<see cref="DownloadPlaybacks"/>).
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanPlay))]
+    private void Play() => _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(MediaItemId));
 
     /// <summary>The film's or the episode's title page.</summary>
     [RelayCommand]

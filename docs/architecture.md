@@ -1149,9 +1149,13 @@ names allow is near 300; a longer chosen folder adds its own length. So a path c
 - .NET's own file calls take such paths, which covers the store, the transfer and the page's artwork. `WindowsDiskSpace`
   asks Windows in the extended form (`\\?\`) for a path that long.
 - `app.manifest` declares `longPathAware`: it costs nothing, and once the system's `LongPathsEnabled` is on, libmpv's and
-  Windows' own calls in Granary take long paths too. Without that setting, playing a download whose path passes 260 may
-  fail in libmpv (Part 2 plays the local file), and File Explorer or a Windows dialog may not open such a folder: a shorter
-  downloads folder avoids both.
+  Windows' own calls in Granary take long paths too. Without that setting, File Explorer or a Windows dialog may not open
+  such a folder: a shorter downloads folder avoids that.
+- Playing does not depend on that setting. libmpv puts the path of the file it plays into the extended form itself, so a
+  media file over 260 characters plays. It opens a subtitle file as given, which Windows refuses over 260, so
+  `MpvPlaybackEngine.AddSubtitleAsync` hands such a path over in the extended form (`ExtendedPath`: `\\?\`, `\\?\UNC\` for
+  a share). `MpvPlaybackEngineTests.AFileWhoseFullPathIsLongerThan260Characters_Plays_WithASubtitleFileBesideIt` holds
+  both, in a test process that is not long-path aware, which is what the whole app is without `LongPathsEnabled`.
 - The names are not made shorter: the layout keeps every id apart and is already on disk, and a long downloads folder
   could pass 260 whatever the names.
 
@@ -1436,6 +1440,75 @@ The view models of the sign-out paths take it (optional, so they work without it
 - **An expired sign-in.** When the server no longer takes the session, the authentication handler signs out by itself,
   without the viewer's command. Nothing comes here and the downloads stay, as the Android app keeps them: they show again
   when that account signs in there, and its next sign-out or the server's removal takes them along.
+
+### Playing a download
+
+A title whose download is whole on this PC plays from it, with the server or without: local first, as Silo's Android app
+plays (`PlayerViewModel.tryLocalPlayback`), where the Apple app asks "Downloaded on This Device" or "Stream from Server"
+while the server answers.
+
+- **Which titles.** `PlayerViewModel.PlayAsync` asks `DownloadPlaybacks.TryCreateAsync` before it makes a server
+  playback. It answers a `LocalPlayback` for a title of the active profile (`DownloadScope.Of`) whose record is completed
+  with a media file, whose folder is there, and whose manifest and media file can be read. Everything else streams, as
+  before: a title without such a download; a download whose media file or manifest is gone or unreadable (Android streams
+  those without a word; the log says which); a Watch Party, whose room plays one file for everyone; and a version the
+  viewer picked themselves on the title page (`PrePlayChoice.IsVersionPicked`) that is not the downloaded one (the
+  record's `MediaFileId`, else the manifest's `media_file_id`). Android plays the download there too; Granary lets the
+  pick win, so the Version picker stays the way to stream another file of a downloaded title. Picked tracks alone stay
+  with the download. A download the server no longer has (`IsNoLongerAvailable`) still plays.
+- **Reading the folder.** The store's rows answer in memory, so a title without a download costs no wait and no thread
+  hop. A download's folder is read on the thread pool (its file names and `manifest.json`, a `LocalMedia`) within
+  `DownloadPlaybacks.ReadBudget` (3 s of the `TimeProvider`): a share that does not answer lets the title stream. A title
+  started before the downloads were first read waits for that read, within the same budget. `PlayerViewModel` counts its
+  starts, so one that waited for a folder goes on only while it is still the latest and the viewer has not left; until
+  its playback is there, the engine's state is not taken for the new title's (`PlaysDirectly`), since the engine may
+  still report the title before.
+- **No server session.** `LocalPlayback` implements `IServerPlayback`, so the player page and everything that follows
+  the player work as for a stream: the seek bar, chapters and skip pills, the next episode, the sleep timer, the kept
+  volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It
+  loads the media file straight into the engine (`MediaSource.Local`, no proxy route, no headers) and opens no playback
+  session, online or not, as both apps: the server's Activity page does not list it, and there is no quality, no other
+  version, no trickplay, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides
+  the last two). `SessionId` is null.
+- **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
+  the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
+  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). The picture for
+  Windows' media controls is the poster or still kept in the folder, a `file:` address the app reads from the disk
+  (`WindowsMediaControls`), as the Apple app shows its `posterFileURL`. The Discord status words the title from the same
+  `PlaybackMediaInfo`; its poster and page come from TMDB through the server, so without a connection it shows without
+  them.
+- **What the server adds.** With a server signed in, the start reads the profile's playback settings
+  (`PlaybackPreferencesReader`) and the title's watch detail side by side, within `LocalPlayback.PreferencesBudget`
+  (3 s); what does not come in time is done without: the settings' defaults, and no watch detail. Android reads the watch
+  detail for a local play the same way. From the watch detail come the profile's subtitle preference, the tracks the
+  title page's picks name, and where the profile left the title.
+- **Where it starts.** Start over starts at 0. A resume starts where the profile left the title: the server's point when
+  the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). A point within 5 s of the end starts over (the
+  Apple app's `resolvedResumePosition`). This PC's Rewind on resume applies as for a stream (`ResumeRewind`; not to a
+  change of episode), though neither app rewinds a local play: the setting is the viewer's for every resume on this PC.
+- **Audio.** The file holds every track. It starts with the title page's pick where that names a track of this file (the
+  same ordinal for the same file, else the first track of that language, for a copy the server prepared with fewer
+  tracks), else with the manifest's `selected_audio_track_index`. A pick in the player switches in the file
+  (`SetAudioStream`); it is not saved for the series.
+- **Subtitles.** The files kept beside the media are listed from the manifest (`local:sidecar:<n>`;
+  `DownloadAssets.SubtitleFile` names each from its reference, and one that never arrived is left out, as in both apps).
+  With the first frame the tracks the file carries itself join them (`local:stream:<id>`, from
+  `IPlaybackEngine.ReadSubtitleTracks`, mpv's `track-list`), since no manifest lists those. A file beside the media is
+  read into the player when it is picked (`AddSubtitleAsync`), once; a track of the file shows at once. The subtitle the
+  title starts with is the one a stream would start with: the title page's pick (Off included), found among the tracks
+  here by its language and its forced and hearing-impaired marks; else `SubtitleAutoSelection.Resolve` over the tracks
+  here with the watch detail's preference. Without the watch detail the preference is the server's default, which shows
+  none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
+- **Settings changed while it plays.** The speed, the subtitle delay, auto-play and the sleep timer's duration hold in
+  the player at once and are saved to the server under a stream's keys, as the download's profile only
+  (`SetValueAsProfileAsync`), when a server was signed in as the title started; a save that does not arrive is logged and
+  the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
+  followed while the title plays, as a stream follows it.
+- **A file that will not play.** The player says "This download can't be played. Delete it and download it again." with
+  Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
+  again."; Apple: its error wall with Retry).
+- **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
+  name and drops its folder, which lies under the Windows user's own folder and names them.
 
 ## Windows App SDK
 
