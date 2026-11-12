@@ -268,6 +268,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             return;
         }
         _playback = playback;
+        // Only now: until the playback is the player's, what the engine still says belongs to the title before.
+        _awaitsPlayback = false;
         _playing = _stops.Playing();
         HasSubtitleMenu = true;
         ReadMarkerPermission();
@@ -315,11 +317,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             }
             return null;
         }
-        _awaitsPlayback = false;
         if (!HasLeft)
         {
+            // Still awaited: the caller ends the wait as it takes the playback.
             return local ?? _serverPlaybacks();
         }
+        _awaitsPlayback = false;
         if (local is not null)
         {
             await local.DisposeAsync();
@@ -327,7 +330,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         return null;
     }
 
-    // A server title's playback is being made (its download's folder is read): the engine may still report the title before.
+    // A server title's playback is being made (its download's folder is read) and not yet the player's: the engine may still
+    // report the title before.
     private bool _awaitsPlayback;
 
     // A file or URL played directly, with no playback of its own: the engine's state alone says what it does. Not while a

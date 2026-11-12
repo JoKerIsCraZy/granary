@@ -22,11 +22,15 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _fixture.DisposeAsync();
 
+    // Runs as a stream's playback is made, before the player has taken it.
+    private Action? _whileAStreamIsMade;
+
     private PlayerViewModel NewPlayer(IUpNextSource? upNext = null) =>
         new(_fixture.Engine, new ImmediateDispatcher(), _navigation, () =>
         {
             var stream = new FakeServerPlayback();
             _streams.Add(stream);
+            _whileAStreamIsMade?.Invoke();
             return stream;
         }, _fixture.Stops, _fixture.Harness.Time, upNext, audioDelay: _fixture.AudioDelay, devicePreferences: _fixture.Device,
             downloads: _fixture.Playbacks);
@@ -387,5 +391,29 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         // The manifest's facts; the commentary is the track the download starts with.
         Assert.Equal(("mkv", "H.264", "SDR", "AAC", "2"), (rows["Current Source File"]["Container"], rows["Current Source File"]["Video codec"],
             rows["Current Source File"]["Video range type"], rows["Current Source File"]["Audio codec"], rows["Current Source File"]["Audio channels"]));
+    }
+
+    [Fact]
+    public async Task WhatTheEngineSaysBeforeTheNewPlaybackIsThePlayers_IsNotTakenForTheNewTitle()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(100);
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+
+        // The next title streams. Between the look for its download and the player taking its playback, the engine still
+        // reports the title before: a frame, then its end.
+        _whileAStreamIsMade = () =>
+        {
+            Frame(110);
+            _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+        };
+        await player.StartAsync(PlayRequest.Resume("mv_streamed"));
+
+        // Neither is the new title's: it is still being prepared, cannot be sought in, and has not ended.
+        Assert.Equal(PlayerPhase.Preparing, player.Phase);
+        Assert.False(player.CanSeek);
+        Assert.Single(_streams);
     }
 }
