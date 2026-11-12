@@ -25,16 +25,14 @@ public static class MediaCardFactory
     public static MediaCard ForSection(string? sectionType, CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default) =>
         sectionType is SectionTypes.ContinueWatching or SectionTypes.NextUp
             ? Landscape(item, serverBase, spoilers)
-            : Poster(item, serverBase, inRow: true);
+            : Poster(item, serverBase);
 
     /// <summary>
     /// "Dune" / "2021"; an episode as the web's grid card: "Tracker" / "Safe Harbor" / "S04E01". Its lines are links as the
-    /// web's <c>ItemCard</c>: an episode's title line opens its series, the lines under it the episode.
+    /// web's <c>ItemCard</c> and <c>SectionItemCard</c>: an episode's title line opens its series, the lines under it the
+    /// episode.
     /// </summary>
-    public static MediaCard Poster(CatalogItemBase item, Uri serverBase) => Poster(item, serverBase, inRow: false);
-
-    // A row's poster is the web's SectionItemCard, which makes one link of an episode's title and its code.
-    private static MediaCard Poster(CatalogItemBase item, Uri serverBase, bool inRow)
+    public static MediaCard Poster(CatalogItemBase item, Uri serverBase)
     {
         ArgumentNullException.ThrowIfNull(item);
         var episode = EpisodeLabels(item);
@@ -47,7 +45,6 @@ public static class MediaCardFactory
             Links = CardLinks.Poster,
             // The web's headingHref: the series for an episode that names it.
             HeadingId = item.Type == CatalogItemTypes.Episode ? SeriesOf(item) : null,
-            JoinsEpisodeLines = inRow && episode is not null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.PosterUrl) ?? ArtworkUrl.Resolve(serverBase, item.BackdropUrl),
             ImageThumbhash = ArtworkUrl.Resolve(serverBase, item.PosterUrl) is not null ? item.PosterThumbhash : item.BackdropThumbhash,
         }, item);
@@ -245,7 +242,7 @@ public static class MediaCardFactory
             string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}"));
     }
 
-    private static string? SeriesOf(CatalogItemBase item) => string.IsNullOrEmpty(item.SeriesId) ? null : item.SeriesId;
+    private static string? SeriesOf(CatalogItemBase item) => string.IsNullOrWhiteSpace(item.SeriesId) ? null : item.SeriesId;
 
     private static string? EpisodeLine(int? season, int? episode, string title) =>
         season is { } s && episode is { } e ? $"Season {s} Episode {e} • {title}" : title;

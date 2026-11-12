@@ -401,12 +401,19 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 - A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
   text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
   caption while it shows; a recycled card without one shows the plain caption again.
-- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element and no handler to a
-  card: the caption has a fill without colour (one brush for all cards), so the card's own pointer handlers hear the
-  pointer there, and the line under it is found from its place among the text blocks. Core decides which lines to
-  underline and what a title line opens; the card sets `TextDecorations` on the lines that change and takes one of two
-  shared cursors. Only a card a pointer has come to while its title opens a series listens for presses and taps: it
-  handles the press on that line, so the button around it does not click, and opens the series on the tap.
+- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element to a card, and no
+  handler to a card no pointer has come to: the caption has a fill without colour (one brush for all cards), so the
+  pointer handlers every card already has hear the pointer there. Each move reads the pointer's place once: above the
+  caption it is on the artwork and nothing more is looked up; on the caption the line under it is found among the text
+  blocks. Core decides what shows where (`CardHover`: the artwork's look or a link, never both), which lines go
+  underlined together and what a title line opens; the card sets `TextDecorations` on the lines that change and, only
+  while the pointer is on it, one of two shared cursors.
+- A click on a card's title line stays the button's click. A card whose title opens a series gets, the first time a
+  pointer comes to its caption, one handler for its own presses and two on the button around it (a key on its way
+  there, the pointer's capture lost), and a `HeadingPress` that notes a press beginning on that line. When the button
+  clicks, the row or grid asks the card first (`TryOpenHeading`, then `CardClick`, both rules in Core). Nothing is
+  marked handled and no gesture event is waited for, so the click cannot be lost: the first version handled the press
+  and opened the series on `Tapped`, which rested on WinUI still raising `Tapped` after a handled press.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the

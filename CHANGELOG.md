@@ -20,8 +20,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
-- The lines under a card are links, as on Silo's web: the mouse underlines the line it is on. On an episode's card the
-  series' name opens the series, and the lines under it open the episode, as the picture does.
+- The lines under a card are links, as on Silo's web: the mouse underlines the line it is on, together with the other
+  lines that open the same page. On an episode's card the series' name opens the series, and the lines under it open the
+  episode, as the picture does.
+- A card's Play button and its other buttons show only while the pointer is on the picture, as on Silo's web, no longer
+  over the lines under it.
 - The details under the logo at the top of Home and For You name the title's IMDb rating (TMDB's without one) and its
   first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →

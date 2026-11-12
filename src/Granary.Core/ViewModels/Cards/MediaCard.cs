@@ -117,12 +117,6 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? HeadingId { get; init; }
 
-    /// <summary>
-    /// The episode's title and its code are one link, as on the web's row card (<c>SectionItemCard</c>): the pointer over
-    /// either underlines both. A grid's card (<c>ItemCard</c>) links each by itself.
-    /// </summary>
-    public bool JoinsEpisodeLines { get; init; }
-
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
         new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
