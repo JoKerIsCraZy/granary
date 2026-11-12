@@ -70,7 +70,7 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
             return [];
         }
         return store.In(scope)
-            .Where(d => d is { Record.State: DownloadState.Completed, FilesMissing: false, MediaPath: not null } && d.Record.SeriesId == current.SeriesId
+            .Where(d => d.CanPlay && d.Record.SeriesId == current.SeriesId
                 && d.Record.MediaItemId != current.ContentId)
             .Select(d => d.Record)
             .Where(r => r is { SeasonNumber: { } season, EpisodeNumber: not null } && (season > 0 || season == current.SeasonNumber))

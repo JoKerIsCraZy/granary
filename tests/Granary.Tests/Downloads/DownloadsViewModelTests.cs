@@ -664,4 +664,27 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         Assert.True(page.ShowsReclaim);
     }
+
+    [Fact]
+    public async Task ADownloadWhoseMediaFileWasDeletedByHand_SaysMissingFile_AndOffersNoPlay()
+    {
+        var download = await _h.AddPlayableAsync();
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+        var queue = _h.StartQueue();
+        var page = await AttachedAsync(queue);
+        var row = Rows(page).Single();
+        Assert.Equal((DownloadText.Downloaded, true), (row.StatusText, row.CanPlay));
+
+        // Deleted in Explorer while Granary runs; the page is left and shown again.
+        File.Delete(download.MediaPath!);
+        page.Detach();
+        page.Attach();
+
+        await Until(() => row.StatusText == DownloadText.MissingFile, "the row says the file is missing");
+        Assert.Equal("Missing file", row.StatusText);
+        Assert.False(row.CanPlay);
+        Assert.False(row.PlayCommand.CanExecute(null));
+        // Nothing to free: it is not offered for deletion, and takes no space.
+        Assert.False(page.ShowsReclaim);
+    }
 }

@@ -123,6 +123,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         // Keep watched downloads, switched in Settings while the page stays in memory, shows at once.
         _preferences.Changed += OnChanged;
         Show(readSpace: true);
+        // A media file deleted by hand since the last look: its row says "Missing file" once the disk was read.
+        _downloads.LookAtFiles();
     }
 
     /// <summary>

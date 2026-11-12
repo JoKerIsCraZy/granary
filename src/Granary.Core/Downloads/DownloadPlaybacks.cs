@@ -13,7 +13,7 @@ public sealed record LocalMedia(StoredDownload Download, OfflineManifest Manifes
 /// Decides whether a title plays from this PC (docs/architecture.md, "Playing a download"). Local first, as Silo's Android
 /// app plays (<c>PlayerViewModel.tryLocalPlayback</c>): a title whose download is whole on this PC plays from it, with or
 /// without the server. What streams instead: a title with no finished download of the active profile, one whose files are
-/// missing (Android streams those without a word), a Watch Party (the room's file plays for everyone), and a version the
+/// missing (Android streams those without a word; the Downloads page says "Missing file" from then on), a Watch Party (the room's file plays for everyone), and a version the
 /// viewer picked on the title page that is not the one downloaded.
 /// </summary>
 public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager session, Func<LocalMedia, LocalPlayback> playbacks, TimeProvider time,
@@ -33,7 +33,7 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.ContentId is not { } contentId || request.IsWatchParty || DownloadScope.Of(session) is not { } scope
-            || store.FindByItem(scope, contentId) is not { Record.State: DownloadState.Completed, FilesMissing: false, MediaPath: not null } download)
+            || store.FindByItem(scope, contentId) is not { CanPlay: true } download)
         {
             return null;
         }
@@ -94,6 +94,8 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             if (!files.Contains(download.Record.MediaFile!))
             {
                 logger.LogWarning("The media file of download {DownloadId} is not in its folder; the title streams", id);
+                // Its row stops saying Downloaded and offering Play.
+                store.MarkMediaMissing(download.Record.Scope, id);
                 return null;
             }
             var manifest = OfflineManifest.Read(File.ReadAllBytes(Path.Combine(download.Folder, DownloadPaths.Manifest)));

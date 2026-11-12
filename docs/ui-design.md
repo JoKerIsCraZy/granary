@@ -237,7 +237,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
   the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
   ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
-  not enough space", "No longer available", "Missing file"),
+  not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
+  hand, which then has no Play; the page has the folders looked at as it shows),
   and a 3 px bar in the accent while it downloads; the size on the right (13 px muted), then two 34 px round outline
   buttons (History's look): Pause, Resume or Retry, one button that stays while its action changes and goes only when
   there is nothing left to do, in whose place a download that is whole has Play (the apps' Play on a download's row; it

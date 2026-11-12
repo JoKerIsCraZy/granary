@@ -156,4 +156,19 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         Assert.Empty(await Create().OnDeckAsync("sr_1", Token));
         Assert.Single(_h.Silo.SentTo(HttpMethod.Get, Home));
     }
+
+    [Fact]
+    public async Task ADownloadWhoseMediaFileIsGone_DoesNotFollow()
+    {
+        await _h.AddPlayableAsync("dl_5", "ep_5", episode: 5);
+        var gone = await _h.AddPlayableAsync("dl_6", "ep_6", episode: 6);
+        await _h.AddPlayableAsync("dl_7", "ep_7", episode: 7);
+        File.Delete(gone.MediaPath!);
+        _h.Store.RecheckFolders();
+        Offline();
+
+        var next = await Create().NextEpisodeAsync(Episode5, Token);
+
+        Assert.Equal("ep_7", next?.ContentId);
+    }
 }

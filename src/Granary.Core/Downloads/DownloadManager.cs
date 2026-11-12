@@ -138,8 +138,14 @@ public sealed partial class DownloadManager
     /// <summary>The bytes the active profile's downloads take: the finished files and the parts so far, as the queue knows them.</summary>
     public long BytesUsed() =>
         DownloadScope.Of(_session) is { } scope
-            ? _store.In(scope).Where(d => !d.FilesMissing).Sum(d => BytesDone(scope, d.Record))
+            ? _store.In(scope).Where(d => !d.FilesMissing && !d.MediaMissing).Sum(d => BytesDone(scope, d.Record))
             : 0;
+
+    /// <summary>
+    /// Has the downloads' folders looked at again soon, off the caller's thread: a page that lists them shows a file that was
+    /// deleted by hand, or a drive that came back, without waiting for the queue's next look.
+    /// </summary>
+    public void LookAtFiles() => _queue.RecheckSoon();
 
     /// <summary>Pauses a download until the viewer resumes it, also across starts; its transfer stops, keeping its bytes.</summary>
     public async Task PauseAsync(string downloadId)
@@ -216,8 +222,10 @@ public sealed partial class DownloadManager
     private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered)
     {
         var record = download.Record;
+        // A finished download whose media file was deleted by hand is missing its file too, for all a page shows of it.
         return new DownloadItem(record.DownloadId, record.MediaItemId, record.Title, record.SeriesId, record.SeriesTitle, record.SeasonNumber,
-            record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable, download.FilesMissing,
+            record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable,
+            download.FilesMissing || download.MediaMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
             record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
             _playing?.Contains(record.Scope, record.DownloadId) == true);

@@ -171,8 +171,21 @@ public sealed partial class DownloadQueue
         StartChores(scope, server);
     }
 
+    /// <summary>
+    /// Has the folders looked at with the loop's next pass, whenever the last look was: the Downloads page asks as it shows.
+    /// Still one look at a time, beside the loop.
+    /// </summary>
+    public void RecheckSoon()
+    {
+        lock (_gate)
+        {
+            _recheckRequested = true;
+            WakeLocked();
+        }
+    }
+
     // The folders are read again at most every FolderRecheck after the last recheck ended (or when a transfer found its folder
-    // gone), beside the loop, one recheck at a time: it reads the disk for every download, a slow drive's included. It also
+    // gone, or a page asked), beside the loop, one recheck at a time: it reads the disk for every download, a slow drive's included. It also
     // retries removed downloads' folders that are due, and wakes the loop once all of it is done, for the deletes those folders
     // held back.
     private void RecheckFoldersWhenDue()
@@ -426,7 +439,7 @@ public sealed partial class DownloadQueue
             // A recheck under way wakes the loop when it ends: until then, no other is due.
             var recheck = (_lastRecheck ?? now) + FolderRecheck;
             bool rechecking = !_rechecking.IsCompleted;
-            if (!rechecking && downloads.Any(d => d.FilesMissing && !d.IsDamaged))
+            if (!rechecking && downloads.Any(d => (d.FilesMissing && !d.IsDamaged) || d.MediaMissing))
             {
                 next = Earliest(next, recheck);
             }

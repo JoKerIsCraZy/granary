@@ -144,6 +144,16 @@ public sealed record StoredDownload(DownloadRecord Record, string Folder, bool F
     public bool IsDamaged { get; init; }
 
     /// <summary>
+    /// The download is finished and its folder is there, but its media file is not: deleted by hand, as to make room. As the
+    /// disk was last looked at (<see cref="DownloadStore.RecheckFolders"/>) or a play found it. It does not play from this PC,
+    /// and its row says so.
+    /// </summary>
+    public bool MediaMissing { get; init; }
+
+    /// <summary>The finished media file can be played, as far as the store knows without reading the disk.</summary>
+    public bool CanPlay => Record.State == DownloadState.Completed && !FilesMissing && !MediaMissing && MediaPath is not null;
+
+    /// <summary>
     /// The store's <see cref="DownloadStore.ClearGeneration"/> when this run added the download; 0 for one read from the disk,
     /// which came before any clear. A sign-out's removal takes only the downloads added before its clear.
     /// </summary>

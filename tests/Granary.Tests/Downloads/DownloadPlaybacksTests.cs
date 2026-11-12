@@ -77,6 +77,9 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
         File.Delete(download.MediaPath!);
         Assert.Null(await TryAsync(PlayRequest.Resume("ep_5")));
         Assert.Contains("media file", _fixture.Harness.Logs.All, StringComparison.Ordinal);
+        // The play found it: the download's row says so from now on, and the next play does not look again.
+        Assert.True(_fixture.Harness.Find("dl_1")!.MediaMissing);
+        Assert.Null(_fixture.Playbacks.Find(PlayRequest.Resume("ep_5")));
 
         // The whole folder went, as on a drive that is not plugged in.
         Directory.Delete(download.Folder, recursive: true);

@@ -1119,6 +1119,14 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   reads the disk on the caller's thread, so the queue's loop calls it, never the UI thread. A folder that is there with a
   record that cannot be read is damaged (`StoredDownload.IsDamaged`, said in the log once): its row stays until it is
   deleted. Deleting such a row takes it off the index and queues the server's delete.
+- **A missing media file.** Someone who deletes a finished download's media file by hand, as to make room, leaves its
+  folder, record and subtitles behind. The load and every `RecheckFolders` look whether a finished download's media file
+  is there (`StoredDownload.MediaMissing`), and a play that finds it gone says so at once (`MarkMediaMissing`). Such a
+  download does not play from this PC (`CanPlay`), is not the next episode, counts no space and is not offered for
+  deletion; the pages show it as they show missing files ("Missing file", the Android app's status for a finished file
+  that is no longer on the device), with Delete alone. The file back in its place, or the download fetched again, ends
+  it. The Downloads page asks for a look as it shows (`DownloadManager.LookAtFiles` → `DownloadQueue.RecheckSoon`), off
+  the UI thread as every look.
 - **Writes.** A change holds at once for `In`, `All` and `Find`, which answer snapshots, and `Changed` follows on the
   caller's thread. The files are written one at a time behind a `SemaphoreSlim`, off the caller's thread, each with the
   latest state, so the last write is the latest, and each is on the disk before it replaces the file. A new download starts

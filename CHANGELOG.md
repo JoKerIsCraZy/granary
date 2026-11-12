@@ -16,7 +16,8 @@ release's section is what its update says it changes (docs/release.md).
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, and the next episode plays when it is downloaded too. What you watch offline
   goes back to your Silo server once Granary reaches it again; signing out of a server or removing it also forgets what
-  was not sent yet. The Downloads page has Play on each download, and Reclaim
+  was not sent yet. The Downloads page has Play on each download, says Missing file for
+  one whose file was deleted outside Granary, and Reclaim
   Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
   watched downloads is on.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
