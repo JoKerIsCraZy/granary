@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
+using Granary.Core.Artwork;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -39,6 +40,15 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
     /// web's <c>HeroBanner</c> does (<see cref="EpisodeSpoilers"/>).
     /// </summary>
     public bool BlursBackdrop { get; init; }
+
+    /// <summary>
+    /// What a hero's pictures of the title depend on: the title, whether its backdrop is blurred, and which backdrop it is,
+    /// without what only authorizes its address (<see cref="ArtworkCacheKey"/>). The same title loaded again has its
+    /// addresses signed anew and keeps the pictures shown; one whose backdrop came in another size, as after its page
+    /// asked for wider ones, or was replaced on the server, gets it shown.
+    /// </summary>
+    public (string Key, bool Blurs, string? Backdrop) Pictures =>
+        (Key, BlursBackdrop, BackdropUrl is { IsAbsoluteUri: true } url ? ArtworkCacheKey.From(url) : null);
 
     /// <summary>The title of <paramref name="item"/>, hiding what <paramref name="spoilers"/> hide of an unwatched episode.</summary>
     public static BrowseHeroTitle From(CatalogItemBase item, Uri server, EpisodeSpoilers spoilers)

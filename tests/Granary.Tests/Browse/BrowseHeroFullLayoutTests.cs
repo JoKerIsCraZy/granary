@@ -43,12 +43,85 @@ public sealed class BrowseHeroFullLayoutTests
     [InlineData(1040)]
     [InlineData(1300)]
     [InlineData(1552)]
-    public void TheRows_BeginUnderTheFullHero_AndItsFadeKeepsItsShare(double pageHeight)
+    public void TheRows_BeginUnderTheFullHero_AndItsFadeIsTheWebsTwoThirds(double pageHeight)
     {
         var sizes = Full(pageHeight);
 
         Assert.Equal(sizes.RestHeight, sizes.RowsTop);
-        Assert.Equal(Math.Round(sizes.RestHeight * BrowseHeroLayout.FadeShare, MidpointRounding.AwayFromZero), sizes.FadeHeight);
+        Assert.Equal(Math.Round(sizes.RestHeight * 0.66, MidpointRounding.AwayFromZero), sizes.FadeHeight);
+    }
+
+    [Theory]
+    [InlineData(1664, 1040)]
+    [InlineData(800, 700)]
+    // A 3840 x 1600 window: the compact hero's box stops at two and a half times its height, the full one's does not.
+    [InlineData(3580, 1552)]
+    public void TheFullHerosBackdrop_RunsOverItsWholeWidth_AsTheWebsBanner(double pageWidth, double pageHeight)
+    {
+        Assert.Equal(pageWidth, BrowseHeroLayout.BackdropBoxWidth(pageWidth, Full(pageHeight)));
+        Assert.True(Full(pageHeight).IsFull);
+        Assert.False(BrowseHeroLayout.For(pageHeight).IsFull);
+    }
+
+    [Theory]
+    // The box, then the picture: its size, and where its top left lies from the box's.
+    // Wider than 16:9: as wide as the box, a fifth of what its height loses cut at the top.
+    [InlineData(1079, 440, 1079, 607, 0, -33)]
+    [InlineData(1664, 686, 1664, 936, 0, -50)]
+    [InlineData(3580, 760, 3580, 2014, 0, -251)]
+    // Narrower: as high as the box, its sides cut evenly.
+    [InlineData(1000, 720, 1280, 720, -140, 0)]
+    [InlineData(800, 459, 816, 459, -8, 0)]
+    public void ABackdrop_FillsItsBox_ShowingItsUpperPart_AsTheWebsHeroes(double boxWidth, double boxHeight, double width, double height,
+        double left, double top)
+    {
+        Assert.Equal(new BackdropPlace(width, height, left, top), BrowseHeroLayout.PlaceBackdrop(boxWidth, boxHeight));
+    }
+
+    [Fact]
+    public void ABackdrop_CoversItsBox_WhateverTheBoxesSize()
+    {
+        for (double boxWidth = 300; boxWidth <= 3900; boxWidth += 37)
+        {
+            for (double boxHeight = 150; boxHeight <= 760; boxHeight += 61)
+            {
+                var place = BrowseHeroLayout.PlaceBackdrop(boxWidth, boxHeight);
+
+                Assert.True(place.Left <= 0 && place.Top <= 0 && place.Left + place.Width >= boxWidth && place.Top + place.Height >= boxHeight,
+                    $"{boxWidth} x {boxHeight}: {place}");
+                // The picture keeps its shape to within the pixel its size is rounded up by.
+                Assert.InRange(place.Width - place.Height * 16 / 9, -2, 2);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(0, 440)]
+    [InlineData(1000, 0)]
+    [InlineData(double.NaN, 440)]
+    [InlineData(1000, double.PositiveInfinity)]
+    [InlineData(-5, 440)]
+    public void ABoxWithoutASize_PlacesNoBackdrop(double boxWidth, double boxHeight)
+    {
+        Assert.Equal(default, BrowseHeroLayout.PlaceBackdrop(boxWidth, boxHeight));
+    }
+
+    [Theory]
+    // A 1920 x 1040 window: the compact hero's box is 1100 wide, the full one's the window's.
+    [InlineData(1920, 1040, BrowseHeroSize.Compact, 1100)]
+    [InlineData(1920, 1040, BrowseHeroSize.Full, 1920)]
+    // A 3840 x 1560 one.
+    [InlineData(3840, 1560, BrowseHeroSize.Compact, 1650)]
+    [InlineData(3840, 1560, BrowseHeroSize.Full, 3840)]
+    // A narrow, tall one: the hero's height cuts the picture's sides, so it is drawn wider than the window.
+    [InlineData(1000, 1200, BrowseHeroSize.Full, 1352)]
+    [InlineData(0, 1040, BrowseHeroSize.Full, 0)]
+    [InlineData(double.NaN, 1040, BrowseHeroSize.Full, 0)]
+    [InlineData(1920, double.NaN, BrowseHeroSize.Full, 1920)]
+    public void TheWidthTheHeroDrawsItsBackdropAt_FollowsTheWindowAndTheHerosSize(double windowWidth, double windowHeight, BrowseHeroSize size,
+        double drawn)
+    {
+        Assert.Equal(drawn, BrowseHeroLayout.BackdropDrawnWidth(windowWidth, windowHeight, size));
     }
 
     [Theory]

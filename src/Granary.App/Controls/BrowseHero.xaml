@@ -2,7 +2,8 @@
 <!--
     The top of Home (docs/ui-design.md, Home): the title the pointer or the keyboard is on, or the slide of Home's banner,
     with its backdrop on the right, fading into the page toward the text and the rows. It stays at the top while the rows
-    scroll, folding to a compact header (BrowseHero.FollowScroll).
+    scroll, folding to a compact header (BrowseHero.FollowScroll). The full hero's backdrop runs over its whole width under
+    the fades of the web's banner (BrowseHero.ApplySizes).
 -->
 <UserControl
     x:Class="Granary.App.Controls.BrowseHero"
@@ -10,39 +11,61 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     VerticalAlignment="Top">
 
+    <UserControl.Resources>
+        <!-- The compact hero's fades: into the page toward the text on the left, and toward the rows. -->
+        <LinearGradientBrush x:Key="CompactSideFade" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Offset="0" Color="{StaticResource SiloBackgroundColor}" />
+            <GradientStop Offset="0.42" Color="#59141417" />
+            <GradientStop Offset="1" Color="#00141417" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="CompactBottomFade" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#00141417" />
+            <GradientStop Offset="1" Color="{StaticResource SiloBackgroundColor}" />
+        </LinearGradientBrush>
+        <!-- The full hero's, as the web's banner's (.hero-gradient-left and .hero-gradient in its app.css): 88 %, 58 % and
+             22 % of the page's colour over the left half; and from the bottom 100 %, 88 %, 48 % and 12 % of it at 0, 12, 30
+             and 50 % of the hero's height, clear from 66 % (the fade is that high, BrowseHeroLayout.FullFadeShare). The
+             page's colour is SiloBackgroundColor, #0E0E10. -->
+        <LinearGradientBrush x:Key="FullSideFade" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Offset="0" Color="#E00E0E10" />
+            <GradientStop Offset="0.16" Color="#940E0E10" />
+            <GradientStop Offset="0.34" Color="#380E0E10" />
+            <GradientStop Offset="0.5" Color="#000E0E10" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="FullBottomFade" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#000E0E10" />
+            <GradientStop Offset="0.242" Color="#1F0E0E10" />
+            <GradientStop Offset="0.545" Color="#7A0E0E10" />
+            <GradientStop Offset="0.818" Color="#E00E0E10" />
+            <GradientStop Offset="1" Color="{StaticResource SiloBackgroundColor}" />
+        </LinearGradientBrush>
+    </UserControl.Resources>
+
     <!-- Heights from BrowseHeroLayout; a wheel or a touch drag on the header scrolls the rows. -->
     <Grid x:Name="Root" Background="Transparent" PointerWheelChanged="OnWheel"
           ManipulationMode="TranslateY,TranslateInertia" ManipulationStarted="OnDragStarting" ManipulationDelta="OnDrag">
         <Grid x:Name="BackdropBox" HorizontalAlignment="Right" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
-            <!-- Two layers, so a new title's backdrop fades in over the last one; cut to the box around its middle. Their order
-                 changes only among themselves, under the fades. -->
-            <Grid>
-                <Grid x:Name="LayerA">
-                    <Image x:Name="BlurA" Stretch="UniformToFill" VerticalAlignment="Center" />
-                    <Image x:Name="ArtA" Stretch="UniformToFill" VerticalAlignment="Center" Opacity="0" ImageOpened="OnArtOpened" />
+            <!-- Two layers, so a new title's backdrop fades in over the last one. Their order changes only among themselves,
+                 under the fades. The picture fills the box showing its upper part, as the web's heroes: an Image can only
+                 be cut around its top, middle or bottom, so the layers have the picture's own size and lie in the box where
+                 BrowseHeroLayout.PlaceBackdrop says, cut to it (BrowseHero.PlacePicture). -->
+            <Canvas x:Name="Pictures">
+                <Grid x:Name="Picture">
+                    <Grid x:Name="LayerA">
+                        <Image x:Name="BlurA" Stretch="UniformToFill" VerticalAlignment="Center" />
+                        <Image x:Name="ArtA" Stretch="UniformToFill" VerticalAlignment="Center" Opacity="0" ImageOpened="OnArtOpened" />
+                    </Grid>
+                    <Grid x:Name="LayerB" Opacity="0">
+                        <Image x:Name="BlurB" Stretch="UniformToFill" VerticalAlignment="Center" />
+                        <Image x:Name="ArtB" Stretch="UniformToFill" VerticalAlignment="Center" Opacity="0" ImageOpened="OnArtOpened" />
+                    </Grid>
                 </Grid>
-                <Grid x:Name="LayerB" Opacity="0">
-                    <Image x:Name="BlurB" Stretch="UniformToFill" VerticalAlignment="Center" />
-                    <Image x:Name="ArtB" Stretch="UniformToFill" VerticalAlignment="Center" Opacity="0" ImageOpened="OnArtOpened" />
-                </Grid>
-            </Grid>
-            <Rectangle>
-                <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Offset="0" Color="{StaticResource SiloBackgroundColor}" />
-                        <GradientStop Offset="0.42" Color="#59141417" />
-                        <GradientStop Offset="1" Color="#00141417" />
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
-            <Rectangle x:Name="BottomFade" VerticalAlignment="Bottom">
-                <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Offset="0" Color="#00141417" />
-                        <GradientStop Offset="1" Color="{StaticResource SiloBackgroundColor}" />
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
+            </Canvas>
+            <!-- The full hero's picture is dimmed a little, as the web's (brightness 0.9, which a tenth of the page's colour
+                 over it comes to; the web's own detail heroes do it so). -->
+            <Rectangle x:Name="Dim" Fill="#1A0E0E10" Visibility="Collapsed" />
+            <Rectangle x:Name="SideFade" Fill="{StaticResource CompactSideFade}" />
+            <Rectangle x:Name="BottomFade" VerticalAlignment="Bottom" Fill="{StaticResource CompactBottomFade}" />
         </Grid>
 
         <!-- The sizes here are a 1080 px window's; a taller one grows them (BrowseHero.ApplySizes). -->

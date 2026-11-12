@@ -400,6 +400,25 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     choice, kept beside the switch in `browse-hero.json` (`hidden_for` and `full_for`: the profiles that turned the
     preview off, and those that chose Full; a file without `full_for` means Compact). A page takes a change the next time
     it shows.
+  - The backdrop fills its box showing its upper part, as the web's heroes place theirs (`object-[center_20%]`): a fifth
+    of what the box cuts off its height goes at the top, the rest at the bottom, and its sides are cut evenly
+    (`BrowseHeroLayout.PlaceBackdrop`, `BackdropFocus`). Cut around its middle, the box took the heads of most
+    backdrops. An `Image` can only be cut around its top, middle or bottom, so the picture's layers have the picture's
+    own size and lie in a clipped `Canvas` (`BrowseHero.PlacePicture`).
+  - The compact hero's backdrop takes the right 65 % of the page, at most two and a half times the hero's height, and
+    fades into the page toward the text. The full hero's runs over its whole width, as the web's banner's, under the
+    web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`) and dimmed a tenth, as the web's
+    `brightness(0.9)`. The web's ambient glow and its faint vignette are left out.
+  - Home and For You ask the server for backdrops as wide as the hero draws them in the window
+    (`BrowseHeroViewModel.Window`, `BrowseHeroLayout.BackdropDrawnWidth`, `ImageSizes.WithDrawnBackdrop`), as the web's
+    `lib/artworkWidths.ts` does for its banner: 1280 px, as every page asks, looked soft over a wide hero. Every row
+    is asked the same, since any card's title can be the hero's. A width within 5 % of a size the server keeps takes
+    that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
+    its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
+    as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
+    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
+    its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
     - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
       height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from

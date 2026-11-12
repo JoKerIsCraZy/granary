@@ -1035,6 +1035,13 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `backdrop_width`, `logo_width`, `still_width`, `photo_width`, 1..7680), only when
   `GET /api/v2/images/capabilities` reports `state: available` and lists the slot in
   `slot_width_params`. Keep the same widths across a paged listing (cursors are bound to them).
+  The server answers a width with the narrowest size it keeps that is at least that wide, else the
+  original (backdrops: 300, 1280, 1920 and 2560 px; silo-server `internal/artworkkey/artworkkey.go`,
+  `VariantWidths`). Granary's pages ask for `ImageSizes.Default` at the display's scale. A width past
+  the widest size `widths` lists for its slot takes that size while it covers four fifths of it, as
+  the web's `TOP_RUNG_COVERAGE` (`web/src/lib/artworkWidths.ts`). Home and For You ask for backdrops
+  as wide as their hero draws them, less the web's 5 % `RUNG_SLACK` and at most 2560 px
+  (`ImageSizes.WithDrawnBackdrop`; docs/ui-design.md, Home's hero).
 
 ### 7.11 Favorites, watchlist, watched, ratings
 

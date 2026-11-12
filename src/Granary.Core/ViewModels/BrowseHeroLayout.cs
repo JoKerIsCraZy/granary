@@ -48,6 +48,19 @@ public static class BrowseHeroLayout
     public const double FadeShare = 0.55;
 
     /// <summary>
+    /// The full hero's bottom fade's share of its height: the web's <c>.hero-gradient</c> (its <c>app.css</c>) is clear above
+    /// 66 % from the bottom.
+    /// </summary>
+    public const double FullFadeShare = 0.66;
+
+    /// <summary>
+    /// Which part of a backdrop taller than its box shows: a fifth of what is cut off goes at the top, the rest at the bottom,
+    /// as the web's heroes place theirs (<c>object-[center_20%]</c> in its <c>components/HeroBanner.tsx</c>). Faces sit in the
+    /// upper half of most backdrops; cut around the middle, the box took their heads.
+    /// </summary>
+    public const double BackdropFocus = 0.2;
+
+    /// <summary>
     /// The full hero's share of the page's height, and its least and its most: the banner of Silo's web
     /// (<c>HERO_BANNER_SIZE</c> in its <c>lib/design-system.ts</c>, "h-[54vh] min-h-[380px] max-h-[760px] lg:h-[66vh]").
     /// Granary takes the wide layout's 66 % at every width, a desktop window being wide, and of the page's height, which
@@ -134,7 +147,7 @@ public static class BrowseHeroLayout
         {
             RestHeight = full,
             RowsTop = full,
-            FadeHeight = Round(full * FadeShare),
+            FadeHeight = Round(full * FullFadeShare),
             TextBottom = FullTextBottom + (banner ? BannerButtonHeight + BannerButtonsGap : 0),
             ButtonsBottom = FullTextBottom,
         };
@@ -155,12 +168,46 @@ public static class BrowseHeroLayout
 
     /// <summary>
     /// The backdrop box's width on a page <paramref name="pageWidth"/> wide: its share, but never wider than
-    /// <see cref="MaxBackdropAspect"/> times the hero's height.
+    /// <see cref="MaxBackdropAspect"/> times the hero's height. The full hero's backdrop runs over its whole width, as the
+    /// web's banner's.
     /// </summary>
     public static double BackdropBoxWidth(double pageWidth, BrowseHeroSizes sizes)
     {
         ArgumentNullException.ThrowIfNull(sizes);
-        return Round(Math.Min(pageWidth * BackdropShare, sizes.RestHeight * MaxBackdropAspect));
+        return sizes.IsFull ? Round(pageWidth) : Round(Math.Min(pageWidth * BackdropShare, sizes.RestHeight * MaxBackdropAspect));
+    }
+
+    /// <summary>
+    /// Where a backdrop lies in a box <paramref name="boxWidth"/> by <paramref name="boxHeight"/> it fills: as wide as the box,
+    /// or as wide as the box's height needs at the picture's shape, its sides cut evenly and its height by
+    /// <see cref="BackdropFocus"/>. In whole pixels, from the box's top left; nothing while the box has no size.
+    /// </summary>
+    public static BackdropPlace PlaceBackdrop(double boxWidth, double boxHeight)
+    {
+        if (!(boxWidth > 0 && boxHeight > 0) || !double.IsFinite(boxWidth) || !double.IsFinite(boxHeight))
+        {
+            return default;
+        }
+        // 16 and 9 apart, so a box of the picture's own shape gets it whole, with no pixel more from rounding.
+        double width = Math.Ceiling(Math.Max(boxWidth, boxHeight * 16 / 9));
+        double height = Math.Ceiling(Math.Max(boxHeight, width * 9 / 16));
+        return new BackdropPlace(width, height, Round((boxWidth - width) / 2), Round((boxHeight - height) * BackdropFocus));
+    }
+
+    /// <summary>
+    /// How wide the hero draws its backdrop in a window <paramref name="windowWidth"/> by <paramref name="windowHeight"/>, for
+    /// asking the server for a picture that wide (the web's <c>heroBackdropWidth</c> in its <c>lib/artworkWidths.ts</c>). The
+    /// window's size stands in for the page's, which is not laid out when its rows are asked for: a little too wide, never
+    /// too narrow. 0 while the width is not known.
+    /// </summary>
+    public static double BackdropDrawnWidth(double windowWidth, double windowHeight, BrowseHeroSize size)
+    {
+        if (!(windowWidth > 0) || !double.IsFinite(windowWidth))
+        {
+            return 0;
+        }
+        var sizes = For(windowHeight, banner: false, size);
+        return BackdropDecodeWidth(BackdropBoxWidth(windowWidth, sizes), sizes.RestHeight);
     }
 
     /// <summary>
@@ -250,7 +297,13 @@ public sealed record BrowseHeroSizes(double RestHeight, double CompactHeight, do
 {
     /// <summary>How far the rows scroll before the hero is compact.</summary>
     public double CollapseDistance => RowsTop - CompactHeight;
+
+    /// <summary>The hero is the full one (<see cref="BrowseHeroSize.Full"/>): its backdrop runs over its whole width, under the web's fades.</summary>
+    public bool IsFull => TextBottom is not null;
 }
+
+/// <summary>A backdrop's size and where its top left lies from its box's (<see cref="BrowseHeroLayout.PlaceBackdrop"/>).</summary>
+public readonly record struct BackdropPlace(double Width, double Height, double Left, double Top);
 
 /// <summary>
 /// Settings → Navigation &amp; Cards → Hero size: how tall the hero at the top of Home, For You and Requests' Discover is,

@@ -21,7 +21,10 @@ public sealed partial class ForYouPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
+        // The frame's root: the page's own is not there yet on its first visit.
+        var root = Frame?.XamlRoot ?? XamlRoot;
+        ViewModel.DisplayScale = root?.RasterizationScale ?? 1;
+        ViewModel.Hero.Window = root is null ? default : (root.Size.Width, root.Size.Height);
         Hero.Resume();
         try
         {

@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -54,6 +55,8 @@ public sealed partial class BrowseHero : UserControl
     private readonly BackdropLayer[] _layers;
     private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
+    // The backdrop's box, which cuts off what of the picture is over its edges.
+    private readonly RectangleGeometry _pictureClip = new();
     // The text's sizes as the markup gives them, for a 1080 px window; a taller one grows them.
     private readonly (double LogoWidth, double Name, double Meta, double Overview, double OverviewLine, double OverviewWidth, double Width, double Top) _textAt1080;
     private readonly (double Size, double Line, double Gap) _eyebrowAt1080;
@@ -62,8 +65,8 @@ public sealed partial class BrowseHero : UserControl
     private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
-    // The title whose pictures show, and whether its backdrop is blurred.
-    private (string Key, bool Blurs)? _picturesOf;
+    // The title whose pictures show, whether its backdrop is blurred and which one it is (BrowseHeroTitle.Pictures).
+    private (string Key, bool Blurs, string? Backdrop)? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
@@ -77,6 +80,7 @@ public sealed partial class BrowseHero : UserControl
         _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
             Texts.MaxWidth, Texts.Margin.Top);
         _eyebrowAt1080 = (Eyebrow.FontSize, Eyebrow.LineHeight, Eyebrow.Margin.Bottom);
+        Pictures.Clip = _pictureClip;
         ApplySizes(Sizes);
         _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
@@ -294,7 +298,8 @@ public sealed partial class BrowseHero : UserControl
     // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
     // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
     // are being set follows them, rather than starting over from within. The same title with its backdrop blurred now, or
-    // no longer (a spoiler switch, the episode started), keeps its logo and fades its backdrop over.
+    // no longer (a spoiler switch, the episode started), or with another backdrop (a wider one, after its page asked for
+    // them again), keeps its logo and fades its backdrop over.
     private void ShowPictures()
     {
         if (_showingPictures)
@@ -320,7 +325,7 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    private static (string Key, bool Blurs) PicturesOf(BrowseHeroTitle title) => (title.Key, title.BlursBackdrop);
+    private static (string Key, bool Blurs, string? Backdrop) PicturesOf(BrowseHeroTitle title) => title.Pictures;
 
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)
@@ -407,11 +412,24 @@ public sealed partial class BrowseHero : UserControl
 
     private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width, Sizes.RestHeight);
 
-    // The backdrop takes its share of the new width.
+    // The backdrop takes its share of the new width, or all of it under the full hero.
     private void OnWidthChanged(double width)
     {
         BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width, Sizes);
+        PlacePicture();
         FollowWidth();
+    }
+
+    // The picture fills the box, showing its upper part; what is over the box's edges is cut off.
+    private void PlacePicture()
+    {
+        double width = BackdropBox.Width;
+        var place = BrowseHeroLayout.PlaceBackdrop(width, Sizes.RestHeight);
+        Picture.Width = place.Width;
+        Picture.Height = place.Height;
+        Canvas.SetLeft(Picture, place.Left);
+        Canvas.SetTop(Picture, place.Top);
+        _pictureClip.Rect = new Rect(0, 0, double.IsFinite(width) ? Math.Max(0, width) : 0, Sizes.RestHeight);
     }
 
     // The page the hero is on: its height sets the hero's sizes. It must be the page's own full-height grid: a parent sized
@@ -454,6 +472,10 @@ public sealed partial class BrowseHero : UserControl
         var text = _textAt1080;
         Root.Height = sizes.RestHeight;
         BottomFade.Height = sizes.FadeHeight;
+        // The compact hero's backdrop fades into the page on its left; the full one's lies under the web's banner's fades.
+        SideFade.Fill = (Brush)Resources[sizes.IsFull ? "FullSideFade" : "CompactSideFade"];
+        BottomFade.Fill = (Brush)Resources[sizes.IsFull ? "FullBottomFade" : "CompactBottomFade"];
+        Dim.Visibility = sizes.IsFull ? Visibility.Visible : Visibility.Collapsed;
         Heading.Height = sizes.HeadingHeight;
         Logo.MaxWidth = BrowseHeroLayout.Scaled(text.LogoWidth, sizes.Grow);
         HeadingText.FontSize = BrowseHeroLayout.Scaled(text.Name, sizes.Grow);

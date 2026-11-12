@@ -62,6 +62,15 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     public partial BrowseHeroSize Size { get; private set; }
 
     /// <summary>
+    /// The window's size in view pixels, as the page gives it when it shows; (0, 0) while it is not known. The hero's
+    /// backdrop is asked for as wide as it is drawn there (<see cref="BackdropWidth"/>).
+    /// </summary>
+    public (double Width, double Height) Window { get; set; }
+
+    /// <summary>How wide the hero draws its backdrop in the <see cref="Window"/>, at its <see cref="Size"/>; 0 while not known.</summary>
+    internal double BackdropWidth => BrowseHeroLayout.BackdropDrawnWidth(Window.Width, Window.Height, Size);
+
+    /// <summary>
     /// The title preview was turned on or off since the hero last took its page's rows: the page gives them again as it shows,
     /// so a change in Settings applies there on the next visit.
     /// </summary>
