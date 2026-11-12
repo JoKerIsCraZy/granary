@@ -23,8 +23,14 @@ public sealed partial class SignInViewModel(
 {
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SignInCommand))]
-    [NotifyPropertyChangedFor(nameof(IsUnencrypted), nameof(CanUseCredentials))]
+    [NotifyPropertyChangedFor(nameof(IsUnencrypted), nameof(CanUseCredentials), nameof(ServerName))]
     public partial ServerEntry? Server { get; private set; }
+
+    /// <summary>
+    /// The server's name, empty while none is known: what the page's title is bound to. x:Bind does not call a function for
+    /// an argument that is null, so bound to <see cref="Server"/> the title stayed empty without one.
+    /// </summary>
+    public string ServerName => Server?.Name ?? "";
 
     /// <summary>
     /// A plain http:// server: passwords and tokens would travel readable by anyone on the network, so

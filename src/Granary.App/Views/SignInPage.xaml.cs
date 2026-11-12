@@ -122,11 +122,11 @@ public sealed partial class SignInPage : Page, IOwnFocus
     }
 
     // Instance methods because x:Bind function bindings call them on the page.
-    public string Heading(ServerEntry? server) =>
-        server is null ? AppText.Get("web.auth.signIn") : AppText.Get("web.auth.login.heading", ("server", server.Name));
+    public string Heading(string serverName) =>
+        string.IsNullOrEmpty(serverName) ? AppText.Get("web.auth.signIn") : AppText.Get("web.auth.login.heading", ("server", serverName));
 
     // The web shows the server's name as the card's title; screen readers hear Heading.
-    public string ServerName(ServerEntry? server) => server?.Name ?? AppText.Get("web.auth.signIn");
+    public string Title(string serverName) => string.IsNullOrEmpty(serverName) ? AppText.Get("web.auth.signIn") : serverName;
 
     public string SignInLabel(bool isRunning) => isRunning ? AppText.Get("web.auth.login.signingIn") : AppText.Get("web.auth.signIn");
 

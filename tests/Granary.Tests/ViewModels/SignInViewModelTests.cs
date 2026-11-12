@@ -37,6 +37,7 @@ public sealed class SignInViewModelTests
         var (viewModel, server) = await LoadedAsync();
 
         Assert.Equal(server, viewModel.Server);
+        Assert.Equal("Living room", viewModel.ServerName);
         Assert.False(viewModel.IsPasswordSignInAvailable);
     }
 
@@ -48,6 +49,8 @@ public sealed class SignInViewModelTests
         await viewModel.LoadAsync("missing", TestContext.Current.CancellationToken);
 
         Assert.Null(viewModel.Server);
+        // Empty, not null: the page's title is bound to it, and says "Sign in" for an empty name.
+        Assert.Equal("", viewModel.ServerName);
         Assert.Contains("no longer saved", viewModel.Status, StringComparison.Ordinal);
         Assert.False(viewModel.SignInCommand.CanExecute(null));
     }

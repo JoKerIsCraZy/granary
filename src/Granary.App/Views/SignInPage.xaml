@@ -25,10 +25,11 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Image Style="{StaticResource SiloAuthMarkStyle}" />
-                    <!-- Both functions say "Sign in" while no server is known, so they need no fallback. -->
-                    <TextBlock Grid.Column="1" Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay}"
+                    <!-- Bound to the server's name, a string that is empty rather than null while no server is known: x:Bind
+                         calls no function for a null argument, and both say "Sign in" then. -->
+                    <TextBlock Grid.Column="1" Text="{x:Bind Title(ViewModel.ServerName), Mode=OneWay}"
                                Style="{StaticResource SiloAuthTitleTextStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1"
-                               AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay}" />
+                               AutomationProperties.Name="{x:Bind Heading(ViewModel.ServerName), Mode=OneWay}" />
                 </Grid>
                 <TextBlock Text="{x:Bind t:AppText.Get('web.auth.loginSubtitle.default')}" Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
