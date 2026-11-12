@@ -55,6 +55,58 @@ public sealed class ImageSizesTests
         Assert.Equal("backdrop_width=7680&still_width=1", parameters.ToString());
     }
 
+    [Theory]
+    // A hero 1920 px wide: 5 % narrower will do, as for the web.
+    [InlineData(1920, 1824)]
+    [InlineData(2600, 2470)]
+    // Never past the widest size the server keeps: the original would come for every card of every row.
+    [InlineData(2700, 2560)]
+    [InlineData(3840, 2560)]
+    [InlineData(100_000, 2560)]
+    // Narrower than backdrops are asked for anyway, or not known: as they are.
+    [InlineData(1100, 1280)]
+    [InlineData(0, 1280)]
+    [InlineData(double.NaN, 1280)]
+    [InlineData(double.PositiveInfinity, 1280)]
+    [InlineData(-1, 1280)]
+    public void WithDrawnBackdrop_AsksForBackdropsAsWideAsAHeroDrawsThem(double devicePixels, int backdrop)
+    {
+        var sizes = ImageSizes.Default.WithDrawnBackdrop(devicePixels);
+
+        Assert.Equal(ImageSizes.Default with { Backdrop = backdrop }, sizes);
+    }
+
+    [Fact]
+    public void WithDrawnBackdrop_KeepsBackdropsAskedForWiderAlready()
+    {
+        // 1280 px at a display scale of 225 %.
+        var scaled = ImageSizes.Default.ScaledBy(2.25);
+
+        Assert.Equal(scaled, scaled.WithDrawnBackdrop(3000));
+    }
+
+    [Theory]
+    // The widest backdrop the server keeps is 2560 px: it stands in for the original while it covers four fifths.
+    [InlineData(2560, "2560")]
+    [InlineData(2561, "2560")]
+    [InlineData(3200, "2560")]
+    [InlineData(3201, "3201")]
+    [InlineData(3648, "3648")]
+    public void For_TakesTheWidestSizeRatherThanTheOriginal_WhileItNearlyCovers(int backdrop, string asked)
+    {
+        var parameters = new ImageSizes(Backdrop: backdrop).For(Available);
+
+        Assert.Equal($"backdrop_width={asked}", parameters.ToString());
+    }
+
+    [Fact]
+    public void For_KnowsAPhotosSizesAsProfile_AndLeavesAWidthWithoutListedSizesAlone()
+    {
+        Assert.Equal("photo_width=500", new ImageSizes(Photo: 600).For(Available).ToString());
+        Assert.Equal("poster_width=1100",
+            new ImageSizes(Poster: 1100).For(Available with { Widths = new Dictionary<string, ImageSizeWidths>() }).ToString());
+    }
+
     [Fact]
     public void ScaledBy_RoundsToWholePixelsAndKeepsUnsetSlots()
     {

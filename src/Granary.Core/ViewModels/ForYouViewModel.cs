@@ -187,7 +187,7 @@ public sealed partial class ForYouViewModel : ObservableObject
         var taste = TasteAsync(server.BaseUri, token);
         try
         {
-            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, token);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, token, Hero.BackdropWidth);
             var discover = await _recommendations.GetDiscoverAsync(server.BaseUri, images, token);
             var (profile, tasteFailed) = await taste;
             if (token.IsCancellationRequested)

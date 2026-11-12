@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -394,11 +395,24 @@ public sealed partial class BrowseHero : UserControl
 
     private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width, Sizes.RestHeight);
 
-    // The backdrop takes its share of the new width.
+    // The backdrop takes its share of the new width, or all of it under the full hero.
     private void OnWidthChanged(double width)
     {
         BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width, Sizes);
+        PlacePicture();
         FollowWidth();
+    }
+
+    // The picture fills the box, showing its upper part; what is over the box's edges is cut off.
+    private void PlacePicture()
+    {
+        double width = BackdropBox.Width;
+        var place = BrowseHeroLayout.PlaceBackdrop(width, Sizes.RestHeight);
+        Picture.Width = place.Width;
+        Picture.Height = place.Height;
+        Canvas.SetLeft(Picture, place.Left);
+        Canvas.SetTop(Picture, place.Top);
+        Pictures.Clip = new RectangleGeometry { Rect = new Rect(0, 0, double.IsFinite(width) ? Math.Max(0, width) : 0, Sizes.RestHeight) };
     }
 
     // The page the hero is on: its height sets the hero's sizes. It must be the page's own full-height grid: a parent sized
@@ -441,6 +455,10 @@ public sealed partial class BrowseHero : UserControl
         var text = _textAt1080;
         Root.Height = sizes.RestHeight;
         BottomFade.Height = sizes.FadeHeight;
+        // The compact hero's backdrop fades into the page on its left; the full one's lies under the web's banner's fades.
+        SideFade.Fill = (Brush)Resources[sizes.IsFull ? "FullSideFade" : "CompactSideFade"];
+        BottomFade.Fill = (Brush)Resources[sizes.IsFull ? "FullBottomFade" : "CompactBottomFade"];
+        Dim.Visibility = sizes.IsFull ? Visibility.Visible : Visibility.Collapsed;
         Heading.Height = sizes.HeadingHeight;
         Logo.MaxWidth = BrowseHeroLayout.Scaled(text.LogoWidth, sizes.Grow);
         HeadingText.FontSize = BrowseHeroLayout.Scaled(text.Name, sizes.Grow);

@@ -251,6 +251,36 @@ public sealed class HomeViewModelTests
     }
 
     [Fact]
+    public async Task Backdrops_AreAskedForAsWideAsTheHeroDrawsThem_InEveryRow()
+    {
+        _silo.Map(SectionsPath, Sections(Section("lazy", "genre", 1)));
+        _silo.Map(SectionsPath + "/lazy/items", Serialize(Section("lazy", "genre", 1, Item("m1"))));
+        var home = Create();
+        // A 3840 x 1600 window: the compact hero's backdrop is 1650 px wide there, and 5 % narrower will do.
+        home.Hero.Window = (3840, 1560);
+
+        await home.ActivateAsync();
+
+        var list = Assert.Single(_silo.To(SectionsPath));
+        var row = Assert.Single(_silo.To(SectionsPath + "/lazy/items"));
+        Assert.Equal("1568", list.Query("backdrop_width"));
+        Assert.Equal("342", list.Query("poster_width"));
+        Assert.Equal(list.Uri.Query, row.Uri.Query);
+    }
+
+    [Fact]
+    public async Task AHeroNarrowerThanBackdropsAreAskedForAnyway_ChangesNothing()
+    {
+        _silo.Map(SectionsPath, Sections());
+        var home = Create();
+        home.Hero.Window = (1920, 1040);
+
+        await home.ActivateAsync();
+
+        Assert.Equal("1280", Assert.Single(_silo.To(SectionsPath)).Query("backdrop_width"));
+    }
+
+    [Fact]
     public async Task FailedLoad_ShowsAFriendlyErrorAndRetryRecovers()
     {
         _silo.Map(SectionsPath, _ => BrowseFakeSilo.Problem(503, ProblemCodes.DependencyUnavailable, TimeSpan.FromSeconds(5)));

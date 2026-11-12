@@ -25,6 +25,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- The picture at the top of Home, For You and Discover shows its upper part, as on Silo's web, where it was cut around
+  its middle and took the heads off many pictures. With Hero size set to Full it runs over the whole width, as on the
+  web.
+- That picture is sharp on a wide window: Home and For You fetch it as wide as it is shown, where it was always 1280
+  pixels wide.
 - A Next Up card says Next Episode, as on Silo's web.
 - Playback info names a Dolby Atmos track also when its title only holds a word such as "Atmospheric".
 - A Continue Watching card's time left is rounded to the nearest minute, as on Silo's web and apps, where it could say a

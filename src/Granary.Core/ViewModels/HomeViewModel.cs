@@ -334,7 +334,7 @@ public sealed partial class HomeViewModel : ObservableObject
         }
         try
         {
-            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken, Hero.BackdropWidth);
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
             var fetched = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
