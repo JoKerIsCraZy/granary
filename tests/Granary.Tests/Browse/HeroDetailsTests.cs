@@ -172,6 +172,7 @@ public sealed class HeroDetailsTests
         var title = Of(Movie() with { RatingImdb = null, RatingTmdb = null });
 
         Assert.Null(title.Rating);
+        Assert.Equal("2008 · 2h 32m · Action · Crime · PG-13", title.Meta);
         Assert.Equal((title.Meta, ""), (title.MetaBeforeRating, title.MetaAfterRating));
     }
 
