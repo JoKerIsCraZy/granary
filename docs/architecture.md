@@ -1544,19 +1544,37 @@ device.
   them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
   about that are still watched, each as a single delete goes.
 - **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
-  (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending, on its
-  way (`Sending`, claimed by a send) or held. Every change is made under one lock and holds at once; the file follows,
-  written whole (`SafeFile`) off the caller's thread, one write at a time with the state as it is then. The queue is read
-  once, at its first use: an entry found on its way was in a request when Granary closed and is held; one older than 90
-  days is let go (its server or profile is gone); anything a file says that is no entry is left out.
+  (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending or on
+  its way (`Sending`, claimed by a send); which, only the run knows, so after a Granary that closed during a send every
+  entry is pending again and is sent. Every change is made under one lock and holds at once; the file follows, written
+  whole (`SafeFile`) off the caller's thread, one write at a time with the state as it is then. The file is read once,
+  on the thread pool as the sync starts (`LoadAsync`), else at its first use: an entry older than 90 days is let go (its
+  server or profile is gone), and anything the file says that is no entry is left out.
+- **The file is never written before it was read.** A file that cannot be read now (a virus scanner has it open at the
+  start, a sharing violation) is left as it is: what this run records is kept in memory, each write tries the read again
+  first, and once it works the file's entries join this run's, the newer of a title's two holding. A file that is not a
+  queue at all is moved aside as `offline-progress.json.bad` before a new one is written. A write that was cut off
+  between its temporary file and the move leaves `offline-progress.json.<id>.tmp` behind; the read deletes those older
+  than a minute.
 - **Sending.** `OfflineProgressSync` runs one flush at a time on the thread pool. It sends only the active profile's
   entries, as that profile (`ProgressSyncApi`, `SiloRequestOptions.Profile`), so another profile's wait until it is used
-  again, also behind a PIN. A flush claims up to 100 pending entries, waits until the file says they are on their way,
-  sends them once, and takes the answer as api-contract 14.7 lists it: answered, they leave; a server that asks to come
-  back, or a request that never left, keeps them pending for the retry `RetryInterval` (5 minutes) on; a request that left
-  without a usable answer holds them, never sent again by themselves, since the server may have taken them (the Apple
-  app's model); a request the server will never take is dropped and logged. A position recorded while its older one was
-  on its way is another entry, which that answer does not touch.
+  again, also behind a PIN. A flush claims up to 100 pending entries, sends them, and takes the answer as api-contract
+  14.7 lists it. An entry leaves the queue only when the server answered for it with success, will never take it (the
+  title is gone for the profile, or the request itself is wrong), or is known to have it (Reading back). Every other
+  one is pending again and goes with the retry `RetryInterval` (5 minutes) on: an item the server failed on, a server
+  that refuses or fails for now, a request that did not arrive, and one whose answer never came. That last kind may have
+  been taken, and is sent again all the same: each position carries the time it was recorded, and the server passes over
+  one that is not newer than what it has, so a second send changes nothing and counts no watch
+  (`silo-server/internal/userstore/pgstore/progress.go`, `SetProgressIfNewer`). Silo's Apple app holds such an entry and
+  lets it go after its next read of the server's progress; that loses the position whenever the request had not arrived.
+  A batch with items to send again ends the run, so they are not claimed twice in it. A position recorded while its
+  older one was on its way is another entry, which that answer does not touch. While a send hangs (a server that takes
+  the request and does not answer holds it for the HTTP timeout), every further wish to flush joins the one run that
+  waits; they do not pile up.
+- **Clocks.** Which of two positions is the later one is decided by the time each device recorded it. A PC whose clock
+  runs ahead can beat a position made a little later elsewhere, and one that runs behind can lose to an older one; the
+  server only caps a time more than 2 minutes ahead of its own. A position sent a second time after such a cap can get a
+  later time than the first send did. Granary does not correct for a wrong clock.
 - **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the app's start, when the
   session changes (a sign-in, a profile that becomes active), when the connection changes, and at the retry. So while the
   server can be reached, a position arrives within seconds, as a session's sample would; without it, it waits.
@@ -1568,9 +1586,12 @@ device.
   `ResumeAt`, its `completed` `IsWatched`. That is how a position made on another device reaches a download, how an older
   offline position never moves a newer one back (the entry went out with the time it was recorded, so the server kept its
   own), and how the server's word on watched arrives. A row that says what the download already has writes nothing and
-  raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A complete one lets the
-  profile's held entries go: what the server has is known. A row missing from the listing changes nothing, since the
-  listing is live.
+  raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A
+  complete one also settles what still waits in the queue (`OfflineProgressQueue.DropKnown`): a pending position whose
+  title the server lists with a time at or after the position's own is there already, or beaten by a newer one, and
+  leaves unsent; that is how a position whose send was taken while its answer got lost stops being sent. One the
+  listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
+  live.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record,
   and the window waits for a player's stop as it closes (`PlaybackStops`). Nothing is sent at the close: the next start
   sends what waits.

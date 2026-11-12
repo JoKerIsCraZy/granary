@@ -80,7 +80,7 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task SucceededAndFailedItems_LeaveTheQueue()
+    public async Task AnItemTheServerTook_AndOneItWillNeverTake_LeaveTheQueue()
     {
         _queue.Record(Scope7, "ep_5", 10_000, 0);
         _queue.Record(Scope7, "ep_gone", 10_000, 0);
@@ -92,19 +92,49 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
         await Sync().FlushAsync(readBack: false, Token);
 
-        // A title the server no longer has will not be taken at a second try either.
+        // A title the profile can no longer see will not be taken at a second try either.
         Assert.Empty(_queue.Entries(Scope7));
         Assert.Single(Sends);
+    }
+
+    [Fact]
+    public async Task AnItemTheServerFailedOn_IsSentAgain_WhileTheOthersOfItsBatchLeave()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _queue.Record(Scope7, "ep_6", 20_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "items": [ { "index": 0, "media_item_id": "ep_5", "status": "success" },
+                         { "index": 1, "media_item_id": "ep_6", "status": "failure", "failure": { "type": "x", "title": "Internal error", "status": 500 } } ],
+              "summary": { "total": 2, "succeeded": 1, "failed": 1 } }
+            """), Answered("ep_6"));
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: false, Token);
+
+        // The server's store failed on it: nothing says it would fail again. It is not claimed again within the run.
+        Assert.Equal([("ep_6", OfflineProgressState.Pending)], _queue.Entries(Scope7).Select(e => (e.MediaItemId, e.State)));
+        Assert.Single(Sends);
+
+        _h.Time.Advance(OfflineProgressSync.RetryInterval);
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        await Until(() => _queue.Entries(Scope7).Count == 0, "the item went with the retry");
+        Assert.Contains("\"position_ms\":20000", Sends[1].Body, StringComparison.Ordinal);
     }
 
     [Theory]
     [InlineData(401)]
     [InlineData(403)]
+    [InlineData(404)]
+    [InlineData(405)]
     [InlineData(408)]
+    [InlineData(409)]
+    [InlineData(412)]
     [InlineData(429)]
+    [InlineData(500)]
     [InlineData(502)]
     [InlineData(503)]
-    public async Task ABusyOrRefusingServer_KeepsTheEntriesForLater(int status)
+    [InlineData(504)]
+    public async Task AServerThatRefusesOrFailsForNow_KeepsTheEntriesForLater(int status)
     {
         _queue.Record(Scope7, "ep_5", 10_000, 0);
         _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(status, "problem"), Answered("ep_5"));
@@ -135,80 +165,143 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
     [Theory]
     [InlineData("ended")]
+    [InlineData("timeout")]
     [InlineData("malformed")]
-    [InlineData("500")]
-    [InlineData("504")]
     [InlineData("short")]
-    public async Task ASendWithNoUsableAnswer_IsHeld_AndNeverSentAgain(string answer)
+    [InlineData("others")]
+    public async Task ASendWithNoUsableAnswer_IsSentAgain(string answer)
     {
         _queue.Record(Scope7, "ep_5", 10_000, 0);
         _h.Silo.On(HttpMethod.Post, SyncPath, answer switch
         {
             "ended" => () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off")),
+            // HttpClient's own timeout: a cancellation nobody asked for.
+            "timeout" => () => Task.FromException<HttpResponseMessage>(new TaskCanceledException("timed out", new TimeoutException())),
             "malformed" => ScriptedSilo.Json(HttpStatusCode.OK, "{ not json"),
-            "500" => ScriptedSilo.Problem(500, "internal_error"),
-            "504" => ScriptedSilo.Problem(504, "gateway_timeout"),
-            // An answer for fewer items than were sent says nothing sure about any of them.
-            _ => ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [] }"""),
+            // An answer for fewer items than were sent, or for other items, says nothing sure about any of them.
+            "short" => ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [] }"""),
+            _ => Answered("ep_other"),
         }, Answered("ep_5"));
         var sync = Sync();
 
         await sync.FlushAsync(readBack: false, Token);
+
+        // The server may have taken it or not: the position is kept, and a second send of it changes nothing there.
+        Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
+
         await sync.FlushAsync(readBack: false, Token);
 
-        // The server may have taken it: a second send could count it twice.
-        Assert.Equal(OfflineProgressState.Held, Assert.Single(_queue.Entries(Scope7)).State);
-        Assert.Single(Sends);
+        Assert.Empty(_queue.Entries(Scope7));
+        Assert.Equal(2, Sends.Count);
+        Assert.Equal(Sends[0].Body, Sends[1].Body);
     }
 
     [Fact]
-    public async Task ASendThatEndsInSomethingUnexpected_HoldsItsEntries_AndTheNextRunStillWorks()
+    public async Task ASendThatEndsInSomethingUnexpected_KeepsItsEntries_AndTheNextRunSendsThem()
     {
         _queue.Record(Scope7, "ep_5", 10_000, 0);
-        _h.Silo.On(HttpMethod.Post, SyncPath, () => throw new InvalidOperationException("boom"), Answered("ep_6"));
+        _h.Silo.On(HttpMethod.Post, SyncPath, () => throw new InvalidOperationException("boom"), Answered("ep_5"));
         var sync = Sync();
 
         await sync.FlushAsync(readBack: false, Token);
 
-        // Not left on its way for the rest of the run: it may have reached the server, so it is held.
-        Assert.Equal(OfflineProgressState.Held, Assert.Single(_queue.Entries(Scope7)).State);
+        // Not left on its way for the rest of the run.
+        Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
         Assert.Contains("failed unexpectedly", _h.Logs.All, StringComparison.Ordinal);
 
-        _queue.Record(Scope7, "ep_6", 20_000, 0);
         await sync.FlushAsync(readBack: false, Token);
 
-        Assert.Equal(["ep_5"], _queue.Entries(Scope7).Select(e => e.MediaItemId));
+        Assert.Empty(_queue.Entries(Scope7));
     }
 
     [Fact]
-    public async Task AHeldEntry_GoesOnceTheServersProgressWasRead_AndANewerPositionIsSent()
+    public async Task APositionTheServerTookWhileItsAnswerGotLost_LeavesOnceTheServersProgressShowsIt()
     {
         await _h.AddPlayableAsync();
         _queue.Record(Scope7, "ep_5", 10_000, 0);
         _h.Silo.On(HttpMethod.Post, SyncPath,
-            () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off")),
-            Answered("ep_5"));
-        var sync = Sync();
-        await sync.FlushAsync(readBack: false, Token);
-
-        // The viewer watches on: the newer position is another entry, and is sent.
-        _h.Time.Advance(TimeSpan.FromSeconds(10));
-        _queue.Record(Scope7, "ep_5", 20_000, 0);
-        _queue.Record(Scope7, "mv_1", 5_000, 0);
-        _h.Silo.On(HttpMethod.Post, SyncPath,
             () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off")));
-        await sync.FlushAsync(readBack: false, Token);
-        Assert.All(_queue.Entries(Scope7), e => Assert.Equal(OfflineProgressState.Held, e.State));
+        // The server has the position, at the very time this PC recorded it.
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 10, "2026-10-01T12:00:00.000Z"))));
+        var sync = Sync();
 
         await sync.FlushAsync(readBack: true, Token);
 
         Assert.Empty(_queue.Entries(Scope7));
-        Assert.Single(Reads);
+        Assert.Contains("already had 1", _h.Logs.All, StringComparison.Ordinal);
+
+        await sync.FlushAsync(readBack: false, Token);
+        Assert.Single(Sends);
+    }
+
+    [Fact]
+    public async Task APositionWhoseSendGotNoAnswer_AndThatTheServerDoesNotShow_IsNotLost()
+    {
+        await _h.AddPlayableAsync(change: r => r with { ResumeMs = 10_000, ResumeAt = ManualTimeProvider.DefaultStart });
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath,
+            () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off")),
+            Answered("ep_5"));
+        // The server still has an older position: the request never got to it.
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 3, "2026-10-01T11:00:00Z"))));
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: true, Token);
+
+        // The read of the server's progress lets nothing go that it does not show.
+        Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
+        Assert.Equal(10_000, _h.Find("dl_1")!.Record.ResumeMs);
+
+        await sync.FlushAsync(readBack: false, Token);
+
+        Assert.Empty(_queue.Entries(Scope7));
+        Assert.Equal(2, Sends.Count);
+    }
+
+    [Fact]
+    public async Task APositionOnItsWayWhenGranaryClosed_IsSentAfterTheNextStart()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _queue.Claim(Scope7, OfflineProgressSync.MaxBatch);
+        await _queue.LatestSave;
+        var restarted = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        var sync = new OfflineProgressSync(restarted, new ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network, _h.Time, _h.Logs.For<OfflineProgressSync>());
+        _syncs.Add(sync);
+
+        await sync.FlushAsync(readBack: false, Token);
+        await restarted.LatestSave;
+
+        Assert.Single(Sends);
+        Assert.Empty(restarted.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task WishesMadeWhileASendHangs_MakeOneMoreRun_NotOneEach()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Post, SyncPath, () => answer.Task, Answered("ep_5"));
+        var sync = Sync();
+        var first = sync.FlushAsync(readBack: false, Token);
+        await Until(() => Sends.Count == 1, "the first send left");
+
+        // The player asks every ten seconds while the server takes the request and does not answer.
+        var second = sync.FlushAsync(readBack: false, Token);
+        var third = sync.FlushAsync(readBack: false, Token);
+        var waiting = sync.LatestRun;
+        _ = sync.FlushAsync(readBack: false, Token);
+
+        Assert.Same(waiting, sync.LatestRun);
+        answer.SetException(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off"));
+        await Task.WhenAll(first, second, third);
+
+        // One run waited, and sent what the first could not.
+        Assert.Equal(2, Sends.Count);
+        Assert.Empty(_queue.Entries(Scope7));
     }
 
     [Theory]
     [InlineData(400)]
-    [InlineData(404)]
     [InlineData(422)]
     public async Task ARequestTheServerWillNeverTake_LeavesTheQueue(int status)
     {
@@ -354,7 +447,7 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AReadBackThatBreaksOff_ChangesNothing_AndKeepsWhatIsHeld()
+    public async Task AReadBackThatBreaksOff_ChangesNothing_AndKeepsWhatWaits()
     {
         await _h.AddPlayableAsync();
         _queue.Record(Scope7, "ep_5", 10_000, 0);
@@ -367,7 +460,7 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
         await Sync().FlushAsync(readBack: true, Token);
 
         Assert.Null(_h.Find("dl_1")!.Record.ResumeMs);
-        Assert.Equal(OfflineProgressState.Held, Assert.Single(_queue.Entries(Scope7)).State);
+        Assert.Equal(OfflineProgressState.Pending, Assert.Single(_queue.Entries(Scope7)).State);
     }
 
     [Fact]

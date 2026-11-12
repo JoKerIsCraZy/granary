@@ -14,6 +14,8 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
 
     private string FilePath => Path.Combine(_folder, "offline-progress.json");
 
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     private OfflineProgressQueue Open()
     {
         var queue = new OfflineProgressQueue(FilePath, _time, _logs.For<OfflineProgressQueue>());
@@ -74,7 +76,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         await queue.LatestSave;
 
         Assert.Equal([entry], Open().Entries(Scope7));
-        Assert.Contains("\"position_ms\": 1830500", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        Assert.Contains("\"position_ms\": 1830500", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -98,23 +100,18 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
-    public void AnAnsweredBatch_LeavesTheQueue_ARefusedOneWaits_AnUncertainOneIsHeld()
+    public void AnAnsweredEntry_LeavesTheQueue_AndOneToTryAgain_GoesWithTheNextSend()
     {
         var queue = Open();
         queue.Record(Scope7, "ep_1", 1000, 0);
         queue.Record(Scope7, "ep_2", 2000, 0);
-        queue.Record(Scope7, "ep_3", 3000, 0);
         var batch = queue.Claim(Scope7, 10);
 
         queue.Resolve([batch[0]], OfflineProgressOutcome.Done);
         queue.Resolve([batch[1]], OfflineProgressOutcome.Later);
-        queue.Resolve([batch[2]], OfflineProgressOutcome.Uncertain);
 
-        Assert.Equal([("ep_2", OfflineProgressState.Pending), ("ep_3", OfflineProgressState.Held)],
-            queue.Entries(Scope7).Select(e => (e.MediaItemId, e.State)));
-        // A held entry is never sent again by itself.
+        Assert.Equal([("ep_2", OfflineProgressState.Pending)], queue.Entries(Scope7).Select(e => (e.MediaItemId, e.State)));
         Assert.Equal(["ep_2"], queue.Claim(Scope7, 10).Select(e => e.MediaItemId));
-        Assert.True(queue.HasUnsent(Scope7, "ep_3"));
     }
 
     [Fact]
@@ -133,36 +130,45 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
-    public void ANewerSample_ReplacesAHeldOne_AndIsSent()
+    public void WhatTheServerAlreadyHas_LeavesTheQueue_AndWhatItDoesNotHave_Stays()
     {
         var queue = Open();
-        queue.Record(Scope7, "ep_5", 10_000, 0);
-        queue.Resolve(queue.Claim(Scope7, 10), OfflineProgressOutcome.Uncertain);
-        _time.Advance(TimeSpan.FromSeconds(10));
+        var at = ManualTimeProvider.DefaultStart;
+        queue.Record(Scope7, "ep_same", 1000, 0);
+        queue.Record(Scope7, "ep_newer_there", 1000, 0);
+        queue.Record(Scope7, "ep_older_there", 1000, 0);
+        queue.Record(Scope7, "ep_not_there", 1000, 0);
+        queue.Record(Scope8, "ep_same", 1000, 0);
 
-        queue.Record(Scope7, "ep_5", 20_000, 0);
+        int gone = queue.DropKnown(Scope7, new Dictionary<string, DateTimeOffset>
+        {
+            ["ep_same"] = at,
+            ["ep_newer_there"] = at.AddMinutes(5),
+            ["ep_older_there"] = at.AddMilliseconds(-1),
+        });
 
-        Assert.Equal(20_000, Assert.Single(queue.Claim(Scope7, 10)).PositionMs);
-    }
-
-    [Fact]
-    public void DropHeld_TakesOnlyTheHeldEntriesOfThatProfile()
-    {
-        var queue = Open();
-        queue.Record(Scope7, "ep_1", 1000, 0);
-        queue.Record(Scope8, "ep_1", 1000, 0);
-        queue.Resolve(queue.Claim(Scope7, 10), OfflineProgressOutcome.Uncertain);
-        queue.Resolve(queue.Claim(Scope8, 10), OfflineProgressOutcome.Uncertain);
-        queue.Record(Scope7, "ep_2", 2000, 0);
-
-        queue.DropHeld(Scope7);
-
-        Assert.Equal(["ep_2"], queue.Entries(Scope7).Select(e => e.MediaItemId));
+        // The server's row at or after the entry's time says it has the position, or a newer one: a send would change nothing.
+        Assert.Equal(2, gone);
+        Assert.Equal(["ep_older_there", "ep_not_there"], queue.Entries(Scope7).Select(e => e.MediaItemId));
+        Assert.All(queue.Entries(Scope7), e => Assert.Equal(OfflineProgressState.Pending, e.State));
         Assert.Single(queue.Entries(Scope8));
     }
 
     [Fact]
-    public async Task AnEntryThatWasOnItsWayWhenGranaryClosed_IsHeldAtTheNextStart()
+    public void AnEntryOnItsWay_IsNotTakenByWhatTheServerSaid()
+    {
+        var queue = Open();
+        queue.Record(Scope7, "ep_5", 1000, 0);
+        var batch = queue.Claim(Scope7, 10);
+
+        queue.DropKnown(Scope7, new Dictionary<string, DateTimeOffset> { ["ep_5"] = ManualTimeProvider.DefaultStart });
+
+        // Its own answer says what becomes of it.
+        Assert.Equal(batch, queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task AnEntryThatWasOnItsWayWhenGranaryClosed_IsSentAgainAfterTheNextStart()
     {
         var queue = Open();
         queue.Record(Scope7, "ep_5", 10_000, 0);
@@ -171,15 +177,32 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
 
         var entry = Assert.Single(Open().Entries(Scope7));
 
-        // The server may have taken it: it is not sent a second time.
-        Assert.Equal(OfflineProgressState.Held, entry.State);
+        // Nothing says the server has it, and a second send of the same position changes nothing there.
+        Assert.Equal(OfflineProgressState.Pending, entry.State);
+    }
+
+    [Fact]
+    public void AFileOfAnEarlierBuild_WithHeldEntries_IsRead_AndTheyAreSentAgain()
+    {
+        Directory.CreateDirectory(_folder);
+        File.WriteAllText(FilePath, """
+            { "version": 1, "entries": [
+              { "scope": { "server_entry_id": "srv1", "account_id": "1", "profile_id": "7" }, "media_item_id": "ep_5", "position_ms": 5000,
+                "duration_ms": 0, "updated_at": "2026-10-01T11:00:00+00:00", "state": "Held" },
+              { "scope": { "server_entry_id": "srv1", "account_id": "1", "profile_id": "7" }, "media_item_id": "ep_6", "position_ms": 6000,
+                "duration_ms": 0, "updated_at": "2026-10-01T11:30:00+00:00", "state": "Sending" } ] }
+            """);
+
+        var queue = Open();
+
+        Assert.Equal([("ep_5", OfflineProgressState.Pending), ("ep_6", OfflineProgressState.Pending)],
+            queue.Entries(Scope7).Select(e => (e.MediaItemId, e.State)));
     }
 
     [Theory]
-    [InlineData("{ not json")]
     [InlineData("""{ "entries": [ { "media_item_id": "ep_5" }, null, { "scope": { "server_entry_id": "srv1", "account_id": "1", "profile_id": "7" }, "media_item_id": "", "position_ms": 5 } ] }""")]
-    [InlineData("""{ "entries": [ { "scope": { "server_entry_id": "srv1", "account_id": "1", "profile_id": "7" }, "media_item_id": "ep_5", "position_ms": -4, "duration_ms": 0, "updated_at": "2026-10-01T12:00:00+00:00", "state": "Pending" } ] }""")]
-    public void AFileThatSaysNothingUsable_IsAnEmptyQueue_AndTheNextRecordIsKept(string content)
+    [InlineData("""{ "entries": [ { "scope": { "server_entry_id": "srv1", "account_id": "1", "profile_id": "7" }, "media_item_id": "ep_5", "position_ms": -4, "duration_ms": 0, "updated_at": "2026-10-01T12:00:00+00:00" } ] }""")]
+    public void EntriesThatSayNothingUsable_AreLeftOut_AndTheNextRecordIsKept(string content)
     {
         Directory.CreateDirectory(_folder);
         File.WriteAllText(FilePath, content);
@@ -189,6 +212,56 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         queue.Record(Scope7, "ep_5", 10_000, 0);
 
         Assert.Single(queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task AFileThatIsNotJson_IsMovedAside_NotWrittenOver()
+    {
+        Directory.CreateDirectory(_folder);
+        File.WriteAllText(FilePath, "{ not json");
+        var queue = Open();
+
+        Assert.Empty(queue.Entries(Scope7));
+        queue.Record(Scope7, "ep_5", 10_000, 0);
+        await queue.LatestSave;
+
+        // What could not be read is still there to look at; the queue starts over beside it.
+        Assert.Equal("{ not json", await File.ReadAllTextAsync(FilePath + ".bad", Token));
+        Assert.Contains("\"media_item_id\": \"ep_5\"", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.Contains("moved aside", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFileThatCannotBeReadNow_IsNeverWrittenOver_AndIsReadOnceItCanBe()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_old", 5_000, 0);
+        before.Record(Scope7, "ep_5", 5_000, 0);
+        await before.LatestSave;
+        string kept = await File.ReadAllTextAsync(FilePath, Token);
+        _time.Advance(TimeSpan.FromMinutes(1));
+        var queue = Open();
+
+        // Something has the file open and shares nothing, as a virus scanner at the start.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Empty(queue.Entries(Scope7));
+            queue.Record(Scope7, "ep_5", 10_000, 0);
+            await queue.LatestSave;
+
+            // The position is kept for this run, and the file is as it was: an empty queue was not written over it.
+            Assert.Equal(10_000, Assert.Single(queue.Entries(Scope7)).PositionMs);
+        }
+        Assert.Equal(kept, await File.ReadAllTextAsync(FilePath, Token));
+        Assert.Contains("could not be read", _logs.All, StringComparison.Ordinal);
+
+        // The next write reads the file first: what it held is back, and the newer position of a title holds.
+        queue.Record(Scope7, "ep_6", 20_000, 0);
+        await queue.LatestSave;
+
+        Assert.Equal([("ep_old", 5_000L), ("ep_5", 10_000L), ("ep_6", 20_000L)],
+            queue.Entries(Scope7).OrderBy(e => e.PositionMs).Select(e => (e.MediaItemId, e.PositionMs)));
+        Assert.Equal(3, Open().Entries(Scope7).Count);
     }
 
     [Fact]
@@ -207,7 +280,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     [Fact]
     public async Task AFileThatCannotBeWritten_KeepsTheQueueForThisRun_AndSaysSoWithoutThePath()
     {
-        // A folder where the file should be: the write fails.
+        // A folder where the file should be: neither read nor written.
         Directory.CreateDirectory(FilePath);
         var queue = Open();
 
@@ -215,7 +288,73 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         await queue.LatestSave;
 
         Assert.Single(queue.Entries(Scope7));
-        Assert.Contains("could not be written", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("could not be", _logs.All, StringComparison.Ordinal);
         Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Remove_TakesEveryEntryOfTheScopesItIsAskedFor_AlsoFromTheFile()
+    {
+        var other = new DownloadScope("srv2", "1", "7");
+        var queue = Open();
+        queue.Record(Scope7, "ep_1", 1000, 0);
+        queue.Record(Scope8, "ep_2", 2000, 0);
+        queue.Record(other, "ep_3", 3000, 0);
+        queue.Claim(Scope8, 10);
+
+        queue.Remove(scope => scope.ServerEntryId == "srv1");
+        await queue.LatestSave;
+
+        Assert.Empty(queue.Entries(Scope7));
+        Assert.Empty(queue.Entries(Scope8));
+        Assert.Single(queue.Entries(other));
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("ep_1", file, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_2", file, StringComparison.Ordinal);
+        Assert.Contains("ep_3", file, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WhatWasRemovedWhileTheFileCouldNotBeRead_DoesNotComeBackWithIt()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_1", 1000, 0);
+        before.Record(Scope8, "ep_2", 2000, 0);
+        await before.LatestSave;
+        var queue = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            queue.Remove(scope => scope == Scope7);
+            await queue.LatestSave;
+        }
+        queue.Record(Scope8, "ep_3", 3000, 0);
+        await queue.LatestSave;
+
+        Assert.Empty(queue.Entries(Scope7));
+        Assert.Equal(2, queue.Entries(Scope8).Count);
+        Assert.DoesNotContain("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ReadsTheFile_AndTakesAWritesLeftoverAway_ButNotOneBeingWritten()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_5", 10_000, 0);
+        await before.LatestSave;
+        // A write that was cut off left its temporary file behind; another is a second write's, still on its way.
+        string leftover = FilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        string fresh = FilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        File.WriteAllText(leftover, "{");
+        File.WriteAllText(fresh, "{");
+        File.SetLastWriteTimeUtc(leftover, _time.GetUtcNow().UtcDateTime - TimeSpan.FromHours(1));
+        File.SetLastWriteTimeUtc(fresh, _time.GetUtcNow().UtcDateTime);
+        var queue = Open();
+
+        await queue.LoadAsync();
+
+        Assert.False(File.Exists(leftover));
+        Assert.True(File.Exists(fresh));
+        Assert.Single(queue.Entries(Scope7));
     }
 }

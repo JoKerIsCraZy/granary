@@ -15,9 +15,9 @@ namespace Granary.Core.Downloads;
 /// another profile's wait until it is used again.
 /// </summary>
 /// <remarks>
-/// One run at a time (<c>_running</c>), on the thread pool; <see cref="FlushSoon"/> and the session's and the link's changes
-/// only set a timer. A run claims entries from the queue, which keeps its own lock, and changes the downloads through the
-/// store. Nothing here is awaited by the player.
+/// One run at a time (<c>_running</c>), on the thread pool, and at most one more waiting for it, which takes every wish made
+/// meanwhile; <see cref="FlushSoon"/> and the session's and the link's changes only set a timer. A run claims entries from the
+/// queue, which keeps its own lock, and changes the downloads through the store. Nothing here is awaited by the player.
 /// </remarks>
 public sealed class OfflineProgressSync : IDisposable
 {
@@ -57,6 +57,10 @@ public sealed class OfflineProgressSync : IDisposable
     private bool _started;
     private bool _disposed;
     private Task _latestRun = Task.CompletedTask;
+
+    // The run that waits for the one under way; null once it began. A server that takes a request and never answers holds a
+    // run for the whole HTTP timeout, and the player asks for a flush every ten seconds.
+    private Task? _waiting;
 
     // Only a run touches these: whose progress was read last, and when.
     private DownloadScope? _readFor;
@@ -102,6 +106,8 @@ public sealed class OfflineProgressSync : IDisposable
         }
         _session.Changed += OnChanged;
         _network.Changed += OnChanged;
+        // Off this thread, which is the UI's at the app's start: the player's first look at the queue finds it read.
+        _ = _queue.LoadAsync();
         FlushSoon(readBack: true);
     }
 
@@ -157,7 +163,12 @@ public sealed class OfflineProgressSync : IDisposable
     {
         lock (_gate)
         {
-            return _latestRun = _disposed ? Task.CompletedTask : Task.Run(RunGuardedAsync);
+            if (_disposed)
+            {
+                return _latestRun = Task.CompletedTask;
+            }
+            // A run that has not begun sends what is there when it begins: this wish is its own too.
+            return _latestRun = _waiting ??= Task.Run(RunGuardedAsync);
         }
     }
 
@@ -177,6 +188,7 @@ public sealed class OfflineProgressSync : IDisposable
             bool readBack;
             lock (_gate)
             {
+                _waiting = null;
                 readBack = _wantsReadBack;
                 _wantsReadBack = false;
             }
@@ -184,7 +196,7 @@ public sealed class OfflineProgressSync : IDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Granary closes: what was claimed is held at the next start.
+            // Granary closes: what was claimed is in the file as it was, and goes with the next start's send.
         }
         catch (Exception ex)
         {
@@ -213,18 +225,17 @@ public sealed class OfflineProgressSync : IDisposable
             {
                 break;
             }
-            // On the disk as on their way before they leave: a Granary that closes now does not send them twice.
-            await _queue.LatestSave.ConfigureAwait(false);
-            SendOutcome? outcome = null;
+            var outcome = SendOutcome.TryAgain;
             try
             {
                 outcome = await SendAsync(server, scope, batch, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
-                // Whatever ended the send without an outcome (Granary closing, something unexpected), the request may have
-                // left: its entries are held rather than left on their way for the rest of the run.
-                _queue.Resolve(batch, outcome?.Entries ?? OfflineProgressOutcome.Uncertain);
+                // Whatever ended the send without an outcome (Granary closing, something unexpected), its entries wait for
+                // the next send rather than stay on their way for the rest of the run.
+                _queue.Resolve(outcome.Done, OfflineProgressOutcome.Done);
+                _queue.Resolve([.. batch.Except(outcome.Done)], OfflineProgressOutcome.Later);
             }
             sent |= outcome.Reached;
             if (!outcome.GoesOn)
@@ -242,57 +253,52 @@ public sealed class OfflineProgressSync : IDisposable
         }
     }
 
-    // One request, sent once. The answer decides what becomes of its entries (the Apple app's outcome model): answered,
-    // they leave, each item's success or failure alike; a server that asks to come back, or a request that never left,
-    // keeps them for later; a request that left without a usable answer holds them, since the server may have taken them
-    // and a second send could count a watch twice; a request the server will never take is dropped.
+    // One request. The answer decides what becomes of its entries (docs/api-contract.md, 14.7): an item the server answered
+    // for with success leaves, and so does one it will never take (a title the profile cannot see); a request it will never
+    // take (400, 422) is dropped whole. Everything else is sent again with the next try: an item that failed on the server's
+    // side, a server that refuses or fails for now (any other status), a request that did not get there, and one whose
+    // answer never came or says nothing usable. The server may have taken that last kind, and the second send does no harm:
+    // each position carries the time it was recorded, and the server passes over one that is not newer than what it has
+    // (silo-server's SetProgressIfNewer), without counting a watch.
     private async Task<SendOutcome> SendAsync(Uri server, DownloadScope scope, IReadOnlyList<OfflineProgressEntry> batch, CancellationToken cancellationToken)
     {
         var body = new ProgressSyncBody([.. batch.Select(e => new ProgressSyncItem(e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt))]);
         try
         {
             var result = await _api.SyncAsync(server, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
-            if (result.Items.Count != batch.Count)
+            if (result.Items.Count != batch.Count || result.Items.Where((item, index) => item.MediaItemId is { } id && id != batch[index].MediaItemId).Any())
             {
-                _logger.LogWarning("The server answered for {Answered} of {Sent} positions; they are held", result.Items.Count, batch.Count);
-                return SendOutcome.Uncertain;
+                // An answer that is not for what was sent says nothing sure about any of it.
+                _logger.LogWarning("The server answered for {Answered} of {Sent} positions; they are sent again", result.Items.Count, batch.Count);
+                return SendOutcome.TryAgain;
             }
-            int failed = result.Items.Count(i => i.Status != ProgressSyncItemResult.Success);
-            _logger.LogInformation("Sent {Count} position(s) recorded on this PC; the server refused {Failed}", batch.Count, failed);
-            return SendOutcome.Answered;
+            var done = batch.Where((_, index) => result.Items[index] is { Status: ProgressSyncItemResult.Success } or { IsRefusedForGood: true }).ToList();
+            int taken = result.Items.Count(i => i.Status == ProgressSyncItemResult.Success);
+            _logger.LogInformation("Sent {Count} position(s) recorded on this PC: the server took {Taken}, refused {Refused} for good, and failed on {Failed}",
+                batch.Count, taken, done.Count - taken, batch.Count - done.Count);
+            // With items to send again, the run ends here: the next batch would only claim them once more.
+            return new SendOutcome(done, Reached: taken > 0, GoesOn: done.Count == batch.Count);
         }
         catch (ProfileChangedException)
         {
-            return SendOutcome.Later;
+            return SendOutcome.TryAgain;
         }
-        catch (SiloApiException ex) when (ex.Status is 401 or 403 or 408 or 429 or 502 or 503)
+        catch (SiloApiException ex) when (ex.Status is 400 or 422)
         {
-            _logger.LogInformation("The server does not take positions now ({Failure}); they wait", ApiFailureText.Describe(ex));
-            return SendOutcome.Later;
-        }
-        catch (SiloApiException ex) when (ex.Status >= 500)
-        {
-            // The server failed while it had the request, or a gateway gave up waiting for it: it may have been applied.
-            _logger.LogWarning("The server failed on {Count} position(s) ({Failure}); they are held", batch.Count, ApiFailureText.Describe(ex));
-            return SendOutcome.Uncertain;
+            _logger.LogWarning("The server refused {Count} position(s) for good ({Failure}); they are dropped", batch.Count, ApiFailureText.Describe(ex));
+            return new SendOutcome(batch, Reached: false, GoesOn: false);
         }
         catch (SiloApiException ex)
         {
-            _logger.LogWarning("The server refused {Count} position(s) for good ({Failure}); they are dropped", batch.Count, ApiFailureText.Describe(ex));
-            return SendOutcome.Refused;
-        }
-        catch (HttpRequestException ex) when (ex.HttpRequestError is HttpRequestError.ConnectionError or HttpRequestError.NameResolutionError
-            or HttpRequestError.SecureConnectionError)
-        {
-            // The request never left this PC: .NET names these three for a name that did not resolve, a connection that could
-            // not be made and a TLS handshake that failed. A connection that breaks once the request is on it comes as
-            // another error (ResponseEnded, or none named), which is held below.
-            return SendOutcome.Later;
+            // A sign-in to renew, a busy or failing server, a proxy or a maintenance page in its place, an older server
+            // without the route: none of them says the positions are wrong.
+            _logger.LogInformation("The server does not take positions now ({Failure}); they wait", ApiFailureText.Describe(ex));
+            return SendOutcome.TryAgain;
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            _logger.LogWarning("No usable answer came for {Count} position(s) ({Failure}); they are held", batch.Count, ApiFailureText.Describe(ex));
-            return SendOutcome.Uncertain;
+            _logger.LogInformation("No usable answer came for {Count} position(s) ({Failure}); they are sent again", batch.Count, ApiFailureText.Describe(ex));
+            return SendOutcome.TryAgain;
         }
     }
 
@@ -303,7 +309,8 @@ public sealed class OfflineProgressSync : IDisposable
 
     // The whole listing, then the downloads it names: the later of the server's position and this PC's holds, the server's
     // on a tie, with its word on whether the title is watched (the Apple app's mergeProgress). A listing that breaks off
-    // changes nothing. A complete one also lets the held entries go: what the server has is known now.
+    // changes nothing. A complete one also settles what still waits in the queue: a position the server has (its row is as
+    // new, or newer) leaves, as one whose send was taken while its answer got lost; every other one is sent again.
     private async Task ReadBackAsync(Uri server, DownloadScope scope, CancellationToken cancellationToken)
     {
         var rows = new Dictionary<string, ProgressListItem>(StringComparer.Ordinal);
@@ -344,7 +351,11 @@ public sealed class OfflineProgressSync : IDisposable
                 await TakeAsync(scope, download.Record.DownloadId, row, cancellationToken).ConfigureAwait(false);
             }
         }
-        _queue.DropHeld(scope);
+        int settled = _queue.DropKnown(scope, rows.ToDictionary(row => row.Key, row => row.Value.UpdatedAt, StringComparer.Ordinal));
+        if (settled > 0)
+        {
+            _logger.LogInformation("The server already had {Count} position(s) that waited on this PC", settled);
+        }
         _readFor = scope;
         _readAt = _time.GetTimestamp();
     }
@@ -385,12 +396,12 @@ public sealed class OfflineProgressSync : IDisposable
         }
     }
 
-    /// <summary>What a send did: what becomes of its entries, whether the server took the request, and whether the next batch may go.</summary>
-    private sealed record SendOutcome(OfflineProgressOutcome Entries, bool Reached, bool GoesOn)
+    /// <summary>
+    /// What a send did: the entries that leave the queue (every other one of its batch is sent again), whether the server took
+    /// any position, and whether the next batch may go.
+    /// </summary>
+    private sealed record SendOutcome(IReadOnlyList<OfflineProgressEntry> Done, bool Reached, bool GoesOn)
     {
-        public static readonly SendOutcome Answered = new(OfflineProgressOutcome.Done, Reached: true, GoesOn: true);
-        public static readonly SendOutcome Later = new(OfflineProgressOutcome.Later, Reached: false, GoesOn: false);
-        public static readonly SendOutcome Uncertain = new(OfflineProgressOutcome.Uncertain, Reached: false, GoesOn: false);
-        public static readonly SendOutcome Refused = new(OfflineProgressOutcome.Done, Reached: false, GoesOn: false);
+        public static readonly SendOutcome TryAgain = new([], Reached: false, GoesOn: false);
     }
 }

@@ -5,33 +5,27 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
 
-/// <summary>Where a recorded position stands on its way to the server.</summary>
+/// <summary>Where a recorded position stands on its way to the server, in this run.</summary>
 public enum OfflineProgressState
 {
-    /// <summary>Not sent yet, or sent back to wait: it goes with the next send.</summary>
+    /// <summary>Not sent yet, or sent without an answer that settles it: it goes with the next send.</summary>
     Pending,
 
     /// <summary>In a request that has not been answered.</summary>
     Sending,
-
-    /// <summary>
-    /// Sent without a usable answer, so the server may have taken it: never sent again by itself, as Silo's Apple app holds
-    /// such an entry. A newer position of the title replaces it, and a read of the server's progress lets it go.
-    /// </summary>
-    Held,
 }
 
-/// <summary>What became of a batch of entries that was sent.</summary>
+/// <summary>What became of entries that were sent.</summary>
 public enum OfflineProgressOutcome
 {
     /// <summary>The server answered for them, or will never take them: they leave the queue.</summary>
     Done,
 
-    /// <summary>They did not reach the server, or it asked to come back: they wait for the next send.</summary>
+    /// <summary>
+    /// The server did not answer for them, or asked to come back: they go with the next send. Sending a position twice changes
+    /// nothing on the server, which keeps the later of two by the time each was recorded.
+    /// </summary>
     Later,
-
-    /// <summary>They left, and no usable answer came: they are held.</summary>
-    Uncertain,
 }
 
 /// <summary>A position a download played from this PC recorded, for the profile it was recorded as.</summary>
@@ -42,24 +36,36 @@ public sealed record OfflineProgressEntry(DownloadScope Scope, string MediaItemI
 /// <summary>
 /// The positions recorded on this PC that the server has not taken yet (docs/architecture.md, "Offline progress"), in
 /// <c>offline-progress.json</c> in the data folder: one for each title and profile, the latest. Modelled on the queue of
-/// Silo's Apple app (<c>OfflineProgressQueue.swift</c>): a new position replaces the title's entry whatever its state, a
-/// send claims entries before it goes out, and an entry whose send got no answer is held instead of sent twice.
+/// Silo's Apple app (<c>OfflineProgressQueue.swift</c>): a new position replaces the title's entry whatever its state, and a
+/// send claims entries before it goes out. Unlike that queue it holds nothing back: an entry leaves only when the server
+/// answered for it, will never take it, or is known to have it (<see cref="DropKnown"/>); every other one is sent again.
 /// </summary>
 /// <remarks>
 /// Safe from any thread: every change is made under one lock and holds at once; the file follows, written whole off the
-/// caller's thread, one write at a time, each with the state as it is then. A file that cannot be written is logged, and the
-/// queue holds for this run.
+/// caller's thread, one write at a time, each with the state as it is then. The file is never written before it was read: one
+/// that cannot be read now (something has it open) is read again before each write, and what was recorded meanwhile is kept
+/// for this run and joins what the file holds; one that is not a queue is moved aside (<c>.bad</c>) first.
 /// </remarks>
 public sealed class OfflineProgressQueue
 {
     /// <summary>An entry nobody could send for this long is let go when the file is read: its server or profile is gone.</summary>
     public static readonly TimeSpan MaxAge = TimeSpan.FromDays(90);
 
+    // A temporary file of a write (SafeFile) this old was left by a write that was cut off.
+    private static readonly TimeSpan LeftoverAge = TimeSpan.FromMinutes(1);
+
     private readonly string _path;
     private readonly TimeProvider _time;
     private readonly ILogger<OfflineProgressQueue> _logger;
     private readonly Lock _gate = new();
-    private List<OfflineProgressEntry>? _entries;
+
+    // Under the lock. What the file held joins the entries once it is read (_loaded); until then they are this run's only,
+    // and the scopes removed meanwhile are remembered for what the file still holds.
+    private readonly List<OfflineProgressEntry> _entries = [];
+    private readonly List<Func<DownloadScope, bool>> _removedUnread = [];
+    private bool _loadTried;
+    private bool _loaded;
+    private bool _readFailureSaid;
     private Task _latestSave = Task.CompletedTask;
 
     public OfflineProgressQueue(string path, TimeProvider time, ILogger<OfflineProgressQueue> logger)
@@ -86,8 +92,19 @@ public sealed class OfflineProgressQueue
     }
 
     /// <summary>
-    /// Records where <paramref name="scope"/>'s profile is in a title now. It replaces the title's entry, also one on its way
-    /// or held: the latest position is the one to send.
+    /// Reads the file on the thread pool, so the first use from the UI thread does not; done once it was read or could not be.
+    /// </summary>
+    public Task LoadAsync() => Task.Run(() =>
+    {
+        lock (_gate)
+        {
+            Loaded();
+        }
+    });
+
+    /// <summary>
+    /// Records where <paramref name="scope"/>'s profile is in a title now. It replaces the title's entry, also one on its
+    /// way: the latest position is the one to send.
     /// </summary>
     public OfflineProgressEntry Record(DownloadScope scope, string mediaItemId, long positionMs, long durationMs)
     {
@@ -116,7 +133,7 @@ public sealed class OfflineProgressQueue
         }
     }
 
-    /// <summary>The profile recorded a position of the title here that the server has not answered for: pending, on its way or held.</summary>
+    /// <summary>The profile recorded a position of the title here that the server has not answered for: waiting or on its way.</summary>
     public bool HasUnsent(DownloadScope scope, string mediaItemId)
     {
         lock (_gate)
@@ -127,8 +144,8 @@ public sealed class OfflineProgressQueue
 
     /// <summary>
     /// Takes up to <paramref name="most"/> of the profile's pending entries for a send, oldest first: they are on their way
-    /// from now on, and no other send takes them. Await <see cref="LatestSave"/> before they leave, so a Granary that closes
-    /// meanwhile finds them held, not pending.
+    /// from now on, and no other send takes them, until <see cref="Resolve"/> says what became of them. Only this run knows:
+    /// after a Granary that closed meanwhile, they are pending again.
     /// </summary>
     public IReadOnlyList<OfflineProgressEntry> Claim(DownloadScope scope, int most)
     {
@@ -144,25 +161,21 @@ public sealed class OfflineProgressQueue
                     claimed.Add(entries[index]);
                 }
             }
-            if (claimed.Count > 0)
-            {
-                Save();
-            }
             return claimed;
         }
     }
 
     /// <summary>
-    /// What became of the entries a <see cref="Claim"/> handed out. One that a newer position replaced meanwhile is left
-    /// alone: that position is another entry, still to send.
+    /// What became of entries a <see cref="Claim"/> handed out. One that a newer position replaced meanwhile is left alone:
+    /// that position is another entry, still to send.
     /// </summary>
-    public void Resolve(IReadOnlyList<OfflineProgressEntry> claimed, OfflineProgressOutcome outcome)
+    public void Resolve(IReadOnlyCollection<OfflineProgressEntry> claimed, OfflineProgressOutcome outcome)
     {
         ArgumentNullException.ThrowIfNull(claimed);
         lock (_gate)
         {
             var entries = Loaded();
-            bool changed = false;
+            bool left = false;
             foreach (var entry in claimed)
             {
                 int index = entries.IndexOf(entry);
@@ -170,67 +183,158 @@ public sealed class OfflineProgressQueue
                 {
                     continue;
                 }
-                changed = true;
-                switch (outcome)
+                if (outcome == OfflineProgressOutcome.Done)
                 {
-                    case OfflineProgressOutcome.Done:
-                        entries.RemoveAt(index);
-                        break;
-                    case OfflineProgressOutcome.Later:
-                        entries[index] = entry with { State = OfflineProgressState.Pending };
-                        break;
-                    default:
-                        entries[index] = entry with { State = OfflineProgressState.Held };
-                        break;
+                    entries.RemoveAt(index);
+                    left = true;
+                }
+                else
+                {
+                    entries[index] = entry with { State = OfflineProgressState.Pending };
                 }
             }
-            if (changed)
+            if (left)
             {
                 Save();
             }
         }
     }
 
-    /// <summary>Lets the profile's held entries go: the server's progress was read, so what it has is known.</summary>
-    public void DropHeld(DownloadScope scope)
+    /// <summary>
+    /// Lets go of the profile's pending entries the server is known to have: <paramref name="serverTimes"/> is when the
+    /// server's progress in each title was recorded, as a complete read of it says, and a time at or after the entry's means
+    /// the server has that position or a newer one, so a send would change nothing. Answers how many went.
+    /// </summary>
+    public int DropKnown(DownloadScope scope, IReadOnlyDictionary<string, DateTimeOffset> serverTimes)
     {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(serverTimes);
         lock (_gate)
         {
-            if (Loaded().RemoveAll(e => e.Scope == scope && e.State == OfflineProgressState.Held) > 0)
+            int gone = Loaded().RemoveAll(e => e.Scope == scope && e.State == OfflineProgressState.Pending
+                && serverTimes.TryGetValue(e.MediaItemId, out var there) && there >= e.UpdatedAt);
+            if (gone > 0)
+            {
+                Save();
+            }
+            return gone;
+        }
+    }
+
+    /// <summary>
+    /// Takes every entry of the scopes <paramref name="match"/> names out of the queue and its file, whatever its state: a
+    /// sign-out that deletes an account's downloads, or a server's removal, leaves none of what was watched there behind.
+    /// </summary>
+    public void Remove(Func<DownloadScope, bool> match)
+    {
+        ArgumentNullException.ThrowIfNull(match);
+        lock (_gate)
+        {
+            var entries = Loaded();
+            if (!_loaded)
+            {
+                _removedUnread.Add(match);
+            }
+            if (entries.RemoveAll(e => match(e.Scope)) > 0 || !_loaded)
             {
                 Save();
             }
         }
     }
 
-    // Under the lock. Read once, at the first use: a small file in the data folder, as this PC's settings are read.
-    private List<OfflineProgressEntry> Loaded() => _entries ??= Read();
+    // Under the lock. The file is read at the first use (LoadAsync has the sync do that off the UI thread): a small file in
+    // the data folder. One that could not be read then is read again by the next write, not by every caller.
+    private List<OfflineProgressEntry> Loaded()
+    {
+        if (!_loadTried)
+        {
+            _loadTried = true;
+            TryLoad();
+        }
+        return _entries;
+    }
 
-    private List<OfflineProgressEntry> Read()
+    // Under the lock. Sets _loaded once what the file holds is in _entries: no file, a file read, or one moved aside.
+    private void TryLoad()
+    {
+        IReadOnlyList<OfflineProgressFileEntry> kept;
+        try
+        {
+            kept = ReadFile();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Something has it open, or it may not be read: its positions are still in it, so it is left as it is. Only the
+            // kind: the message would name the data folder, with the Windows user's name. Said once: every write tries again.
+            if (!_readFailureSaid)
+            {
+                _readFailureSaid = true;
+                _logger.LogWarning("The positions recorded on this PC could not be read ({Failure}); the file is left alone and read again before each write",
+                    DownloadLog.Failure(ex));
+            }
+            return;
+        }
+        var oldest = _time.GetUtcNow() - MaxAge;
+        // JSON can say null or anything for every member. Every entry read is pending: one that was on its way when
+        // Granary closed is sent again, which changes nothing on a server that has it.
+        var read = kept
+            .Where(e => e is { MediaItemId.Length: > 0, PositionMs: >= 0, DurationMs: >= 0 } && DownloadRecords.IsUsable(e.Scope) && e.UpdatedAt >= oldest
+                && !_removedUnread.Any(removed => removed(e.Scope)))
+            .Select(e => new OfflineProgressEntry(e.Scope, e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt, OfflineProgressState.Pending));
+        // What this run recorded before the file could be read is the newer of a title's two.
+        var merged = read.Concat(_entries).GroupBy(e => (e.Scope, e.MediaItemId)).Select(group => group.MaxBy(e => e.UpdatedAt)!).ToList();
+        _entries.Clear();
+        _entries.AddRange(merged);
+        _removedUnread.Clear();
+        _loaded = true;
+        SweepLeftovers();
+    }
+
+    // The file's entries; none when there is no file, or when it is not a queue and was moved aside. An I/O failure, also of
+    // the move, is the caller's: the file stays unread.
+    private IReadOnlyList<OfflineProgressFileEntry> ReadFile()
+    {
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(_path);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return [];
+        }
+        try
+        {
+            return JsonSerializer.Deserialize(bytes, OfflineProgressJsonContext.Default.OfflineProgressFile)?.Entries ?? [];
+        }
+        catch (JsonException)
+        {
+            // Not written over: whoever wants to know what happened to it finds it beside the new file.
+            File.Move(_path, _path + ".bad", overwrite: true);
+            _logger.LogWarning("The file of positions recorded on this PC is damaged; it was moved aside (.bad) and the queue starts empty");
+            return [];
+        }
+    }
+
+    // A write that was cut off between its temporary file and the move left that file behind (SafeFile.WriteWhole). A young
+    // one may be a write on its way, of this Granary or a second one on this data folder.
+    private void SweepLeftovers()
     {
         try
         {
-            if (!File.Exists(_path))
+            var oldest = _time.GetUtcNow().UtcDateTime - LeftoverAge;
+            string folder = Path.GetDirectoryName(_path)!;
+            foreach (string leftover in Directory.EnumerateFiles(folder, Path.GetFileName(_path) + ".*.tmp"))
             {
-                return [];
+                if (File.GetLastWriteTimeUtc(leftover) < oldest)
+                {
+                    File.Delete(leftover);
+                }
             }
-            var file = JsonSerializer.Deserialize(File.ReadAllBytes(_path), OfflineProgressJsonContext.Default.OfflineProgressFile);
-            var oldest = _time.GetUtcNow() - MaxAge;
-            // JSON can say null or anything for every member. An entry that was on its way when Granary closed may have
-            // arrived: it is held, as the Apple app holds one it finds dispatched at its start.
-            return
-            [
-                .. (file?.Entries ?? [])
-                    .Where(e => e is { MediaItemId.Length: > 0, PositionMs: >= 0, DurationMs: >= 0 } && DownloadRecords.IsUsable(e.Scope)
-                        && Enum.IsDefined(e.State) && e.UpdatedAt >= oldest)
-                    .Select(e => e.State == OfflineProgressState.Sending ? e with { State = OfflineProgressState.Held } : e)
-                    .GroupBy(e => (e.Scope, e.MediaItemId)).Select(group => group.MaxBy(e => e.UpdatedAt)!),
-            ];
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _logger.LogWarning("The positions recorded on this PC could not be read ({Failure}); none are kept from before", DownloadLog.Failure(ex));
-            return [];
+            // They take a few bytes and get in no write's way.
         }
     }
 
@@ -243,7 +347,19 @@ public sealed class OfflineProgressQueue
         OfflineProgressFile file;
         lock (_gate)
         {
-            file = new OfflineProgressFile { Entries = [.. Loaded()] };
+            if (!_loaded)
+            {
+                TryLoad();
+            }
+            if (!_loaded)
+            {
+                // Never over a file that was not read: it may hold positions this run does not know.
+                return;
+            }
+            file = new OfflineProgressFile
+            {
+                Entries = [.. _entries.Select(e => new OfflineProgressFileEntry(e.Scope, e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt))],
+            };
         }
         try
         {
@@ -265,13 +381,18 @@ internal sealed record OfflineProgressFile
 {
     public int Version { get; init; } = 1;
 
-    public IReadOnlyList<OfflineProgressEntry> Entries { get; init => field = value ?? []; } = [];
+    public IReadOnlyList<OfflineProgressFileEntry> Entries { get; init => field = value ?? []; } = [];
 }
+
+/// <summary>
+/// An entry as the file keeps it. Where it stands on its way is this run's alone: an earlier build's <c>state</c> member is
+/// passed over, and every entry read is sent.
+/// </summary>
+internal sealed record OfflineProgressFileEntry(DownloadScope Scope, string MediaItemId, long PositionMs, long DurationMs, DateTimeOffset UpdatedAt);
 
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    UseStringEnumConverter = true,
     WriteIndented = true)]
 [JsonSerializable(typeof(OfflineProgressFile))]
 internal sealed partial class OfflineProgressJsonContext : JsonSerializerContext;

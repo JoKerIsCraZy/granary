@@ -2929,13 +2929,23 @@ progress of a download.
 
 - `POST /api/v2/sync/progress` (profile) with `{ "items": [{ "media_item_id", "position_ms", "duration_ms", "updated_at" }] }`,
   1 to 100 items, no `media_item_id` twice → `200 { "items": [{ "index", "media_item_id", "status" }], "summary" }`, one
-  result for each item by its `index`; `status` is `success` or `failure` (with a `failure` problem object).
+  result for each item by its `index`; `status` is `success` or `failure`, with a `failure` problem object
+  (`{ "type", "title", "status", "detail" }`): status `404` for a title the profile cannot see or that is gone, `500` for
+  a write the server's store failed on.
   - `media_item_id` is the film's or the episode's own id. Positions and lengths are whole milliseconds; `duration_ms` is
     0 when unknown. `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
     offset, `2026-10-01T12:00:00+00:00`). The server replaces one more than 2 minutes ahead of its clock with its own
     time, and answers `422` for one it cannot read.
   - The server keeps the later of an item's `updated_at` and what it has (last write wins), so a position recorded
-    offline never moves a newer one from another device. An older or equal one is a `success` that changes nothing.
+    offline never moves a newer one from another device. An older or equal one is a `success` that changes nothing
+    (`SetProgressIfNewer`: the row is written only `WHERE EXCLUDED.event_at > user_watch_progress.event_at`, and no
+    watch-history row is made on this path). So sending the same item twice is harmless, and Granary sends again
+    whenever it is not sure the first send was taken. The server lists the operation as not retry-safe because an item
+    without `updated_at` is merged by position; Granary never sends one.
+  - The comparison is between clocks: this PC's for what it recorded, the other device's or the server's for theirs. A
+    PC whose clock is ahead (by up to the 2 minutes the server allows) can beat a position another device made a little
+    later, and one whose clock is behind can lose to an older one. Granary does not correct for it; Silo's Apple app and
+    the server do not either.
   - The server decides completion with its own threshold (`playback.watched_threshold`, 90 by default): a position past
     it marks the title watched and stores its position as 0. Watched is a latch: a later, lower position does not unwatch.
     A position below `playback.min_resume_threshold` of the length is not stored (also a `success`).
@@ -2950,13 +2960,21 @@ progress of a download.
 
   | Answer | The entries |
   |---|---|
-  | `200` with a result for each item | leave the queue, `success` and `failure` alike |
-  | `401`, `403`, `408`, `429`, `502`, `503`, a profile switched to meanwhile, a request that never left (no connection, no name, no TLS) | wait, and go with the next send |
-  | no answer after the request left, a timeout, an answer that cannot be read or names fewer items, `500`, `504` and other `5xx` | are held: the server may have taken them, so they are not sent again |
-  | any other `4xx` (`400`, `404`, `422`) | are dropped, with a line in the log |
+  | `200` with a result for each item: `success` | leave the queue |
+  | `200`: `failure` with status `404` | leave the queue, with a line in the log: the profile cannot see the title any more |
+  | `200`: any other `failure` (`500`) | wait, and go with the next send; the others of the batch leave |
+  | `200` that cannot be read, names another number of items, or other items | wait, and go with the next send |
+  | `400`, `422` | are dropped, with a line in the log: the request itself is wrong |
+  | every other status (`401`, `403`, `404`, `405`, `408`, `409`, `412`, `429`, every `5xx`) | wait, and go with the next send |
+  | no answer: no connection, a connection that broke off, a timeout; a profile switched to meanwhile | wait, and go with the next send |
 
-  The Apple app drops the entries on every status that is not in its wait list, `5xx` included; Granary holds them on a
-  server failure and waits on `502`, since a reverse proxy answers so while a self-hosted server restarts.
+  Nothing is dropped because its fate is unknown: a position whose request may or may not have arrived is sent again,
+  which changes nothing on a server that has it. A read of the server's progress also settles it: a waiting position
+  whose title the server lists with an `updated_at` at or after the position's own is known to be there and leaves
+  unsent. A `404` or `405` for the whole request is an older server without the route, a proxy or a maintenance page,
+  not a verdict on the positions. The Apple app holds an entry whose send got no answer and lets it go after its next
+  read of the server's progress, whether the server has it or not, and drops the entries on every status outside its
+  wait list; Granary keeps them, since the server's write allows the second send.
 
 ## Appendix: where docs and code disagree
 
