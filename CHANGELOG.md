@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
+  Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
+  Version picker.
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
@@ -20,6 +23,7 @@ release's section is what its update says it changes (docs/release.md).
 ### Fixed
 
 - A Next Up card says Next Episode, as on Silo's web.
+- Playback info names a Dolby Atmos track also when its title only holds a word such as "Atmospheric".
 - A Continue Watching card's time left is rounded to the nearest minute, as on Silo's web and apps, where it could say a
   minute more.
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.

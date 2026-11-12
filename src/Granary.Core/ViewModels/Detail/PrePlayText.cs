@@ -126,9 +126,9 @@ public static partial class PrePlayText
     public static string SubtitleFormat(string? codec) =>
         TrackText.SubtitleFormat(codec) is { Length: > 0 } format ? format : codec?.Trim().ToUpperInvariant() ?? "";
 
-    // The file's main audio as its quality line names it: the first track's profile and titles can tell Atmos when its
-    // codec is the file's (web: mapAudioLabel with versionAudioAtmosEvidence).
-    private static string AudioLabel(FileVersion version)
+    // The file's main audio as its quality line and its badge name it: the first track's profile and titles can tell Atmos
+    // when its codec is the file's (web: mapAudioLabel with versionAudioAtmosEvidence).
+    internal static string AudioLabel(FileVersion version)
     {
         if (version.CodecAudio.Length == 0)
         {
