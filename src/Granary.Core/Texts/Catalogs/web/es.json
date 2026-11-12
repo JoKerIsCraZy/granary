@@ -11,6 +11,12 @@
       "value": "Cancelar"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Cambiar servidor"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -507,6 +513,70 @@
     {
       "type": 0,
       "value": "Tendencias de esta semana"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Escanea un código, inicia sesión allí y aprueba este dispositivo."
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Mostrar código QR"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Usa tu teléfono en su lugar"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Iniciar sesión en "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Iniciando sesión..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Inicia sesión con una cuenta existente."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "Esta cuenta está desactivada."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Contraseña"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Iniciar sesión"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
     }
   ],
   "web.catalog.page.doneSelecting": [

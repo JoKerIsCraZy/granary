@@ -11,6 +11,12 @@
       "value": "キャンセル"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "サーバーを変更"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -507,6 +513,70 @@
     {
       "type": 0,
       "value": "今週のトレンド"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "コードをスキャンし、そこでサインインしてこのデバイスを承認してください。"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "QRコードを表示"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "スマートフォンを使用"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 1,
+      "value": "server"
+    },
+    {
+      "type": 0,
+      "value": "にサインイン"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "サインイン中..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "既存のアカウントでサインインしてください。"
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "このアカウントは無効になっています。"
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "パスワード"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "サインイン"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "ユーザー名"
     }
   ],
   "web.catalog.page.doneSelecting": [

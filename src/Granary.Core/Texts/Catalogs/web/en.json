@@ -11,6 +11,12 @@
       "value": "Cancel"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Change server"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -507,6 +513,70 @@
     {
       "type": 0,
       "value": "Trending This Week"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Scan a code, sign in there, and approve this device."
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Show QR code"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Use your phone instead"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Sign in to "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Signing in..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Sign in with an existing account."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "This account is disabled."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Password"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Sign in"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Username"
     }
   ],
   "web.catalog.page.doneSelecting": [

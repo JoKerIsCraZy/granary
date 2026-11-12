@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Granary.App.Controls;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -121,15 +122,17 @@ public sealed partial class SignInPage : Page, IOwnFocus
     }
 
     // Instance methods because x:Bind function bindings call them on the page.
-    public string Heading(ServerEntry? server) => server is null ? "Sign in" : $"Sign in to {server.Name}";
+    public string Heading(ServerEntry? server) =>
+        server is null ? AppText.Get("web.auth.signIn") : AppText.Get("web.auth.login.heading", ("server", server.Name));
 
     // The web shows the server's name as the card's title; screen readers hear Heading.
-    public string ServerName(ServerEntry? server) => server?.Name ?? "Sign in";
+    public string ServerName(ServerEntry? server) => server?.Name ?? AppText.Get("web.auth.signIn");
 
-    public string SignInLabel(bool isRunning) => isRunning ? "Signing in…" : "Sign in";
+    public string SignInLabel(bool isRunning) => isRunning ? AppText.Get("web.auth.login.signingIn") : AppText.Get("web.auth.signIn");
 
+    // Without password sign-in the code is the only way, so the heading does not offer it "instead".
     public string DeviceHeading(bool isPasswordSignInAvailable) =>
-        isPasswordSignInAvailable ? "Use your phone instead" : "Sign in with your phone";
+        isPasswordSignInAvailable ? AppText.Get("web.auth.login.device.title") : AppText.Get("granary.signIn.deviceOnly");
 
     public Visibility ShowsPasswordForm(bool canUseCredentials, bool isPasswordSignInAvailable) =>
         canUseCredentials && isPasswordSignInAvailable ? Visibility.Visible : Visibility.Collapsed;

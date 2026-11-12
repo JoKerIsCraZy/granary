@@ -11,6 +11,12 @@
       "value": "Abbrechen"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Server wechseln"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -515,6 +521,74 @@
     {
       "type": 0,
       "value": "Diese Woche im Trend"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Scanne einen Code, melde dich dort an und gib dieses Gerät frei."
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "QR-Code anzeigen"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Stattdessen dein Smartphone verwenden"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Bei "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    },
+    {
+      "type": 0,
+      "value": " anmelden"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Anmeldung läuft…"
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Melde dich mit einem bestehenden Konto an."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "Dieses Konto ist deaktiviert."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Passwort"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Anmelden"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Benutzername"
     }
   ],
   "web.catalog.page.doneSelecting": [

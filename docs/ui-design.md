@@ -1121,8 +1121,8 @@ says why above the sections.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
-  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
-  standalone servers page, which shares the question before removing.
+  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Change server" (the apps' words)
+  still opens the standalone servers page, which shares the question before removing.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

@@ -11,6 +11,12 @@
       "value": "إلغاء"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "تغيير الخادم"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -507,6 +513,70 @@
     {
       "type": 0,
       "value": "الرائج هذا الأسبوع"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "امسح رمزًا، وسجّل الدخول هناك، ثم وافق على هذا الجهاز."
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "عرض رمز QR"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "استخدم هاتفك بدلًا من ذلك"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول إلى "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "جارٍ تسجيل الدخول..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "سجّل الدخول بحساب موجود."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "هذا الحساب معطّل."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "كلمة المرور"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
     }
   ],
   "web.catalog.page.doneSelecting": [

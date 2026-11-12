@@ -5,9 +5,11 @@
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
 # src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
 # src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
-# list (src/Granary.App/Views/ServersPage.xaml).
+# list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
+# had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
 common.back
 common.cancel
+common.changeServer
 common.done
 common.retry
 common.save
@@ -90,6 +92,20 @@ home.section.topRatedMovies
 home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
+
+# Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
+# the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
+# src/Granary.Core/ViewModels/SignInViewModel.cs.
+web.auth.login.device.description
+web.auth.login.device.showQrCode
+web.auth.login.device.title
+web.auth.login.heading
+web.auth.login.signingIn
+web.auth.loginSubtitle.default
+web.auth.oauthFailure.accountDisabled
+web.auth.password
+web.auth.signIn
+web.auth.username
 
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting

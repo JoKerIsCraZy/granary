@@ -11,6 +11,12 @@
       "value": "Cancelar"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Trocar de servidor"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -507,6 +513,70 @@
     {
       "type": 0,
       "value": "Em alta nesta semana"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Escaneie um código, entre na sua conta por lá e aprove este dispositivo."
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Mostrar código QR"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Usar o celular em vez disso"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Entrar em "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Entrando…"
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Entre com uma conta existente."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "Esta conta está desativada."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Senha"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Entrar"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Nome de usuário"
     }
   ],
   "web.catalog.page.doneSelecting": [

@@ -12,7 +12,7 @@
 
     <!--
         Silo's web login: the server's name, a refusal, the password form, then "Use your phone instead" with the
-        code on request (at once when the server has no password sign-in).
+        code on request (at once when the server has no password sign-in), and the apps' Change server.
     -->
     <!-- The shell's lockup takes its line under Granary's name from Tag (SiloAuthShellStyle). -->
     <ContentControl Style="{StaticResource SiloAuthShellStyle}" Tag="{x:Bind t:AppText.Get('granary.auth.tagline')}">
@@ -25,23 +25,24 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Image Style="{StaticResource SiloAuthMarkStyle}" />
-                    <TextBlock Grid.Column="1" Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}"
+                    <!-- Both functions say "Sign in" while no server is known, so they need no fallback. -->
+                    <TextBlock Grid.Column="1" Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay}"
                                Style="{StaticResource SiloAuthTitleTextStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1"
-                               AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" />
+                               AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay}" />
                 </Grid>
-                <TextBlock Text="Sign in with an existing account." Style="{StaticResource SiloAuthLeadTextStyle}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.auth.loginSubtitle.default')}" Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
 
             <Border Style="{StaticResource SiloAuthWarningStyle}"
                     Visibility="{x:Bind NeedsConsent(ViewModel.IsUnencrypted, ViewModel.IsUnencryptedAccepted), Mode=OneWay}">
                 <StackPanel Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="This connection is not encrypted" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="#FFFBBF24"
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.signIn.unencrypted.title')}" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="#FFFBBF24"
                                    AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock Style="{StaticResource SiloAuthTextStyle}"
-                                   Text="The server address starts with http://. Your password and sign-in would be readable by others on the network." />
+                        <TextBlock Style="{StaticResource SiloAuthTextStyle}" Text="{x:Bind t:AppText.Get('granary.signIn.unencrypted.body')}" />
                     </StackPanel>
-                    <Button Content="Sign in anyway" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.AcceptUnencryptedCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('granary.signIn.unencrypted.accept')}" Style="{StaticResource SiloAuthOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.AcceptUnencryptedCommand}" />
                 </StackPanel>
             </Border>
 
@@ -50,9 +51,9 @@
             </Border>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ShowsPasswordForm(ViewModel.CanUseCredentials, ViewModel.IsPasswordSignInAvailable), Mode=OneWay}">
-                <TextBox x:Name="UsernameBox" Header="Username" Style="{StaticResource SiloAuthTextBoxStyle}" AutomationProperties.AutomationId="Username"
-                         Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <PasswordBox Header="Password" Style="{StaticResource SiloAuthPasswordBoxStyle}" AutomationProperties.AutomationId="Password"
+                <TextBox x:Name="UsernameBox" Header="{x:Bind t:AppText.Get('web.auth.username')}" Style="{StaticResource SiloAuthTextBoxStyle}"
+                         AutomationProperties.AutomationId="Username" Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <PasswordBox Header="{x:Bind t:AppText.Get('web.auth.password')}" Style="{StaticResource SiloAuthPasswordBoxStyle}" AutomationProperties.AutomationId="Password"
                              KeyDown="OnPasswordKeyDown" Password="{x:Bind ViewModel.Password, Mode=TwoWay}" />
                 <Button Style="{StaticResource SiloAuthButtonStyle}" Command="{x:Bind ViewModel.SignInCommand}"
                         Content="{x:Bind SignInLabel(ViewModel.SignInCommand.IsRunning), Mode=OneWay}" />
@@ -64,14 +65,15 @@
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Bind DeviceHeading(ViewModel.IsPasswordSignInAvailable), Mode=OneWay}"
                                    Style="{StaticResource SiloAuthHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock Text="Scan a code, sign in there, and approve this device." Style="{StaticResource SiloAuthTextStyle}" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.auth.login.device.description')}" Style="{StaticResource SiloAuthTextStyle}" />
                     </StackPanel>
-                    <Button x:Name="ShowCodeButton" Content="Show QR code" Style="{StaticResource SiloAuthOutlineButtonStyle}" Click="OnShowCodeClick" />
+                    <Button x:Name="ShowCodeButton" Content="{x:Bind t:AppText.Get('web.auth.login.device.showQrCode')}" Style="{StaticResource SiloAuthOutlineButtonStyle}" Click="OnShowCodeClick" />
                     <controls:DeviceSignInPanel x:Name="DeviceSignIn" Visibility="Collapsed" />
                 </StackPanel>
             </StackPanel>
 
-            <HyperlinkButton Content="Use another server" HorizontalAlignment="Center" Padding="4,2" FontSize="14"
+            <!-- The apps' Change server, in the catalog Silo's clients share. -->
+            <HyperlinkButton Content="{x:Bind t:AppText.Get('common.changeServer')}" HorizontalAlignment="Center" Padding="4,2" FontSize="14"
                              Foreground="{StaticResource SiloMutedBrush}" Command="{x:Bind ViewModel.UseAnotherServerCommand}" />
         </StackPanel>
     </ContentControl>

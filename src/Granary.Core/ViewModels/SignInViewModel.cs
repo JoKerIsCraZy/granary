@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Auth;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -59,7 +60,7 @@ public sealed partial class SignInViewModel(
         Server = (serverEntryId is null ? null : registry.Find(serverEntryId)) ?? session.ActiveServer;
         if (Server is null)
         {
-            Status = "This server is no longer saved. Add it again.";
+            Status = AppText.Get("granary.signIn.serverGone");
             return;
         }
         try
@@ -94,12 +95,12 @@ public sealed partial class SignInViewModel(
         catch (HttpRequestException ex) when (ex.HttpRequestError == HttpRequestError.InvalidResponse)
         {
             logger.LogWarning(ex, "Password sign-in to server {ServerEntryId} got an answer it cannot use", Server!.Id);
-            Status = $"{Server.Name} answered in a way Granary does not understand. Check the server address.";
+            Status = AppText.Get("granary.signIn.unexpectedAnswer", ("name", Server.Name));
         }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "Password sign-in to server {ServerEntryId} could not reach the server", Server!.Id);
-            Status = $"Can't reach {Server.Name}. Check the connection and try again.";
+            Status = AppText.Get("granary.signIn.unreachable", ("name", Server.Name));
         }
         finally
         {
@@ -122,20 +123,22 @@ public sealed partial class SignInViewModel(
     internal static string Describe(SiloApiException error) => error switch
     {
         // There is no dedicated code for bad credentials (docs/api-contract.md, 4.1).
-        { Status: 401 } => "Wrong username or password.",
-        { Code: ProblemCodes.LocalLoginDisabled } => "Password sign-in is turned off on this server. Sign in with the code instead.",
-        { Code: ProblemCodes.PermissionDenied } => "This account is disabled.",
-        { Status: 429 } => $"Too many attempts. Try again {WaitText(error.RetryAfter)}.",
-        { Status: 503 } => "The server is busy. Try again in a moment.",
+        { Status: 401 } => AppText.Get("granary.signIn.wrongCredentials"),
+        { Code: ProblemCodes.LocalLoginDisabled } => AppText.Get("granary.signIn.passwordDisabled"),
+        // As the web's sign-in words permission_denied: before sign-in the only denial is a disabled account.
+        { Code: ProblemCodes.PermissionDenied } => AppText.Get("web.auth.oauthFailure.accountDisabled"),
+        { Status: 429 } => TooManyAttempts(error.RetryAfter),
+        { Status: 503 } => AppText.Get("granary.signIn.busy"),
         // Directory (LDAP) outcomes come with a text meant for people.
         { Status: 403 or 409, Problem.Detail: { Length: > 0 } detail } => detail,
-        _ => $"Sign-in failed (error {error.Status}).",
+        _ => AppText.Get("granary.signIn.failed", ("status", error.Status)),
     };
 
-    internal static string WaitText(TimeSpan? retryAfter) => retryAfter switch
+    // A whole message for each wait: later, in a minute, or in so many minutes.
+    private static string TooManyAttempts(TimeSpan? retryAfter) => retryAfter switch
     {
-        null => "later",
-        { TotalSeconds: <= 60 } => "in a minute",
-        { } wait => $"in {Math.Ceiling(wait.TotalMinutes):0} minutes",
+        null => AppText.Get("granary.signIn.tooManyAttempts.later"),
+        { TotalSeconds: <= 60 } => AppText.Get("granary.signIn.tooManyAttempts.inAMinute"),
+        { } wait => AppText.Get("granary.signIn.tooManyAttempts.minutes", ("count", (int)Math.Ceiling(wait.TotalMinutes))),
     };
 }
