@@ -82,8 +82,14 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             {
                 return null;
             }
-            // The download as it is now: the read may be one an earlier start began.
-            return playbacks(read with { Download = download });
+            // The read can take seconds, and a profile can be switched to in them: the download plays only for the profile it
+            // was found for, as it is now (the read may be one an earlier start began).
+            if (Find(request) is not { } now || now.Record.Scope != download.Record.Scope || now.Record.DownloadId != download.Record.DownloadId)
+            {
+                logger.LogInformation("Download {DownloadId} is no longer the active profile's to play; the title streams", download.Record.DownloadId);
+                return null;
+            }
+            return playbacks(read with { Download = now });
         }
         catch (TimeoutException)
         {
@@ -143,6 +149,11 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                 // Its row stops saying Downloaded and offering Play.
                 store.MarkMediaMissing(download.Record.Scope, id);
                 return null;
+            }
+            // A folder that lists the file does not say it can be opened: one this account may not read, or that something
+            // holds for itself, streams, as a file that is gone does.
+            using (new FileStream(download.MediaPath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
             }
             var manifest = OfflineManifest.Read(File.ReadAllBytes(Path.Combine(download.Folder, DownloadPaths.Manifest)));
             if (manifest.DownloadId != id)

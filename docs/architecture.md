@@ -1472,7 +1472,10 @@ while the server answers.
   started before the downloads were first read waits for that read, within the same budget. `PlayerViewModel` counts its
   starts, so one that waited for a folder goes on only while it is still the latest and the viewer has not left; until
   its playback is there, the engine's state is not taken for the new title's (`PlaysDirectly`), since the engine may
-  still report the title before.
+  still report the title before. The read opens the media file too: a folder that lists a file does not say it can be
+  opened, and one this account may not read, or that something holds for itself, streams. After the read the download
+  is looked up once more for the profile that is active then: a profile switched to during the read gets no playback
+  of the other profile's download, which would record that profile's progress.
 - **No server session.** `LocalPlayback` implements `IServerPlayback`, so the player page and everything that follows
   the player work as for a stream: the seek bar, chapters and skip pills, the next episode, the sleep timer, the kept
   volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It

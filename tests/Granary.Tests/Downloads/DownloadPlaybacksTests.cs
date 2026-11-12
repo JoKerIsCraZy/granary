@@ -225,4 +225,37 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
             "the failed read was logged");
         Assert.DoesNotContain("boom in a folder", _fixture.Harness.Logs.All, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task AProfileSwitchedToWhileTheFolderWasRead_DoesNotGetTheOtherProfilesDownload()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        // Profile 8 becomes the active one while profile 7's folder is read.
+        _fixture.Playbacks.Reading = () => _fixture.Harness.SwitchProfile("8");
+
+        var playback = await TryAsync(PlayRequest.Resume("ep_5"));
+
+        // It would record profile 7's progress while profile 8 watches: the title streams for profile 8 instead.
+        Assert.Null(playback);
+        Assert.False(_fixture.Harness.Playing.Contains(DownloadHarness.Scope7, "dl_1"));
+    }
+
+    [Fact]
+    public async Task AMediaFileThatCannotBeOpened_Streams_ThoughItsFolderListsIt()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+
+        // Something holds the file for itself; a file this account may not read answers the same way.
+        using (new FileStream(download.MediaPath!, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Null(await TryAsync(PlayRequest.Resume("ep_5")));
+        }
+
+        Assert.Contains("cannot be read", _fixture.Harness.Logs.All, StringComparison.Ordinal);
+        // The file is there: the download is not marked as missing it, and plays once it can be opened.
+        Assert.False(_fixture.Harness.Find("dl_1")!.MediaMissing);
+        var played = await TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.NotNull(played);
+        await played.DisposeAsync();
+    }
 }
