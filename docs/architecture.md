@@ -1059,7 +1059,9 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
 
 - **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it wants the
   administrator's channels too (the lane asks for those the server's `hello` offers) and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
-  disconnected), on to `ServerActivity`. The lane takes frames up to 1 MiB whole and cuts a larger one to its head
+  disconnected), on to `ServerActivity`. Not for a profile that switched its indicator off (`ActivityIndicatorSetting`,
+  below): that is a following without the activity, as an account that is no administrator is. The lane takes frames
+  up to 1 MiB whole and cuts a larger one to its head
   (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
   notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every
   `sessions` and `tasks` frame, the preparation queue's but its progress readings) never has its payload kept: past
@@ -1097,6 +1099,17 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   be scans nobody knows of. What the shell's keys do around the button that needs no WinUI is in Core too
   (`ActivityIndicatorFocus`: Up at a page's top, and whether a button that goes gives focus back), as is where the
   button lies for a page that must keep clear of it (`ActivityIndicatorPlace`).
+- **`ActivityIndicatorSetting`** (Core, a singleton) is the switch of Settings → Navigation & Cards → Server activity:
+  the profiles that turned their indicator off, by "server id/profile id", in `activity-indicator.json` in the data
+  directory, read and written as `BrowseHeroSetting` does its file. Both parts above follow it. The view model's
+  `IsVisible` is false while it is off, whatever the state says, so the button goes with the switch and waits for
+  nothing. `RealtimeEvents` cannot give the connection up, which Home's reloads and the notification count live on
+  for everyone; it replaces it by one that asks for everyone's channels only and has `ServerActivity` follow nothing
+  (`Follow(null)`), so no administrator's frame is sent and none of the lists is read while the switch is off, and the
+  other way round when it goes on again. A connection replaced for the same profile on the same server (this switch,
+  or an account made or unmade an administrator) costs the profile none of its own news: a reload that waited still
+  comes, and when the new connection takes longer than `CatchUpAfter` to subscribe, the app reloads once for what was
+  sent to nobody meanwhile, as after any gap that long (a new lane knows of no gap by itself).
 
 ## Discord status
 

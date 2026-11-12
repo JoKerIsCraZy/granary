@@ -21,6 +21,7 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
 {
     public const string Hello = EventsLaneTests.Hello;
 
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly List<FakeRealtimeSocket> _sockets = [];
 
     public ServerActivityHarness()
@@ -29,8 +30,10 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         Library.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
         var badge = new NotificationBadge(Library.Session, new NotificationsApi(Library.Silo.Http), Library.Clock, Library.Logs.For<NotificationBadge>());
         Activity = new ServerActivity(new AdminApi(Library.Silo.Http), Library.Clock, Library.Logs.For<ServerActivity>());
+        Indicator = new ActivityIndicatorSetting(Path.Combine(_directory, "activity-indicator.json"), Library.Session, new ImmediateDispatcher(),
+            Library.Logs.For<ActivityIndicatorSetting>());
         Events = new RealtimeEvents(Library.Session, Lane, Library.ViewerState, new PlaybackStops(), badge, Activity, new ImmediateDispatcher(),
-            Library.Clock, Library.Logs.For<RealtimeEvents>());
+            Library.Clock, Library.Logs.For<RealtimeEvents>(), Indicator);
     }
 
     public static Account Administrator { get; } = new("1", "elena", "", "admin", [], true, false, null);
@@ -40,6 +43,9 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
     public ServerActivity Activity { get; }
 
     public RealtimeEvents Events { get; }
+
+    /// <summary>The indicator's switch in Settings, on unless a test turns it off; its file is in a folder of the test's own.</summary>
+    public ActivityIndicatorSetting Indicator { get; }
 
     public ServerActivityState State => Activity.State;
 
@@ -107,15 +113,34 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         await ServerPlaybackFixture.Until(() => Events.Handled > handled, "the frame");
     }
 
-    public async ValueTask DisposeAsync() => await Events.StopAsync();
-
-    private EventsLane Lane() => new(new EventsApi(Library.Silo.Http), () =>
+    public async ValueTask DisposeAsync()
     {
-        var socket = new FakeRealtimeSocket { Picks = EventsApi.Protocol };
+        await Events.StopAsync();
+        await Indicator.Saving;
+        if (Directory.Exists(_directory))
+        {
+            Directory.Delete(_directory, recursive: true);
+        }
+    }
+
+    /// <summary>The lanes the stream made, the first one first; a replaced one stays listed.</summary>
+    public List<EventsLane> Lanes { get; } = [];
+
+    private EventsLane Lane()
+    {
+        var lane = new EventsLane(new EventsApi(Library.Silo.Http), () =>
+        {
+            var socket = new FakeRealtimeSocket { Picks = EventsApi.Protocol };
+            lock (_sockets)
+            {
+                _sockets.Add(socket);
+            }
+            return socket;
+        }, Library.Clock, Library.Logs.For<EventsLane>());
         lock (_sockets)
         {
-            _sockets.Add(socket);
+            Lanes.Add(lane);
         }
-        return socket;
-    }, Library.Clock, Library.Logs.For<EventsLane>());
+        return lane;
+    }
 }

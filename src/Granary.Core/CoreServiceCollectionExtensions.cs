@@ -286,6 +286,10 @@ public static class CoreServiceCollectionExtensions
             () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes, EventsFrames.TakesWhole),
             sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
         services.AddSingleton<ServerActivity>();
+        // Granary's own switch for the administrator's activity indicator, kept on this PC by server and profile as the
+        // title preview's is. The stream and the indicator both follow it.
+        services.AddSingleton(sp => new ActivityIndicatorSetting(ActivityIndicatorSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<ActivityIndicatorSetting>>()));
         services.AddSingleton<RealtimeEvents>();
     }
 

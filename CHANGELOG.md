@@ -14,7 +14,9 @@ release's section is what its update says it changes (docs/release.md).
   library scans that run or wait, and the downloads being prepared with their progress and time left. In the admin
   area the button is always there. It follows the server live and says so when the connection is away, and when it
   cannot know every scan it says "at least" rather than a number that may be too small. With a keyboard or a TV
-  remote, Up at the top of a page reaches it, on a title's page by way of the Go back button.
+  remote, Up at the top of a page reaches it, on a title's page by way of the Go back button. Settings → Navigation &
+  Cards → Server activity turns it off for a profile on this PC: it then shows nowhere, and Granary no longer follows
+  the server's activity for it.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.
