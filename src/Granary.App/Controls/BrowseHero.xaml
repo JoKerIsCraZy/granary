@@ -58,8 +58,11 @@
                 <TextBlock x:Name="HeadingText" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="40"
                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" AutomationProperties.HeadingLevel="Level1" />
             </Grid>
+            <!-- The details, one line. A rating in it shows as the web's RatingEntry: its source's mark in smaller, fainter
+                 type, as text (the web's IMDb mark; Granary draws TMDB's so too), and its score in bold. The line's own
+                 type and colour otherwise (BrowseHero.ShowDetails, ApplySizes). -->
             <TextBlock x:Name="MetaText" Margin="0,10,0,0" FontSize="16" Foreground="{StaticResource SiloMutedBrush}"
-                       TextTrimming="CharacterEllipsis" MaxLines="1" />
+                       TextTrimming="CharacterEllipsis" MaxLines="1"><Run x:Name="MetaLead" /><Run x:Name="MetaMark" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" CharacterSpacing="-25" Foreground="{StaticResource SiloMutedTint75Brush}" /><Run x:Name="MetaScore" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" /><Run x:Name="MetaTail" /></TextBlock>
             <TextBlock x:Name="OverviewText" Margin="0,10,0,0" MaxWidth="570" HorizontalAlignment="Left" FontSize="15" LineHeight="22"
                        TextWrapping="Wrap" TextTrimming="WordEllipsis" MaxLines="3" />
         </StackPanel>

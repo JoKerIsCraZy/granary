@@ -46,6 +46,8 @@ public sealed partial class BrowseHero : UserControl
         DependencyProperty.Register(nameof(Sizes), typeof(BrowseHeroSizes), typeof(BrowseHero), new PropertyMetadata(BrowseHeroLayout.For(0)));
 
     private const int LogoDecodeWidth = 400;
+    // A rating's mark beside its score, as the web's RatingEntry sets them: 12 px beside 14 px. The score is the line's size.
+    private const double RatingMarkShare = 12d / 14;
     private static readonly TimeSpan Crossfade = TimeSpan.FromMilliseconds(350);
     private static readonly TimeSpan LogoFade = TimeSpan.FromMilliseconds(200);
 
@@ -254,11 +256,22 @@ public sealed partial class BrowseHero : UserControl
         }
         Visibility = Visibility.Visible;
         HeadingText.Text = title.Heading;
-        MetaText.Text = title.Meta;
-        MetaText.Visibility = title.Meta.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowDetails(title);
         OverviewText.Text = title.Overview ?? "";
         OverviewText.Visibility = title.Overview is null ? Visibility.Collapsed : Visibility.Visible;
         ShowPictures();
+    }
+
+    // The line of details: what comes before its rating, the rating's mark and score in their own type, and the rest. A line
+    // without a rating is all in the first run. It is read whole, as it would be written ("2006 · IMDb 8.4 · Drama · TV-PG").
+    private void ShowDetails(BrowseHeroTitle title)
+    {
+        MetaLead.Text = title.MetaBeforeRating;
+        MetaMark.Text = title.Rating?.Name ?? "";
+        MetaScore.Text = title.Rating is { } rating ? " " + rating.Display : "";
+        MetaTail.Text = title.MetaAfterRating;
+        AutomationProperties.SetName(MetaText, title.Meta);
+        MetaText.Visibility = title.Meta.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // Whether the hero shows Home's banner. x:Bind hands a string property "" for null, so empty means none too: the card
@@ -450,6 +463,7 @@ public sealed partial class BrowseHero : UserControl
         Texts.VerticalAlignment = sizes.TextBottom is null ? VerticalAlignment.Top : VerticalAlignment.Bottom;
         Texts.Margin = Texts.Margin with { Top = BrowseHeroLayout.Scaled(text.Top, sizes.Grow), Bottom = sizes.TextBottom ?? 0 };
         MetaText.FontSize = BrowseHeroLayout.Scaled(text.Meta, sizes.TextGrow);
+        MetaMark.FontSize = BrowseHeroLayout.Scaled(text.Meta * RatingMarkShare, sizes.TextGrow);
         OverviewText.FontSize = BrowseHeroLayout.Scaled(text.Overview, sizes.TextGrow);
         OverviewText.LineHeight = BrowseHeroLayout.Scaled(text.OverviewLine, sizes.TextGrow);
         OverviewText.MaxWidth = BrowseHeroLayout.Scaled(text.OverviewWidth, sizes.Grow);

@@ -140,6 +140,8 @@
     <SolidColorBrush x:Key="SiloBorderBrush" Color="{StaticResource SiloBorderColor}" />
     <SolidColorBrush x:Key="SiloForegroundBrush" Color="{StaticResource SiloForegroundColor}" />
     <SolidColorBrush x:Key="SiloMutedBrush" Color="{StaticResource SiloMutedColor}" />
+    <!-- A rating's mark in a line of muted text: the web's opacity-75 (RatingEntry). -->
+    <SolidColorBrush x:Key="SiloMutedTint75Brush" Color="{StaticResource SiloMutedColor}" Opacity="0.75" />
     <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
     <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
