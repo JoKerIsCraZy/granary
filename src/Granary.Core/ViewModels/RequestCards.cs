@@ -23,6 +23,8 @@ internal static class RequestCards
         {
             Shape = MediaCardShape.Poster,
             Subtitle = result.MediaType == "series" ? $"{year} SERIES".Trim() : year,
+            // The web's RequestPosterCard links the title and the line under it; a title with no page to open has none.
+            Links = Destination(result) is null ? CardLines.None : CardLinks.TitleAndSubtitle,
             ImageUrl = TmdbImages.Poster(result.PosterPath),
             StatusBadge = Badge(result.Request, result.Availability),
             InWatchlist = result.InWatchlist,
@@ -80,6 +82,8 @@ internal static class RequestCards
             Subtitle = title.Year is int year and > 0 ? $"{type} · {year.ToString(CultureInfo.InvariantCulture)}" : type,
             Caption = status.Caption,
             IsCaptionAttention = status.Attention,
+            // The web's WatchlistTitleCard: the status under them is plain text.
+            Links = CardLinks.TitleAndSubtitle,
             ImageUrl = TmdbImages.Poster(title.PosterPath),
             // The state is the profile's Request Status badge, beside TMDB's rating, the age rating and the year (the web's
             // overlayDataFromWatchlistTitle); the file badges have nothing to say about a title not in the library.

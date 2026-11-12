@@ -816,6 +816,7 @@ public sealed partial class MediaCardView : UserControl
         if (!hovered)
         {
             _pointerMayRequest = false;
+            Underline(CardLines.None);
         }
         ArtImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
         BottomBadges.Opacity = hovered ? 0 : 1;
@@ -841,6 +842,7 @@ public sealed partial class MediaCardView : UserControl
         EnsureActions();
         ShowState();
         SetHovered(true);
+        ShowLink(e);
     }
 
     // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen), or one recycled
@@ -854,6 +856,7 @@ public sealed partial class MediaCardView : UserControl
             ShowState();
             SetHovered(true);
         }
+        ShowLink(e);
     }
 
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
