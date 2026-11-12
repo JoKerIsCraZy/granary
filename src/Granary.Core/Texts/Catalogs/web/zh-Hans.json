@@ -1,4 +1,40 @@
 {
+  "catalog.sort.added": [
+    {
+      "type": 0,
+      "value": "添加日期"
+    }
+  ],
+  "catalog.sort.imdbRating": [
+    {
+      "type": 0,
+      "value": "IMDb评分"
+    }
+  ],
+  "catalog.sort.released": [
+    {
+      "type": 0,
+      "value": "上映日期"
+    }
+  ],
+  "catalog.sort.resolution": [
+    {
+      "type": 0,
+      "value": "分辨率"
+    }
+  ],
+  "catalog.sort.title": [
+    {
+      "type": 0,
+      "value": "标题"
+    }
+  ],
+  "catalog.sort.year": [
+    {
+      "type": 0,
+      "value": "年份"
+    }
+  ],
   "common.back": [
     {
       "type": 0,
@@ -569,6 +605,12 @@
       "value": "本周热门"
     }
   ],
+  "shuffle.nothingToPlay": [
+    {
+      "type": 0,
+      "value": "这里没有可播放的内容。"
+    }
+  ],
   "web.auth.choosePassword.description": [
     {
       "type": 0,
@@ -779,6 +821,116 @@
       "value": "向右滚动"
     }
   ],
+  "web.catalog.filters.badgeContentRating": [
+    {
+      "type": 0,
+      "value": "年龄分级："
+    },
+    {
+      "type": 1,
+      "value": "rating"
+    }
+  ],
+  "web.catalog.filters.badgeGenre": [
+    {
+      "type": 0,
+      "value": "类型："
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.catalog.filters.badgeLanguage": [
+    {
+      "type": 0,
+      "value": "语言："
+    },
+    {
+      "type": 1,
+      "value": "language"
+    }
+  ],
+  "web.catalog.filters.badgeWatch": [
+    {
+      "type": 0,
+      "value": "观看："
+    },
+    {
+      "type": 5,
+      "value": "status",
+      "options": {
+        "watched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已观看"
+            }
+          ]
+        },
+        "unwatched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "未观看"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "观看中"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.catalog.filters.badgeYearFrom": [
+    {
+      "type": 0,
+      "value": "年份：>= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.badgeYearRange": [
+    {
+      "type": 0,
+      "value": "年份："
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "–"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    }
+  ],
+  "web.catalog.filters.badgeYearTo": [
+    {
+      "type": 0,
+      "value": "年份：<= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.clearAll": [
+    {
+      "type": 0,
+      "value": "全部清除"
+    }
+  ],
   "web.catalog.filters.heading": [
     {
       "type": 0,
@@ -791,10 +943,92 @@
       "value": "筛选条件已锁定为此来源。"
     }
   ],
+  "web.catalog.filters.open": [
+    {
+      "type": 0,
+      "value": "筛选"
+    }
+  ],
+  "web.catalog.filters.removeBadge": [
+    {
+      "type": 0,
+      "value": "移除"
+    },
+    {
+      "type": 1,
+      "value": "filter"
+    }
+  ],
   "web.catalog.grid.noItems": [
     {
       "type": 0,
       "value": "未找到项目。"
+    }
+  ],
+  "web.catalog.letters.letterNoTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": "，无作品"
+    }
+  ],
+  "web.catalog.letters.letterTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": "，"
+    },
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "部作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.letters.numbersAndSymbols": [
+    {
+      "type": 0,
+      "value": "数字和符号"
+    }
+  ],
+  "web.catalog.letters.showing": [
+    {
+      "type": 0,
+      "value": "正在显示"
+    },
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": "下的作品"
+    }
+  ],
+  "web.catalog.letters.toolbar": [
+    {
+      "type": 0,
+      "value": "跳转到字母"
     }
   ],
   "web.catalog.mediaType.movies": [
@@ -865,10 +1099,150 @@
       "value": "搜索"
     }
   ],
+  "web.catalog.page.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "个作品"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
       "value": "搜索范围"
+    }
+  ],
+  "web.catalog.sort.ascending": [
+    {
+      "type": 0,
+      "value": "升序"
+    }
+  ],
+  "web.catalog.sort.descending": [
+    {
+      "type": 0,
+      "value": "降序"
+    }
+  ],
+  "web.collections.builder.fieldAudioLanguage": [
+    {
+      "type": 0,
+      "value": "音频语言"
+    }
+  ],
+  "web.collections.builder.fieldSubtitleLanguage": [
+    {
+      "type": 0,
+      "value": "字幕语言"
+    }
+  ],
+  "web.collections.guidedRules.any": [
+    {
+      "type": 0,
+      "value": "任意"
+    }
+  ],
+  "web.collections.guidedRules.contentRating": [
+    {
+      "type": 0,
+      "value": "年龄分级"
+    }
+  ],
+  "web.collections.guidedRules.decade": [
+    {
+      "type": 0,
+      "value": "年代"
+    }
+  ],
+  "web.collections.guidedRules.decadeOption": [
+    {
+      "type": 1,
+      "value": "decade"
+    },
+    {
+      "type": 0,
+      "value": "年代"
+    }
+  ],
+  "web.collections.guidedRules.genres": [
+    {
+      "type": 0,
+      "value": "类型"
+    }
+  ],
+  "web.collections.guidedRules.inProgress": [
+    {
+      "type": 0,
+      "value": "进行中"
+    }
+  ],
+  "web.collections.guidedRules.originalLanguage": [
+    {
+      "type": 0,
+      "value": "原始语言"
+    }
+  ],
+  "web.collections.guidedRules.unwatched": [
+    {
+      "type": 0,
+      "value": "未观看"
+    }
+  ],
+  "web.collections.guidedRules.videoQuality": [
+    {
+      "type": 0,
+      "value": "视频画质"
+    }
+  ],
+  "web.collections.guidedRules.watchStatus": [
+    {
+      "type": 0,
+      "value": "观看状态"
+    }
+  ],
+  "web.collections.guidedRules.watched": [
+    {
+      "type": 0,
+      "value": "已观看"
+    }
+  ],
+  "web.collections.guidedRules.yearFrom": [
+    {
+      "type": 0,
+      "value": "起始年份"
+    }
+  ],
+  "web.collections.guidedRules.yearFromPlaceholder": [
+    {
+      "type": 0,
+      "value": "例如2000"
+    }
+  ],
+  "web.collections.guidedRules.yearTo": [
+    {
+      "type": 0,
+      "value": "结束年份"
+    }
+  ],
+  "web.collections.guidedRules.yearToPlaceholder": [
+    {
+      "type": 0,
+      "value": "例如2025"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -909,6 +1283,72 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.sort.bitrate": [
+    {
+      "type": 0,
+      "value": "比特率"
+    }
+  ],
+  "web.common.sort.contentRating": [
+    {
+      "type": 0,
+      "value": "年龄分级"
+    }
+  ],
+  "web.common.sort.dateViewed": [
+    {
+      "type": 0,
+      "value": "观看日期"
+    }
+  ],
+  "web.common.sort.duration": [
+    {
+      "type": 0,
+      "value": "时长"
+    }
+  ],
+  "web.common.sort.latestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "最新一集添加时间"
+    }
+  ],
+  "web.common.sort.latestEpisodeAirDate": [
+    {
+      "type": 0,
+      "value": "最新一集播出日期"
+    }
+  ],
+  "web.common.sort.plays": [
+    {
+      "type": 0,
+      "value": "播放次数"
+    }
+  ],
+  "web.common.sort.progress": [
+    {
+      "type": 0,
+      "value": "进度"
+    }
+  ],
+  "web.common.sort.rtAudienceRating": [
+    {
+      "type": 0,
+      "value": "RT观众评分"
+    }
+  ],
+  "web.common.sort.rtCriticRating": [
+    {
+      "type": 0,
+      "value": "RT影评人评分"
+    }
+  ],
+  "web.common.sort.tmdbRating": [
+    {
+      "type": 0,
+      "value": "TMDB评分"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -1434,6 +1874,90 @@
     {
       "type": 0,
       "value": "在推荐中显示"
+    }
+  ],
+  "web.library.browse.clearFilters": [
+    {
+      "type": 0,
+      "value": "清除筛选"
+    }
+  ],
+  "web.library.browse.noMatches": [
+    {
+      "type": 0,
+      "value": "没有符合当前筛选条件的项目。"
+    }
+  ],
+  "web.library.browse.someItemsFailed": [
+    {
+      "type": 0,
+      "value": "部分项目无法加载。"
+    }
+  ],
+  "web.library.collections.emptyBody": [
+    {
+      "type": 0,
+      "value": "此媒体库的合集将显示在这里。"
+    }
+  ],
+  "web.library.collections.emptyTitle": [
+    {
+      "type": 0,
+      "value": "还没有合集"
+    }
+  ],
+  "web.library.empty.body": [
+    {
+      "type": 0,
+      "value": "此媒体库中还没有内容。"
+    }
+  ],
+  "web.library.header.collectionsTab": [
+    {
+      "type": 0,
+      "value": "合集"
+    }
+  ],
+  "web.library.header.eyebrow": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.library.header.libraryTab": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.library.header.recommendedTab": [
+    {
+      "type": 0,
+      "value": "推荐"
+    }
+  ],
+  "web.library.header.shuffle": [
+    {
+      "type": 0,
+      "value": "随机"
+    }
+  ],
+  "web.library.header.tabsLabel": [
+    {
+      "type": 0,
+      "value": "媒体库视图"
+    }
+  ],
+  "web.library.page.titleFallback": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.library.page.unavailable": [
+    {
+      "type": 0,
+      "value": "此媒体库对你的账户隐藏或不可用。"
     }
   ],
   "web.markers.save": [
@@ -1996,6 +2520,12 @@
     {
       "type": 0,
       "value": "我的内容"
+    }
+  ],
+  "web.shuffle.startFailed": [
+    {
+      "type": 0,
+      "value": "无法开始随机播放。"
     }
   ],
   "web.ui.saving": [

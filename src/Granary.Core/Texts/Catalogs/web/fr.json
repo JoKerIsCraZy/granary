@@ -1,4 +1,40 @@
 {
+  "catalog.sort.added": [
+    {
+      "type": 0,
+      "value": "Date d’ajout"
+    }
+  ],
+  "catalog.sort.imdbRating": [
+    {
+      "type": 0,
+      "value": "Note IMDb"
+    }
+  ],
+  "catalog.sort.released": [
+    {
+      "type": 0,
+      "value": "Date de sortie"
+    }
+  ],
+  "catalog.sort.resolution": [
+    {
+      "type": 0,
+      "value": "Résolution"
+    }
+  ],
+  "catalog.sort.title": [
+    {
+      "type": 0,
+      "value": "Titre"
+    }
+  ],
+  "catalog.sort.year": [
+    {
+      "type": 0,
+      "value": "Année"
+    }
+  ],
   "common.back": [
     {
       "type": 0,
@@ -569,6 +605,12 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "shuffle.nothingToPlay": [
+    {
+      "type": 0,
+      "value": "Aucun élément lisible ici."
+    }
+  ],
   "web.auth.choosePassword.description": [
     {
       "type": 0,
@@ -779,6 +821,116 @@
       "value": "Défiler vers la droite"
     }
   ],
+  "web.catalog.filters.badgeContentRating": [
+    {
+      "type": 0,
+      "value": "Classification : "
+    },
+    {
+      "type": 1,
+      "value": "rating"
+    }
+  ],
+  "web.catalog.filters.badgeGenre": [
+    {
+      "type": 0,
+      "value": "Genre : "
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "web.catalog.filters.badgeLanguage": [
+    {
+      "type": 0,
+      "value": "Langue : "
+    },
+    {
+      "type": 1,
+      "value": "language"
+    }
+  ],
+  "web.catalog.filters.badgeWatch": [
+    {
+      "type": 0,
+      "value": "Visionnage : "
+    },
+    {
+      "type": 5,
+      "value": "status",
+      "options": {
+        "watched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "vu"
+            }
+          ]
+        },
+        "unwatched": {
+          "value": [
+            {
+              "type": 0,
+              "value": "non vu"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "en cours"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.catalog.filters.badgeYearFrom": [
+    {
+      "type": 0,
+      "value": "Année : >= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.badgeYearRange": [
+    {
+      "type": 0,
+      "value": "Année : "
+    },
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "–"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    }
+  ],
+  "web.catalog.filters.badgeYearTo": [
+    {
+      "type": 0,
+      "value": "Année : <= "
+    },
+    {
+      "type": 1,
+      "value": "year"
+    }
+  ],
+  "web.catalog.filters.clearAll": [
+    {
+      "type": 0,
+      "value": "Tout effacer"
+    }
+  ],
   "web.catalog.filters.heading": [
     {
       "type": 0,
@@ -791,10 +943,112 @@
       "value": "Les filtres sont verrouillés pour cette source."
     }
   ],
+  "web.catalog.filters.open": [
+    {
+      "type": 0,
+      "value": "Filtres"
+    }
+  ],
+  "web.catalog.filters.removeBadge": [
+    {
+      "type": 0,
+      "value": "Retirer "
+    },
+    {
+      "type": 1,
+      "value": "filter"
+    }
+  ],
   "web.catalog.grid.noItems": [
     {
       "type": 0,
       "value": "Aucun élément trouvé."
+    }
+  ],
+  "web.catalog.letters.letterNoTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": ", aucun titre"
+    }
+  ],
+  "web.catalog.letters.letterTitles": [
+    {
+      "type": 1,
+      "value": "letter"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titre"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de titres"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titres"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.catalog.letters.numbersAndSymbols": [
+    {
+      "type": 0,
+      "value": "Chiffres et symboles"
+    }
+  ],
+  "web.catalog.letters.showing": [
+    {
+      "type": 0,
+      "value": "Affichage des titres commençant par "
+    },
+    {
+      "type": 1,
+      "value": "letter"
+    }
+  ],
+  "web.catalog.letters.toolbar": [
+    {
+      "type": 0,
+      "value": "Aller à la lettre"
     }
   ],
   "web.catalog.mediaType.movies": [
@@ -865,10 +1119,174 @@
       "value": "Recherche"
     }
   ],
+  "web.catalog.page.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titre"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de titres"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titres"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
       "value": "Portée de la recherche"
+    }
+  ],
+  "web.catalog.sort.ascending": [
+    {
+      "type": 0,
+      "value": "Ordre croissant"
+    }
+  ],
+  "web.catalog.sort.descending": [
+    {
+      "type": 0,
+      "value": "Ordre décroissant"
+    }
+  ],
+  "web.collections.builder.fieldAudioLanguage": [
+    {
+      "type": 0,
+      "value": "Langue audio"
+    }
+  ],
+  "web.collections.builder.fieldSubtitleLanguage": [
+    {
+      "type": 0,
+      "value": "Langue des sous-titres"
+    }
+  ],
+  "web.collections.guidedRules.any": [
+    {
+      "type": 0,
+      "value": "Indifférent"
+    }
+  ],
+  "web.collections.guidedRules.contentRating": [
+    {
+      "type": 0,
+      "value": "Classification par âge"
+    }
+  ],
+  "web.collections.guidedRules.decade": [
+    {
+      "type": 0,
+      "value": "Décennie"
+    }
+  ],
+  "web.collections.guidedRules.decadeOption": [
+    {
+      "type": 0,
+      "value": "Années "
+    },
+    {
+      "type": 1,
+      "value": "decade"
+    }
+  ],
+  "web.collections.guidedRules.genres": [
+    {
+      "type": 0,
+      "value": "Genres"
+    }
+  ],
+  "web.collections.guidedRules.inProgress": [
+    {
+      "type": 0,
+      "value": "En cours"
+    }
+  ],
+  "web.collections.guidedRules.originalLanguage": [
+    {
+      "type": 0,
+      "value": "Langue originale"
+    }
+  ],
+  "web.collections.guidedRules.unwatched": [
+    {
+      "type": 0,
+      "value": "Non vu"
+    }
+  ],
+  "web.collections.guidedRules.videoQuality": [
+    {
+      "type": 0,
+      "value": "Qualité vidéo"
+    }
+  ],
+  "web.collections.guidedRules.watchStatus": [
+    {
+      "type": 0,
+      "value": "Statut de visionnage"
+    }
+  ],
+  "web.collections.guidedRules.watched": [
+    {
+      "type": 0,
+      "value": "Vu"
+    }
+  ],
+  "web.collections.guidedRules.yearFrom": [
+    {
+      "type": 0,
+      "value": "Année de début"
+    }
+  ],
+  "web.collections.guidedRules.yearFromPlaceholder": [
+    {
+      "type": 0,
+      "value": "p. ex. 2000"
+    }
+  ],
+  "web.collections.guidedRules.yearTo": [
+    {
+      "type": 0,
+      "value": "Année de fin"
+    }
+  ],
+  "web.collections.guidedRules.yearToPlaceholder": [
+    {
+      "type": 0,
+      "value": "p. ex. 2025"
     }
   ],
   "web.common.format.runtime.hoursMinutes": [
@@ -933,6 +1351,72 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.sort.bitrate": [
+    {
+      "type": 0,
+      "value": "Débit"
+    }
+  ],
+  "web.common.sort.contentRating": [
+    {
+      "type": 0,
+      "value": "Classification par âge"
+    }
+  ],
+  "web.common.sort.dateViewed": [
+    {
+      "type": 0,
+      "value": "Date de visionnage"
+    }
+  ],
+  "web.common.sort.duration": [
+    {
+      "type": 0,
+      "value": "Durée"
+    }
+  ],
+  "web.common.sort.latestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "Dernier épisode ajouté"
+    }
+  ],
+  "web.common.sort.latestEpisodeAirDate": [
+    {
+      "type": 0,
+      "value": "Date de diffusion du dernier épisode"
+    }
+  ],
+  "web.common.sort.plays": [
+    {
+      "type": 0,
+      "value": "Nombre de lectures"
+    }
+  ],
+  "web.common.sort.progress": [
+    {
+      "type": 0,
+      "value": "Progression"
+    }
+  ],
+  "web.common.sort.rtAudienceRating": [
+    {
+      "type": 0,
+      "value": "Note du public RT"
+    }
+  ],
+  "web.common.sort.rtCriticRating": [
+    {
+      "type": 0,
+      "value": "Note des critiques RT"
+    }
+  ],
+  "web.common.sort.tmdbRating": [
+    {
+      "type": 0,
+      "value": "Note TMDB"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -1524,6 +2008,90 @@
     {
       "type": 0,
       "value": "Afficher dans les recommandations"
+    }
+  ],
+  "web.library.browse.clearFilters": [
+    {
+      "type": 0,
+      "value": "Effacer les filtres"
+    }
+  ],
+  "web.library.browse.noMatches": [
+    {
+      "type": 0,
+      "value": "Aucun élément ne correspond à vos filtres actuels."
+    }
+  ],
+  "web.library.browse.someItemsFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger certains éléments."
+    }
+  ],
+  "web.library.collections.emptyBody": [
+    {
+      "type": 0,
+      "value": "Les collections de cette bibliothèque s’afficheront ici."
+    }
+  ],
+  "web.library.collections.emptyTitle": [
+    {
+      "type": 0,
+      "value": "Aucune collection pour l’instant"
+    }
+  ],
+  "web.library.empty.body": [
+    {
+      "type": 0,
+      "value": "Il n’y a encore rien dans cette bibliothèque."
+    }
+  ],
+  "web.library.header.collectionsTab": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.library.header.eyebrow": [
+    {
+      "type": 0,
+      "value": "Bibliothèque"
+    }
+  ],
+  "web.library.header.libraryTab": [
+    {
+      "type": 0,
+      "value": "Bibliothèque"
+    }
+  ],
+  "web.library.header.recommendedTab": [
+    {
+      "type": 0,
+      "value": "Recommandations"
+    }
+  ],
+  "web.library.header.shuffle": [
+    {
+      "type": 0,
+      "value": "Lecture aléatoire"
+    }
+  ],
+  "web.library.header.tabsLabel": [
+    {
+      "type": 0,
+      "value": "Vue de la bibliothèque"
+    }
+  ],
+  "web.library.page.titleFallback": [
+    {
+      "type": 0,
+      "value": "Bibliothèque"
+    }
+  ],
+  "web.library.page.unavailable": [
+    {
+      "type": 0,
+      "value": "Cette bibliothèque est masquée ou indisponible pour votre compte."
     }
   ],
   "web.markers.save": [
@@ -2222,6 +2790,12 @@
     {
       "type": 0,
       "value": "Vos contenus"
+    }
+  ],
+  "web.shuffle.startFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de lancer la lecture aléatoire."
     }
   ],
   "web.ui.saving": [

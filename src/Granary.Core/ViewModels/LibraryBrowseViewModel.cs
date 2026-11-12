@@ -4,6 +4,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -94,7 +95,7 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
 
     public string SortLabel => Sort.Label;
 
-    public string OrderLabel => IsDescending ? "Descending" : "Ascending";
+    public string OrderLabel => IsDescending ? AppText.Get("web.catalog.sort.descending") : AppText.Get("web.catalog.sort.ascending");
 
     /// <summary>
     /// The A–Z bar holds its place while titles are in title order, its letters greyed until the index arrives; it steps

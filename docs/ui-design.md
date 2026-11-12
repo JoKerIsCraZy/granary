@@ -175,8 +175,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
   their options read for the list with `GET /api/v2/catalog/filters?source=…`, and the applied ones as badges under the
-  bar as on the library page; another list starts unfiltered, and filters that leave nothing say "No titles match these
-  filters" with Clear filters), and the posters by window. A collection's page has the same Filters.
+  bar as on the library page; another list starts unfiltered, and filters that leave nothing say "No items match your
+  current filters." with Clear filters), and the posters by window. A collection's page has the same Filters.
   While the server keeps watchlist titles the library does not have (`requests_enabled` and `watchlist_titles_supported`),
   the watchlist has the web's line tabs (`SiloLineTabStyle`, as Requests'): In your library, the list; and Not in your
   library yet (`WatchlistTitlesViewModel`, the web's `WatchlistTitlesTab`) with its count in a pill and an amber dot
@@ -228,9 +228,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Date, Latest Episode Air Date and Latest Episode Added (a series library only), Year, Content Rating (A to Z), Duration,
   IMDb Rating, TMDB Rating, RT Critic Rating and RT Audience Rating (while the server shows that rating), Resolution,
   Bitrate, Progress, Date Viewed and Plays. The A–Z bar shows in Title order only. Filters (`CatalogFiltersButton`) opens
-  a 400 px flyout whose sections scroll between its heading and Clear / Apply, in the order and words of the web's filter
-  sheet: Genres, Decade (this decade back to the 1900s), Year From and Year To, Content Rating, Video Quality (4K, HDR,
-  DOVI), Original Language, Audio Language and Subtitle Language (by their English names) as pills that turn on and off,
+  a 400 px flyout whose sections scroll between its heading and Clear All / Apply, in the order and words of the web's
+  guided filters: Genres, Decade (this decade back to the 1900s), Year From and Year To ("e.g. 2000", "e.g. 2025"),
+  Content Rating, Video Quality (4K, HDR, DOVI), Original Language, Audio language and Subtitle language (the rule
+  builder's words; the languages by their English names) as pills that turn on and off,
   and Watch Status (Any, Unwatched, In Progress, Watched). A facet the library has no values for is left out. Values of
   one facet are alternatives, as in Silo's apps, and the facets all apply. The count is one per picked value, one for the
   year range and one for a watch status. Arrow keys move between the pills, Tab from one section to the next. Under the

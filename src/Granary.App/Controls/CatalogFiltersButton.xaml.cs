@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -22,7 +23,7 @@ public sealed partial class CatalogFiltersButton : UserControl
 
     public static readonly DependencyProperty OptionsErrorTextProperty =
         DependencyProperty.Register(nameof(OptionsErrorText), typeof(string), typeof(CatalogFiltersButton),
-            new PropertyMetadata("Couldn't load the genres, ratings and languages. The other filters still work."));
+            new PropertyMetadata(null));
 
     public CatalogFiltersButton()
     {
@@ -40,10 +41,10 @@ public sealed partial class CatalogFiltersButton : UserControl
         set => SetValue(FiltersProperty, value);
     }
 
-    /// <summary>What the flyout says when the genres, ratings and languages could not be read.</summary>
+    /// <summary>What the flyout says when the genres, ratings and languages could not be read; Granary's words unless set.</summary>
     public string OptionsErrorText
     {
-        get => (string)GetValue(OptionsErrorTextProperty);
+        get => (string?)GetValue(OptionsErrorTextProperty) ?? AppText.Get("granary.libraryFilters.optionsFailed");
         set => SetValue(OptionsErrorTextProperty, value);
     }
 
@@ -52,12 +53,9 @@ public sealed partial class CatalogFiltersButton : UserControl
 
     public string CountText(int count) => count.ToString(CultureInfo.InvariantCulture);
 
-    public string FiltersName(int activeCount) => activeCount switch
-    {
-        0 => "Filters",
-        1 => "Filters, 1 active",
-        _ => $"Filters, {activeCount} active",
-    };
+    public string FiltersName(int activeCount) => activeCount == 0
+        ? AppText.Get("web.catalog.filters.open")
+        : AppText.Get("granary.libraryFilters.name", ("count", activeCount));
 
     private void OnFiltersFlyoutOpening(object sender, object e)
     {

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -220,11 +221,11 @@ public sealed partial class LibraryCollectionsViewModel : ObservableObject
     private MediaCard CardOf(LibraryCollectionCard collection, string source, Uri server)
     {
         _sources[collection.Id] = source;
-        string count = collection.ItemCount.ToString("N0", CultureInfo.InvariantCulture);
+        string count = AppText.Number(collection.ItemCount);
         return new MediaCard(collection.Id, CardType, collection.Title)
         {
             Shape = MediaCardShape.Poster,
-            Subtitle = collection.ItemCount == 1 ? "1 TITLE" : $"{count} TITLES",
+            Subtitle = AppText.Upper(AppText.Get("granary.library.collectionTitles", ("count", collection.ItemCount), ("count_text", count))),
             ImageUrl = ArtworkUrl.Resolve(server, collection.PosterUrl),
         };
     }
