@@ -1344,8 +1344,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the title cannot be sought and on the Playing Next screen the keys pass on. A jump shows the controls as a skip does; in
   a Watch Party it is a seek like any other, asked of the room, and a guest's is refused with the web's words. They work
   in the full player, the mini view and the minimized bar, taken before the focused control: on the picture, the seek
-  bar, the volume slider (which keeps the plain arrows) or a button, also while a remote's arrows move between the
-  controls.
+  bar, the volume slider or a button, also while a remote's arrows move between the controls. The slider keeps the plain
+  arrows for the volume while it has the focus from Tab or a click; while a remote's arrows move between the controls,
+  they move on from it too.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
   title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
   with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are

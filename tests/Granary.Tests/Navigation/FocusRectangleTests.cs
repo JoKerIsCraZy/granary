@@ -14,8 +14,8 @@ public sealed partial class FocusRectangleTests
     [Fact]
     public void FocusMoves_UseNoRectangle()
     {
+        // Every App file, not only those that name FindNextElementOptions: a target-typed new() names no type.
         var found = Sources()
-            .Where(source => source.Code.Contains("FindNextElementOptions", StringComparison.Ordinal))
             .SelectMany(source => Where(source, FocusRectangle()))
             .ToList();
 
@@ -25,6 +25,7 @@ public sealed partial class FocusRectangleTests
     [Theory]
     [InlineData("options.ExclusionRect = bounds;", true)]
     [InlineData("new FindNextElementOptions { SearchRoot = this, HintRect = bounds }", true)]
+    [InlineData("FocusManager.TryMoveFocus(direction, new() { ExclusionRect = bounds });", true)]
     [InlineData("// options.ExclusionRect = bounds;", false)]
     [InlineData("new FindNextElementOptions { SearchRoot = this }", false)]
     public void ARectangle_IsFound_OutsideAComment(string code, bool isFound)
