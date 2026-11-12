@@ -115,7 +115,7 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
         var settings = new SettingsApi(Harness.Silo.Http);
         var playback = new LocalPlayback(media, Engine, new ImmediateDispatcher(), Harness.Session,
             new PlaybackPreferencesReader(settings, Harness.Logs.For<PlaybackPreferencesReader>()), new WatchApi(Harness.Silo.Http), settings, Device,
-            Harness.Time, Harness.Logs.For<LocalPlayback>(), AudioDelay, Harness.Store, Queue, Sync);
+            Harness.Time, Harness.Logs.For<LocalPlayback>(), AudioDelay, Harness.Store, Queue, Sync, Harness.Playing);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
     }

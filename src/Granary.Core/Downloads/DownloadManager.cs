@@ -61,6 +61,7 @@ public sealed partial class DownloadManager
     private readonly ISessionManager _session;
     private readonly IPlaybackDeviceProbe _probe;
     private readonly IPlaybackDevicePreferences _device;
+    private readonly PlayingDownloads? _playing;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadManager> _logger;
 
@@ -69,7 +70,8 @@ public sealed partial class DownloadManager
     private readonly HashSet<(DownloadScope Scope, string MediaItemId)> _starting = [];
 
     public DownloadManager(DownloadStore store, DownloadQueue queue, DownloadsApi api, DownloadsFeature feature, ISessionManager session,
-        IPlaybackDeviceProbe probe, IPlaybackDevicePreferences device, TimeProvider time, ILogger<DownloadManager> logger)
+        IPlaybackDeviceProbe probe, IPlaybackDevicePreferences device, TimeProvider time, ILogger<DownloadManager> logger,
+        PlayingDownloads? playing = null)
     {
         ArgumentNullException.ThrowIfNull(feature);
         _store = store;
@@ -78,10 +80,16 @@ public sealed partial class DownloadManager
         _session = session;
         _probe = probe;
         _device = device;
+        _playing = playing;
         _time = time;
         _logger = logger;
         // The manager lives as long as the app, as the store, the queue and the feature do.
         store.Changed += OnChanged;
+        // A download that plays is not suggested for deletion; the suggestion follows its start and its stop.
+        if (playing is not null)
+        {
+            playing.Changed += OnChanged;
+        }
         queue.Progressed += OnProgressed;
         // "Paused · metered connection" comes and goes with the link and Settings → Downloads.
         queue.ConditionsChanged += OnChanged;
@@ -89,8 +97,8 @@ public sealed partial class DownloadManager
     }
 
     /// <summary>
-    /// Raised on any thread when a download changed, went further, or what the server offers did, and when downloads start or
-    /// stop waiting for an unmetered connection. A transfer that only went further comes with
+    /// Raised on any thread when a download changed, went further, started or stopped playing, or what the server offers did,
+    /// and when downloads start or stop waiting for an unmetered connection. A transfer that only went further comes with
     /// <see cref="DownloadProgressedEventArgs"/>, at most every half second for each.
     /// </summary>
     public event EventHandler? Changed;
@@ -178,7 +186,8 @@ public sealed partial class DownloadManager
     /// <summary>
     /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
     /// as <see cref="DeleteAsync"/> deletes one, and answers how many went. The ids are the ones the viewer was asked about:
-    /// a download that became watched after the question stays, and so does one that is no longer watched.
+    /// a download that became watched after the question stays, and so does one that is no longer watched, or that plays now:
+    /// its file is never taken from under the player.
     /// </summary>
     public async Task<int> DeleteWatchedAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
     {
@@ -210,7 +219,8 @@ public sealed partial class DownloadManager
         return new DownloadItem(record.DownloadId, record.MediaItemId, record.Title, record.SeriesId, record.SeriesTitle, record.SeasonNumber,
             record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable, download.FilesMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
-            record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched);
+            record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
+            _playing?.Contains(record.Scope, record.DownloadId) == true);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

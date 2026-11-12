@@ -322,6 +322,7 @@ public static class CoreServiceCollectionExtensions
         // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
         services.AddSingleton<DownloadQueue>();
         services.AddSingleton<DownloadsFeature>();
+        services.AddSingleton<PlayingDownloads>();
         services.AddSingleton<DownloadManager>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
         // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).

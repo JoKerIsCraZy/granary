@@ -604,4 +604,46 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         Assert.Equal(new SidebarEntry("Downloads", "Downloads", SidebarSection.YourStuff, "Downloads"), entries[history + 1]);
         Assert.Equal(nameof(AppRoute.Downloads), entries[history + 1].Tag);
     }
+
+    [Fact]
+    public async Task ADownloadThatPlays_IsNotSuggestedForDeletion_UntilItsPlayEnded()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        Assert.True(page.ShowsReclaim);
+
+        // Past its credits' start under the minimized player: watched, and still open.
+        using (_h.Playing.Enter(Scope7, "dl_1"))
+        {
+            await page.ReclaimCommand.ExecuteAsync(null);
+
+            Assert.Equal("Delete 1 watched download and free 1.0 GB?", Assert.Single(_confirmation.Asked).Message);
+            Assert.NotNull(_h.Find("dl_1"));
+            Assert.Null(_h.Find("dl_2"));
+            Assert.False(page.ShowsReclaim);
+        }
+
+        // Its play ended: it is offered now.
+        Assert.True(page.ShowsReclaim);
+    }
+
+    [Fact]
+    public async Task ADownloadThatStartedPlayingWhileTheQuestionWasOpen_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        IDisposable? play = null;
+        _confirmation.WhileAsking = () =>
+        {
+            play = _h.Playing.Enter(Scope7, "dl_1");
+            return Task.CompletedTask;
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Its file is not taken from under the player.
+        Assert.NotNull(_h.Find("dl_1"));
+        play!.Dispose();
+    }
 }

@@ -70,6 +70,9 @@ internal sealed class DownloadHarness : IAsyncDisposable
 
     public DownloadStore Store { get; private set; }
 
+    /// <summary>The downloads a player has open, shared by the playbacks and the managers of this harness.</summary>
+    public PlayingDownloads Playing { get; } = new();
+
     public static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>A queue over this harness, not started yet; it is stopped when the harness goes.</summary>
@@ -99,7 +102,7 @@ internal sealed class DownloadHarness : IAsyncDisposable
     /// </summary>
     public DownloadManager NewManager(DownloadQueue? queue = null, DownloadsFeature? feature = null) =>
         new(Store, queue ?? NewQueue(), Api, feature ?? NewFeature(), Session, new FakeDeviceProbe(), new InMemoryPlaybackDevicePreferences(), Time,
-            Logs.For<DownloadManager>());
+            Logs.For<DownloadManager>(), Playing);
 
     /// <summary>As at Granary's next start: the queues stop, and a new store reads the index.</summary>
     public async Task RestartAsync()

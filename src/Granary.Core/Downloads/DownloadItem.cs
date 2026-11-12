@@ -5,6 +5,7 @@ namespace Granary.Core.Downloads;
 /// <see cref="WaitsForUnmetered"/>: the connection is metered and Settings → Downloads does not allow downloads there.
 /// <see cref="PosterPath"/> is a film's poster or an episode's still, <see cref="SeriesPosterPath"/> an episode's series poster;
 /// each null until fetched. <see cref="IsWatched"/>: the profile has watched it, on this PC or as the server says.
+/// <see cref="IsPlaying"/>: a player of this app has it open now (<see cref="PlayingDownloads"/>).
 /// </summary>
 public sealed record DownloadItem(
     string DownloadId,
@@ -26,7 +27,8 @@ public sealed record DownloadItem(
     string? PosterPath,
     string? MediaFileId,
     string? SeriesPosterPath = null,
-    bool IsWatched = false)
+    bool IsWatched = false,
+    bool IsPlaying = false)
 {
     /// <summary>How much of the file is on this PC, 0 to 1; 1 once it is downloaded.</summary>
     public double Progress => State == DownloadState.Completed ? 1 : ExpectedBytes > 0 ? Math.Clamp((double)BytesDone / ExpectedBytes, 0, 1) : 0;
@@ -36,7 +38,8 @@ public sealed record DownloadItem(
 
     /// <summary>
     /// The Downloads page may suggest deleting it to free up space: it is whole on this PC and watched. Not one the server no
-    /// longer has, which could not be downloaded again (Silo's Apple app leaves revoked downloads out the same way).
+    /// longer has, which could not be downloaded again (Silo's Apple app leaves revoked downloads out the same way), and not
+    /// one that plays now, as during its credits under a minimized player (Silo's Android app leaves the playing file out).
     /// </summary>
-    public bool IsReclaimable => IsPlayable && IsWatched && !IsNoLongerAvailable;
+    public bool IsReclaimable => IsPlayable && IsWatched && !IsNoLongerAvailable && !IsPlaying;
 }

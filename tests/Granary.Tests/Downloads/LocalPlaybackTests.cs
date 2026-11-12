@@ -455,4 +455,19 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
         Assert.Equal(0, _fixture.Engine.Stops);
         Assert.False(_fixture.Engine.HasSubscribers);
     }
+
+    [Fact]
+    public async Task ADownload_CountsAsPlaying_FromItsPlaybackUntilThatIsLetGo()
+    {
+        var playback = await _fixture.PlayingAsync();
+
+        Assert.True(_fixture.Harness.Playing.Contains(DownloadHarness.Scope7, "dl_1"));
+        await playback.StopAsync();
+        // Stopped, the player may still have the file open: it counts until the playback is let go.
+        Assert.True(_fixture.Harness.Playing.Contains(DownloadHarness.Scope7, "dl_1"));
+
+        await playback.DisposeAsync();
+
+        Assert.False(_fixture.Harness.Playing.Contains(DownloadHarness.Scope7, "dl_1"));
+    }
 }

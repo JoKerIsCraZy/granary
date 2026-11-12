@@ -1542,7 +1542,10 @@ device.
   decides in the end: its answer replaces the mark when the progress is read back. The Downloads page suggests deleting
   the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
   them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
-  about that are still watched, each as a single delete goes.
+  about that are still watched, each as a single delete goes. A download that plays is neither suggested nor deleted
+  that way: `LocalPlayback` marks it in `PlayingDownloads` from the moment it is made until it is let go, since a title
+  counts as watched while its credits still run and the player stays up, minimized, over the Downloads page (Silo's
+  Android app keeps the same mark, `ActivePlaybackFile`). The row's own Delete still deletes it.
 - **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
   (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending or on
   its way (`Sending`, claimed by a send); which, only the run knows, so after a Granary that closed during a send every

@@ -61,6 +61,7 @@ public sealed partial class LocalPlayback : IServerPlayback
     private double _position;
     private bool _paused;
     private double? _pendingSeek;
+    private readonly IDisposable? _playingMark;
 
     public LocalPlayback(
         LocalMedia media,
@@ -76,7 +77,8 @@ public sealed partial class LocalPlayback : IServerPlayback
         AudioDelay? audioDelay = null,
         DownloadStore? store = null,
         OfflineProgressQueue? progress = null,
-        OfflineProgressSync? sync = null)
+        OfflineProgressSync? sync = null,
+        PlayingDownloads? playing = null)
     {
         ArgumentNullException.ThrowIfNull(media);
         if (media.Download.MediaPath is null)
@@ -103,6 +105,8 @@ public sealed partial class LocalPlayback : IServerPlayback
         MediaInfo = Info();
         _engine.StateChanged += OnEngineStateChanged;
         _engine.Ended += OnEngineEnded;
+        // From now until it is let go, whatever deletes downloads by itself leaves this one alone.
+        _playingMark = playing?.Enter(_download.Record.Scope, _download.Record.DownloadId);
     }
 
     public event EventHandler<ServerPlaybackStatus>? StatusChanged;
@@ -340,6 +344,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         StopProgress();
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
+        _playingMark?.Dispose();
         await _saves.ConfigureAwait(false);
         await _records.ConfigureAwait(false);
     }
