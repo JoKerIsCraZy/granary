@@ -110,16 +110,18 @@ public sealed partial class MediaCardView : UserControl
         InitializeComponent();
         ArtImage.ScaleTransition = new Vector3Transition { Duration = ZoomDuration };
         TopBadges.Gap = BottomBadges.Gap = EdgeInset;
+        // The card's fixed words are set here and where a part is made (FindName), not bound: a card is made by the
+        // hundred, and each binding would cost every one of them its own bindings object.
+        AutomationProperties.SetName(WatchedMark, AppText.Get("web.item.card.watched"));
         Show(null);
     }
 
-    // The web's marks on a card, in capitals as its CSS shows them: an episode's own, a box set's film, a box set. Instance
-    // properties because the control's own x:Bind reads them.
-    public string NowViewingText => AppText.Upper(AppText.Get("web.detail.episodes.nowViewing"));
+    // The web's marks on a card, in capitals as its CSS shows them: an episode's own, a box set's film, a box set.
+    private static string NowViewingText => AppText.Upper(AppText.Get("web.detail.episodes.nowViewing"));
 
-    public string ThisFilmText => AppText.Upper(AppText.Get("web.detail.boxSet.thisFilm"));
+    private static string ThisFilmText => AppText.Upper(AppText.Get("web.detail.boxSet.thisFilm"));
 
-    public string BoxSetLabel => AppText.Upper(AppText.Get("web.detail.boxSet.label"));
+    private static string BoxSetLabel => AppText.Upper(AppText.Get("web.detail.boxSet.label"));
 
     public MediaCard? Card
     {
@@ -245,6 +247,7 @@ public sealed partial class MediaCardView : UserControl
         if (hasProgress && Progress is null)
         {
             FindName(nameof(Progress));
+            AutomationProperties.SetName(Progress, AppText.Get("granary.card.progress"));
         }
         if (Progress is { } bar)
         {
@@ -451,6 +454,11 @@ public sealed partial class MediaCardView : UserControl
         if (HoverLayer is null)
         {
             FindName(nameof(HoverLayer));
+            string more = AppText.Get("web.item.menu.moreActions");
+            AutomationProperties.SetName(MoreButton, more);
+            ToolTipService.SetToolTip(MoreButton, more);
+            MenuPlayFromBeginning.Text = AppText.Get("web.item.menu.playFromBeginning");
+            MenuResetProgress.Text = AppText.Get("granary.card.resetProgress");
             SizeActions(Art.ActualWidth > 0 ? Art.ActualWidth : ActualWidth);
         }
         if (RequestButton is null && Pick is null && Card is { RequestOffer: not null } card && _actions.CanRequest(card))
