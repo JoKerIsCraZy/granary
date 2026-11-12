@@ -785,6 +785,66 @@
       "value": "Buscar películas, series..."
     }
   ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "Perfil actual"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "Navegación y tarjetas"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "Cuenta"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "Apariencia"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "Reproducción"
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "Reproducción"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "Volver a la app"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "Configuración"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "Idioma y subtítulos"
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "Páginas de títulos"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,

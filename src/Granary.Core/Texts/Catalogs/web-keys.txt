@@ -147,6 +147,20 @@ web.profiles.pin.verifying
 web.search.label
 web.search.placeholderProminent
 
+# Settings, in the words of the web's settings pages (pages/settings) for the same settings: the sidebar of
+# src/Granary.App/Views/SettingsPage.xaml(.cs), as the web's UserSettingsSidebar and lib/userSettingsNav.ts, with its group
+# names upper-cased at display as its CSS does.
+web.settings.currentProfileLink.caption
+web.settings.interface.title
+web.settings.nav.group.account
+web.settings.nav.group.appearance
+web.settings.nav.group.playback
+web.settings.playback.title
+web.settings.sidebar.backToApp
+web.settings.sidebar.title
+web.settings.subtitleAppearance.title
+web.settings.titlePages.title
+
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
 # src/Granary.App/Controls/SidebarSectionHeader.xaml.cs, and the entries' names in

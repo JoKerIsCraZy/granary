@@ -7,7 +7,7 @@
     x:Class="Granary.App.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    AutomationProperties.Name="Settings">
+    xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
         <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
@@ -22,13 +22,13 @@
         <Border Background="#FF111113" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,1,0">
             <StackPanel Padding="12,20,12,24" Spacing="4">
                 <Button x:Name="BackButton" Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="8,4" Click="OnBackClick"
-                        AutomationProperties.Name="Back to App">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.sidebar.backToApp')}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE72B;" FontSize="12" />
-                        <TextBlock Text="Back to App" FontSize="14" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.sidebar.backToApp')}" FontSize="14" />
                     </StackPanel>
                 </Button>
-                <TextBlock Text="Settings" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="22"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.sidebar.title')}" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="22"
                            Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
                 <Grid Margin="8,0,8,16" ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
@@ -40,73 +40,69 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Current profile" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.currentProfileLink.caption')}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
                         <TextBlock Text="{x:Bind Sidebar.ProfileName, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                    FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Text="PLAYBACK" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                <TextBlock x:Name="PlaybackGroup" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                          AutomationProperties.Name="Settings pages">
-                    <ListViewItem Tag="playback" AutomationProperties.Name="Playback">
+                <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
+                    <ListViewItem Tag="playback" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.playback.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE768;" FontSize="14" />
-                            <TextBlock Text="Playback" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.playback.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
-                    <ListViewItem Tag="subtitles" AutomationProperties.Name="Language &amp; Subtitles">
+                    <ListViewItem Tag="subtitles" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE7F0;" FontSize="14" />
-                            <TextBlock Text="Language &amp; Subtitles" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
                 <!-- How Granary looks: posters, badges and the sidebar; what a title's page shows. -->
-                <TextBlock Text="APPEARANCE" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                <TextBlock x:Name="AppearanceGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                          AutomationProperties.Name="Appearance pages">
-                    <ListViewItem Tag="interface" AutomationProperties.Name="Navigation &amp; Cards">
+                <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
+                    <ListViewItem Tag="interface" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.interface.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE8A1;" FontSize="14" />
-                            <TextBlock Text="Navigation &amp; Cards" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.interface.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
-                    <ListViewItem Tag="title-pages" AutomationProperties.Name="Title Pages">
+                    <ListViewItem Tag="title-pages" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.titlePages.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE8B2;" FontSize="14" />
-                            <TextBlock Text="Title Pages" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.titlePages.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
                 <!-- The account's: where it is signed in, and the devices it watches on. -->
-                <TextBlock Text="ACCOUNT" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                <TextBlock x:Name="AccountGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                          AutomationProperties.Name="Account pages">
-                    <ListViewItem Tag="devices" AutomationProperties.Name="Devices">
+                <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
+                    <ListViewItem Tag="devices" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.devices.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE8EA;" FontSize="14" />
-                            <TextBlock Text="Devices" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.devices.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
                 <!-- The app's own: its servers, and what it is. One page is open across all the lists. -->
-                <TextBlock Text="APP" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                <TextBlock x:Name="AppGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                          AutomationProperties.Name="App pages">
-                    <ListViewItem Tag="servers" AutomationProperties.Name="Servers">
+                <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
+                    <ListViewItem Tag="servers" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.servers.title')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE968;" FontSize="14" />
-                            <TextBlock Text="Servers" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.servers.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
-                    <ListViewItem Tag="about" AutomationProperties.Name="About">
+                    <ListViewItem Tag="about" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.nav.about')}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE946;" FontSize="14" />
-                            <TextBlock Text="About" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.nav.about')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>

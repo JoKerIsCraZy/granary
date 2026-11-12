@@ -769,6 +769,66 @@
       "value": "Search movies, series..."
     }
   ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "Current profile"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "Navigation & Cards"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "Account"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "Appearance"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "Playback"
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "Playback"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "Back to App"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "Settings"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "Language & Subtitles"
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "Title Pages"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,

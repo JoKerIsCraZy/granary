@@ -825,6 +825,66 @@
       "value": "البحث عن أفلام ومسلسلات..."
     }
   ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "الملف الشخصي الحالي"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "التنقل والبطاقات"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "الحساب"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "المظهر"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "التشغيل"
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "التشغيل"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "العودة إلى التطبيق"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "الإعدادات"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "اللغة والترجمة"
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "صفحات العناوين"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,
