@@ -20,6 +20,8 @@ release's section is what its update says it changes (docs/release.md).
 ### Fixed
 
 - A Next Up card says Next Episode, as on Silo's web.
+- A Continue Watching card's time left is rounded to the nearest minute, as on Silo's web and apps, where it could say a
+  minute more.
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
