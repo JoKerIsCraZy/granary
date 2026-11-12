@@ -926,11 +926,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Game controller
 
-A game controller drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is decided in
-Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face button, **B**
-the right one, **X** the left one and **Y** the top one. The pad goes the way the remote's keys go, through the same
-code, so what the TV remote does at a page's edges, in the sidebar and on the way back holds for the pad too. Focus the
-pad moves shows its ring, as the keyboard's.
+An Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is
+decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face
+button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
+Share or Create, **Menu** is Options, the bumpers are L1 and R1 and the triggers L2 and R2. The pad goes the way the
+remote's keys go, through the same code, so what the TV remote does at a page's edges, in the sidebar and on the way
+back holds for the pad too. Focus the pad moves shows its ring, as the keyboard's.
 
 On the pages, and in the minimized player's bar:
 
@@ -980,6 +981,9 @@ Always:
 - A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
   dropped rather than sent, and any pad that comes (back) works at once. Several pads count as one.
 - Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
+- PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
+  or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. A tool that presents the pad to
+  Windows as an Xbox pad works too, and the pad still counts once.
 
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
 pictures that match the pad, and a way to swap A and B.

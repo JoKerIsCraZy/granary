@@ -1139,8 +1139,18 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   tests drive it with `ManualTimeProvider`. A button held while the pad is first read, after `Reset`, or while the pages
   and the player change places, does nothing until it is pressed again: A on a card opens the player and pauses nothing
   there.
-- **`GamepadReader`** (App) lists the pads Windows knows as a `Gamepad` (an Xbox pad, and any pad its maker registered
-  with Windows as one) and reads them as one (`PadReading.Merge`), so any pad in the room works.
+- **`GamepadReader`** (App) lists the pads and reads them as one (`PadReading.Merge`), so any pad in the room works.
+  Windows knows an Xbox pad, and any pad its maker registered with it as one (docs: "Registry data for game
+  controllers"), as a `Gamepad`. A DualShock 4 or DualSense is only a `RawGameController` to it, a list of unnamed
+  buttons and axes, unless a tool presents it as an Xbox pad. Core's `SonyPad` reads that list by position: the
+  buttons' places are the ones Microsoft's own controller data labels for these pads (Square 0, Cross 1, Circle 2,
+  Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
+  axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
+  with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. A pad
+  that shows up twice, itself and as the Xbox pad a tool makes of it, still presses each button once, since the readings
+  are merged before anything is decided. No PlayStation pad was at hand: `SonyPadTests` cover both orders, a real pad
+  has not been tried.
 - **Reading costs nothing without a pad.** Windows tells of pads that come and go; a timer runs only while there is one
   and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while the pad is in use and every
   33 ms while it rests, which still catches the shortest press. Windows documents that a UWP app gets no pad input out

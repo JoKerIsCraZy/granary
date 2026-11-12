@@ -11,8 +11,10 @@ namespace Granary.App.Services;
 /// </summary>
 /// <remarks>
 /// Windows (<c>Windows.Gaming.Input</c>) knows an Xbox pad, and any pad its maker registered as one, as a
-/// <see cref="Gamepad"/>. It fills its list a moment after it is first asked for and tells of changes on a thread
-/// of its own; the list here is the UI thread's.
+/// <see cref="Gamepad"/>. A DualShock 4 or DualSense is only a <see cref="RawGameController"/> to it, a list of buttons
+/// and axes, unless a tool presents it as an Xbox pad; <see cref="SonyPad"/> reads those by position. Windows fills its
+/// lists a moment after they are first asked for and tells of changes on a thread of its own; the list here is the UI
+/// thread's.
 /// </remarks>
 internal sealed class GamepadReader
 {
@@ -29,6 +31,8 @@ internal sealed class GamepadReader
         {
             Gamepad.GamepadAdded += OnPadsChanged;
             Gamepad.GamepadRemoved += OnPadsChanged;
+            RawGameController.RawGameControllerAdded += OnPadsChanged;
+            RawGameController.RawGameControllerRemoved += OnPadsChanged;
         }
         catch (Exception ex)
         {
@@ -90,6 +94,13 @@ internal sealed class GamepadReader
             {
                 pads.Add(new KnownPad(gamepad));
             }
+            foreach (var controller in RawGameController.RawGameControllers)
+            {
+                if (Gamepad.FromGameController(controller) is null && SonyPad.IsKnown(controller.HardwareVendorId, controller.HardwareProductId))
+                {
+                    pads.Add(new RawSonyPad(controller));
+                }
+            }
             _pads = pads;
             _logger.LogInformation("Game controllers attached: {Count}", pads.Count);
         }
@@ -128,5 +139,33 @@ internal sealed class GamepadReader
             return new PadReading(buttons, reading.LeftThumbstickX, reading.LeftThumbstickY, reading.RightThumbstickX, reading.RightThumbstickY,
                 reading.LeftTrigger, reading.RightTrigger);
         }
+    }
+
+    // A DualShock 4 or DualSense as Windows lists it by itself.
+    private sealed class RawSonyPad(RawGameController controller) : IPad
+    {
+        private readonly SonyPad _layout = new();
+        private readonly bool[] _buttons = new bool[controller.ButtonCount];
+        private readonly GameControllerSwitchPosition[] _switches = new GameControllerSwitchPosition[controller.SwitchCount];
+        private readonly double[] _axes = new double[controller.AxisCount];
+
+        public PadReading Read()
+        {
+            controller.GetCurrentReading(_buttons, _switches, _axes);
+            return _layout.Read(_buttons, _axes, _switches.Length > 0 ? DPadOf(_switches[0]) : PadButtons.None);
+        }
+
+        private static PadButtons DPadOf(GameControllerSwitchPosition position) => position switch
+        {
+            GameControllerSwitchPosition.Up => PadButtons.DPadUp,
+            GameControllerSwitchPosition.UpRight => PadButtons.DPadUp | PadButtons.DPadRight,
+            GameControllerSwitchPosition.Right => PadButtons.DPadRight,
+            GameControllerSwitchPosition.DownRight => PadButtons.DPadDown | PadButtons.DPadRight,
+            GameControllerSwitchPosition.Down => PadButtons.DPadDown,
+            GameControllerSwitchPosition.DownLeft => PadButtons.DPadDown | PadButtons.DPadLeft,
+            GameControllerSwitchPosition.Left => PadButtons.DPadLeft,
+            GameControllerSwitchPosition.UpLeft => PadButtons.DPadUp | PadButtons.DPadLeft,
+            _ => PadButtons.None,
+        };
     }
 }
