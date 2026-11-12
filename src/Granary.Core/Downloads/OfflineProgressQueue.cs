@@ -109,22 +109,38 @@ public sealed class OfflineProgressQueue
     /// Records where <paramref name="scope"/>'s profile is in a title now. It replaces the title's entry, also one on its
     /// way: the latest position is the one to send.
     /// </summary>
-    public OfflineProgressEntry Record(DownloadScope scope, string mediaItemId, long positionMs, long durationMs)
+    /// <param name="after">
+    /// A time this PC knows the title's progress to have had already: the last one it recorded or read from the server. The
+    /// new position is later than that whatever the clock says, and is stamped so.
+    /// </param>
+    /// <remarks>
+    /// The server keeps the later of two positions by their times. A PC whose clock was set back, or runs behind, would stamp
+    /// a position recorded now before one it recorded or learned of earlier, and the server would pass the new one over. So a
+    /// title's times never go backwards here: a position is stamped at least a millisecond after the entry it replaces and
+    /// after <paramref name="after"/>.
+    /// </remarks>
+    public OfflineProgressEntry Record(DownloadScope scope, string mediaItemId, long positionMs, long durationMs, DateTimeOffset? after = null)
     {
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(mediaItemId);
         // Whole milliseconds, as the server keeps and answers them: the same instant compares equal when it is read back.
         var now = _time.GetUtcNow();
-        var entry = new OfflineProgressEntry(scope, mediaItemId, Math.Max(0, positionMs), Math.Max(0, durationMs),
-            new DateTimeOffset(now.Ticks - now.Ticks % TimeSpan.TicksPerMillisecond, now.Offset), OfflineProgressState.Pending);
+        var at = new DateTimeOffset(now.Ticks - now.Ticks % TimeSpan.TicksPerMillisecond, now.Offset);
         lock (_gate)
         {
             var entries = Loaded();
+            var before = entries.Where(e => e.Scope == scope && e.MediaItemId == mediaItemId).Select(e => (DateTimeOffset?)e.UpdatedAt).Max();
+            if ((before > after ? before : after ?? before) is { } known && at <= known)
+            {
+                long ticks = known.UtcTicks - known.UtcTicks % TimeSpan.TicksPerMillisecond + TimeSpan.TicksPerMillisecond;
+                at = new DateTimeOffset(ticks, TimeSpan.Zero);
+            }
+            var entry = new OfflineProgressEntry(scope, mediaItemId, Math.Max(0, positionMs), Math.Max(0, durationMs), at, OfflineProgressState.Pending);
             entries.RemoveAll(e => e.Scope == scope && e.MediaItemId == mediaItemId);
             entries.Add(entry);
             Save();
+            return entry;
         }
-        return entry;
     }
 
     /// <summary>The profile's entries, oldest first.</summary>

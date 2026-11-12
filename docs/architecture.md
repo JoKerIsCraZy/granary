@@ -1549,9 +1549,12 @@ while the server answers.
   the device; Android plays a next episode from its download when the server named it. On Deck stays the server's.
 - **A file that will not play.** The player says "This download can't be played. Try again, or delete it and download
   it again." with Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
-  again."; Apple: its error wall with Retry). A file that ends more than 30 s before its length (the player's own reading
-  of it, else the manifest's) is such a file, not the title's end: it is not marked watched and nothing plays next, as the
-  Apple app says "The downloaded video file ends early." Where the viewer got to is kept either way.
+  again."; Apple: its error wall with Retry). A file that ends more than 30 s before its length is such a file, not the
+  title's end: it is not marked watched and nothing plays next, as the Apple app says "The downloaded video file ends
+  early." The length is the longer of the player's own reading of the file and the manifest's: the file's alone would
+  let a shorter file put in the download's place, which plays through by its own word, pass for the title. Where the
+  viewer got to is kept either way, also past nine tenths, where a title left by choice would start over: Retry and the
+  next play go on from where the file broke off.
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
   name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
   of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
@@ -1566,7 +1569,11 @@ device.
 - **Recording.** `LocalPlayback` records where the viewer is every `ProgressInterval` (10 s) once the first frame showed,
   at the stop, at the title's end and when the file breaks off, but only when the position moved by a second or more
   since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
-  device meanwhile. Nothing is recorded before the first frame. Each record goes to two places. The download's own record
+  device meanwhile. Nothing is recorded before the first frame. A title's times never go backwards: a position is
+  stamped at least a millisecond after the one it replaces in the queue, after the last one this play recorded, and
+  after the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
+  now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get
+  the newest position passed over by the server as an old one. Each record goes to two places. The download's own record
   takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
   position, the length and the time, in whole milliseconds, for the server.
 - **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine

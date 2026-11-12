@@ -27,6 +27,9 @@ public sealed partial class LocalPlayback
 
     // The position recorded last; a pause records nothing new, so a title left paused does not grow newer by itself.
     private double? _recorded;
+
+    // When it was recorded, as it was stamped.
+    private DateTimeOffset? _recordedAt;
     private double? _engineDuration;
 
     // The record's writes, in the order the positions were recorded.
@@ -50,9 +53,10 @@ public sealed partial class LocalPlayback
     /// <summary>
     /// Records where the viewer is, unless nothing played yet or the position has not moved since the last record.
     /// <paramref name="isFinal"/>: the play ends here, so the server's progress is read back after the send, to learn
-    /// whether it now counts the title as watched.
+    /// whether it now counts the title as watched. <paramref name="brokeOff"/>: the file would not play on from here, so
+    /// here is where Retry and the next play go on, however near the end it is.
     /// </summary>
-    private void RecordProgress(bool isFinal, bool playedToTheEnd = false)
+    private void RecordProgress(bool isFinal, bool playedToTheEnd = false, bool brokeOff = false)
     {
         if (_progress is not { } queue || _stopping || !_played)
         {
@@ -73,8 +77,13 @@ public sealed partial class LocalPlayback
         var record = _download.Record;
         double duration = DurationSeconds ?? _engineDuration ?? 0;
         long positionMs = (long)Math.Round(position * 1000);
-        bool startsOver = playedToTheEnd || (duration > 0 && position / duration > StartsOverFraction);
-        var entry = queue.Record(record.Scope, record.MediaItemId, positionMs, (long)Math.Round(Math.Max(0, duration) * 1000));
+        bool startsOver = playedToTheEnd || (!brokeOff && duration > 0 && position / duration > StartsOverFraction);
+        // Later than what this PC last recorded for the title or read of it from the server, also on a clock that was set
+        // back meanwhile: the viewer is here now.
+        var known = _store?.Find(record.Scope, record.DownloadId)?.Record.ResumeAt;
+        var entry = queue.Record(record.Scope, record.MediaItemId, positionMs, (long)Math.Round(Math.Max(0, duration) * 1000),
+            after: _recordedAt > known ? _recordedAt : known ?? _recordedAt);
+        _recordedAt = entry.UpdatedAt;
         // As the server sets a watched title's position back to 0.
         long resumeMs = startsOver ? 0 : positionMs;
         // Watched for sure only at the title's end. Any other position is a watch under way, also of a title watched

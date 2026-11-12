@@ -416,8 +416,10 @@ public sealed partial class LocalPlayback : IServerPlayback
             Fail();
             return;
         }
-        // The file's own length as the player read it, else the manifest's. Without either, an end can only be taken for the end.
-        double? length = _engineDuration ?? DurationSeconds;
+        // The longer of the file's own length as the player read it and the manifest's. The file's alone would let a file that
+        // is not the title pass: one put in its place, or cut with a length of its own, plays through to an end the manifest
+        // knows to be long before the title's. Without either, an end can only be taken for the end.
+        double? length = _engineDuration is { } read && DurationSeconds is { } named ? Math.Max(read, named) : _engineDuration ?? DurationSeconds;
         if (length is { } whole && _position < whole - EndTolerance)
         {
             // The file breaks off long before its length: a damaged copy, not the title's end. As Silo's Apple app, the
@@ -442,8 +444,9 @@ public sealed partial class LocalPlayback : IServerPlayback
         {
             return;
         }
-        // Where the viewer got to before the file broke off is kept.
-        RecordProgress(isFinal: true);
+        // Where the viewer got to before the file broke off is kept, also past nine tenths: Retry goes on from there, not
+        // from the start as after a title that was left near its end.
+        RecordProgress(isFinal: true, brokeOff: true);
         StopProgress();
         _loadId = 0;
         _started = false;

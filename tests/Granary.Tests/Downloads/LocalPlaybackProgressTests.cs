@@ -153,18 +153,22 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task APositionWrittenLate_DoesNotLowerANewerOneTheServersReadStoredMeanwhile()
+    public async Task APositionWatchedNow_IsLaterThanWhatTheDownloadAlreadyKnew_AlsoOnAClockThatIsBehind()
     {
         _fixture.GoOffline();
-        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
-        // Another device's later position reached the download while this play's own write still waits for the disk.
-        var later = ManualTimeProvider.DefaultStart.AddHours(2);
-        await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", r => r with { ResumeMs = 3_000_000, ResumeAt = later }, LocalPlaybackFixture.Token);
+        // The download holds another device's position from 14:00, read from the server; this PC's clock says 12:00.
+        var known = ManualTimeProvider.DefaultStart.AddHours(2);
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { ResumeMs = 3_000_000, ResumeAt = known });
+        var playback = await _fixture.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
         Frame(120);
 
-        await playback.StopAsync();
+        await playback!.StopAsync();
 
-        Assert.Equal((3_000_000L, later), (Record.ResumeMs, Record.ResumeAt));
+        // The viewer is at two minutes now, whatever the clock reads: stamped after what was known, so the server takes it
+        // and the next play from this PC starts there.
+        Assert.Equal((120_000L, known.AddMilliseconds(1)), (Entry.PositionMs, Entry.UpdatedAt));
+        Assert.Equal((120_000L, known.AddMilliseconds(1)), (Record.ResumeMs, Record.ResumeAt));
     }
 
     [Fact]
@@ -215,6 +219,25 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFileThatBreaksOffPastNineTenths_IsNeitherWatchedNorStartedOver_AndRetryGoesOnFromThere()
+    {
+        _fixture.GoOffline();
+        await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(6600);
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "read error"));
+
+        // Left there by choice, the title would start over next time. It broke off: the last ten minutes are still to watch.
+        await Until(() => Record.ResumeMs == 6_600_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+        Assert.Equal(6_600_000, Entry.PositionMs);
+
+        // Retry is a new play of the title, from where it left off.
+        await _fixture.StartAsync();
+        Assert.Equal(TimeSpan.FromSeconds(6600), _fixture.Engine.Loaded[^1].Start);
+    }
+
+    [Fact]
     public async Task AFileThatEndsLongBeforeItsLength_IsNotTheTitlesEnd()
     {
         _fixture.GoOffline();
@@ -229,6 +252,36 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         Assert.Equal(1_500_000, Entry.PositionMs);
         await Until(() => Record.ResumeMs == 1_500_000, "the download kept the position");
         Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task AFileShorterThanTheTitleItsManifestNames_IsNotTheTitlesEnd_ThoughItPlaysThrough()
+    {
+        _fixture.GoOffline();
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        // The file in the download's place is an hour long, by its own word; the manifest names a title of two.
+        _fixture.Engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(3595), TimeSpan.FromSeconds(3600), null, HasStarted: true));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+
+        // Not the title's end: it is not watched, nothing plays next, and where the viewer got to is kept.
+        Assert.Equal(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, LocalPlayback.CannotPlay, CanRetry: true), playback.Status);
+        await Until(() => Record.ResumeMs == 3_595_000, "the download kept the position");
+        Assert.False(Record.IsWatched);
+    }
+
+    [Fact]
+    public async Task AFileALittleLongerOrShorterThanItsManifestSays_EndsAsTheTitle()
+    {
+        _fixture.GoOffline();
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        // A copy the server prepared is seconds off the source's length the manifest names.
+        _fixture.Engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(7188), TimeSpan.FromSeconds(7189), null, HasStarted: true));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+
+        Assert.Equal(ServerPlaybackPhase.Ended, playback.Status.Phase);
+        await Until(() => Record.IsWatched, "the download is marked watched");
     }
 
     [Fact]

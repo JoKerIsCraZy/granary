@@ -383,4 +383,42 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         Assert.True(File.Exists(fresh));
         Assert.Single(queue.Entries(Scope7));
     }
+
+    [Fact]
+    public async Task ATitlesTimes_NeverGoBackwards_WhenThePCsClockIsSetBack()
+    {
+        var early = Open();
+        _time.Advance(TimeSpan.FromHours(1));
+        var first = early.Record(Scope7, "ep_5", 10_000, 0);
+        await early.LatestSave;
+
+        // Windows corrects the clock by half an hour (a clock of its own here: the test's only moves forward); the viewer
+        // watches on.
+        var corrected = new ManualTimeProvider();
+        corrected.Advance(TimeSpan.FromMinutes(30));
+        var queue = new OfflineProgressQueue(FilePath, corrected, _logs.For<OfflineProgressQueue>());
+        _opened.Add(queue);
+        var second = queue.Record(Scope7, "ep_5", 20_000, 0);
+        var third = queue.Record(Scope7, "ep_5", 30_000, 0);
+
+        // Each is later than the one it replaces, so the server keeps the newest: a millisecond is enough.
+        Assert.Equal(first.UpdatedAt.AddMilliseconds(1), second.UpdatedAt);
+        Assert.Equal(first.UpdatedAt.AddMilliseconds(2), third.UpdatedAt);
+        // Another title is stamped by the clock as it is.
+        Assert.Equal(corrected.GetUtcNow(), queue.Record(Scope7, "ep_6", 10_000, 0).UpdatedAt);
+    }
+
+    [Fact]
+    public void APosition_IsStampedAfterWhatThisPCAlreadyKnewOfTheTitle()
+    {
+        var queue = Open();
+        // The server's progress, read before, names 13:00 for the title; this PC's clock is an hour behind.
+        var known = ManualTimeProvider.DefaultStart.AddHours(1);
+
+        var entry = queue.Record(Scope7, "ep_5", 10_000, 0, after: known);
+
+        Assert.Equal(known.AddMilliseconds(1), entry.UpdatedAt);
+        // A clock that is ahead of what is known stamps as it reads.
+        Assert.Equal(_time.GetUtcNow(), queue.Record(Scope7, "ep_6", 10_000, 0, after: ManualTimeProvider.DefaultStart.AddHours(-1)).UpdatedAt);
+    }
 }
