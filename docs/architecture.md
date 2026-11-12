@@ -1061,12 +1061,16 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
   5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
   403, 404, 501 or 503 on the read) is left out and not asked for again on that connection; another failure keeps what
-  was shown. While preparation jobs are on their way, their list is also read again 60 s after its last read.
+  was shown, and the window after it grows with each failure in a row (5 s, 10, 20, 40, then 60, or the server's
+  `Retry-After` up to five minutes), with one warning in the log per outage and a line when the list reads again.
+  While preparation jobs are on their way, their list is also read again 60 s after its last read, whether that read
+  answered or failed. A progress reading that comes while that list is being read is put into the answer too, which
+  was made before it.
   `RealtimeEvents` tells it of every change of server, profile, role or sign-in under the lock it replaces
   its lane in (`Follow`), and gets a number its frames come under: frames under an older number are dropped, and each
   following has an object of its own that its reads are cancelled by and compared against, so a late answer is dropped
   too. Everything in it is guarded by one lock; `Changed` is raised outside it, on the lane's, a read's or a timer's
-  thread.
+  thread, and what a listener throws there is logged and goes no further.
 - **`ServerActivityViewModel`** (Core, a singleton) shows the state on the UI thread (`IUiDispatcher`, one look at the
   latest state per burst of changes). Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
   row the keyboard is on keeps its focus while its numbers change. The shell says where it is (`ShowsWhenIdle` on the

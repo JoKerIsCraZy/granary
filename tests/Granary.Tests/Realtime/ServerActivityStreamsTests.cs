@@ -167,6 +167,95 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         await ShownAsync(0);
     }
 
+    private int LogLines(string text) => _harness.Library.Logs.Lines.Count(line => line.Contains(text, StringComparison.Ordinal));
+
+    [Fact]
+    public async Task ReadsThatKeepFailing_WaitLongerEachTime_AreWarnedOfOnce_AndSayWhenTheyWorkAgain()
+    {
+        _harness.Library.Answer(SessionsPath, ScriptedSilo.Json(HttpStatusCode.OK, AdminPayloads.Sessions), ScriptedSilo.NetworkError(),
+            ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, AdminPayloads.NoSessions));
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+        await ShownAsync(2);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+
+        // The stream keeps bringing news all the while. After the first failure the list waits as after any read…
+        await _harness.PushedAsync(socket, Replaced);
+        await ServerPlaybackFixture.Until(() => Reads == 2 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the first failed read");
+        await _harness.PushedAsync(socket, Replaced);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        // …then twice as long…
+        await ServerPlaybackFixture.Until(() => Reads == 3 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow * 2, "the second failed read");
+        await _harness.PushedAsync(socket, Replaced);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal(3, Reads);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        // …and twice as long again.
+        await ServerPlaybackFixture.Until(() => Reads == 4 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow * 4, "the third failed read");
+        Assert.Equal(2, _harness.State.Sessions?.Count);
+        await _harness.PushedAsync(socket, Replaced);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow * 4);
+
+        await ShownAsync(0);
+        Assert.Equal(1, LogLines("Could not read the playback sessions"));
+        Assert.Equal(2, LogLines("Still could not read the playback sessions"));
+        Assert.Equal(1, LogLines("playback sessions for the activity indicator can be read again"));
+        // After a read that worked the list is read at the usual pace again.
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the window after the read");
+    }
+
+    [Fact]
+    public async Task ReadsThatKeepFailing_AreNeverLeftAloneForLongerThanAMinute()
+    {
+        _harness.Library.Answer(SessionsPath, ScriptedSilo.NetworkError());
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+
+        foreach (int seconds in new[] { 5, 10, 20, 40, 60, 60 })
+        {
+            await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(seconds), $"a wait of {seconds} s");
+            await _harness.PushedAsync(socket, Replaced);
+            _harness.Library.Clock.Advance(TimeSpan.FromSeconds(seconds));
+        }
+
+        Assert.Equal(ServerActivity.LongestRetryWindow, TimeSpan.FromSeconds(60));
+    }
+
+    [Fact]
+    public async Task AServerThatAsksForTime_IsGivenIt()
+    {
+        _harness.Library.Answer(SessionsPath, ScriptedSilo.Json(HttpStatusCode.OK, AdminPayloads.Sessions),
+            ScriptedSilo.Problem(429, "rate_limited", TimeSpan.FromSeconds(30)), ScriptedSilo.Json(HttpStatusCode.OK, AdminPayloads.NoSessions));
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+        await ShownAsync(2);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+
+        await _harness.PushedAsync(socket, Replaced);
+        await ServerPlaybackFixture.Until(() => Reads == 2 && _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(30), "the read turned away");
+        await _harness.PushedAsync(socket, Replaced);
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(29));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal(2, Reads);
+
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+        await ShownAsync(0);
+    }
+
+    [Fact]
+    public async Task AListenerThatThrows_DoesNotStopTheReads()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+        await ShownAsync(2);
+        _harness.Activity.Changed += (_, _) => throw new InvalidOperationException("A listener failed.");
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        _harness.Library.Answer(SessionsPath, AdminPayloads.NoSessions);
+
+        // The answer comes on a thread of its own, where nobody would catch what the listener throws.
+        await _harness.PushedAsync(socket, Replaced);
+
+        await ShownAsync(0);
+        await ServerPlaybackFixture.Until(() => LogLines("A listener of the server's activity failed") >= 1, "the failure in the log");
+    }
+
     [Fact]
     public async Task AChannelTurnedDownOnALaterConnection_TakesItsListAway()
     {

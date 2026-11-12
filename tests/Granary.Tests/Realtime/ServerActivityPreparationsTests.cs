@@ -143,6 +143,50 @@ public sealed class ServerActivityPreparationsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AMinutesReadThatFails_DoesNotEndTheMinutesReads()
+    {
+        _harness.Library.Answer(QueuePath, ScriptedSilo.Json(HttpStatusCode.OK, Queue), ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(),
+            ScriptedSilo.Json(HttpStatusCode.OK, Idle));
+        await ReadAsync();
+
+        // No event comes all the while: only the clock reads the queue.
+        _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh);
+        await ServerPlaybackFixture.Until(() => Reads == 2 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the failed read");
+        Assert.Equal(3, _harness.State.Preparations!.Counts.Active);
+        _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh);
+        await ServerPlaybackFixture.Until(() => Reads == 3 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow * 2, "the second failed read");
+        _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh);
+
+        await ServerPlaybackFixture.Until(() => _harness.State.Preparations?.Counts.Active == 0, "the read that worked");
+        Assert.Equal(4, Reads);
+    }
+
+    [Fact]
+    public async Task AReadingThatComesWhileTheQueueIsRead_IsNotLostToTheOlderAnswer()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        // The second answer was made when job-1 stood at 600 s, as the first.
+        _harness.Library.Answer(QueuePath, ScriptedSilo.Json(HttpStatusCode.OK, Queue), Browse.LibraryHarness.Held(release, Queue));
+        var socket = await ReadAsync();
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        await _harness.PushedAsync(socket, Changed);
+        await ServerPlaybackFixture.Until(() => Reads == 2, "the read on its way");
+
+        await _harness.PushedAsync(socket, Progress("job-1", 1500));
+        Assert.Equal(1500d, _harness.State.Preparations!.Items[0].Progress!.EncodedSeconds);
+        release.SetResult();
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the answer");
+
+        Assert.Equal((1500d, 2.5), (_harness.State.Preparations!.Items[0].Progress!.EncodedSeconds, _harness.State.Preparations.Items[0].Progress!.Speed));
+        Assert.Equal(2, Reads);
+
+        // A reading from before a later read is that read's to replace.
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
+        await _harness.PushedAsync(socket, Changed);
+        await ServerPlaybackFixture.Until(() => Reads == 3 && _harness.State.Preparations!.Items[0].Progress!.EncodedSeconds == 600d, "the next read");
+    }
+
+    [Fact]
     public async Task AServerWithoutSuchAQueue_HasNone_AndIsNotAskedAgain()
     {
         _harness.Library.Answer(QueuePath, ScriptedSilo.Problem(503, ProblemCodes.DependencyUnavailable, TimeSpan.FromSeconds(30)));

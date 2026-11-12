@@ -47,7 +47,8 @@ public sealed record ServerActivityState
 /// <remarks>
 /// <para>
 /// Each source stands alone. One the server does not offer (its channel turned down, or its list answering 403, 404, 501
-/// or 503) is not shown and not asked for again until the next connection; any other failed read keeps what was shown.
+/// or 503) is not shown and not asked for again until the next connection; any other failed read keeps what was shown,
+/// and the list is left alone for longer after each failure in a row.
 /// </para>
 /// <para>
 /// Frames and the connection's state arrive on the lane's thread, answers on the thread pool, timers on theirs.
@@ -143,7 +144,7 @@ public sealed partial class ServerActivity : IDisposable
         previous?.Cancel();
         if (changed)
         {
-            Changed?.Invoke(this, EventArgs.Empty);
+            Notify();
         }
         return feed;
     }
@@ -159,7 +160,7 @@ public sealed partial class ServerActivity : IDisposable
             }
             _state = _state with { Connection = connection };
         }
-        Changed?.Invoke(this, EventArgs.Empty);
+        Notify();
     }
 
     /// <summary>A frame of the connection of <paramref name="feed"/>.</summary>
@@ -201,7 +202,20 @@ public sealed partial class ServerActivity : IDisposable
             }
         }
         previous?.Cancel();
-        Changed?.Invoke(this, EventArgs.Empty);
+        Notify();
+    }
+
+    // Raised on a read's or a timer's thread too, where nobody would catch what a listener throws.
+    private void Notify()
+    {
+        try
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "A listener of the server's activity failed");
+        }
     }
 
     // What the server gave this connection is all there is to follow: each source it gave is read, the others are gone.
@@ -259,9 +273,11 @@ public sealed partial class ServerActivity : IDisposable
             reread.IsWaiting = false;
             reread.IsDue = false;
             reread.IsOff = false;
+            reread.Failures = 0;
             reread.Window.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
         _askedLibraries.Clear();
+        _readingsDuringRead.Clear();
         _preparationsDue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         return previous;
     }

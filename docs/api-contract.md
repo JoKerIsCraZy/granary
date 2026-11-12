@@ -2720,15 +2720,19 @@ What the indicator reads, each source by itself (a source the server does not of
   says "read"; Granary reads on `subscribed` instead. `download_preparation.progress` carries `{ "id", "progress":
   { "encoded_seconds", "duration_seconds", "speed", "updated_at" } }`, at most every 5 s per job, and is put into
   that job when it runs in the list as known; for any other job, and on `download_preparation.changed`, the list is
-  read again. `download_storage.changed` on the same channel is news of the storage views and is ignored. While jobs
-  run, wait or retry the list is read again 60 s after its last read, as not every change announces itself (the web
-  reads every 60 s then). The web also reads once when the oldest failure turns 24 hours old; Granary leaves that to
+  read again. A reading that arrives while the list is being read is put into that read's answer as well: the answer
+  was made before it and would step the job back for five seconds. `download_storage.changed` on the same channel is
+  news of the storage views and is ignored. While jobs run, wait or retry the list is read again 60 s after its last
+  read, as not every change announces itself (the web reads every 60 s then); a read that fails counts as one, so the
+  list is tried again a minute later while jobs were on their way. The web also reads once when the oldest failure turns 24 hours old; Granary leaves that to
   the read every connection starts with, at most five minutes later. 503 (`dependency_unavailable`): the server has
   no such queue, and the indicator no such section.
 
 Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
 or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until
-the next connection (at most five minutes away); any other failure keeps what was shown and waits for the next news.
+the next connection (at most five minutes away); any other failure (a network error, 401, 429, 500) keeps what was
+shown and waits for the next news, and the window after it is twice as long with each failure in a row: 5 s, 10, 20,
+40, then 60. A `Retry-After` longer than that is kept, up to five minutes.
 
 ## 13. Consequences for the Windows client
 
