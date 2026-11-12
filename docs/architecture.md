@@ -1674,13 +1674,14 @@ device.
 - **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
   and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and
   when, and would otherwise lie in the data folder for up to 90 days. First what can still be sent is sent: the active
-  profile's entries, when it is a profile of that server and account, in one flush within the budget the sign-out has
-  for the server's deletes (`DeleteBudget`, shared with them). Another profile's entries cannot go out as this one, and
-  another account's or server's not at all, so those are lost, as are the active profile's when the server does not
-  take them in time. A question that is asked anyway says so, after a first try to send (`SendBudget`, 3 s): "Progress
-  in 2 titles is not on your Silo server yet and is lost with it." (`UnsentNote`), after the downloads' sentence in the
-  sign-out's question, in Settings → Devices' question, and in the question before removing a server, which is asked
-  whatever the downloads. A sign-out that asks nothing today (no downloads) still asks nothing. A play still open then records
+  profile's entries, when it is a profile of that server and account, in one flush within a budget of its own
+  (`SendBudget`, 3 s), so a server that does not answer it leaves the deletes their whole `DeleteBudget`. Another
+  profile's entries cannot go out as this one, and another account's or server's not at all, so those are lost, as are
+  the active profile's when the server does not take them in time. The question says so, after a first try to send
+  (`SendBudget` again): "Progress in 2 titles is not on your Silo server yet and is lost with it." (`UnsentNote`), after
+  the downloads' sentence in the sign-out's question, in Settings → Devices' question, and in the question before
+  removing a server. A sign-out without downloads asks for this sentence alone, and asks nothing when the try sent
+  everything or there was nothing to send. A play still open then records
   nothing more (`DownloadStore.IsClearedSince`). A sign-in that expired keeps them, as it keeps the downloads, and they
   go once the account is signed in again.
 

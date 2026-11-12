@@ -1260,7 +1260,8 @@ says why above the sections.
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
   Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
-  asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
+  asks first only when the account has downloads on this PC, which go with it, or progress watched here that could not
+  be sent: "Sign out of NAS?", "2 downloads
   (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
   server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
   line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,

@@ -289,6 +289,52 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task SigningOutWithoutDownloads_AsksAfterAll_WhenWhatWasWatchedHereCouldNotBeSent()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+        _confirm.Answer = false;
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // Nothing but the progress would be lost, and the viewer hears it before it is: said no, it stays.
+        Assert.Equal(("Sign out of NAS?", "Progress in 1 title is not on your Silo server yet and is lost with it.", "Sign out"),
+            Assert.Single(_confirm.Asked));
+        Assert.Single(_progress.Entries(Scope7));
+        Assert.Empty(_h.Session.Calls);
+
+        _confirm.Answer = true;
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotAnswerThePositions_StillHearsTheDeletes()
+    {
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _h.Silo.OnCancellable(HttpMethod.Post, SyncPath, async ct =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), ScriptedSilo.NoContent());
+        await _registry.AddOrUpdateAsync(ScriptedSilo.Base, "NAS", "server-srv1", Token);
+
+        var clearing = NewSignOut().ClearAsync("srv1", "1", Token);
+        await Until(() => PositionsSent.Count == 1, "the positions went out");
+        _h.Time.Advance(DownloadSignOut.SendBudget);
+        using var clear = await clearing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        // The send has a budget of its own: the time it took is not taken from the deletes.
+        Assert.Single(DeletesSent);
+        Assert.Empty(_progress.Entries(Scope7));
+    }
+
+    [Fact]
     public async Task SigningOutOfAnotherServer_SendsNothingAsTheAccountInUse()
     {
         await _credentials.SetAsync("srv2", SignedIn("5"), Token);
