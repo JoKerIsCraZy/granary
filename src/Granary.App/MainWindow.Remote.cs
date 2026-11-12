@@ -766,6 +766,7 @@ public sealed partial class MainWindow
             {
                 _followedPopups.Add(child, popup);
                 child.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnPopupKeyDown), handledEventsToo: false);
+                child.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnPadKeyDown), handledEventsToo: false);
             }
         }
     }

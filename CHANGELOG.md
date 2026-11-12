@@ -8,6 +8,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Game controller:** browse and watch with a game controller. The D-pad or the left stick moves, A picks, B goes
+  back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the
+  bumpers switch tabs, the triggers page and the right stick scrolls. In the player A or X plays and pauses, Left and
+  Right seek in steps that grow while you hold them, the triggers scrub, the bumpers jump chapters, the right stick sets
+  the volume, Y opens audio and subtitles, Menu the settings and View the playback info; A takes Skip Intro and the next
+  episode when they show. Granary listens to the pad only while its window is in front, and a pad that falls asleep
+  never stops what plays. Typing with the pad (the search box) is not there yet.
 - **Server activity:** an administrator sees a button at the top right of every page while something is going on on
   the server, as on Silo's web, with the number of things on it. It opens a panel that counts the streams playing now
   by play method and leads to Admin → Activity, and lists the scheduled tasks that run with their progress, the

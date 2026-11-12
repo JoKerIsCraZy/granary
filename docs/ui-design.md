@@ -924,6 +924,66 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
     is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
 
+## Game controller
+
+A game controller drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is decided in
+Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face button, **B**
+the right one, **X** the left one and **Y** the top one. The pad goes the way the remote's keys go, through the same
+code, so what the TV remote does at a page's edges, in the sidebar and on the way back holds for the pad too. Focus the
+pad moves shows its ring, as the keyboard's.
+
+On the pages, and in the minimized player's bar:
+
+| Pad | Does |
+|---|---|
+| D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
+| A | Presses what has focus, as OK. Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
+| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
+| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| Y | Search. |
+| Menu | The focused card's menu. |
+| View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's first (a library's Recommended, Library and Collections). On a page without tabs the row of cards moves on by as many cards as show, less one. |
+| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus the page scrolls. Held, they page again. |
+| Right stick | Scrolls the page, faster the further it is pushed. Focus stays. |
+| Right stick's click | Full screen on and off. |
+
+In the full player:
+
+| Pad | Does |
+|---|---|
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing. On a control: presses it. |
+| X | Plays or pauses, wherever focus is. |
+| B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
+| D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. On a control: move focus; on the seek bar, seek. |
+| D-pad up and down | On the picture: the bar shows with focus on Play/Pause. On a control: move focus. The volume slider is passed by, as for a remote. |
+| LT, RT | Scrub back and forward while held, from 5 to 180 seconds a second by how far the trigger is pulled; the seek bar shows the target, and one seek is sent when the trigger is let go. |
+| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on. |
+| Right stick up and down | Volume by 5, again while held. |
+| Y | The audio menu when there is a track to choose, else the subtitles', else the playback settings (what Down opens for a remote). Pressed while a menu is open it closes that. |
+| Menu | The playback settings menu; likewise. |
+| View | The playback info, on and off. |
+| Left stick's click | Subtitles off and on. |
+| Right stick's click | Full screen on and off. |
+
+With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
+In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
+
+Always:
+
+- Only while Granary's window is in front. Behind another window the pad is not even read, so a game played with the same
+  pad never moves Granary. Coming back, a button still held is not a press.
+- A stick inside its dead zone is at rest (24 % of the left stick's way, 26.5 % of the right one's, 12 % of a trigger's)
+  and no activity: a stick that drifts moves nothing and does not keep the bar up. A stick is a direction from 70 % of
+  its way and until it falls under 50 %, on its stronger axis only; a trigger is pressed from half way and until it is
+  nearly let go.
+- A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
+  dropped rather than sent, and any pad that comes (back) works at once. Several pads count as one.
+- Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
+
+Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
+pictures that match the pad, and a way to swap A and B.
+
 ## Signed-out screens
 
 Adding a server and signing in look like Silo's web login (measured 2026-10-25). `SiloAuthShellStyle` centres a
