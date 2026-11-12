@@ -129,9 +129,9 @@ public sealed class ServerActivityScansViewTests : IDisposable
     }
 
     [Fact]
-    public void AFullSnapshot_MakesTheCountsALowerBound()
+    public void WhileThereMayBeMoreScans_TheCountsAreALowerBound()
     {
-        _indicator.Show(Live(Queued(ServerActivity.ScanSnapshotLimit)));
+        _indicator.Show(Live(Queued(ServerActivity.ScanSnapshotLimit)) with { ScansMayBeMore = true });
 
         Assert.True(_indicator.IsCountLowerBound);
         Assert.Equal("99+", _indicator.ScanCountText);
@@ -139,10 +139,84 @@ public sealed class ServerActivityScansViewTests : IDisposable
         Assert.Equal("Server activity: at least 500 active", _indicator.Name);
         Assert.Equal("At least 475 more scans queued", _indicator.MoreScansText);
 
-        // Below the snapshot's size the number is exact again.
+        // Scans that end do not make the number exact: the ones nobody knows of are still there.
+        _indicator.Show(Live(Queued(30)) with { ScansMayBeMore = true });
+        Assert.True(_indicator.IsCountLowerBound);
+        Assert.Equal(("30+", "30+", "At least 5 more scans queued"), (_indicator.BadgeText, _indicator.ScanCountText, _indicator.MoreScansText));
+        Assert.Equal("Server activity: at least 30 active", _indicator.Name);
+
+        // Only what the stream says of all of them does.
         _indicator.Show(Live(Queued(30)));
         Assert.False(_indicator.IsCountLowerBound);
         Assert.Equal("30", _indicator.BadgeText);
+    }
+
+    [Fact]
+    public void ManyKnownScans_AreStillAnExactNumber()
+    {
+        // 499 from the snapshot and two the stream told of since: every one is known.
+        _indicator.Show(Live(Queued(ServerActivity.ScanSnapshotLimit + 1)));
+
+        Assert.False(_indicator.IsCountLowerBound);
+        Assert.Equal("Server activity: 501 active", _indicator.Name);
+        Assert.Equal("476 more scans queued", _indicator.MoreScansText);
+    }
+
+    [Fact]
+    public void WithNoScanKnownButPossiblySome_TheButtonStays_AndThePanelSaysSo()
+    {
+        // The last scan the full snapshot named has ended; or the snapshot could not be read at all.
+        foreach (var state in new[] { Live() with { ScansMayBeMore = true }, Live() with { Scans = null, ScansMayBeMore = true } })
+        {
+            _indicator.Show(state);
+
+            // On a regular page too, though there is nothing to count.
+            Assert.True(_indicator.IsVisible);
+            Assert.False(_indicator.HasActivity);
+            Assert.Equal("Server activity", _indicator.Name);
+            Assert.False(_indicator.IsEmpty);
+            Assert.True(_indicator.HasNoScans);
+            Assert.Equal("Scans may be running", _indicator.ScanEmptyText);
+        }
+
+        // Without a live stream the line names the connection, as always.
+        _indicator.Show(Live() with { ScansMayBeMore = true, Connection = EventsConnection.Disconnected });
+        Assert.Equal("Disconnected", _indicator.ScanEmptyText);
+
+        _indicator.Show(Live());
+        Assert.False(_indicator.IsVisible);
+        Assert.Equal("No active scans", _indicator.ScanEmptyText);
+    }
+
+    [Fact]
+    public void TheLinePastTheListedScans_CountsEveryOneOfThem_AsTheWebDoes()
+    {
+        // 26 running scans: the web lists 25 and calls the last "1 more scan queued", though it runs.
+        _indicator.Show(Live([.. Enumerable.Range(0, 26).Select(index => Scan("r" + index, "running"))]));
+
+        Assert.Equal(25, _indicator.Scans.Count);
+        Assert.Equal("1 more scan queued", _indicator.MoreScansText);
+    }
+
+    [Theory]
+    [InlineData(1, false, "1 more scan queued")]
+    [InlineData(2, false, "2 more scans queued")]
+    [InlineData(1, true, "At least 1 more scan queued")]
+    [InlineData(1475, true, "At least 1,475 more scans queued")]
+    public void TheScansPastTheListedOnes_AreCounted_AsTheWebWritesIt(int count, bool isLowerBound, string expected) =>
+        Assert.Equal(expected, ServerActivityText.MoreScans(count, isLowerBound));
+
+    [Fact]
+    public void AScanThatSaysNothing_HasNoProgressLine_AndOneThatOnlyCounts_IsProcessingFiles()
+    {
+        // The server leaves an empty message out; one that came empty all the same reads as none.
+        Assert.Equal("", ServerActivityText.ScanProgress(new AdminScanResult { Message = "" }));
+        Assert.Equal("", ServerActivityText.ScanProgress(new AdminScanResult { Message = "", TotalFiles = 90 }));
+        Assert.Equal("Processing files · 1 / 3 (33%)", ServerActivityText.ScanProgress(new AdminScanResult { Message = "", TotalFiles = 3, FilesProcessed = 1 }));
+
+        _indicator.Show(Live(Scan("a", "running", result: new AdminScanResult { Message = "" })));
+        Assert.False(_indicator.Scans[0].HasProgressText);
+        Assert.Equal("Movies, Scanning…, Full library", _indicator.Scans[0].ReadText);
     }
 
     [Theory]

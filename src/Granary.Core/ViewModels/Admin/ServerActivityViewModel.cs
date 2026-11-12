@@ -10,8 +10,8 @@ namespace Granary.Core.ViewModels.Admin;
 /// <summary>
 /// The activity indicator an acting administrator sees at the top right of every page, as the web's
 /// (<c>components/ServerActivity.tsx</c>): a button with the number of things going on, and a panel that lists them. On
-/// the admin area's pages it shows always, elsewhere only while something is going on or its panel is open. Its texts are
-/// the web's.
+/// the admin area's pages it shows always, elsewhere only while something is going on, or may be, or its panel is open.
+/// Its texts are the web's.
 /// </summary>
 public sealed partial class ServerActivityViewModel : ObservableObject, IDisposable
 {
@@ -55,7 +55,11 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     [NotifyPropertyChangedFor(nameof(IsVisible))]
     public partial bool IsPanelOpen { get; set; }
 
-    public bool IsVisible => IsAvailable && (ShowsWhenIdle || Total > 0 || IsPanelOpen);
+    /// <summary>
+    /// Also while the scans may be more than are known: with none of them known there is nothing to count, but
+    /// something may well be going on.
+    /// </summary>
+    public bool IsVisible => IsAvailable && (ShowsWhenIdle || Total > 0 || IsCountLowerBound || IsPanelOpen);
 
     /// <summary>Streams, running tasks, active scans and downloads being prepared, together.</summary>
     [ObservableProperty]
@@ -65,11 +69,12 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     public bool HasActivity => Total > 0;
 
     /// <summary>
-    /// The server's snapshot of the scans was full (<see cref="ServerActivity.ScanSnapshotLimit"/>): there may be more
-    /// scans than are known, so the counts with them in are the least there is.
+    /// There may be more scans than are known (<see cref="ServerActivityState.ScansMayBeMore"/>), so the counts with
+    /// them in are the least there is. The web takes this from the number of scans it knows at the moment (500 or
+    /// more); Granary keeps it from the snapshot until the next one, so scans that end do not make a guess exact.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(BadgeText), nameof(Name), nameof(ScanCountText))]
+    [NotifyPropertyChangedFor(nameof(IsVisible), nameof(BadgeText), nameof(Name), nameof(ScanCountText))]
     public partial bool IsCountLowerBound { get; private set; }
 
     /// <summary>The red count on the button: "3", "99+", or "12+" for at least twelve.</summary>
@@ -98,7 +103,7 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     /// </summary>
     public bool IsEmpty => Total == 0 && AreScansKnown && !HasFailedPreparations;
 
-    /// <summary>The stream said which scans there are, or the server offers none.</summary>
+    /// <summary>The stream said which scans there are, all of them, or the server offers none.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty), nameof(HasSections))]
     public partial bool AreScansKnown { get; private set; } = true;
@@ -172,7 +177,8 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     /// <summary>
     /// In place of the rows: "No active scans" when the stream said so. Without a live stream nobody knows, so the line
-    /// names the connection instead ("Connecting…", "Disconnected").
+    /// names the connection instead ("Connecting…", "Disconnected"); and when the stream is live but could not say
+    /// which scans there are, "Scans may be running", a text of Granary's own for a state the web does not have.
     /// </summary>
     [ObservableProperty]
     public partial string ScanEmptyText { get; private set; } = "";
@@ -256,15 +262,19 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     {
         var active = (state.Scans ?? []).Where(scan => scan.IsActive).ToList();
         ShowsScans = state.Channels.Contains(EventsChannels.Scans);
-        AreScansKnown = !ShowsScans || state.Scans is not null;
-        IsCountLowerBound = active.Count >= ServerActivity.ScanSnapshotLimit;
+        IsCountLowerBound = ShowsScans && state.ScansMayBeMore;
+        AreScansKnown = !ShowsScans || (state.Scans is not null && !IsCountLowerBound);
         ScanCount = active.Count;
         ServerActivityRows.Sync(Scans, [.. active.Take(MaxScanRows)], scan => scan.Id, row => row.Id, scan => new ActivityScanRow(scan.Id),
             (row, scan) => row.Show(scan, state.LibraryNames));
+        // As the web: the scans in the stream's order, and every one past the listed ones in this line, whether it
+        // waits or runs.
         int more = active.Count - Scans.Count;
         MoreScansText = more > 0 ? ServerActivityText.MoreScans(more, IsCountLowerBound) : "";
-        ScanEmptyText = state.Scans is not null && state.Connection == EventsConnection.Live ? "No active scans"
-            : state.Connection == EventsConnection.Disconnected ? "Disconnected"
+        ScanEmptyText = state.Connection == EventsConnection.Disconnected ? "Disconnected"
+            : state.Connection != EventsConnection.Live ? "Connecting…"
+            : IsCountLowerBound ? "Scans may be running"
+            : state.Scans is not null ? "No active scans"
             : "Connecting…";
         return active.Count;
     }

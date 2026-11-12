@@ -1269,7 +1269,9 @@ by `MainWindow.Activity.cs`.
   animations are off. A red dot at its foot once the events stream has had no connection for 4 s. Its name for a
   screen reader: "Server activity: 3 active", or "Server activity" when idle.
 - **When it shows.** As the web: on the admin area's pages always; on every other page only while something is going
-  on, or while its panel is open. Never over the full player, which has the window to itself; over the pages while the
+  on, or while its panel is open. Also, without a count, while there may be scans nobody knows of (see Scans): with
+  none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over
+  the full player, which has the window to itself; over the pages while the
   player is its bar. Not on the signed-out screens.
 - **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
   "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
@@ -1284,11 +1286,16 @@ by `MainWindow.Activity.cs`.
     library's name ("Library #3" while it is not known) with "Scanning…" or "Queued" at the right, under it "Full
     library", "Subtree" or "Single file" and " · " with the path where there is one, and once the scan counts files
     "Matching files · 1,200 / 4,800 (25%)" ("Processing files" when it does not say what it does). 25 rows at most,
-    then "3 more scans queued". When the server's snapshot was full (500) there may be more scans than are known: the
-    section's count and the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity:
-    at least 500 active", and the line "At least 475 more scans queued". Without any: "No active scans" when the
-    stream said so; while it is away, "Connecting…" or "Disconnected", since scans are known from the stream alone
-    (the web says "No active scans" there too). The big "No active server activity" waits for the scans to be known.
+    in the stream's order, then "3 more scans queued" for every scan past them, whether it waits or runs, as on the
+    web. When the server's snapshot was full (500) there may be more scans than are known: the section's count and
+    the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity: at least 500
+    active", and the line "At least 475 more scans queued". That lasts until a snapshot that is not full, however
+    many of the known scans end (the web goes by the number it knows at the moment). The same when a connection's
+    snapshot could not be read or did not come: the scans are then not known, and those the stream tells of since
+    are the least there is. Without any: "No active scans" when the stream said so; while it is away, "Connecting…"
+    or "Disconnected", since scans are known from the stream alone (the web says "No active scans" there too); and
+    while there may be more than are known, "Scans may be running" (Granary's own words, for a state the web does
+    not have). The big "No active server activity" waits for the scans to be known, all of them.
   - **Preparing downloads** (only on a server that prepares offline downloads): its count is the jobs still to
     finish, running, queued and waiting to retry; paused and failed ones do not count. A row for each of the first
     three running jobs: the title ("Dark S01E03" for an episode, else the movie's title, else "File #48211"), "42%"
