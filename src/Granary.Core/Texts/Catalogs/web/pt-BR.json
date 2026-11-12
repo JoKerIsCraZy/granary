@@ -3138,12 +3138,6 @@
       "value": "Edição"
     }
   ],
-  "web.detail.mediaInfo.row.file": [
-    {
-      "type": 0,
-      "value": "Arquivo"
-    }
-  ],
   "web.detail.mediaInfo.row.fileSize": [
     {
       "type": 0,
@@ -3388,12 +3382,6 @@
     {
       "type": 1,
       "value": "season"
-    }
-  ],
-  "web.detail.seasons.seasonFallback": [
-    {
-      "type": 0,
-      "value": "Temporada"
     }
   ],
   "web.detail.seasons.specials": [

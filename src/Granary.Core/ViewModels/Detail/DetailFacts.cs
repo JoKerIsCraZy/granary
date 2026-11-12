@@ -282,7 +282,7 @@ public static class DetailFacts
                 : Row(AppText.Get("granary.detail.info.released"), item.Type == CatalogItemTypes.Movie
                     ? DetailText.Date(item.ReleaseDate) ?? DetailText.Year(item.Year)
                     : DetailText.Date(item.AirDate ?? item.ReleaseDate)),
-            Row(AppText.Get("web.detail.seasons.seasonFallback"), item.Type == CatalogItemTypes.Season ? DetailText.SeasonLabel(item.SeasonNumber ?? 0) : null),
+            Row(AppText.Get("granary.detail.info.season"), item.Type == CatalogItemTypes.Season ? DetailText.SeasonLabel(item.SeasonNumber ?? 0) : null),
             Row(AppText.Get("web.detail.seasons.heading"), item.Type == CatalogItemTypes.Series ? SeasonsBadge(seasonCount) : null),
             Row(AppText.Get("web.detail.episodes.heading"), item.Type switch
             {
@@ -315,7 +315,7 @@ public static class DetailFacts
         {
             var version = item.Versions[i];
             // Several files as the web's Media Info numbers them: "Version 2".
-            Add(item.Versions.Count == 1 ? AppText.Get("web.detail.mediaInfo.row.file") : AppText.Get("web.detail.versions.numbered", ("number", i + 1)),
+            Add(item.Versions.Count == 1 ? AppText.Get("granary.detail.info.file") : AppText.Get("web.detail.versions.numbered", ("number", i + 1)),
             [
                 Row(AppText.Get("web.detail.mediaInfo.row.edition"), version.EditionRaw),
                 Row(AppText.Get("web.detail.mediaInfo.row.resolution"), MediaCardFactory.ResolutionText(OverlayOf(version))),

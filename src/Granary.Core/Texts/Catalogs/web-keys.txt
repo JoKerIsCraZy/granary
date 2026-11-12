@@ -572,7 +572,6 @@ web.detail.mediaInfo.row.bitrate
 web.detail.mediaInfo.row.container
 web.detail.mediaInfo.row.duration
 web.detail.mediaInfo.row.edition
-web.detail.mediaInfo.row.file
 web.detail.mediaInfo.row.fileSize
 web.detail.mediaInfo.row.hearingImpaired
 web.detail.mediaInfo.row.resolution
@@ -626,7 +625,6 @@ web.detail.seasons.noEpisodes
 web.detail.seasons.numbered
 
 # More of a title's page's words, as above under web.collections.addToCollection.title.
-web.detail.seasons.seasonFallback
 web.detail.seasons.specials
 web.detail.seasons.totalCount
 

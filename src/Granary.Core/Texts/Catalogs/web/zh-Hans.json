@@ -2921,12 +2921,6 @@
       "value": "版本"
     }
   ],
-  "web.detail.mediaInfo.row.file": [
-    {
-      "type": 0,
-      "value": "文件"
-    }
-  ],
   "web.detail.mediaInfo.row.fileSize": [
     {
       "type": 0,
@@ -3124,12 +3118,6 @@
       "type": 1,
       "value": "season"
     },
-    {
-      "type": 0,
-      "value": "季"
-    }
-  ],
-  "web.detail.seasons.seasonFallback": [
     {
       "type": 0,
       "value": "季"
