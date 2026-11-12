@@ -20,6 +20,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- The details under the logo at the top of Home and For You name the title's IMDb rating (TMDB's without one) and its
+  first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
   Player buttons, as F11 does.
 

@@ -445,9 +445,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     and the overview a quarter (18 and 17 px). A page of another height lays the hero out again and gives the running
     fold its new numbers.
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
-    does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
-    logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
+    does not load); a 16 px grey line of details; and the overview, at most three lines 570 px wide. All of it comes with
     the rows; nothing is read for the hero.
+  - The details, one line that is cut with an ellipsis, in the order of the web's `formatHeroMetadata`
+    (`components/heroMetadata.ts`): a movie's year, length, rating, genres and certificate
+    ("2008 · 2h 32m · IMDb 9.0 · Action · Crime · PG-13"), and a series' the same without a length, which is an
+    episode's ("2006 · IMDb 8.4 · Drama · Crime · TV-PG"). What a title lacks is left out.
+    - The rating is the one the web's `primaryCardRating` picks: IMDb's, or TMDB's when there is no IMDb score
+      (`CardRating.Primary`; a score counts over 0 up to 10, with one decimal place as a card's badge rounds it). It shows
+      as the web's `RatingEntry`: the source's mark in smaller semi-bold type at 75 % (14 px beside the line's 16), then
+      the score in bold. Both marks are text, "IMDb" as on the web and "TMDB" where the web has TMDB's logo; Granary
+      draws every rating's source as text.
+    - The genres are the first two, trimmed and each named once; the certificate is in capitals.
+    - An episode, under its series' logo, reads "S1 E1 · Kein Zufall · 25m · TV-14": where it sits, its own title (which
+      the web's line leaves out), its length and certificate, and neither rating nor genres, as on the web.
+    - A title of Discover keeps its own line ("2026 · Movie · Pending").
+    - A screen reader reads the line whole, "2006 · IMDb 8.4 · Drama · Crime · TV-PG".
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
     middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
     wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
