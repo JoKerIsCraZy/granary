@@ -116,6 +116,24 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnotherDownloadsFolder_ShowsItsOwnFreeSpace()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 12 * GB);
+        _h.Disk.Set(200 * GB);
+        var page = await AttachedAsync();
+        Assert.Equal("12.0 GB used · 200.0 GB free", page.SpaceText);
+
+        // Settings → Downloads names a folder on another drive while the page stays in memory.
+        string other = Path.Combine(_h.Directory, "elsewhere");
+        _h.Disk.Set(50 * GB);
+        await _h.Preferences.SetFolderAsync(other);
+        await page.SpaceRead;
+
+        Assert.Equal("12.0 GB used · 50.0 GB free", page.SpaceText);
+        Assert.Equal(other, _h.Disk.Asked[^1]);
+    }
+
+    [Fact]
     public async Task ADriveThatIsNotThere_ShowsOnlyTheSpaceUsed()
     {
         _h.Disk.Set(null);

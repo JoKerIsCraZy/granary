@@ -69,6 +69,9 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private long? _free;
     private int _reads;
 
+    // The folder the free space was last read for: Settings → Downloads can name another while the page stays in memory.
+    private string? _spaceFolder;
+
     public DownloadsViewModel(DownloadManager downloads, IDiskSpace disk, IDownloadPreferences preferences, INavigationService navigation,
         IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger)
     {
@@ -223,8 +226,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         bool rebuild = readSpace || !shapes.SequenceEqual(_shapes);
         _shapes = shapes;
         int completed = items.Count(i => i.State == DownloadState.Completed);
-        // A download that came, went or finished changed what the drive has free.
-        bool reread = rebuild || completed != _completed;
+        // A download that came, went or finished changed what the drive has free; another downloads folder is another drive's.
+        bool reread = rebuild || completed != _completed || !string.Equals(_preferences.Folder, _spaceFolder, StringComparison.OrdinalIgnoreCase);
         _completed = completed;
         foreach (var item in items)
         {
@@ -310,8 +313,15 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private void ReadSpace()
     {
         int read = ++_reads;
+        string folder = _preferences.Folder;
+        if (!string.Equals(folder, _spaceFolder, StringComparison.OrdinalIgnoreCase))
+        {
+            // The space left in the folder before says nothing of this one: only the space used shows until it is read.
+            _spaceFolder = folder;
+            _free = null;
+        }
         ShowSpace();
-        SpaceRead = ReadSpaceAsync(_preferences.Folder, read);
+        SpaceRead = ReadSpaceAsync(folder, read);
     }
 
     // Unknown (null) when the drive fails or does not answer in time; the page goes on either way.

@@ -232,7 +232,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
-  hides the button. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
+  hides the button. The space left is the downloads folder's: when Settings → Downloads names another folder
+  while the page is in memory, the line shows only the space used until the new folder's is read. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
   semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
   or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
   the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
