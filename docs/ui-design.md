@@ -1141,7 +1141,7 @@ says why above the sections.
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
 - **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
-  `TitlePreviewSettingsViewModel` and `SidebarSettingsViewModel`, the web's
+  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel` and `SidebarSettingsViewModel`, the web's
   page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
@@ -1162,7 +1162,12 @@ says why above the sections.
   Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, and
   Hero size ("Compact shows the first row without scrolling. Full is as tall as on Silo's web."), Compact or Full as
   choice buttons, Compact by default; both saved on this PC at once and taken by each page the next time it shows
-  (Home's hero, above). Then Sidebar, with
+  (Home's hero, above). Then Server activity, only for an administrator's account (`Account.IsAdmin`, on a profile),
+  and Granary's own, as the web's indicator cannot be turned off (`ActivityIndicatorSettingsViewModel` on
+  `ActivityIndicatorSetting`): "What your Silo server is doing, for its administrators. Kept for this profile on this
+  PC.", with Activity indicator ("A button at the top right shows the streams, tasks, scans and downloads being
+  prepared. Off, it never shows."), on by default; the indicator follows it at once (Activity indicator, under Admin).
+  The group comes and goes with the account's role while the page is open. Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
@@ -1305,6 +1310,12 @@ by `MainWindow.Activity.cs`.
   none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over
   the full player, which has the window to itself; over the pages while the
   player is its bar. Not on the signed-out screens.
+- **Switched off** (Settings → Navigation & Cards → Server activity → Activity indicator; Granary's own, on by
+  default, kept on this PC for each server and profile in `activity-indicator.json`, `hidden_for`, as the title
+  preview's switch): the button shows nowhere, the admin area's pages included, so its panel cannot be opened; a
+  panel that is open closes with it. Nothing is followed for it meanwhile (docs/architecture.md, "Server
+  activity"). Switched on again it is back without a restart: in the admin area as soon as the server answered the
+  new connection, elsewhere while something is going on.
 - **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
   "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
   on it says "No active server activity". Otherwise a section each, a small uppercase title with its count beside it:

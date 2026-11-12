@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -11,7 +12,8 @@ namespace Granary.Core.ViewModels.Admin;
 /// The activity indicator an acting administrator sees at the top right of every page, as the web's
 /// (<c>components/ServerActivity.tsx</c>): a button with the number of things going on, and a panel that lists them. On
 /// the admin area's pages it shows always, elsewhere only while something is going on, or may be, or its panel is open.
-/// Its texts are the web's.
+/// Its texts are the web's. Switched off in Settings (<see cref="ActivityIndicatorSetting"/>, Granary's own) it shows
+/// nowhere.
 /// </summary>
 /// <remarks>
 /// The server's news comes on other threads and as fast as a scan counts its files. It is shown at once when nothing was
@@ -34,6 +36,7 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     private readonly ServerActivity _activity;
     private readonly IUiDispatcher _dispatcher;
+    private readonly ActivityIndicatorSetting? _setting;
     private readonly ITimer _problem;
     private readonly ITimer _pace;
     private readonly Lock _paceGate = new();
@@ -44,14 +47,19 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     private volatile bool _showsAvailable;
     private bool _isOffline;
 
-    public ServerActivityViewModel(ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time)
+    public ServerActivityViewModel(ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time, ActivityIndicatorSetting? setting = null)
     {
         ArgumentNullException.ThrowIfNull(time);
         _activity = activity;
         _dispatcher = dispatcher;
+        _setting = setting;
         _problem = time.CreateTimer(_ => _dispatcher.Post(ShowConnectionProblem), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _pace = time.CreateTimer(_ => OnPaced(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _activity.Changed += OnActivityChanged;
+        if (_setting is not null)
+        {
+            _setting.PropertyChanged += OnSettingChanged;
+        }
         Show(_activity.State);
     }
 
@@ -72,9 +80,9 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
 
     /// <summary>
     /// Also while the scans may be more than are known: with none of them known there is nothing to count, but
-    /// something may well be going on.
+    /// something may well be going on. Never while the acting profile has the indicator switched off in Settings.
     /// </summary>
-    public bool IsVisible => IsAvailable && (ShowsWhenIdle || Total > 0 || IsCountLowerBound || IsPanelOpen);
+    public bool IsVisible => _setting?.IsShown != false && IsAvailable && (ShowsWhenIdle || Total > 0 || IsCountLowerBound || IsPanelOpen);
 
     /// <summary>Streams, running tasks, active scans and downloads being prepared, together.</summary>
     [ObservableProperty]
@@ -248,6 +256,10 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     public void Dispose()
     {
         _activity.Changed -= OnActivityChanged;
+        if (_setting is not null)
+        {
+            _setting.PropertyChanged -= OnSettingChanged;
+        }
         _problem.Dispose();
         _pace.Dispose();
     }
@@ -353,6 +365,16 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     }
 
     private void ShowLatest() => Show(_activity.State);
+
+    // The switch in Settings, or another profile's own choice: on the UI thread, and never kept waiting. The stream
+    // stops following the activity on the same change, so the state empties too; the button does not wait for that.
+    private void OnSettingChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ActivityIndicatorSetting.IsShown))
+        {
+            OnPropertyChanged(nameof(IsVisible));
+        }
+    }
 
     // As the web's useDelayedConnectionProblem: the dot comes only once the stream stayed away, and goes at once.
     private void ShowConnection(ServerActivityState state)
