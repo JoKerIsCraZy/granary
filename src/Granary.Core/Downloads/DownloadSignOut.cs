@@ -297,7 +297,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     }
 
     /// <summary>
-    /// A sign-out the viewer asked for: asks when the account has downloads here (<see cref="ConfirmSignOutAsync"/>), takes
+    /// A sign-out the viewer asked for: asks when something of the account's is lost with it (<see cref="ConfirmSignOutAsync"/>), takes
     /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. A sign-in whose account is not known
     /// takes none along: those on that server are other accounts', as one whose sign-in expired. A sign-out that fails leaves
     /// the account's downloads gone, and its new ones run. False when the viewer said no, or another account was signed in
