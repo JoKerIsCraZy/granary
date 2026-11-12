@@ -139,6 +139,14 @@ web.auth.username
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
+# A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
+# src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
+web.common.devicePlatform.kind.desktop
+web.common.devicePlatform.kind.mobile
+web.common.devicePlatform.kind.tablet
+web.common.devicePlatform.kind.tv
+web.common.devicePlatform.kind.unknown
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
@@ -176,7 +184,8 @@ web.search.placeholderProminent
 # TitleArtSettingsGroup.tsx, its Spoilers panel in the words of the Navigation & Cards one; Language & Subtitles
 # (LanguageSettingsView.xaml, LanguageSettingsViewModel.cs, SubtitleAppearanceEditor.cs, which the player's Appearance
 # panel shares, and src/Granary.App/Controls/SubtitlePreview.cs), as SubtitleAppearanceSettings.tsx and
-# lib/subtitleAppearance.ts.
+# lib/subtitleAppearance.ts; Devices (DevicesSettingsView.xaml, DevicesViewModel.cs and .Actions.cs, DeviceRows.cs and
+# DeviceText.cs), as the web's SignedInSessions.tsx, lib/loginSessionDevice.ts, DeviceSettings.tsx and DeviceList.tsx.
 web.settings.cardOverlay.adjust
 web.settings.cardOverlay.adjustLabel
 web.settings.cardOverlay.badgesDescription
@@ -194,6 +203,33 @@ web.settings.cardOverlay.someOn
 web.settings.cardOverlay.style
 web.settings.cardOverlay.suppressedHint
 web.settings.currentProfileLink.caption
+web.settings.device.changedCount
+web.settings.device.empty
+web.settings.device.forget
+web.settings.device.forgetFailed
+web.settings.device.forgotten
+web.settings.device.nameLabel
+web.settings.device.nameReset
+web.settings.device.nothingChanged
+web.settings.device.rename
+web.settings.device.renameFailed
+web.settings.device.renamed
+web.settings.device.reportsItselfAs
+web.settings.device.resetDone
+web.settings.device.resetFailed
+web.settings.device.title
+web.settings.device.useProfileSettings
+web.settings.device.usingNow
+web.settings.deviceList.group.current
+web.settings.deviceList.group.earlier
+web.settings.deviceList.group.week
+web.settings.deviceList.lastSeen.days
+web.settings.deviceList.lastSeen.hours
+web.settings.deviceList.lastSeen.months
+web.settings.deviceList.lastSeen.never
+web.settings.deviceList.lastSeen.underAnHour
+web.settings.deviceList.lastSeen.years
+web.settings.deviceList.lastSeen.yesterday
 web.settings.interface.loadFailedDescription
 web.settings.interface.loading
 web.settings.interface.moveDown
@@ -296,8 +332,44 @@ web.settings.overlays.preset.vibrant.description
 web.settings.overlays.preset.vibrant.label
 web.settings.playback.title
 web.settings.resetButton.label
+web.settings.sessions.confirm.clientDescription
+web.settings.sessions.confirm.deviceTitle
+web.settings.sessions.confirm.note
+web.settings.sessions.confirm.thisBrowserDescription
+web.settings.sessions.current.description
+web.settings.sessions.description
+web.settings.sessions.device.unknown
+web.settings.sessions.lastSeen.active
+web.settings.sessions.lastSeen.days
+web.settings.sessions.lastSeen.hours
+web.settings.sessions.lastSeen.minutes
+web.settings.sessions.lastSeen.never
+web.settings.sessions.loadFailed
+web.settings.sessions.loadMore
+web.settings.sessions.loading
+web.settings.sessions.others.description
+web.settings.sessions.others.empty
+web.settings.sessions.others.title
+web.settings.sessions.refresh
+web.settings.sessions.refreshLabel
+web.settings.sessions.row.details
+web.settings.sessions.row.detailsFor
+web.settings.sessions.row.expires
+web.settings.sessions.row.ipAddress
+web.settings.sessions.row.lastSeen
+web.settings.sessions.row.notRecorded
+web.settings.sessions.row.notSent
+web.settings.sessions.row.signOutDevice
+web.settings.sessions.row.signedIn
+web.settings.sessions.row.summary
+web.settings.sessions.row.unknown
+web.settings.sessions.row.userAgent
+web.settings.sessions.signOutFailed
+web.settings.sessions.signedOut
+web.settings.sessions.title
 web.settings.sidebar.backToApp
 web.settings.sidebar.title
+web.settings.signedInSessions.unavailable
 web.settings.subtitleAppearance.background.color
 web.settings.subtitleAppearance.background.description
 web.settings.subtitleAppearance.background.opacity

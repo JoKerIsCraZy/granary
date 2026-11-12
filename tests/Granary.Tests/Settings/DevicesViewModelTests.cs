@@ -311,7 +311,7 @@ public sealed class DevicesViewModelTests
 
         Assert.Null(page.CurrentSession);
         Assert.Empty(page.OtherSessions);
-        Assert.Equal("Couldn't load sessions. Try again.", page.SessionsMessage);
+        Assert.Equal("Couldn’t load sessions. Try again.", page.SessionsMessage);
         Assert.True(page.CanRetrySessions);
     }
 
@@ -325,7 +325,7 @@ public sealed class DevicesViewModelTests
         await page.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(page.ShowsSessions);
-        Assert.Equal("Couldn't load sessions. Try again.", page.SessionsMessage);
+        Assert.Equal("Couldn’t load sessions. Try again.", page.SessionsMessage);
         Assert.True(page.CanRetrySessions);
         Assert.Empty(_silo.SentTo(HttpMethod.Get, Sessions));
     }

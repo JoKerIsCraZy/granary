@@ -1108,7 +1108,7 @@ says why above the sections.
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
   it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
-  management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
+  management says "Signed-in session management is unavailable on this server."; a failed read "Couldn’t load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
   a 40 px disc with its kind's icon, its name (the profile's own, else the reported one), "Reports itself as Apple TV"
   under a name of the profile's own, and "TV · 2 days ago · 3 things set differently" ("Desktop · using now · nothing

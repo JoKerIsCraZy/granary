@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Views.Settings;
@@ -426,12 +427,34 @@ public sealed partial class DevicesSettingsView : UserControl, IDisposable
     /// <summary>"Active now" in green, as the web shows a sign-in seen in the last two minutes.</summary>
     public static Brush SeenBrush(bool activeNow) => activeNow ? ActiveBrush : (Brush)Application.Current.Resources["SiloMutedBrush"];
 
-    public static string Upper(string text) => text.ToUpperInvariant();
+    // A group's name in capitals by the language on screen's rules, as the web's CSS shows it.
+    public static string Upper(string text) => AppText.Upper(text);
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
         await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
+    }
+
+    // "Last seen 3 hr ago · Signed in …" as the web's message has it: the part it marks as the status in green while the
+    // sign-in is active, wherever the language puts it.
+    private void OnSessionStatusContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+    {
+        if (sender is not TextBlock text || args.NewValue is not SignedInSessionRow row)
+        {
+            return;
+        }
+        text.Inlines.Clear();
+        var seen = SeenBrush(row.IsActiveNow);
+        foreach (var part in row.StatusRuns)
+        {
+            var run = new Run { Text = part.Text };
+            if (part.Tags.Contains("status"))
+            {
+                run.Foreground = seen;
+            }
+            text.Inlines.Add(run);
+        }
     }
 
     private async void OnSignOutClick(object sender, RoutedEventArgs e)
