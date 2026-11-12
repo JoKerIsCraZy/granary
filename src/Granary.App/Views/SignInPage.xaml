@@ -3,7 +3,8 @@
     x:Class="Granary.App.Views.SignInPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Granary.App.Controls">
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
         <ResourceDictionary Source="ms-appx:///Themes/SiloAuth.xaml" />
@@ -13,7 +14,8 @@
         Silo's web login: the server's name, a refusal, the password form, then "Use your phone instead" with the
         code on request (at once when the server has no password sign-in).
     -->
-    <ContentControl Style="{StaticResource SiloAuthShellStyle}">
+    <!-- The shell's lockup takes its line under Granary's name from Tag (SiloAuthShellStyle). -->
+    <ContentControl Style="{StaticResource SiloAuthShellStyle}" Tag="{x:Bind t:AppText.Get('granary.auth.tagline')}">
         <StackPanel Spacing="24">
             <StackPanel Spacing="8">
                 <!-- The Silo server's name, with Silo's mark beside it. -->
