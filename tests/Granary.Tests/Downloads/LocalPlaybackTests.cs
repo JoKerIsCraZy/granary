@@ -510,4 +510,28 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
         Assert.Equal(SubtitleAppearance.Default, _fixture.Engine.SubtitleLook);
         Assert.Null(playback.SubtitleTrack);
     }
+
+    [Fact]
+    public async Task ThisDevicesOwnSubtitleDelay_IsClearedAgain_WhenItsFirstClearDidNotGoThrough()
+    {
+        const string key = "api/v2/settings/values/player.subtitle_sync_ms";
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK, """
+            { "items": [ { "key": "player.subtitle_sync_ms", "value": 300, "source": "profile_device" } ], "revision": 2 }
+            """));
+        _fixture.Silo.On(HttpMethod.Put, key, ScriptedSilo.NoContent());
+        // The first clear fails; the device's own value still outranks the profile's that was just saved.
+        _fixture.Silo.On(HttpMethod.Delete, key, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var playback = await _fixture.PlayingAsync();
+
+        playback.SetSubtitleDelay(500);
+        _fixture.Harness.Time.Advance(TimeSpan.FromSeconds(1));
+        playback.SetSubtitleDelay(700);
+        _fixture.Harness.Time.Advance(TimeSpan.FromSeconds(1));
+        playback.SetSubtitleDelay(900);
+        await playback.StopAsync();
+
+        // The second save clears again, and once that went through the third leaves it be.
+        Assert.Equal(3, _fixture.Silo.SentTo(HttpMethod.Put, key).Count);
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Delete, key).Count);
+    }
 }

@@ -148,9 +148,9 @@ public sealed partial class LocalPlayback
         }
         _subtitleDelaySave.Dispose();
         _subtitleDelaySave = null;
-        // The profile's value, as the web writes it. One this device kept for itself would outrank it, so that one is cleared, once.
+        // The profile's value, as the web writes it. One this device kept for itself would outrank it, so that one is cleared,
+        // until a clear went through: one that failed is tried again with the next save.
         bool clearDevice = Preferences.SubtitleDelayOnDevice && !_deviceDelayCleared;
-        _deviceDelayCleared |= clearDevice;
         Save("subtitle delay", SubtitleDelayKey, _subtitleDelayMs.ToString(CultureInfo.InvariantCulture), SettingScopes.Profile, clearDevice);
     }
 
@@ -180,11 +180,13 @@ public sealed partial class LocalPlayback
                 if (clearDevice)
                 {
                     await _settings.ClearValueAsProfileAsync(server, key, SettingScopes.ProfileDevice, profile, timeout.Token);
+                    _deviceDelayCleared = true;
                 }
             }
             catch (SiloApiException ex) when (clearDevice && ex.Status == 404)
             {
                 // Nothing to clear is what this asked for.
+                _deviceDelayCleared = true;
             }
             catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is ProfileChangedException)
             {
