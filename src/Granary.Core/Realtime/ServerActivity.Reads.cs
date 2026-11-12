@@ -21,10 +21,11 @@ public sealed partial class ServerActivity
         return reread;
     }
 
-    // News of a list: read now, or once more when the read or the window that runs is over.
+    // News of a list: read now, or once more when the read or the window that runs is over. Nothing is read whose channel
+    // the server did not give this connection, whoever asks (a frame, or a timer that fired late).
     private void CueLocked(Reread reread)
     {
-        if (reread.IsOff || _following is not { } following)
+        if (reread.IsOff || _following is not { } following || !_state.Channels.Contains(reread.Channel))
         {
             return;
         }
@@ -68,6 +69,11 @@ public sealed partial class ServerActivity
                 return;
             }
             reread.IsReading = false;
+            // A later connection of the same profile no longer has the channel: the answer shows nothing.
+            if (!_state.Channels.Contains(reread.Channel))
+            {
+                return;
+            }
             if (!offered)
             {
                 reread.IsOff = true;

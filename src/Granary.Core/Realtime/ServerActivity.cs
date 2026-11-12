@@ -212,14 +212,15 @@ public sealed partial class ServerActivity : IDisposable
         _state = _state with { Channels = channels, Scans = channels.Contains(EventsChannels.Scans) ? _state.Scans : null };
         foreach (var reread in _rereads)
         {
-            reread.IsOff = !channels.Contains(reread.Channel);
-            if (reread.IsOff)
+            // A list that was missing is asked for again with every connection.
+            reread.IsOff = false;
+            if (channels.Contains(reread.Channel))
             {
-                _state = reread.Clear(_state);
+                CueLocked(reread);
             }
             else
             {
-                CueLocked(reread);
+                _state = reread.Clear(_state);
             }
         }
     }

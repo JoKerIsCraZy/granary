@@ -183,6 +183,25 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAnswerForAChannelALaterConnectionNoLongerHas_IsDropped()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Library.Answer(SessionsPath, LibraryHarness.Held(release, AdminPayloads.Sessions));
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions, EventsChannels.Scans);
+        await ServerPlaybackFixture.Until(() => Reads == 1, "the read on its way");
+
+        socket.Close();
+        await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(1), "the wait before the next connection");
+        _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
+        await _harness.OpenedAsync(1, EventsChannels.Scans);
+        release.SetResult();
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Null(_harness.State.Sessions);
+        Assert.True(_harness.State.IsAvailable);
+    }
+
+    [Fact]
     public async Task AnAnswerForTheLastProfile_IsDropped()
     {
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -215,6 +234,25 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
 
         Assert.Null(_harness.State.Sessions);
         Assert.False(_harness.State.IsAvailable);
+    }
+
+    [Fact]
+    public async Task AfterAnAccessChange_NothingIsRead_UntilTheServerGivesTheChannelAgain()
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+        await ShownAsync(2);
+        _harness.Library.Clock.Advance(ServerActivity.RefreshWindow + TimeSpan.FromSeconds(1));
+
+        await _harness.PushedAsync(socket, """{ "type": "access_changed" }""");
+        await _harness.PushedAsync(socket, Replaced);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal(1, Reads);
+        Assert.Null(_harness.State.Sessions);
+
+        socket.Close(4001);
+        await _harness.OpenedAsync(1, EventsChannels.Sessions);
+        await ShownAsync(2);
+        Assert.Equal(2, Reads);
     }
 
     [Fact]
