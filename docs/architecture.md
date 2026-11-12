@@ -1575,9 +1575,19 @@ device.
   runs ahead can beat a position made a little later elsewhere, and one that runs behind can lose to an older one; the
   server only caps a time more than 2 minutes ahead of its own. A position sent a second time after such a cap can get a
   later time than the first send did. Granary does not correct for a wrong clock.
-- **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the app's start, when the
-  session changes (a sign-in, a profile that becomes active), when the connection changes, and at the retry. So while the
-  server can be reached, a position arrives within seconds, as a session's sample would; without it, it waits.
+- **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the stop, at the app's
+  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, and at the
+  retry. So while the server can be reached, a position arrives within seconds, as a session's sample would; without it,
+  it waits.
+- **Telling the pages.** Home's Continue Watching and Next Up and a title's page load again when a playback stops
+  (`ViewerStateChanges`, raised by `PlaybackStops`). A stream's stop has told the server by then. A download's stop
+  therefore waits for its last position to be sent (`LocalPlayback.StopAsync` flushes, for at most `StopSendBudget`, 3 s),
+  so the pages read the server after it has the position; the page itself is left at once, as always. Whenever a flush
+  reaches the server while no title plays, as once the connection is back, `OfflineProgressSync` reports the change
+  itself (`ViewerStateChanges.Report`), also for a position the server turned out to have taken without its answer
+  arriving. It reports nothing while a title plays: that title's stop does, so Home under a minimized player is not
+  loaded again with each position. The server's own `progress` event for a send is this app's echo
+  (`RealtimeEvents.EchoWindow`, or "while this app plays") and reloads nothing a second time.
 - **Reading back.** After a flush, the server's whole progress listing is read (every page) when the caller wanted it
   (the stop, the start, a session or connection change, a retry), the profile has downloads, and either the flush sent
   something or the last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. A position on
@@ -1592,9 +1602,9 @@ device.
   leaves unsent; that is how a position whose send was taken while its answer got lost stops being sent. One the
   listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
   live.
-- **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record,
-  and the window waits for a player's stop as it closes (`PlaybackStops`). Nothing is sent at the close: the next start
-  sends what waits.
+- **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
+  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
+  not go by then is in the file, and the next start sends it.
 - **Signing out.** The queue's entries stay when a sign-out takes the downloads: what was watched still reaches the
   server when that account and profile are used again.
 

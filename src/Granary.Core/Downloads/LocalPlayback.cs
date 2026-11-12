@@ -26,6 +26,9 @@ public sealed partial class LocalPlayback : IServerPlayback
     /// <summary>How long the start waits for the server's settings and the title's state; without them, the defaults.</summary>
     public static readonly TimeSpan PreferencesBudget = TimeSpan.FromSeconds(3);
 
+    /// <summary>How long the stop waits for the server to take the last position; a slower send goes on by itself.</summary>
+    public static readonly TimeSpan StopSendBudget = TimeSpan.FromSeconds(3);
+
     /// <summary>What the player says when the file on this PC will not play.</summary>
     public const string CannotPlay = "This download can't be played. Delete it and download it again.";
 
@@ -300,8 +303,31 @@ public sealed partial class LocalPlayback : IServerPlayback
         StopProgress();
         StopAudioDelay();
         SaveSettingsNow();
-        // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then.
-        return Task.WhenAll(_saves, _records, _progress?.LatestSave ?? Task.CompletedTask);
+        return EndStopAsync();
+    }
+
+    // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then. While
+    // the server answers, it has the position by then too, as after a stream's stop: the pages that reload when a playback
+    // stops (ViewerStateChanges) read where the viewer left off, not where they were before. Without the server the send
+    // fails at once and the position waits; a send slower than the budget goes on by itself, and tells the pages when it
+    // is through (OfflineProgressSync).
+    private async Task EndStopAsync()
+    {
+        await Task.WhenAll(_saves, _records, _progress?.LatestSave ?? Task.CompletedTask).ConfigureAwait(false);
+        if (_sync is not { } sync || !_played)
+        {
+            return;
+        }
+        using var budget = new CancellationTokenSource(StopSendBudget, _time);
+        try
+        {
+            await sync.FlushAsync(readBack: true, budget.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("The last position of download {DownloadId} was not sent within {Seconds} s; the send goes on by itself",
+                _download.Record.DownloadId, StopSendBudget.TotalSeconds);
+        }
     }
 
     public async ValueTask DisposeAsync()

@@ -12,7 +12,8 @@ namespace Granary.Core.Downloads;
 /// Sends what was watched from this PC to the server and reads the server's progress back (docs/architecture.md, "Offline
 /// progress"; docs/api-contract.md, 14.7), as Silo's Apple app does (<c>DownloadManager.flushProgressQueue</c> and
 /// <c>refreshWatchState</c>); the Android app sends none. Only the active profile's entries go, bound to that profile, so
-/// another profile's wait until it is used again.
+/// another profile's wait until it is used again. Once the server took positions, the pages that show where the viewer
+/// left off are told (<see cref="ViewerStateChanges"/>), as a stream's stop tells them.
 /// </summary>
 /// <remarks>
 /// One run at a time (<c>_running</c>), on the thread pool, and at most one more waiting for it, which takes every wish made
@@ -44,6 +45,7 @@ public sealed class OfflineProgressSync : IDisposable
     private readonly DownloadStore _store;
     private readonly ISessionManager _session;
     private readonly INetworkLink _network;
+    private readonly ViewerStateChanges _changes;
     private readonly TimeProvider _time;
     private readonly ILogger<OfflineProgressSync> _logger;
     private readonly Lock _gate = new();
@@ -67,13 +69,14 @@ public sealed class OfflineProgressSync : IDisposable
     private long _readAt;
 
     public OfflineProgressSync(OfflineProgressQueue queue, ProgressSyncApi api, DownloadStore store, ISessionManager session, INetworkLink network,
-        TimeProvider time, ILogger<OfflineProgressSync> logger)
+        ViewerStateChanges changes, TimeProvider time, ILogger<OfflineProgressSync> logger)
     {
         _queue = queue;
         _api = api;
         _store = store;
         _session = session;
         _network = network;
+        _changes = changes;
         _time = time;
         _logger = logger;
     }
@@ -247,9 +250,27 @@ public sealed class OfflineProgressSync : IDisposable
         {
             RetryLater();
         }
-        if (readBack && IsReadBackDue(scope, sent))
+        if (sent)
         {
-            await ReadBackAsync(server, scope, cancellationToken).ConfigureAwait(false);
+            TellThePages();
+        }
+        if (readBack && IsReadBackDue(scope, sent) && await ReadBackAsync(server, scope, cancellationToken).ConfigureAwait(false) > 0 && !sent)
+        {
+            // The server had taken positions whose answer never came: it has them all the same.
+            TellThePages();
+        }
+    }
+
+    // The server has where the viewer left a download: Home's Continue Watching and Next Up and the title's page are stale,
+    // as after a stream's stop (ViewerStateChanges), also when the position went long after the play, once the connection
+    // was back. Not while a title plays: its stop tells the pages, and a download's stop waits for this very send
+    // (LocalPlayback.StopAsync), so they read the server once it has the position. The server's own event for the send is
+    // then this app's echo (RealtimeEvents.EchoWindow).
+    private void TellThePages()
+    {
+        if (!_changes.IsPlaying)
+        {
+            _changes.Report();
         }
     }
 
@@ -311,7 +332,8 @@ public sealed class OfflineProgressSync : IDisposable
     // on a tie, with its word on whether the title is watched (the Apple app's mergeProgress). A listing that breaks off
     // changes nothing. A complete one also settles what still waits in the queue: a position the server has (its row is as
     // new, or newer) leaves, as one whose send was taken while its answer got lost; every other one is sent again.
-    private async Task ReadBackAsync(Uri server, DownloadScope scope, CancellationToken cancellationToken)
+    // Answers how many waiting positions the server turned out to have.
+    private async Task<int> ReadBackAsync(Uri server, DownloadScope scope, CancellationToken cancellationToken)
     {
         var rows = new Dictionary<string, ProgressListItem>(StringComparer.Ordinal);
         try
@@ -334,7 +356,7 @@ public sealed class OfflineProgressSync : IDisposable
                 if (next == cursor || page + 1 >= MaxPages)
                 {
                     _logger.LogWarning("The server's progress listing did not end; nothing is taken from it");
-                    return;
+                    return 0;
                 }
                 cursor = next;
             }
@@ -342,7 +364,7 @@ public sealed class OfflineProgressSync : IDisposable
         catch (Exception ex) when (ex is ProfileChangedException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             _logger.LogInformation("The server's progress could not be read ({Failure}); this PC keeps what it has", ApiFailureText.Describe(ex));
-            return;
+            return 0;
         }
         foreach (var download in _store.In(scope))
         {
@@ -358,6 +380,7 @@ public sealed class OfflineProgressSync : IDisposable
         }
         _readFor = scope;
         _readAt = _time.GetTimestamp();
+        return settled;
     }
 
     // A row that says what the download already has, or is older than what this PC recorded, is no change: nothing is

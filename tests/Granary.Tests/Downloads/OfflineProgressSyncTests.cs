@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Playback;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -20,10 +21,15 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     private readonly DownloadHarness _h = new();
     private readonly OfflineProgressQueue _queue;
     private readonly List<OfflineProgressSync> _syncs = [];
+    private readonly PlaybackStops _stops = new();
+    private readonly ViewerStateChanges _changes;
+    private int _told;
 
     public OfflineProgressSyncTests()
     {
         _queue = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        _changes = new ViewerStateChanges(_stops);
+        _changes.Changed += (_, _) => Interlocked.Increment(ref _told);
         _h.Silo.On(HttpMethod.Post, SyncPath, Answered("ep_5"));
         _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null)));
     }
@@ -43,7 +49,8 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
     private OfflineProgressSync Sync()
     {
-        var sync = new OfflineProgressSync(_queue, new ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network, _h.Time, _h.Logs.For<OfflineProgressSync>());
+        var sync = new OfflineProgressSync(_queue, new ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network, _changes, _h.Time,
+            _h.Logs.For<OfflineProgressSync>());
         _syncs.Add(sync);
         return sync;
     }
@@ -265,7 +272,8 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
         _queue.Claim(Scope7, OfflineProgressSync.MaxBatch);
         await _queue.LatestSave;
         var restarted = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
-        var sync = new OfflineProgressSync(restarted, new ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network, _h.Time, _h.Logs.For<OfflineProgressSync>());
+        var sync = new OfflineProgressSync(restarted, new ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network, _changes, _h.Time,
+            _h.Logs.For<OfflineProgressSync>());
         _syncs.Add(sync);
 
         await sync.FlushAsync(readBack: false, Token);
@@ -312,6 +320,79 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
 
         Assert.Empty(_queue.Entries(Scope7));
         Assert.Contains("refused", _h.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OnceTheServerTookAPosition_ThePagesAreTold_Once()
+    {
+        await _h.AddPlayableAsync();
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _queue.Record(Scope7, "mv_1", 20_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, Answered("ep_5", "mv_1"));
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: true, Token);
+
+        // Continue Watching, Next Up and the title's page show where the viewer left off, as after a stream.
+        Assert.Equal(1, Volatile.Read(ref _told));
+
+        // A run with nothing to send says nothing.
+        await sync.FlushAsync(readBack: true, Token);
+        Assert.Equal(1, Volatile.Read(ref _told));
+    }
+
+    [Fact]
+    public async Task APositionSentLater_OnceTheServerIsBack_TellsThePagesThen()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError(), ScriptedSilo.Problem(503, "unavailable"), Answered("ep_5"));
+        var sync = Sync();
+        sync.Start();
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        await Until(() => Sends.Count == 1, "the start tried");
+        await sync.LatestRun;
+        _h.Network.SetMetered(false);
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        await Until(() => Sends.Count == 2, "the link's change tried");
+        await sync.LatestRun;
+
+        // Nothing reached the server yet: the pages would only read what they have.
+        Assert.Equal(0, Volatile.Read(ref _told));
+
+        _h.Time.Advance(OfflineProgressSync.RetryInterval);
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        await Until(() => Volatile.Read(ref _told) == 1, "the pages were told once the position arrived");
+        Assert.Empty(_queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task WhileATitlePlays_ASendTellsNobody_SinceItsStopWill()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        var sync = Sync();
+
+        using (_stops.Playing())
+        {
+            await sync.FlushAsync(readBack: false, Token);
+        }
+
+        // Home under a minimized player is not loaded again with every position the play records.
+        Assert.Single(Sends);
+        Assert.Equal(0, Volatile.Read(ref _told));
+    }
+
+    [Fact]
+    public async Task APositionTheServerTookWithoutAnAnswer_TellsThePages_OnceTheReadShowsIt()
+    {
+        await _h.AddPlayableAsync();
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath,
+            () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "the connection broke off")));
+        _h.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, Listing(null, Row("ep_5", 10, "2026-10-01T12:00:00.000Z"))));
+
+        await Sync().FlushAsync(readBack: true, Token);
+
+        Assert.Equal(1, Volatile.Read(ref _told));
     }
 
     [Fact]

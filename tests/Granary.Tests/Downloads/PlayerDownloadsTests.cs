@@ -28,7 +28,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
             var stream = new FakeServerPlayback();
             _streams.Add(stream);
             return stream;
-        }, new PlaybackStops(), _fixture.Harness.Time, upNext, audioDelay: _fixture.AudioDelay, devicePreferences: _fixture.Device,
+        }, _fixture.Stops, _fixture.Harness.Time, upNext, audioDelay: _fixture.AudioDelay, devicePreferences: _fixture.Device,
             downloads: _fixture.Playbacks);
 
     private void Frame(double seconds, bool paused = false) => _fixture.Engine.RaiseState(LocalPlaybackFixture.Frame(seconds, paused));
@@ -60,6 +60,60 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
 
         Assert.Single(_streams);
         Assert.Equal(PlayRequest.Resume("mv_streamed"), _streams[0].Started);
+    }
+
+    [Fact]
+    public async Task LeavingADownload_TellsThePagesOnce_WhenTheServerHasWhereTheViewerLeftOff()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        int told = 0;
+        int sentWhenTold = -1;
+        _fixture.Changes.Changed += (_, _) =>
+        {
+            Volatile.Write(ref sentWhenTold, _fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath).Count);
+            Interlocked.Increment(ref told);
+        };
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
+        Frame(600);
+
+        player.Leave();
+        Assert.True(await _fixture.Stops.WhenStoppedAsync(TimeSpan.FromSeconds(5)));
+        // The flush the last record asked for finds nothing more to send.
+        await _fixture.FlushedAsync();
+
+        // Home's Continue Watching and the title's page load again at the stop, as after a stream, and read the new position:
+        // the stop waited for the server to take it. The send itself told nobody a second time.
+        Assert.Equal((1, 1), (Volatile.Read(ref told), Volatile.Read(ref sentWhenTold)));
+        Assert.Contains("\"position_ms\":600000", _fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath)[0].Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LeavingADownloadWithoutTheServer_TellsThePagesAtTheStop_AndAgainOnceThePositionArrived()
+    {
+        _fixture.GoOffline();
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        int told = 0;
+        _fixture.Changes.Changed += (_, _) => Interlocked.Increment(ref told);
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(0);
+        Frame(600);
+
+        player.Leave();
+        Assert.True(await _fixture.Stops.WhenStoppedAsync(TimeSpan.FromSeconds(5)));
+        await _fixture.FlushedAsync();
+        Assert.Equal(1, Volatile.Read(ref told));
+        Assert.Single(_fixture.Queue.Entries(DownloadHarness.Scope7));
+
+        // The connection is back: the position goes, and the pages hear that the server has it now.
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK,
+            """{ "items": [ { "index": 0, "media_item_id": "ep_5", "status": "success" } ], "summary": { "total": 1, "succeeded": 1, "failed": 0 } }"""));
+        await _fixture.Sync.FlushAsync(readBack: false, LocalPlaybackFixture.Token);
+
+        Assert.Equal(2, Volatile.Read(ref told));
+        Assert.Empty(_fixture.Queue.Entries(DownloadHarness.Scope7));
     }
 
     [Fact]

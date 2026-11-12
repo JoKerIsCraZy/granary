@@ -31,8 +31,9 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
         Harness.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "page": { "has_more": false } }"""));
         Queue = new OfflineProgressQueue(Path.Combine(Harness.Directory, "data", "offline-progress.json"), Harness.Time,
             Harness.Logs.For<OfflineProgressQueue>());
-        Sync = new OfflineProgressSync(Queue, new ProgressSyncApi(Harness.Silo.Http), Harness.Store, Harness.Session, Harness.Network, Harness.Time,
-            Harness.Logs.For<OfflineProgressSync>());
+        Changes = new ViewerStateChanges(Stops);
+        Sync = new OfflineProgressSync(Queue, new ProgressSyncApi(Harness.Silo.Http), Harness.Store, Harness.Session, Harness.Network, Changes,
+            Harness.Time, Harness.Logs.For<OfflineProgressSync>());
         AudioDelay = new AudioDelay(new SettingsApi(Harness.Silo.Http), Harness.Session, new ImmediateDispatcher(), Harness.Time,
             Harness.Logs.For<AudioDelay>());
         Playbacks = new DownloadPlaybacks(Harness.Store, Harness.Session, Create, Harness.Time, Harness.Logs.For<DownloadPlaybacks>());
@@ -53,6 +54,12 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public OfflineProgressSync Sync { get; }
 
     public DownloadPlaybacks Playbacks { get; }
+
+    /// <summary>The playbacks that run and their stops, as the player counts them.</summary>
+    public PlaybackStops Stops { get; } = new();
+
+    /// <summary>What tells the pages that where the viewer left off changed.</summary>
+    public ViewerStateChanges Changes { get; }
 
     public List<ServerPlaybackStatus> Statuses { get; } = [];
 

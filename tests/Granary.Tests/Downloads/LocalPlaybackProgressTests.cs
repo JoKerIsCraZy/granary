@@ -215,7 +215,30 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
 
         await playback.StopAsync();
 
-        // The server still hears where the viewer was.
-        Assert.Equal(120_000, Entry.PositionMs);
+        // The server still hears where the viewer was, at the stop.
+        var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+        Assert.Contains("\"position_ms\":120000", sent.Body, StringComparison.Ordinal);
+        Assert.Empty(_fixture.Queue.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task TheStop_DoesNotWaitLongerThanItsBudget_ForAServerThatDoesNotAnswer()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, () => answer.Task);
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+
+        var stop = playback.StopAsync();
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath).Count == 1, "the last position left");
+        Assert.False(stop.IsCompleted);
+        _fixture.Harness.Time.Advance(LocalPlayback.StopSendBudget);
+        await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+        // The position is kept and the send goes on by itself.
+        Assert.Equal(OfflineProgressState.Sending, Entry.State);
+        answer.SetException(new HttpRequestException(HttpRequestError.ConnectionError, "connection refused"));
+        await _fixture.Sync.LatestRun;
+        Assert.Equal(OfflineProgressState.Pending, Entry.State);
     }
 }
