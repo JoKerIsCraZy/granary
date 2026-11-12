@@ -123,13 +123,24 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         }
     }
 
-    private EventsLane Lane() => new(new EventsApi(Library.Silo.Http), () =>
+    /// <summary>The lanes the stream made, the first one first; a replaced one stays listed.</summary>
+    public List<EventsLane> Lanes { get; } = [];
+
+    private EventsLane Lane()
     {
-        var socket = new FakeRealtimeSocket { Picks = EventsApi.Protocol };
+        var lane = new EventsLane(new EventsApi(Library.Silo.Http), () =>
+        {
+            var socket = new FakeRealtimeSocket { Picks = EventsApi.Protocol };
+            lock (_sockets)
+            {
+                _sockets.Add(socket);
+            }
+            return socket;
+        }, Library.Clock, Library.Logs.For<EventsLane>());
         lock (_sockets)
         {
-            _sockets.Add(socket);
+            Lanes.Add(lane);
         }
-        return socket;
-    }, Library.Clock, Library.Logs.For<EventsLane>());
+        return lane;
+    }
 }

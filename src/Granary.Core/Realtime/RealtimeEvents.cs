@@ -166,14 +166,18 @@ public sealed class RealtimeEvents : IDisposable
         _count.Dispose();
     }
 
-    /// <summary>What <paramref name="frame"/>, sent for <paramref name="profileId"/>, means for the app.</summary>
-    internal void Handle(EventsFrame frame, string profileId)
+    /// <summary>
+    /// What <paramref name="frame"/>, sent for <paramref name="profileId"/>, means for the app. A frame of a lane
+    /// (<paramref name="from"/>) counts only while that lane is the one followed: a replaced one may still hand on a last
+    /// frame, and its "subscribed" would be taken for the new connection's start.
+    /// </summary>
+    internal void Handle(EventsFrame frame, string profileId, EventsLane? from = null)
     {
         try
         {
             lock (_gate)
             {
-                if (_following?.ProfileId == profileId)
+                if (_following?.ProfileId == profileId && (from is null || ReferenceEquals(_lane, from)))
                 {
                     HandleLocked(frame, profileId);
                 }
@@ -321,11 +325,7 @@ public sealed class RealtimeEvents : IDisposable
                 next.Follow(following.BaseUri, following.FollowsActivity ? AdminChannels : Channels, frame =>
                 {
                     _activity.Handle(feed, frame);
-                    // A lane that was replaced may still hand on a last frame.
-                    if (ReferenceEquals(Volatile.Read(ref _lane), next))
-                    {
-                        Handle(frame, following.ProfileId);
-                    }
+                    Handle(frame, following.ProfileId, next);
                 }, connection => _activity.Connection(feed, connection));
             }
         }

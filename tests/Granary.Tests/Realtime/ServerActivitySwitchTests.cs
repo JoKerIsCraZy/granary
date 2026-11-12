@@ -140,14 +140,32 @@ public sealed class ServerActivitySwitchTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFrameTheReplacedConnectionStillHandsOn_IsNotTakenForTheNewOnesStart()
+    {
+        await _harness.StartedAsync(EventsChannels.Sessions);
+        long before = Version;
+        await _harness.Indicator.SetShownAsync(false);
+        await ServerPlaybackFixture.Until(() => _harness.SocketCount == 2, "the next connection");
+
+        // The connection that was replaced says a last "subscribed" after the switch, before the new one has said its own.
+        _harness.Events.Handle(new EventsFrame(EventsFrameTypes.Subscribed), "7", _harness.Lanes[0]);
+        _harness.Library.Clock.Advance(RealtimeEvents.CatchUpAfter + TimeSpan.FromSeconds(1));
+        await _harness.OpenedAsync(1);
+        _harness.Library.Clock.Advance(RealtimeEvents.SettleDelay);
+
+        // The time since the switch still counts: what the server sent meanwhile is read once.
+        Assert.Equal(before + 1, Version);
+    }
+
+    [Fact]
     public async Task Stopped_TheStreamNoLongerFollowsTheSwitch()
     {
         await _harness.StartedAsync(EventsChannels.Sessions);
         await _harness.Events.StopAsync();
 
+        // The stream let go of the switch before its stop returned, so neither change reaches it.
         await _harness.Indicator.SetShownAsync(false);
         await _harness.Indicator.SetShownAsync(true);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, _harness.SocketCount);
     }
