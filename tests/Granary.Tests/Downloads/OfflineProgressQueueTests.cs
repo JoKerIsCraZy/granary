@@ -401,9 +401,10 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         var second = queue.Record(Scope7, "ep_5", 20_000, 0);
         var third = queue.Record(Scope7, "ep_5", 30_000, 0);
 
-        // Each is later than the one it replaces, so the server keeps the newest: a millisecond is enough.
-        Assert.Equal(first.UpdatedAt.AddMilliseconds(1), second.UpdatedAt);
-        Assert.Equal(first.UpdatedAt.AddMilliseconds(2), third.UpdatedAt);
+        // Each is later than the one it replaces, so the server keeps the newest: by a whole second, which is all a server
+        // on SQLite keeps of a time.
+        Assert.Equal(first.UpdatedAt.AddSeconds(1), second.UpdatedAt);
+        Assert.Equal(first.UpdatedAt.AddSeconds(2), third.UpdatedAt);
         // Another title is stamped by the clock as it is.
         Assert.Equal(corrected.GetUtcNow(), queue.Record(Scope7, "ep_6", 10_000, 0).UpdatedAt);
     }
@@ -417,8 +418,43 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
 
         var entry = queue.Record(Scope7, "ep_5", 10_000, 0, after: known);
 
-        Assert.Equal(known.AddMilliseconds(1), entry.UpdatedAt);
+        Assert.Equal(known.AddSeconds(1), entry.UpdatedAt);
         // A clock that is ahead of what is known stamps as it reads.
         Assert.Equal(_time.GetUtcNow(), queue.Record(Scope7, "ep_6", 10_000, 0, after: ManualTimeProvider.DefaultStart.AddHours(-1)).UpdatedAt);
+    }
+
+    [Fact]
+    public void APositionStampedAfterWhatWasKnown_IsInTheNextWholeSecond_WhichAServerThatKeepsWholeSecondsTellsApart()
+    {
+        var queue = Open();
+        // A server that keeps milliseconds named 13:00:00.250; one that keeps whole seconds would have cut a stamp a
+        // millisecond later to the same 13:00:00 and passed the position over as not newer.
+        var known = ManualTimeProvider.DefaultStart.AddHours(1).AddMilliseconds(250);
+
+        var entry = queue.Record(Scope7, "ep_5", 10_000, 0, after: known);
+
+        Assert.Equal(ManualTimeProvider.DefaultStart.AddHours(1).AddSeconds(1), entry.UpdatedAt);
+    }
+
+    [Fact]
+    public void PositionsOfATitleRecordedWithinOneSecond_AreEachAWholeSecondApart_AndTheClockTakesOverOnceItIsPast()
+    {
+        var queue = Open();
+        _time.Advance(TimeSpan.FromMilliseconds(200));
+        var first = queue.Record(Scope7, "ep_5", 10_000, 0);
+        _time.Advance(TimeSpan.FromMilliseconds(300));
+        var second = queue.Record(Scope7, "ep_5", 20_000, 0);
+        _time.Advance(TimeSpan.FromMilliseconds(300));
+        var third = queue.Record(Scope7, "ep_5", 30_000, 0);
+
+        // The first as the clock reads; the others within the same second each in a second of their own, in their order,
+        // and no further ahead than one second for each.
+        Assert.Equal(ManualTimeProvider.DefaultStart.AddMilliseconds(200), first.UpdatedAt);
+        Assert.Equal(ManualTimeProvider.DefaultStart.AddSeconds(1), second.UpdatedAt);
+        Assert.Equal(ManualTimeProvider.DefaultStart.AddSeconds(2), third.UpdatedAt);
+
+        // Ten seconds on, as the next position of a play comes, the clock is past them and stamps as it reads.
+        _time.Advance(TimeSpan.FromSeconds(10));
+        Assert.Equal(_time.GetUtcNow(), queue.Record(Scope7, "ep_5", 40_000, 0).UpdatedAt);
     }
 }

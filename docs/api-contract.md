@@ -2943,6 +2943,10 @@ progress of a download.
     watch-history row is made on this path). So sending the same item twice is harmless, and Granary sends again
     whenever it is not sure the first send was taken. The server lists the operation as not retry-safe because an item
     without `updated_at` is merged by position; Granary never sends one.
+  - A server on SQLite compares whole seconds: `userdb/progress.go` formats the time as RFC 3339 without a fraction and
+    compares that text, so a position of the second the row already has is "equal" and changes nothing. A server on
+    Postgres compares the full time. Granary therefore stamps a title's next position in a later whole second than the
+    last time it knows for the title (architecture.md, "Offline progress").
   - The comparison is between clocks: this PC's for what it recorded, the other device's or the server's for theirs. A
     PC whose clock is ahead (by up to the 2 minutes the server allows) can beat a position another device made a little
     later, and one whose clock is behind can lose to an older one. Granary does not correct for it; Silo's Apple app and

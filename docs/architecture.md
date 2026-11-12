@@ -1574,10 +1574,15 @@ device.
   device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
   recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
   before the first frame. A title's times never go backwards: a position is
-  stamped at least a millisecond after the one it replaces in the queue, after the last one this play recorded, and
-  after the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
+  stamped in a later whole second than the one it replaces in the queue, than the last one this play recorded, and
+  than the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
   now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get
-  the newest position passed over by the server as an old one. Each record goes to two places. The download's own record
+  the newest position passed over by the server as an old one. A whole second, because a server on SQLite keeps no more
+  of a time (`userdb/progress.go`): it cuts a stamp to its second, passes over a position of the second it already has,
+  and still answers success, after which the entry would leave the queue unheard. A stamp that has to be moved on is
+  the start of the next second after what was known; one the clock already puts in a later second stays as the clock
+  reads. Positions of one title that follow each other within a second therefore run a second ahead for each, in their
+  order; a play records one every 10 s, so the clock is past them again with the next. Each record goes to two places. The download's own record
   takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
   position, the length and the time, in whole milliseconds, for the server.
 - **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine

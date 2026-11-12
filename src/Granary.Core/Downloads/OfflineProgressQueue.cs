@@ -116,8 +116,11 @@ public sealed class OfflineProgressQueue
     /// <remarks>
     /// The server keeps the later of two positions by their times. A PC whose clock was set back, or runs behind, would stamp
     /// a position recorded now before one it recorded or learned of earlier, and the server would pass the new one over. So a
-    /// title's times never go backwards here: a position is stamped at least a millisecond after the entry it replaces and
-    /// after <paramref name="after"/>.
+    /// title's times never go backwards here: a position is stamped in a later whole second than the entry it replaces and
+    /// than <paramref name="after"/>. A later millisecond would not do: a server on SQLite keeps whole seconds
+    /// (<see cref="Has"/>), passes over a position of the second it has, and still answers success. A stamp moved on is the
+    /// start of the next second, so positions of one title that follow each other within a second run a second ahead for
+    /// each; a play records one every <see cref="LocalPlayback.ProgressInterval"/>, and the clock is past them again.
     /// </remarks>
     public OfflineProgressEntry Record(DownloadScope scope, string mediaItemId, long positionMs, long durationMs, DateTimeOffset? after = null)
     {
@@ -130,10 +133,13 @@ public sealed class OfflineProgressQueue
         {
             var entries = Loaded();
             var before = entries.Where(e => e.Scope == scope && e.MediaItemId == mediaItemId).Select(e => (DateTimeOffset?)e.UpdatedAt).Max();
-            if ((before > after ? before : after ?? before) is { } known && at <= known)
+            if ((before > after ? before : after ?? before) is { } known)
             {
-                long ticks = known.UtcTicks - known.UtcTicks % TimeSpan.TicksPerMillisecond + TimeSpan.TicksPerMillisecond;
-                at = new DateTimeOffset(ticks, TimeSpan.Zero);
+                long nextSecond = known.UtcTicks - known.UtcTicks % TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond;
+                if (at.UtcTicks < nextSecond)
+                {
+                    at = new DateTimeOffset(nextSecond, TimeSpan.Zero);
+                }
             }
             var entry = new OfflineProgressEntry(scope, mediaItemId, Math.Max(0, positionMs), Math.Max(0, durationMs), at, OfflineProgressState.Pending);
             entries.RemoveAll(e => e.Scope == scope && e.MediaItemId == mediaItemId);

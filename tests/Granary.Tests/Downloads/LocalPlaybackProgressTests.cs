@@ -167,8 +167,8 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
 
         // The viewer is at two minutes now, whatever the clock reads: stamped after what was known, so the server takes it
         // and the next play from this PC starts there.
-        Assert.Equal((120_000L, known.AddMilliseconds(1)), (Entry.PositionMs, Entry.UpdatedAt));
-        Assert.Equal((120_000L, known.AddMilliseconds(1)), (Record.ResumeMs, Record.ResumeAt));
+        Assert.Equal((120_000L, known.AddSeconds(1)), (Entry.PositionMs, Entry.UpdatedAt));
+        Assert.Equal((120_000L, known.AddSeconds(1)), (Record.ResumeMs, Record.ResumeAt));
     }
 
     [Fact]
