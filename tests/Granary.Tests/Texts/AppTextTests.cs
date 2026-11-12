@@ -39,6 +39,16 @@ public sealed partial class AppTextTests
     }
 
     [Fact]
+    public void ANumber_IsGroupedAsTheLanguageOnScreenWritesIt()
+    {
+        Assert.Equal("1,234", AppText.Number(1234));
+        Assert.Equal("7", AppText.Number(7));
+
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("1.234", AppText.Number(1234));
+    }
+
+    [Fact]
     public async Task ALanguageInUse_StaysInItsOwnFlow_AndEndsWithIt()
     {
         Task<string> elsewhere;

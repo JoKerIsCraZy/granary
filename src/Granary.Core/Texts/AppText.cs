@@ -59,6 +59,9 @@ public static class AppText
     /// </summary>
     public static string Upper(string text) => text.ToUpper(Language.Culture);
 
+    /// <summary>A number as the language on screen writes it (<see cref="TextLanguage.Number"/>).</summary>
+    public static string Number(decimal number) => Language.Number(number);
+
     /// <summary>
     /// Text a Silo server sent in English with its catalog key, such as a row's title: translated where the language on
     /// screen has the key, else as sent (<see cref="TextLanguage.ServerText"/>; the web's <c>serverText</c>).

@@ -373,8 +373,8 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         {
             return AppText.Get("web.profiles.pin.lockedLater");
         }
-        int minutes = Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes));
-        return AppText.Get("web.profiles.pin.lockedMinutes", ("count", minutes), ("count_text", minutes));
+        int minutes = ApiFailureText.WholeMinutes(delay);
+        return AppText.Get("web.profiles.pin.lockedMinutes", ("count", minutes), ("count_text", AppText.Number(minutes)));
     }
 
     public void Dispose()
@@ -408,8 +408,7 @@ internal static class ApiFailureText
         {
             return AppText.Get("granary.apiFailure.tooManyRequestsLater");
         }
-        int minutes = Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes));
-        return AppText.Get("granary.apiFailure.tooManyRequests", ("count", minutes));
+        return AppText.Get("granary.apiFailure.tooManyRequests", ("count", WholeMinutes(delay)));
     }
 
     /// <summary>
@@ -423,9 +422,15 @@ internal static class ApiFailureText
         {
             return "Try again in a few minutes.";
         }
-        int minutes = Math.Max(1, (int)Math.Ceiling(delay.TotalMinutes));
+        int minutes = WholeMinutes(delay);
         return minutes == 1 ? "Try again in 1 minute." : $"Try again in {minutes} minutes.";
     }
+
+    /// <summary>
+    /// A wait in whole minutes, rounded up and at least one. A server can name any wait: one past what a whole number
+    /// holds stops there, where the cast alone gave a number of its own.
+    /// </summary>
+    public static int WholeMinutes(TimeSpan delay) => (int)Math.Clamp(Math.Ceiling(delay.TotalMinutes), 1, int.MaxValue);
 
     /// <summary>
     /// The failures an API call reports to the user instead of crashing: an error answer, a network

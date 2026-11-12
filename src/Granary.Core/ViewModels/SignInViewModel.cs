@@ -145,6 +145,6 @@ public sealed partial class SignInViewModel(
     {
         null => AppText.Get("granary.signIn.tooManyAttempts.later"),
         { TotalSeconds: <= 60 } => AppText.Get("granary.signIn.tooManyAttempts.inAMinute"),
-        { } wait => AppText.Get("granary.signIn.tooManyAttempts.minutes", ("count", (int)Math.Ceiling(wait.TotalMinutes))),
+        { } wait => AppText.Get("granary.signIn.tooManyAttempts.minutes", ("count", ApiFailureText.WholeMinutes(wait))),
     };
 }

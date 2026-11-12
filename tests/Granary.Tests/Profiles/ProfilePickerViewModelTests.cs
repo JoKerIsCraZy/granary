@@ -183,8 +183,21 @@ public sealed class ProfilePickerViewModelTests
         Assert.Empty(harness.Session.Calls);
     }
 
+    [Fact]
+    public void AWait_IsWholeMinutes_RoundedUp_AtLeastOne_AndNeverPastWhatANumberHolds()
+    {
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.Zero));
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.FromSeconds(20)));
+        Assert.Equal(2, ApiFailureText.WholeMinutes(TimeSpan.FromSeconds(61)));
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.FromMinutes(-5)));
+        // A server may name any wait; the longest a TimeSpan holds is over ten billion minutes.
+        Assert.Equal(int.MaxValue, ApiFailureText.WholeMinutes(TimeSpan.MaxValue));
+    }
+
     [Theory]
     [InlineData(240, "Too many incorrect PINs. Try again in 4 minutes.")]
+    // The number is grouped, as the web's numberText writes it.
+    [InlineData(72_000, "Too many incorrect PINs. Try again in 1,200 minutes.")]
     [InlineData(61, "Too many incorrect PINs. Try again in 2 minutes.")]
     [InlineData(20, "Too many incorrect PINs. Try again in 1 minute.")]
     [InlineData(-1, "Too many incorrect PINs. Try again later.")]

@@ -49,6 +49,12 @@ public sealed class TextLanguage
     /// <summary>The language's culture, for what it writes by its own rules, such as capitals.</summary>
     public CultureInfo Culture { get; }
 
+    /// <summary>
+    /// A number as the language writes it, grouped (1,234; 1.234 in German), as the web's <c>numberText</c>: for a message
+    /// that takes its number as a text (<c>count_text</c>) beside the count its plural goes by.
+    /// </summary>
+    public string Number(decimal number) => _formatter.Number(number);
+
     /// <summary>Whether the language is written right to left: Arabic.</summary>
     public bool IsRightToLeft { get; }
 
