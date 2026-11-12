@@ -27,6 +27,10 @@ public static partial class MpvLogClassifier
     [GeneratedRegex(@"(https?://[^\s?#]+)\?[^\s#]*", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex UrlQuery();
 
+    // A Windows path up to a quote or the line's end: a drive's, a share's, or one in the extended form (\\?\).
+    [GeneratedRegex(@"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^'""\r\n]*", RegexOptions.CultureInvariant)]
+    private static partial Regex LocalPath();
+
     public static MpvNetworkFailure Classify(string prefix, string text)
     {
         if (!prefix.Contains("curl", StringComparison.OrdinalIgnoreCase)
@@ -53,10 +57,18 @@ public static partial class MpvLogClassifier
     /// <summary>
     /// Never let a credential reach the app log, even if a verbose line echoes an option: a line that
     /// mentions an Authorization header is dropped whole, URLs lose their query (a plan's URL may carry a
-    /// signature under any name), and everything else is masked.
+    /// signature under any name), and everything else is masked. A local file keeps its name and loses its
+    /// folder: a download's lies under the Windows user's own folder, which names them.
     /// </summary>
     public static string Redact(string text) =>
         text.Contains("authorization", StringComparison.OrdinalIgnoreCase)
             ? "<redacted: line contained an Authorization header>"
-            : LogRedactor.Redact(UrlQuery().Replace(text, "$1?…"));
+            : LogRedactor.Redact(LocalPath().Replace(UrlQuery().Replace(text, "$1?…"), WithoutFolder));
+
+    // "C:\Videos\clip.mkv" as "…\clip.mkv".
+    private static string WithoutFolder(Match path)
+    {
+        int name = path.Value.LastIndexOfAny(['\\', '/']);
+        return "…" + path.Value[name..];
+    }
 }
