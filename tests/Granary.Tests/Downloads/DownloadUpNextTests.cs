@@ -133,6 +133,21 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASlowServer_IsWaitedFor_WhenNoDownloadFollows()
+    {
+        // A title that streams, on a server that takes its time: its next episode still comes.
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, Season1, () => answer.Task);
+
+        var next = Create().NextEpisodeAsync(Episode5, Token);
+        _h.Time.Advance(DownloadUpNext.ServerBudget + TimeSpan.FromSeconds(30));
+        Assert.False(next.IsCompleted);
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 5, 6))());
+
+        Assert.Equal("ep_6", (await next.WaitAsync(TimeSpan.FromSeconds(5), Token))?.ContentId);
+    }
+
+    [Fact]
     public async Task OnDeck_IsTheServers()
     {
         await AddDownloadsAsync();

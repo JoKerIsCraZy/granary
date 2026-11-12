@@ -1510,7 +1510,9 @@ while the server answers.
   it plays from this PC when it is downloaded too and streams when it is not. When the server names none within
   `DownloadUpNext.ServerBudget` (5 s of the `TimeProvider`), as without a connection, the active profile's finished
   downloads of the series answer: the next by season and episode after the playing one (the specials only from a
-  special), with its title and no still; an episode that is not on this PC is passed over. The previous episode is the one
+  special), with its title and no still; an episode that is not on this PC is passed over. A server that only takes
+  longer than the budget is still waited for when no download follows, so a slow server names the next episode of a title
+  that streams as before. The previous episode is the one
   before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
   the device; Android plays a next episode from its download when the server named it. On Deck stays the server's.
 - **A file that will not play.** The player says "This download can't be played. Delete it and download it again." with

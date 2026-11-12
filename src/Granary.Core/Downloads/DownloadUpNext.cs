@@ -19,39 +19,45 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
     /// </summary>
     public static readonly TimeSpan ServerBudget = TimeSpan.FromSeconds(5);
 
-    public async Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+    public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return await FromServerAsync(server.NextEpisodeAsync(current, cancellationToken), cancellationToken).ConfigureAwait(false)
-            ?? Downloaded(current, e => e.Season > current.SeasonNumber || (e.Season == current.SeasonNumber && e.Episode > current.EpisodeNumber))
-                .OrderBy(e => e.Season).ThenBy(e => e.Episode).Select(e => e.Next).FirstOrDefault();
+        return ServerFirstAsync(server.NextEpisodeAsync(current, cancellationToken), () =>
+            Downloaded(current, e => e.Season > current.SeasonNumber || (e.Season == current.SeasonNumber && e.Episode > current.EpisodeNumber))
+                .OrderBy(e => e.Season).ThenBy(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }
 
     // The web player's previous-episode button stays inside the season; so does this.
-    public async Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+    public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return await FromServerAsync(server.PreviousEpisodeAsync(current, cancellationToken), cancellationToken).ConfigureAwait(false)
-            ?? Downloaded(current, e => e.Season == current.SeasonNumber && e.Episode < current.EpisodeNumber)
-                .OrderByDescending(e => e.Episode).Select(e => e.Next).FirstOrDefault();
+        return ServerFirstAsync(server.PreviousEpisodeAsync(current, cancellationToken), () =>
+            Downloaded(current, e => e.Season == current.SeasonNumber && e.Episode < current.EpisodeNumber)
+                .OrderByDescending(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }
 
     public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>
         server.OnDeckAsync(exceptSeriesId, cancellationToken);
 
-    // The server's answer, or none once the budget is over: the server's source answers null by itself when it cannot say.
-    private async Task<NextEpisode?> FromServerAsync(Task<NextEpisode?> answer, CancellationToken cancellationToken)
+    // The server's answer, which is null by itself when the server cannot say; else the downloads'. A server that takes
+    // longer than the budget gives way to a download that follows, and is waited for when none does: a slow server still
+    // names the next episode of a title that streams.
+    private async Task<NextEpisode?> ServerFirstAsync(Task<NextEpisode?> answer, Func<NextEpisode?> downloaded, CancellationToken cancellationToken)
     {
         try
         {
-            return await answer.WaitAsync(ServerBudget, time, cancellationToken).ConfigureAwait(false);
+            return await answer.WaitAsync(ServerBudget, time, cancellationToken).ConfigureAwait(false) ?? downloaded();
         }
         catch (TimeoutException)
         {
-            // It may still fail later; nobody waits for it any more.
-            _ = answer.ContinueWith(static late => _ = late.Exception, CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-            return null;
+            if (downloaded() is { } here)
+            {
+                // It may still fail later; nobody waits for it any more.
+                _ = answer.ContinueWith(static late => _ = late.Exception, CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                return here;
+            }
+            return await answer.WaitAsync(cancellationToken).ConfigureAwait(false) ?? downloaded();
         }
     }
 
