@@ -935,6 +935,48 @@
       "value": "Save"
     }
   ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Audio tracks"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Chapters"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "Edit markers"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "Fill screen"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "Playback info"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "Volume"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "Sleep timer"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -2085,12 +2127,6 @@
     {
       "type": 0,
       "value": "Pill"
-    }
-  ],
-  "web.settings.overlays.preset.square.description": [
-    {
-      "type": 0,
-      "value": "Blocky, high-density. Plex-inspired."
     }
   ],
   "web.settings.overlays.preset.square.label": [
@@ -3825,6 +3861,18 @@
     {
       "type": 0,
       "value": "Your Stuff"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "Discard"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "Discard unsaved changes?"
     }
   ]
 }

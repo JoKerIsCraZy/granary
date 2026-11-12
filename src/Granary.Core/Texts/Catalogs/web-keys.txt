@@ -181,6 +181,16 @@ web.common.ui.loadError.timeout
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
 
+# The player's buttons, as the web's player names them (components/player): Label in
+# src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
+web.player.audioMenu.trigger
+web.player.chaptersMenu.trigger
+web.player.controls.editMarkers
+web.player.controls.fillScreen
+web.player.controls.playbackInfo
+web.player.controls.volume
+web.player.sleepTimer.trigger
+
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
 # components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
 # PinLockout in src/Granary.Core/ViewModels/ProfilePickerViewModel.cs, and AccessibleName in
@@ -356,7 +366,6 @@ web.settings.overlays.preset.minimal.description
 web.settings.overlays.preset.minimal.label
 web.settings.overlays.preset.pill.description
 web.settings.overlays.preset.pill.label
-web.settings.overlays.preset.square.description
 web.settings.overlays.preset.square.label
 web.settings.overlays.preset.vibrant.description
 web.settings.overlays.preset.vibrant.label
@@ -580,3 +589,8 @@ web.shell.sidebar.switchProfile
 web.shell.sidebar.watchParty
 web.shell.sidebar.watchlist
 web.shell.sidebar.yourStuff
+
+# The question before unsaved edits are thrown away, as the web's (components/UnsavedChangesGuard.tsx): the mpv.conf
+# editor in src/Granary.Core/ViewModels/Settings/MpvConfigEditorViewModel.cs.
+web.shell.unsavedChanges.discard
+web.shell.unsavedChanges.title

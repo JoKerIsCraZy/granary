@@ -935,6 +935,48 @@
       "value": "حفظ"
     }
   ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "المسارات الصوتية"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "الفصول"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "ملء الشاشة بالصورة"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "معلومات التشغيل"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "مستوى الصوت"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "مؤقت النوم"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -2441,12 +2483,6 @@
     {
       "type": 0,
       "value": "كبسولة"
-    }
-  ],
-  "web.settings.overlays.preset.square.description": [
-    {
-      "type": 0,
-      "value": "مربعة وكثيفة. مستوحاة من Plex."
     }
   ],
   "web.settings.overlays.preset.square.label": [
@@ -4737,6 +4773,18 @@
     {
       "type": 0,
       "value": "محتواك"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "تجاهل"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "تجاهل التغييرات غير المحفوظة؟"
     }
   ]
 }

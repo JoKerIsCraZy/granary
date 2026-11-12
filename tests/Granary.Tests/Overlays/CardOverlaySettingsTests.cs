@@ -387,6 +387,24 @@ public sealed class CardOverlaySettingsTests
         Assert.Null(rows.Single(row => row.Id == "edition").Hint);
     }
 
+    // A badge or a style added to the registry without its words would show its id, or nothing, on the page.
+    [Fact]
+    public void EveryBadgeAndStyle_HasItsOwnWords()
+    {
+        Assert.All(OverlayRegistry.All, def =>
+        {
+            Assert.NotEqual(def.Id, BadgeSettingsText.Label(def.Id));
+            Assert.NotEqual("", BadgeSettingsText.Description(def.Id));
+        });
+        Assert.All(OverlayPreset.All, preset =>
+        {
+            Assert.NotEqual("", BadgeSettingsText.PresetLabel(preset.Id));
+            Assert.NotEqual("", BadgeSettingsText.PresetDescription(preset.Id));
+        });
+        // Granary's own line: the web's goes on to name another product.
+        Assert.Equal("Blocky, high-density.", BadgeSettingsText.PresetDescription(OverlayPresetId.Square));
+    }
+
     [Fact]
     public async Task TheSettingsPage_SpeaksTheLanguageOnScreen()
     {

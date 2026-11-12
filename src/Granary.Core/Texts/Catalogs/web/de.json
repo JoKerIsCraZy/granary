@@ -947,6 +947,48 @@
       "value": "Speichern"
     }
   ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Audiospuren"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Kapitel"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "Marker bearbeiten"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "Bildschirm füllen"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "Wiedergabeinfos"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "Lautstärke"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "Einschlaf-Timer"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -2125,12 +2167,6 @@
     {
       "type": 0,
       "value": "Kapsel"
-    }
-  ],
-  "web.settings.overlays.preset.square.description": [
-    {
-      "type": 0,
-      "value": "Kantig, hohe Dichte. Von Plex inspiriert."
     }
   ],
   "web.settings.overlays.preset.square.label": [
@@ -3893,6 +3929,18 @@
     {
       "type": 0,
       "value": "Deine Inhalte"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "Verwerfen"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "Nicht gespeicherte Änderungen verwerfen?"
     }
   ]
 }

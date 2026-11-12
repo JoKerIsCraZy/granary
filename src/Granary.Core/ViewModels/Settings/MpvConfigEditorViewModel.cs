@@ -146,8 +146,8 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     /// edits are on their way to the file by then and can't be thrown away any more.
     /// </summary>
     public Task<bool> ConfirmDiscardAsync() => IsSaving ? Task.FromResult(false) : HasUnsavedChanges
-        ? _confirmation.AskAsync(AppText.Get("granary.settings.mpv.editor.discardTitle"), AppText.Get("granary.settings.mpv.editor.discardBody"),
-            AppText.Get("granary.settings.mpv.editor.discard"))
+        ? _confirmation.AskAsync(AppText.Get("web.shell.unsavedChanges.title"), AppText.Get("granary.settings.mpv.editor.discardBody"),
+            AppText.Get("web.shell.unsavedChanges.discard"))
         : Task.FromResult(true);
 
     partial void OnTextChanged(string value)

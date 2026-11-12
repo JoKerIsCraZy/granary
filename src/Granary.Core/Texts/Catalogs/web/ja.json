@@ -935,6 +935,48 @@
       "value": "保存"
     }
   ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "音声トラック"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "チャプター"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "マーカーを編集"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "画面いっぱいに表示"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "再生情報"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "音量"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "スリープタイマー"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -1997,12 +2039,6 @@
     {
       "type": 0,
       "value": "ピル"
-    }
-  ],
-  "web.settings.overlays.preset.square.description": [
-    {
-      "type": 0,
-      "value": "角張った高密度のスタイル。Plexを参考にしています。"
     }
   ],
   "web.settings.overlays.preset.square.label": [
@@ -3597,6 +3633,18 @@
     {
       "type": 0,
       "value": "マイコンテンツ"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "破棄"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "未保存の変更を破棄しますか？"
     }
   ]
 }

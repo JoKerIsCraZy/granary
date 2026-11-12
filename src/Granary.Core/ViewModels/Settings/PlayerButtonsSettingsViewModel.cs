@@ -92,16 +92,16 @@ public sealed partial class PlayerButtonRowViewModel : ObservableObject
 
     public string Label => Button switch
     {
-        PlayerButton.Volume => AppText.Get("granary.settings.playerButtons.volume"),
-        PlayerButton.SleepTimer => AppText.Get("granary.settings.playerButtons.sleepTimer"),
-        PlayerButton.Audio => AppText.Get("granary.settings.playerButtons.audio"),
+        PlayerButton.Volume => AppText.Get("web.player.controls.volume"),
+        PlayerButton.SleepTimer => AppText.Get("web.player.sleepTimer.trigger"),
+        PlayerButton.Audio => AppText.Get("web.player.audioMenu.trigger"),
         PlayerButton.Subtitles => AppText.Get("granary.settings.playerButtons.subtitles"),
-        PlayerButton.Chapters => AppText.Get("granary.settings.playerButtons.chapters"),
+        PlayerButton.Chapters => AppText.Get("web.player.chaptersMenu.trigger"),
         PlayerButton.Settings => AppText.Get("granary.settings.playerButtons.settings"),
-        PlayerButton.EditMarkers => AppText.Get("granary.settings.playerButtons.editMarkers"),
-        PlayerButton.PlaybackInfo => AppText.Get("granary.settings.playerButtons.playbackInfo"),
+        PlayerButton.EditMarkers => AppText.Get("web.player.controls.editMarkers"),
+        PlayerButton.PlaybackInfo => AppText.Get("web.player.controls.playbackInfo"),
         PlayerButton.MiniView => AppText.Get("granary.settings.playerButtons.miniView"),
-        PlayerButton.Fill => AppText.Get("granary.settings.playerButtons.fill"),
+        PlayerButton.Fill => AppText.Get("web.player.controls.fillScreen"),
         PlayerButton.FullScreen => AppText.Get("granary.settings.playerButtons.fullScreen"),
         _ => _info.Label,
     };

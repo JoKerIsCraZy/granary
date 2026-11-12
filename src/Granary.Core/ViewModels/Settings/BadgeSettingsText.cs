@@ -111,7 +111,8 @@ public static class BadgeSettingsText
         OverlayPresetId.Classic => AppText.Get("web.settings.overlays.preset.classic.description"),
         OverlayPresetId.Vibrant => AppText.Get("web.settings.overlays.preset.vibrant.description"),
         OverlayPresetId.Pill => AppText.Get("web.settings.overlays.preset.pill.description"),
-        _ => AppText.Get("web.settings.overlays.preset.square.description"),
+        // Granary's own: the web's line goes on to name another product.
+        _ => AppText.Get("granary.settings.badges.squareDescription"),
     };
 
     /// <summary>A palette colour's name (<see cref="BadgeRowViewModel.Palette"/>), as the web's swatches are named.</summary>
