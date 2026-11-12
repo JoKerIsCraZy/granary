@@ -63,8 +63,8 @@ public sealed partial class BrowseHero : UserControl
     private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
-    // The title whose pictures show, and whether its backdrop is blurred.
-    private (string Key, bool Blurs)? _picturesOf;
+    // The title whose pictures show, whether its backdrop is blurred and which one it is (BrowseHeroTitle.Pictures).
+    private (string Key, bool Blurs, string? Backdrop)? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
@@ -285,7 +285,8 @@ public sealed partial class BrowseHero : UserControl
     // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
     // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
     // are being set follows them, rather than starting over from within. The same title with its backdrop blurred now, or
-    // no longer (a spoiler switch, the episode started), keeps its logo and fades its backdrop over.
+    // no longer (a spoiler switch, the episode started), or with another backdrop (a wider one, after its page asked for
+    // them again), keeps its logo and fades its backdrop over.
     private void ShowPictures()
     {
         if (_showingPictures)
@@ -311,7 +312,7 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    private static (string Key, bool Blurs) PicturesOf(BrowseHeroTitle title) => (title.Key, title.BlursBackdrop);
+    private static (string Key, bool Blurs, string? Backdrop) PicturesOf(BrowseHeroTitle title) => title.Pictures;
 
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)

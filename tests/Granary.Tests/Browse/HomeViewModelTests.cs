@@ -287,6 +287,20 @@ public sealed class HomeViewModelTests
     }
 
     [Fact]
+    public void ATitleSignedAnew_KeepsItsPictures_AndOneWithAnotherBackdropGetsItShown()
+    {
+        static BrowseHeroTitle Title(string backdrop) => new("m1", "Heat", "1995", null, null, new Uri("https://silo.test/api/v2/artwork/" + backdrop), null);
+        var shown = Title("movies/1/backdrop/w1280.ab12.webp?exp=1&sig=a");
+
+        Assert.Equal(shown.Pictures, Title("movies/1/backdrop/w1280.ab12.webp?exp=2&sig=b").Pictures);
+        // Wider, after the page asked for its rows again; or replaced on the server.
+        Assert.NotEqual(shown.Pictures, Title("movies/1/backdrop/w1920.ab12.webp?exp=2&sig=b").Pictures);
+        Assert.NotEqual(shown.Pictures, Title("movies/1/backdrop/w1280.cd34.webp?exp=2&sig=b").Pictures);
+        Assert.NotEqual(shown.Pictures, (shown with { BlursBackdrop = true }).Pictures);
+        Assert.Equal(("m1", false, null), (shown with { BackdropUrl = null }).Pictures);
+    }
+
+    [Fact]
     public async Task AHeroALittleWider_KeepsTheRows()
     {
         _silo.Map(SectionsPath, Sections(Section("r", "genre", 1, Item("m1"))));

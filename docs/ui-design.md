@@ -416,7 +416,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
     its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
     as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
-    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). Discover's titles keep TMDB's 1280 px backdrop.
+    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
+    its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
     - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
       height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from
