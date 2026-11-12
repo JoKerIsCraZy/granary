@@ -29,6 +29,31 @@ public sealed partial class PlayerPage
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool ScreenToClient(nint window, ref NativePoint point);
 
+    // CURSOR_SHOWING, and IDC_ARROW as LoadCursor takes it.
+    private const int CursorShowing = 0x00000001;
+    private const nint ArrowCursorId = 32512;
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool GetCursorInfo(ref CursorInfo info);
+
+    [LibraryImport("user32.dll")]
+    private static partial nint LoadCursorW(nint instance, nint name);
+
+    // Sets the cursor Windows draws for this thread's windows, until one of them is asked for its cursor again.
+    [LibraryImport("user32.dll")]
+    private static partial nint SetCursor(nint cursor);
+
+    // CURSORINFO: the cursor Windows draws now.
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CursorInfo
+    {
+        public int Size;
+        public int Flags;
+        public nint Cursor;
+        public NativePoint Position;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct NativePoint
     {

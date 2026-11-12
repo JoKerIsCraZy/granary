@@ -190,9 +190,12 @@ public static partial class TrackText
         return language.EnglishName;
     }
 
+    /// <summary>Whether <paramref name="text"/> names Atmos as a word; "Atmospheric" does not (web: mentionsAtmos).</summary>
+    internal static bool MentionsAtmos(string? text) => !string.IsNullOrEmpty(text) && AtmosWord().IsMatch(text);
+
     // The profile and the titles can name Atmos too; some releases only say so in the title.
     private static bool MentionsAtmos(WatchAudioTrack track) =>
-        AtmosWord().IsMatch(Join(" ", track.Profile, track.Title, track.EmbeddedTitle));
+        MentionsAtmos(Join(" ", track.Profile, track.Title, track.EmbeddedTitle));
 
     private static bool CanCarryAtmos(string lowerCodec) =>
         lowerCodec.Contains("truehd", StringComparison.Ordinal) || lowerCodec.Contains("eac3", StringComparison.Ordinal)
