@@ -326,7 +326,9 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
 - Secrets live in one DPAPI-protected file per Windows user (`DpapiSecretStore`) in local app data. A file
   that can no longer be decrypted is set aside as `.unreadable-<time>`; the user signs in again.
 - Logs go to `%LOCALAPPDATA%\Granary\logs`. Every line passes `LogRedactor`; mpv log lines that mention an
-  `Authorization` header are dropped whole. Tokens never reach a log.
+  `Authorization` header are dropped whole. Tokens never reach a log. A local path in an mpv line loses its folders,
+  which can name the Windows user: a file mpv reads keeps its name (of a name with spaces, the last word), and a path
+  that ends in no such file goes whole (`MpvLogClassifier.Redact`).
 - Media requests of server playback go through the loopback media proxy (see Server playback), which adds
   the headers per request; mpv itself gets none. mpv reports a refused request only in its log (as end of
   file), so the engine watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of

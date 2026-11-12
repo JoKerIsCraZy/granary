@@ -32,6 +32,18 @@ public sealed class MpvLogClassifierTests
     [InlineData("Watching directory C:\\Users\\elena.moreau", "Watching directory …")]
     [InlineData("Watching directory \\\\nas\\home\\e.moreau", "Watching directory …")]
     [InlineData("Reading config file C:\\Users\\elena.moreau\\AppData\\Local\\Granary\\mpv\\mpv.conf", "Reading config file …\\mpv.conf")]
+    // What follows a folder on the line can end like a file: the folder's name is not taken for the start of one.
+    [InlineData("Cannot open C:\\Users\\elena fail a.mkv", "Cannot open … a.mkv")]
+    [InlineData("Cannot open C:\\Users\\elena.moreau, fallback x.mkv", "Cannot open … x.mkv")]
+    // So a file's name with spaces keeps its last word, which still says what kind of file it is.
+    [InlineData("Playing: D:\\Films\\Elena Moreau.mkv", "Playing: … Moreau.mkv")]
+    // What follows a file on the line stays as it is.
+    [InlineData("Failed to load C:\\Users\\elena\\dl_1\\media.mkv: see mpv.conf", "Failed to load …\\media.mkv: see mpv.conf")]
+    // A share written with forward slashes, bare or as a file URL.
+    [InlineData("Failed to open //nas/home/elena/dl_1/media.mkv.", "Failed to open …/media.mkv.")]
+    [InlineData("Opening file://nas/home/elena/dl_1/media.mkv", "Opening …/media.mkv")]
+    [InlineData("Watching directory //nas/home/e.moreau", "Watching directory …")]
+    [InlineData("Opening https://silo.example/api/v2/stream/a.mkv", "Opening https://silo.example/api/v2/stream/a.mkv")]
     public void Redact_KeepsALocalFilesName_ButNotItsFolder(string line, string expected)
     {
         // A download lies under the Windows user's folder, which names them; the file's name is enough to diagnose.
