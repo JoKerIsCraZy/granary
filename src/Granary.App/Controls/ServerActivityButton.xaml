@@ -246,7 +246,7 @@
             <Button.Flyout>
                 <Flyout x:Name="Panel" Placement="BottomEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource ActivityPanelStyle}"
                         Opened="OnPanelOpened" Closed="OnPanelClosed">
-                    <Grid Width="320">
+                    <Grid x:Name="PanelRoot" Width="320" PreviewKeyDown="OnPanelPreviewKeyDown">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -259,7 +259,7 @@
                                        HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
                                        FontWeight="Medium" FontSize="10" Foreground="#FFE9B44C" AutomationProperties.LiveSetting="Polite" />
                         </Grid>
-                        <ScrollViewer Grid.Row="1" MaxHeight="400" XYFocusKeyboardNavigation="Enabled" HorizontalScrollMode="Disabled"
+                        <ScrollViewer Grid.Row="1" MaxHeight="400" HorizontalScrollMode="Disabled"
                                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <Border Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" BorderBrush="{StaticResource SiloBorderBrush}"

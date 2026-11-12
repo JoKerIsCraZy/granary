@@ -1302,10 +1302,13 @@ by `MainWindow.Activity.cs`.
     sections showing where the panel would otherwise say "No active server activity", though it does not count.
   A section whose list the server does not offer is left out; a hairline parts the sections that show.
 - **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
-  the page's top edge moves to it (a held key stops at the edge), Down or Left from it back to where focus was on the
-  page. Enter or Space opens the panel and moves into it; the arrows walk its rows, which are only read (`ReadingRow`:
-  focus and one text for a screen reader, nothing happens on OK), and reach "View all"; Esc or the remote's Back closes
-  it, also while focus is still on the button.
+  the page's top edge moves to it (a held key stops at the edge; from a row of tabs there too), Down or Left from it
+  back to where focus was on the page. Enter or Space opens the panel and moves into it, onto "View all" first. Up
+  and Down walk the link and the rows one by one in the order they are read and stop at the panel's ends, the scroller
+  following the focused row (the panel takes the two keys itself: left to the scroller they scrolled by lines, past
+  rows that never got focus). The rows are only read (`ReadingRow`: focus and one text for a screen reader, nothing
+  happens on OK). Esc or the remote's Back closes the panel, also while focus is still on the button, and focus is
+  back on the button.
 - **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
   scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
   web shows too for a task it has no translation for).

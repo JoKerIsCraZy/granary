@@ -5,7 +5,9 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.System;
 using Windows.UI.ViewManagement;
 
 namespace Granary.App.Controls;
@@ -71,6 +73,44 @@ public sealed partial class ServerActivityButton : UserControl
     {
         Panel.Hide();
         ViewModel.ViewStreamsCommand.Execute(null);
+    }
+
+    // Up and Down walk the panel's rows and its link in the order they are read, and stop at its ends. The rows' scroller
+    // would take the arrows to scroll by lines instead, past rows that never got focus: taken here on their way down, it
+    // only follows the row that has focus.
+    private void OnPanelPreviewKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key is not (VirtualKey.Up or VirtualKey.Down))
+        {
+            return;
+        }
+        e.Handled = true;
+        var stops = new List<Control>();
+        CollectStops(PanelRoot, stops);
+        int at = XamlRoot is { } root && FocusManager.GetFocusedElement(root) is Control focused ? stops.IndexOf(focused) : -1;
+        int next = at < 0 ? 0 : at + (e.Key == VirtualKey.Down ? 1 : -1);
+        if (next >= 0 && next < stops.Count)
+        {
+            stops[next].Focus(FocusState.Keyboard);
+        }
+    }
+
+    // What takes focus in the panel, in the order of the tree; nothing of a part that does not show.
+    private static void CollectStops(DependencyObject element, List<Control> stops)
+    {
+        if (element is UIElement { Visibility: Visibility.Collapsed })
+        {
+            return;
+        }
+        if (element is Control { IsTabStop: true, IsEnabled: true } control)
+        {
+            stops.Add(control);
+            return;
+        }
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(element); index++)
+        {
+            CollectStops(VisualTreeHelper.GetChild(element, index), stops);
+        }
     }
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
