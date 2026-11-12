@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -11,9 +12,7 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string NextTitleText = "Applies to the next title.";
-
-    private const string DeviceNameText = "Windows keeps this name for itself. Choose another.";
+    public static string NextTitleText => AppText.Get("granary.settings.mpv.nextTitle");
 
     private readonly MpvConfigFolder _folder;
     private readonly MpvPresets _presets;
@@ -59,10 +58,10 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
     public static string PresetNameNote(string typed)
     {
         string clean = MpvPresets.Clean(typed);
-        return clean.Length == 0 ? "Enter a name."
-            : MpvPresets.IsDeviceName(clean) ? DeviceNameText
+        return clean.Length == 0 ? AppText.Get("granary.settings.mpv.presetName.empty")
+            : MpvPresets.IsDeviceName(clean) ? AppText.Get("granary.settings.mpv.presetName.reserved")
             : clean == typed.Trim() ? ""
-            : $"Saves as {clean}.";
+            : AppText.Get("granary.settings.mpv.presetName.savesAs", ("name", clean));
     }
 
     public static bool CanSavePresetAs(string typed) => MpvPresets.SafeName(typed) is not null;
@@ -85,19 +84,21 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         var content = await Task.Run(_folder.ReadConfig);
         if (content is null || content.IsNew || content.IsNotText)
         {
-            PresetMessage = content is null ? "Couldn't read your mpv.conf."
-                : content.IsNew ? "There's no mpv.conf to save yet."
-                : "Your mpv.conf isn't UTF-8 text, so Granary can't save it as a preset.";
+            PresetMessage = content is null ? AppText.Get("granary.settings.mpv.preset.readFailed")
+                : content.IsNew ? AppText.Get("granary.settings.mpv.preset.nothingToSave")
+                : AppText.Get("granary.settings.mpv.preset.notText");
             return;
         }
         if (await Task.Run(() => _presets.Exists(name))
-            && !await _confirmation.AskAsync($"Replace the preset {name}?",
-                "A preset of that name is already saved. Saving replaces it with your mpv.conf.", "Replace"))
+            && !await _confirmation.AskAsync(AppText.Get("granary.settings.mpv.preset.replaceTitle", ("name", name)),
+                AppText.Get("granary.settings.mpv.preset.replaceBody"), AppText.Get("granary.settings.mpv.preset.replace")))
         {
             return;
         }
         bool saved = await Task.Run(() => _presets.Save(name, content.Text));
-        PresetMessage = saved ? $"Saved your mpv.conf as {name}." : $"Couldn't save the preset {name}.";
+        PresetMessage = saved
+            ? AppText.Get("granary.settings.mpv.preset.saved", ("name", name))
+            : AppText.Get("granary.settings.mpv.preset.saveFailed", ("name", name));
         Presets = await Task.Run(ReadPresets);
     });
 
@@ -105,20 +106,20 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
     public Task LoadPresetAsync(MpvPresetRow preset) => RunAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(preset);
-        if (!await _confirmation.AskAsync($"Load the preset {preset.Name}?",
-                "It replaces your mpv.conf. Save mpv.conf as a preset first to keep it.", "Load"))
+        if (!await _confirmation.AskAsync(AppText.Get("granary.settings.mpv.preset.loadTitle", ("name", preset.Name)),
+                AppText.Get("granary.settings.mpv.preset.loadBody"), AppText.Get("granary.settings.mpv.load")))
         {
             return;
         }
         if (!await Task.Run(() => _presets.Load(preset.Name)))
         {
-            PresetMessage = $"Couldn't load the preset {preset.Name}.";
+            PresetMessage = AppText.Get("granary.settings.mpv.preset.loadFailed", ("name", preset.Name));
             Presets = await Task.Run(ReadPresets);
             // One that could not take the preset's name back leaves it named, with Unload as the way out.
             await ShowActiveAsync();
             return;
         }
-        PresetMessage = $"Loaded {preset.Name} into mpv.conf.";
+        PresetMessage = AppText.Get("granary.settings.mpv.preset.loaded", ("name", preset.Name));
         // Through the change: the row reads the preset in use again.
         _changes.Saved();
         await ShowActiveAsync();
@@ -127,18 +128,19 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
     /// <summary>Goes back to mpv.conf from before the first preset, after asking: a change like a save.</summary>
     public Task UnloadPresetAsync() => RunAsync(async () =>
     {
-        if (!await _confirmation.AskAsync("Go back to your mpv.conf from before you loaded a preset?", "Changes made since are lost.", "Unload"))
+        if (!await _confirmation.AskAsync(AppText.Get("granary.settings.mpv.preset.unloadTitle"), AppText.Get("granary.settings.mpv.preset.unloadBody"),
+                AppText.Get("granary.settings.mpv.unload")))
         {
             return;
         }
         var result = await Task.Run(_presets.Unload);
         PresetMessage = result switch
         {
-            MpvPresetUnload.Restored => "Your mpv.conf from before the preset is back.",
-            MpvPresetUnload.Removed => "You had no mpv.conf before the preset, so it is removed.",
-            MpvPresetUnload.NotCleanedUp => "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again.",
-            MpvPresetUnload.NothingToRestore => "There's nothing from before the preset to go back to, so your mpv.conf stays as it is.",
-            _ => "Couldn't go back to your mpv.conf from before the preset.",
+            MpvPresetUnload.Restored => AppText.Get("granary.settings.mpv.preset.unloaded"),
+            MpvPresetUnload.Removed => AppText.Get("granary.settings.mpv.preset.unloadedRemoved"),
+            MpvPresetUnload.NotCleanedUp => AppText.Get("granary.settings.mpv.preset.unloadedNotCleanedUp"),
+            MpvPresetUnload.NothingToRestore => AppText.Get("granary.settings.mpv.preset.nothingToRestore"),
+            _ => AppText.Get("granary.settings.mpv.preset.unloadFailed"),
         };
         if (result is MpvPresetUnload.Restored or MpvPresetUnload.Removed or MpvPresetUnload.NotCleanedUp)
         {
@@ -150,13 +152,15 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
     public Task DeletePresetAsync(MpvPresetRow preset) => RunAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(preset);
-        if (!await _confirmation.AskAsync($"Delete the preset {preset.Name}?", "Its file goes from the presets folder. This can't be undone.",
-                "Delete"))
+        if (!await _confirmation.AskAsync(AppText.Get("granary.settings.mpv.preset.deleteTitle", ("name", preset.Name)),
+                AppText.Get("granary.settings.mpv.preset.deleteBody"), AppText.Get("granary.settings.mpv.delete")))
         {
             return;
         }
         bool deleted = await Task.Run(() => _presets.Delete(preset.Name));
-        PresetMessage = deleted ? $"Deleted the preset {preset.Name}." : $"Couldn't delete the preset {preset.Name}.";
+        PresetMessage = deleted
+            ? AppText.Get("granary.settings.mpv.preset.deleted", ("name", preset.Name))
+            : AppText.Get("granary.settings.mpv.preset.deleteFailed", ("name", preset.Name));
         Presets = await Task.Run(ReadPresets);
     });
 
@@ -185,7 +189,9 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
     private async Task ShowActiveAsync()
     {
         var active = await Task.Run(_presets.Active);
-        ActivePresetText = active is null ? "" : active.IsChanged ? $"Preset: {active.Name} (changed)" : $"Preset: {active.Name}";
+        ActivePresetText = active is null ? ""
+            : active.IsChanged ? AppText.Get("granary.settings.mpv.preset.activeChanged", ("name", active.Name))
+            : AppText.Get("granary.settings.mpv.preset.active", ("name", active.Name));
     }
 
     // An edit in Granary's editor can make the preset in use "changed". Active() logs a disk that fails and answers null.
@@ -201,7 +207,7 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
 /// <summary>A preset in the list, with what its buttons are called for a screen reader.</summary>
 public sealed record MpvPresetRow(string Name)
 {
-    public string LoadName => $"Load the preset {Name}";
+    public string LoadName => AppText.Get("granary.settings.mpv.preset.loadName", ("name", Name));
 
-    public string DeleteName => $"Delete the preset {Name}";
+    public string DeleteName => AppText.Get("granary.settings.mpv.preset.deleteName", ("name", Name));
 }

@@ -133,18 +133,23 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
         {
             return;
         }
-        var name = new TextBox { PlaceholderText = "Name", MaxLength = 120, IsSpellCheckEnabled = false };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(name, "Preset name");
+        var name = new TextBox { PlaceholderText = AppText.Get("granary.settings.mpv.presetName.placeholder"), MaxLength = 120, IsSpellCheckEnabled = false };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(name, AppText.Get("granary.settings.mpv.presetName.name"));
         var note = new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Foreground = (Brush)Application.Current.Resources["SiloMutedBrush"] };
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-            Title = "Save as preset",
+            Title = AppText.Get("granary.settings.mpv.presetName.title"),
             Content = new StackPanel
             {
                 Spacing = 8,
-                Children = { new TextBlock { Text = "Keeps your mpv.conf as it is now under this name.", TextWrapping = TextWrapping.Wrap }, name, note },
+                Children =
+                {
+                    new TextBlock { Text = AppText.Get("granary.settings.mpv.presetName.body"), TextWrapping = TextWrapping.Wrap },
+                    name,
+                    note,
+                },
             },
             PrimaryButtonText = AppText.Get("common.save"),
             CloseButtonText = AppText.Get("common.cancel"),
