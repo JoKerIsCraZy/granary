@@ -8,12 +8,22 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.ViewModels;
 
 /// <summary>
-/// Settings → Navigation &amp; Cards → Title preview at the top: whether Home, For You and Requests' Discover open with the
-/// large picture of the title pointed at (<see cref="BrowseHeroViewModel"/>), or start with their rows. On by default.
-/// Granary's own switch: the hero is Granary's, and Silo's clients have none to turn off. It leaves Home's banner alone,
-/// which a row marked as the hero on Silo's web brings, as on the web. Kept on this PC for each server and profile in
-/// <c>browse-hero.json</c>, as the sidebar's layout is (<see cref="SidebarLayout"/>): the server keeps no such setting. A
-/// file that cannot be read shows the hero; one that cannot be written is logged, and the choice still holds for this run.
+/// Settings → Navigation &amp; Cards → Pages, the hero at the top of Home, For You and Requests' Discover
+/// (<see cref="BrowseHeroViewModel"/>):
+/// <list type="bullet">
+/// <item>
+/// Title preview at the top (<see cref="IsShown"/>): whether the pages open with the large picture of the title pointed at,
+/// or start with their rows. On by default. Granary's own switch: the hero is Granary's, and Silo's clients have none to turn
+/// off. It leaves Home's banner alone, which a row marked as the hero on Silo's web brings, as on the web.
+/// </item>
+/// <item>
+/// Hero size (<see cref="Size"/>): Granary's compact hero, the default, or one as tall as the banner of Silo's web
+/// (<see cref="BrowseHeroLayout.For"/>). Home's banner follows it too.
+/// </item>
+/// </list>
+/// Both are kept on this PC for each server and profile in <c>browse-hero.json</c>, as the sidebar's layout is
+/// (<see cref="SidebarLayout"/>): the server keeps no such settings. A file that cannot be read shows the hero, compact; one
+/// that cannot be written is logged, and the choice still holds for this run.
 /// </summary>
 public sealed partial class BrowseHeroSetting : ObservableObject
 {
@@ -23,8 +33,10 @@ public sealed partial class BrowseHeroSetting : ObservableObject
     private readonly ILogger<BrowseHeroSetting> _logger;
     // Saves one at a time, each the profiles as they are when its turn comes, so the last one written is the latest.
     private readonly SemaphoreSlim _gate = new(1, 1);
-    // The profiles that turned it off, by "server id/profile id". Replaced, never changed, so a save reads it whole.
+    // The profiles that turned the title preview off, and those that chose the full size, by "server id/profile id".
+    // Replaced, never changed, so a save reads them whole.
     private IReadOnlySet<string> _hiddenFor;
+    private IReadOnlySet<string> _fullFor;
 
     public BrowseHeroSetting(string filePath, ISessionManager session, IUiDispatcher dispatcher, ILogger<BrowseHeroSetting> logger)
     {
@@ -33,7 +45,7 @@ public sealed partial class BrowseHeroSetting : ObservableObject
         _session = session;
         _dispatcher = dispatcher;
         _logger = logger;
-        _hiddenFor = Load();
+        (_hiddenFor, _fullFor) = Load();
         _session.Changed += OnSessionChanged;
     }
 
@@ -41,6 +53,9 @@ public sealed partial class BrowseHeroSetting : ObservableObject
 
     /// <summary>The acting profile's pages open with the title preview, as they do without a profile.</summary>
     public bool IsShown => Key() is not { } key || !_hiddenFor.Contains(key);
+
+    /// <summary>The acting profile's hero size; compact until it chooses, and without a profile.</summary>
+    public BrowseHeroSize Size => Key() is { } key && _fullFor.Contains(key) ? BrowseHeroSize.Full : BrowseHeroSize.Compact;
 
     /// <summary>The save in flight, for tests.</summary>
     internal Task Saving { get; private set; } = Task.CompletedTask;
@@ -59,36 +74,59 @@ public sealed partial class BrowseHeroSetting : ObservableObject
         {
             return Task.CompletedTask;
         }
-        _hiddenFor = shown
-            ? _hiddenFor.Where(k => k != key).ToHashSet(StringComparer.Ordinal)
-            : _hiddenFor.Append(key).ToHashSet(StringComparer.Ordinal);
+        _hiddenFor = With(_hiddenFor, key, !shown);
         OnPropertyChanged(nameof(IsShown));
+        return Saving = SaveAsync();
+    }
+
+    /// <summary>
+    /// Sets the acting profile's hero size, and saves it; without a profile there is none to keep it for, and it stays
+    /// compact. Never fails: a save that does not work is logged.
+    /// </summary>
+    public Task SetSizeAsync(BrowseHeroSize size)
+    {
+        if (Key() is not { } key || size == Size)
+        {
+            return Task.CompletedTask;
+        }
+        _fullFor = With(_fullFor, key, size == BrowseHeroSize.Full);
+        OnPropertyChanged(nameof(Size));
         return Saving = SaveAsync();
     }
 
     private string? Key() => _session is { ActiveServer: { } server, ProfileId: { } profile } ? $"{server.Id}/{profile}" : null;
 
-    // Another profile has its own choice; Changed can come from a background thread (a sign-out by the authentication handler).
-    private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => OnPropertyChanged(nameof(IsShown)));
+    // The profiles with or without the one of key, as a new set.
+    private static IReadOnlySet<string> With(IReadOnlySet<string> keys, string key, bool included) => included
+        ? keys.Append(key).ToHashSet(StringComparer.Ordinal)
+        : keys.Where(k => k != key).ToHashSet(StringComparer.Ordinal);
 
-    private IReadOnlySet<string> Load()
+    // Another profile has its own choices; Changed can come from a background thread (a sign-out by the authentication handler).
+    private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
+    {
+        OnPropertyChanged(nameof(IsShown));
+        OnPropertyChanged(nameof(Size));
+    });
+
+    private (IReadOnlySet<string> HiddenFor, IReadOnlySet<string> FullFor) Load()
     {
         try
         {
-            if (!File.Exists(_filePath))
+            if (File.Exists(_filePath))
             {
-                return new HashSet<string>(StringComparer.Ordinal);
+                var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), BrowseHeroJsonContext.Default.BrowseHeroFile);
+                return (Keys(file?.HiddenFor), Keys(file?.FullFor));
             }
-            var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), BrowseHeroJsonContext.Default.BrowseHeroFile);
-            return (file?.HiddenFor ?? []).OfType<string>().ToHashSet(StringComparer.Ordinal);
         }
         catch (Exception ex)
         {
-            // Whatever the file or the disk does, the app starts: the pages show their hero.
-            _logger.LogWarning(ex, "The title preview's switch could not be read; the pages show it");
-            return new HashSet<string>(StringComparer.Ordinal);
+            // Whatever the file or the disk does, the app starts: the pages show their hero, compact.
+            _logger.LogWarning(ex, "The hero's settings could not be read; the pages show it, compact");
         }
+        return (Keys(null), Keys(null));
     }
+
+    private static IReadOnlySet<string> Keys(IReadOnlyList<string?>? keys) => (keys ?? []).OfType<string>().ToHashSet(StringComparer.Ordinal);
 
     private async Task SaveAsync()
     {
@@ -97,7 +135,7 @@ public sealed partial class BrowseHeroSetting : ObservableObject
         string temp = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
         {
-            var file = new BrowseHeroFile([.. _hiddenFor.Order(StringComparer.Ordinal)]);
+            var file = new BrowseHeroFile([.. _hiddenFor.Order(StringComparer.Ordinal)], [.. _fullFor.Order(StringComparer.Ordinal)]);
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             await using (var stream = File.Create(temp))
             {
@@ -107,15 +145,15 @@ public sealed partial class BrowseHeroSetting : ObservableObject
         }
         catch (Exception ex)
         {
-            // Never the switch's to fail: the choice holds for this run.
-            _logger.LogWarning(ex, "The title preview's switch could not be saved");
+            // Never the setting's to fail: the choice holds for this run.
+            _logger.LogWarning(ex, "The hero's settings could not be saved");
             try
             {
                 File.Delete(temp);
             }
             catch (Exception deleteFailure)
             {
-                _logger.LogDebug(deleteFailure, "A half-written title preview file stays behind");
+                _logger.LogDebug(deleteFailure, "A half-written file of the hero's settings stays behind");
             }
         }
         finally
@@ -125,8 +163,12 @@ public sealed partial class BrowseHeroSetting : ObservableObject
     }
 }
 
-/// <summary><c>browse-hero.json</c>: the profiles, by "server id/profile id", whose pages start with their rows.</summary>
-internal sealed record BrowseHeroFile(IReadOnlyList<string?>? HiddenFor);
+/// <summary>
+/// <c>browse-hero.json</c>: the profiles, by "server id/profile id", whose pages start with their rows, and those whose
+/// hero is the full size. Both may be missing: a file from before the size could be chosen has no <c>full_for</c>, which
+/// means compact for everyone.
+/// </summary>
+internal sealed record BrowseHeroFile(IReadOnlyList<string?>? HiddenFor, IReadOnlyList<string?>? FullFor = null);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
 [JsonSerializable(typeof(BrowseHeroFile))]

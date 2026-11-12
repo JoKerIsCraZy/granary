@@ -16,7 +16,8 @@ namespace Granary.Tests.Browse;
 /// <summary>
 /// Settings → Navigation &amp; Cards → Title preview at the top: off, Home, For You and Requests' Discover start with their
 /// rows, and a card pointed at changes nothing; Home's banner, which a row marked on the web brings, still shows. A change
-/// made while a page is away applies as it shows again.
+/// made while a page is away applies as it shows again. Hero size beside it: the pages take the profile's size the same
+/// way, Home's banner too.
 /// </summary>
 public sealed class BrowseHeroSwitchTests : IDisposable
 {
@@ -308,5 +309,95 @@ public sealed class BrowseHeroSwitchTests : IDisposable
         await setting.SetShownAsync(true);
         await hub.ActivateAsync(isReturn: true);
         Assert.Equal("New One", hub.Hero.Shown?.Heading);
+    }
+
+    // Hero size, beside the switch: Compact by default, Full as tall as the banner of Silo's web. A page takes it as it shows.
+
+    private async Task<BrowseHeroSetting> FullAsync(FakeSessionManager session)
+    {
+        var setting = SettingFor(session);
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+        return setting;
+    }
+
+    [Fact]
+    public async Task Home_ShowsACompactHero_UntilFullIsChosen()
+    {
+        var home = await HomeAsync(SettingFor(_session), Section("recent", "recently_added", 1, Item("r1")));
+
+        Assert.Equal(BrowseHeroSize.Compact, home.Hero.Size);
+    }
+
+    [Fact]
+    public async Task Home_SetToFullWhileAway_TakesTheSizeWhenItShowsAgain_AndTellsThePage()
+    {
+        var setting = SettingFor(_session);
+        var home = await HomeAsync(setting, Section("recent", "recently_added", 1, Item("r1")));
+        home.Deactivate();
+        var changed = new List<string?>();
+        home.Hero.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+        Assert.Equal(BrowseHeroSize.Compact, home.Hero.Size);
+
+        await home.ActivateAsync();
+        Assert.Equal(BrowseHeroSize.Full, home.Hero.Size);
+        Assert.Contains(nameof(BrowseHeroViewModel.Size), changed);
+        // The title pointed at stays: only the hero's sizes change.
+        Assert.Equal("r1", home.HeroTitle?.Key);
+    }
+
+    [Fact]
+    public async Task Home_WithTheTitlePreviewOff_ItsBannerStillTakesTheSize()
+    {
+        var setting = await TurnedOffAsync(_session);
+        await setting.SetSizeAsync(BrowseHeroSize.Full);
+
+        var home = await HomeAsync(setting, Featured("picks", "collection", 2, Item("f1"), Item("f2")), Section("recent", "recently_added", 1, Item("r1")));
+
+        Assert.True(home.Banner.HasSlides);
+        Assert.Equal(BrowseHeroSize.Full, home.Hero.Size);
+    }
+
+    [Fact]
+    public async Task Home_AnotherProfile_TakesItsOwnSize()
+    {
+        var home = await HomeAsync(await FullAsync(_session), Section("recent", "recently_added", 1, Item("r1")));
+        Assert.Equal(BrowseHeroSize.Full, home.Hero.Size);
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        await home.Loading;
+
+        Assert.Equal(BrowseHeroSize.Compact, home.Hero.Size);
+    }
+
+    [Fact]
+    public async Task ForYou_TakesTheSize_AndAChangeOnTheWayBack()
+    {
+        var setting = await FullAsync(_harness.Session);
+        var page = await ForYouAsync(setting);
+        Assert.Equal(BrowseHeroSize.Full, page.Hero.Size);
+
+        await setting.SetSizeAsync(BrowseHeroSize.Compact);
+        Assert.Equal(BrowseHeroSize.Full, page.Hero.Size);
+
+        await page.ActivateAsync(isReturn: true);
+        Assert.Equal(BrowseHeroSize.Compact, page.Hero.Size);
+    }
+
+    [Fact]
+    public async Task RequestsDiscover_TakesTheSize_AndAChangeOnTheWayBack()
+    {
+        var setting = await FullAsync(_harness.Session);
+        var hub = await RequestsAsync(setting);
+        Assert.Equal(BrowseHeroSize.Full, hub.Hero.Size);
+        hub.Deactivate();
+
+        await setting.SetSizeAsync(BrowseHeroSize.Compact);
+        Assert.Equal(BrowseHeroSize.Full, hub.Hero.Size);
+
+        await hub.ActivateAsync(isReturn: true);
+        Assert.Equal(BrowseHeroSize.Compact, hub.Hero.Size);
     }
 }

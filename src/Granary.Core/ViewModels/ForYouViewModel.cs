@@ -123,6 +123,7 @@ public sealed partial class ForYouViewModel : ObservableObject
     /// </summary>
     public Task ActivateAsync(bool isReturn)
     {
+        Hero.TakeSize();
         if (Hero.MissedSwitch)
         {
             // The title preview was turned on or off while the page was away.

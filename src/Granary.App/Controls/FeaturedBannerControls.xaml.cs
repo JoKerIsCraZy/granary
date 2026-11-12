@@ -34,6 +34,8 @@ public sealed partial class FeaturedBannerControls : UserControl
             new PropertyMetadata(false, (sender, _) => ((FeaturedBannerControls)sender).FollowRail()));
 
     private const double ArrowSize = 36;
+    // How much higher the counter, the rail and the pause button end than Play, to be level with it.
+    private const double IndicatorRise = 8;
     private const double ArrowsShown = 0.9;
     private static readonly TimeSpan ArrowFade = TimeSpan.FromMilliseconds(150);
 
@@ -123,11 +125,14 @@ public sealed partial class FeaturedBannerControls : UserControl
     public string PauseGlyph(bool isPaused) => isPaused ? "" : "";
 
     // The room reaches from the compact header to the first row; the arrows sit half way down the whole banner, which
-    // begins at the top of the page.
+    // begins at the top of the page. Play and More Info end 26 px above the first row, and under a full hero as far above its
+    // bottom as the web's banner has them, with the counter level beside them.
     private void FollowSizes()
     {
         var sizes = Sizes;
         Height = sizes.CollapseDistance;
+        Actions.Margin = Actions.Margin with { Bottom = sizes.ButtonsBottom };
+        Indicator.Margin = Indicator.Margin with { Bottom = sizes.ButtonsBottom + IndicatorRise };
         double top = Math.Max(0, sizes.RowsTop / 2 - sizes.CompactHeight - ArrowSize / 2);
         PreviousButton.Margin = PreviousButton.Margin with { Top = top };
         NextButton.Margin = NextButton.Margin with { Top = top };
