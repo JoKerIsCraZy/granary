@@ -812,5 +812,161 @@
       "type": 0,
       "value": "جارٍ التحقق..."
     }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "بحث"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "البحث عن أفلام ومسلسلات..."
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "رجوع"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "الإدارة"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "التقويم"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "طي "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "المجموعات"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "استكشاف"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "توسيع "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "المفضلة"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "لك"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "السجل"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "الرئيسية"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "الإشعارات"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 0,
+      "value": "قائمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "الطلبات"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "بحث"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "الإعدادات"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "تبديل الملف الشخصي"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "قائمة المشاهدة"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "محتواك"
+    }
   ]
 }

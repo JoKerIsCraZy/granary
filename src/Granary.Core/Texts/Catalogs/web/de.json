@@ -772,5 +772,161 @@
       "type": 0,
       "value": "Wird überprüft …"
     }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "Suche"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "Filme, Serien suchen …"
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "Zurück"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "Admin"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "Kalender"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " einklappen"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "Sammlungen"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "Entdecken"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " ausklappen"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "Favoriten"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "Für dich"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "Verlauf"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "Startseite"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "Mediatheken"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "Abmelden"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "Benachrichtigungen"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 0,
+      "value": "Menü von "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "Anfragen"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "Suche"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "Einstellungen"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "Profil wechseln"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "Merkliste"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "Deine Inhalte"
+    }
   ]
 }

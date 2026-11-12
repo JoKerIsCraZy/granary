@@ -44,8 +44,8 @@
             <Grid MaxWidth="760" HorizontalAlignment="Stretch">
                 <TextBox x:Name="SearchBox" Style="{StaticResource SearchBoxStyle}"
                          Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         PlaceholderText="Search movies, series and people" IsSpellCheckEnabled="False" InputScope="Search"
-                         AutomationProperties.Name="Search" KeyDown="OnSearchBoxKeyDown" />
+                         PlaceholderText="{x:Bind t:AppText.Get('web.search.placeholderProminent')}" IsSpellCheckEnabled="False"
+                         InputScope="Search" AutomationProperties.Name="{x:Bind t:AppText.Get('web.search.label')}" KeyDown="OnSearchBoxKeyDown" />
                 <FontIcon Glyph="&#xE721;" FontSize="18" Margin="22,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                           Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
                 <ProgressRing Width="20" Height="20" Margin="0,0,22,0" HorizontalAlignment="Right" VerticalAlignment="Center"

@@ -141,3 +141,35 @@ web.profiles.pin.lockedLater
 web.profiles.pin.lockedMinutes
 web.profiles.pin.title
 web.profiles.pin.verifying
+
+# The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
+# src/Granary.App/Views/SearchPage.xaml.
+web.search.label
+web.search.placeholderProminent
+
+# The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
+# display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
+# src/Granary.App/Controls/SidebarSectionHeader.xaml.cs, and the entries' names in
+# src/Granary.Core/ViewModels/SidebarLayout.cs, which Settings' sidebar editor shows too.
+web.shell.pageBack.goBack
+web.shell.sidebar.admin
+web.shell.sidebar.calendar
+web.shell.sidebar.collapse
+web.shell.sidebar.collections
+web.shell.sidebar.discover
+web.shell.sidebar.expand
+web.shell.sidebar.favorites
+web.shell.sidebar.forYou
+web.shell.sidebar.history
+web.shell.sidebar.home
+web.shell.sidebar.libraries
+web.shell.sidebar.logout
+web.shell.sidebar.notifications
+web.shell.sidebar.profileMenu
+web.shell.sidebar.requests
+web.shell.sidebar.search
+web.shell.sidebar.settings
+web.shell.sidebar.switchProfile
+web.shell.sidebar.watchParty
+web.shell.sidebar.watchlist
+web.shell.sidebar.yourStuff

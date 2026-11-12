@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Granary.App.Services;
+using Granary.Core.Texts;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -73,9 +74,10 @@ public sealed partial class MainWindow
     {
         bool fullScreen = _modes.IsFullScreen;
         FullScreenGlyph.Glyph = fullScreen ? "" : "";
-        string name = fullScreen ? "Exit full screen" : "Full screen";
-        AutomationProperties.SetName(FullScreenButton, name);
-        ToolTipService.SetToolTip(FullScreenButton, $"{name} (F11)");
+        AutomationProperties.SetName(FullScreenButton,
+            fullScreen ? AppText.Get("granary.shell.exitFullScreen") : AppText.Get("granary.shell.fullScreen"));
+        ToolTipService.SetToolTip(FullScreenButton,
+            fullScreen ? AppText.Get("granary.shell.exitFullScreenTooltip") : AppText.Get("granary.shell.fullScreenTooltip"));
         CloseButton.Visibility = fullScreen ? Visibility.Visible : Visibility.Collapsed;
         ShowWindowButtons();
     }

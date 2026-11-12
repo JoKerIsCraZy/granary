@@ -744,5 +744,161 @@
       "type": 0,
       "value": "正在验证……"
     }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "搜索"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "搜索电影、剧集……"
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "返回"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "管理"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "日历"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "收起"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "合集"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "发现"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "展开"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "收藏"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "为你推荐"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "观看历史"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "首页"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "退出登录"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "通知"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "的菜单"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "请求"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "搜索"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "设置"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "切换个人资料"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "待看清单"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "我的内容"
+    }
   ]
 }

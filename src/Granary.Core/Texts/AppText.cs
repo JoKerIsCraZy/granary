@@ -54,6 +54,12 @@ public static class AppText
         Language.Runs(key, values);
 
     /// <summary>
+    /// A text in capitals by the rules of the language on screen, where the web writes it in mixed case and its CSS shows
+    /// it upper-cased (<c>uppercase</c>), as the sidebar's section names. Scripts without capitals stay as they are.
+    /// </summary>
+    public static string Upper(string text) => text.ToUpper(Language.Culture);
+
+    /// <summary>
     /// Text a Silo server sent in English with its catalog key, such as a row's title: translated where the language on
     /// screen has the key, else as sent (<see cref="TextLanguage.ServerText"/>; the web's <c>serverText</c>).
     /// </summary>

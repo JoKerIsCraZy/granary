@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -39,10 +40,14 @@ public sealed class TextLanguage
         _logger = logger ?? NullLogger.Instance;
         Tag = own.Tag;
         IsRightToLeft = AppLanguage.IsRightToLeft(Tag);
+        Culture = CultureOf(Tag);
     }
 
     /// <summary>The shipped language's tag, such as <c>en</c> or <c>pt-BR</c>.</summary>
     public string Tag { get; }
+
+    /// <summary>The language's culture, for what it writes by its own rules, such as capitals.</summary>
+    public CultureInfo Culture { get; }
 
     /// <summary>Whether the language is written right to left: Arabic.</summary>
     public bool IsRightToLeft { get; }
@@ -164,6 +169,19 @@ public sealed class TextLanguage
             }
         }
         return true;
+    }
+
+    private static CultureInfo CultureOf(string tag)
+    {
+        try
+        {
+            return CultureInfo.GetCultureInfo(tag);
+        }
+        catch (CultureNotFoundException)
+        {
+            // Only without the system's culture data (invariant globalization); a text still shows.
+            return CultureInfo.InvariantCulture;
+        }
     }
 
     private void Report(string key, string problem)

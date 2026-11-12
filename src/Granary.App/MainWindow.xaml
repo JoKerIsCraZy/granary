@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts"
     Title="Granary">
 
     <!--
@@ -47,7 +48,8 @@
             </Button>
             <!-- Closes the window as Windows' Close does, through the same command, so playback stops as on any close. -->
             <Button x:Name="CloseButton" Style="{StaticResource SiloTitleBarCloseButtonStyle}" Click="OnCloseClick"
-                    Visibility="Collapsed" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
+                    Visibility="Collapsed" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.shell.close')}"
+                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.shell.close')}">
                 <FontIcon Glyph="&#xE8BB;" FontSize="10" />
             </Button>
         </StackPanel>
@@ -87,42 +89,44 @@
             </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Home" Tag="Home" Icon="Home" />
-                <NavigationViewItem Tag="Search" Icon="Find" AutomationProperties.Name="Search" ToolTipService.ToolTip="Search (Ctrl+K)">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.home')}" Tag="Home" Icon="Home" />
+                <NavigationViewItem Tag="Search" Icon="Find" AutomationProperties.Name="{x:Bind t:AppText.Get('web.shell.sidebar.search')}"
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.shell.searchTooltip')}">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Search" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.shell.sidebar.search')}" VerticalAlignment="Center" />
                         <Border Grid.Column="1" Margin="0,0,8,0" Padding="6,1" CornerRadius="5" BorderThickness="1"
                                 BorderBrush="{StaticResource SiloBorderBrush}" VerticalAlignment="Center">
+                            <!-- A key cap, as the web's: not a text. -->
                             <TextBlock Text="Ctrl K" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
                         </Border>
                     </Grid>
                 </NavigationViewItem>
                 <!-- The three sections fold away by their headers, and stay so across starts (MainWindow.ShowSections). -->
                 <NavigationViewItemHeader x:Name="LibrariesHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader x:Name="LibrariesToggle" Label="Libraries" IsExpanded="{x:Bind Sections.IsLibrariesExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="LibrariesToggle" Label="{x:Bind t:AppText.Get('web.shell.sidebar.libraries')}" IsExpanded="{x:Bind Sections.IsLibrariesExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind LibrariesSection}" />
                 </NavigationViewItemHeader>
                 <!-- The libraries go between the two headers. -->
                 <NavigationViewItemHeader x:Name="DiscoverHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader x:Name="DiscoverToggle" Label="Discover" IsExpanded="{x:Bind Sections.IsDiscoverExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="DiscoverToggle" Label="{x:Bind t:AppText.Get('web.shell.sidebar.discover')}" IsExpanded="{x:Bind Sections.IsDiscoverExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind DiscoverSection}" />
                 </NavigationViewItemHeader>
-                <NavigationViewItem Content="For You" Tag="ForYou">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.forYou')}" Tag="ForYou">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE734;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <!-- Only while the server takes requests from the profile. -->
-                <NavigationViewItem Content="Requests" Tag="Requests">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.requests')}" Tag="Requests">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE724;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Calendar" Tag="Calendar">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.calendar')}" Tag="Calendar">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE787;" />
                     </NavigationViewItem.Icon>
@@ -131,7 +135,7 @@
                     Hidden when the server has no inbox for the profile; the unread count beside it in the accent, as the web's
                     primary (components/AppSidebar.tsx), its number in the label drawn on the accent.
                 -->
-                <NavigationViewItem Content="Notifications" Tag="Notifications"
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.notifications')}" Tag="Notifications"
                                     AutomationProperties.Name="{x:Bind NotificationsName(Notifications.UnreadCount), Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEA8F;" />
@@ -142,31 +146,31 @@
                     </NavigationViewItem.InfoBadge>
                 </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="YourStuffHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader x:Name="YourStuffToggle" Label="Your Stuff" IsExpanded="{x:Bind Sections.IsYourStuffExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="YourStuffToggle" Label="{x:Bind t:AppText.Get('web.shell.sidebar.yourStuff')}" IsExpanded="{x:Bind Sections.IsYourStuffExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind YourStuffSection}" />
                 </NavigationViewItemHeader>
-                <NavigationViewItem Content="Favorites" Tag="List:favorites">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.favorites')}" Tag="List:favorites">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEB51;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Watchlist" Tag="List:watchlist">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.watchlist')}" Tag="List:watchlist">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8FD;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <!-- Only while the server offers rooms to the account. -->
-                <NavigationViewItem Content="Watch Party" Tag="WatchParty">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.watchParty')}" Tag="WatchParty">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE716;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Collections" Tag="Collections">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.collections')}" Tag="Collections">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE838;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="History" Tag="List:history">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.history')}" Tag="List:history">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE81C;" />
                     </NavigationViewItem.Icon>
@@ -175,12 +179,12 @@
 
             <NavigationView.FooterMenuItems>
                 <!-- The server's administration, for an administrator only, as the web's sidebar offers it. -->
-                <NavigationViewItem x:Name="AdminItem" Content="Admin" Tag="Admin" Visibility="{x:Bind Sidebar.IsAdmin, Mode=OneWay}">
+                <NavigationViewItem x:Name="AdminItem" Content="{x:Bind t:AppText.Get('web.shell.sidebar.admin')}" Tag="Admin" Visibility="{x:Bind Sidebar.IsAdmin, Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEA18;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Settings" Tag="Settings">
+                <NavigationViewItem Content="{x:Bind t:AppText.Get('web.shell.sidebar.settings')}" Tag="Settings">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
@@ -193,13 +197,13 @@
                     </NavigationViewItem.Icon>
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout Placement="TopEdgeAlignedLeft">
-                            <MenuFlyoutItem Text="Switch profile" Command="{x:Bind Sidebar.SwitchProfileCommand}">
+                            <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.shell.sidebar.switchProfile')}" Command="{x:Bind Sidebar.SwitchProfileCommand}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE748;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <MenuFlyoutSeparator />
-                            <MenuFlyoutItem Text="Sign out" Command="{x:Bind Sidebar.SignOutCommand}">
+                            <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.shell.sidebar.logout')}" Command="{x:Bind Sidebar.SignOutCommand}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xF3B1;" />
                                 </MenuFlyoutItem.Icon>
@@ -219,7 +223,8 @@
         -->
         <Button x:Name="PageBackButton" Grid.Row="1" Style="{StaticResource SiloPageBackButtonStyle}" Margin="64,12,0,0"
                 HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed" Click="OnPageBackClick"
-                AutomationProperties.Name="Go back" ToolTipService.ToolTip="Back (Alt+Left)">
+                AutomationProperties.Name="{x:Bind t:AppText.Get('web.shell.pageBack.goBack')}"
+                ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.shell.backTooltip')}">
             <FontIcon Glyph="&#xE76B;" FontSize="14" />
         </Button>
 
@@ -242,13 +247,13 @@
                         <TextBlock Text="{x:Bind Updates.NoticeText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                    FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextWrapping="Wrap"
                                    AutomationProperties.LiveSetting="Polite" />
-                        <TextBlock Text="Restart now, or it installs when you close Granary." Style="{StaticResource SiloCaptionTextStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.update.noticeHint')}" Style="{StaticResource SiloCaptionTextStyle}"
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                    <Button Content="Later" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Updates.LaterCommand}" />
-                    <Button Content="Restart now" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind Updates.RestartNowCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('granary.update.later')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Updates.LaterCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('granary.update.restartNow')}" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind Updates.RestartNowCommand}" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -276,7 +281,7 @@
         -->
         <Grid x:Name="Splash" Grid.Row="1" Background="{StaticResource SiloBackgroundBrush}">
             <controls:GranaryMark x:Name="SplashMark" Width="132" Height="132" Margin="0,0,0,32"
-                                  AutomationProperties.Name="Granary is starting" />
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.shell.starting')}" />
         </Grid>
     </Grid>
 </Window>

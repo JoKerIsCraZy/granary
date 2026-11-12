@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -28,18 +29,18 @@ public sealed partial class SidebarLayout : ObservableObject
     /// </summary>
     public const string ServerLogoTag = "ServerLogo";
 
-    /// <summary>The entries besides the libraries, in the sidebar's own order.</summary>
-    public static IReadOnlyList<SidebarEntry> Entries { get; } =
+    /// <summary>The entries besides the libraries, in the sidebar's own order, named in the language on screen.</summary>
+    public static IReadOnlyList<SidebarEntry> Entries =>
     [
-        new("ForYou", "For You", SidebarSection.Discover, "ForYou"),
-        new("Requests", "Requests", SidebarSection.Discover, "Requests"),
-        new("Calendar", "Calendar", SidebarSection.Discover, "Calendar"),
-        new("Notifications", "Notifications", SidebarSection.Discover, "Notifications"),
-        new("List:favorites", "Favorites", SidebarSection.YourStuff, "List:favorites"),
-        new("List:watchlist", "Watchlist", SidebarSection.YourStuff, "List:watchlist"),
-        new("WatchParty", "Watch Party", SidebarSection.YourStuff, "WatchParty"),
-        new("Collections", "Collections", SidebarSection.YourStuff, "Collections"),
-        new("List:history", "History", SidebarSection.YourStuff, "List:history"),
+        new("ForYou", AppText.Get("web.shell.sidebar.forYou"), SidebarSection.Discover, "ForYou"),
+        new("Requests", AppText.Get("web.shell.sidebar.requests"), SidebarSection.Discover, "Requests"),
+        new("Calendar", AppText.Get("web.shell.sidebar.calendar"), SidebarSection.Discover, "Calendar"),
+        new("Notifications", AppText.Get("web.shell.sidebar.notifications"), SidebarSection.Discover, "Notifications"),
+        new("List:favorites", AppText.Get("web.shell.sidebar.favorites"), SidebarSection.YourStuff, "List:favorites"),
+        new("List:watchlist", AppText.Get("web.shell.sidebar.watchlist"), SidebarSection.YourStuff, "List:watchlist"),
+        new("WatchParty", AppText.Get("web.shell.sidebar.watchParty"), SidebarSection.YourStuff, "WatchParty"),
+        new("Collections", AppText.Get("web.shell.sidebar.collections"), SidebarSection.YourStuff, "Collections"),
+        new("List:history", AppText.Get("web.shell.sidebar.history"), SidebarSection.YourStuff, "List:history"),
     ];
 
     private readonly string _filePath;
