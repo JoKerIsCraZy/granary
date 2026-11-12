@@ -10,7 +10,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
-    xmlns:vm="using:Granary.Core.ViewModels.Collections">
+    xmlns:vm="using:Granary.Core.ViewModels.Collections"
+    xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -80,7 +81,7 @@
                 <StackPanel Visibility="{x:Bind ViewModel.HasLoadError, Mode=OneWay}" Spacing="12" Margin="0,24">
                     <TextBlock Text="{x:Bind ViewModel.LoadError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Retry" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
                         <Button Content="All collections" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind BackToCollectionsCommand}" />
                     </StackPanel>
                 </StackPanel>
@@ -185,7 +186,7 @@
 
                             <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasSearchState, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.SearchState, Mode=OneWay}" Style="{StaticResource EditorHelpStyle}" FontSize="13" VerticalAlignment="Center" />
-                                <Button Content="Try again" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetrySearchCommand}"
+                                <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetrySearchCommand}"
                                         Visibility="{x:Bind ViewModel.SearchFailed, Mode=OneWay}" />
                             </StackPanel>
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Results}" Visibility="{x:Bind ViewModel.HasResults, Mode=OneWay}">
@@ -279,7 +280,7 @@
                                        Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
                             <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasFailedAdds, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.FailedText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource SiloDestructiveBrush}" />
-                                <Button Content="Try again" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetryFailedAddsCommand}" />
+                                <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetryFailedAddsCommand}" />
                             </StackPanel>
 
                             <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
@@ -640,9 +641,9 @@
                                     <TextBlock Text="Look" Style="{StaticResource EditorHeadingStyle}" FontSize="17" VerticalAlignment="Center"
                                                AutomationProperties.HeadingLevel="Level2" />
                                     <Button HorizontalAlignment="Right" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.CloseLookCommand}"
-                                            AutomationProperties.Name="Done">
+                                            AutomationProperties.Name="{x:Bind t:AppText.Get('common.done')}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="Done" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('common.done')}" />
                                             <FontIcon Glyph="&#xE70E;" FontSize="10" />
                                         </StackPanel>
                                     </Button>
@@ -686,7 +687,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasPosterError, Mode=OneWay}">
                                     <TextBlock Text="{x:Bind ViewModel.PosterErrorText, Mode=OneWay}" Foreground="{StaticResource SiloDestructiveBrush}" FontSize="12.5"
                                                TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="560" />
-                                    <Button Content="Retry" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
                                     <!-- The failed poster can go on its own, without discarding the rest. -->
                                     <Button Content="Undo" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.UndoPosterCommand}" />
                                 </StackPanel>
@@ -706,7 +707,7 @@
                                         <TextBox x:Name="PosterLinkBox" Text="{x:Bind ViewModel.PosterLink, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  PlaceholderText="https://" CornerRadius="8" AutomationProperties.Name="Poster image link" KeyDown="OnPosterLinkKeyDown" />
                                         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                            <Button Content="Cancel" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.CancelPosterLinkCommand}" />
+                                            <Button Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.CancelPosterLinkCommand}" />
                                             <Button Content="Use link" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.UsePosterLinkCommand}" />
                                         </StackPanel>
                                     </StackPanel>
@@ -743,7 +744,7 @@
                                    Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Button Content="Cancel" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind BackToCollectionsCommand}"
+                        <Button Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind BackToCollectionsCommand}"
                                 Visibility="{x:Bind ViewModel.IsNew, Mode=OneWay}" />
                         <Button Content="Discard" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.DiscardCommand}"
                                 Visibility="{x:Bind ViewModel.IsCreated, Mode=OneWay}" />

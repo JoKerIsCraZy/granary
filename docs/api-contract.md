@@ -749,8 +749,8 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   Both are absent when someone typed the title, and `title_args` is absent when the message has no placeholders. A
   translated interface shows the message filled from `title_args`, else `title`; English shows `title` as sent. An
   empty key counts as none (`silo-server/web/src/lib/sectionTitle.ts`). Granary reads them into `Section.TitleKey`
-  and `TitleArgs` but shows neither yet; the messages come from the web's catalogs (docs/release.md,
-  "Translations"). `default_title_key` and `default_title_args` come only with a profile's section settings
+  and `TitleArgs` and shows Home, library and Watch Party shelf rows by that rule (`SectionTitle`,
+  `AppText.ServerText`); the messages come from the web's catalogs (docs/release.md, "Translations"). `default_title_key` and `default_title_args` come only with a profile's section settings
   (`getProfileSectionSettings`), which Granary does not read. `getHomeCapabilities` reports `section_title_keys`,
   which is informational. Sources: `silo-server/internal/apiv2/library_views.go` (`SectionTitleKey`),
   `internal/sections/title_keys.go` and `docs/catalog-api.md`, "Section titles", at `0e95e55b6`.

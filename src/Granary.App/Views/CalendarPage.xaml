@@ -11,6 +11,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <Grid>
@@ -102,7 +103,7 @@
                 <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                     <TextBlock Text="Couldn't load the calendar." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                TextAlignment="Center" />
-                    <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryCommand}" />
                 </StackPanel>
 

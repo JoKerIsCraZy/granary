@@ -11,6 +11,7 @@
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     Background="{StaticResource SiloBackgroundBrush}">
 
     <Page.Resources>
@@ -234,7 +235,7 @@
                        AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="Something went wrong while loading it. Try again in a moment." Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
-            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+            <Button HorizontalAlignment="Center" Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
         </StackPanel>
 
         <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
@@ -248,7 +249,7 @@
         <!-- Request seasons: a switch per season; seasons in the library or already asked for are shown but cannot be picked. -->
         <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="Request seasons"
                        PrimaryButtonText="{x:Bind Picker.SubmitLabel, Mode=OneWay}" IsPrimaryButtonEnabled="{x:Bind Picker.CanSubmit, Mode=OneWay}"
-                       CloseButtonText="Cancel" DefaultButton="Primary">
+                       CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}" DefaultButton="Primary">
             <StackPanel Width="440" Spacing="12">
                 <TextBlock Text="{x:Bind Picker.Description, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            TextWrapping="Wrap" />

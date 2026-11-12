@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,7 +75,7 @@ public sealed partial class PersonalListPage : Page
             Title = ViewModel.RemovalTitle,
             Content = new TextBlock { Text = ViewModel.RemovalDescription, TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = "Remove",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         try

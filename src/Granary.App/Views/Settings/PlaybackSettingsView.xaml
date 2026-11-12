@@ -5,7 +5,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -240,7 +241,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.HasLoadMessage, Mode=OneWay}">
                         <TextBlock Text="{x:Bind AudioDelay.LoadMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                                    VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
-                        <Button Content="Retry" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind AudioDelay.LoadCommand}"
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind AudioDelay.LoadCommand}"
                                 AutomationProperties.Name="Retry loading the audio sync offset" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.ShowsSlider, Mode=OneWay}">

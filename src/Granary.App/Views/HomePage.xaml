@@ -12,6 +12,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled"
     AutomationProperties.Name="Home">
 
@@ -65,7 +66,7 @@
             <TextBlock Text="Rows appear here once this server has something for the profile." HorizontalAlignment="Center"
                        TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
                        Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
-            <Button Content="Retry" HorizontalAlignment="Center" Style="{StaticResource SiloSecondaryButtonStyle}"
+            <Button Content="{x:Bind t:AppText.Get('common.retry')}" HorizontalAlignment="Center" Style="{StaticResource SiloSecondaryButtonStyle}"
                     Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" />
         </StackPanel>
     </Grid>

@@ -19,6 +19,8 @@ public sealed class TextLanguage
     internal const bool MarksProblemsInThisBuild = false;
 #endif
 
+    private static readonly Dictionary<string, string> EmptyValues = [];
+
     private readonly TextCatalog _own;
     private readonly TextCatalog _english;
     private readonly MessageFormatter _formatter;
@@ -70,6 +72,40 @@ public sealed class TextLanguage
     public IReadOnlyList<TextRun> Runs(string key, ReadOnlySpan<(string Name, object? Value)> values = default) =>
         Format(key, values, keepRuns: true).ToRuns();
 
+    /// <summary>
+    /// Text a Silo server sent in English with the key of its catalog message, such as a row's title and its
+    /// <c>title_key</c>: this language's message when its own catalog has the key and <paramref name="values"/> fill every
+    /// value the message uses; otherwise, and always in English, <paramref name="serverText"/> as sent. As the web's
+    /// <c>serverTextWith</c> (web/src/i18n/format.ts), so a title the server words anew still shows in English as it is.
+    /// </summary>
+    public string ServerText(string? key, IReadOnlyDictionary<string, string>? values, string serverText)
+    {
+        if (string.IsNullOrEmpty(key) || Tag == AppLanguage.English || !_own.TryGet(key, out var message)
+            || !FillsEveryValue(message, values))
+        {
+            return serverText;
+        }
+        try
+        {
+            (string, object?)[] filled = [.. (values ?? EmptyValues).Select(value => (value.Key, (object?)value.Value))];
+            var output = new TextOutput(keepRuns: false);
+            _formatter.Write(message, filled, IsRightToLeft, output);
+            foreach (string problem in output.Problems)
+            {
+                Report(key, problem);
+            }
+            return output.ToText();
+        }
+        catch (Exception ex)
+        {
+            if (_reported.TryAdd($"{key} threw", true))
+            {
+                _logger.LogError(ex, "Text {Key} could not be formatted", key);
+            }
+            return serverText;
+        }
+    }
+
     private TextOutput Format(string key, ReadOnlySpan<(string Name, object? Value)> values, bool keepRuns)
     {
         var output = new TextOutput(keepRuns);
@@ -103,6 +139,31 @@ public sealed class TextLanguage
             Report(key, problem);
         }
         return output;
+    }
+
+    // Whether every value the message prints or chooses by is text the server sent, anywhere in it: the web's
+    // argumentUse, with a number's value too, which no server message has had.
+    private static bool FillsEveryValue(IReadOnlyList<MessageNode> nodes, IReadOnlyDictionary<string, string>? values)
+    {
+        bool Has(string name) => values is not null && values.TryGetValue(name, out string? value) && value is not null;
+
+        foreach (var node in nodes)
+        {
+            bool fills = node switch
+            {
+                ArgumentNode argument => Has(argument.Name),
+                NumberNode number => Has(number.Name),
+                SelectNode select => Has(select.Name) && select.Options.Values.All(branch => FillsEveryValue(branch, values)),
+                PluralNode plural => Has(plural.Name) && plural.Options.Values.All(branch => FillsEveryValue(branch, values)),
+                TagNode tag => FillsEveryValue(tag.Children, values),
+                _ => true,
+            };
+            if (!fills)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void Report(string key, string problem)

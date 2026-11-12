@@ -502,5 +502,29 @@
       "type": 0,
       "value": "Trending This Week"
     }
+  ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "Done"
+    }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "Something went wrong while loading it. Try again in a moment."
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "The server isn't responding. Try again in a moment."
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "Save"
+    }
   ]
 }

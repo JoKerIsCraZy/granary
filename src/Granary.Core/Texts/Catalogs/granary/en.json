@@ -1,1 +1,6 @@
-{}
+{
+  "granary.loadError.denied": "This profile isn't allowed to see this.",
+  "@granary.loadError.denied": { "description": "Under a page or row that could not load because the server refused this profile (401 or 403). Granary's own: the web has no text for it." },
+  "granary.loadError.gone": "This isn't available any more.",
+  "@granary.loadError.gone": { "description": "Under a page or row that could not load because the server no longer has it (404). Granary's own: the web has no text for it." }
+}

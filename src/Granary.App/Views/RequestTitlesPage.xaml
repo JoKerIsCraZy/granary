@@ -10,6 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
@@ -59,7 +60,7 @@
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            TextAlignment="Center" TextWrapping="Wrap" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand}" />
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand}" />
             </StackPanel>
             <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                        Visibility="{x:Bind views:RequestTitlesPage.ShowsMessage(ViewModel.IsEmpty, ViewModel.IsNotFound, ViewModel.Message), Mode=OneWay}"
@@ -78,7 +79,7 @@
             <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.HasMoreError, Mode=OneWay}">
                 <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            HorizontalAlignment="Center" />
-                <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.TryAgainCommand}" />
             </StackPanel>
         </StackPanel>

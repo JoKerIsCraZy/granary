@@ -11,6 +11,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
@@ -132,7 +133,7 @@
                                                   AutomationProperties.Name="Loading preferences" />
                                 <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Preferences.HasError, Mode=OneWay}">
                                     <TextBlock Text="Couldn't load preferences." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
-                                    <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Preferences.LoadCommand}" />
+                                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Preferences.LoadCommand}" />
                                 </StackPanel>
                                 <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.Preferences.IsReady, Mode=OneWay}">
                                     <Grid>
@@ -341,7 +342,7 @@
                               Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading series" />
                 <StackPanel Visibility="{x:Bind ViewModel.Series.HasError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" Margin="12,0">
                     <TextBlock Text="Could not load the series that notify you." FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
-                    <Button Content="Retry" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.LoadCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.LoadCommand}" />
                 </StackPanel>
                 <TextBlock Text="No series match. Try another search or reason." FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                            HorizontalAlignment="Center" Margin="0,64" Visibility="{x:Bind ViewModel.Series.IsFilteredEmpty, Mode=OneWay}" />
@@ -380,7 +381,7 @@
                     <StackPanel Visibility="{x:Bind ViewModel.Series.HasLoadMoreError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.Series.LoadMoreError, Mode=OneWay}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                                    HorizontalAlignment="Center" />
-                        <Button Content="Try again" Style="{StaticResource SeriesSmallButtonStyle}" HorizontalAlignment="Center"
+                        <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SeriesSmallButtonStyle}" HorizontalAlignment="Center"
                                 Command="{x:Bind ViewModel.Series.LoadMoreCommand}" />
                     </StackPanel>
                 </StackPanel>

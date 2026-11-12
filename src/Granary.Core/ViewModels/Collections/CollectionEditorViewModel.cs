@@ -6,6 +6,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -172,7 +173,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         : Titles.Count > 0 ? CollectionEditorText.TitlesReadyToAdd(Titles.Count)
         : "";
 
-    public string SaveLabel => IsSaving ? (IsNew ? "Creating..." : "Saving...") : HasSaveError ? "Try again" : IsNew ? "Create collection" : "Save";
+    // As the web's CollectionEditor: "Try again" after a failed save, else "Save".
+    public string SaveLabel => IsSaving ? (IsNew ? "Creating..." : "Saving...")
+        : HasSaveError ? AppText.Get("common.tryAgain") : IsNew ? "Create collection" : AppText.Get("common.save");
 
     public IReadOnlyList<string> OtherProfiles { get; private set; } = [];
 

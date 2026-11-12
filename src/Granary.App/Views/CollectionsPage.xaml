@@ -9,6 +9,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
@@ -50,7 +51,7 @@
                           Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.LoadCommand}" />
             </StackPanel>
 
@@ -84,7 +85,7 @@
                     </Button>
                     <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasOwnError, Mode=OneWay}">
                         <TextBlock Text="{x:Bind ViewModel.OwnErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
                     </StackPanel>
                     <!-- "Shown to other profiles", "Collection deleted", or what failed, after a card's ⋯ entry. -->
                     <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}">
@@ -138,7 +139,7 @@
                     <TextBlock Text="Server collections" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                     <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasServerError, Mode=OneWay}">
                         <TextBlock Text="{x:Bind ViewModel.ServerErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
                     </StackPanel>
                     <controls:PillChoices ItemsSource="{x:Bind ViewModel.Server.LibraryChoices, Mode=OneWay}"
                                           SelectedItem="{x:Bind ViewModel.Server.SelectedLibrary, Mode=TwoWay}"
@@ -154,7 +155,7 @@
                             Visibility="{x:Bind ViewModel.Server.CanLoadMore, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Server.HasFailure, Mode=OneWay}">
                         <TextBlock Text="{x:Bind ViewModel.Server.FailureText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Server.RetryCommand}" />
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Server.RetryCommand}" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

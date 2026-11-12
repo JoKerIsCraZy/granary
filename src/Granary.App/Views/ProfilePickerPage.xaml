@@ -4,7 +4,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Granary.App.Views"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts">
 
     <Grid Padding="36,48,36,24" RowSpacing="24">
         <Grid.RowDefinitions>
@@ -28,7 +29,7 @@
             Severity="{x:Bind local:ProfilePickerPage.StatusSeverity(ViewModel.HasLoadError), Mode=OneWay}">
             <InfoBar.ActionButton>
                 <Button
-                    Content="Try again"
+                    Content="{x:Bind t:AppText.Get('common.tryAgain')}"
                     Command="{x:Bind ViewModel.RetryCommand}"
                     Visibility="{x:Bind ViewModel.HasLoadError, Mode=OneWay}" />
             </InfoBar.ActionButton>
@@ -83,7 +84,7 @@
         <ContentDialog
             x:Name="PinDialog"
             Title="{x:Bind ViewModel.PinPromptTitle, Mode=OneWay}"
-            CloseButtonText="Cancel"
+            CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}"
             Closed="OnPinDialogClosed"
             Opened="OnPinDialogOpened">
             <StackPanel MinWidth="320" Spacing="12">

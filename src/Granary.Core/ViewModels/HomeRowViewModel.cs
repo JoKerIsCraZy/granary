@@ -15,7 +15,7 @@ public sealed class HomeRowViewModel
     {
         SectionId = section.Id;
         SectionType = section.SectionType;
-        Title = section.Title;
+        Title = SectionTitle.Shown(section);
         OpenCardCommand = openCard;
         PointCardCommand = pointCard;
         ExploreAllCommand = exploreAll;

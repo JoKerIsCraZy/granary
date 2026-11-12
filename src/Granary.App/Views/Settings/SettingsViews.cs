@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using Granary.Core;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -144,8 +145,8 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
                 Spacing = 8,
                 Children = { new TextBlock { Text = "Keeps your mpv.conf as it is now under this name.", TextWrapping = TextWrapping.Wrap }, name, note },
             },
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = AppText.Get("common.save"),
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Primary,
             IsPrimaryButtonEnabled = false,
         };
@@ -309,7 +310,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
             Title = BadgeSettingsViewModel.ResetTitle,
             Content = BadgeSettingsViewModel.ResetText,
             PrimaryButtonText = "Reset badges",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
@@ -571,7 +572,7 @@ internal static class ServerDialogs
             Title = $"Remove {server.Name}?",
             Content = "Granary signs out of this server and forgets it. You can add it again later.",
             PrimaryButtonText = "Remove",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;

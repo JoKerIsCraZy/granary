@@ -502,5 +502,29 @@
       "type": 0,
       "value": "Tendencias de esta semana"
     }
+  ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "Listo"
+    }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "Algo salió mal al cargar el contenido. Vuelve a intentarlo en un momento."
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "El servidor no responde. Vuelve a intentarlo en un momento."
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "Guardar"
+    }
   ]
 }

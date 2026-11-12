@@ -13,7 +13,8 @@
     xmlns:cards="using:Granary.Core.ViewModels.Cards"
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:local="using:Granary.App.Views"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
         <!-- The page's black, under the standing backdrop and its fades. -->
@@ -259,7 +260,7 @@
                        AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="{x:Bind ViewModel.LoadErrorText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
-            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}"
+            <Button HorizontalAlignment="Center" Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloPrimaryButtonStyle}"
                     Command="{x:Bind ViewModel.RetryCommand}" />
         </StackPanel>
 

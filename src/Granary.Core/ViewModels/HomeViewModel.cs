@@ -428,7 +428,7 @@ public sealed partial class HomeViewModel : ObservableObject
             // "Explore all" on every row, as the web's, also when the row already holds all of it.
             var exploreAll = section.Id.Length > 0
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
-                    new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
+                    new SectionRouteParameter(section.Id, SectionTitle.Shown(section), SectionType: section.SectionType)))
                 : null;
             rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll, RemoveCommand, PointCardCommand));
         }

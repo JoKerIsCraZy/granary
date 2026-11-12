@@ -10,6 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
@@ -158,7 +159,7 @@
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" MaxWidth="480"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.RetryCommand}" />
             </StackPanel>
 
@@ -172,7 +173,7 @@
                                Text="Nothing to recommend here yet. All titles are in the Library tab." />
                     <StackPanel Visibility="{x:Bind ViewModel.Recommended.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.Recommended.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                                 Command="{x:Bind ViewModel.Recommended.RetryCommand}" />
                     </StackPanel>
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Recommended.Rows}">
@@ -245,7 +246,7 @@
                                       Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
                         <StackPanel Visibility="{x:Bind ViewModel.Browse.Grid.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.Browse.Grid.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                            <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                                     Command="{x:Bind ViewModel.Browse.Grid.RetryCommand}" />
                         </StackPanel>
                         <StackPanel Visibility="{x:Bind ShowBoth(ViewModel.Browse.Grid.IsEmpty, ViewModel.Browse.IsNarrowed), Mode=OneWay}"
@@ -268,7 +269,7 @@
                 <Border Visibility="{x:Bind ViewModel.Browse.Grid.HasPageError, Mode=OneWay}" Style="{StaticResource LibraryPageErrorStyle}">
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                        <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Browse.Grid.RetryPagesCommand}" />
+                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Browse.Grid.RetryPagesCommand}" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -286,7 +287,7 @@
                         </StackPanel>
                         <StackPanel Visibility="{x:Bind ViewModel.Collections.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.Collections.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                            <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                                     Command="{x:Bind ViewModel.Collections.LoadCommand}" />
                         </StackPanel>
                         <ItemsRepeater ItemsSource="{x:Bind ViewModel.Collections.Shelves}">
@@ -317,7 +318,7 @@
                                       Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
                         <StackPanel Visibility="{x:Bind ViewModel.Collections.Items.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.Collections.Items.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
-                            <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                                     Command="{x:Bind ViewModel.Collections.Items.RetryCommand}" />
                         </StackPanel>
                         <TextBlock Visibility="{x:Bind ViewModel.Collections.Items.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
@@ -333,7 +334,7 @@
                     Style="{StaticResource LibraryPageErrorStyle}">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                    <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Collections.Items.RetryPagesCommand}" />
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Collections.Items.RetryPagesCommand}" />
                 </StackPanel>
             </Border>
         </Grid>

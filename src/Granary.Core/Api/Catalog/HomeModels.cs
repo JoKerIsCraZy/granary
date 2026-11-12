@@ -21,8 +21,9 @@ public sealed record Section
 
     /// <summary>
     /// The shared translation catalog's key for <see cref="Title"/>, such as <c>home.section.continueWatching</c>, while
-    /// the title is Silo's own wording; null when someone typed it. Not shown yet: a translated interface shows the
-    /// key's message, else <see cref="Title"/>. An empty key counts as none, as the web's <c>lib/sectionTitle.ts</c>.
+    /// the title is Silo's own wording; null when someone typed it. A translated interface shows the key's message, else
+    /// <see cref="Title"/> (<c>ViewModels.SectionTitle</c>). An empty key counts as none, as the web's
+    /// <c>lib/sectionTitle.ts</c>.
     /// </summary>
     public string? TitleKey { get; init => field = string.IsNullOrEmpty(value) ? null : value; }
 

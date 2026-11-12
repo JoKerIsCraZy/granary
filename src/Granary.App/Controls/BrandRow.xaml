@@ -9,6 +9,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     PointerEntered="OnPointerEntered"
     PointerExited="OnPointerExited">
 
@@ -67,7 +68,7 @@
         <Grid>
             <TextBlock Text="{x:Bind Row.Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
                        AutomationProperties.HeadingLevel="Level2" />
-            <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}" Content="Retry"
+            <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}" Content="{x:Bind t:AppText.Get('common.retry')}"
                              Command="{x:Bind Row.RetryCommand, Mode=OneWay}" Visibility="{x:Bind Row.HasError, Mode=OneWay}" />
         </Grid>
 

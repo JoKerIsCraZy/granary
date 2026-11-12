@@ -10,6 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled"
     Loaded="OnLoaded">
 
@@ -101,7 +102,7 @@
             <StackPanel MaxWidth="480" HorizontalAlignment="Left" Spacing="14" Visibility="{x:Bind HasText(ViewModel.StatusText), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.LiveSetting="Polite" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}"
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}"
                         Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" />
             </StackPanel>
 
@@ -135,7 +136,7 @@
                 <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Requests.HasMoreError, Mode=OneWay}">
                     <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                HorizontalAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
-                    <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.Requests.TryAgainCommand}" />
                 </StackPanel>
             </StackPanel>
