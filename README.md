@@ -117,6 +117,8 @@ For development:
 - `--play-item <content id>` plays a title of the signed-in server.
 - `--remote` (debug builds) shows a TV remote on screen beside the window, to try Granary without one; VS Code's
   "Granary: with TV remote" starts it.
+- `--language <tag>` (debug builds) shows Granary's texts in another of the languages it ships, such as `de`, to check
+  translated texts.
 - Set `GRANARY_DATA_DIR` to an empty folder to keep servers, sign-ins, cache and logs out of your own
   `%LOCALAPPDATA%\Granary`, for example when you run a second copy.
 

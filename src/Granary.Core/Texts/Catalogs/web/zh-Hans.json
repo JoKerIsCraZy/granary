@@ -1,0 +1,506 @@
+{
+  "common.back": [
+    {
+      "type": 0,
+      "value": "返回"
+    }
+  ],
+  "common.cancel": [
+    {
+      "type": 0,
+      "value": "取消"
+    }
+  ],
+  "common.done": [
+    {
+      "type": 0,
+      "value": "完成"
+    }
+  ],
+  "common.retry": [
+    {
+      "type": 0,
+      "value": "重试"
+    }
+  ],
+  "common.save": [
+    {
+      "type": 0,
+      "value": "保存"
+    }
+  ],
+  "common.tryAgain": [
+    {
+      "type": 0,
+      "value": "重试"
+    }
+  ],
+  "home.section.becauseYouEnjoy": [
+    {
+      "type": 0,
+      "value": "因为你喜欢"
+    },
+    {
+      "type": 1,
+      "value": "genres"
+    }
+  ],
+  "home.section.becauseYouWatched": [
+    {
+      "type": 0,
+      "value": "因为你看过"
+    }
+  ],
+  "home.section.becauseYouWatchedTitle": [
+    {
+      "type": 0,
+      "value": "因为你看过"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "home.section.continueListening": [
+    {
+      "type": 0,
+      "value": "继续收听"
+    }
+  ],
+  "home.section.continueReading": [
+    {
+      "type": 0,
+      "value": "继续阅读"
+    }
+  ],
+  "home.section.continueWatching": [
+    {
+      "type": 0,
+      "value": "继续观看"
+    }
+  ],
+  "home.section.forYou": [
+    {
+      "type": 0,
+      "value": "为你推荐"
+    }
+  ],
+  "home.section.hiddenGems": [
+    {
+      "type": 0,
+      "value": "遗珠佳作"
+    }
+  ],
+  "home.section.highlyRatedInLibrary": [
+    {
+      "type": 0,
+      "value": "你的媒体库中的高分内容"
+    }
+  ],
+  "home.section.nextInYourSeries": [
+    {
+      "type": 0,
+      "value": "你的系列的下一部"
+    }
+  ],
+  "home.section.nextUp": [
+    {
+      "type": 0,
+      "value": "接下来"
+    }
+  ],
+  "home.section.pickedFromYourHistory": [
+    {
+      "type": 0,
+      "value": "根据你的观看记录挑选"
+    }
+  ],
+  "home.section.popularOnServer": [
+    {
+      "type": 0,
+      "value": "此服务器上的热门内容"
+    }
+  ],
+  "home.section.profilesLikeYouEnjoyed": [
+    {
+      "type": 0,
+      "value": "口味相似的个人资料喜欢的内容"
+    }
+  ],
+  "home.section.randomPicks": [
+    {
+      "type": 0,
+      "value": "随机推荐"
+    }
+  ],
+  "home.section.recentlyAdded": [
+    {
+      "type": 0,
+      "value": "最近添加"
+    }
+  ],
+  "home.section.recentlyAddedAudiobooks": [
+    {
+      "type": 0,
+      "value": "最近添加的有声书"
+    }
+  ],
+  "home.section.recentlyAddedEbooks": [
+    {
+      "type": 0,
+      "value": "最近添加的电子书"
+    }
+  ],
+  "home.section.recentlyAddedIn": [
+    {
+      "type": 1,
+      "value": "library"
+    },
+    {
+      "type": 0,
+      "value": "中最近添加"
+    }
+  ],
+  "home.section.recentlyAddedManga": [
+    {
+      "type": 0,
+      "value": "最近添加的漫画"
+    }
+  ],
+  "home.section.recentlyAddedMovies": [
+    {
+      "type": 0,
+      "value": "最近添加的电影"
+    }
+  ],
+  "home.section.recentlyAddedTv": [
+    {
+      "type": 0,
+      "value": "最近添加的剧集"
+    }
+  ],
+  "home.section.recentlyReleased": [
+    {
+      "type": 0,
+      "value": "最新上映"
+    }
+  ],
+  "home.section.recentlyReleasedAudiobooks": [
+    {
+      "type": 0,
+      "value": "最新发布的有声书"
+    }
+  ],
+  "home.section.recentlyReleasedEbooks": [
+    {
+      "type": 0,
+      "value": "最新发布的电子书"
+    }
+  ],
+  "home.section.recentlyReleasedEpisodes": [
+    {
+      "type": 0,
+      "value": "最新播出的集"
+    }
+  ],
+  "home.section.recentlyReleasedEpisodesIn": [
+    {
+      "type": 1,
+      "value": "library"
+    },
+    {
+      "type": 0,
+      "value": "中最新播出的集"
+    }
+  ],
+  "home.section.recentlyReleasedIn": [
+    {
+      "type": 1,
+      "value": "library"
+    },
+    {
+      "type": 0,
+      "value": "中最新发布"
+    }
+  ],
+  "home.section.recentlyReleasedManga": [
+    {
+      "type": 0,
+      "value": "最新发布的漫画"
+    }
+  ],
+  "home.section.recentlyReleasedMovies": [
+    {
+      "type": 0,
+      "value": "最新上映的电影"
+    }
+  ],
+  "home.section.recommendedForYou": [
+    {
+      "type": 0,
+      "value": "为你推荐"
+    }
+  ],
+  "home.section.returningShows": [
+    {
+      "type": 0,
+      "value": "回归剧集"
+    }
+  ],
+  "home.section.seasonal.christmas.classics": [
+    {
+      "type": 0,
+      "value": "圣诞经典"
+    }
+  ],
+  "home.section.seasonal.christmas.comedies": [
+    {
+      "type": 0,
+      "value": "圣诞喜剧"
+    }
+  ],
+  "home.section.seasonal.christmas.family": [
+    {
+      "type": 0,
+      "value": "家庭圣诞"
+    }
+  ],
+  "home.section.seasonal.christmas.favorites": [
+    {
+      "type": 0,
+      "value": "圣诞最爱"
+    }
+  ],
+  "home.section.seasonal.christmas.hallmark": [
+    {
+      "type": 0,
+      "value": "Hallmark圣诞电影"
+    }
+  ],
+  "home.section.seasonal.christmas.romcoms": [
+    {
+      "type": 0,
+      "value": "圣诞爱情喜剧"
+    }
+  ],
+  "home.section.seasonal.easter.faith": [
+    {
+      "type": 0,
+      "value": "复活节故事"
+    }
+  ],
+  "home.section.seasonal.easter.family": [
+    {
+      "type": 0,
+      "value": "复活节电影"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.favorites": [
+    {
+      "type": 0,
+      "value": "家庭最爱"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.liveAction": [
+    {
+      "type": 0,
+      "value": "家庭电影之夜"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.new": [
+    {
+      "type": 0,
+      "value": "家庭电影之夜"
+    }
+  ],
+  "home.section.seasonal.halloween.animated": [
+    {
+      "type": 0,
+      "value": "万圣节动画"
+    }
+  ],
+  "home.section.seasonal.halloween.family": [
+    {
+      "type": 0,
+      "value": "家庭万圣节"
+    }
+  ],
+  "home.section.seasonal.halloween.favorites": [
+    {
+      "type": 0,
+      "value": "万圣节最爱"
+    }
+  ],
+  "home.section.seasonal.halloween.horror": [
+    {
+      "type": 0,
+      "value": "万圣节恐怖片"
+    }
+  ],
+  "home.section.seasonal.halloween.tv": [
+    {
+      "type": 0,
+      "value": "万圣节剧集"
+    }
+  ],
+  "home.section.seasonal.newYear.favorites": [
+    {
+      "type": 0,
+      "value": "新年电影"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.cartoons": [
+    {
+      "type": 0,
+      "value": "周六早间动画"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.modern": [
+    {
+      "type": 0,
+      "value": "周六早间最爱"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.nineties": [
+    {
+      "type": 0,
+      "value": "90年代周六早间动画"
+    }
+  ],
+  "home.section.seasonal.stPatricks.irishFilm": [
+    {
+      "type": 0,
+      "value": "爱尔兰电影"
+    }
+  ],
+  "home.section.seasonal.stPatricks.irishTv": [
+    {
+      "type": 0,
+      "value": "爱尔兰剧集"
+    }
+  ],
+  "home.section.seasonal.summer.blockbusters": [
+    {
+      "type": 0,
+      "value": "夏日大片"
+    }
+  ],
+  "home.section.seasonal.summer.classicSummer": [
+    {
+      "type": 0,
+      "value": "经典夏日电影"
+    }
+  ],
+  "home.section.seasonal.summer.nostalgia": [
+    {
+      "type": 0,
+      "value": "夏日怀旧"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.blockbusters": [
+    {
+      "type": 0,
+      "value": "夏日大片"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.classicSummer": [
+    {
+      "type": 0,
+      "value": "经典夏日电影"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.nostalgia": [
+    {
+      "type": 0,
+      "value": "夏日怀旧"
+    }
+  ],
+  "home.section.seasonal.thanksgiving.favorites": [
+    {
+      "type": 0,
+      "value": "感恩节电影"
+    }
+  ],
+  "home.section.seasonal.thanksgiving.feelGood": [
+    {
+      "type": 0,
+      "value": "暖心最爱"
+    }
+  ],
+  "home.section.seasonal.valentines.favorites": [
+    {
+      "type": 0,
+      "value": "情人节最爱"
+    }
+  ],
+  "home.section.seasonal.valentines.loveStories": [
+    {
+      "type": 0,
+      "value": "经典爱情故事"
+    }
+  ],
+  "home.section.seasonal.valentines.romanticDramas": [
+    {
+      "type": 0,
+      "value": "爱情剧情片"
+    }
+  ],
+  "home.section.seasonal.valentines.romcoms": [
+    {
+      "type": 0,
+      "value": "情人节爱情喜剧"
+    }
+  ],
+  "home.section.seasonalPicks": [
+    {
+      "type": 0,
+      "value": "应季推荐"
+    }
+  ],
+  "home.section.topGenre": [
+    {
+      "type": 0,
+      "value": "高分"
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "home.section.topPicksToday": [
+    {
+      "type": 0,
+      "value": "今日精选"
+    }
+  ],
+  "home.section.topRated": [
+    {
+      "type": 0,
+      "value": "高分内容"
+    }
+  ],
+  "home.section.topRatedMovies": [
+    {
+      "type": 0,
+      "value": "高分电影"
+    }
+  ],
+  "home.section.topRatedTv": [
+    {
+      "type": 0,
+      "value": "高分剧集"
+    }
+  ],
+  "home.section.trendingOnServer": [
+    {
+      "type": 0,
+      "value": "服务器上的热门内容"
+    }
+  ],
+  "home.section.trendingThisWeek": [
+    {
+      "type": 0,
+      "value": "本周热门"
+    }
+  ]
+}

@@ -92,7 +92,8 @@ classes in `tests/Granary.Tests/Fakes`.
   `%LOCALAPPDATA%\Granary`: it holds their servers, sign-ins and device id.
 - `--play <file>` plays a local file without a server. `--play-item <content id>` plays a title of the
   signed-in server. `--remote` (debug builds) shows a TV remote on screen that sends the keys a PC remote sends
-  (`Debugging/RemoteWindow.cs`).
+  (`Debugging/RemoteWindow.cs`). `--language <tag>` (debug builds) shows Granary's texts in a shipped language, such as
+  `de`, enabled or not, to check converted texts.
 - Drive the running app with UI Automation patterns, not simulated global mouse or keyboard input, which lands
   in whatever window is on top.
 - Never take actions on a real server that change someone's data, such as requests, watch state or settings,

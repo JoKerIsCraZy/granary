@@ -70,6 +70,71 @@ public sealed class CatalogModelTests
     }
 
     [Fact]
+    public void Section_ReadsTheTitleKeyAndArgsOfATitleSiloWrote()
+    {
+        var row = Read(SectionTitled("""
+            "title": "Recently Added in Movies", "title_key": "home.section.recentlyAddedIn", "title_args": { "library": "Movies" }
+            """), SiloJsonContext.Default.Section);
+
+        Assert.Equal(("Recently Added in Movies", "home.section.recentlyAddedIn"), (row.Title, row.TitleKey));
+        Assert.Equal(new Dictionary<string, string> { ["library"] = "Movies" }, row.TitleArgs);
+    }
+
+    [Fact]
+    public void Section_AKeyWithoutPlaceholders_HasNoArgs()
+    {
+        var row = Read(SectionTitled("""
+            "title": "Continue Watching", "title_key": "home.section.continueWatching"
+            """), SiloJsonContext.Default.Section);
+
+        Assert.Equal("home.section.continueWatching", row.TitleKey);
+        Assert.Empty(row.TitleArgs);
+    }
+
+    [Fact]
+    public void Section_ATypedTitle_HasNoKey()
+    {
+        var row = Read(CatalogPayloads.RecentlyAddedSection, SiloJsonContext.Default.Section);
+
+        Assert.Null(row.TitleKey);
+        Assert.Empty(row.TitleArgs);
+    }
+
+    [Fact]
+    public void Section_AnEmptyTitleKey_CountsAsNone()
+    {
+        var row = Read(SectionTitled("""
+            "title": "Movies Night", "title_key": "", "title_args": null
+            """), SiloJsonContext.Default.Section);
+
+        Assert.Null(row.TitleKey);
+        Assert.Empty(row.TitleArgs);
+    }
+
+    [Fact]
+    public void HomeSections_CarryEachRowsTitleKey()
+    {
+        var sections = Read("""
+            { "sections": [
+              { "id": "a", "section_type": "next_up", "title": "Next Up", "featured": false, "item_limit": 20, "total_count": 0,
+                "is_custom": false, "customized": false, "items": [], "title_key": "home.section.nextUp" },
+              { "id": "b", "section_type": "because_you_watched", "title": "Because You Watched Heat", "featured": false,
+                "item_limit": 20, "total_count": 0, "is_custom": false, "customized": false, "items": [],
+                "title_key": "home.section.becauseYouWatchedTitle", "title_args": { "title": "Heat" } }
+            ] }
+            """, SiloJsonContext.Default.SectionCollection);
+
+        Assert.Equal(["home.section.nextUp", "home.section.becauseYouWatchedTitle"], sections.Sections.Select(s => s.TitleKey));
+        Assert.Equal("Heat", sections.Sections[1].TitleArgs["title"]);
+    }
+
+    /// <summary>An empty row with the given title members.</summary>
+    private static string SectionTitled(string titleMembers) => $$"""
+        { "id": "generated-recent-12", "section_type": "recently_added", {{titleMembers}}, "featured": false,
+          "item_limit": 20, "total_count": 0, "is_custom": false, "customized": false, "items": [] }
+        """;
+
+    [Fact]
     public void Browse_ReadsThePageAndItsCursor()
     {
         var page = Read(CatalogPayloads.BrowsePage, SiloJsonContext.Default.CatalogBrowseCollection);
