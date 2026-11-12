@@ -25,8 +25,12 @@ public sealed partial class PlayerPage
     // With a remote's focus in the controls they wait as long as Silo's TV app's (CONTROLS_AUTO_HIDE_MS).
     private static readonly TimeSpan RemoteHideDelay = TimeSpan.FromSeconds(5);
 
-    // How often a cursor the hidden controls left showing off the picture is looked at again.
-    private static readonly TimeSpan CursorLookInterval = TimeSpan.FromSeconds(1);
+    // How often a cursor the hidden controls left showing off the picture is looked at again, and a hidden one is checked
+    // for Windows drawing its arrow over it (CheckShownCursor): often enough that an arrow is gone before it is noticed.
+    private static readonly TimeSpan CursorLookInterval = TimeSpan.FromMilliseconds(250);
+
+    // How many times Windows drawing its arrow over a hidden cursor is logged for one hide.
+    private const int ArrowLogLimit = 5;
 
     private const float ChromeSlide = 8;
 
@@ -40,7 +44,7 @@ public sealed partial class PlayerPage
     // Whether the cursor shows, and whether the page's cursor is the blank one now.
     private readonly PlayerCursor _cursor = new(TimeProvider.System);
     private bool _isCursorHidden;
-    private bool _loggedArrowWhileHidden;
+    private int _arrowsLoggedWhileHidden;
 
     // What tells the page to look at the cursor again, from its load until it is left.
     private MainWindow? _cursorWindow;
@@ -373,9 +377,12 @@ public sealed partial class PlayerPage
         WatchCursor();
     }
 
-    // While the player's cursor is hidden, Windows should draw the blank one over the picture. Should it draw its arrow
-    // there all the same (it draws what the window answered last, and something else can have asked meanwhile), the
-    // window is asked again, and the log says so once for each time the cursor hid.
+    // While the player's cursor is hidden, Windows should draw the blank one over the picture. A tester's log showed it
+    // drawing its arrow there all the same, at once or after a while, and asking the window again (WM_SETCURSOR) did not
+    // help: WinUI itself answered with the arrow, though the page's cursor was the blank one. So when asking again leaves
+    // the arrow, the blank cursor is set past WinUI. It holds until the window is asked for its cursor again, which is the
+    // mouse's next move; a move that is none for the player has this look set it again. The log says what helped, a few
+    // times for each time the cursor hid.
     private void CheckShownCursor()
     {
         // Over the picture only: over the title bar's drag area Windows draws the arrow itself. Which window is under the
@@ -386,10 +393,21 @@ public sealed partial class PlayerPage
             return;
         }
         AskForCursor(under);
-        if (!_loggedArrowWhileHidden)
+        string outcome = "asking the window again hid it";
+        if (ShowsArrow())
         {
-            _loggedArrowWhileHidden = true;
-            _autoHideLog.LogDebug("Windows drew its arrow over the picture while the player's cursor is hidden; asked for the hidden one again");
+            if (BlankCursor.Handle != 0)
+            {
+                _ = SetCursor(BlankCursor.Handle);
+            }
+            outcome = ShowsArrow()
+                ? "the window answered with its arrow, and it stays though Granary set the hidden cursor itself"
+                : "the window answered with its arrow, so Granary set the hidden cursor itself";
+        }
+        if (_arrowsLoggedWhileHidden < ArrowLogLimit)
+        {
+            _arrowsLoggedWhileHidden++;
+            _autoHideLog.LogDebug("Windows drew its arrow over the picture while the player's cursor is hidden: {Outcome}", outcome);
         }
     }
 
@@ -480,8 +498,8 @@ public sealed partial class PlayerPage
         }
         else
         {
-            // A new hide: Windows drawing its arrow is logged once for it, not again for the hidden cursor set anew.
-            _loggedArrowWhileHidden = false;
+            // A new hide: Windows drawing its arrow is logged for it afresh, not for the hidden cursor set anew.
+            _arrowsLoggedWhileHidden = 0;
         }
         _isCursorHidden = true;
         ProtectedCursor = blank;
@@ -498,6 +516,9 @@ public sealed partial class PlayerPage
         {
             bool asked = AskForCursor(OwnWindowUnderPointer());
             _autoHideLog.LogDebug("The player's cursor is {Cursor} (shown at once: {Asked})", hidden ? "hidden" : "the arrow", asked);
+            // Should the window have answered with its arrow all the same, the hidden cursor is set at once, not at the
+            // next look.
+            CheckShownCursor();
         });
     }
 

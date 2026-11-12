@@ -40,6 +40,10 @@ public sealed partial class PlayerPage
     [LibraryImport("user32.dll")]
     private static partial nint LoadCursorW(nint instance, nint name);
 
+    // Sets the cursor Windows draws for this thread's windows, until one of them is asked for its cursor again.
+    [LibraryImport("user32.dll")]
+    private static partial nint SetCursor(nint cursor);
+
     // CURSORINFO: the cursor Windows draws now.
     [StructLayout(LayoutKind.Sequential)]
     private struct CursorInfo
