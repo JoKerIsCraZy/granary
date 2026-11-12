@@ -1,4 +1,5 @@
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.Trailers;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -13,9 +14,10 @@ public sealed record DetailTrailer(string Title, string KindLabel, bool IsOffici
     /// <summary>The video's YouTube key, checked as the trailer is made: it goes into addresses and the trailer's page.</summary>
     public string Key { get; } = YouTubeVideo.Checked(Key);
 
-    public string Caption => IsOfficial ? $"{KindLabel} · Official" : KindLabel;
+    /// <summary>"Trailer · Official": its kind, and the web's Official badge for a video from the title's makers.</summary>
+    public string Caption => IsOfficial ? $"{KindLabel} · {AppText.Get("web.detail.trailers.official")}" : KindLabel;
 
-    public string AccessibleName => $"{Title}, {Caption}, plays the trailer";
+    public string AccessibleName => AppText.Get("granary.detail.trailerName", ("title", Title), ("caption", Caption));
 
     /// <summary>The video's page on YouTube, for the browser when it can't play here.</summary>
     public Uri WatchUrl => YouTubeVideo.WatchUrl(Key);

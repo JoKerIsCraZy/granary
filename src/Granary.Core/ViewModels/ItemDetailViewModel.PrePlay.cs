@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
 
@@ -104,9 +105,9 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetAudioPreference, useDeleteAudioPreference).
         return preference is null
-            ? SaveTrackChoiceAsync(AudioKind, "Failed to reset audio preference",
+            ? SaveTrackChoiceAsync(AudioKind, () => AppText.Get("web.player.tracks.resetAudioFailed"),
                 (api, owner, key, token) => api.DeleteAudioAsync(owner.Server, key, owner.ProfileId, token))
-            : SaveTrackChoiceAsync(AudioKind, "Failed to save audio preference",
+            : SaveTrackChoiceAsync(AudioKind, () => AppText.Get("web.player.tracks.saveAudioFailed"),
                 (api, owner, key, token) => api.SaveAudioAsync(owner.Server, key, owner.ProfileId, preference, token));
     }
 
@@ -143,9 +144,9 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetSubtitlePreference, useDeleteSubtitlePreference).
         return choice is null
-            ? SaveTrackChoiceAsync(SubtitleKind, "Failed to reset subtitle preference",
+            ? SaveTrackChoiceAsync(SubtitleKind, () => AppText.Get("web.common.toast.subtitles.resetPreferenceFailed"),
                 (api, owner, key, token) => api.DeleteSubtitleAsync(owner.Server, key, owner.ProfileId, token))
-            : SaveTrackChoiceAsync(SubtitleKind, "Failed to save subtitle preference",
+            : SaveTrackChoiceAsync(SubtitleKind, () => AppText.Get("web.common.toast.subtitles.savePreferenceFailed"),
                 (api, owner, key, token) => api.SaveSubtitleAsync(owner.Server, key, owner.ProfileId, choice, token));
     }
 
@@ -176,7 +177,7 @@ public sealed partial class ItemDetailViewModel
     // says so, unless a newer pick of its kind has been made since. Once this page's own saves are all done, a failed one
     // too, it reads its item again, whatever other pages still have queued. A page the viewer has left is not touched.
     // The queue sends each save for the server and profile it was made under, and drops it once they are no longer active.
-    private async Task SaveTrackChoiceAsync(string kind, string failure, Func<TrackPreferencesApi, TrackWriteOwner, string, CancellationToken, Task> write)
+    private async Task SaveTrackChoiceAsync(string kind, Func<string> failure, Func<TrackPreferencesApi, TrackWriteOwner, string, CancellationToken, Task> write)
     {
         if (_trackPreferences is not { } api || _trackChoices is not { } writes || _serverBase is not { } server || _prePlayItem is not { } item
             || _session.ActiveServer?.BaseUri != server)
@@ -208,7 +209,7 @@ public sealed partial class ItemDetailViewModel
         }
         else if (pick == (kind == AudioKind ? _audioPicks : _subtitlePicks))
         {
-            ActionError = failure;
+            ActionError = failure();
             // The server keeps what it had: the picker, and Play, go back to it.
             _picks = kind == AudioKind
                 ? _picks with { AudioTrack = _keptAudio.Track, AudioAutoPending = false }

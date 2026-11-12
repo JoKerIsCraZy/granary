@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -25,14 +26,20 @@ internal static class TitleText
         : detail.ProductionCompanies.Count > 0 ? detail.ProductionCompanies[0]
         : null;
 
-    /// <summary>"Season 2: The Return", or "Season 2" when that is its name.</summary>
+    /// <summary>
+    /// "Season 2: The Return", or "Season 2" when that is its name, in the words of the web's RequestSeasonsDialog: TMDB's
+    /// name for a season without one of its own is English, so it is compared with the English.
+    /// </summary>
     public static string SeasonName(RequestMediaSeason season)
     {
-        string number = $"Season {season.SeasonNumber.ToString(CultureInfo.InvariantCulture)}";
-        return !string.IsNullOrWhiteSpace(season.Name) && season.Name != number ? $"{number}: {season.Name}" : number;
+        string unnamed = $"Season {season.SeasonNumber.ToString(CultureInfo.InvariantCulture)}";
+        string number = AppText.Get("web.requests.seasons.season", ("number", season.SeasonNumber));
+        return !string.IsNullOrWhiteSpace(season.Name) && season.Name != unnamed && season.Name != number
+            ? AppText.Get("web.requests.seasons.seasonNamed", ("number", season.SeasonNumber), ("name", season.Name))
+            : number;
     }
 
-    /// <summary>"2022 · 9 episodes", or "Not announced" before TMDB dates or fills the season.</summary>
+    /// <summary>"2022 · 9 episodes", or "Not announced" before TMDB dates or fills the season (web: formatRequestSeasonMeta).</summary>
     public static string SeasonMeta(RequestMediaSeason season)
     {
         var parts = new List<string>();
@@ -42,19 +49,23 @@ internal static class TitleText
         }
         if (season.EpisodeCount > 0)
         {
-            parts.Add($"{season.EpisodeCount.ToString(CultureInfo.InvariantCulture)} {(season.EpisodeCount == 1 ? "episode" : "episodes")}");
+            parts.Add(AppText.Get("web.requests.status.seasonEpisodes",
+                ("count", season.EpisodeCount), ("count_text", AppText.Number(season.EpisodeCount))));
         }
-        return parts.Count > 0 ? string.Join(" · ", parts) : "Not announced";
+        return parts.Count > 0 ? string.Join(" · ", parts) : AppText.Get("web.requests.seasons.notAnnounced");
     }
 
-    /// <summary>Where a season stands: "In library", "Requested", "Partly in library", "Not aired yet", "Not announced"; null once aired.</summary>
+    /// <summary>
+    /// Where a season stands: "In library", "Requested", "Partly in library", "Not aired yet", "Not announced"; null once
+    /// aired (web: SeasonStatus in RequestSeasonsDialog.tsx).
+    /// </summary>
     public static string? SeasonStatus(RequestMediaSeason season, DateOnly today) =>
-        season.Availability == "available" ? "In library"
-        : season.Requested ? "Requested"
-        : season.Availability == "partial" ? "Partly in library"
+        season.Availability == "available" ? AppText.Get("web.requests.seasons.inLibrary")
+        : season.Requested ? AppText.Get("web.requests.seasons.requested")
+        : season.Availability == "partial" ? AppText.Get("web.requests.seasons.partlyInLibrary")
         : HasAired(season, today) ? null
-        : !string.IsNullOrEmpty(season.AirDate) && season.EpisodeCount > 0 ? "Not aired yet"
-        : "Not announced";
+        : !string.IsNullOrEmpty(season.AirDate) && season.EpisodeCount > 0 ? AppText.Get("web.requests.seasons.notAired")
+        : AppText.Get("web.requests.seasons.notAnnounced");
 
     /// <summary>Started airing by TMDB's dates, against today's UTC date as the server compares them.</summary>
     public static bool HasAired(RequestMediaSeason season, DateOnly today) =>
@@ -82,21 +93,33 @@ internal static class TitleText
     public static IReadOnlyList<int> UpcomingSeasons(IEnumerable<RequestMediaSeason> seasons, DateOnly today) =>
         [.. seasons.Where(s => s.SeasonNumber > 0 && Requestable(s) && !HasAired(s, today)).Select(s => s.SeasonNumber)];
 
-    /// <summary>Why no season can be picked, for a series the viewer cannot request now.</summary>
+    /// <summary>Why no season can be picked, for a series the viewer cannot request now (web: unavailableReason).</summary>
     public static string UnavailableReason(string? reason) => reason switch
     {
-        "already_available" => "Every season is already in the library.",
-        "already_requested" => "This series already has an open request.",
-        _ => $"{RequestText.ReasonLabel(reason)}.",
+        "already_available" => AppText.Get("web.requests.seasons.allAvailable"),
+        "already_requested" => AppText.Get("web.requests.seasons.alreadyRequested"),
+        _ => AppText.Get("web.requests.seasons.reason", ("reason", RequestText.ReasonLabel(reason))),
     };
 
-    /// <summary>"12.3K votes" (the web's compact number).</summary>
-    public static string Votes(int count) => count switch
+    /// <summary>
+    /// "12.3K votes", as the web's ScoreRow counts TMDB's votes. The web writes the number in the language's compact
+    /// notation; Granary has that notation for English only, so another language shows the whole number ("12.345 Stimmen").
+    /// </summary>
+    public static string Votes(int count) => AppText.Get("web.detail.overview.tmdbVotes", ("count", count), ("count_text", VoteCount(count)));
+
+    private static string VoteCount(int count)
     {
-        >= 1_000_000 => $"{Compact(count / 1_000_000.0)}M votes",
-        >= 1_000 => $"{Compact(count / 1_000.0)}K votes",
-        _ => $"{count.ToString(CultureInfo.InvariantCulture)} votes",
-    };
+        if (AppText.Language.Tag != AppLanguage.English)
+        {
+            return AppText.Number(count);
+        }
+        return count switch
+        {
+            >= 1_000_000 => $"{Compact(count / 1_000_000.0)}M",
+            >= 1_000 => $"{Compact(count / 1_000.0)}K",
+            _ => count.ToString(CultureInfo.InvariantCulture),
+        };
+    }
 
     private static string Compact(double value) => Math.Round(value, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);
 

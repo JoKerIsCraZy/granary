@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -147,11 +148,12 @@ internal static class SeasonGaps
         var day = Day(airing, zone);
         if (!HasAired(airing, now, today) && day is { } airs)
         {
+            // English until dates are worded in the language on screen: the sentences hold a date.
             return new(new DetailEpisodePlaceholder(number, IsMissing: false, Code(season, number, airing), $"Airs {CalendarText.ShortDate(airs)}",
                 $"Episode {number}, airs {CalendarText.MonthDay(airs)}"), null);
         }
         string? date = day is { } aired ? MediaCardFactory.FormatDate(aired) : null;
-        return new(new DetailEpisodePlaceholder(number, IsMissing: true, Code(season, number, airing), date, $"Episode {number}, missing"), heldBy);
+        return new(new DetailEpisodePlaceholder(number, IsMissing: true, Code(season, number, airing), date, MissingName(number)), heldBy);
     }
 
     // By its instant when the calendar knows it, else by the day it is listed under; one without either counts as aired.
@@ -159,11 +161,14 @@ internal static class SeasonGaps
         ? at <= now
         : (DateOf(airing.LocalAirDate) ?? DateOf(airing.AirDate)) is not { } day || day < today;
 
-    private static DetailEpisodePlaceholder Missing(int number) => new(number, IsMissing: true, $"Episode {number}", null, $"Episode {number}, missing");
+    private static DetailEpisodePlaceholder Missing(int number) =>
+        new(number, IsMissing: true, AppText.Get("web.detail.episodes.numbered", ("episode", number)), null, MissingName(number));
+
+    // "Episode 5, missing", for screen readers.
+    private static string MissingName(int number) => AppText.Get("granary.detail.missingEpisodeName", ("episode", number));
 
     // As an episode card's title: "S01E05 · Title".
-    private static string Code(int season, int number, EpisodeAiring airing) =>
-        airing.Title?.Trim() is { Length: > 0 } title ? $"S{season:00}E{number:00} · {title}" : $"S{season:00}E{number:00}";
+    private static string Code(int season, int number, EpisodeAiring airing) => DetailText.EpisodeTitle(season, number, airing.Title);
 
     // The viewer's day: the instant's in the viewer's zone, else the day the calendar listed it under, else the source's.
     private static DateOnly? Day(EpisodeAiring airing, TimeZoneInfo zone) => airing.AirAt is { } at

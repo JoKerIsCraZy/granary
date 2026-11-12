@@ -605,6 +605,18 @@
       "value": "本周热门"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "无法提交请求"
+    }
+  ],
+  "requests.error.follow": [
+    {
+      "type": 0,
+      "value": "无法更新通知"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -1880,6 +1892,12 @@
       "value": "更多操作"
     }
   ],
+  "web.collections.addToCollection.title": [
+    {
+      "type": 0,
+      "value": "添加到合集"
+    }
+  ],
   "web.collections.builder.fieldAudioLanguage": [
     {
       "type": 0,
@@ -2082,6 +2100,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "无法取消请求"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "请求已提交"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -2154,6 +2184,76 @@
       "value": "删除失败"
     }
   ],
+  "web.common.toast.subtitles.resetPreferenceFailed": [
+    {
+      "type": 0,
+      "value": "无法重置字幕偏好"
+    }
+  ],
+  "web.common.toast.subtitles.savePreferenceFailed": [
+    {
+      "type": 0,
+      "value": "无法保存字幕偏好"
+    }
+  ],
+  "web.common.toast.watchlist.added": [
+    {
+      "type": 0,
+      "value": "已添加到你的待看清单"
+    }
+  ],
+  "web.common.toast.watchlist.addedAndRequested": [
+    {
+      "type": 0,
+      "value": "已添加到你的待看清单并已请求"
+    }
+  ],
+  "web.common.toast.watchlist.availableNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "可观看时，我们会通知你。"
+    }
+  ],
+  "web.common.toast.watchlist.notRequestedReason": [
+    {
+      "type": 0,
+      "value": "未请求此内容："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.common.toast.watchlist.removed": [
+    {
+      "type": 0,
+      "value": "已从你的待看清单中移除"
+    }
+  ],
+  "web.common.toast.watchlist.requestedNotice": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "可观看时，我们会通知你。它会自动移入你的待看清单。"
+    }
+  ],
+  "web.common.toast.watchlist.updateFailed": [
+    {
+      "type": 0,
+      "value": "无法更新你的待看清单"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -2176,6 +2276,30 @@
     {
       "type": 0,
       "value": "正在加载更多"
+    }
+  ],
+  "web.detail.actions.addToCollection": [
+    {
+      "type": 0,
+      "value": "添加到合集"
+    }
+  ],
+  "web.detail.actions.addToFavorites": [
+    {
+      "type": 0,
+      "value": "添加到收藏"
+    }
+  ],
+  "web.detail.actions.addToWatchlist": [
+    {
+      "type": 0,
+      "value": "添加到待看清单"
+    }
+  ],
+  "web.detail.actions.browseSeries": [
+    {
+      "type": 0,
+      "value": "浏览剧集"
     }
   ],
   "web.detail.actions.markSeasonUnwatched": [
@@ -2212,6 +2336,178 @@
     {
       "type": 0,
       "value": "标记为已看"
+    }
+  ],
+  "web.detail.actions.moreActions": [
+    {
+      "type": 0,
+      "value": "更多操作"
+    }
+  ],
+  "web.detail.actions.play": [
+    {
+      "type": 0,
+      "value": "播放"
+    }
+  ],
+  "web.detail.actions.playEpisode": [
+    {
+      "type": 0,
+      "value": "播放本集"
+    }
+  ],
+  "web.detail.actions.playFirstEpisode": [
+    {
+      "type": 0,
+      "value": "播放第一集"
+    }
+  ],
+  "web.detail.actions.playFromBeginning": [
+    {
+      "type": 0,
+      "value": "从头播放"
+    }
+  ],
+  "web.detail.actions.playNext": [
+    {
+      "type": 0,
+      "value": "播放下一集"
+    }
+  ],
+  "web.detail.actions.removeFromFavorites": [
+    {
+      "type": 0,
+      "value": "从收藏中移除"
+    }
+  ],
+  "web.detail.actions.removeFromWatchlist": [
+    {
+      "type": 0,
+      "value": "从待看清单中移除"
+    }
+  ],
+  "web.detail.actions.resume": [
+    {
+      "type": 0,
+      "value": "继续播放"
+    }
+  ],
+  "web.detail.actions.resumeAt": [
+    {
+      "type": 0,
+      "value": "从"
+    },
+    {
+      "type": 1,
+      "value": "time"
+    },
+    {
+      "type": 0,
+      "value": "继续"
+    }
+  ],
+  "web.detail.actions.startFromFirstEpisode": [
+    {
+      "type": 0,
+      "value": "从第"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": "集开始"
+    }
+  ],
+  "web.detail.actions.startWatchParty": [
+    {
+      "type": 0,
+      "value": "发起Watch Party"
+    }
+  ],
+  "web.detail.audio.button": [
+    {
+      "type": 0,
+      "value": "音频"
+    }
+  ],
+  "web.detail.audio.unknown": [
+    {
+      "type": 0,
+      "value": "未知"
+    }
+  ],
+  "web.detail.badges.advisory": [
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.advisorySource": [
+    {
+      "type": 1,
+      "value": "source"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "age"
+    },
+    {
+      "type": 0,
+      "value": "+"
+    }
+  ],
+  "web.detail.badges.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "集"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.badges.seasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "季"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.detail.boxSet.cardLabel": [
@@ -2347,6 +2643,60 @@
       "value": "部"
     }
   ],
+  "web.detail.breadcrumb.label": [
+    {
+      "type": 0,
+      "value": "面包屑导航"
+    }
+  ],
+  "web.detail.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "向左滚动"
+    }
+  ],
+  "web.detail.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "向右滚动"
+    }
+  ],
+  "web.detail.castCrew.cast": [
+    {
+      "type": 0,
+      "value": "演员表"
+    }
+  ],
+  "web.detail.castCrew.creator": [
+    {
+      "type": 0,
+      "value": "主创"
+    }
+  ],
+  "web.detail.castCrew.crew": [
+    {
+      "type": 0,
+      "value": "制作人员"
+    }
+  ],
+  "web.detail.castCrew.director": [
+    {
+      "type": 0,
+      "value": "导演"
+    }
+  ],
+  "web.detail.castCrew.writer": [
+    {
+      "type": 0,
+      "value": "编剧"
+    }
+  ],
+  "web.detail.castCrew.writers": [
+    {
+      "type": 0,
+      "value": "编剧"
+    }
+  ],
   "web.detail.episodeCode": [
     {
       "type": 0,
@@ -2365,10 +2715,364 @@
       "value": "episode"
     }
   ],
+  "web.detail.episodes.heading": [
+    {
+      "type": 0,
+      "value": "分集"
+    }
+  ],
+  "web.detail.episodes.moreEpisodes": [
+    {
+      "type": 0,
+      "value": "更多分集"
+    }
+  ],
   "web.detail.episodes.nowViewing": [
     {
       "type": 0,
       "value": "正在查看"
+    }
+  ],
+  "web.detail.episodes.numbered": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": "集"
+    }
+  ],
+  "web.detail.extras.heading": [
+    {
+      "type": 0,
+      "value": "附加内容"
+    }
+  ],
+  "web.detail.extras.kind.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "幕后花絮"
+    }
+  ],
+  "web.detail.extras.kind.bloopers": [
+    {
+      "type": 0,
+      "value": "NG镜头"
+    }
+  ],
+  "web.detail.extras.kind.clip": [
+    {
+      "type": 0,
+      "value": "片段"
+    }
+  ],
+  "web.detail.extras.kind.deletedScene": [
+    {
+      "type": 0,
+      "value": "删减片段"
+    }
+  ],
+  "web.detail.extras.kind.featurette": [
+    {
+      "type": 0,
+      "value": "特辑"
+    }
+  ],
+  "web.detail.extras.kind.otherKind": [
+    {
+      "type": 0,
+      "value": "附加视频"
+    }
+  ],
+  "web.detail.extras.kind.teaser": [
+    {
+      "type": 0,
+      "value": "先导预告"
+    }
+  ],
+  "web.detail.extras.kind.trailer": [
+    {
+      "type": 0,
+      "value": "预告片"
+    }
+  ],
+  "web.detail.extras.kindGroup.behindTheScenes": [
+    {
+      "type": 0,
+      "value": "幕后花絮"
+    }
+  ],
+  "web.detail.extras.kindGroup.bloopers": [
+    {
+      "type": 0,
+      "value": "NG镜头"
+    }
+  ],
+  "web.detail.extras.kindGroup.clip": [
+    {
+      "type": 0,
+      "value": "片段"
+    }
+  ],
+  "web.detail.extras.kindGroup.deletedScene": [
+    {
+      "type": 0,
+      "value": "删减片段"
+    }
+  ],
+  "web.detail.extras.kindGroup.featurette": [
+    {
+      "type": 0,
+      "value": "特辑"
+    }
+  ],
+  "web.detail.extras.kindGroup.otherKind": [
+    {
+      "type": 0,
+      "value": "其他"
+    }
+  ],
+  "web.detail.extras.kindGroup.teaser": [
+    {
+      "type": 0,
+      "value": "先导预告"
+    }
+  ],
+  "web.detail.extras.kindGroup.trailer": [
+    {
+      "type": 0,
+      "value": "预告片"
+    }
+  ],
+  "web.detail.hero.typeMovie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.detail.hero.typeSeries": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.detail.mediaInfo.audio": [
+    {
+      "type": 0,
+      "value": "音频"
+    }
+  ],
+  "web.detail.mediaInfo.defaultBadge": [
+    {
+      "type": 0,
+      "value": "默认"
+    }
+  ],
+  "web.detail.mediaInfo.embedded": [
+    {
+      "type": 0,
+      "value": "内嵌"
+    }
+  ],
+  "web.detail.mediaInfo.external": [
+    {
+      "type": 0,
+      "value": "外部"
+    }
+  ],
+  "web.detail.mediaInfo.forced": [
+    {
+      "type": 0,
+      "value": "强制"
+    }
+  ],
+  "web.detail.mediaInfo.hearingImpairedShort": [
+    {
+      "type": 0,
+      "value": "听障"
+    }
+  ],
+  "web.detail.mediaInfo.row.bitrate": [
+    {
+      "type": 0,
+      "value": "码率"
+    }
+  ],
+  "web.detail.mediaInfo.row.container": [
+    {
+      "type": 0,
+      "value": "容器"
+    }
+  ],
+  "web.detail.mediaInfo.row.duration": [
+    {
+      "type": 0,
+      "value": "时长"
+    }
+  ],
+  "web.detail.mediaInfo.row.edition": [
+    {
+      "type": 0,
+      "value": "版本"
+    }
+  ],
+  "web.detail.mediaInfo.row.fileSize": [
+    {
+      "type": 0,
+      "value": "文件大小"
+    }
+  ],
+  "web.detail.mediaInfo.row.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "听障人士"
+    }
+  ],
+  "web.detail.mediaInfo.row.resolution": [
+    {
+      "type": 0,
+      "value": "分辨率"
+    }
+  ],
+  "web.detail.mediaInfo.video": [
+    {
+      "type": 0,
+      "value": "视频"
+    }
+  ],
+  "web.detail.overview.createdBy": [
+    {
+      "type": 0,
+      "value": "创作者："
+    }
+  ],
+  "web.detail.overview.directedBy": [
+    {
+      "type": 0,
+      "value": "导演："
+    }
+  ],
+  "web.detail.overview.revealHidden": [
+    {
+      "type": 0,
+      "value": "简介在观看前隐藏。显示简介"
+    }
+  ],
+  "web.detail.overview.tmdbVotes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "票"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.page.itemLoadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载此项目"
+    }
+  ],
+  "web.detail.page.loadFailedBody": [
+    {
+      "type": 0,
+      "value": "加载时出错。请稍后重试。"
+    }
+  ],
+  "web.detail.page.loadingDetails": [
+    {
+      "type": 0,
+      "value": "正在加载项目详情"
+    }
+  ],
+  "web.detail.page.titleLoadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载此作品"
+    }
+  ],
+  "web.detail.page.unavailableBody": [
+    {
+      "type": 0,
+      "value": "它可能已被移除，或者你没有访问权限。"
+    }
+  ],
+  "web.detail.page.unavailableTitle": [
+    {
+      "type": 0,
+      "value": "此项目不可用"
+    }
+  ],
+  "web.detail.request.cancelRequest": [
+    {
+      "type": 0,
+      "value": "取消请求"
+    }
+  ],
+  "web.detail.request.inLibrary": [
+    {
+      "type": 0,
+      "value": "已在媒体库中"
+    }
+  ],
+  "web.detail.request.notifyWhenAvailable": [
+    {
+      "type": 0,
+      "value": "可观看时通知我"
+    }
+  ],
+  "web.detail.request.onWatchlist": [
+    {
+      "type": 0,
+      "value": "已在待看清单"
+    }
+  ],
+  "web.detail.request.openInLibrary": [
+    {
+      "type": 0,
+      "value": "在媒体库中打开"
+    }
+  ],
+  "web.detail.request.requestMovie": [
+    {
+      "type": 0,
+      "value": "请求电影"
+    }
+  ],
+  "web.detail.request.requestSeries": [
+    {
+      "type": 0,
+      "value": "请求剧集"
+    }
+  ],
+  "web.detail.request.requested": [
+    {
+      "type": 0,
+      "value": "已请求"
+    }
+  ],
+  "web.detail.request.stopNotifying": [
+    {
+      "type": 0,
+      "value": "停止通知我"
     }
   ],
   "web.detail.seasons.episodeCount": [
@@ -2393,6 +3097,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.detail.seasons.heading": [
+    {
+      "type": 0,
+      "value": "季"
+    }
+  ],
+  "web.detail.seasons.noEpisodes": [
+    {
+      "type": 0,
+      "value": "这一季暂时还没有可观看的集。"
+    }
+  ],
   "web.detail.seasons.numbered": [
     {
       "type": 0,
@@ -2405,6 +3121,26 @@
     {
       "type": 0,
       "value": "季"
+    }
+  ],
+  "web.detail.seasons.specials": [
+    {
+      "type": 0,
+      "value": "特别篇"
+    }
+  ],
+  "web.detail.seasons.totalCount": [
+    {
+      "type": 0,
+      "value": "共"
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "项"
     }
   ],
   "web.detail.seasons.watchedProgress": [
@@ -2439,6 +3175,114 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.detail.sections.cast": [
+    {
+      "type": 0,
+      "value": "演员表"
+    }
+  ],
+  "web.detail.sections.castAndCrew": [
+    {
+      "type": 0,
+      "value": "演职人员"
+    }
+  ],
+  "web.detail.subtitles.button": [
+    {
+      "type": 0,
+      "value": "字幕"
+    }
+  ],
+  "web.detail.subtitles.forcedMarker": [
+    {
+      "type": 0,
+      "value": "（强制）"
+    }
+  ],
+  "web.detail.subtitles.off": [
+    {
+      "type": 0,
+      "value": "关闭"
+    }
+  ],
+  "web.detail.subtitles.resetToDefaults": [
+    {
+      "type": 0,
+      "value": "恢复个人资料默认设置"
+    }
+  ],
+  "web.detail.subtitles.sdhMarker": [
+    {
+      "type": 0,
+      "value": "（SDH）"
+    }
+  ],
+  "web.detail.subtitles.unknown": [
+    {
+      "type": 0,
+      "value": "未知"
+    }
+  ],
+  "web.detail.tracks.auto": [
+    {
+      "type": 0,
+      "value": "自动"
+    }
+  ],
+  "web.detail.tracks.autoSummary": [
+    {
+      "type": 0,
+      "value": "自动："
+    },
+    {
+      "type": 1,
+      "value": "summary"
+    }
+  ],
+  "web.detail.trailers.heading": [
+    {
+      "type": 0,
+      "value": "预告片及更多"
+    }
+  ],
+  "web.detail.trailers.official": [
+    {
+      "type": 0,
+      "value": "官方"
+    }
+  ],
+  "web.detail.trailers.playerDescription": [
+    {
+      "type": 0,
+      "value": "预告片视频播放器"
+    }
+  ],
+  "web.detail.versions.fileIdFallback": [
+    {
+      "type": 0,
+      "value": "版本"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.detail.versions.numbered": [
+    {
+      "type": 0,
+      "value": "版本"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.detail.versions.versionButton": [
+    {
+      "type": 0,
+      "value": "版本"
     }
   ],
   "web.home.continueWatching.episodeLabelWithTitle": [
@@ -2649,6 +3493,66 @@
       "value": "已观看"
     }
   ],
+  "web.item.dialog.fieldTitle": [
+    {
+      "type": 0,
+      "value": "标题"
+    }
+  ],
+  "web.item.editMetadata.contentRating": [
+    {
+      "type": 0,
+      "value": "年龄分级"
+    }
+  ],
+  "web.item.editMetadata.countries": [
+    {
+      "type": 0,
+      "value": "国家/地区"
+    }
+  ],
+  "web.item.editMetadata.genres": [
+    {
+      "type": 0,
+      "value": "类型"
+    }
+  ],
+  "web.item.editMetadata.networks": [
+    {
+      "type": 0,
+      "value": "电视网"
+    }
+  ],
+  "web.item.editMetadata.originalTitle": [
+    {
+      "type": 0,
+      "value": "原始标题"
+    }
+  ],
+  "web.item.editMetadata.overview": [
+    {
+      "type": 0,
+      "value": "简介"
+    }
+  ],
+  "web.item.editMetadata.ratings": [
+    {
+      "type": 0,
+      "value": "评分"
+    }
+  ],
+  "web.item.editMetadata.studios": [
+    {
+      "type": 0,
+      "value": "制片公司"
+    }
+  ],
+  "web.item.editMetadata.tagline": [
+    {
+      "type": 0,
+      "value": "标语"
+    }
+  ],
   "web.item.menu.addToFavorites": [
     {
       "type": 0,
@@ -2707,6 +3611,33 @@
     {
       "type": 0,
       "value": "在推荐中显示"
+    }
+  ],
+  "web.item.rating.label": [
+    {
+      "type": 0,
+      "value": "评分"
+    }
+  ],
+  "web.item.rating.stars": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "星"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.library.browse.clearFilters": [
@@ -3142,6 +4073,18 @@
       "value": "睡眠定时器"
     }
   ],
+  "web.player.tracks.resetAudioFailed": [
+    {
+      "type": 0,
+      "value": "无法重置音频偏好"
+    }
+  ],
+  "web.player.tracks.saveAudioFailed": [
+    {
+      "type": 0,
+      "value": "无法保存音频偏好"
+    }
+  ],
   "web.profiles.picker.documentTitle": [
     {
       "type": 0,
@@ -3314,6 +4257,12 @@
       "value": "无法加载推荐。"
     }
   ],
+  "web.recommendations.moreLikeThis": [
+    {
+      "type": 0,
+      "value": "更多类似内容"
+    }
+  ],
   "web.recommendations.sectionCount": [
     {
       "type": 6,
@@ -3384,6 +4333,38 @@
       "value": "热门类型"
     }
   ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "取消请求"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "你对“"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "”的请求将在发送到自动下载之前撤回。"
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "保留请求"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "要取消此请求吗？"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -3420,10 +4401,100 @@
       "value": "title"
     }
   ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "下载进度"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "无法加载更多作品。"
+    }
+  ],
+  "web.requests.seasons.allAvailable": [
+    {
+      "type": 0,
+      "value": "每一季都已在媒体库中。"
+    }
+  ],
+  "web.requests.seasons.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "此剧集已有未完成的请求。"
+    }
+  ],
+  "web.requests.seasons.inLibrary": [
+    {
+      "type": 0,
+      "value": "已在媒体库中"
+    }
+  ],
+  "web.requests.seasons.notAired": [
+    {
+      "type": 0,
+      "value": "尚未播出"
+    }
+  ],
+  "web.requests.seasons.notAnnounced": [
+    {
+      "type": 0,
+      "value": "尚未公布"
+    }
+  ],
+  "web.requests.seasons.partlyInLibrary": [
+    {
+      "type": 0,
+      "value": "部分在媒体库中"
+    }
+  ],
+  "web.requests.seasons.reason": [
+    {
+      "type": 1,
+      "value": "reason"
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.requests.seasons.requested": [
+    {
+      "type": 0,
+      "value": "已请求"
+    }
+  ],
+  "web.requests.seasons.season": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "季"
+    }
+  ],
+  "web.requests.seasons.seasonNamed": [
+    {
+      "type": 0,
+      "value": "第"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "季："
+    },
+    {
+      "type": 1,
+      "value": "name"
     }
   ],
   "web.requests.status.approved": [
@@ -3436,6 +4507,28 @@
     {
       "type": 0,
       "value": "处理中"
+    }
+  ],
+  "web.requests.status.seasonEpisodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "集"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
     }
   ],
   "web.requests.toAdd.heading": [
@@ -6164,10 +7257,54 @@
       "value": "无法开始随机播放。"
     }
   ],
+  "web.ui.close": [
+    {
+      "type": 0,
+      "value": "关闭"
+    }
+  ],
   "web.ui.saving": [
     {
       "type": 0,
       "value": "正在保存……"
+    }
+  ],
+  "web.watchTogether.common.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.watchTogether.startSheet.seriesSeasons": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "剧集 · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "季"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.startSheet.title": [
+    {
+      "type": 0,
+      "value": "用此内容开始Watch Party"
     }
   ]
 }
