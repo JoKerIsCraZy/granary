@@ -215,16 +215,24 @@ public sealed partial class ServerActivity : IDisposable
         Notify();
     }
 
-    // Raised on a read's or a timer's thread too, where nobody would catch what a listener throws.
+    // Raised on a read's or a timer's thread too, where nobody would catch what a listener throws. Each listener by
+    // itself: one that throws must not keep the news from those after it.
     private void Notify()
     {
-        try
+        if (Changed is not { } changed)
         {
-            Changed?.Invoke(this, EventArgs.Empty);
+            return;
         }
-        catch (Exception ex)
+        foreach (var listener in changed.GetInvocationList().Cast<EventHandler>())
         {
-            _logger.LogError(ex, "A listener of the server's activity failed");
+            try
+            {
+                listener(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "A listener of the server's activity failed");
+            }
         }
     }
 

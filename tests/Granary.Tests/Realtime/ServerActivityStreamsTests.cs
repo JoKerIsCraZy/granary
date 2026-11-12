@@ -241,11 +241,13 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AListenerThatThrows_DoesNotStopTheReads()
+    public async Task AListenerThatThrows_DoesNotStopTheReads_NorTheListenersAfterIt()
     {
         var socket = await _harness.StartedAsync(EventsChannels.Sessions);
         await ShownAsync(2);
+        int later = 0;
         _harness.Activity.Changed += (_, _) => throw new InvalidOperationException("A listener failed.");
+        _harness.Activity.Changed += (_, _) => Interlocked.Increment(ref later);
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
         _harness.Library.Answer(SessionsPath, AdminPayloads.NoSessions);
 
@@ -254,6 +256,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
 
         await ShownAsync(0);
         await ServerPlaybackFixture.Until(() => LogLines("A listener of the server's activity failed") >= 1, "the failure in the log");
+        Assert.True(Volatile.Read(ref later) >= 1);
     }
 
     [Fact]
