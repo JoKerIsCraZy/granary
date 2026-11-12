@@ -215,8 +215,17 @@ public sealed class OfflineProgressSync : IDisposable
             }
             // On the disk as on their way before they leave: a Granary that closes now does not send them twice.
             await _queue.LatestSave.ConfigureAwait(false);
-            var outcome = await SendAsync(server, scope, batch, cancellationToken).ConfigureAwait(false);
-            _queue.Resolve(batch, outcome.Entries);
+            SendOutcome? outcome = null;
+            try
+            {
+                outcome = await SendAsync(server, scope, batch, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                // Whatever ended the send without an outcome (Granary closing, something unexpected), the request may have
+                // left: its entries are held rather than left on their way for the rest of the run.
+                _queue.Resolve(batch, outcome?.Entries ?? OfflineProgressOutcome.Uncertain);
+            }
             sent |= outcome.Reached;
             if (!outcome.GoesOn)
             {

@@ -251,9 +251,10 @@ public sealed class OfflineProgressQueue
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(file, OfflineProgressJsonContext.Default.OfflineProgressFile);
             SafeFile.WriteWhole(_path, temp => File.WriteAllBytes(temp, json));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            // Only the kind: the message would name the data folder, with the Windows user's name.
+            // Whatever the disk does, the chain of writes goes on and nobody who waits for one fails. Only the kind: the
+            // message would name the data folder, with the Windows user's name.
             _logger.LogWarning("The positions recorded on this PC could not be written ({Failure}); they hold for this run", DownloadLog.Failure(ex));
         }
     }

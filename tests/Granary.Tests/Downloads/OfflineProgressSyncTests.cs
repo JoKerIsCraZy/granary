@@ -162,6 +162,25 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASendThatEndsInSomethingUnexpected_HoldsItsEntries_AndTheNextRunStillWorks()
+    {
+        _queue.Record(Scope7, "ep_5", 10_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, () => throw new InvalidOperationException("boom"), Answered("ep_6"));
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: false, Token);
+
+        // Not left on its way for the rest of the run: it may have reached the server, so it is held.
+        Assert.Equal(OfflineProgressState.Held, Assert.Single(_queue.Entries(Scope7)).State);
+        Assert.Contains("failed unexpectedly", _h.Logs.All, StringComparison.Ordinal);
+
+        _queue.Record(Scope7, "ep_6", 20_000, 0);
+        await sync.FlushAsync(readBack: false, Token);
+
+        Assert.Equal(["ep_5"], _queue.Entries(Scope7).Select(e => e.MediaItemId));
+    }
+
+    [Fact]
     public async Task AHeldEntry_GoesOnceTheServersProgressWasRead_AndANewerPositionIsSent()
     {
         await _h.AddPlayableAsync();
