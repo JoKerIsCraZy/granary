@@ -365,9 +365,8 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await Until(() => ShowsDownload(page), "Download showed");
 
         LeaveTitlePage(page);
-        Collect();
 
-        Assert.False(page.TryGetTarget(out _));
+        Assert.True(await Collected.IsGoneAsync(page));
         GC.KeepAlive(Manager);
     }
 

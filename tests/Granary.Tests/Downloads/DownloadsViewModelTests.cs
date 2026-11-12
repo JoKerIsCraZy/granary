@@ -390,9 +390,8 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await spaceRead;
 
         Leave(page);
-        Collect();
 
-        Assert.False(page.TryGetTarget(out _));
+        Assert.True(await Collected.IsGoneAsync(page));
         GC.KeepAlive(downloads);
     }
 
