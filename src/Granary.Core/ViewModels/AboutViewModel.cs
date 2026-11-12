@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -24,7 +25,7 @@ public sealed partial class AboutViewModel : ObservableObject
     public AppUpdatesViewModel Updates { get; }
 
     /// <summary>"Version 0.2.0".</summary>
-    public string VersionText => $"Version {_app.Version}";
+    public string VersionText => AppText.Get("granary.settings.about.version", ("version", _app.Version));
 
     /// <summary>The changelog shipped with the app, newest first.</summary>
     public IReadOnlyList<ChangelogRelease> Releases { get; }
@@ -37,7 +38,7 @@ public sealed partial class AboutViewModel : ObservableObject
     public bool HasReadyChanges => ReadyChanges.Count > 0;
 
     /// <summary>"What's new in 0.3.0".</summary>
-    public string ReadyChangesTitle => $"What's new in {Updates.ReadyVersion}";
+    public string ReadyChangesTitle => AppText.Get("granary.settings.about.readyChanges", ("version", Updates.ReadyVersion));
 
     public Uri? SourceUrl => _app.SourceUrl;
 

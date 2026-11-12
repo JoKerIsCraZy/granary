@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
@@ -17,5 +18,6 @@ public static class SettingsSwatches
     // The chosen colour has a white ring, the others none.
     public static Brush Ring(bool isSelected) => new SolidColorBrush(isSelected ? Colors.White : Colors.Transparent);
 
-    public static string Status(bool isSelected) => isSelected ? "Selected" : "";
+    // What a screen reader adds to the chosen one.
+    public static string Status(bool isSelected) => isSelected ? AppText.Get("granary.settings.selected") : "";
 }

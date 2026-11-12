@@ -515,6 +515,252 @@
       "value": "今週のトレンド"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "エピソードのサムネイルを視聴を始めるまでぼかし、画像からストーリーがわからないようにします。"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "未視聴エピソードの画像をぼかす"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "エピソードの説明を視聴を始めるまで非表示にします。"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "未視聴エピソードの説明を非表示"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "推奨年齢を表示"
+    }
+  ],
+  "settingsManifest.playback.audio_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "指定なし"
+    }
+  ],
+  "settingsManifest.playback.auto_play_next.label": [
+    {
+      "type": 0,
+      "value": "次のエピソードを自動再生"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.description": [
+    {
+      "type": 0,
+      "value": "スキップできる場合、エンドクレジットを自動的にスキップします。"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.label": [
+    {
+      "type": 0,
+      "value": "クレジットを自動スキップ"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_recap.label": [
+    {
+      "type": 0,
+      "value": "あらすじを自動スキップ"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.description": [
+    {
+      "type": 0,
+      "value": "自動のときにバッファリングが続く場合のSiloの動作です。選択した画質を下げる前には必ず確認します。"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.label": [
+    {
+      "type": 0,
+      "value": "バッファリング時に画質を下げる"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.always": [
+    {
+      "type": 0,
+      "value": "自動的に"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "先に確認"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.never": [
+    {
+      "type": 0,
+      "value": "しない"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.label": [
+    {
+      "type": 0,
+      "value": "イントロをスキップ"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.always": [
+    {
+      "type": 0,
+      "value": "自動的にスキップ"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "スキップを確認"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.never": [
+    {
+      "type": 0,
+      "value": "しない"
+    }
+  ],
+  "settingsManifest.playback.max_bitrate_kbps.label": [
+    {
+      "type": 0,
+      "value": "最大ビットレート"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.label": [
+    {
+      "type": 0,
+      "value": "優先する画質"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.1080p": [
+    {
+      "type": 0,
+      "value": "1080p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.2160p": [
+    {
+      "type": 0,
+      "value": "2160p / 4K"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.480p": [
+    {
+      "type": 0,
+      "value": "480p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.720p": [
+    {
+      "type": 0,
+      "value": "720p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.auto": [
+    {
+      "type": 0,
+      "value": "自動"
+    }
+  ],
+  "settingsManifest.playback.show_forced_subtitles.label": [
+    {
+      "type": 0,
+      "value": "強制字幕を表示"
+    }
+  ],
+  "settingsManifest.playback.subtitle_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "なし"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.always": [
+    {
+      "type": 0,
+      "value": "常にオン"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.auto": [
+    {
+      "type": 0,
+      "value": "自動"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.off": [
+    {
+      "type": 0,
+      "value": "オフ"
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.description": [
+    {
+      "type": 0,
+      "value": "このデバイスで音声を早めたり遅らせたりして、口の動きとのずれを補正します。"
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.label": [
+    {
+      "type": 0,
+      "value": "音声同期のオフセット"
+    }
+  ],
+  "settingsManifest.player.passout_threshold.label": [
+    {
+      "type": 0,
+      "value": "視聴継続の確認"
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.description": [
+    {
+      "type": 0,
+      "value": "途中まで視聴した項目を再開するとき、内容を思い出せるようにこの秒数だけ巻き戻します。0にするとオフになります。"
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.label": [
+    {
+      "type": 0,
+      "value": "再開時に巻き戻す"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "映画やシリーズの詳細ページを閲覧中に、ローカルのテーマ音楽を再生します。"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "テーマ音楽"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "詳細ページを開いている間、テーマ音楽を繰り返し再生します。"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "テーマ音楽をループ"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "タイトルアートを表示"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -641,6 +887,36 @@
       "value": "完了"
     }
   ],
+  "web.common.devicePlatform.kind.desktop": [
+    {
+      "type": 0,
+      "value": "デスクトップ"
+    }
+  ],
+  "web.common.devicePlatform.kind.mobile": [
+    {
+      "type": 0,
+      "value": "モバイル"
+    }
+  ],
+  "web.common.devicePlatform.kind.tablet": [
+    {
+      "type": 0,
+      "value": "タブレット"
+    }
+  ],
+  "web.common.devicePlatform.kind.tv": [
+    {
+      "type": 0,
+      "value": "テレビ"
+    }
+  ],
+  "web.common.devicePlatform.kind.unknown": [
+    {
+      "type": 0,
+      "value": "その他"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -657,6 +933,48 @@
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "音声トラック"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "チャプター"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "マーカーを編集"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "画面いっぱいに表示"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "再生情報"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "音量"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "スリープタイマー"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -751,6 +1069,2426 @@
     {
       "type": 0,
       "value": "映画、シリーズを検索…"
+    }
+  ],
+  "web.settings.cardOverlay.adjust": [
+    {
+      "type": 0,
+      "value": "調整"
+    }
+  ],
+  "web.settings.cardOverlay.adjustLabel": [
+    {
+      "type": 1,
+      "value": "badge"
+    },
+    {
+      "type": 0,
+      "value": "を調整"
+    }
+  ],
+  "web.settings.cardOverlay.badgesDescription": [
+    {
+      "type": 0,
+      "value": "ポスターに表示される小さなラベルです（4K、Dolby Vision、評価など）。"
+    }
+  ],
+  "web.settings.cardOverlay.badgesTitle": [
+    {
+      "type": 0,
+      "value": "バッジ"
+    }
+  ],
+  "web.settings.cardOverlay.color": [
+    {
+      "type": 0,
+      "value": "色"
+    }
+  ],
+  "web.settings.cardOverlay.colorDefault": [
+    {
+      "type": 0,
+      "value": "デフォルト"
+    }
+  ],
+  "web.settings.cardOverlay.noneOn": [
+    {
+      "type": 0,
+      "value": "すべてオフ"
+    }
+  ],
+  "web.settings.cardOverlay.position": [
+    {
+      "type": 0,
+      "value": "位置"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadges": [
+    {
+      "type": 0,
+      "value": "バッジをリセット"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmDescription": [
+    {
+      "type": 0,
+      "value": "バッジの選択がクリアされ、以降このプロフィールはサーバーのバッジ設定に従います。"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmTitle": [
+    {
+      "type": 0,
+      "value": "バッジをリセットしますか？"
+    }
+  ],
+  "web.settings.cardOverlay.showBadges": [
+    {
+      "type": 0,
+      "value": "ポスターにバッジを表示"
+    }
+  ],
+  "web.settings.cardOverlay.showIcon": [
+    {
+      "type": 0,
+      "value": "アイコンを表示"
+    }
+  ],
+  "web.settings.cardOverlay.someOn": [
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "件中"
+    },
+    {
+      "type": 1,
+      "value": "on"
+    },
+    {
+      "type": 0,
+      "value": "件オン"
+    }
+  ],
+  "web.settings.cardOverlay.style": [
+    {
+      "type": 0,
+      "value": "スタイル"
+    }
+  ],
+  "web.settings.cardOverlay.suppressedHint": [
+    {
+      "type": 1,
+      "value": "badge"
+    },
+    {
+      "type": 0,
+      "value": "の統合バッジがオンの間は非表示になります。"
+    }
+  ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "現在のプロフィール"
+    }
+  ],
+  "web.settings.device.changedCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件の個別設定"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.device.empty": [
+    {
+      "type": 0,
+      "value": "デバイスはまだありません。デバイスでサインインすると、ここに表示されます。"
+    }
+  ],
+  "web.settings.device.forget": [
+    {
+      "type": 0,
+      "value": "削除"
+    }
+  ],
+  "web.settings.device.forgetFailed": [
+    {
+      "type": 0,
+      "value": "削除できませんでした"
+    }
+  ],
+  "web.settings.device.forgotten": [
+    {
+      "type": 0,
+      "value": "デバイスを削除しました"
+    }
+  ],
+  "web.settings.device.nameLabel": [
+    {
+      "type": 0,
+      "value": "デバイス名"
+    }
+  ],
+  "web.settings.device.nameReset": [
+    {
+      "type": 0,
+      "value": "デバイス名をリセットしました"
+    }
+  ],
+  "web.settings.device.nothingChanged": [
+    {
+      "type": 0,
+      "value": "変更なし"
+    }
+  ],
+  "web.settings.device.rename": [
+    {
+      "type": 0,
+      "value": "名前を変更"
+    }
+  ],
+  "web.settings.device.renameFailed": [
+    {
+      "type": 0,
+      "value": "名前を変更できませんでした"
+    }
+  ],
+  "web.settings.device.renamed": [
+    {
+      "type": 0,
+      "value": "デバイス名を変更しました"
+    }
+  ],
+  "web.settings.device.reportsItselfAs": [
+    {
+      "type": 0,
+      "value": "デバイスが報告する名前："
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.settings.device.resetDone": [
+    {
+      "type": 0,
+      "value": "このデバイスでの変更を削除しました"
+    }
+  ],
+  "web.settings.device.resetFailed": [
+    {
+      "type": 0,
+      "value": "クリアできませんでした"
+    }
+  ],
+  "web.settings.device.title": [
+    {
+      "type": 0,
+      "value": "お使いのデバイス"
+    }
+  ],
+  "web.settings.device.useProfileSettings": [
+    {
+      "type": 0,
+      "value": "プロフィールの設定を使用"
+    }
+  ],
+  "web.settings.device.usingNow": [
+    {
+      "type": 0,
+      "value": "使用中"
+    }
+  ],
+  "web.settings.deviceGroups.sound.description": [
+    {
+      "type": 0,
+      "value": "このデバイスのオーディオ"
+    }
+  ],
+  "web.settings.deviceGroups.sound.title": [
+    {
+      "type": 0,
+      "value": "音声"
+    }
+  ],
+  "web.settings.deviceList.group.current": [
+    {
+      "type": 0,
+      "value": "使用中"
+    }
+  ],
+  "web.settings.deviceList.group.earlier": [
+    {
+      "type": 0,
+      "value": "それ以前"
+    }
+  ],
+  "web.settings.deviceList.group.week": [
+    {
+      "type": 0,
+      "value": "今週"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "日前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "時間前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.months": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "か月前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "未使用"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.underAnHour": [
+    {
+      "type": 0,
+      "value": "1時間以内"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.years": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "年前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.yesterday": [
+    {
+      "type": 0,
+      "value": "昨日"
+    }
+  ],
+  "web.settings.interface.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "読み込まれるまで編集はオフになっています。以前に選択した内容が上書きされることはありません。"
+    }
+  ],
+  "web.settings.interface.loading": [
+    {
+      "type": 0,
+      "value": "読み込み中…"
+    }
+  ],
+  "web.settings.interface.moveDown": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": "を下へ移動"
+    }
+  ],
+  "web.settings.interface.moveUp": [
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": "を上へ移動"
+    }
+  ],
+  "web.settings.interface.posterCompact": [
+    {
+      "type": 0,
+      "value": "コンパクト"
+    }
+  ],
+  "web.settings.interface.posterLarge": [
+    {
+      "type": 0,
+      "value": "大"
+    }
+  ],
+  "web.settings.interface.posterReset": [
+    {
+      "type": 0,
+      "value": "ポスター設定をリセット"
+    }
+  ],
+  "web.settings.interface.posterSize": [
+    {
+      "type": 0,
+      "value": "サイズ"
+    }
+  ],
+  "web.settings.interface.posterStandard": [
+    {
+      "type": 0,
+      "value": "標準"
+    }
+  ],
+  "web.settings.interface.postersTitle": [
+    {
+      "type": 0,
+      "value": "ポスター"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "ナビゲーションとカード"
+    }
+  ],
+  "web.settings.interface.unsupportedTitle": [
+    {
+      "type": 0,
+      "value": "サーバーのアップデートが必要です"
+    }
+  ],
+  "web.settings.limitField.unlimited": [
+    {
+      "type": 0,
+      "value": "無制限"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "アカウント"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "外観"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "再生"
+    }
+  ],
+  "web.settings.overlays.accent.amber": [
+    {
+      "type": 0,
+      "value": "アンバー"
+    }
+  ],
+  "web.settings.overlays.accent.blue": [
+    {
+      "type": 0,
+      "value": "ブルー"
+    }
+  ],
+  "web.settings.overlays.accent.cyan": [
+    {
+      "type": 0,
+      "value": "シアン"
+    }
+  ],
+  "web.settings.overlays.accent.emerald": [
+    {
+      "type": 0,
+      "value": "エメラルド"
+    }
+  ],
+  "web.settings.overlays.accent.gold": [
+    {
+      "type": 0,
+      "value": "ゴールド"
+    }
+  ],
+  "web.settings.overlays.accent.indigo": [
+    {
+      "type": 0,
+      "value": "インディゴ"
+    }
+  ],
+  "web.settings.overlays.accent.orange": [
+    {
+      "type": 0,
+      "value": "オレンジ"
+    }
+  ],
+  "web.settings.overlays.accent.pink": [
+    {
+      "type": 0,
+      "value": "ピンク"
+    }
+  ],
+  "web.settings.overlays.accent.slate": [
+    {
+      "type": 0,
+      "value": "スレート"
+    }
+  ],
+  "web.settings.overlays.accent.tomato": [
+    {
+      "type": 0,
+      "value": "トマト"
+    }
+  ],
+  "web.settings.overlays.accent.violet": [
+    {
+      "type": 0,
+      "value": "バイオレット"
+    }
+  ],
+  "web.settings.overlays.accent.white": [
+    {
+      "type": 0,
+      "value": "ホワイト"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.description": [
+    {
+      "type": 0,
+      "value": "推奨される視聴者の最低年齢（Common Sense Mediaの13+など）"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.label": [
+    {
+      "type": 0,
+      "value": "推奨年齢"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.description": [
+    {
+      "type": 0,
+      "value": "表示アスペクト比（16:9、2.39:1など）"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.label": [
+    {
+      "type": 0,
+      "value": "アスペクト比"
+    }
+  ],
+  "web.settings.overlays.badge.audio.description": [
+    {
+      "type": 0,
+      "value": "音声コーデック（Atmos、DTS-HD、TrueHDなど）"
+    }
+  ],
+  "web.settings.overlays.badge.audio.label": [
+    {
+      "type": 0,
+      "value": "音声コーデック"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.description": [
+    {
+      "type": 0,
+      "value": "チャンネル構成（ステレオ、5.1、7.1）"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.label": [
+    {
+      "type": 0,
+      "value": "音声チャンネル"
+    }
+  ],
+  "web.settings.overlays.badge.container.description": [
+    {
+      "type": 0,
+      "value": "ファイルのコンテナ（MKV、MP4など）"
+    }
+  ],
+  "web.settings.overlays.badge.container.label": [
+    {
+      "type": 0,
+      "value": "コンテナ"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.description": [
+    {
+      "type": 0,
+      "value": "年齢制限（PG-13、TV-MA、Rなど）"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.label": [
+    {
+      "type": 0,
+      "value": "年齢制限"
+    }
+  ],
+  "web.settings.overlays.badge.edition.description": [
+    {
+      "type": 0,
+      "value": "利用できる最適なメディアバージョンのエディション名"
+    }
+  ],
+  "web.settings.overlays.badge.edition.label": [
+    {
+      "type": 0,
+      "value": "エディション"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.description": [
+    {
+      "type": 0,
+      "value": "ダイナミックレンジの形式（HDR10、DV、HLG）"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.label": [
+    {
+      "type": 0,
+      "value": "HDR / Dolby Vision"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.description": [
+    {
+      "type": 0,
+      "value": "ファイルに2つ以上の言語の音声がある場合に表示されます"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.label": [
+    {
+      "type": 0,
+      "value": "多言語音声"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.description": [
+    {
+      "type": 0,
+      "value": "ファイルに字幕トラックがある場合に表示されます"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.label": [
+    {
+      "type": 0,
+      "value": "字幕あり"
+    }
+  ],
+  "web.settings.overlays.badge.network.description": [
+    {
+      "type": 0,
+      "value": "主な放送局（シリーズ）"
+    }
+  ],
+  "web.settings.overlays.badge.network.label": [
+    {
+      "type": 0,
+      "value": "放送局"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.description": [
+    {
+      "type": 0,
+      "value": "コンテンツの元の言語"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.label": [
+    {
+      "type": 0,
+      "value": "言語"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.description": [
+    {
+      "type": 0,
+      "value": "IMDbの10点満点の評価"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.label": [
+    {
+      "type": 0,
+      "value": "IMDbの評価"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.description": [
+    {
+      "type": 0,
+      "value": "Rotten Tomatoesの批評家スコア（管理者が表示している場合）"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.label": [
+    {
+      "type": 0,
+      "value": "RT批評家"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.description": [
+    {
+      "type": 0,
+      "value": "Rotten Tomatoesの観客スコア（管理者が表示している場合）"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.label": [
+    {
+      "type": 0,
+      "value": "RT観客"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.description": [
+    {
+      "type": 0,
+      "value": "TMDBの10点満点の評価"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.label": [
+    {
+      "type": 0,
+      "value": "TMDBの評価"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.description": [
+    {
+      "type": 0,
+      "value": "ソースの形式（REMUX、BluRay、WEB-DLなど）"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.label": [
+    {
+      "type": 0,
+      "value": "リリースの種類"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.description": [
+    {
+      "type": 0,
+      "value": "ライブラリにまだないウォッチリストのタイトルの状況：ダウンロード中、公開日、承認待ち"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.label": [
+    {
+      "type": 0,
+      "value": "リクエストの状況"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.description": [
+    {
+      "type": 0,
+      "value": "映像の解像度（4K、1080p、720pなど）"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.label": [
+    {
+      "type": 0,
+      "value": "解像度"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.label": [
+    {
+      "type": 0,
+      "value": "解像度＋HDR（統合）"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.shortLabel": [
+    {
+      "type": 0,
+      "value": "解像度＋HDR"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.description": [
+    {
+      "type": 0,
+      "value": "作品の再生時間（時間と分）"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.label": [
+    {
+      "type": 0,
+      "value": "再生時間"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.availabilityNote": [
+    {
+      "type": 0,
+      "value": "メタデータプラグインから取得します（TMDB/TVDBの更新は準備中）"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.description": [
+    {
+      "type": 0,
+      "value": "シリーズの状況：継続中、終了、打ち切り"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.label": [
+    {
+      "type": 0,
+      "value": "シリーズの状況"
+    }
+  ],
+  "web.settings.overlays.badge.studio.description": [
+    {
+      "type": 0,
+      "value": "主な制作スタジオ（映画）"
+    }
+  ],
+  "web.settings.overlays.badge.studio.label": [
+    {
+      "type": 0,
+      "value": "スタジオ"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.description": [
+    {
+      "type": 0,
+      "value": "映像コーデック（H.264、H.265、AV1）"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.label": [
+    {
+      "type": 0,
+      "value": "映像コーデック"
+    }
+  ],
+  "web.settings.overlays.badge.year.description": [
+    {
+      "type": 0,
+      "value": "公開年"
+    }
+  ],
+  "web.settings.overlays.badge.year.label": [
+    {
+      "type": 0,
+      "value": "年"
+    }
+  ],
+  "web.settings.overlays.category.metadata.description": [
+    {
+      "type": 0,
+      "value": "コンテンツそのものに関する情報です。"
+    }
+  ],
+  "web.settings.overlays.category.metadata.title": [
+    {
+      "type": 0,
+      "value": "コンテンツのメタデータ"
+    }
+  ],
+  "web.settings.overlays.category.ratings.description": [
+    {
+      "type": 0,
+      "value": "外部ソースの評価と年齢制限です。"
+    }
+  ],
+  "web.settings.overlays.category.ratings.title": [
+    {
+      "type": 0,
+      "value": "評価と年齢制限"
+    }
+  ],
+  "web.settings.overlays.category.ribbons.description": [
+    {
+      "type": 0,
+      "value": "シリーズの状況、リクエストの状況、受賞のバッジです。一部は今後追加されるデータソースが必要です。"
+    }
+  ],
+  "web.settings.overlays.category.ribbons.title": [
+    {
+      "type": 0,
+      "value": "状況と受賞"
+    }
+  ],
+  "web.settings.overlays.category.tech.description": [
+    {
+      "type": 0,
+      "value": "メディアファイルの技術的な詳細です。"
+    }
+  ],
+  "web.settings.overlays.category.tech.title": [
+    {
+      "type": 0,
+      "value": "メディア情報"
+    }
+  ],
+  "web.settings.overlays.look.style": [
+    {
+      "type": 0,
+      "value": "バッジのスタイル"
+    }
+  ],
+  "web.settings.overlays.position.bottomLeft": [
+    {
+      "type": 0,
+      "value": "左下"
+    }
+  ],
+  "web.settings.overlays.position.bottomRight": [
+    {
+      "type": 0,
+      "value": "右下"
+    }
+  ],
+  "web.settings.overlays.position.topLeft": [
+    {
+      "type": 0,
+      "value": "左上"
+    }
+  ],
+  "web.settings.overlays.preset.classic.description": [
+    {
+      "type": 0,
+      "value": "白い枠線付きの半透明のダークなピル形。既定のスタイルです。"
+    }
+  ],
+  "web.settings.overlays.preset.classic.label": [
+    {
+      "type": 0,
+      "value": "クラシック"
+    }
+  ],
+  "web.settings.overlays.preset.minimal.description": [
+    {
+      "type": 0,
+      "value": "ほぼ目立たないスタイル。小さな文字で、背景はありません。"
+    }
+  ],
+  "web.settings.overlays.preset.minimal.label": [
+    {
+      "type": 0,
+      "value": "ミニマル"
+    }
+  ],
+  "web.settings.overlays.preset.pill.description": [
+    {
+      "type": 0,
+      "value": "余白を広く取った大きめのピル形。アイコンとの相性が良いスタイルです。"
+    }
+  ],
+  "web.settings.overlays.preset.pill.label": [
+    {
+      "type": 0,
+      "value": "ピル"
+    }
+  ],
+  "web.settings.overlays.preset.square.label": [
+    {
+      "type": 0,
+      "value": "スクエア"
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.description": [
+    {
+      "type": 0,
+      "value": "アクセントカラーの不透明なバッジ。コントラストが高いスタイルです。"
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.label": [
+    {
+      "type": 0,
+      "value": "ビビッド"
+    }
+  ],
+  "web.settings.playback.autoPlayNext.description": [
+    {
+      "type": 0,
+      "value": "現在のエピソードが終わったら、次のエピソードを自動的に再生します。"
+    }
+  ],
+  "web.settings.playback.maxBitrate.description": [
+    {
+      "type": 0,
+      "value": "再生に使用する帯域幅の上限を設定します。「制限なし」の場合は、選択した解像度に合わせてSiloが決めます。"
+    }
+  ],
+  "web.settings.playback.maxBitrate.saveFailed": [
+    {
+      "type": 0,
+      "value": "最大ビットレートを保存できませんでした"
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewDescription": [
+    {
+      "type": 0,
+      "value": "エンドクレジットを待たずに、現在のエピソードが次回予告に達した時点で次のエピソードを開始します。"
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewLabel": [
+    {
+      "type": 0,
+      "value": "予告で次を開始"
+    }
+  ],
+  "web.settings.playback.nextEpisode.title": [
+    {
+      "type": 0,
+      "value": "次のエピソード"
+    }
+  ],
+  "web.settings.playback.quality.autoDescription": [
+    {
+      "type": 0,
+      "value": "デバイスと接続が対応できる場合は、常に元のファイルを再生します。"
+    }
+  ],
+  "web.settings.playback.quality.description": [
+    {
+      "type": 0,
+      "value": "再生開始時にこのプロフィールがリクエストする解像度です。"
+    }
+  ],
+  "web.settings.playback.quality.groupDescription": [
+    {
+      "type": 0,
+      "value": "各デバイスでこの設定を上書きでき、世帯の管理者はこのプロフィールの上限を設定できます。"
+    }
+  ],
+  "web.settings.playback.quality.saveFailed": [
+    {
+      "type": 0,
+      "value": "優先画質を保存できませんでした"
+    }
+  ],
+  "web.settings.playback.quality.title": [
+    {
+      "type": 0,
+      "value": "画質"
+    }
+  ],
+  "web.settings.playback.saveFailed": [
+    {
+      "type": 0,
+      "value": "再生設定を保存できませんでした"
+    }
+  ],
+  "web.settings.playback.seek.description": [
+    {
+      "type": 0,
+      "value": "巻き戻しと早送りで移動する秒数です。この設定は現在のプロフィールに保存され、対応するSiloアプリ全体で共有されます。"
+    }
+  ],
+  "web.settings.playback.seek.forwardInterval": [
+    {
+      "type": 0,
+      "value": "早送りの間隔"
+    }
+  ],
+  "web.settings.playback.seek.rewindInterval": [
+    {
+      "type": 0,
+      "value": "巻き戻しの間隔"
+    }
+  ],
+  "web.settings.playback.seek.seconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "秒"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playback.seek.title": [
+    {
+      "type": 0,
+      "value": "シーク操作"
+    }
+  ],
+  "web.settings.playback.seek.video.forwardDescription": [
+    {
+      "type": 0,
+      "value": "動画で早送りしたときに進む秒数です。"
+    }
+  ],
+  "web.settings.playback.seek.video.forwardSaveFailed": [
+    {
+      "type": 0,
+      "value": "動画の早送り間隔を保存できませんでした"
+    }
+  ],
+  "web.settings.playback.seek.video.rewindDescription": [
+    {
+      "type": 0,
+      "value": "動画で巻き戻したときに戻る秒数です。"
+    }
+  ],
+  "web.settings.playback.seek.video.rewindSaveFailed": [
+    {
+      "type": 0,
+      "value": "動画の巻き戻し間隔を保存できませんでした"
+    }
+  ],
+  "web.settings.playback.seek.videoDescription": [
+    {
+      "type": 0,
+      "value": "再生操作ボタン、ダブルタップ操作、矢印キー、システムのメディアコントロールに適用されます。"
+    }
+  ],
+  "web.settings.playback.seek.videoTitle": [
+    {
+      "type": 0,
+      "value": "動画"
+    }
+  ],
+  "web.settings.playback.skipping.introModeDescription": [
+    {
+      "type": 0,
+      "value": "イントロをそのまま再生するか、「イントロをスキップ」ボタンを表示するか、元に戻せる形で自動的にスキップします。"
+    }
+  ],
+  "web.settings.playback.skipping.recapDescription": [
+    {
+      "type": 0,
+      "value": "Siloが検出できた場合、「前回までの…」のあらすじを自動的にスキップします。"
+    }
+  ],
+  "web.settings.playback.skipping.title": [
+    {
+      "type": 0,
+      "value": "スキップ"
+    }
+  ],
+  "web.settings.playback.subtitle": [
+    {
+      "type": 0,
+      "value": "このプロフィールが再生を開始するときのデフォルトです。ライブラリ、シリーズ、各デバイスで一部を上書きできます。"
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "再生"
+    }
+  ],
+  "web.settings.playbackConnection.ago.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "日前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "時間前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.justNow": [
+    {
+      "type": 0,
+      "value": "たった今"
+    }
+  ],
+  "web.settings.playbackConnection.ago.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.autoBudget": [
+    {
+      "type": 0,
+      "value": "自動では、"
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "までの動画を変換せずに再生します。"
+    }
+  ],
+  "web.settings.playbackConnection.fasterThan": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "超"
+    }
+  ],
+  "web.settings.playbackConnection.learnedLimit": [
+    {
+      "type": 1,
+      "value": "date"
+    },
+    {
+      "type": 0,
+      "value": "のバッファリング後、"
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "に制限"
+    }
+  ],
+  "web.settings.playbackConnection.measured": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "・"
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    },
+    {
+      "type": 0,
+      "value": "に"
+    },
+    {
+      "type": 1,
+      "value": "transport"
+    },
+    {
+      "type": 0,
+      "value": "で測定"
+    }
+  ],
+  "web.settings.playbackConnection.notMeasured": [
+    {
+      "type": 0,
+      "value": "未測定"
+    }
+  ],
+  "web.settings.playbackConnection.notSaved": [
+    {
+      "type": 0,
+      "value": "速度テストを保存できませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.settings.playbackConnection.rateLimited": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "秒後にもう一度お試しください"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.reset": [
+    {
+      "type": 0,
+      "value": "リセット"
+    }
+  ],
+  "web.settings.playbackConnection.resetFailed": [
+    {
+      "type": 0,
+      "value": "制限をリセットできませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.settings.playbackConnection.seenDuringPlayback": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "超・"
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    },
+    {
+      "type": 0,
+      "value": "の再生中に確認"
+    }
+  ],
+  "web.settings.playbackConnection.skippedCellular": [
+    {
+      "type": 0,
+      "value": "モバイルデータ通信では速度テストを行わず、モバイルデータ通信の画質設定が適用されます。"
+    }
+  ],
+  "web.settings.playbackConnection.skippedMetered": [
+    {
+      "type": 0,
+      "value": "従量制ネットワークでは速度テストを行いません。"
+    }
+  ],
+  "web.settings.playbackConnection.speed": [
+    {
+      "type": 0,
+      "value": "接続速度"
+    }
+  ],
+  "web.settings.playbackConnection.test": [
+    {
+      "type": 0,
+      "value": "速度をテスト"
+    }
+  ],
+  "web.settings.playbackConnection.testFailed": [
+    {
+      "type": 0,
+      "value": "接続速度を測定できませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.settings.playbackConnection.testing": [
+    {
+      "type": 0,
+      "value": "テスト中…"
+    }
+  ],
+  "web.settings.playbackConnection.title": [
+    {
+      "type": 0,
+      "value": "接続"
+    }
+  ],
+  "web.settings.playbackConnection.transport.cellular": [
+    {
+      "type": 0,
+      "value": "モバイルデータ通信"
+    }
+  ],
+  "web.settings.playbackConnection.transport.ethernet": [
+    {
+      "type": 0,
+      "value": "Ethernet"
+    }
+  ],
+  "web.settings.playbackConnection.transport.unknown": [
+    {
+      "type": 0,
+      "value": "この接続"
+    }
+  ],
+  "web.settings.playbackConnection.transport.wifi": [
+    {
+      "type": 0,
+      "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.resetButton.label": [
+    {
+      "type": 0,
+      "value": "リセット"
+    }
+  ],
+  "web.settings.sessions.confirm.clientDescription": [
+    {
+      "type": 0,
+      "value": "このクライアントは、次の認証済みリクエストでアクセスできなくなります。ほかのセッションとパスワードは変わりません。"
+    }
+  ],
+  "web.settings.sessions.confirm.deviceTitle": [
+    {
+      "type": 1,
+      "value": "device"
+    },
+    {
+      "type": 0,
+      "value": "をサインアウトしますか？"
+    }
+  ],
+  "web.settings.sessions.confirm.note": [
+    {
+      "type": 0,
+      "value": "再生中の動画は、次のリクエストまで再生が続く場合があります。保存されたデバイスの設定は保持されます。"
+    }
+  ],
+  "web.settings.sessions.confirm.thisBrowserDescription": [
+    {
+      "type": 0,
+      "value": "サインイン画面に戻ります。同じパスワードまたはサインインプロバイダーで再度サインインできます。"
+    }
+  ],
+  "web.settings.sessions.current.description": [
+    {
+      "type": 0,
+      "value": "現在使用中のセッションです。"
+    }
+  ],
+  "web.settings.sessions.description": [
+    {
+      "type": 0,
+      "value": "アカウントがサインインしている場所を確認し、心当たりのないセッションをサインアウトできます。"
+    }
+  ],
+  "web.settings.sessions.device.unknown": [
+    {
+      "type": 0,
+      "value": "不明なデバイス"
+    }
+  ],
+  "web.settings.sessions.lastSeen.active": [
+    {
+      "type": 0,
+      "value": "現在アクティブ"
+    }
+  ],
+  "web.settings.sessions.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最終アクティビティ："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "日前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最終アクティビティ："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "時間前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "最終アクティビティ："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "最終アクティビティはまだ記録されていません"
+    }
+  ],
+  "web.settings.sessions.loadFailed": [
+    {
+      "type": 0,
+      "value": "セッションを読み込めませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.settings.sessions.loadMore": [
+    {
+      "type": 0,
+      "value": "さらにセッションを読み込む"
+    }
+  ],
+  "web.settings.sessions.loading": [
+    {
+      "type": 0,
+      "value": "セッションを読み込み中…"
+    }
+  ],
+  "web.settings.sessions.others.description": [
+    {
+      "type": 0,
+      "value": "アカウントにアクセスできるほかのブラウザーとアプリです。"
+    }
+  ],
+  "web.settings.sessions.others.empty": [
+    {
+      "type": 0,
+      "value": "ほかにサインイン中のセッションはありません。"
+    }
+  ],
+  "web.settings.sessions.others.title": [
+    {
+      "type": 0,
+      "value": "ほかのサインイン中のセッション"
+    }
+  ],
+  "web.settings.sessions.refresh": [
+    {
+      "type": 0,
+      "value": "更新"
+    }
+  ],
+  "web.settings.sessions.refreshLabel": [
+    {
+      "type": 0,
+      "value": "セッションを更新"
+    }
+  ],
+  "web.settings.sessions.row.details": [
+    {
+      "type": 0,
+      "value": "詳細"
+    }
+  ],
+  "web.settings.sessions.row.detailsFor": [
+    {
+      "type": 1,
+      "value": "device"
+    },
+    {
+      "type": 0,
+      "value": "の詳細"
+    }
+  ],
+  "web.settings.sessions.row.expires": [
+    {
+      "type": 0,
+      "value": "有効期限"
+    }
+  ],
+  "web.settings.sessions.row.ipAddress": [
+    {
+      "type": 0,
+      "value": "サインイン時のIPアドレス"
+    }
+  ],
+  "web.settings.sessions.row.lastSeen": [
+    {
+      "type": 0,
+      "value": "最終アクティビティ"
+    }
+  ],
+  "web.settings.sessions.row.notRecorded": [
+    {
+      "type": 0,
+      "value": "まだ記録されていません"
+    }
+  ],
+  "web.settings.sessions.row.notSent": [
+    {
+      "type": 0,
+      "value": "送信なし"
+    }
+  ],
+  "web.settings.sessions.row.signOutDevice": [
+    {
+      "type": 1,
+      "value": "device"
+    },
+    {
+      "type": 0,
+      "value": "をサインアウト"
+    }
+  ],
+  "web.settings.sessions.row.signedIn": [
+    {
+      "type": 0,
+      "value": "サインイン日時"
+    }
+  ],
+  "web.settings.sessions.row.summary": [
+    {
+      "type": 8,
+      "value": "status",
+      "children": [
+        {
+          "type": 1,
+          "value": "last_seen"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · サインイン："
+    },
+    {
+      "type": 1,
+      "value": "signed_in"
+    }
+  ],
+  "web.settings.sessions.row.unknown": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.settings.sessions.row.userAgent": [
+    {
+      "type": 0,
+      "value": "User-Agent"
+    }
+  ],
+  "web.settings.sessions.signOutFailed": [
+    {
+      "type": 0,
+      "value": "セッションをサインアウトできませんでした。もう一度お試しください。"
+    }
+  ],
+  "web.settings.sessions.signedOut": [
+    {
+      "type": 0,
+      "value": "セッションをサインアウトしました"
+    }
+  ],
+  "web.settings.sessions.title": [
+    {
+      "type": 0,
+      "value": "サインイン中のセッション"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "アプリに戻る"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "設定"
+    }
+  ],
+  "web.settings.signedInSessions.unavailable": [
+    {
+      "type": 0,
+      "value": "このサーバーではサインイン中のセッションを管理できません。"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.color": [
+    {
+      "type": 0,
+      "value": "背景色"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.description": [
+    {
+      "type": 0,
+      "value": "字幕の位置とコントラストを調整します。"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacity": [
+    {
+      "type": 0,
+      "value": "背景の不透明度"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacityDescription": [
+    {
+      "type": 0,
+      "value": "ボックス表示の字幕でのみ使用されます。"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.position": [
+    {
+      "type": 0,
+      "value": "字幕の位置"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.style": [
+    {
+      "type": 0,
+      "value": "背景のスタイル"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.title": [
+    {
+      "type": 0,
+      "value": "背景と位置"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenDescription": [
+    {
+      "type": 0,
+      "value": "複数の音声トラックがある場合に、このプロフィールで優先する音声言語です。"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenLabel": [
+    {
+      "type": 0,
+      "value": "音声言語"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.title": [
+    {
+      "type": 0,
+      "value": "言語"
+    }
+  ],
+  "web.settings.subtitleAppearance.languageSaveFailed": [
+    {
+      "type": 0,
+      "value": "言語の設定を保存できませんでした"
+    }
+  ],
+  "web.settings.subtitleAppearance.percentSign": [
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.description": [
+    {
+      "type": 0,
+      "value": "このプロフィールのすべてのデバイスでの字幕の見た目です。"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.discard": [
+    {
+      "type": 0,
+      "value": "変更を破棄"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.reset": [
+    {
+      "type": 0,
+      "value": "字幕の見た目をデフォルトに戻す"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine1": [
+    {
+      "type": 0,
+      "value": "字幕のサンプルテキスト"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine2": [
+    {
+      "type": 0,
+      "value": "読みやすさを調整"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.save": [
+    {
+      "type": 0,
+      "value": "見た目を保存"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.title": [
+    {
+      "type": 0,
+      "value": "プレビュー"
+    }
+  ],
+  "web.settings.subtitleAppearance.resetFailed": [
+    {
+      "type": 0,
+      "value": "字幕の見た目をリセットできませんでした"
+    }
+  ],
+  "web.settings.subtitleAppearance.saveFailed": [
+    {
+      "type": 0,
+      "value": "字幕の見た目を保存できませんでした"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitle": [
+    {
+      "type": 0,
+      "value": "このプロフィールで優先する言語、字幕を表示するタイミング、字幕の見た目を設定します。"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitleSettingSaveFailed": [
+    {
+      "type": 0,
+      "value": "字幕の設定を保存できませんでした"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorDescription": [
+    {
+      "type": 0,
+      "value": "字幕を表示するタイミングを決めます。"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorLabel": [
+    {
+      "type": 0,
+      "value": "字幕の動作"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.description": [
+    {
+      "type": 0,
+      "value": "このプロフィールでSiloが選択する字幕です。"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.forcedDescription": [
+    {
+      "type": 0,
+      "value": "外国語の会話に強制字幕を表示します。"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageDescription": [
+    {
+      "type": 0,
+      "value": "字幕の言語を選択するか、デフォルトで字幕をオフにします。"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageLabel": [
+    {
+      "type": 0,
+      "value": "字幕の言語"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.title": [
+    {
+      "type": 0,
+      "value": "字幕"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.description": [
+    {
+      "type": 0,
+      "value": "字幕テキストの見た目と読みやすさを調整します。"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontColor": [
+    {
+      "type": 0,
+      "value": "フォントの色"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontFamily": [
+    {
+      "type": 0,
+      "value": "フォントファミリー"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontSize": [
+    {
+      "type": 0,
+      "value": "フォントサイズ"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacity": [
+    {
+      "type": 0,
+      "value": "テキストの不透明度"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacityDescription": [
+    {
+      "type": 0,
+      "value": "字幕テキスト自体の透明度です。"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outline": [
+    {
+      "type": 0,
+      "value": "テキストの縁取り"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColor": [
+    {
+      "type": 0,
+      "value": "縁取りの色"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColorDescription": [
+    {
+      "type": 0,
+      "value": "テキストの縁取りがオンの場合にのみ使用されます。"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.title": [
+    {
+      "type": 0,
+      "value": "テキスト"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.description": [
+    {
+      "type": 0,
+      "value": "すべての字幕を早めたり遅らせたりします。このプロフィールのすべてのデバイスに適用されます。"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.earlier": [
+    {
+      "type": 0,
+      "value": "字幕を"
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒早く表示"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.later": [
+    {
+      "type": 0,
+      "value": "字幕を"
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒遅く表示"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offset": [
+    {
+      "type": 0,
+      "value": "字幕のオフセット"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetDescription": [
+    {
+      "type": 0,
+      "value": "負の値で字幕が早く、正の値で遅く表示されます。"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetValue": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.reset": [
+    {
+      "type": 0,
+      "value": "リセット"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.saveFailed": [
+    {
+      "type": 0,
+      "value": "字幕のオフセットを保存できませんでした"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.title": [
+    {
+      "type": 0,
+      "value": "タイミング"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "言語と字幕"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.black": [
+    {
+      "type": 0,
+      "value": "黒"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGray": [
+    {
+      "type": 0,
+      "value": "ダークグレー"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGreen": [
+    {
+      "type": 0,
+      "value": "ダークグリーン"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkRed": [
+    {
+      "type": 0,
+      "value": "ダークレッド"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.navy": [
+    {
+      "type": 0,
+      "value": "ネイビー"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.box": [
+    {
+      "type": 0,
+      "value": "ボックス"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.dropShadow": [
+    {
+      "type": 0,
+      "value": "ドロップシャドウ"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.none": [
+    {
+      "type": 0,
+      "value": "なし"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.outline": [
+    {
+      "type": 0,
+      "value": "縁取り"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.black": [
+    {
+      "type": 0,
+      "value": "黒"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.blue": [
+    {
+      "type": 0,
+      "value": "青"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.cyan": [
+    {
+      "type": 0,
+      "value": "シアン"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.gray": [
+    {
+      "type": 0,
+      "value": "グレー"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.green": [
+    {
+      "type": 0,
+      "value": "緑"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.magenta": [
+    {
+      "type": 0,
+      "value": "マゼンタ"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.red": [
+    {
+      "type": 0,
+      "value": "赤"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.white": [
+    {
+      "type": 0,
+      "value": "白"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.yellow": [
+    {
+      "type": 0,
+      "value": "黄"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.monospace": [
+    {
+      "type": 0,
+      "value": "等幅"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.sansSerif": [
+    {
+      "type": 0,
+      "value": "ゴシック体"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.serif": [
+    {
+      "type": 0,
+      "value": "明朝体"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.large": [
+    {
+      "type": 0,
+      "value": "大"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.medium": [
+    {
+      "type": 0,
+      "value": "中"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.small": [
+    {
+      "type": 0,
+      "value": "小"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xLarge": [
+    {
+      "type": 0,
+      "value": "特大"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xxLarge": [
+    {
+      "type": 0,
+      "value": "超特大"
+    }
+  ],
+  "web.settings.subtitleOptions.position.bottom": [
+    {
+      "type": 0,
+      "value": "下"
+    }
+  ],
+  "web.settings.subtitleOptions.position.lowerThird": [
+    {
+      "type": 0,
+      "value": "下から3分の1"
+    }
+  ],
+  "web.settings.subtitleOptions.position.top": [
+    {
+      "type": 0,
+      "value": "上"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "すべてのデバイスに適用"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでこの設定を使用します。"
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでタイトルアートがオフになっています。ここで変更すると、すべてのデバイスで変更されます。デバイスごとに選択するには、「すべてのデバイスに適用」をオフにしてください。"
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "このプロフィールにサインインしているすべてのデバイスでタイトルアートがオンになっています。ここで変更すると、すべてのデバイスで変更されます。デバイスごとに選択するには、「すべてのデバイスに適用」をオフにしてください。"
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "映画やシリーズのページ上部でのタイトルの表示方法です。"
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "タイトルアートの設定を保存できませんでした"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "タイトル"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "ロゴのアートワークがある場合は、タイトルとして使用します。"
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "サーバーのデフォルトを使用"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Common Sense Mediaなどによる推奨視聴年齢をタイトルのページに表示します。年齢を表示するだけです。世帯の管理者は、プロフィールのアクセス設定でこの年齢によってプロフィールを制限できます。"
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "年齢の目安"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "タイトルページの設定を保存できませんでした"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "タイトルのページを開いている間に再生されます。"
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "サウンド"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "このプロフィールを使用するすべてのデバイスで、まだ見始めていないエピソードに適用されます。"
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "ネタバレ"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "映画やシリーズのページを開いたときに表示・再生される内容です。"
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "タイトルページ"
+    }
+  ],
+  "web.settings.value.custom": [
+    {
+      "type": 0,
+      "value": "カスタム"
+    }
+  ],
+  "web.settings.value.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": "エピソード"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.milliseconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": "ミリ秒"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.noLimit": [
+    {
+      "type": 0,
+      "value": "制限なし"
     }
   ],
   "web.shell.pageBack.goBack": [
@@ -895,6 +3633,18 @@
     {
       "type": 0,
       "value": "マイコンテンツ"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "破棄"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "未保存の変更を破棄しますか？"
     }
   ]
 }

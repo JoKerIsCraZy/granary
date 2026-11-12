@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -12,10 +13,7 @@ namespace Granary.Core.ViewModels.Settings;
 public sealed partial class MpvConfigEditorViewModel : ObservableObject
 {
     /// <summary>The check when nothing in the text concerns Granary.</summary>
-    public const string NothingToNote = "Nothing in it changes the options Granary keeps.";
-
-    private const string NotTextMessage =
-        "mpv.conf isn't UTF-8 text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another editor.";
+    public static string NothingToNote => AppText.Get("granary.settings.mpv.editor.nothingToNote");
 
     private readonly MpvConfigFolder _folder;
     private readonly IMpvConfigCheck _check;
@@ -27,8 +25,7 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     private bool _isNew;
     private string _lineBreak = "\r\n";
 
-    public const string ChangedElsewhereMessage =
-        "mpv.conf was changed outside Granary since you opened it, so this wasn't saved. Copy your edits, then close the editor and open it again.";
+    public static string ChangedElsewhereMessage => AppText.Get("granary.settings.mpv.editor.changedElsewhere");
 
     public MpvConfigEditorViewModel(MpvConfigFolder folder, IMpvConfigCheck check, MpvConfigChanges changes, IConfirmation confirmation)
     {
@@ -78,12 +75,12 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
         if (content is null)
         {
             Message = _folder.ConfigFileIsFolder
-                ? $"mpv.conf in {_folder.Directory} is a folder. Rename or remove it, then try again."
-                : $"Couldn't read mpv.conf in {_folder.Directory}.";
+                ? AppText.Get("granary.settings.mpv.configIsFolder", ("folder", _folder.Directory))
+                : AppText.Get("granary.settings.mpv.editor.readFailed", ("folder", _folder.Directory));
         }
         else if (content.IsNotText)
         {
-            Message = NotTextMessage;
+            Message = AppText.Get("granary.settings.mpv.editor.notText");
         }
         else
         {
@@ -126,7 +123,7 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
                 // A write that had to wait stops when the file changes meanwhile, and that is what the viewer needs to hear.
                 Message = ChangedElsewhere(await Task.Run(_folder.ReadConfig))
                     ? ChangedElsewhereMessage
-                    : $"Couldn't save mpv.conf in {_folder.Directory}.";
+                    : AppText.Get("granary.settings.mpv.editor.saveFailed", ("folder", _folder.Directory));
                 return false;
             }
             Message = "";
@@ -149,7 +146,8 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     /// edits are on their way to the file by then and can't be thrown away any more.
     /// </summary>
     public Task<bool> ConfirmDiscardAsync() => IsSaving ? Task.FromResult(false) : HasUnsavedChanges
-        ? _confirmation.AskAsync("Discard unsaved changes?", "Your edits to mpv.conf were never saved. Leaving now throws them away.", "Discard")
+        ? _confirmation.AskAsync(AppText.Get("web.shell.unsavedChanges.title"), AppText.Get("granary.settings.mpv.editor.discardBody"),
+            AppText.Get("web.shell.unsavedChanges.discard"))
         : Task.FromResult(true);
 
     partial void OnTextChanged(string value)

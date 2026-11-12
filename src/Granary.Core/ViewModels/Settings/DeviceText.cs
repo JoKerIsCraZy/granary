@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -22,7 +23,8 @@ public static partial class DeviceText
 
     /// <summary>
     /// The name and kind of a sign-in: a client that named itself keeps its name; a browser's User-Agent reads as
-    /// "Chrome on Windows"; anything else that is no User-Agent is a name and shows as it is.
+    /// "Chrome on Windows", in English as the web writes it, like the names the server gives devices; anything else that
+    /// is no User-Agent is a name and shows as it is.
     /// </summary>
     public static (string Name, SessionDeviceKind Kind) SessionDevice(string? deviceName, string? platform)
     {
@@ -31,11 +33,11 @@ public static partial class DeviceText
         if (reported.Length > 0)
         {
             string label = PlatformLabel(reported);
-            return (raw.Length > 0 ? raw : "Unknown device", KindOf(label.Length > 0 ? label : PlatformLabel(raw)));
+            return (raw.Length > 0 ? raw : UnknownDevice, KindOf(label.Length > 0 ? label : PlatformLabel(raw)));
         }
         if (raw.Length == 0)
         {
-            return ("Unknown device", SessionDeviceKind.Unknown);
+            return (UnknownDevice, SessionDeviceKind.Unknown);
         }
         string platformOf = PlatformLabel(raw);
         string app = AppOf(raw);
@@ -53,23 +55,35 @@ public static partial class DeviceText
         return (name, KindOf(platformOf));
     }
 
+    /// <summary>A device's name when it reports none.</summary>
+    public static string UnknownDevice => AppText.Get("web.settings.sessions.device.unknown");
+
+    /// <summary>A sign-in seen within two minutes: "Active now", which the page shows in green.</summary>
+    public static bool IsActiveNow(DateTimeOffset? lastSeen, DateTimeOffset now) => lastSeen is { } seen && now - seen < TimeSpan.FromMinutes(2);
+
     /// <summary>"Active now" within two minutes, then "Last seen 5 min ago", "3 hr ago", "2 days ago".</summary>
     public static string SessionLastSeen(DateTimeOffset? lastSeen, DateTimeOffset now)
     {
         if (lastSeen is not { } seen)
         {
-            return "Last seen not recorded yet";
+            return AppText.Get("web.settings.sessions.lastSeen.never");
         }
-        var elapsed = now - seen;
-        if (elapsed < TimeSpan.FromMinutes(2))
+        if (IsActiveNow(seen, now))
         {
-            return "Active now";
+            return AppText.Get("web.settings.sessions.lastSeen.active");
         }
-        int minutes = (int)elapsed.TotalMinutes;
-        // The web writes "1 days ago"; one day reads as one here.
-        return minutes < 60 ? $"Last seen {minutes} min ago"
-            : minutes < 1440 ? $"Last seen {minutes / 60} hr ago"
-            : $"Last seen {Count(minutes / 1440, "day")} ago";
+        int minutes = (int)(now - seen).TotalMinutes;
+        if (minutes < 60)
+        {
+            return AppText.Get("web.settings.sessions.lastSeen.minutes", ("count", minutes), ("count_text", AppText.Number(minutes)));
+        }
+        int hours = minutes / 60;
+        if (hours < 24)
+        {
+            return AppText.Get("web.settings.sessions.lastSeen.hours", ("count", hours), ("count_text", AppText.Number(hours)));
+        }
+        int days = hours / 24;
+        return AppText.Get("web.settings.sessions.lastSeen.days", ("count", days), ("count_text", AppText.Number(days)));
     }
 
     /// <summary>When a device was last used, in round figures: "Less than an hour ago", "Yesterday", "2 months ago".</summary>
@@ -77,32 +91,40 @@ public static partial class DeviceText
     {
         if (lastSeen is not { } seen)
         {
-            return "Never used";
+            return AppText.Get("web.settings.deviceList.lastSeen.never");
         }
         int minutes = (int)Math.Max(0, Math.Round((now - seen).TotalMinutes, MidpointRounding.AwayFromZero));
         if (minutes < 60)
         {
-            return "Less than an hour ago";
+            return AppText.Get("web.settings.deviceList.lastSeen.underAnHour");
         }
         int hours = Round(minutes / 60.0);
         if (hours < 24)
         {
-            return Count(hours, "hour") + " ago";
+            return AppText.Get("web.settings.deviceList.lastSeen.hours", ("count", hours), ("count_text", AppText.Number(hours)));
         }
         int days = Round(hours / 24.0);
         if (days == 1)
         {
-            return "Yesterday";
+            return AppText.Get("web.settings.deviceList.lastSeen.yesterday");
         }
         if (days < 30)
         {
-            return $"{days} days ago";
+            return AppText.Get("web.settings.deviceList.lastSeen.days", ("count", days), ("count_text", AppText.Number(days)));
         }
         int months = Round(days / 30.0);
-        return months < 12 ? Count(months, "month") + " ago" : Count(Round(months / 12.0), "year") + " ago";
+        if (months < 12)
+        {
+            return AppText.Get("web.settings.deviceList.lastSeen.months", ("count", months), ("count_text", AppText.Number(months)));
+        }
+        int years = Round(months / 12.0);
+        return AppText.Get("web.settings.deviceList.lastSeen.years", ("count", years), ("count_text", AppText.Number(years)));
     }
 
-    /// <summary>What a device's reported platform is: TV, Tablet, Mobile, Desktop, or Other.</summary>
+    /// <summary>
+    /// What a device's reported platform is: TV, Tablet, Mobile, Desktop, or Other, as identifiers the page picks icons by;
+    /// <see cref="KindLabel"/> names them.
+    /// </summary>
     public static string PlatformKind(string? platform)
     {
         string p = platform?.ToLowerInvariant() ?? "";
@@ -125,12 +147,19 @@ public static partial class DeviceText
         return ContainsAny(p, "mac", "win", "linux", "desktop", "chrome", "safari", "firefox", "edge", "web", "browser") ? "Desktop" : "Other";
     }
 
+    /// <summary>A kind of <see cref="PlatformKind"/> in the language on screen, as the web's platformKindLabel.</summary>
+    public static string KindLabel(string kind) => kind switch
+    {
+        "TV" => AppText.Get("web.common.devicePlatform.kind.tv"),
+        "Tablet" => AppText.Get("web.common.devicePlatform.kind.tablet"),
+        "Mobile" => AppText.Get("web.common.devicePlatform.kind.mobile"),
+        "Desktop" => AppText.Get("web.common.devicePlatform.kind.desktop"),
+        _ => AppText.Get("web.common.devicePlatform.kind.unknown"),
+    };
+
     /// <summary>A date and time in the viewer's own zone, as the web writes it: "Oct 1, 2026, 8:00 AM".</summary>
     public static string Stamp(DateTimeOffset at, TimeZoneInfo zone) =>
         TimeZoneInfo.ConvertTime(at, zone).ToString("MMM d, yyyy, h:mm tt", English);
-
-    /// <summary>"1 thing" or "3 things".</summary>
-    public static string Count(int count, string noun) => $"{count} {(count == 1 ? noun : noun + "s")}";
 
     private static int Round(double value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
 

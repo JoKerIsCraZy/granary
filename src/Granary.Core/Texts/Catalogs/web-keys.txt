@@ -93,6 +93,51 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# A setting's name, description and choices as Silo's settings manifest words them for every client
+# (settingsManifest.<key>.label, .description, .option.<value>), where the web's settings pages show them for the same
+# setting: src/Granary.App/Views/Settings and src/Granary.Core/ViewModels/Settings.
+settingsManifest.catalog.hide_unwatched_episode_images.description
+settingsManifest.catalog.hide_unwatched_episode_images.label
+settingsManifest.catalog.hide_unwatched_episode_overviews.description
+settingsManifest.catalog.hide_unwatched_episode_overviews.label
+settingsManifest.catalog.show_advisory_age.label
+settingsManifest.playback.audio_language.unsetLabel
+settingsManifest.playback.auto_play_next.label
+settingsManifest.playback.auto_skip_credits.description
+settingsManifest.playback.auto_skip_credits.label
+settingsManifest.playback.auto_skip_recap.label
+settingsManifest.playback.buffering_quality_mode.description
+settingsManifest.playback.buffering_quality_mode.label
+settingsManifest.playback.buffering_quality_mode.option.always
+settingsManifest.playback.buffering_quality_mode.option.ask
+settingsManifest.playback.buffering_quality_mode.option.never
+settingsManifest.playback.intro_skip_mode.label
+settingsManifest.playback.intro_skip_mode.option.always
+settingsManifest.playback.intro_skip_mode.option.ask
+settingsManifest.playback.intro_skip_mode.option.never
+settingsManifest.playback.max_bitrate_kbps.label
+settingsManifest.playback.preferred_quality.label
+settingsManifest.playback.preferred_quality.option.1080p
+settingsManifest.playback.preferred_quality.option.2160p
+settingsManifest.playback.preferred_quality.option.480p
+settingsManifest.playback.preferred_quality.option.720p
+settingsManifest.playback.preferred_quality.option.auto
+settingsManifest.playback.show_forced_subtitles.label
+settingsManifest.playback.subtitle_language.unsetLabel
+settingsManifest.playback.subtitle_mode.option.always
+settingsManifest.playback.subtitle_mode.option.auto
+settingsManifest.playback.subtitle_mode.option.off
+settingsManifest.player.audio_sync_ms.description
+settingsManifest.player.audio_sync_ms.label
+settingsManifest.player.passout_threshold.label
+settingsManifest.player.resume_rewind_seconds.description
+settingsManifest.player.resume_rewind_seconds.label
+settingsManifest.ui.theme_music_enabled.description
+settingsManifest.ui.theme_music_enabled.label
+settingsManifest.ui.theme_music_loop.description
+settingsManifest.ui.theme_music_loop.label
+settingsManifest.ui.title_art.label
+
 # Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
 # the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
 # src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
@@ -119,6 +164,14 @@ web.auth.username
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
+# A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
+# src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
+web.common.devicePlatform.kind.desktop
+web.common.devicePlatform.kind.mobile
+web.common.devicePlatform.kind.tablet
+web.common.devicePlatform.kind.tv
+web.common.devicePlatform.kind.unknown
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
@@ -127,6 +180,16 @@ web.common.ui.loadError.timeout
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# The player's buttons, as the web's player names them (components/player): Label in
+# src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
+web.player.audioMenu.trigger
+web.player.chaptersMenu.trigger
+web.player.controls.editMarkers
+web.player.controls.fillScreen
+web.player.controls.playbackInfo
+web.player.controls.volume
+web.player.sleepTimer.trigger
 
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
 # components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
@@ -146,6 +209,359 @@ web.profiles.pin.verifying
 # src/Granary.App/Views/SearchPage.xaml.
 web.search.label
 web.search.placeholderProminent
+
+# Settings, in the words of the web's settings pages (pages/settings) for the same settings: the sidebar of
+# src/Granary.App/Views/SettingsPage.xaml(.cs), as the web's UserSettingsSidebar and lib/userSettingsNav.ts, with its group
+# names upper-cased at display as its CSS does; Navigation & Cards (src/Granary.App/Views/Settings/InterfaceSettingsView.xaml,
+# src/Granary.App/Controls/BadgeSettingsLook.cs, and in src/Granary.Core/ViewModels/Settings PosterSettingsViewModel.cs,
+# BadgeSettingsViewModel.cs and BadgeSettingsText.cs, the badges, styles and colours as the web's lib/overlays names them);
+# Title Pages (TitlePagesSettingsView.xaml and TitlePagesSettingsViewModel.cs), as TitlePagesSettings.tsx and
+# TitleArtSettingsGroup.tsx, its Spoilers panel in the words of the Navigation & Cards one; Language & Subtitles
+# (LanguageSettingsView.xaml, LanguageSettingsViewModel.cs, SubtitleAppearanceEditor.cs, which the player's Appearance
+# panel shares, and src/Granary.App/Controls/SubtitlePreview.cs), as SubtitleAppearanceSettings.tsx and
+# lib/subtitleAppearance.ts; Devices (DevicesSettingsView.xaml, DevicesViewModel.cs and .Actions.cs, DeviceRows.cs and
+# DeviceText.cs), as the web's SignedInSessions.tsx, lib/loginSessionDevice.ts, DeviceSettings.tsx and DeviceList.tsx;
+# Playback (PlaybackSettingsView.xaml, PlaybackSettingsViewModel.cs and .Device.cs, AudioDelaySettingsViewModel.cs), as
+# PlaybackSettings.tsx, PlaybackConnection.tsx, the Sound group of DeviceSettingGroups.tsx and lib/settingsDisplay.ts.
+web.settings.cardOverlay.adjust
+web.settings.cardOverlay.adjustLabel
+web.settings.cardOverlay.badgesDescription
+web.settings.cardOverlay.badgesTitle
+web.settings.cardOverlay.color
+web.settings.cardOverlay.colorDefault
+web.settings.cardOverlay.noneOn
+web.settings.cardOverlay.position
+web.settings.cardOverlay.resetBadges
+web.settings.cardOverlay.resetBadgesConfirmDescription
+web.settings.cardOverlay.resetBadgesConfirmTitle
+web.settings.cardOverlay.showBadges
+web.settings.cardOverlay.showIcon
+web.settings.cardOverlay.someOn
+web.settings.cardOverlay.style
+web.settings.cardOverlay.suppressedHint
+web.settings.currentProfileLink.caption
+web.settings.device.changedCount
+web.settings.device.empty
+web.settings.device.forget
+web.settings.device.forgetFailed
+web.settings.device.forgotten
+web.settings.device.nameLabel
+web.settings.device.nameReset
+web.settings.device.nothingChanged
+web.settings.device.rename
+web.settings.device.renameFailed
+web.settings.device.renamed
+web.settings.device.reportsItselfAs
+web.settings.device.resetDone
+web.settings.device.resetFailed
+web.settings.device.title
+web.settings.device.useProfileSettings
+web.settings.device.usingNow
+web.settings.deviceGroups.sound.description
+web.settings.deviceGroups.sound.title
+web.settings.deviceList.group.current
+web.settings.deviceList.group.earlier
+web.settings.deviceList.group.week
+web.settings.deviceList.lastSeen.days
+web.settings.deviceList.lastSeen.hours
+web.settings.deviceList.lastSeen.months
+web.settings.deviceList.lastSeen.never
+web.settings.deviceList.lastSeen.underAnHour
+web.settings.deviceList.lastSeen.years
+web.settings.deviceList.lastSeen.yesterday
+web.settings.interface.loadFailedDescription
+web.settings.interface.loading
+web.settings.interface.moveDown
+web.settings.interface.moveUp
+web.settings.interface.posterCompact
+web.settings.interface.posterLarge
+web.settings.interface.posterReset
+web.settings.interface.posterSize
+web.settings.interface.posterStandard
+web.settings.interface.postersTitle
+web.settings.interface.title
+web.settings.interface.unsupportedTitle
+web.settings.limitField.unlimited
+web.settings.nav.group.account
+web.settings.nav.group.appearance
+web.settings.nav.group.playback
+web.settings.overlays.accent.amber
+web.settings.overlays.accent.blue
+web.settings.overlays.accent.cyan
+web.settings.overlays.accent.emerald
+web.settings.overlays.accent.gold
+web.settings.overlays.accent.indigo
+web.settings.overlays.accent.orange
+web.settings.overlays.accent.pink
+web.settings.overlays.accent.slate
+web.settings.overlays.accent.tomato
+web.settings.overlays.accent.violet
+web.settings.overlays.accent.white
+web.settings.overlays.badge.advisoryAge.description
+web.settings.overlays.badge.advisoryAge.label
+web.settings.overlays.badge.aspectRatio.description
+web.settings.overlays.badge.aspectRatio.label
+web.settings.overlays.badge.audio.description
+web.settings.overlays.badge.audio.label
+web.settings.overlays.badge.audioChannels.description
+web.settings.overlays.badge.audioChannels.label
+web.settings.overlays.badge.container.description
+web.settings.overlays.badge.container.label
+web.settings.overlays.badge.contentRating.description
+web.settings.overlays.badge.contentRating.label
+web.settings.overlays.badge.edition.description
+web.settings.overlays.badge.edition.label
+web.settings.overlays.badge.hdr.description
+web.settings.overlays.badge.hdr.label
+web.settings.overlays.badge.multiAudio.description
+web.settings.overlays.badge.multiAudio.label
+web.settings.overlays.badge.multiSub.description
+web.settings.overlays.badge.multiSub.label
+web.settings.overlays.badge.network.description
+web.settings.overlays.badge.network.label
+web.settings.overlays.badge.originalLanguage.description
+web.settings.overlays.badge.originalLanguage.label
+web.settings.overlays.badge.ratingImdb.description
+web.settings.overlays.badge.ratingImdb.label
+web.settings.overlays.badge.ratingRt.description
+web.settings.overlays.badge.ratingRt.label
+web.settings.overlays.badge.ratingRtAudience.description
+web.settings.overlays.badge.ratingRtAudience.label
+web.settings.overlays.badge.ratingTmdb.description
+web.settings.overlays.badge.ratingTmdb.label
+web.settings.overlays.badge.releaseType.description
+web.settings.overlays.badge.releaseType.label
+web.settings.overlays.badge.requestStatus.description
+web.settings.overlays.badge.requestStatus.label
+web.settings.overlays.badge.resolution.description
+web.settings.overlays.badge.resolution.label
+web.settings.overlays.badge.resolutionHdr.label
+web.settings.overlays.badge.resolutionHdr.shortLabel
+web.settings.overlays.badge.runtime.description
+web.settings.overlays.badge.runtime.label
+web.settings.overlays.badge.showStatus.availabilityNote
+web.settings.overlays.badge.showStatus.description
+web.settings.overlays.badge.showStatus.label
+web.settings.overlays.badge.studio.description
+web.settings.overlays.badge.studio.label
+web.settings.overlays.badge.videoCodec.description
+web.settings.overlays.badge.videoCodec.label
+web.settings.overlays.badge.year.description
+web.settings.overlays.badge.year.label
+web.settings.overlays.category.metadata.description
+web.settings.overlays.category.metadata.title
+web.settings.overlays.category.ratings.description
+web.settings.overlays.category.ratings.title
+web.settings.overlays.category.ribbons.description
+web.settings.overlays.category.ribbons.title
+web.settings.overlays.category.tech.description
+web.settings.overlays.category.tech.title
+web.settings.overlays.look.style
+web.settings.overlays.position.bottomLeft
+web.settings.overlays.position.bottomRight
+web.settings.overlays.position.topLeft
+web.settings.overlays.preset.classic.description
+web.settings.overlays.preset.classic.label
+web.settings.overlays.preset.minimal.description
+web.settings.overlays.preset.minimal.label
+web.settings.overlays.preset.pill.description
+web.settings.overlays.preset.pill.label
+web.settings.overlays.preset.square.label
+web.settings.overlays.preset.vibrant.description
+web.settings.overlays.preset.vibrant.label
+web.settings.playback.autoPlayNext.description
+web.settings.playback.maxBitrate.description
+web.settings.playback.maxBitrate.saveFailed
+web.settings.playback.nextEpisode.previewDescription
+web.settings.playback.nextEpisode.previewLabel
+web.settings.playback.nextEpisode.title
+web.settings.playback.quality.autoDescription
+web.settings.playback.quality.description
+web.settings.playback.quality.groupDescription
+web.settings.playback.quality.saveFailed
+web.settings.playback.quality.title
+web.settings.playback.saveFailed
+web.settings.playback.seek.description
+web.settings.playback.seek.forwardInterval
+web.settings.playback.seek.rewindInterval
+web.settings.playback.seek.seconds
+web.settings.playback.seek.title
+web.settings.playback.seek.video.forwardDescription
+web.settings.playback.seek.video.forwardSaveFailed
+web.settings.playback.seek.video.rewindDescription
+web.settings.playback.seek.video.rewindSaveFailed
+web.settings.playback.seek.videoDescription
+web.settings.playback.seek.videoTitle
+web.settings.playback.skipping.introModeDescription
+web.settings.playback.skipping.recapDescription
+web.settings.playback.skipping.title
+web.settings.playback.subtitle
+web.settings.playback.title
+web.settings.playbackConnection.ago.days
+web.settings.playbackConnection.ago.hours
+web.settings.playbackConnection.ago.justNow
+web.settings.playbackConnection.ago.minutes
+web.settings.playbackConnection.autoBudget
+web.settings.playbackConnection.fasterThan
+web.settings.playbackConnection.learnedLimit
+web.settings.playbackConnection.measured
+web.settings.playbackConnection.notMeasured
+web.settings.playbackConnection.notSaved
+web.settings.playbackConnection.rateLimited
+web.settings.playbackConnection.reset
+web.settings.playbackConnection.resetFailed
+web.settings.playbackConnection.seenDuringPlayback
+web.settings.playbackConnection.skippedCellular
+web.settings.playbackConnection.skippedMetered
+web.settings.playbackConnection.speed
+web.settings.playbackConnection.test
+web.settings.playbackConnection.testFailed
+web.settings.playbackConnection.testing
+web.settings.playbackConnection.title
+web.settings.playbackConnection.transport.cellular
+web.settings.playbackConnection.transport.ethernet
+web.settings.playbackConnection.transport.unknown
+web.settings.playbackConnection.transport.wifi
+web.settings.resetButton.label
+web.settings.sessions.confirm.clientDescription
+web.settings.sessions.confirm.deviceTitle
+web.settings.sessions.confirm.note
+web.settings.sessions.confirm.thisBrowserDescription
+web.settings.sessions.current.description
+web.settings.sessions.description
+web.settings.sessions.device.unknown
+web.settings.sessions.lastSeen.active
+web.settings.sessions.lastSeen.days
+web.settings.sessions.lastSeen.hours
+web.settings.sessions.lastSeen.minutes
+web.settings.sessions.lastSeen.never
+web.settings.sessions.loadFailed
+web.settings.sessions.loadMore
+web.settings.sessions.loading
+web.settings.sessions.others.description
+web.settings.sessions.others.empty
+web.settings.sessions.others.title
+web.settings.sessions.refresh
+web.settings.sessions.refreshLabel
+web.settings.sessions.row.details
+web.settings.sessions.row.detailsFor
+web.settings.sessions.row.expires
+web.settings.sessions.row.ipAddress
+web.settings.sessions.row.lastSeen
+web.settings.sessions.row.notRecorded
+web.settings.sessions.row.notSent
+web.settings.sessions.row.signOutDevice
+web.settings.sessions.row.signedIn
+web.settings.sessions.row.summary
+web.settings.sessions.row.unknown
+web.settings.sessions.row.userAgent
+web.settings.sessions.signOutFailed
+web.settings.sessions.signedOut
+web.settings.sessions.title
+web.settings.sidebar.backToApp
+web.settings.sidebar.title
+web.settings.signedInSessions.unavailable
+web.settings.subtitleAppearance.background.color
+web.settings.subtitleAppearance.background.description
+web.settings.subtitleAppearance.background.opacity
+web.settings.subtitleAppearance.background.opacityDescription
+web.settings.subtitleAppearance.background.position
+web.settings.subtitleAppearance.background.style
+web.settings.subtitleAppearance.background.title
+web.settings.subtitleAppearance.language.spokenDescription
+web.settings.subtitleAppearance.language.spokenLabel
+web.settings.subtitleAppearance.language.title
+web.settings.subtitleAppearance.languageSaveFailed
+web.settings.subtitleAppearance.percentSign
+web.settings.subtitleAppearance.preview.description
+web.settings.subtitleAppearance.preview.discard
+web.settings.subtitleAppearance.preview.reset
+web.settings.subtitleAppearance.preview.sampleLine1
+web.settings.subtitleAppearance.preview.sampleLine2
+web.settings.subtitleAppearance.preview.save
+web.settings.subtitleAppearance.preview.title
+web.settings.subtitleAppearance.resetFailed
+web.settings.subtitleAppearance.saveFailed
+web.settings.subtitleAppearance.subtitle
+web.settings.subtitleAppearance.subtitleSettingSaveFailed
+web.settings.subtitleAppearance.subtitles.behaviorDescription
+web.settings.subtitleAppearance.subtitles.behaviorLabel
+web.settings.subtitleAppearance.subtitles.description
+web.settings.subtitleAppearance.subtitles.forcedDescription
+web.settings.subtitleAppearance.subtitles.languageDescription
+web.settings.subtitleAppearance.subtitles.languageLabel
+web.settings.subtitleAppearance.subtitles.title
+web.settings.subtitleAppearance.text.description
+web.settings.subtitleAppearance.text.fontColor
+web.settings.subtitleAppearance.text.fontFamily
+web.settings.subtitleAppearance.text.fontSize
+web.settings.subtitleAppearance.text.opacity
+web.settings.subtitleAppearance.text.opacityDescription
+web.settings.subtitleAppearance.text.outline
+web.settings.subtitleAppearance.text.outlineColor
+web.settings.subtitleAppearance.text.outlineColorDescription
+web.settings.subtitleAppearance.text.title
+web.settings.subtitleAppearance.timing.description
+web.settings.subtitleAppearance.timing.earlier
+web.settings.subtitleAppearance.timing.later
+web.settings.subtitleAppearance.timing.offset
+web.settings.subtitleAppearance.timing.offsetDescription
+web.settings.subtitleAppearance.timing.offsetValue
+web.settings.subtitleAppearance.timing.reset
+web.settings.subtitleAppearance.timing.saveFailed
+web.settings.subtitleAppearance.timing.title
+web.settings.subtitleAppearance.title
+web.settings.subtitleOptions.backgroundColor.black
+web.settings.subtitleOptions.backgroundColor.darkGray
+web.settings.subtitleOptions.backgroundColor.darkGreen
+web.settings.subtitleOptions.backgroundColor.darkRed
+web.settings.subtitleOptions.backgroundColor.navy
+web.settings.subtitleOptions.backgroundStyle.box
+web.settings.subtitleOptions.backgroundStyle.dropShadow
+web.settings.subtitleOptions.backgroundStyle.none
+web.settings.subtitleOptions.backgroundStyle.outline
+web.settings.subtitleOptions.fontColor.black
+web.settings.subtitleOptions.fontColor.blue
+web.settings.subtitleOptions.fontColor.cyan
+web.settings.subtitleOptions.fontColor.gray
+web.settings.subtitleOptions.fontColor.green
+web.settings.subtitleOptions.fontColor.magenta
+web.settings.subtitleOptions.fontColor.red
+web.settings.subtitleOptions.fontColor.white
+web.settings.subtitleOptions.fontColor.yellow
+web.settings.subtitleOptions.fontFamily.monospace
+web.settings.subtitleOptions.fontFamily.sansSerif
+web.settings.subtitleOptions.fontFamily.serif
+web.settings.subtitleOptions.fontSize.large
+web.settings.subtitleOptions.fontSize.medium
+web.settings.subtitleOptions.fontSize.small
+web.settings.subtitleOptions.fontSize.xLarge
+web.settings.subtitleOptions.fontSize.xxLarge
+web.settings.subtitleOptions.position.bottom
+web.settings.subtitleOptions.position.lowerThird
+web.settings.subtitleOptions.position.top
+web.settings.titleArt.allDevices
+web.settings.titleArt.allDevicesDescription
+web.settings.titleArt.allDevicesOffNote
+web.settings.titleArt.allDevicesOnNote
+web.settings.titleArt.description
+web.settings.titleArt.saveFailed
+web.settings.titleArt.title
+web.settings.titleArt.titleArtDescription
+web.settings.titleArt.useServerDefault
+web.settings.titlePages.advisoryAgeDescription
+web.settings.titlePages.ageGuidanceTitle
+web.settings.titlePages.saveFailed
+web.settings.titlePages.soundDescription
+web.settings.titlePages.soundTitle
+web.settings.titlePages.spoilersDescription
+web.settings.titlePages.spoilersTitle
+web.settings.titlePages.subtitle
+web.settings.titlePages.title
+web.settings.value.custom
+web.settings.value.episodes
+web.settings.value.milliseconds
+web.settings.value.noLimit
 
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
@@ -173,3 +589,8 @@ web.shell.sidebar.switchProfile
 web.shell.sidebar.watchParty
 web.shell.sidebar.watchlist
 web.shell.sidebar.yourStuff
+
+# The question before unsaved edits are thrown away, as the web's (components/UnsavedChangesGuard.tsx): the mpv.conf
+# editor in src/Granary.Core/ViewModels/Settings/MpvConfigEditorViewModel.cs.
+web.shell.unsavedChanges.discard
+web.shell.unsavedChanges.title

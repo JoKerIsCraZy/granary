@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -20,7 +21,9 @@ public sealed partial class SubtitlePreview : UserControl
     public static readonly DependencyProperty IsCompactProperty = DependencyProperty.Register(nameof(IsCompact), typeof(bool),
         typeof(SubtitlePreview), new PropertyMetadata(false, (sender, _) => ((SubtitlePreview)sender).ShowFrame()));
 
-    private static readonly string[] Lines = ["Sample subtitle text", "tuned for readability"];
+    // The settings page's sample, in the web's words; the player panel's below is its own and stays in English for now.
+    private static string[] Lines =>
+        [AppText.Get("web.settings.subtitleAppearance.preview.sampleLine1"), AppText.Get("web.settings.subtitleAppearance.preview.sampleLine2")];
 
     private static readonly string[] CompactLines = ["The quick brown fox", "jumps over the lazy dog."];
 
@@ -101,8 +104,12 @@ public sealed partial class SubtitlePreview : UserControl
         set => SetValue(AppearanceProperty, value);
     }
 
-    private void AutomationPropertiesHelper() =>
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this, "Subtitle preview: " + string.Join(" ", Lines));
+    private void AutomationPropertiesHelper()
+    {
+        string[] lines = Lines;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this,
+            AppText.Get("granary.settings.subtitles.previewName", ("line1", lines[0]), ("line2", lines[1])));
+    }
 
     private void Render()
     {

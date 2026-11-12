@@ -14,88 +14,90 @@
     </UserControl.Resources>
 
     <StackPanel>
-        <TextBlock Text="Playback" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.playback.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="The defaults this profile starts playback with. A library, a series, or one of your devices can override some of them." />
+                   Text="{x:Bind t:AppText.Get('web.settings.playback.subtitle')}" />
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
                  Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
 
-        <controls:SettingsGroup Title="Quality" Description="Each of your devices can override these, and a household manager can cap them for this profile.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.playback.quality.title')}"
+                                Description="{x:Bind t:AppText.Get('web.settings.playback.quality.groupDescription')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Preferred quality"
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('settingsManifest.playback.preferred_quality.label')}"
                                       Description="{x:Bind ViewModel.QualityDescription, Mode=OneWay}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.QualityChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedQuality, Mode=TwoWay}" IsEnabled="{x:Bind controls:SettingsText.Not(ViewModel.IsLoading), Mode=OneWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Maximum bitrate"
-                                      Description="Cap how much bandwidth playback may use. No limit means Silo picks for the chosen resolution.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.max_bitrate_kbps.label')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.maxBitrate.description')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.BitrateChoices, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedBitrate, Mode=TwoWay}" IsEnabled="{x:Bind controls:SettingsText.Not(ViewModel.IsLoading), Mode=OneWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Lower quality when buffering" Visibility="{x:Bind ViewModel.ShowsBuffering, Mode=OneWay}"
-                                      Description="What Silo does on Auto when playback keeps buffering. Silo always asks before lowering a quality you picked.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.buffering_quality_mode.label')}" Visibility="{x:Bind ViewModel.ShowsBuffering, Mode=OneWay}"
+                                      Description="{x:Bind t:AppText.Get('settingsManifest.playback.buffering_quality_mode.description')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.BufferingChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedBuffering, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="{x:Bind ViewModel.LearnedLimitText, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowsLearnedLimit, Mode=OneWay}">
-                    <Button Content="Reset" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.ResetLearnedLimitCommand}"
-                            AutomationProperties.Name="Reset the learned limit" />
+                    <Button Content="{x:Bind t:AppText.Get('web.settings.playbackConnection.reset')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.ResetLearnedLimitCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.resetLearnedLimit')}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
 
         <!-- Granary's own: about this PC's graphics card and player, so kept on the PC, not in the profile. -->
-        <controls:SettingsGroup Title="This PC" Description="Kept on this PC, not in your profile.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.playback.thisPc')}" Description="{x:Bind t:AppText.Get('granary.settings.playback.thisPcDescription')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
-                                      Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter. Counts from the next title you play. With a fixed Quality above, your server can still convert a file.">
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.playback.softwareDecoding')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.playback.softwareDecodingDescription')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
-                                  AutomationProperties.Name="Direct play without hardware decoding" />
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.softwareDecoding')}" />
                 </controls:SettingsRow>
                 <!-- Granary's own: a remote's arrows and a keyboard's are the same keys, so the viewer says which they use. -->
-                <controls:SettingsRow Label="Up and Down in the player"
-                                      Description="While the picture shows. Controls and menus suits a remote, as on Silo's TV app: Up shows the controls, Down opens audio or subtitles. Volume is the keyboard shortcut of Silo's web player.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.playback.upDown')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.playback.upDownDescription')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
-                              SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
+                              SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}"
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.upDown')}" />
                 </controls:SettingsRow>
                 <!-- player.resume_rewind_seconds, kept on the device as the contract has it, with its words and range; 0 by default, Granary's own choice (ResumeRewind). -->
-                <controls:SettingsRow Label="Rewind on resume"
-                                      Description="Skip back this far when resuming a partly watched item, to re-establish context. 0 turns it off.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.player.resume_rewind_seconds.label')}"
+                                      Description="{x:Bind t:AppText.Get('settingsManifest.player.resume_rewind_seconds.description')}">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <NumberBox Width="80" Minimum="0" Maximum="30" SmallChange="1" LargeChange="5" VerticalAlignment="Center"
-                                   Value="{x:Bind ViewModel.ResumeRewindSeconds, Mode=TwoWay}" AutomationProperties.Name="Rewind on resume in seconds" />
-                        <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                                   Value="{x:Bind ViewModel.ResumeRewindSeconds, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.resumeRewindName')}" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.playback.secondsUnit')}" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <!-- player.passout_threshold is kept on the device, as the contract has it, which also sets the highest number; the named choices are the Android app's. -->
-                <controls:SettingsRow Label="Still watching prompt"
-                                      Description="How many episodes auto-play in a row before Granary asks whether you're still watching. Unlimited never asks, and Custom takes a number from 1 to 20.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.player.passout_threshold.label')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.playback.stillWatchingDescription')}">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <NumberBox Width="80" Minimum="1" Maximum="20" SmallChange="1" LargeChange="5" VerticalAlignment="Center"
                                    Value="{x:Bind ViewModel.StillWatchingEpisodes, Mode=TwoWay}"
                                    Visibility="{x:Bind ViewModel.IsStillWatchingCustom, Mode=OneWay}"
-                                   AutomationProperties.Name="Episodes before the still watching prompt" />
+                                   AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.stillWatchingEpisodes')}" />
                         <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.StillWatchingChoices}"
-                                  SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
+                                  SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('settingsManifest.player.passout_threshold.label')}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
-                <controls:SettingsRow Label="mpv configuration"
-                                      Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply from the next title you play. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.mpv.config')}" Description="{x:Bind t:AppText.Get('granary.settings.mpv.configDescription')}">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <!-- Only when the line below says how mpv.conf fared: the log has the details. -->
-                        <HyperlinkButton Content="Open logs" Command="{x:Bind ViewModel.OpenLogsCommand}"
+                        <HyperlinkButton Content="{x:Bind t:AppText.Get('granary.settings.mpv.openLogs')}" Command="{x:Bind ViewModel.OpenLogsCommand}"
                                          Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigStatusText), Mode=OneWay}"
-                                         ToolTipService.ToolTip="Granary's log says what the player did with your mpv.conf"
-                                         AutomationProperties.Name="Open logs" />
-                        <HyperlinkButton Content="Open folder" Command="{x:Bind ViewModel.OpenMpvFolderCommand}"
-                                         ToolTipService.ToolTip="For shaders and other files your mpv.conf uses"
-                                         AutomationProperties.Name="Open the mpv folder" />
-                        <Button Content="Open mpv.conf" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                                Command="{x:Bind ViewModel.OpenMpvConfigCommand}" AutomationProperties.Name="Open mpv.conf" />
+                                         ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.mpv.openLogsTooltip')}"
+                                         AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.openLogs')}" />
+                        <HyperlinkButton Content="{x:Bind t:AppText.Get('granary.settings.mpv.openFolder')}" Command="{x:Bind ViewModel.OpenMpvFolderCommand}"
+                                         ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.mpv.openFolderTooltip')}"
+                                         AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.openFolderName')}" />
+                        <Button Content="{x:Bind t:AppText.Get('granary.settings.mpv.openFile')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.OpenMpvConfigCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.openFile')}" />
                         <!-- Granary's own editor, in this page's place (MpvConfigEditorView), for a remote as for a keyboard. -->
-                        <Button x:Name="EditMpvConfigButton" Content="Edit" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                                Click="OnEditMpvConfigClick" AutomationProperties.Name="Edit mpv.conf" />
+                        <Button x:Name="EditMpvConfigButton" Content="{x:Bind t:AppText.Get('granary.settings.mpv.edit')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Click="OnEditMpvConfigClick" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.editName')}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <!-- How the player fared with mpv.conf in this run; a fix counts from the next title, as the row says. -->
@@ -110,10 +112,9 @@
                            Visibility="{x:Bind controls:SettingsText.Shows(Mpv.ChangeText), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
                 <!-- Granary's own: named copies of mpv.conf, plain files in mpv\presets (MpvPresets). -->
-                <controls:SettingsRow Label="mpv presets"
-                                      Description="Copies of your mpv.conf under a name, kept as files in the presets folder. Loading one replaces mpv.conf.">
-                    <Button x:Name="SavePresetButton" Content="Save as preset…" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnSavePresetClick"
-                            AutomationProperties.Name="Save mpv.conf as a preset" />
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.mpv.presets')}" Description="{x:Bind t:AppText.Get('granary.settings.mpv.presetsDescription')}">
+                    <Button x:Name="SavePresetButton" Content="{x:Bind t:AppText.Get('granary.settings.mpv.saveAsPreset')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Click="OnSavePresetClick" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.saveAsPresetName')}" />
                 </controls:SettingsRow>
                 <!-- The preset loaded last, while one is; Unload goes back to mpv.conf from before the first preset. -->
                 <Grid Margin="0,12,0,0" ColumnSpacing="12" Visibility="{x:Bind Mpv.HasActivePreset, Mode=OneWay}">
@@ -123,10 +124,10 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{x:Bind Mpv.ActivePresetText, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
                                FontWeight="Medium" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{StaticResource SiloForegroundBrush}" />
-                    <Button x:Name="UnloadPresetButton" Grid.Column="1" Content="Unload" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                            Click="OnUnloadPresetClick" AutomationProperties.Name="Unload the preset" />
+                    <Button x:Name="UnloadPresetButton" Grid.Column="1" Content="{x:Bind t:AppText.Get('granary.settings.mpv.unload')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Click="OnUnloadPresetClick" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.mpv.unloadName')}" />
                 </Grid>
-                <TextBlock Margin="0,12,0,0" Text="No presets yet." Style="{StaticResource SiloSettingsMutedTextStyle}"
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind t:AppText.Get('granary.settings.mpv.noPresets')}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Hides(Mpv.HasPresets), Mode=OneWay}" />
                 <ItemsControl ItemsSource="{x:Bind Mpv.Presets, Mode=OneWay}" IsTabStop="False">
                     <ItemsControl.ItemTemplate>
@@ -139,9 +140,9 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"
                                            Foreground="{StaticResource SiloForegroundBrush}" />
-                                <Button Grid.Column="1" Content="Load" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('granary.settings.mpv.load')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
                                         Click="OnLoadPresetClick" AutomationProperties.Name="{x:Bind LoadName}" />
-                                <Button Grid.Column="2" Content="Delete" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                <Button Grid.Column="2" Content="{x:Bind t:AppText.Get('granary.settings.mpv.delete')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
                                         Click="OnDeletePresetClick" AutomationProperties.Name="{x:Bind DeleteName}" />
                             </Grid>
                         </DataTemplate>
@@ -151,10 +152,10 @@
                            Visibility="{x:Bind controls:SettingsText.Shows(Mpv.PresetMessage), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
                 <!-- Granary's own: Discord's status while a title plays (PlayerRichPresence), shown or taken away at once. -->
-                <controls:SettingsRow Label="Show what's playing in Discord"
-                                      Description="Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app on this PC.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.playback.discord')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.playback.discordDescription')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DiscordStatus, Mode=TwoWay}"
-                                  AutomationProperties.Name="Show what's playing in Discord" />
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.discord')}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
@@ -173,19 +174,19 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="6">
                     <Grid>
-                        <TextBlock Text="Player buttons" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.playerButtons.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
                                    Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
                         <Button x:Name="ResetPlayerButtonsButton" HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
                                 Click="OnResetPlayerButtonsClick" Visibility="{x:Bind PlayerButtons.IsCustomized, Mode=OneWay}"
-                                AutomationProperties.Name="Reset player buttons">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playerButtons.reset')}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE7A7;" FontSize="12" />
-                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.resetButton.label')}" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
                             </StackPanel>
                         </Button>
                     </Grid>
                     <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
-                               Text="Which buttons the player shows on the right of its controls, and in which order, for this profile on this PC. Some show only when a title has what they need. A hidden button's keys do nothing too, such as C for Subtitles." />
+                               Text="{x:Bind t:AppText.Get('granary.settings.playerButtons.description')}" />
                 </StackPanel>
                 <ItemsControl x:Name="PlayerButtonRows" Grid.Column="1" ItemsSource="{x:Bind PlayerButtons.Rows}" IsTabStop="False"
                               BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
@@ -210,12 +211,12 @@
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                                     <Button Tag="up" Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0"
                                             Click="OnMovePlayerButtonClick" AllowFocusWhenDisabled="True" IsEnabled="{x:Bind CanMoveUp, Mode=OneWay}"
-                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="Move up">
+                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.moveUp')}">
                                         <FontIcon Glyph="&#xE70E;" FontSize="12" />
                                     </Button>
                                     <Button Tag="down" Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0"
                                             Click="OnMovePlayerButtonClick" AllowFocusWhenDisabled="True" IsEnabled="{x:Bind CanMoveDown, Mode=OneWay}"
-                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="Move down">
+                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.moveDown')}">
                                         <FontIcon Glyph="&#xE70D;" FontSize="12" />
                                     </Button>
                                 </StackPanel>
@@ -234,23 +235,24 @@
             The view model makes the steps: a slider stepping by itself would move a value another app stored off them. A read
             that failed says so with Retry, as the Devices page does; a server that does not know the setting has no Sound.
         -->
-        <controls:SettingsGroup Title="Sound" Description="Audio on this device" Visibility="{x:Bind AudioDelay.IsSupported, Mode=OneWay}">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Audio sync offset"
-                                  Description="Shift audio earlier or later to correct lip sync on this device.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.title')}" Description="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.description')}"
+                                Visibility="{x:Bind AudioDelay.IsSupported, Mode=OneWay}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.label')}"
+                                  Description="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}">
                 <Grid>
                     <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.HasLoadMessage, Mode=OneWay}">
                         <TextBlock Text="{x:Bind AudioDelay.LoadMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                                    VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
                         <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind AudioDelay.LoadCommand}"
-                                AutomationProperties.Name="Retry loading the audio sync offset" />
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.playback.audioSyncRetry')}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.ShowsSlider, Mode=OneWay}">
                         <Slider x:Name="AudioSyncSlider" Width="160" VerticalAlignment="Center" IsThumbToolTipEnabled="False"
                                 Minimum="{x:Bind settings:AudioDelaySettingsViewModel.Minimum}" Maximum="{x:Bind settings:AudioDelaySettingsViewModel.Maximum}"
                                 StepFrequency="1" SmallChange="50" LargeChange="500"
                                 Value="{x:Bind AudioDelay.Milliseconds, Mode=TwoWay}" IsEnabled="{x:Bind AudioDelay.IsLoaded, Mode=OneWay}"
-                                AutomationProperties.Name="Audio sync offset"
-                                AutomationProperties.HelpText="Shift audio earlier or later to correct lip sync on this device." />
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.label')}"
+                                AutomationProperties.HelpText="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}" />
                         <TextBlock MinWidth="112" Text="{x:Bind AudioDelay.ValueText, Mode=OneWay}" VerticalAlignment="Center" TextAlignment="Right"
                                    FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                                    Typography.NumeralAlignment="Tabular" AutomationProperties.AccessibilityView="Raw" />
@@ -259,13 +261,13 @@
             </controls:SettingsRow>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.playbackConnection.title')}" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
             <StackPanel Spacing="16">
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Connection speed"
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('web.settings.playbackConnection.speed')}"
                                       Description="{x:Bind ViewModel.ConnectionSpeedText, Mode=OneWay}">
                     <Button Content="{x:Bind ViewModel.TestSpeedText, Mode=OneWay}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                             Command="{x:Bind ViewModel.TestSpeedCommand}" Visibility="{x:Bind ViewModel.ShowsTestSpeed, Mode=OneWay}"
-                            AutomationProperties.Name="Test speed" />
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.playbackConnection.test')}" />
                 </controls:SettingsRow>
                 <TextBlock Text="{x:Bind ViewModel.SpeedTestMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.SpeedTestMessage), Mode=OneWay}"
@@ -275,47 +277,53 @@
             </StackPanel>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="Skipping">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.playback.skipping.title')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Skip intros"
-                                      Description="Leave intros alone, offer a Skip Intro button, or skip automatically with an undo.">
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('settingsManifest.playback.intro_skip_mode.label')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.skipping.introModeDescription')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.IntroSkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedIntroSkip, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowsIntroSkip, Mode=OneWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Auto-skip recaps" Description="Skip 'previously on…' recaps automatically when Silo can detect them.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.auto_skip_recap.label')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.skipping.recapDescription')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipRecaps, Mode=TwoWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Auto-skip credits" Description="Move through end credits automatically when a skip is available.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.auto_skip_credits.label')}"
+                                      Description="{x:Bind t:AppText.Get('settingsManifest.playback.auto_skip_credits.description')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipCredits, Mode=TwoWay}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="Next episode">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.playback.nextEpisode.title')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Start next at preview"
-                                      Description="Begin the next episode when the current one reaches its next-episode preview teaser, rather than waiting for the end credits.">
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('web.settings.playback.nextEpisode.previewLabel')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.nextEpisode.previewDescription')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.StartNextAtPreview, Mode=TwoWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Auto-play next episode" Description="Start the next episode automatically after the current one ends.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.auto_play_next.label')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.autoPlayNext.description')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoPlayNext, Mode=TwoWay}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
 
         <StackPanel Padding="0,32,0,16" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" Spacing="8">
-            <TextBlock Text="Seek controls" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.playback.seek.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
             <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" MaxWidth="660" HorizontalAlignment="Left"
-                       Text="How far rewind and fast-forward jump. These belong to the active profile and follow it across supported Silo apps." />
+                       Text="{x:Bind t:AppText.Get('web.settings.playback.seek.description')}" />
         </StackPanel>
-        <controls:SettingsGroup Title="Video" Description="Applies to the transport buttons, double-tap gestures, arrow keys, and system media controls.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.playback.seek.videoTitle')}"
+                                Description="{x:Bind t:AppText.Get('web.settings.playback.seek.videoDescription')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Rewind interval" Description="How far video jumps when you rewind.">
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('web.settings.playback.seek.rewindInterval')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.seek.video.rewindDescription')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedRewind, Mode=TwoWay}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Fast-forward interval" Description="How far video jumps when you fast-forward.">
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('web.settings.playback.seek.forwardInterval')}"
+                                      Description="{x:Bind t:AppText.Get('web.settings.playback.seek.video.forwardDescription')}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedFastForward, Mode=TwoWay}" />
                 </controls:SettingsRow>

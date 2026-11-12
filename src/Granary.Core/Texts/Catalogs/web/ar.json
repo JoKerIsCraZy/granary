@@ -515,6 +515,252 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "تمويه الصورة المصغّرة للحلقة حتى تبدأ مشاهدتها، كي لا تكشف الصورة أحداث القصة."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "تمويه صور الحلقات غير المشاهَدة"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "إخفاء وصف الحلقة حتى تبدأ مشاهدتها."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "إخفاء أوصاف الحلقات غير المشاهَدة"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "عرض العمر الموصى به"
+    }
+  ],
+  "settingsManifest.playback.audio_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "بلا تفضيل"
+    }
+  ],
+  "settingsManifest.playback.auto_play_next.label": [
+    {
+      "type": 0,
+      "value": "تشغيل الحلقة التالية تلقائيًا"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.description": [
+    {
+      "type": 0,
+      "value": "تجاوز شارة النهاية تلقائيًا عند توفر التخطي."
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.label": [
+    {
+      "type": 0,
+      "value": "تخطي شارة النهاية تلقائيًا"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_recap.label": [
+    {
+      "type": 0,
+      "value": "تخطي الملخصات تلقائيًا"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.description": [
+    {
+      "type": 0,
+      "value": "ما يفعله Silo في وضع تلقائي عندما يستمر التخزين المؤقت أثناء التشغيل. يسأل Silo دائمًا قبل خفض جودة اخترتها."
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.label": [
+    {
+      "type": 0,
+      "value": "خفض الجودة عند التخزين المؤقت"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.always": [
+    {
+      "type": 0,
+      "value": "تلقائيًا"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "السؤال أولًا"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.never": [
+    {
+      "type": 0,
+      "value": "أبدًا"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.label": [
+    {
+      "type": 0,
+      "value": "تخطي المقدمات"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.always": [
+    {
+      "type": 0,
+      "value": "التخطي تلقائيًا"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "السؤال قبل التخطي"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.never": [
+    {
+      "type": 0,
+      "value": "أبدًا"
+    }
+  ],
+  "settingsManifest.playback.max_bitrate_kbps.label": [
+    {
+      "type": 0,
+      "value": "الحد الأقصى لمعدل البت"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.label": [
+    {
+      "type": 0,
+      "value": "الجودة المفضّلة"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.1080p": [
+    {
+      "type": 0,
+      "value": "1080p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.2160p": [
+    {
+      "type": 0,
+      "value": "2160p / 4K"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.480p": [
+    {
+      "type": 0,
+      "value": "480p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.720p": [
+    {
+      "type": 0,
+      "value": "720p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.auto": [
+    {
+      "type": 0,
+      "value": "تلقائي"
+    }
+  ],
+  "settingsManifest.playback.show_forced_subtitles.label": [
+    {
+      "type": 0,
+      "value": "عرض الترجمة الإجبارية"
+    }
+  ],
+  "settingsManifest.playback.subtitle_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "بلا"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.always": [
+    {
+      "type": 0,
+      "value": "مفعّلة دائمًا"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.auto": [
+    {
+      "type": 0,
+      "value": "تلقائي"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.off": [
+    {
+      "type": 0,
+      "value": "معطّلة"
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.description": [
+    {
+      "type": 0,
+      "value": "تقديم الصوت أو تأخيره لتصحيح تزامن الشفاه على هذا الجهاز."
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.label": [
+    {
+      "type": 0,
+      "value": "إزاحة مزامنة الصوت"
+    }
+  ],
+  "settingsManifest.player.passout_threshold.label": [
+    {
+      "type": 0,
+      "value": "سؤال «هل ما زلت تشاهد؟»"
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.description": [
+    {
+      "type": 0,
+      "value": "الرجوع هذا القدر عند استئناف عنصر شوهد جزئيًا، لاستعادة السياق. القيمة 0 تعطّل هذا الخيار."
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.label": [
+    {
+      "type": 0,
+      "value": "الترجيع عند الاستئناف"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "تشغيل موسيقى الشارة المحلية أثناء تصفح صفحات تفاصيل الأفلام والمسلسلات."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "تكرار موسيقى الشارة ما دامت صفحة التفاصيل مفتوحة."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "تكرار موسيقى الشارة"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "عرض شعار العنوان"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -641,6 +887,36 @@
       "value": "تم"
     }
   ],
+  "web.common.devicePlatform.kind.desktop": [
+    {
+      "type": 0,
+      "value": "كمبيوتر مكتبي"
+    }
+  ],
+  "web.common.devicePlatform.kind.mobile": [
+    {
+      "type": 0,
+      "value": "الهاتف"
+    }
+  ],
+  "web.common.devicePlatform.kind.tablet": [
+    {
+      "type": 0,
+      "value": "الجهاز اللوحي"
+    }
+  ],
+  "web.common.devicePlatform.kind.tv": [
+    {
+      "type": 0,
+      "value": "التلفزيون"
+    }
+  ],
+  "web.common.devicePlatform.kind.unknown": [
+    {
+      "type": 0,
+      "value": "أخرى"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -657,6 +933,48 @@
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "المسارات الصوتية"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "الفصول"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "ملء الشاشة بالصورة"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "معلومات التشغيل"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "مستوى الصوت"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "مؤقت النوم"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -825,6 +1143,3494 @@
       "value": "البحث عن أفلام ومسلسلات..."
     }
   ],
+  "web.settings.cardOverlay.adjust": [
+    {
+      "type": 0,
+      "value": "ضبط"
+    }
+  ],
+  "web.settings.cardOverlay.adjustLabel": [
+    {
+      "type": 0,
+      "value": "ضبط "
+    },
+    {
+      "type": 1,
+      "value": "badge"
+    }
+  ],
+  "web.settings.cardOverlay.badgesDescription": [
+    {
+      "type": 0,
+      "value": "تسميات صغيرة على الملصقات، مثل 4K أو Dolby Vision أو التقييم."
+    }
+  ],
+  "web.settings.cardOverlay.badgesTitle": [
+    {
+      "type": 0,
+      "value": "الشارات"
+    }
+  ],
+  "web.settings.cardOverlay.color": [
+    {
+      "type": 0,
+      "value": "اللون"
+    }
+  ],
+  "web.settings.cardOverlay.colorDefault": [
+    {
+      "type": 0,
+      "value": "افتراضي"
+    }
+  ],
+  "web.settings.cardOverlay.noneOn": [
+    {
+      "type": 0,
+      "value": "لا شيء مفعّل"
+    }
+  ],
+  "web.settings.cardOverlay.position": [
+    {
+      "type": 0,
+      "value": "الموضع"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadges": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين الشارات"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmDescription": [
+    {
+      "type": 0,
+      "value": "تُمسح اختياراتك للشارات، ويتبع هذا الملف الشخصي إعدادات الشارات في الخادم الخاص بك من الآن فصاعدًا."
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmTitle": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين الشارات؟"
+    }
+  ],
+  "web.settings.cardOverlay.showBadges": [
+    {
+      "type": 0,
+      "value": "عرض الشارات على الملصقات"
+    }
+  ],
+  "web.settings.cardOverlay.showIcon": [
+    {
+      "type": 0,
+      "value": "عرض الأيقونة"
+    }
+  ],
+  "web.settings.cardOverlay.someOn": [
+    {
+      "type": 1,
+      "value": "on"
+    },
+    {
+      "type": 0,
+      "value": " من "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " مفعّلة"
+    }
+  ],
+  "web.settings.cardOverlay.style": [
+    {
+      "type": 0,
+      "value": "النمط"
+    }
+  ],
+  "web.settings.cardOverlay.suppressedHint": [
+    {
+      "type": 0,
+      "value": "مخفية أثناء تفعيل الشارة المجمّعة "
+    },
+    {
+      "type": 1,
+      "value": "badge"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "الملف الشخصي الحالي"
+    }
+  ],
+  "web.settings.device.changedCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " إعداد مختلف"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " إعداد مختلف"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "إعدادان مختلفان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " إعدادات مختلفة"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " إعدادًا مختلفًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " إعداد مختلف"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.device.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد أجهزة بعد. ستظهر هنا عند تسجيل الدخول عليها."
+    }
+  ],
+  "web.settings.device.forget": [
+    {
+      "type": 0,
+      "value": "نسيان"
+    }
+  ],
+  "web.settings.device.forgetFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر النسيان"
+    }
+  ],
+  "web.settings.device.forgotten": [
+    {
+      "type": 0,
+      "value": "تم نسيان الجهاز"
+    }
+  ],
+  "web.settings.device.nameLabel": [
+    {
+      "type": 0,
+      "value": "اسم الجهاز"
+    }
+  ],
+  "web.settings.device.nameReset": [
+    {
+      "type": 0,
+      "value": "تمت إعادة تعيين اسم الجهاز"
+    }
+  ],
+  "web.settings.device.nothingChanged": [
+    {
+      "type": 0,
+      "value": "لم يتغير شيء هنا"
+    }
+  ],
+  "web.settings.device.rename": [
+    {
+      "type": 0,
+      "value": "إعادة التسمية"
+    }
+  ],
+  "web.settings.device.renameFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة التسمية"
+    }
+  ],
+  "web.settings.device.renamed": [
+    {
+      "type": 0,
+      "value": "تمت إعادة تسمية الجهاز"
+    }
+  ],
+  "web.settings.device.reportsItselfAs": [
+    {
+      "type": 0,
+      "value": "يعرّف نفسه باسم "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.settings.device.resetDone": [
+    {
+      "type": 0,
+      "value": "تمت إزالة التغييرات على هذا الجهاز"
+    }
+  ],
+  "web.settings.device.resetFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر المسح"
+    }
+  ],
+  "web.settings.device.title": [
+    {
+      "type": 0,
+      "value": "أجهزتك"
+    }
+  ],
+  "web.settings.device.useProfileSettings": [
+    {
+      "type": 0,
+      "value": "استخدام إعدادات الملف الشخصي"
+    }
+  ],
+  "web.settings.device.usingNow": [
+    {
+      "type": 0,
+      "value": "قيد الاستخدام الآن"
+    }
+  ],
+  "web.settings.deviceGroups.sound.description": [
+    {
+      "type": 0,
+      "value": "الصوت على هذا الجهاز"
+    }
+  ],
+  "web.settings.deviceGroups.sound.title": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.settings.deviceList.group.current": [
+    {
+      "type": 0,
+      "value": "قيد الاستخدام الآن"
+    }
+  ],
+  "web.settings.deviceList.group.earlier": [
+    {
+      "type": 0,
+      "value": "في وقت سابق"
+    }
+  ],
+  "web.settings.deviceList.group.week": [
+    {
+      "type": 0,
+      "value": "هذا الأسبوع"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ يومين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أيام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يومًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ ساعتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.months": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " شهر"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " شهر"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ شهرين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أشهر"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " شهرًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " شهر"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "لم يُستخدم قط"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.underAnHour": [
+    {
+      "type": 0,
+      "value": "منذ أقل من ساعة"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.years": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " سنة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " سنة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ سنتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " سنوات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " سنةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " سنة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.yesterday": [
+    {
+      "type": 0,
+      "value": "أمس"
+    }
+  ],
+  "web.settings.interface.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "التعديل معطّل حتى يكتمل تحميلها، كي لا يُستبدل أي شيء اخترته سابقًا."
+    }
+  ],
+  "web.settings.interface.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ التحميل…"
+    }
+  ],
+  "web.settings.interface.moveDown": [
+    {
+      "type": 0,
+      "value": "نقل "
+    },
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " للأسفل"
+    }
+  ],
+  "web.settings.interface.moveUp": [
+    {
+      "type": 0,
+      "value": "نقل "
+    },
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " للأعلى"
+    }
+  ],
+  "web.settings.interface.posterCompact": [
+    {
+      "type": 0,
+      "value": "مدمج"
+    }
+  ],
+  "web.settings.interface.posterLarge": [
+    {
+      "type": 0,
+      "value": "كبير"
+    }
+  ],
+  "web.settings.interface.posterReset": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين إعدادات الملصقات"
+    }
+  ],
+  "web.settings.interface.posterSize": [
+    {
+      "type": 0,
+      "value": "الحجم"
+    }
+  ],
+  "web.settings.interface.posterStandard": [
+    {
+      "type": 0,
+      "value": "عادي"
+    }
+  ],
+  "web.settings.interface.postersTitle": [
+    {
+      "type": 0,
+      "value": "الملصقات"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "التنقل والبطاقات"
+    }
+  ],
+  "web.settings.interface.unsupportedTitle": [
+    {
+      "type": 0,
+      "value": "يحتاج خادمك إلى تحديث"
+    }
+  ],
+  "web.settings.limitField.unlimited": [
+    {
+      "type": 0,
+      "value": "غير محدود"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "الحساب"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "المظهر"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "التشغيل"
+    }
+  ],
+  "web.settings.overlays.accent.amber": [
+    {
+      "type": 0,
+      "value": "كهرماني"
+    }
+  ],
+  "web.settings.overlays.accent.blue": [
+    {
+      "type": 0,
+      "value": "أزرق"
+    }
+  ],
+  "web.settings.overlays.accent.cyan": [
+    {
+      "type": 0,
+      "value": "سماوي"
+    }
+  ],
+  "web.settings.overlays.accent.emerald": [
+    {
+      "type": 0,
+      "value": "زمردي"
+    }
+  ],
+  "web.settings.overlays.accent.gold": [
+    {
+      "type": 0,
+      "value": "ذهبي"
+    }
+  ],
+  "web.settings.overlays.accent.indigo": [
+    {
+      "type": 0,
+      "value": "نيلي"
+    }
+  ],
+  "web.settings.overlays.accent.orange": [
+    {
+      "type": 0,
+      "value": "برتقالي"
+    }
+  ],
+  "web.settings.overlays.accent.pink": [
+    {
+      "type": 0,
+      "value": "وردي"
+    }
+  ],
+  "web.settings.overlays.accent.slate": [
+    {
+      "type": 0,
+      "value": "أردوازي"
+    }
+  ],
+  "web.settings.overlays.accent.tomato": [
+    {
+      "type": 0,
+      "value": "طماطمي"
+    }
+  ],
+  "web.settings.overlays.accent.violet": [
+    {
+      "type": 0,
+      "value": "بنفسجي"
+    }
+  ],
+  "web.settings.overlays.accent.white": [
+    {
+      "type": 0,
+      "value": "أبيض"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.description": [
+    {
+      "type": 0,
+      "value": "الحد الأدنى الموصى به لعمر المشاهد، مثل 13+ من Common Sense Media"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.label": [
+    {
+      "type": 0,
+      "value": "العمر الموصى به"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.description": [
+    {
+      "type": 0,
+      "value": "نسبة العرض إلى الارتفاع (16:9، 2.39:1، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.label": [
+    {
+      "type": 0,
+      "value": "نسبة العرض إلى الارتفاع"
+    }
+  ],
+  "web.settings.overlays.badge.audio.description": [
+    {
+      "type": 0,
+      "value": "ترميز الصوت (Atmos، DTS-HD، TrueHD، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.audio.label": [
+    {
+      "type": 0,
+      "value": "ترميز الصوت"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.description": [
+    {
+      "type": 0,
+      "value": "توزيع القنوات (ستيريو، 5.1، 7.1)"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.label": [
+    {
+      "type": 0,
+      "value": "قنوات الصوت"
+    }
+  ],
+  "web.settings.overlays.badge.container.description": [
+    {
+      "type": 0,
+      "value": "حاوية الملف (MKV، MP4، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.container.label": [
+    {
+      "type": 0,
+      "value": "الحاوية"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.description": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري للمحتوى (PG-13، TV-MA، R، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.label": [
+    {
+      "type": 0,
+      "value": "التصنيف العمري"
+    }
+  ],
+  "web.settings.overlays.badge.edition.description": [
+    {
+      "type": 0,
+      "value": "تسمية الإصدار من أفضل نسخة وسائط متاحة"
+    }
+  ],
+  "web.settings.overlays.badge.edition.label": [
+    {
+      "type": 0,
+      "value": "الإصدار"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.description": [
+    {
+      "type": 0,
+      "value": "صيغة النطاق الديناميكي (HDR10، DV، HLG)"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.label": [
+    {
+      "type": 0,
+      "value": "HDR / Dolby Vision"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.description": [
+    {
+      "type": 0,
+      "value": "تظهر عندما يحتوي الملف على صوت بلغتين أو أكثر"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.label": [
+    {
+      "type": 0,
+      "value": "صوت متعدد اللغات"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.description": [
+    {
+      "type": 0,
+      "value": "تظهر عندما يحتوي الملف على أي مسار ترجمة"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.label": [
+    {
+      "type": 0,
+      "value": "الترجمة متاحة"
+    }
+  ],
+  "web.settings.overlays.badge.network.description": [
+    {
+      "type": 0,
+      "value": "الشبكة الرئيسية (المسلسلات)"
+    }
+  ],
+  "web.settings.overlays.badge.network.label": [
+    {
+      "type": 0,
+      "value": "الشبكة"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.description": [
+    {
+      "type": 0,
+      "value": "اللغة الأصلية للمحتوى"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.label": [
+    {
+      "type": 0,
+      "value": "اللغة"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.description": [
+    {
+      "type": 0,
+      "value": "تقييم IMDb من 10"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.label": [
+    {
+      "type": 0,
+      "value": "تقييم IMDb"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.description": [
+    {
+      "type": 0,
+      "value": "تقييم النقاد على Rotten Tomatoes، عندما يعرضه المسؤول"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.label": [
+    {
+      "type": 0,
+      "value": "نقاد RT"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.description": [
+    {
+      "type": 0,
+      "value": "تقييم الجمهور على Rotten Tomatoes، عندما يعرضه المسؤول"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.label": [
+    {
+      "type": 0,
+      "value": "جمهور RT"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.description": [
+    {
+      "type": 0,
+      "value": "تقييم TMDB من 10"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.label": [
+    {
+      "type": 0,
+      "value": "تقييم TMDB"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.description": [
+    {
+      "type": 0,
+      "value": "صيغة المصدر (REMUX، BluRay، WEB-DL، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.label": [
+    {
+      "type": 0,
+      "value": "نوع الإصدار"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.description": [
+    {
+      "type": 0,
+      "value": "موقف عنوان في قائمة المشاهدة لا تحتويه المكتبة بعد: قيد التنزيل، تاريخ الإصدار، بانتظار الموافقة"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.label": [
+    {
+      "type": 0,
+      "value": "حالة الطلب"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.description": [
+    {
+      "type": 0,
+      "value": "دقة الفيديو (4K، 1080p، 720p، إلخ)"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.label": [
+    {
+      "type": 0,
+      "value": "الدقة"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.label": [
+    {
+      "type": 0,
+      "value": "الدقة + HDR (مدمجة)"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.shortLabel": [
+    {
+      "type": 0,
+      "value": "الدقة + HDR"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.description": [
+    {
+      "type": 0,
+      "value": "مدة العنصر بالساعات والدقائق"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.label": [
+    {
+      "type": 0,
+      "value": "المدة"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.availabilityNote": [
+    {
+      "type": 0,
+      "value": "تُملأ بواسطة المكونات الإضافية للبيانات الوصفية (تحديثات TMDB/TVDB قيد الانتظار)"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.description": [
+    {
+      "type": 0,
+      "value": "دورة حياة المسلسل: مستمر، منتهٍ، ملغى"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.label": [
+    {
+      "type": 0,
+      "value": "حالة المسلسل"
+    }
+  ],
+  "web.settings.overlays.badge.studio.description": [
+    {
+      "type": 0,
+      "value": "استوديو الإنتاج الرئيسي (الأفلام)"
+    }
+  ],
+  "web.settings.overlays.badge.studio.label": [
+    {
+      "type": 0,
+      "value": "الاستوديو"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.description": [
+    {
+      "type": 0,
+      "value": "ترميز الفيديو (H.264، H.265، AV1)"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.label": [
+    {
+      "type": 0,
+      "value": "ترميز الفيديو"
+    }
+  ],
+  "web.settings.overlays.badge.year.description": [
+    {
+      "type": 0,
+      "value": "سنة الإصدار"
+    }
+  ],
+  "web.settings.overlays.badge.year.label": [
+    {
+      "type": 0,
+      "value": "السنة"
+    }
+  ],
+  "web.settings.overlays.category.metadata.description": [
+    {
+      "type": 0,
+      "value": "معلومات عن المحتوى نفسه."
+    }
+  ],
+  "web.settings.overlays.category.metadata.title": [
+    {
+      "type": 0,
+      "value": "البيانات الوصفية للمحتوى"
+    }
+  ],
+  "web.settings.overlays.category.ratings.description": [
+    {
+      "type": 0,
+      "value": "تقييمات من مصادر خارجية والتصنيفات العمرية للمحتوى."
+    }
+  ],
+  "web.settings.overlays.category.ratings.title": [
+    {
+      "type": 0,
+      "value": "التقييمات والتصنيفات"
+    }
+  ],
+  "web.settings.overlays.category.ribbons.description": [
+    {
+      "type": 0,
+      "value": "شارات دورة حياة المسلسل وحالة الطلب والجوائز. يتطلب بعضها مصادر بيانات قادمة."
+    }
+  ],
+  "web.settings.overlays.category.ribbons.title": [
+    {
+      "type": 0,
+      "value": "الحالة والجوائز"
+    }
+  ],
+  "web.settings.overlays.category.tech.description": [
+    {
+      "type": 0,
+      "value": "تفاصيل تقنية من ملفات الوسائط لديك."
+    }
+  ],
+  "web.settings.overlays.category.tech.title": [
+    {
+      "type": 0,
+      "value": "معلومات الوسائط"
+    }
+  ],
+  "web.settings.overlays.look.style": [
+    {
+      "type": 0,
+      "value": "نمط الشارة"
+    }
+  ],
+  "web.settings.overlays.position.bottomLeft": [
+    {
+      "type": 0,
+      "value": "أسفل اليسار"
+    }
+  ],
+  "web.settings.overlays.position.bottomRight": [
+    {
+      "type": 0,
+      "value": "أسفل اليمين"
+    }
+  ],
+  "web.settings.overlays.position.topLeft": [
+    {
+      "type": 0,
+      "value": "أعلى اليسار"
+    }
+  ],
+  "web.settings.overlays.preset.classic.description": [
+    {
+      "type": 0,
+      "value": "كبسولة داكنة شبه شفافة بإطار أبيض. النمط الافتراضي."
+    }
+  ],
+  "web.settings.overlays.preset.classic.label": [
+    {
+      "type": 0,
+      "value": "كلاسيكي"
+    }
+  ],
+  "web.settings.overlays.preset.minimal.description": [
+    {
+      "type": 0,
+      "value": "شبه مخفية. نص صغير جدًا بلا خلفية."
+    }
+  ],
+  "web.settings.overlays.preset.minimal.label": [
+    {
+      "type": 0,
+      "value": "بسيط"
+    }
+  ],
+  "web.settings.overlays.preset.pill.description": [
+    {
+      "type": 0,
+      "value": "كبسولة أكبر بحشو أوسع. تناسب الأيقونات."
+    }
+  ],
+  "web.settings.overlays.preset.pill.label": [
+    {
+      "type": 0,
+      "value": "كبسولة"
+    }
+  ],
+  "web.settings.overlays.preset.square.label": [
+    {
+      "type": 0,
+      "value": "مربع"
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.description": [
+    {
+      "type": 0,
+      "value": "شارات معتمة بلون التمييز. تباين عالٍ."
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.label": [
+    {
+      "type": 0,
+      "value": "زاهٍ"
+    }
+  ],
+  "web.settings.playback.autoPlayNext.description": [
+    {
+      "type": 0,
+      "value": "بدء الحلقة التالية تلقائيًا بعد انتهاء الحلقة الحالية."
+    }
+  ],
+  "web.settings.playback.maxBitrate.description": [
+    {
+      "type": 0,
+      "value": "حدّد مقدار عرض النطاق الذي يمكن أن يستخدمه التشغيل. يعني «بلا حد» أن Silo يختار وفقًا للدقة المحددة."
+    }
+  ],
+  "web.settings.playback.maxBitrate.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ الحد الأقصى لمعدل البت"
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewDescription": [
+    {
+      "type": 0,
+      "value": "بدء الحلقة التالية عندما تصل الحلقة الحالية إلى المقطع التشويقي للحلقة التالية، بدلًا من انتظار شارة النهاية."
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewLabel": [
+    {
+      "type": 0,
+      "value": "بدء التالية عند المقطع التشويقي"
+    }
+  ],
+  "web.settings.playback.nextEpisode.title": [
+    {
+      "type": 0,
+      "value": "الحلقة التالية"
+    }
+  ],
+  "web.settings.playback.quality.autoDescription": [
+    {
+      "type": 0,
+      "value": "يشغّل الملف الأصلي كلما سمح جهازك واتصالك بذلك."
+    }
+  ],
+  "web.settings.playback.quality.description": [
+    {
+      "type": 0,
+      "value": "الدقة التي يطلبها ملفك الشخصي عند بدء التشغيل."
+    }
+  ],
+  "web.settings.playback.quality.groupDescription": [
+    {
+      "type": 0,
+      "value": "يمكن لكل جهاز من أجهزتك تجاوز هذه القيم، ويمكن لمدير المنزل تقييدها لهذا الملف الشخصي."
+    }
+  ],
+  "web.settings.playback.quality.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ الجودة المفضلة"
+    }
+  ],
+  "web.settings.playback.quality.title": [
+    {
+      "type": 0,
+      "value": "الجودة"
+    }
+  ],
+  "web.settings.playback.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد التشغيل"
+    }
+  ],
+  "web.settings.playback.seek.description": [
+    {
+      "type": 0,
+      "value": "مقدار قفز الترجيع والتقديم السريع. تتبع هذه القيم الملف الشخصي النشط في تطبيقات Silo المدعومة."
+    }
+  ],
+  "web.settings.playback.seek.forwardInterval": [
+    {
+      "type": 0,
+      "value": "فاصل التقديم السريع"
+    }
+  ],
+  "web.settings.playback.seek.rewindInterval": [
+    {
+      "type": 0,
+      "value": "فاصل الترجيع"
+    }
+  ],
+  "web.settings.playback.seek.seconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ثانيتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playback.seek.title": [
+    {
+      "type": 0,
+      "value": "عناصر التحكم في التنقل"
+    }
+  ],
+  "web.settings.playback.seek.video.forwardDescription": [
+    {
+      "type": 0,
+      "value": "مقدار قفز الفيديو عند التقديم السريع."
+    }
+  ],
+  "web.settings.playback.seek.video.forwardSaveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ فاصل التقديم السريع للفيديو"
+    }
+  ],
+  "web.settings.playback.seek.video.rewindDescription": [
+    {
+      "type": 0,
+      "value": "مقدار رجوع الفيديو عند الترجيع."
+    }
+  ],
+  "web.settings.playback.seek.video.rewindSaveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ فاصل الترجيع للفيديو"
+    }
+  ],
+  "web.settings.playback.seek.videoDescription": [
+    {
+      "type": 0,
+      "value": "يُطبَّق على أزرار التشغيل وإيماءات النقر المزدوج ومفاتيح الأسهم وعناصر التحكم في الوسائط بالنظام."
+    }
+  ],
+  "web.settings.playback.seek.videoTitle": [
+    {
+      "type": 0,
+      "value": "الفيديو"
+    }
+  ],
+  "web.settings.playback.skipping.introModeDescription": [
+    {
+      "type": 0,
+      "value": "ترك المقدمات كما هي، أو عرض زر «تخطي المقدمة»، أو التخطي تلقائيًا مع إمكانية التراجع."
+    }
+  ],
+  "web.settings.playback.skipping.recapDescription": [
+    {
+      "type": 0,
+      "value": "تخطي ملخصات «في الحلقات السابقة…» تلقائيًا عندما يتمكن Silo من اكتشافها."
+    }
+  ],
+  "web.settings.playback.skipping.title": [
+    {
+      "type": 0,
+      "value": "التخطي"
+    }
+  ],
+  "web.settings.playback.subtitle": [
+    {
+      "type": 0,
+      "value": "الإعدادات الافتراضية التي يبدأ بها هذا الملف الشخصي التشغيل. يمكن لمكتبة أو مسلسل أو أحد أجهزتك تجاوز بعضها."
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "التشغيل"
+    }
+  ],
+  "web.settings.playbackConnection.ago.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ يومين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أيام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يومًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ ساعتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.justNow": [
+    {
+      "type": 0,
+      "value": "قبل لحظات"
+    }
+  ],
+  "web.settings.playbackConnection.ago.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ دقيقتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقائق"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.autoBudget": [
+    {
+      "type": 0,
+      "value": "يشغّل الخيار «تلقائي» الفيديوهات حتى "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " دون تحويلها."
+    }
+  ],
+  "web.settings.playbackConnection.fasterThan": [
+    {
+      "type": 0,
+      "value": "أسرع من "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    }
+  ],
+  "web.settings.playbackConnection.learnedLimit": [
+    {
+      "type": 0,
+      "value": "مقيّد بـ "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " بعد التخزين المؤقت في "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.settings.playbackConnection.measured": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " · قيست "
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    },
+    {
+      "type": 0,
+      "value": " عبر "
+    },
+    {
+      "type": 1,
+      "value": "transport"
+    }
+  ],
+  "web.settings.playbackConnection.notMeasured": [
+    {
+      "type": 0,
+      "value": "لم تُقس بعد"
+    }
+  ],
+  "web.settings.playbackConnection.notSaved": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ اختبار السرعة. حاول مرة أخرى."
+    }
+  ],
+  "web.settings.playbackConnection.rateLimited": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد ثانيتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.reset": [
+    {
+      "type": 0,
+      "value": "إعادة التعيين"
+    }
+  ],
+  "web.settings.playbackConnection.resetFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تعيين الحد. حاول مرة أخرى."
+    }
+  ],
+  "web.settings.playbackConnection.seenDuringPlayback": [
+    {
+      "type": 0,
+      "value": "أسرع من "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " · رُصدت أثناء التشغيل "
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    }
+  ],
+  "web.settings.playbackConnection.skippedCellular": [
+    {
+      "type": 0,
+      "value": "يُتخطى اختبار السرعة على الشبكة الخلوية، وتُطبَّق إعدادات الجودة الخلوية."
+    }
+  ],
+  "web.settings.playbackConnection.skippedMetered": [
+    {
+      "type": 0,
+      "value": "يُتخطى اختبار السرعة على الشبكات محدودة البيانات."
+    }
+  ],
+  "web.settings.playbackConnection.speed": [
+    {
+      "type": 0,
+      "value": "سرعة الاتصال"
+    }
+  ],
+  "web.settings.playbackConnection.test": [
+    {
+      "type": 0,
+      "value": "اختبار السرعة"
+    }
+  ],
+  "web.settings.playbackConnection.testFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر قياس سرعة الاتصال. حاول مرة أخرى."
+    }
+  ],
+  "web.settings.playbackConnection.testing": [
+    {
+      "type": 0,
+      "value": "جارٍ الاختبار…"
+    }
+  ],
+  "web.settings.playbackConnection.title": [
+    {
+      "type": 0,
+      "value": "الاتصال"
+    }
+  ],
+  "web.settings.playbackConnection.transport.cellular": [
+    {
+      "type": 0,
+      "value": "الشبكة الخلوية"
+    }
+  ],
+  "web.settings.playbackConnection.transport.ethernet": [
+    {
+      "type": 0,
+      "value": "Ethernet"
+    }
+  ],
+  "web.settings.playbackConnection.transport.unknown": [
+    {
+      "type": 0,
+      "value": "هذا الاتصال"
+    }
+  ],
+  "web.settings.playbackConnection.transport.wifi": [
+    {
+      "type": 0,
+      "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.resetButton.label": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين"
+    }
+  ],
+  "web.settings.sessions.confirm.clientDescription": [
+    {
+      "type": 0,
+      "value": "سيفقد هذا العميل إمكانية الوصول عند طلبه المصادق عليه التالي. تبقى جلساته الأخرى وكلمة المرور دون تغيير."
+    }
+  ],
+  "web.settings.sessions.confirm.deviceTitle": [
+    {
+      "type": 0,
+      "value": "تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    },
+    {
+      "type": 0,
+      "value": "؟"
+    }
+  ],
+  "web.settings.sessions.confirm.note": [
+    {
+      "type": 0,
+      "value": "قد يستمر تشغيل فيديو قيد التشغيل حتى طلبه التالي. تُحفظ إعدادات الجهاز المحفوظة."
+    }
+  ],
+  "web.settings.sessions.confirm.thisBrowserDescription": [
+    {
+      "type": 0,
+      "value": "ستعود إلى شاشة تسجيل الدخول. يمكنك تسجيل الدخول مجددًا بكلمة المرور نفسها أو مزود تسجيل الدخول نفسه."
+    }
+  ],
+  "web.settings.sessions.current.description": [
+    {
+      "type": 0,
+      "value": "الجلسة التي تستخدمها الآن."
+    }
+  ],
+  "web.settings.sessions.description": [
+    {
+      "type": 0,
+      "value": "اطّلع على الأماكن التي سُجّل فيها الدخول إلى حسابك، وسجّل الخروج من أي جلسة لا تتعرّف عليها."
+    }
+  ],
+  "web.settings.sessions.device.unknown": [
+    {
+      "type": 0,
+      "value": "جهاز غير معروف"
+    }
+  ],
+  "web.settings.sessions.lastSeen.active": [
+    {
+      "type": 0,
+      "value": "نشط الآن"
+    }
+  ],
+  "web.settings.sessions.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ يومين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " أيام"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يومًا"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " يوم"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ ساعتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ساعة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ دقيقتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقائق"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "آخر نشاط منذ "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "لم يُسجَّل آخر نشاط بعد"
+    }
+  ],
+  "web.settings.sessions.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل الجلسات. حاول مرة أخرى."
+    }
+  ],
+  "web.settings.sessions.loadMore": [
+    {
+      "type": 0,
+      "value": "تحميل المزيد من الجلسات"
+    }
+  ],
+  "web.settings.sessions.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل الجلسات…"
+    }
+  ],
+  "web.settings.sessions.others.description": [
+    {
+      "type": 0,
+      "value": "متصفحات وتطبيقات أخرى يمكنها الوصول إلى حسابك."
+    }
+  ],
+  "web.settings.sessions.others.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد جلسات أخرى مسجّلة الدخول."
+    }
+  ],
+  "web.settings.sessions.others.title": [
+    {
+      "type": 0,
+      "value": "جلسات أخرى مسجّلة الدخول"
+    }
+  ],
+  "web.settings.sessions.refresh": [
+    {
+      "type": 0,
+      "value": "تحديث"
+    }
+  ],
+  "web.settings.sessions.refreshLabel": [
+    {
+      "type": 0,
+      "value": "تحديث الجلسات"
+    }
+  ],
+  "web.settings.sessions.row.details": [
+    {
+      "type": 0,
+      "value": "التفاصيل"
+    }
+  ],
+  "web.settings.sessions.row.detailsFor": [
+    {
+      "type": 0,
+      "value": "تفاصيل "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    }
+  ],
+  "web.settings.sessions.row.expires": [
+    {
+      "type": 0,
+      "value": "تنتهي الصلاحية"
+    }
+  ],
+  "web.settings.sessions.row.ipAddress": [
+    {
+      "type": 0,
+      "value": "عنوان IP عند تسجيل الدخول"
+    }
+  ],
+  "web.settings.sessions.row.lastSeen": [
+    {
+      "type": 0,
+      "value": "آخر نشاط"
+    }
+  ],
+  "web.settings.sessions.row.notRecorded": [
+    {
+      "type": 0,
+      "value": "لم يُسجَّل بعد"
+    }
+  ],
+  "web.settings.sessions.row.notSent": [
+    {
+      "type": 0,
+      "value": "لم يُرسَل"
+    }
+  ],
+  "web.settings.sessions.row.signOutDevice": [
+    {
+      "type": 0,
+      "value": "تسجيل خروج "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    }
+  ],
+  "web.settings.sessions.row.signedIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول"
+    }
+  ],
+  "web.settings.sessions.row.summary": [
+    {
+      "type": 8,
+      "value": "status",
+      "children": [
+        {
+          "type": 1,
+          "value": "last_seen"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · تسجيل الدخول: "
+    },
+    {
+      "type": 1,
+      "value": "signed_in"
+    }
+  ],
+  "web.settings.sessions.row.unknown": [
+    {
+      "type": 0,
+      "value": "غير معروف"
+    }
+  ],
+  "web.settings.sessions.row.userAgent": [
+    {
+      "type": 0,
+      "value": "User-Agent"
+    }
+  ],
+  "web.settings.sessions.signOutFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تسجيل الخروج من الجلسة. حاول مرة أخرى."
+    }
+  ],
+  "web.settings.sessions.signedOut": [
+    {
+      "type": 0,
+      "value": "تم تسجيل الخروج من الجلسة"
+    }
+  ],
+  "web.settings.sessions.title": [
+    {
+      "type": 0,
+      "value": "الجلسات المسجّلة الدخول"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "العودة إلى التطبيق"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "الإعدادات"
+    }
+  ],
+  "web.settings.signedInSessions.unavailable": [
+    {
+      "type": 0,
+      "value": "إدارة الجلسات المسجّلة الدخول غير متاحة على هذا الخادم."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.color": [
+    {
+      "type": 0,
+      "value": "لون الخلفية"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.description": [
+    {
+      "type": 0,
+      "value": "اضبط موضع الترجمة وتباينها."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacity": [
+    {
+      "type": 0,
+      "value": "عتامة الخلفية"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacityDescription": [
+    {
+      "type": 0,
+      "value": "تُستخدم فقط للترجمة داخل مربع."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.position": [
+    {
+      "type": 0,
+      "value": "موضع الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.style": [
+    {
+      "type": 0,
+      "value": "نمط الخلفية"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.title": [
+    {
+      "type": 0,
+      "value": "الخلفية والموضع"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenDescription": [
+    {
+      "type": 0,
+      "value": "اختر لغة منطوقة مفضلة لهذا الملف الشخصي عند توفر عدة مسارات صوتية."
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenLabel": [
+    {
+      "type": 0,
+      "value": "اللغة المنطوقة"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.title": [
+    {
+      "type": 0,
+      "value": "اللغة"
+    }
+  ],
+  "web.settings.subtitleAppearance.languageSaveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد اللغة"
+    }
+  ],
+  "web.settings.subtitleAppearance.percentSign": [
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.description": [
+    {
+      "type": 0,
+      "value": "كيف تظهر الترجمة لهذا الملف الشخصي على كل جهاز."
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.discard": [
+    {
+      "type": 0,
+      "value": "تجاهل التغييرات"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.reset": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين مظهر الترجمة إلى الافتراضي"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine1": [
+    {
+      "type": 0,
+      "value": "نص ترجمة تجريبي"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine2": [
+    {
+      "type": 0,
+      "value": "مضبوط لسهولة القراءة"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.save": [
+    {
+      "type": 0,
+      "value": "حفظ المظهر"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.title": [
+    {
+      "type": 0,
+      "value": "معاينة"
+    }
+  ],
+  "web.settings.subtitleAppearance.resetFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تعيين مظهر الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ مظهر الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitle": [
+    {
+      "type": 0,
+      "value": "اللغات التي يفضلها هذا الملف الشخصي، ومتى تظهر الترجمة، وكيف تبدو."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitleSettingSaveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorDescription": [
+    {
+      "type": 0,
+      "value": "حدّد متى يجب أن تظهر الترجمة."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorLabel": [
+    {
+      "type": 0,
+      "value": "سلوك الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.description": [
+    {
+      "type": 0,
+      "value": "الترجمة التي يختارها Silo لهذا الملف الشخصي."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.forcedDescription": [
+    {
+      "type": 0,
+      "value": "اعرض الترجمة الإجبارية للحوار بلغة أجنبية."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageDescription": [
+    {
+      "type": 0,
+      "value": "اختر لغة للترجمة أو اترك الترجمة معطّلة افتراضيًا."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageLabel": [
+    {
+      "type": 0,
+      "value": "لغة الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.title": [
+    {
+      "type": 0,
+      "value": "الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.description": [
+    {
+      "type": 0,
+      "value": "اضبط مظهر نص الترجمة وسهولة قراءته."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontColor": [
+    {
+      "type": 0,
+      "value": "لون الخط"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontFamily": [
+    {
+      "type": 0,
+      "value": "عائلة الخط"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontSize": [
+    {
+      "type": 0,
+      "value": "حجم الخط"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacity": [
+    {
+      "type": 0,
+      "value": "عتامة النص"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacityDescription": [
+    {
+      "type": 0,
+      "value": "مدى شفافية نص الترجمة نفسه."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outline": [
+    {
+      "type": 0,
+      "value": "حدود النص"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColor": [
+    {
+      "type": 0,
+      "value": "لون الحدود"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColorDescription": [
+    {
+      "type": 0,
+      "value": "يُستخدم فقط عند تفعيل حدود النص."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.title": [
+    {
+      "type": 0,
+      "value": "النص"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.description": [
+    {
+      "type": 0,
+      "value": "قدّم كل الترجمة أو أخّرها. ينطبق على هذا الملف الشخصي على كل جهاز."
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.earlier": [
+    {
+      "type": 0,
+      "value": "تقديم الترجمة بمقدار "
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.later": [
+    {
+      "type": 0,
+      "value": "تأخير الترجمة بمقدار "
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offset": [
+    {
+      "type": 0,
+      "value": "إزاحة الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetDescription": [
+    {
+      "type": 0,
+      "value": "القيم السالبة تعرض الترجمة أبكر، والقيم الموجبة أخّر."
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetValue": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.reset": [
+    {
+      "type": 0,
+      "value": "إعادة التعيين"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إزاحة الترجمة"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.title": [
+    {
+      "type": 0,
+      "value": "التوقيت"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "اللغة والترجمة"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.black": [
+    {
+      "type": 0,
+      "value": "أسود"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGray": [
+    {
+      "type": 0,
+      "value": "رمادي داكن"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGreen": [
+    {
+      "type": 0,
+      "value": "أخضر داكن"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkRed": [
+    {
+      "type": 0,
+      "value": "أحمر داكن"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.navy": [
+    {
+      "type": 0,
+      "value": "كحلي"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.box": [
+    {
+      "type": 0,
+      "value": "مربع"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.dropShadow": [
+    {
+      "type": 0,
+      "value": "ظل"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.none": [
+    {
+      "type": 0,
+      "value": "بلا"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.outline": [
+    {
+      "type": 0,
+      "value": "حدود"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.black": [
+    {
+      "type": 0,
+      "value": "أسود"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.blue": [
+    {
+      "type": 0,
+      "value": "أزرق"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.cyan": [
+    {
+      "type": 0,
+      "value": "سماوي"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.gray": [
+    {
+      "type": 0,
+      "value": "رمادي"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.green": [
+    {
+      "type": 0,
+      "value": "أخضر"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.magenta": [
+    {
+      "type": 0,
+      "value": "أرجواني"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.red": [
+    {
+      "type": 0,
+      "value": "أحمر"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.white": [
+    {
+      "type": 0,
+      "value": "أبيض"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.yellow": [
+    {
+      "type": 0,
+      "value": "أصفر"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.monospace": [
+    {
+      "type": 0,
+      "value": "أحادي المسافة"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.sansSerif": [
+    {
+      "type": 0,
+      "value": "بدون تذييل"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.serif": [
+    {
+      "type": 0,
+      "value": "بتذييل"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.large": [
+    {
+      "type": 0,
+      "value": "كبير"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.medium": [
+    {
+      "type": 0,
+      "value": "متوسط"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.small": [
+    {
+      "type": 0,
+      "value": "صغير"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xLarge": [
+    {
+      "type": 0,
+      "value": "كبير جدًا"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xxLarge": [
+    {
+      "type": 0,
+      "value": "ضخم"
+    }
+  ],
+  "web.settings.subtitleOptions.position.bottom": [
+    {
+      "type": 0,
+      "value": "أسفل"
+    }
+  ],
+  "web.settings.subtitleOptions.position.lowerThird": [
+    {
+      "type": 0,
+      "value": "الثلث السفلي"
+    }
+  ],
+  "web.settings.subtitleOptions.position.top": [
+    {
+      "type": 0,
+      "value": "أعلى"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "التطبيق على جميع الأجهزة"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "استخدم هذا الاختيار على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "صورة العنوان معطّلة على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي. تغييرها هنا يغيّرها في كل مكان. أوقف «التطبيق على جميع الأجهزة» لتختار لكل جهاز على حدة مرة أخرى."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "صورة العنوان مفعّلة على كل جهاز مسجّل الدخول إلى هذا الملف الشخصي. تغييرها هنا يغيّرها في كل مكان. أوقف «التطبيق على جميع الأجهزة» لتختار لكل جهاز على حدة مرة أخرى."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "كيف يظهر اسم الفيلم أو المسلسل أعلى صفحته."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد صورة العنوان"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "العنوان"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "استخدم صورة الشعار عنوانًا عند توفرها."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "استخدام الإعداد الافتراضي للخادم"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "اعرض الحد الأدنى المقترح لعمر المشاهد، مثل تقييم Common Sense Media، في صفحة العنوان. يعرض هذا العمر فقط؛ ويمكن لمدير المنزل تقييد ملف شخصي بناءً عليه من إعدادات الوصول الخاصة بالملف الشخصي."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "إرشادات العمر"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ إعداد صفحة العنوان"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "يُشغَّل أثناء فتح صفحة العنوان."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "ينطبق على الحلقات التي لم تبدأ مشاهدتها، على كل جهاز يستخدم هذا الملف الشخصي."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "حرق الأحداث"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "ما تعرضه صفحة الفيلم أو المسلسل وتشغّله عند فتحها."
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "صفحات العناوين"
+    }
+  ],
+  "web.settings.value.custom": [
+    {
+      "type": 0,
+      "value": "مخصص"
+    }
+  ],
+  "web.settings.value.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " حلقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.milliseconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثانية"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثانية"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " ملي ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.noLimit": [
+    {
+      "type": 0,
+      "value": "بلا حد"
+    }
+  ],
   "web.shell.pageBack.goBack": [
     {
       "type": 0,
@@ -967,6 +4773,18 @@
     {
       "type": 0,
       "value": "محتواك"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "تجاهل"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "تجاهل التغييرات غير المحفوظة؟"
     }
   ]
 }

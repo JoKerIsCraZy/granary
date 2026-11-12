@@ -5,7 +5,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy of the settings look: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -53,11 +54,11 @@
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                     <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveUpCommand}"
-                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="Move up">
+                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.moveUp')}">
                         <FontIcon Glyph="&#xE70E;" FontSize="12" />
                     </Button>
                     <Button Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveDownCommand}"
-                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="Move down">
+                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.moveDown')}">
                         <FontIcon Glyph="&#xE70D;" FontSize="12" />
                     </Button>
                 </StackPanel>
@@ -85,7 +86,7 @@
                         Visibility="{x:Bind IsEnabled, Mode=OneWay}" AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.AdjustName(Label)}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE9E9;" FontSize="14" />
-                        <TextBlock Text="Adjust" FontFamily="{StaticResource SiloFontMedium}" FontSize="13" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.adjust')}" FontFamily="{StaticResource SiloFontMedium}" FontSize="13" />
                     </StackPanel>
                     <Button.Flyout>
                         <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloSettingsPopoverStyle}">
@@ -100,44 +101,48 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <Grid Width="80" Height="120" CornerRadius="6" Background="#14FFFFFF" BorderThickness="1" BorderBrush="#1FFFFFFF"
-                                          AutomationProperties.Name="Corner">
+                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.cardOverlay.position')}">
                                         <Button Width="28" Height="16" Padding="0" Margin="4" CornerRadius="3" BorderThickness="0"
                                                 HorizontalAlignment="Left" VerticalAlignment="Top"
                                                 Background="{x:Bind controls:BadgeSettingsLook.CornerFill(IsTopLeft), Mode=OneWay}"
                                                 Command="{x:Bind PickCornerCommand}" CommandParameter="TopLeft"
-                                                AutomationProperties.Name="Top Left" ToolTipService.ToolTip="Top Left" />
+                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.overlays.position.topLeft')}"
+                                                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.settings.overlays.position.topLeft')}" />
                                         <Button Width="28" Height="16" Padding="0" Margin="4" CornerRadius="3" BorderThickness="0"
                                                 HorizontalAlignment="Right" VerticalAlignment="Top"
                                                 Background="{x:Bind controls:BadgeSettingsLook.CornerFill(IsTopRight), Mode=OneWay}"
                                                 Command="{x:Bind PickCornerCommand}" CommandParameter="TopRight"
-                                                AutomationProperties.Name="Top Right" ToolTipService.ToolTip="Top Right" />
+                                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.badges.topRight')}"
+                                                ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.badges.topRight')}" />
                                         <Button Width="28" Height="16" Padding="0" Margin="4" CornerRadius="3" BorderThickness="0"
                                                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
                                                 Background="{x:Bind controls:BadgeSettingsLook.CornerFill(IsBottomLeft), Mode=OneWay}"
                                                 Command="{x:Bind PickCornerCommand}" CommandParameter="BottomLeft"
-                                                AutomationProperties.Name="Bottom Left" ToolTipService.ToolTip="Bottom Left" />
+                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.overlays.position.bottomLeft')}"
+                                                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.settings.overlays.position.bottomLeft')}" />
                                         <Button Width="28" Height="16" Padding="0" Margin="4" CornerRadius="3" BorderThickness="0"
                                                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                                 Background="{x:Bind controls:BadgeSettingsLook.CornerFill(IsBottomRight), Mode=OneWay}"
                                                 Command="{x:Bind PickCornerCommand}" CommandParameter="BottomRight"
-                                                AutomationProperties.Name="Bottom Right" ToolTipService.ToolTip="Bottom Right" />
+                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.overlays.position.bottomRight')}"
+                                                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.settings.overlays.position.bottomRight')}" />
                                     </Grid>
                                     <StackPanel Grid.Column="1" Spacing="4">
-                                        <TextBlock Text="Corner" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.position')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                                    Foreground="{StaticResource SiloForegroundBrush}" />
-                                        <TextBlock Text="Pick where it sits. Badges in the same corner stack." Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.badges.cornerHint')}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
                                     </StackPanel>
                                 </Grid>
 
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="Color" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.color')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                                Foreground="{StaticResource SiloForegroundBrush}" />
-                                    <Button Content="Default" Height="28" Padding="10,0" CornerRadius="14" FontSize="12" Background="Transparent"
+                                    <Button Content="{x:Bind t:AppText.Get('web.settings.cardOverlay.colorDefault')}" Height="28" Padding="10,0" CornerRadius="14" FontSize="12" Background="Transparent"
                                             BorderThickness="1" BorderBrush="{x:Bind controls:BadgeSettingsLook.DefaultRing(IsDefaultColor), Mode=OneWay}"
                                             Command="{x:Bind PickColorCommand}" CommandParameter="{x:Null}"
                                             AutomationProperties.ItemStatus="{x:Bind controls:SettingsSwatches.Status(IsDefaultColor), Mode=OneWay}" />
                                     <ItemsControl ItemsSource="{x:Bind Swatches, Mode=OneWay}" ItemTemplate="{StaticResource BadgeSwatchTemplate}" IsTabStop="False"
-                                                  AutomationProperties.Name="Color">
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.cardOverlay.color')}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="36" ItemHeight="36" MaximumRowsOrColumns="8" />
@@ -147,11 +152,11 @@
                                 </StackPanel>
 
                                 <Grid Visibility="{x:Bind CanShowIcon}">
-                                    <TextBlock Text="Show icon" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.showIcon')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                                VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
                                     <!-- A popover is outside the page, so the switch takes the settings' colours along itself. -->
                                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ShowIcon, Mode=TwoWay}"
-                                                  AutomationProperties.Name="Show icon">
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.cardOverlay.showIcon')}">
                                         <ToggleSwitch.Resources>
                                             <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="SiloPrimaryBrush" />
                                             <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="SiloPrimaryHoverBrush" />
@@ -180,9 +185,9 @@
     </UserControl.Resources>
 
     <StackPanel>
-        <TextBlock Text="Navigation &amp; Cards" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.interface.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="Choose how posters look and what the sidebar shows. Changes show as you make them." />
+                   Text="{x:Bind t:AppText.Get('granary.settings.interface.lead')}" />
 
         <!-- Posters, as the web's PosterSettings: Reset beside the title, so laid out by hand as Badges. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
@@ -193,23 +198,23 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="6">
                     <Grid>
-                        <TextBlock Text="Posters" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.interface.postersTitle')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
                                    Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
                         <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
                                 Command="{x:Bind Posters.ResetCommand}" Visibility="{x:Bind Posters.HasOverride, Mode=OneWay}"
-                                AutomationProperties.Name="Reset poster settings">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.interface.posterReset')}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE7A7;" FontSize="12" />
-                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.resetButton.label')}" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
                             </StackPanel>
                         </Button>
                     </Grid>
                     <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
-                               Text="How big posters are, and what's written under them, in Granary and Silo's other desktop apps." />
+                               Text="{x:Bind t:AppText.Get('granary.settings.posters.description')}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="24">
-                    <TextBlock Text="Loading…" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.interface.loading')}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
                                Visibility="{x:Bind Posters.IsLoading, Mode=OneWay}" />
                     <!-- Why the choices cannot show: the read failed, or the server predates them. -->
                     <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#FF28282E" Background="#0AFFFFFF"
@@ -229,17 +234,17 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="This PC has its own poster settings, so changes here won't show on it." FontSize="14"
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.posters.deviceOverride')}" FontSize="14"
                                        Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" Content="Match my other computers" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('granary.settings.posters.matchOtherComputers')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                     MinHeight="32" VerticalAlignment="Center" Command="{x:Bind Posters.MatchOtherComputersCommand}" />
                         </Grid>
 
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Size" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.interface.posterSize')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                        Foreground="{StaticResource SiloForegroundBrush}" />
                             <ItemsControl ItemsSource="{x:Bind Posters.Sizes}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
-                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="Size">
+                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.interface.posterSize')}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal" Spacing="8" />
@@ -249,10 +254,10 @@
                         </StackPanel>
 
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Under each poster" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.posters.caption')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                                        Foreground="{StaticResource SiloForegroundBrush}" />
                             <ItemsControl ItemsSource="{x:Bind Posters.Captions}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
-                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="Under each poster">
+                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.posters.caption')}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal" Spacing="8" />
@@ -266,7 +271,7 @@
         </Border>
 
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Not(ViewModel.CanEdit), Mode=OneWay}" Severity="Informational" IsClosable="False"
-                 Message="This server does not keep badge choices for profiles; posters show the server's badges." Margin="0,0,0,16" />
+                 Message="{x:Bind t:AppText.Get('granary.settings.badges.serverOnly')}" Margin="0,0,0,16" />
 
         <!-- Reset sits beside the title, so the group is laid out by hand. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
@@ -277,31 +282,31 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="6">
                     <Grid>
-                        <TextBlock Text="Badges" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.badgesTitle')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
                                    Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
                         <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0" Click="OnResetBadgesClick"
-                                Visibility="{x:Bind ViewModel.HasOverride, Mode=OneWay}" AutomationProperties.Name="Reset badges">
+                                Visibility="{x:Bind ViewModel.HasOverride, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.cardOverlay.resetBadges')}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE7A7;" FontSize="12" />
-                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.resetButton.label')}" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
                             </StackPanel>
                         </Button>
                     </Grid>
-                    <TextBlock Text="Small labels on posters, such as 4K, Dolby Vision, or a rating." Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.badgesDescription')}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="24" IsHitTestVisible="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
                             Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.CanEdit), Mode=OneWay}">
-                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Show badges on posters">
+                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('web.settings.cardOverlay.showBadges')}">
                         <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.IsEnabled, Mode=TwoWay}"
-                                      IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}" AutomationProperties.Name="Show badges on posters" />
+                                      IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.cardOverlay.showBadges')}" />
                     </controls:SettingsRow>
 
                     <StackPanel Spacing="24" Visibility="{x:Bind ViewModel.IsEnabled, Mode=OneWay}">
                         <StackPanel Spacing="12">
-                            <TextBlock Text="Style" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.cardOverlay.style')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
                                        Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.Styles, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Badge style">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Styles, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.overlays.look.style')}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal" Spacing="8" />
@@ -379,11 +384,11 @@
             clients have no such switch. Kept for this profile on this PC (BrowseHeroSetting). Home's banner, a row marked as
             the hero on Silo's web, is not this switch's.
         -->
-        <controls:SettingsGroup Title="Pages" Description="The top of Home, For You and Discover, for this profile on this PC.">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Title preview at the top"
-                                  Description="Home, For You and Discover open with a large picture of the title you point at. Off, they start with the rows.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.pages.title')}" Description="{x:Bind t:AppText.Get('granary.settings.pages.description')}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}"
+                                  Description="{x:Bind t:AppText.Get('granary.settings.titlePreview.description')}">
                 <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
-                              AutomationProperties.Name="Title preview at the top" />
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.titlePreview.label')}" />
             </controls:SettingsRow>
         </controls:SettingsGroup>
 
@@ -396,25 +401,25 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="6">
                     <Grid>
-                        <TextBlock Text="Sidebar" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.sidebar.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
                                    Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
                         <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
                                 Command="{x:Bind Sidebar.ResetCommand}" Visibility="{x:Bind Sidebar.IsCustomized, Mode=OneWay}"
-                                AutomationProperties.Name="Reset sidebar">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.sidebar.reset')}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE7A7;" FontSize="12" />
-                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.resetButton.label')}" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
                             </StackPanel>
                         </Button>
                     </Grid>
                     <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
-                               Text="What Granary's sidebar shows, and in which order, for this profile on this PC. Home, Search and Settings always show." />
+                               Text="{x:Bind t:AppText.Get('granary.settings.sidebar.description')}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="24">
-                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Server logo"
-                                          Description="Shows the logo your Silo server's admin set in place of the server's name. A server without one shows its name.">
+                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.sidebar.serverLogo')}"
+                                          Description="{x:Bind t:AppText.Get('granary.settings.sidebar.serverLogoDescription')}">
                         <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Sidebar.ShowsServerLogo, Mode=TwoWay}"
-                                      AutomationProperties.Name="Server logo" />
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.sidebar.serverLogo')}" />
                     </controls:SettingsRow>
                     <ItemsControl ItemsSource="{x:Bind Sidebar.Groups}" IsTabStop="False">
                         <ItemsControl.ItemTemplate>

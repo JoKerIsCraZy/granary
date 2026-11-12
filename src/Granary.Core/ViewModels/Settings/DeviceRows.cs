@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Accounts;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -17,14 +18,14 @@ public sealed partial class SignedInSessionRow : ObservableObject
         (Name, Kind) = DeviceText.SessionDevice(session.DeviceName, session.DevicePlatform);
         IsCurrent = session.Current;
         LastSeenText = DeviceText.SessionLastSeen(session.LastSeenAt, now);
-        IsActiveNow = LastSeenText == "Active now";
-        SignedInLine = $"· Signed in {DeviceText.Stamp(session.CreatedAt, zone)}";
-        StatusLine = $"{LastSeenText} {SignedInLine}";
-        LastSeenDetail = session.LastSeenAt is { } seen ? DeviceText.Stamp(seen, zone) : "Not recorded yet";
+        IsActiveNow = DeviceText.IsActiveNow(session.LastSeenAt, now);
         SignedInDetail = DeviceText.Stamp(session.CreatedAt, zone);
-        IpAddress = session.IpAddress.Length > 0 ? session.IpAddress : "Unknown";
+        StatusRuns = AppText.Runs("web.settings.sessions.row.summary", ("last_seen", LastSeenText), ("signed_in", SignedInDetail));
+        StatusLine = string.Concat(StatusRuns.Select(run => run.Text));
+        LastSeenDetail = session.LastSeenAt is { } seen ? DeviceText.Stamp(seen, zone) : AppText.Get("web.settings.sessions.row.notRecorded");
+        IpAddress = session.IpAddress.Length > 0 ? session.IpAddress : AppText.Get("web.settings.sessions.row.unknown");
         ExpiresDetail = DeviceText.Stamp(session.ExpiresAt, zone);
-        UserAgent = session.DeviceName.Length > 0 ? session.DeviceName : "Not sent";
+        UserAgent = session.DeviceName.Length > 0 ? session.DeviceName : AppText.Get("web.settings.sessions.row.notSent");
     }
 
     public string Id { get; }
@@ -45,8 +46,11 @@ public sealed partial class SignedInSessionRow : ObservableObject
     /// <summary>"Last seen 3 hr ago · Signed in Oct 1, 2026, 8:00 AM".</summary>
     public string StatusLine { get; }
 
-    /// <summary>"· Signed in Oct 1, 2026, 8:00 AM": the line after <see cref="LastSeenText"/>, which may show in green.</summary>
-    public string SignedInLine { get; }
+    /// <summary>
+    /// <see cref="StatusLine"/> as the web's message gives it: the part tagged <c>status</c> is <see cref="LastSeenText"/>,
+    /// which may show in green, wherever the language puts it.
+    /// </summary>
+    public IReadOnlyList<TextRun> StatusRuns { get; }
 
     public string LastSeenDetail { get; }
 
@@ -60,11 +64,12 @@ public sealed partial class SignedInSessionRow : ObservableObject
     /// <summary>The name or User-Agent it signed in with, as sent.</summary>
     public string UserAgent { get; }
 
-    public string SignOutLabel => IsCurrent ? "Sign out this device" : "Sign out";
+    public string SignOutLabel => IsCurrent ? AppText.Get("granary.settings.sessions.signOutThisDevice") : AppText.Get("common.signOut");
 
-    public string SignOutName => IsCurrent ? "Sign out this device" : $"Sign out {Name}";
+    public string SignOutName =>
+        IsCurrent ? AppText.Get("granary.settings.sessions.signOutThisDevice") : AppText.Get("web.settings.sessions.row.signOutDevice", ("device", Name));
 
-    public string DetailsName => $"Details for {Name}";
+    public string DetailsName => AppText.Get("web.settings.sessions.row.detailsFor", ("device", Name));
 
     [ObservableProperty]
     public partial bool IsExpanded { get; set; }
@@ -149,9 +154,9 @@ public sealed partial class UserDeviceRow : ObservableObject
     [ObservableProperty]
     public partial bool IsBusy { get; internal set; }
 
-    public string RenameName => $"Rename {Name}";
+    public string RenameName => AppText.Get("granary.settings.devices.renameName", ("device", Name));
 
-    public string ForgetName => $"Forget {Name}";
+    public string ForgetName => AppText.Get("granary.settings.devices.forgetName", ("device", Name));
 
     [RelayCommand]
     private void StartRename()
@@ -170,11 +175,15 @@ public sealed partial class UserDeviceRow : ObservableObject
         Device = device;
         Name = DisplayName(device);
         ReportedName = device.CustomName is { Length: > 0 } custom && device.DeviceName.Length > 0 && custom != device.DeviceName
-            ? "Reports itself as " + device.DeviceName
+            ? AppText.Get("web.settings.device.reportsItselfAs", ("name", device.DeviceName))
             : "";
-        string used = IsCurrent ? "using now" : DeviceText.DeviceLastSeen(device.LastSeenAt, _now);
-        string changed = device.ChangedCount > 0 ? DeviceText.Count(device.ChangedCount, "thing") + " set differently" : "nothing changed here";
-        Line = $"{DeviceText.PlatformKind(device.DevicePlatform)} · {used} · {changed}";
+        string used = IsCurrent ? AppText.Get("web.settings.device.usingNow") : DeviceText.DeviceLastSeen(device.LastSeenAt, _now);
+        int count = device.ChangedCount;
+        string changed = count > 0
+            ? AppText.Get("web.settings.device.changedCount", ("count", count), ("count_text", AppText.Number(count)))
+            : AppText.Get("web.settings.device.nothingChanged");
+        // Three parts the web joins with a middle dot, as it does.
+        Line = string.Join(" · ", DeviceText.KindLabel(DeviceText.PlatformKind(device.DevicePlatform)), used, changed);
         CanUseProfileSettings = device.ChangedCount > 0;
         OnPropertyChanged(nameof(Kind));
         OnPropertyChanged(nameof(RenameName));
@@ -183,5 +192,5 @@ public sealed partial class UserDeviceRow : ObservableObject
 
     /// <summary>The name the profile gave it, else the one it reports.</summary>
     internal static string DisplayName(UserDevice device) =>
-        device.CustomName is { Length: > 0 } custom ? custom : device.DeviceName.Length > 0 ? device.DeviceName : "Unknown device";
+        device.CustomName is { Length: > 0 } custom ? custom : device.DeviceName.Length > 0 ? device.DeviceName : DeviceText.UnknownDevice;
 }

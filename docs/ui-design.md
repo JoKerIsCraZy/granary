@@ -1057,9 +1057,10 @@ says why above the sections.
   while on, Style as five 112 px tiles, each with its "4K" on a dark slate (the chosen one outlined and tinted in the
   accent), then the categories as a flat accordion (Media Info, Ratings & Certifications, Content Metadata, Status &
   Awards), each header saying "None on" or "2 of 5 on" with a chevron, its rows flush with it between hairlines: name,
-  description, a muted italic hint (hidden by the combined Resolution + HDR badge, or data still to come), Adjust while
-  on, and the switch. Adjust opens a popover (`SiloSettingsPopoverStyle`): the corner on an 80 × 120 poster with four
-  buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
+  description, a muted italic hint (hidden by the combined Resolution + HDR badge, or, for Show Status, data still to
+  come), Adjust while on, and the switch. Adjust opens a popover (`SiloSettingsPopoverStyle`): Position, the corner on an
+  80 × 120 poster with four buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has
+  one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
   badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Pages, Granary's
   own group since Silo's clients have no such switch (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
@@ -1107,7 +1108,7 @@ says why above the sections.
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
   it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
-  management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
+  management says "Signed-in session management is unavailable on this server."; a failed read "Couldn’t load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
   a 40 px disc with its kind's icon, its name (the profile's own, else the reported one), "Reports itself as Apple TV"
   under a name of the profile's own, and "TV · 2 days ago · 3 things set differently" ("Desktop · using now · nothing

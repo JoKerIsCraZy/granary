@@ -515,6 +515,252 @@
       "value": "Em alta nesta semana"
     }
   ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.description": [
+    {
+      "type": 0,
+      "value": "Desfoca a miniatura de um episódio até você começar a assistir, para que a imagem não revele a história."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_images.label": [
+    {
+      "type": 0,
+      "value": "Desfocar imagens de episódios não assistidos"
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.description": [
+    {
+      "type": 0,
+      "value": "Oculta a descrição de um episódio até você começar a assistir."
+    }
+  ],
+  "settingsManifest.catalog.hide_unwatched_episode_overviews.label": [
+    {
+      "type": 0,
+      "value": "Ocultar descrições de episódios não assistidos"
+    }
+  ],
+  "settingsManifest.catalog.show_advisory_age.label": [
+    {
+      "type": 0,
+      "value": "Mostrar idade recomendada"
+    }
+  ],
+  "settingsManifest.playback.audio_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "Sem preferência"
+    }
+  ],
+  "settingsManifest.playback.auto_play_next.label": [
+    {
+      "type": 0,
+      "value": "Reproduzir próximo episódio automaticamente"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.description": [
+    {
+      "type": 0,
+      "value": "Pula os créditos finais automaticamente quando houver como pular."
+    }
+  ],
+  "settingsManifest.playback.auto_skip_credits.label": [
+    {
+      "type": 0,
+      "value": "Pular créditos automaticamente"
+    }
+  ],
+  "settingsManifest.playback.auto_skip_recap.label": [
+    {
+      "type": 0,
+      "value": "Pular recapitulações automaticamente"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.description": [
+    {
+      "type": 0,
+      "value": "O que o Silo faz na qualidade Auto quando a reprodução fica carregando. O Silo sempre pergunta antes de reduzir uma qualidade que você escolheu."
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.label": [
+    {
+      "type": 0,
+      "value": "Reduzir qualidade ao carregar"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.always": [
+    {
+      "type": 0,
+      "value": "Automaticamente"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "Perguntar antes"
+    }
+  ],
+  "settingsManifest.playback.buffering_quality_mode.option.never": [
+    {
+      "type": 0,
+      "value": "Nunca"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.label": [
+    {
+      "type": 0,
+      "value": "Pular aberturas"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.always": [
+    {
+      "type": 0,
+      "value": "Pular automaticamente"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.ask": [
+    {
+      "type": 0,
+      "value": "Perguntar se deve pular"
+    }
+  ],
+  "settingsManifest.playback.intro_skip_mode.option.never": [
+    {
+      "type": 0,
+      "value": "Nunca"
+    }
+  ],
+  "settingsManifest.playback.max_bitrate_kbps.label": [
+    {
+      "type": 0,
+      "value": "Taxa de bits máxima"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.label": [
+    {
+      "type": 0,
+      "value": "Qualidade preferida"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.1080p": [
+    {
+      "type": 0,
+      "value": "1080p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.2160p": [
+    {
+      "type": 0,
+      "value": "2160p / 4K"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.480p": [
+    {
+      "type": 0,
+      "value": "480p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.720p": [
+    {
+      "type": 0,
+      "value": "720p"
+    }
+  ],
+  "settingsManifest.playback.preferred_quality.option.auto": [
+    {
+      "type": 0,
+      "value": "Automático"
+    }
+  ],
+  "settingsManifest.playback.show_forced_subtitles.label": [
+    {
+      "type": 0,
+      "value": "Mostrar legendas forçadas"
+    }
+  ],
+  "settingsManifest.playback.subtitle_language.unsetLabel": [
+    {
+      "type": 0,
+      "value": "Nenhum"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.always": [
+    {
+      "type": 0,
+      "value": "Sempre ativado"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.auto": [
+    {
+      "type": 0,
+      "value": "Automático"
+    }
+  ],
+  "settingsManifest.playback.subtitle_mode.option.off": [
+    {
+      "type": 0,
+      "value": "Desativado"
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.description": [
+    {
+      "type": 0,
+      "value": "Adianta ou atrasa o áudio para corrigir a sincronização labial neste dispositivo."
+    }
+  ],
+  "settingsManifest.player.audio_sync_ms.label": [
+    {
+      "type": 0,
+      "value": "Ajuste de sincronização do áudio"
+    }
+  ],
+  "settingsManifest.player.passout_threshold.label": [
+    {
+      "type": 0,
+      "value": "Aviso “Ainda está assistindo?”"
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.description": [
+    {
+      "type": 0,
+      "value": "Volta esse tanto ao retomar um item assistido em parte, para relembrar o contexto. 0 desativa."
+    }
+  ],
+  "settingsManifest.player.resume_rewind_seconds.label": [
+    {
+      "type": 0,
+      "value": "Voltar ao retomar"
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.description": [
+    {
+      "type": 0,
+      "value": "Toca a música-tema local enquanto você navega pelas páginas de detalhes de filmes e séries."
+    }
+  ],
+  "settingsManifest.ui.theme_music_enabled.label": [
+    {
+      "type": 0,
+      "value": "Música-tema"
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.description": [
+    {
+      "type": 0,
+      "value": "Repete a música-tema enquanto a página de detalhes estiver aberta."
+    }
+  ],
+  "settingsManifest.ui.theme_music_loop.label": [
+    {
+      "type": 0,
+      "value": "Repetir música-tema"
+    }
+  ],
+  "settingsManifest.ui.title_art.label": [
+    {
+      "type": 0,
+      "value": "Mostrar arte do título"
+    }
+  ],
   "web.auth.login.device.continueOnPhone": [
     {
       "type": 0,
@@ -641,6 +887,36 @@
       "value": "Concluir"
     }
   ],
+  "web.common.devicePlatform.kind.desktop": [
+    {
+      "type": 0,
+      "value": "Computador"
+    }
+  ],
+  "web.common.devicePlatform.kind.mobile": [
+    {
+      "type": 0,
+      "value": "Celular"
+    }
+  ],
+  "web.common.devicePlatform.kind.tablet": [
+    {
+      "type": 0,
+      "value": "Tablet"
+    }
+  ],
+  "web.common.devicePlatform.kind.tv": [
+    {
+      "type": 0,
+      "value": "TV"
+    }
+  ],
+  "web.common.devicePlatform.kind.unknown": [
+    {
+      "type": 0,
+      "value": "Outro"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -657,6 +933,48 @@
     {
       "type": 0,
       "value": "Salvar"
+    }
+  ],
+  "web.player.audioMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Faixas de áudio"
+    }
+  ],
+  "web.player.chaptersMenu.trigger": [
+    {
+      "type": 0,
+      "value": "Capítulos"
+    }
+  ],
+  "web.player.controls.editMarkers": [
+    {
+      "type": 0,
+      "value": "Editar marcadores"
+    }
+  ],
+  "web.player.controls.fillScreen": [
+    {
+      "type": 0,
+      "value": "Preencher a tela"
+    }
+  ],
+  "web.player.controls.playbackInfo": [
+    {
+      "type": 0,
+      "value": "Informações de reprodução"
+    }
+  ],
+  "web.player.controls.volume": [
+    {
+      "type": 0,
+      "value": "Volume"
+    }
+  ],
+  "web.player.sleepTimer.trigger": [
+    {
+      "type": 0,
+      "value": "Timer de desligamento"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -783,6 +1101,2918 @@
     {
       "type": 0,
       "value": "Pesquisar filmes, séries…"
+    }
+  ],
+  "web.settings.cardOverlay.adjust": [
+    {
+      "type": 0,
+      "value": "Ajustar"
+    }
+  ],
+  "web.settings.cardOverlay.adjustLabel": [
+    {
+      "type": 0,
+      "value": "Ajustar "
+    },
+    {
+      "type": 1,
+      "value": "badge"
+    }
+  ],
+  "web.settings.cardOverlay.badgesDescription": [
+    {
+      "type": 0,
+      "value": "Pequenos rótulos nos pôsteres, como 4K, Dolby Vision ou uma avaliação."
+    }
+  ],
+  "web.settings.cardOverlay.badgesTitle": [
+    {
+      "type": 0,
+      "value": "Selos"
+    }
+  ],
+  "web.settings.cardOverlay.color": [
+    {
+      "type": 0,
+      "value": "Cor"
+    }
+  ],
+  "web.settings.cardOverlay.colorDefault": [
+    {
+      "type": 0,
+      "value": "Padrão"
+    }
+  ],
+  "web.settings.cardOverlay.noneOn": [
+    {
+      "type": 0,
+      "value": "Nenhum ativado"
+    }
+  ],
+  "web.settings.cardOverlay.position": [
+    {
+      "type": 0,
+      "value": "Posição"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadges": [
+    {
+      "type": 0,
+      "value": "Redefinir selos"
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmDescription": [
+    {
+      "type": 0,
+      "value": "Suas escolhas de selos serão apagadas, e este perfil passará a seguir as configurações de selos do seu servidor."
+    }
+  ],
+  "web.settings.cardOverlay.resetBadgesConfirmTitle": [
+    {
+      "type": 0,
+      "value": "Redefinir selos?"
+    }
+  ],
+  "web.settings.cardOverlay.showBadges": [
+    {
+      "type": 0,
+      "value": "Mostrar selos nos pôsteres"
+    }
+  ],
+  "web.settings.cardOverlay.showIcon": [
+    {
+      "type": 0,
+      "value": "Mostrar ícone"
+    }
+  ],
+  "web.settings.cardOverlay.someOn": [
+    {
+      "type": 1,
+      "value": "on"
+    },
+    {
+      "type": 0,
+      "value": " de "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " ativados"
+    }
+  ],
+  "web.settings.cardOverlay.style": [
+    {
+      "type": 0,
+      "value": "Estilo"
+    }
+  ],
+  "web.settings.cardOverlay.suppressedHint": [
+    {
+      "type": 0,
+      "value": "Oculto enquanto o selo combinado "
+    },
+    {
+      "type": 1,
+      "value": "badge"
+    },
+    {
+      "type": 0,
+      "value": " estiver ativado."
+    }
+  ],
+  "web.settings.currentProfileLink.caption": [
+    {
+      "type": 0,
+      "value": "Perfil atual"
+    }
+  ],
+  "web.settings.device.changedCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " configuração diferente"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de configurações diferentes"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " configurações diferentes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.device.empty": [
+    {
+      "type": 0,
+      "value": "Nenhum dispositivo ainda. Os dispositivos aparecem aqui quando você entra na sua conta neles."
+    }
+  ],
+  "web.settings.device.forget": [
+    {
+      "type": 0,
+      "value": "Esquecer"
+    }
+  ],
+  "web.settings.device.forgetFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível esquecer"
+    }
+  ],
+  "web.settings.device.forgotten": [
+    {
+      "type": 0,
+      "value": "Dispositivo esquecido"
+    }
+  ],
+  "web.settings.device.nameLabel": [
+    {
+      "type": 0,
+      "value": "Nome do dispositivo"
+    }
+  ],
+  "web.settings.device.nameReset": [
+    {
+      "type": 0,
+      "value": "Nome do dispositivo redefinido"
+    }
+  ],
+  "web.settings.device.nothingChanged": [
+    {
+      "type": 0,
+      "value": "nada alterado aqui"
+    }
+  ],
+  "web.settings.device.rename": [
+    {
+      "type": 0,
+      "value": "Renomear"
+    }
+  ],
+  "web.settings.device.renameFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível renomear"
+    }
+  ],
+  "web.settings.device.renamed": [
+    {
+      "type": 0,
+      "value": "Dispositivo renomeado"
+    }
+  ],
+  "web.settings.device.reportsItselfAs": [
+    {
+      "type": 0,
+      "value": "Se identifica como "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.settings.device.resetDone": [
+    {
+      "type": 0,
+      "value": "As alterações neste dispositivo foram removidas"
+    }
+  ],
+  "web.settings.device.resetFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível limpar"
+    }
+  ],
+  "web.settings.device.title": [
+    {
+      "type": 0,
+      "value": "Seus dispositivos"
+    }
+  ],
+  "web.settings.device.useProfileSettings": [
+    {
+      "type": 0,
+      "value": "Usar configurações do perfil"
+    }
+  ],
+  "web.settings.device.usingNow": [
+    {
+      "type": 0,
+      "value": "em uso agora"
+    }
+  ],
+  "web.settings.deviceGroups.sound.description": [
+    {
+      "type": 0,
+      "value": "Áudio neste dispositivo"
+    }
+  ],
+  "web.settings.deviceGroups.sound.title": [
+    {
+      "type": 0,
+      "value": "Som"
+    }
+  ],
+  "web.settings.deviceList.group.current": [
+    {
+      "type": 0,
+      "value": "Em uso agora"
+    }
+  ],
+  "web.settings.deviceList.group.earlier": [
+    {
+      "type": 0,
+      "value": "Anteriores"
+    }
+  ],
+  "web.settings.deviceList.group.week": [
+    {
+      "type": 0,
+      "value": "Esta semana"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dia"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de dias"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dias"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " hora"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de horas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " horas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.months": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " mês"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de meses"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " meses"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "Nunca usado"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.underAnHour": [
+    {
+      "type": 0,
+      "value": "Há menos de uma hora"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.years": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ano"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de anos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " anos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.deviceList.lastSeen.yesterday": [
+    {
+      "type": 0,
+      "value": "Ontem"
+    }
+  ],
+  "web.settings.interface.loadFailedDescription": [
+    {
+      "type": 0,
+      "value": "A edição fica desativada até que elas sejam carregadas, para que nada do que você escolheu antes seja substituído."
+    }
+  ],
+  "web.settings.interface.loading": [
+    {
+      "type": 0,
+      "value": "Carregando…"
+    }
+  ],
+  "web.settings.interface.moveDown": [
+    {
+      "type": 0,
+      "value": "Mover "
+    },
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " para baixo"
+    }
+  ],
+  "web.settings.interface.moveUp": [
+    {
+      "type": 0,
+      "value": "Mover "
+    },
+    {
+      "type": 1,
+      "value": "label"
+    },
+    {
+      "type": 0,
+      "value": " para cima"
+    }
+  ],
+  "web.settings.interface.posterCompact": [
+    {
+      "type": 0,
+      "value": "Compacto"
+    }
+  ],
+  "web.settings.interface.posterLarge": [
+    {
+      "type": 0,
+      "value": "Grande"
+    }
+  ],
+  "web.settings.interface.posterReset": [
+    {
+      "type": 0,
+      "value": "Redefinir configurações de pôsteres"
+    }
+  ],
+  "web.settings.interface.posterSize": [
+    {
+      "type": 0,
+      "value": "Tamanho"
+    }
+  ],
+  "web.settings.interface.posterStandard": [
+    {
+      "type": 0,
+      "value": "Padrão"
+    }
+  ],
+  "web.settings.interface.postersTitle": [
+    {
+      "type": 0,
+      "value": "Pôsteres"
+    }
+  ],
+  "web.settings.interface.title": [
+    {
+      "type": 0,
+      "value": "Navegação e cartões"
+    }
+  ],
+  "web.settings.interface.unsupportedTitle": [
+    {
+      "type": 0,
+      "value": "Seu servidor precisa de uma atualização"
+    }
+  ],
+  "web.settings.limitField.unlimited": [
+    {
+      "type": 0,
+      "value": "Ilimitado"
+    }
+  ],
+  "web.settings.nav.group.account": [
+    {
+      "type": 0,
+      "value": "Conta"
+    }
+  ],
+  "web.settings.nav.group.appearance": [
+    {
+      "type": 0,
+      "value": "Aparência"
+    }
+  ],
+  "web.settings.nav.group.playback": [
+    {
+      "type": 0,
+      "value": "Reprodução"
+    }
+  ],
+  "web.settings.overlays.accent.amber": [
+    {
+      "type": 0,
+      "value": "Âmbar"
+    }
+  ],
+  "web.settings.overlays.accent.blue": [
+    {
+      "type": 0,
+      "value": "Azul"
+    }
+  ],
+  "web.settings.overlays.accent.cyan": [
+    {
+      "type": 0,
+      "value": "Ciano"
+    }
+  ],
+  "web.settings.overlays.accent.emerald": [
+    {
+      "type": 0,
+      "value": "Esmeralda"
+    }
+  ],
+  "web.settings.overlays.accent.gold": [
+    {
+      "type": 0,
+      "value": "Dourado"
+    }
+  ],
+  "web.settings.overlays.accent.indigo": [
+    {
+      "type": 0,
+      "value": "Índigo"
+    }
+  ],
+  "web.settings.overlays.accent.orange": [
+    {
+      "type": 0,
+      "value": "Laranja"
+    }
+  ],
+  "web.settings.overlays.accent.pink": [
+    {
+      "type": 0,
+      "value": "Rosa"
+    }
+  ],
+  "web.settings.overlays.accent.slate": [
+    {
+      "type": 0,
+      "value": "Ardósia"
+    }
+  ],
+  "web.settings.overlays.accent.tomato": [
+    {
+      "type": 0,
+      "value": "Tomate"
+    }
+  ],
+  "web.settings.overlays.accent.violet": [
+    {
+      "type": 0,
+      "value": "Violeta"
+    }
+  ],
+  "web.settings.overlays.accent.white": [
+    {
+      "type": 0,
+      "value": "Branco"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.description": [
+    {
+      "type": 0,
+      "value": "Idade mínima recomendada para assistir, como o 13+ da Common Sense Media"
+    }
+  ],
+  "web.settings.overlays.badge.advisoryAge.label": [
+    {
+      "type": 0,
+      "value": "Idade recomendada"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.description": [
+    {
+      "type": 0,
+      "value": "Proporção de tela (16:9, 2.39:1 etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.aspectRatio.label": [
+    {
+      "type": 0,
+      "value": "Proporção de tela"
+    }
+  ],
+  "web.settings.overlays.badge.audio.description": [
+    {
+      "type": 0,
+      "value": "Codec de áudio (Atmos, DTS-HD, TrueHD etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.audio.label": [
+    {
+      "type": 0,
+      "value": "Codec de áudio"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.description": [
+    {
+      "type": 0,
+      "value": "Configuração de canais (estéreo, 5.1, 7.1)"
+    }
+  ],
+  "web.settings.overlays.badge.audioChannels.label": [
+    {
+      "type": 0,
+      "value": "Canais de áudio"
+    }
+  ],
+  "web.settings.overlays.badge.container.description": [
+    {
+      "type": 0,
+      "value": "Contêiner do arquivo (MKV, MP4 etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.container.label": [
+    {
+      "type": 0,
+      "value": "Contêiner"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.description": [
+    {
+      "type": 0,
+      "value": "Classificação indicativa (PG-13, TV-MA, R etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.contentRating.label": [
+    {
+      "type": 0,
+      "value": "Classificação indicativa"
+    }
+  ],
+  "web.settings.overlays.badge.edition.description": [
+    {
+      "type": 0,
+      "value": "Rótulo de edição da melhor versão de mídia disponível"
+    }
+  ],
+  "web.settings.overlays.badge.edition.label": [
+    {
+      "type": 0,
+      "value": "Edição"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.description": [
+    {
+      "type": 0,
+      "value": "Formato de faixa dinâmica (HDR10, DV, HLG)"
+    }
+  ],
+  "web.settings.overlays.badge.hdr.label": [
+    {
+      "type": 0,
+      "value": "HDR / Dolby Vision"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.description": [
+    {
+      "type": 0,
+      "value": "Mostrado quando o arquivo tem áudio em 2 ou mais idiomas"
+    }
+  ],
+  "web.settings.overlays.badge.multiAudio.label": [
+    {
+      "type": 0,
+      "value": "Vários áudios"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.description": [
+    {
+      "type": 0,
+      "value": "Mostrado quando o arquivo tem alguma faixa de legendas"
+    }
+  ],
+  "web.settings.overlays.badge.multiSub.label": [
+    {
+      "type": 0,
+      "value": "Legendas disponíveis"
+    }
+  ],
+  "web.settings.overlays.badge.network.description": [
+    {
+      "type": 0,
+      "value": "Emissora principal (séries)"
+    }
+  ],
+  "web.settings.overlays.badge.network.label": [
+    {
+      "type": 0,
+      "value": "Emissora"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.description": [
+    {
+      "type": 0,
+      "value": "Idioma original do conteúdo"
+    }
+  ],
+  "web.settings.overlays.badge.originalLanguage.label": [
+    {
+      "type": 0,
+      "value": "Idioma"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.description": [
+    {
+      "type": 0,
+      "value": "Nota do IMDb de 0 a 10"
+    }
+  ],
+  "web.settings.overlays.badge.ratingImdb.label": [
+    {
+      "type": 0,
+      "value": "Avaliação do IMDb"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.description": [
+    {
+      "type": 0,
+      "value": "Nota da crítica no Rotten Tomatoes, quando um administrador a mostra"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRt.label": [
+    {
+      "type": 0,
+      "value": "Crítica RT"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.description": [
+    {
+      "type": 0,
+      "value": "Nota do público no Rotten Tomatoes, quando um administrador a mostra"
+    }
+  ],
+  "web.settings.overlays.badge.ratingRtAudience.label": [
+    {
+      "type": 0,
+      "value": "Público RT"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.description": [
+    {
+      "type": 0,
+      "value": "Nota do TMDB de 0 a 10"
+    }
+  ],
+  "web.settings.overlays.badge.ratingTmdb.label": [
+    {
+      "type": 0,
+      "value": "Avaliação do TMDB"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.description": [
+    {
+      "type": 0,
+      "value": "Formato de origem (REMUX, BluRay, WEB-DL etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.releaseType.label": [
+    {
+      "type": 0,
+      "value": "Tipo de lançamento"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.description": [
+    {
+      "type": 0,
+      "value": "Situação de um título da lista para assistir que a biblioteca ainda não tem: baixando, data de lançamento, aguardando aprovação"
+    }
+  ],
+  "web.settings.overlays.badge.requestStatus.label": [
+    {
+      "type": 0,
+      "value": "Status da solicitação"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.description": [
+    {
+      "type": 0,
+      "value": "Resolução do vídeo (4K, 1080p, 720p etc.)"
+    }
+  ],
+  "web.settings.overlays.badge.resolution.label": [
+    {
+      "type": 0,
+      "value": "Resolução"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.label": [
+    {
+      "type": 0,
+      "value": "Resolução + HDR (combinado)"
+    }
+  ],
+  "web.settings.overlays.badge.resolutionHdr.shortLabel": [
+    {
+      "type": 0,
+      "value": "Resolução + HDR"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.description": [
+    {
+      "type": 0,
+      "value": "Duração do item em horas e minutos"
+    }
+  ],
+  "web.settings.overlays.badge.runtime.label": [
+    {
+      "type": 0,
+      "value": "Duração"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.availabilityNote": [
+    {
+      "type": 0,
+      "value": "Preenchido por plugins de metadados (atualizações do TMDB/TVDB pendentes)"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.description": [
+    {
+      "type": 0,
+      "value": "Ciclo de vida da série: em continuação, encerrada, cancelada"
+    }
+  ],
+  "web.settings.overlays.badge.showStatus.label": [
+    {
+      "type": 0,
+      "value": "Status da série"
+    }
+  ],
+  "web.settings.overlays.badge.studio.description": [
+    {
+      "type": 0,
+      "value": "Estúdio de produção principal (filmes)"
+    }
+  ],
+  "web.settings.overlays.badge.studio.label": [
+    {
+      "type": 0,
+      "value": "Estúdio"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.description": [
+    {
+      "type": 0,
+      "value": "Codec de vídeo (H.264, H.265, AV1)"
+    }
+  ],
+  "web.settings.overlays.badge.videoCodec.label": [
+    {
+      "type": 0,
+      "value": "Codec de vídeo"
+    }
+  ],
+  "web.settings.overlays.badge.year.description": [
+    {
+      "type": 0,
+      "value": "Ano de lançamento"
+    }
+  ],
+  "web.settings.overlays.badge.year.label": [
+    {
+      "type": 0,
+      "value": "Ano"
+    }
+  ],
+  "web.settings.overlays.category.metadata.description": [
+    {
+      "type": 0,
+      "value": "Informações sobre o próprio conteúdo."
+    }
+  ],
+  "web.settings.overlays.category.metadata.title": [
+    {
+      "type": 0,
+      "value": "Metadados do conteúdo"
+    }
+  ],
+  "web.settings.overlays.category.ratings.description": [
+    {
+      "type": 0,
+      "value": "Notas de fontes externas e classificações indicativas."
+    }
+  ],
+  "web.settings.overlays.category.ratings.title": [
+    {
+      "type": 0,
+      "value": "Avaliações e classificações"
+    }
+  ],
+  "web.settings.overlays.category.ribbons.description": [
+    {
+      "type": 0,
+      "value": "Selos de ciclo de vida da série, status da solicitação e prêmios. Alguns dependem de fontes de dados futuras."
+    }
+  ],
+  "web.settings.overlays.category.ribbons.title": [
+    {
+      "type": 0,
+      "value": "Status e prêmios"
+    }
+  ],
+  "web.settings.overlays.category.tech.description": [
+    {
+      "type": 0,
+      "value": "Detalhes técnicos dos seus arquivos de mídia."
+    }
+  ],
+  "web.settings.overlays.category.tech.title": [
+    {
+      "type": 0,
+      "value": "Informações da mídia"
+    }
+  ],
+  "web.settings.overlays.look.style": [
+    {
+      "type": 0,
+      "value": "Estilo do selo"
+    }
+  ],
+  "web.settings.overlays.position.bottomLeft": [
+    {
+      "type": 0,
+      "value": "Canto inferior esquerdo"
+    }
+  ],
+  "web.settings.overlays.position.bottomRight": [
+    {
+      "type": 0,
+      "value": "Canto inferior direito"
+    }
+  ],
+  "web.settings.overlays.position.topLeft": [
+    {
+      "type": 0,
+      "value": "Canto superior esquerdo"
+    }
+  ],
+  "web.settings.overlays.preset.classic.description": [
+    {
+      "type": 0,
+      "value": "Pílula escura semitransparente com borda branca. O padrão."
+    }
+  ],
+  "web.settings.overlays.preset.classic.label": [
+    {
+      "type": 0,
+      "value": "Clássico"
+    }
+  ],
+  "web.settings.overlays.preset.minimal.description": [
+    {
+      "type": 0,
+      "value": "Quase invisível. Texto minúsculo, sem fundo."
+    }
+  ],
+  "web.settings.overlays.preset.minimal.label": [
+    {
+      "type": 0,
+      "value": "Minimalista"
+    }
+  ],
+  "web.settings.overlays.preset.pill.description": [
+    {
+      "type": 0,
+      "value": "Pílula maior, com mais espaçamento interno. Funciona bem com ícones."
+    }
+  ],
+  "web.settings.overlays.preset.pill.label": [
+    {
+      "type": 0,
+      "value": "Pílula"
+    }
+  ],
+  "web.settings.overlays.preset.square.label": [
+    {
+      "type": 0,
+      "value": "Quadrado"
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.description": [
+    {
+      "type": 0,
+      "value": "Selos opacos na cor de destaque. Alto contraste."
+    }
+  ],
+  "web.settings.overlays.preset.vibrant.label": [
+    {
+      "type": 0,
+      "value": "Vibrante"
+    }
+  ],
+  "web.settings.playback.autoPlayNext.description": [
+    {
+      "type": 0,
+      "value": "Inicia o próximo episódio automaticamente quando o atual termina."
+    }
+  ],
+  "web.settings.playback.maxBitrate.description": [
+    {
+      "type": 0,
+      "value": "Limita quanta banda a reprodução pode usar. Com “Sem limite”, o Silo escolhe conforme a resolução selecionada."
+    }
+  ],
+  "web.settings.playback.maxBitrate.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a taxa de bits máxima"
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewDescription": [
+    {
+      "type": 0,
+      "value": "Inicia o próximo episódio quando o atual chega à prévia do próximo episódio, em vez de esperar os créditos finais."
+    }
+  ],
+  "web.settings.playback.nextEpisode.previewLabel": [
+    {
+      "type": 0,
+      "value": "Começar o próximo na prévia"
+    }
+  ],
+  "web.settings.playback.nextEpisode.title": [
+    {
+      "type": 0,
+      "value": "Próximo episódio"
+    }
+  ],
+  "web.settings.playback.quality.autoDescription": [
+    {
+      "type": 0,
+      "value": "Reproduz o arquivo original sempre que seu dispositivo e sua conexão permitirem."
+    }
+  ],
+  "web.settings.playback.quality.description": [
+    {
+      "type": 0,
+      "value": "A resolução que seu perfil deve solicitar quando a reprodução começa."
+    }
+  ],
+  "web.settings.playback.quality.groupDescription": [
+    {
+      "type": 0,
+      "value": "Cada um dos seus dispositivos pode substituir essas opções, e quem administra a casa pode limitá-las para este perfil."
+    }
+  ],
+  "web.settings.playback.quality.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a qualidade preferida"
+    }
+  ],
+  "web.settings.playback.quality.title": [
+    {
+      "type": 0,
+      "value": "Qualidade"
+    }
+  ],
+  "web.settings.playback.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração de reprodução"
+    }
+  ],
+  "web.settings.playback.seek.description": [
+    {
+      "type": 0,
+      "value": "O tamanho do salto ao retroceder e avançar. Essas opções pertencem ao perfil ativo e o acompanham nos apps do Silo compatíveis."
+    }
+  ],
+  "web.settings.playback.seek.forwardInterval": [
+    {
+      "type": 0,
+      "value": "Intervalo de avanço"
+    }
+  ],
+  "web.settings.playback.seek.rewindInterval": [
+    {
+      "type": 0,
+      "value": "Intervalo de retrocesso"
+    }
+  ],
+  "web.settings.playback.seek.seconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playback.seek.title": [
+    {
+      "type": 0,
+      "value": "Controles de busca"
+    }
+  ],
+  "web.settings.playback.seek.video.forwardDescription": [
+    {
+      "type": 0,
+      "value": "O tamanho do salto ao avançar um vídeo."
+    }
+  ],
+  "web.settings.playback.seek.video.forwardSaveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar o intervalo de avanço dos vídeos"
+    }
+  ],
+  "web.settings.playback.seek.video.rewindDescription": [
+    {
+      "type": 0,
+      "value": "O tamanho do salto ao retroceder um vídeo."
+    }
+  ],
+  "web.settings.playback.seek.video.rewindSaveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar o intervalo de retrocesso dos vídeos"
+    }
+  ],
+  "web.settings.playback.seek.videoDescription": [
+    {
+      "type": 0,
+      "value": "Vale para os botões de controle, os gestos de toque duplo, as teclas de seta e os controles de mídia do sistema."
+    }
+  ],
+  "web.settings.playback.seek.videoTitle": [
+    {
+      "type": 0,
+      "value": "Vídeo"
+    }
+  ],
+  "web.settings.playback.skipping.introModeDescription": [
+    {
+      "type": 0,
+      "value": "Deixar as aberturas como estão, oferecer um botão Pular abertura ou pular automaticamente com opção de desfazer."
+    }
+  ],
+  "web.settings.playback.skipping.recapDescription": [
+    {
+      "type": 0,
+      "value": "Pula automaticamente as recapitulações (“anteriormente em…”) quando o Silo consegue detectá-las."
+    }
+  ],
+  "web.settings.playback.skipping.title": [
+    {
+      "type": 0,
+      "value": "Pular trechos"
+    }
+  ],
+  "web.settings.playback.subtitle": [
+    {
+      "type": 0,
+      "value": "Os padrões com que este perfil inicia a reprodução. Uma biblioteca, uma série ou um dos seus dispositivos pode substituir alguns deles."
+    }
+  ],
+  "web.settings.playback.title": [
+    {
+      "type": 0,
+      "value": "Reprodução"
+    }
+  ],
+  "web.settings.playbackConnection.ago.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dia"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de dias"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dias"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " hora"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de horas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " horas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.ago.justNow": [
+    {
+      "type": 0,
+      "value": "agora mesmo"
+    }
+  ],
+  "web.settings.playbackConnection.ago.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minuto"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minutos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.autoBudget": [
+    {
+      "type": 0,
+      "value": "A qualidade Auto reproduz vídeos de até "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " sem convertê-los."
+    }
+  ],
+  "web.settings.playbackConnection.fasterThan": [
+    {
+      "type": 0,
+      "value": "Acima de "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    }
+  ],
+  "web.settings.playbackConnection.learnedLimit": [
+    {
+      "type": 0,
+      "value": "Limitado a "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " após pausas para carregar em "
+    },
+    {
+      "type": 1,
+      "value": "date"
+    }
+  ],
+  "web.settings.playbackConnection.measured": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " · medida "
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    },
+    {
+      "type": 0,
+      "value": " via "
+    },
+    {
+      "type": 1,
+      "value": "transport"
+    }
+  ],
+  "web.settings.playbackConnection.notMeasured": [
+    {
+      "type": 0,
+      "value": "Ainda não medida"
+    }
+  ],
+  "web.settings.playbackConnection.notSaved": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar o teste de velocidade. Tente novamente."
+    }
+  ],
+  "web.settings.playbackConnection.rateLimited": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Tente novamente em "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.playbackConnection.reset": [
+    {
+      "type": 0,
+      "value": "Redefinir"
+    }
+  ],
+  "web.settings.playbackConnection.resetFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível redefinir o limite. Tente novamente."
+    }
+  ],
+  "web.settings.playbackConnection.seenDuringPlayback": [
+    {
+      "type": 0,
+      "value": "Acima de "
+    },
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " · observada durante a reprodução "
+    },
+    {
+      "type": 1,
+      "value": "ago"
+    }
+  ],
+  "web.settings.playbackConnection.skippedCellular": [
+    {
+      "type": 0,
+      "value": "Os testes de velocidade não são feitos na rede celular, e valem as configurações de qualidade de Celular."
+    }
+  ],
+  "web.settings.playbackConnection.skippedMetered": [
+    {
+      "type": 0,
+      "value": "Os testes de velocidade não são feitos em redes limitadas."
+    }
+  ],
+  "web.settings.playbackConnection.speed": [
+    {
+      "type": 0,
+      "value": "Velocidade da conexão"
+    }
+  ],
+  "web.settings.playbackConnection.test": [
+    {
+      "type": 0,
+      "value": "Testar velocidade"
+    }
+  ],
+  "web.settings.playbackConnection.testFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível medir a velocidade da conexão. Tente novamente."
+    }
+  ],
+  "web.settings.playbackConnection.testing": [
+    {
+      "type": 0,
+      "value": "Testando…"
+    }
+  ],
+  "web.settings.playbackConnection.title": [
+    {
+      "type": 0,
+      "value": "Conexão"
+    }
+  ],
+  "web.settings.playbackConnection.transport.cellular": [
+    {
+      "type": 0,
+      "value": "rede celular"
+    }
+  ],
+  "web.settings.playbackConnection.transport.ethernet": [
+    {
+      "type": 0,
+      "value": "Ethernet"
+    }
+  ],
+  "web.settings.playbackConnection.transport.unknown": [
+    {
+      "type": 0,
+      "value": "esta conexão"
+    }
+  ],
+  "web.settings.playbackConnection.transport.wifi": [
+    {
+      "type": 0,
+      "value": "Wi-Fi"
+    }
+  ],
+  "web.settings.resetButton.label": [
+    {
+      "type": 0,
+      "value": "Redefinir"
+    }
+  ],
+  "web.settings.sessions.confirm.clientDescription": [
+    {
+      "type": 0,
+      "value": "Este cliente perderá o acesso na próxima solicitação autenticada. As outras sessões e a senha continuam iguais."
+    }
+  ],
+  "web.settings.sessions.confirm.deviceTitle": [
+    {
+      "type": 0,
+      "value": "Desconectar "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.settings.sessions.confirm.note": [
+    {
+      "type": 0,
+      "value": "Um vídeo que já está sendo reproduzido pode continuar até a próxima solicitação. As configurações salvas do dispositivo são mantidas."
+    }
+  ],
+  "web.settings.sessions.confirm.thisBrowserDescription": [
+    {
+      "type": 0,
+      "value": "Você voltará para a tela de login. Você pode entrar novamente com a mesma senha ou o mesmo provedor de login."
+    }
+  ],
+  "web.settings.sessions.current.description": [
+    {
+      "type": 0,
+      "value": "A sessão que você está usando agora."
+    }
+  ],
+  "web.settings.sessions.description": [
+    {
+      "type": 0,
+      "value": "Veja onde sua conta está conectada e desconecte qualquer sessão que você não reconheça."
+    }
+  ],
+  "web.settings.sessions.device.unknown": [
+    {
+      "type": 0,
+      "value": "Dispositivo desconhecido"
+    }
+  ],
+  "web.settings.sessions.lastSeen.active": [
+    {
+      "type": 0,
+      "value": "Ativa agora"
+    }
+  ],
+  "web.settings.sessions.lastSeen.days": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dia"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de dias"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " dias"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.hours": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.minutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Última atividade há "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.sessions.lastSeen.never": [
+    {
+      "type": 0,
+      "value": "Última atividade ainda não registrada"
+    }
+  ],
+  "web.settings.sessions.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar as sessões. Tente novamente."
+    }
+  ],
+  "web.settings.sessions.loadMore": [
+    {
+      "type": 0,
+      "value": "Carregar mais sessões"
+    }
+  ],
+  "web.settings.sessions.loading": [
+    {
+      "type": 0,
+      "value": "Carregando sessões…"
+    }
+  ],
+  "web.settings.sessions.others.description": [
+    {
+      "type": 0,
+      "value": "Outros navegadores e apps com acesso à sua conta."
+    }
+  ],
+  "web.settings.sessions.others.empty": [
+    {
+      "type": 0,
+      "value": "Nenhuma outra sessão conectada."
+    }
+  ],
+  "web.settings.sessions.others.title": [
+    {
+      "type": 0,
+      "value": "Outras sessões conectadas"
+    }
+  ],
+  "web.settings.sessions.refresh": [
+    {
+      "type": 0,
+      "value": "Atualizar"
+    }
+  ],
+  "web.settings.sessions.refreshLabel": [
+    {
+      "type": 0,
+      "value": "Atualizar sessões"
+    }
+  ],
+  "web.settings.sessions.row.details": [
+    {
+      "type": 0,
+      "value": "Detalhes"
+    }
+  ],
+  "web.settings.sessions.row.detailsFor": [
+    {
+      "type": 0,
+      "value": "Detalhes de "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    }
+  ],
+  "web.settings.sessions.row.expires": [
+    {
+      "type": 0,
+      "value": "Expira em"
+    }
+  ],
+  "web.settings.sessions.row.ipAddress": [
+    {
+      "type": 0,
+      "value": "Endereço IP no login"
+    }
+  ],
+  "web.settings.sessions.row.lastSeen": [
+    {
+      "type": 0,
+      "value": "Última atividade"
+    }
+  ],
+  "web.settings.sessions.row.notRecorded": [
+    {
+      "type": 0,
+      "value": "Ainda não registrada"
+    }
+  ],
+  "web.settings.sessions.row.notSent": [
+    {
+      "type": 0,
+      "value": "Não enviado"
+    }
+  ],
+  "web.settings.sessions.row.signOutDevice": [
+    {
+      "type": 0,
+      "value": "Desconectar "
+    },
+    {
+      "type": 1,
+      "value": "device"
+    }
+  ],
+  "web.settings.sessions.row.signedIn": [
+    {
+      "type": 0,
+      "value": "Login em"
+    }
+  ],
+  "web.settings.sessions.row.summary": [
+    {
+      "type": 8,
+      "value": "status",
+      "children": [
+        {
+          "type": 1,
+          "value": "last_seen"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · Login em "
+    },
+    {
+      "type": 1,
+      "value": "signed_in"
+    }
+  ],
+  "web.settings.sessions.row.unknown": [
+    {
+      "type": 0,
+      "value": "Desconhecido"
+    }
+  ],
+  "web.settings.sessions.row.userAgent": [
+    {
+      "type": 0,
+      "value": "User-Agent"
+    }
+  ],
+  "web.settings.sessions.signOutFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível desconectar a sessão. Tente novamente."
+    }
+  ],
+  "web.settings.sessions.signedOut": [
+    {
+      "type": 0,
+      "value": "Sessão desconectada"
+    }
+  ],
+  "web.settings.sessions.title": [
+    {
+      "type": 0,
+      "value": "Sessões conectadas"
+    }
+  ],
+  "web.settings.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "Voltar ao app"
+    }
+  ],
+  "web.settings.sidebar.title": [
+    {
+      "type": 0,
+      "value": "Configurações"
+    }
+  ],
+  "web.settings.signedInSessions.unavailable": [
+    {
+      "type": 0,
+      "value": "O gerenciamento de sessões conectadas não está disponível neste servidor."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.color": [
+    {
+      "type": 0,
+      "value": "Cor do fundo"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.description": [
+    {
+      "type": 0,
+      "value": "Ajuste o posicionamento e o contraste das legendas."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacity": [
+    {
+      "type": 0,
+      "value": "Opacidade do fundo"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.opacityDescription": [
+    {
+      "type": 0,
+      "value": "Usada apenas em legendas com caixa."
+    }
+  ],
+  "web.settings.subtitleAppearance.background.position": [
+    {
+      "type": 0,
+      "value": "Posição das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.style": [
+    {
+      "type": 0,
+      "value": "Estilo do fundo"
+    }
+  ],
+  "web.settings.subtitleAppearance.background.title": [
+    {
+      "type": 0,
+      "value": "Fundo e posição"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenDescription": [
+    {
+      "type": 0,
+      "value": "Prefira um idioma falado para este perfil quando houver várias faixas disponíveis."
+    }
+  ],
+  "web.settings.subtitleAppearance.language.spokenLabel": [
+    {
+      "type": 0,
+      "value": "Idioma falado"
+    }
+  ],
+  "web.settings.subtitleAppearance.language.title": [
+    {
+      "type": 0,
+      "value": "Idioma"
+    }
+  ],
+  "web.settings.subtitleAppearance.languageSaveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração de idioma"
+    }
+  ],
+  "web.settings.subtitleAppearance.percentSign": [
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.description": [
+    {
+      "type": 0,
+      "value": "Como as legendas aparecem para este perfil em todos os dispositivos."
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.discard": [
+    {
+      "type": 0,
+      "value": "Descartar alterações"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.reset": [
+    {
+      "type": 0,
+      "value": "Redefinir a aparência das legendas para o padrão"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine1": [
+    {
+      "type": 0,
+      "value": "Texto de legenda de exemplo"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.sampleLine2": [
+    {
+      "type": 0,
+      "value": "ajustado para facilitar a leitura"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.save": [
+    {
+      "type": 0,
+      "value": "Salvar aparência"
+    }
+  ],
+  "web.settings.subtitleAppearance.preview.title": [
+    {
+      "type": 0,
+      "value": "Prévia"
+    }
+  ],
+  "web.settings.subtitleAppearance.resetFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível redefinir a aparência das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a aparência das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitle": [
+    {
+      "type": 0,
+      "value": "Os idiomas preferidos deste perfil, quando as legendas aparecem e como elas ficam."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitleSettingSaveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração de legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorDescription": [
+    {
+      "type": 0,
+      "value": "Decida quando as legendas devem aparecer."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.behaviorLabel": [
+    {
+      "type": 0,
+      "value": "Comportamento das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.description": [
+    {
+      "type": 0,
+      "value": "Quais legendas o Silo escolhe para este perfil."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.forcedDescription": [
+    {
+      "type": 0,
+      "value": "Exibir legendas forçadas para diálogos em idioma estrangeiro."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageDescription": [
+    {
+      "type": 0,
+      "value": "Escolha um idioma de legendas ou deixe as legendas desativadas por padrão."
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.languageLabel": [
+    {
+      "type": 0,
+      "value": "Idioma das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.subtitles.title": [
+    {
+      "type": 0,
+      "value": "Legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.description": [
+    {
+      "type": 0,
+      "value": "Ajuste a aparência e a legibilidade do texto das legendas."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontColor": [
+    {
+      "type": 0,
+      "value": "Cor da fonte"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontFamily": [
+    {
+      "type": 0,
+      "value": "Família da fonte"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.fontSize": [
+    {
+      "type": 0,
+      "value": "Tamanho da fonte"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacity": [
+    {
+      "type": 0,
+      "value": "Opacidade do texto"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.opacityDescription": [
+    {
+      "type": 0,
+      "value": "O nível de transparência do próprio texto das legendas."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outline": [
+    {
+      "type": 0,
+      "value": "Contorno do texto"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColor": [
+    {
+      "type": 0,
+      "value": "Cor do contorno"
+    }
+  ],
+  "web.settings.subtitleAppearance.text.outlineColorDescription": [
+    {
+      "type": 0,
+      "value": "Usada apenas quando o contorno do texto está ativado."
+    }
+  ],
+  "web.settings.subtitleAppearance.text.title": [
+    {
+      "type": 0,
+      "value": "Texto"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.description": [
+    {
+      "type": 0,
+      "value": "Adiante ou atrase todas as legendas. Vale para este perfil em todos os dispositivos."
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.earlier": [
+    {
+      "type": 0,
+      "value": "Mostrar legendas "
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": " ms antes"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.later": [
+    {
+      "type": 0,
+      "value": "Mostrar legendas "
+    },
+    {
+      "type": 1,
+      "value": "ms"
+    },
+    {
+      "type": 0,
+      "value": " ms depois"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offset": [
+    {
+      "type": 0,
+      "value": "Atraso das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetDescription": [
+    {
+      "type": 0,
+      "value": "Valores negativos mostram as legendas antes; valores positivos, depois."
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.offsetValue": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.reset": [
+    {
+      "type": 0,
+      "value": "Redefinir"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar o atraso das legendas"
+    }
+  ],
+  "web.settings.subtitleAppearance.timing.title": [
+    {
+      "type": 0,
+      "value": "Sincronia"
+    }
+  ],
+  "web.settings.subtitleAppearance.title": [
+    {
+      "type": 0,
+      "value": "Idioma e legendas"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.black": [
+    {
+      "type": 0,
+      "value": "Preto"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGray": [
+    {
+      "type": 0,
+      "value": "Cinza-escuro"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkGreen": [
+    {
+      "type": 0,
+      "value": "Verde-escuro"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.darkRed": [
+    {
+      "type": 0,
+      "value": "Vermelho-escuro"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundColor.navy": [
+    {
+      "type": 0,
+      "value": "Azul-marinho"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.box": [
+    {
+      "type": 0,
+      "value": "Caixa"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.dropShadow": [
+    {
+      "type": 0,
+      "value": "Sombra projetada"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.none": [
+    {
+      "type": 0,
+      "value": "Nenhum"
+    }
+  ],
+  "web.settings.subtitleOptions.backgroundStyle.outline": [
+    {
+      "type": 0,
+      "value": "Contorno"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.black": [
+    {
+      "type": 0,
+      "value": "Preto"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.blue": [
+    {
+      "type": 0,
+      "value": "Azul"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.cyan": [
+    {
+      "type": 0,
+      "value": "Ciano"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.gray": [
+    {
+      "type": 0,
+      "value": "Cinza"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.green": [
+    {
+      "type": 0,
+      "value": "Verde"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.magenta": [
+    {
+      "type": 0,
+      "value": "Magenta"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.red": [
+    {
+      "type": 0,
+      "value": "Vermelho"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.white": [
+    {
+      "type": 0,
+      "value": "Branco"
+    }
+  ],
+  "web.settings.subtitleOptions.fontColor.yellow": [
+    {
+      "type": 0,
+      "value": "Amarelo"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.monospace": [
+    {
+      "type": 0,
+      "value": "Monoespaçada"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.sansSerif": [
+    {
+      "type": 0,
+      "value": "Sem serifa"
+    }
+  ],
+  "web.settings.subtitleOptions.fontFamily.serif": [
+    {
+      "type": 0,
+      "value": "Com serifa"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.large": [
+    {
+      "type": 0,
+      "value": "Grande"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.medium": [
+    {
+      "type": 0,
+      "value": "Médio"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.small": [
+    {
+      "type": 0,
+      "value": "Pequeno"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xLarge": [
+    {
+      "type": 0,
+      "value": "Muito grande"
+    }
+  ],
+  "web.settings.subtitleOptions.fontSize.xxLarge": [
+    {
+      "type": 0,
+      "value": "Enorme"
+    }
+  ],
+  "web.settings.subtitleOptions.position.bottom": [
+    {
+      "type": 0,
+      "value": "Embaixo"
+    }
+  ],
+  "web.settings.subtitleOptions.position.lowerThird": [
+    {
+      "type": 0,
+      "value": "Terço inferior"
+    }
+  ],
+  "web.settings.subtitleOptions.position.top": [
+    {
+      "type": 0,
+      "value": "Em cima"
+    }
+  ],
+  "web.settings.titleArt.allDevices": [
+    {
+      "type": 0,
+      "value": "Aplicar a todos os dispositivos"
+    }
+  ],
+  "web.settings.titleArt.allDevicesDescription": [
+    {
+      "type": 0,
+      "value": "Usar esta opção em todos os dispositivos conectados a este perfil."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOffNote": [
+    {
+      "type": 0,
+      "value": "A arte do título está desativada em todos os dispositivos conectados a este perfil. Alterar aqui altera em todos. Desative “Aplicar a todos os dispositivos” para voltar a escolher por dispositivo."
+    }
+  ],
+  "web.settings.titleArt.allDevicesOnNote": [
+    {
+      "type": 0,
+      "value": "A arte do título está ativada em todos os dispositivos conectados a este perfil. Alterar aqui altera em todos. Desative “Aplicar a todos os dispositivos” para voltar a escolher por dispositivo."
+    }
+  ],
+  "web.settings.titleArt.description": [
+    {
+      "type": 0,
+      "value": "Como um filme ou uma série é identificado no topo da página."
+    }
+  ],
+  "web.settings.titleArt.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração da arte do título"
+    }
+  ],
+  "web.settings.titleArt.title": [
+    {
+      "type": 0,
+      "value": "Título"
+    }
+  ],
+  "web.settings.titleArt.titleArtDescription": [
+    {
+      "type": 0,
+      "value": "Usar o logotipo como título quando disponível."
+    }
+  ],
+  "web.settings.titleArt.useServerDefault": [
+    {
+      "type": 0,
+      "value": "Usar padrão do servidor"
+    }
+  ],
+  "web.settings.titlePages.advisoryAgeDescription": [
+    {
+      "type": 0,
+      "value": "Mostrar uma idade mínima sugerida, como a da Common Sense Media, na página de um título. Isso apenas mostra a idade; quem gerencia a casa pode limitar um perfil por ela nas configurações de acesso do perfil."
+    }
+  ],
+  "web.settings.titlePages.ageGuidanceTitle": [
+    {
+      "type": 0,
+      "value": "Orientação de idade"
+    }
+  ],
+  "web.settings.titlePages.saveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar a configuração da página do título"
+    }
+  ],
+  "web.settings.titlePages.soundDescription": [
+    {
+      "type": 0,
+      "value": "Toca enquanto a página de um título está aberta."
+    }
+  ],
+  "web.settings.titlePages.soundTitle": [
+    {
+      "type": 0,
+      "value": "Som"
+    }
+  ],
+  "web.settings.titlePages.spoilersDescription": [
+    {
+      "type": 0,
+      "value": "Vale para episódios que você ainda não começou, em todos os dispositivos que usam este perfil."
+    }
+  ],
+  "web.settings.titlePages.spoilersTitle": [
+    {
+      "type": 0,
+      "value": "Spoilers"
+    }
+  ],
+  "web.settings.titlePages.subtitle": [
+    {
+      "type": 0,
+      "value": "O que a página de um filme ou série mostra e reproduz ao ser aberta."
+    }
+  ],
+  "web.settings.titlePages.title": [
+    {
+      "type": 0,
+      "value": "Páginas de títulos"
+    }
+  ],
+  "web.settings.value.custom": [
+    {
+      "type": 0,
+      "value": "Personalizado"
+    }
+  ],
+  "web.settings.value.episodes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " episódio"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " de episódios"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " episódios"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.milliseconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " milissegundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " de milissegundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "value"
+            },
+            {
+              "type": 0,
+              "value": " milissegundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.settings.value.noLimit": [
+    {
+      "type": 0,
+      "value": "Sem limite"
     }
   ],
   "web.shell.pageBack.goBack": [
@@ -927,6 +4157,18 @@
     {
       "type": 0,
       "value": "Suas coisas"
+    }
+  ],
+  "web.shell.unsavedChanges.discard": [
+    {
+      "type": 0,
+      "value": "Descartar"
+    }
+  ],
+  "web.shell.unsavedChanges.title": [
+    {
+      "type": 0,
+      "value": "Descartar alterações não salvas?"
     }
   ]
 }
