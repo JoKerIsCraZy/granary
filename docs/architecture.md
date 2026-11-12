@@ -1044,8 +1044,8 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
 
 The administrator's activity indicator (docs/ui-design.md, "Activity indicator") is made of three parts.
 
-- **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it asks for the
-  administrator's channels too and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
+- **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it wants the
+  administrator's channels too (the lane asks for those the server's `hello` offers) and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
   disconnected), on to `ServerActivity`. The lane takes frames up to 1 MiB whole and cuts a larger one to its head
   (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
   notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every

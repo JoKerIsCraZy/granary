@@ -2492,7 +2492,10 @@ Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per s
 with the window and replaced on a profile or server switch, none while signed out. A profile-bound
 ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
 to `catalog`, `user_state`, `notifications` after `hello`, and for an administrator account also to `sessions`,
-`tasks`, `scans` and `download_preparations` (12.3). The connection ends with
+`tasks`, `scans` and `download_preparations` (12.3). The server writes `hello` first, before it reads anything, with
+`available_channels`: what this connection may subscribe to (`events_ws.go`, `allowedChannelsForClaims`). Granary asks
+only for the wanted channels that list names; a `hello` without the list, or with none of the wanted channels in it,
+is asked for all of them and the `subscribed` answer decides. The connection ends with
 `max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes and holds
 longer than 1 s, and at once after `access_changed` or close code 4001 on a connection that held that long
 (one closed sooner waits like any loss, so a server that closes every connection is not asked in a loop).
@@ -2677,15 +2680,18 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
 
 The server gives `jobs`, `sessions`, `tasks`, `scans`, `settings` and `download_preparations` to the acting
 administrator only: an administrator account as its primary profile, or without a profile while the household needs
-none. Anyone else gets each back in `subscribed.rejected` with `forbidden` (an older server: `unknown_channel`) and
-keeps the connection. When that changes, the server sends `access_changed` and closes with 4001. Sources:
-`silo-server/internal/api/handlers/events_ws.go` (`allowedChannelsForRole`, `resolveChannelSelection`),
-`silo-server/docs/realtime-api.md` ("Access changes").
+none. The `hello` frame's `available_channels` lists them for that connection only (the role the socket validated,
+`events_socket_v2.go`). Anyone else who asks gets each back in `subscribed.rejected` with `forbidden` (an older
+server: `unknown_channel`) and keeps the connection. When that changes, the server sends `access_changed` and closes
+with 4001. Sources: `silo-server/internal/api/handlers/events_ws.go` (`allowedChannelsForRole`,
+`resolveChannelSelection`), `silo-server/docs/realtime-api.md` ("Access changes").
 
-Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) asks for `sessions`, `tasks`, `scans` and
-`download_preparations` on every connection of an account whose role is `admin`, and takes the `channels` of the
-`subscribed` answer as the only say on who is an acting administrator: the activity indicator and its reads exist
-for the accepted channels, and a profile the server turns down causes no request. `access_changed` closes the gate
+Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) wants `sessions`, `tasks`, `scans` and
+`download_preparations` on every connection of an account whose role is `admin`, asks for those of them the `hello`
+offers (all of them when it offers nothing to go by, 12), and takes the `channels` of the `subscribed` answer as the
+only say on who is an acting administrator: the activity indicator and its reads exist for the accepted channels, and
+a profile the server does not take as one causes no request and, on a server that says so in its `hello`, no channel
+turned down. `access_changed` closes the gate
 until the next connection's answer. The state starts over with the lane, on a server or profile switch and on
 sign-out, and frames or answers of the replaced one are dropped by a number handed out per following.
 

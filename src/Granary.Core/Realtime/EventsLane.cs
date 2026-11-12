@@ -20,12 +20,13 @@ public enum EventsConnection
 
 /// <summary>
 /// The events stream's connection, as the web and Silo's Android app keep it (docs/api-contract.md, 12): a fresh ticket per
-/// connection, the socket offering the protocol and the ticket, a <c>subscribe</c> once the server said hello, and every
-/// frame after it handed on. The server ends a connection after five minutes; a lost one comes back after 1 second, then
+/// connection, the socket offering the protocol and the ticket, a <c>subscribe</c> once the server said hello (to the
+/// wanted channels its hello offers), and every frame after it handed on. The server ends a connection after five minutes; a lost one comes back after 1 second, then
 /// 2, 4, … up to 30 (from 1 again once one subscribed and held longer than a second), and at once after an access change
 /// on a connection that held that long. A server that serves no events (404, 501) has no lane until the next one is made
 /// (sign-in, another profile, the next start). A frame larger than <see cref="MaxFrameBytes"/> does not end the
-/// connection: it is handed on cut to its head (<see cref="EventsFrame.IsCut"/>).
+/// connection: it is handed on cut to its head (<see cref="EventsFrame.IsCut"/>), as is a long frame that is only a
+/// cue (<see cref="EventsFrames.TakesWhole"/>), whose payload the app's sockets never keep.
 /// </summary>
 /// <remarks>
 /// The socket runs off the UI thread; <c>onFrame</c> is called there. Once stopped, a lane stays stopped: a late
@@ -43,8 +44,15 @@ public sealed class EventsLane : IAsyncDisposable
     /// </summary>
     public const int MaxFrameBytes = 1024 * 1024;
 
-    /// <summary>What is kept of a larger frame: enough for its type, channel and event, which come first.</summary>
+    /// <summary>
+    /// What is kept of a frame that is not taken whole: enough for its type, channel and event, which come first. A
+    /// frame no longer than this is always taken whole.
+    /// </summary>
     public const int OversizeHeadBytes = 4096;
+
+    // What a log line names of the channels a server turned down: the server's own bounds (32 names of 64 characters).
+    private const int MaxNamedChannels = 32;
+    private const int MaxChannelNameLength = 64;
 
     private static readonly TimeSpan FirstWait = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan LongestWait = TimeSpan.FromSeconds(30);
@@ -235,19 +243,25 @@ public sealed class EventsLane : IAsyncDisposable
         {
             if (EventsFrames.Parse(text) is not { } frame)
             {
+                // Never its text: a frame may carry what a profile watches.
+                if (text.Length > 0)
+                {
+                    _logger.LogDebug("A frame of the events stream could not be read ({Length} characters)", text.Length);
+                }
                 continue;
             }
             switch (frame.Type)
             {
                 case EventsFrameTypes.Hello:
-                    await socket.SendAsync(EventsFrames.Subscribe(channels, $"req-{++requests}"), connection.Token).ConfigureAwait(false);
+                    await socket.SendAsync(EventsFrames.Subscribe(Offered(channels, frame.Available), $"req-{++requests}"), connection.Token)
+                        .ConfigureAwait(false);
                     continue;
                 case EventsFrameTypes.Subscribed:
                     attempt.Subscribed = true;
                     frame = frame with { Gap = _time.GetUtcNow() - attempt.Since };
                     if (frame.Rejected.Count > 0)
                     {
-                        _logger.LogInformation("The server turned down the channels {Channels}", string.Join(", ", frame.Rejected));
+                        _logger.LogInformation("The server turned down the channels {Channels}", Named(frame.Rejected));
                     }
                     break;
                 case EventsFrameTypes.AccessChanged:
@@ -266,6 +280,27 @@ public sealed class EventsLane : IAsyncDisposable
             listener.Frame(new EventsFrame(EventsFrameTypes.AccessChanged));
         }
     }
+
+    // The hello frame says which channels the server gives this connection (an administrator's only to the acting
+    // administrator): only those are asked for, so nothing comes back turned down. A hello that names none, or none of
+    // the wanted ones (an older server), is no say: everything is asked for and the server's answer decides.
+    private static IReadOnlyList<string> Offered(IReadOnlyList<string> wanted, IReadOnlyList<string>? available)
+    {
+        if (available is null)
+        {
+            return wanted;
+        }
+        string[] offered = [.. wanted.Where(available.Contains)];
+        return offered.Length > 0 ? offered : wanted;
+    }
+
+    // Channel names in a log line are the server's words: only what looks like one is written out.
+    private static string Named(IReadOnlyList<string> channels) =>
+        string.Join(", ", channels.Take(MaxNamedChannels).Select(channel => IsChannelName(channel) ? channel : "(unnamed)"))
+        + (channels.Count > MaxNamedChannels ? ", …" : "");
+
+    private static bool IsChannelName(string channel) =>
+        channel.Length is > 0 and <= MaxChannelNameLength && channel.All(letter => char.IsAsciiLetterOrDigit(letter) || letter is '_' or '-' or '.');
 
     // Whoever follows the lane. What the app makes of a frame or of the connection's state is no reason to lose it.
     private sealed class Listener(Action<EventsFrame> onFrame, Action<EventsConnection>? onConnection, ILogger logger)

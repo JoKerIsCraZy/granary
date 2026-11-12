@@ -17,10 +17,37 @@ public sealed class ServerActivityTests : IAsyncDisposable
     [Fact]
     public async Task AnAdministratorsConnection_AsksForTheAdministratorsChannelsToo()
     {
-        var socket = await _harness.StartedAsync(EventsChannels.Sessions);
+        var socket = await _harness.StartedAsync([.. EventsChannels.Admin]);
 
         Assert.Contains("\"channels\":[\"catalog\",\"user_state\",\"notifications\",\"sessions\",\"tasks\",\"scans\",\"download_preparations\"]",
             Assert.Single(socket.Sent), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OnAProfileTheServerOffersNoAdministratorsChannel_NoneIsAskedFor_AndNothingIsTurnedDown()
+    {
+        // An administrator account on a profile that is not its primary one: the hello offers everyone's channels only.
+        var socket = await _harness.StartedAsync();
+
+        Assert.Contains("\"channels\":[\"catalog\",\"user_state\",\"notifications\"]", Assert.Single(socket.Sent), StringComparison.Ordinal);
+        Assert.False(_harness.State.IsAvailable);
+        Assert.DoesNotContain(_harness.Library.Logs.Lines, line => line.Contains("turned down", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AServerWhoseHelloNamesNoChannels_IsAskedForAll_AndItsAnswerDecides()
+    {
+        _harness.Events.Start();
+        await ServerPlaybackFixture.Until(() => _harness.SocketCount == 1, "the connection");
+        var socket = _harness.Socket(0);
+        socket.Push("""{ "type": "hello", "schema_version": 1, "connection_id": "c1", "required_action": "subscribe" }""");
+        await ServerPlaybackFixture.Until(() => !socket.Sent.IsEmpty, "the subscribe");
+
+        await _harness.PushedAsync(socket, ServerActivityHarness.Subscribed([EventsChannels.Scans],
+            [EventsChannels.Sessions, EventsChannels.Tasks, EventsChannels.DownloadPreparations]));
+
+        Assert.Contains("\"sessions\",\"tasks\",\"scans\",\"download_preparations\"", Assert.Single(socket.Sent), StringComparison.Ordinal);
+        Assert.Equal([EventsChannels.Scans], _harness.State.Channels.Order());
     }
 
     [Fact]

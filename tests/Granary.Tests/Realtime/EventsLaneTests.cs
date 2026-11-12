@@ -73,7 +73,7 @@ public sealed class EventsLaneTests
 
     private readonly List<EventsConnection> _connections = [];
 
-    private void Follow(EventsLane lane) => lane.Follow(ScriptedSilo.Base, Channels, frame =>
+    private void Follow(EventsLane lane, IReadOnlyList<string>? channels = null) => lane.Follow(ScriptedSilo.Base, channels ?? Channels, frame =>
     {
         lock (_frames)
         {
@@ -124,6 +124,75 @@ public sealed class EventsLaneTests
         Assert.Equal(Channels, subscribe.GetProperty("channels").EnumerateArray().Select(c => c.GetString()));
         // The lane's first connection missed nothing.
         Assert.Null(Assert.Single(Frames()).Gap);
+    }
+
+    private static string HelloOffering(string? available) =>
+        $$"""{ "type": "hello", "schema_version": 1, "connection_id": "c1"{{(available is null ? "" : $", \"available_channels\": {available}")}}, "required_action": "subscribe" }""";
+
+    private async Task<string[]> AskedForAsync(string hello, params string[] wanted)
+    {
+        await using var lane = Lane();
+        Follow(lane, wanted);
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the connection");
+        Socket(0).Push(hello);
+        await ServerPlaybackFixture.Until(() => Socket(0).Sent.Count == 1, "the subscribe");
+        var subscribe = JsonDocument.Parse(Assert.Single(Socket(0).Sent)).RootElement;
+        return [.. subscribe.GetProperty("channels").EnumerateArray().Select(channel => channel.GetString()!)];
+    }
+
+    [Fact]
+    public async Task OnlyTheChannelsTheHelloOffers_AreAskedFor()
+    {
+        // An administrator account on a profile the server does not take as the acting administrator.
+        string[] asked = await AskedForAsync(HelloOffering("""["catalog", "history_import", "user_state", "user_settings", "notifications"]"""),
+            "catalog", "user_state", "notifications", "sessions", "tasks", "scans", "download_preparations");
+
+        Assert.Equal(["catalog", "user_state", "notifications"], asked);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("null")]
+    [InlineData("\"all\"")]
+    [InlineData("[]")]
+    [InlineData("""["jobs", "settings"]""")]
+    public async Task AHelloThatOffersNothingToGoBy_AsksForEverything_AndTheServersAnswerDecides(string? available)
+    {
+        string[] asked = await AskedForAsync(HelloOffering(available), "catalog", "user_state", "sessions");
+
+        Assert.Equal(["catalog", "user_state", "sessions"], asked);
+    }
+
+    [Fact]
+    public async Task TheChannelsTurnedDown_AreNamedInTheLog_OnlyWhereTheyLookLikeChannels()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the connection");
+        Socket(0).Push(Hello);
+
+        Socket(0).Push("""{ "type": "subscribed", "request_id": "req-1", "channels": ["catalog"], "rejected": [ { "channel": "notifications", "code": "profile_required" }, { "channel": "x\r\nWARN forged line", "code": "unknown_channel" } ] }""");
+
+        await ServerPlaybackFixture.Until(() => Frames().Count == 1, "the subscription");
+        string line = Assert.Single(_logs.Lines, each => each.Contains("turned down", StringComparison.Ordinal));
+        Assert.Contains("notifications, (unnamed)", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("forged", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WhatIsNoFrame_IsNotedWithoutItsText()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+
+        // What is kept of a frame that was cut, when its head does not say what it is.
+        Socket(0).Push("""{"data":[{"session_id":"s1","media_title":"Heat""");
+        Socket(0).Push("""{ "type": "event", "channel": "catalog", "event": "catalog.item.changed", "event_id": "e1", "timestamp": "t", "data": {} }""");
+
+        await ServerPlaybackFixture.Until(() => Frames().Count == 2, "the next frame");
+        string line = Assert.Single(_logs.Lines, each => each.Contains("could not be read", StringComparison.Ordinal));
+        Assert.DoesNotContain("Heat", line, StringComparison.Ordinal);
     }
 
     [Fact]

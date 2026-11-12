@@ -70,6 +70,14 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         return $$"""{ "type": "subscribed", "request_id": "req-1", "channels": [{{channels}}], "rejected": [{{refused}}] }""";
     }
 
+    /// <summary>A <c>hello</c> frame of a connection the server gives everyone's channels and <paramref name="offered"/>.</summary>
+    public static string HelloOffering(IEnumerable<string> offered)
+    {
+        string channels = string.Join(", ", new[] { "catalog", "history_import", "user_state", "user_settings", "notifications" }.Concat(offered)
+            .Select(channel => $"\"{channel}\""));
+        return $$"""{ "type": "hello", "schema_version": 1, "connection_id": "c1", "available_channels": [{{channels}}], "required_action": "subscribe" }""";
+    }
+
     /// <summary>Starts the stream; its first connection subscribes and the server takes <paramref name="accepted"/>.</summary>
     public async Task<FakeRealtimeSocket> StartedAsync(params string[] accepted)
     {
@@ -77,14 +85,17 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         return await OpenedAsync(0, accepted);
     }
 
-    /// <summary>Connection number <paramref name="index"/> says hello and takes <paramref name="accepted"/>, turning the other administrator's channels down.</summary>
+    /// <summary>
+    /// Connection number <paramref name="index"/>: the server offers and takes <paramref name="accepted"/> of the
+    /// administrator's channels, and the others it was asked for it turns down.
+    /// </summary>
     public async Task<FakeRealtimeSocket> OpenedAsync(int index, params string[] accepted)
     {
         await ServerPlaybackFixture.Until(() => SocketCount > index, "connection " + index);
         var socket = Socket(index);
-        socket.Push(Hello);
+        socket.Push(HelloOffering(accepted));
         await ServerPlaybackFixture.Until(() => !socket.Sent.IsEmpty, "the subscribe");
-        await PushedAsync(socket, Subscribed(accepted, EventsChannels.Admin.Except(accepted)));
+        await PushedAsync(socket, Subscribed(accepted, EventsChannels.Admin.Except(accepted).Where(channel => socket.Sent.First().Contains($"\"{channel}\"", StringComparison.Ordinal))));
         return socket;
     }
 
