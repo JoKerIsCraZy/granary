@@ -280,6 +280,8 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   would read and starting a new mpv if it changed ("Your own mpv.conf", "The next title"). A failure that ends a title
   before mpv has it, and the window's new swap chain, come from that chain's thread.
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
+- The events stream's frames arrive on its lane's thread; `ServerActivity` takes them, its reads' answers (thread pool)
+  and its timers under one lock and raises `Changed` outside it ("Server activity").
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
 - What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
@@ -1043,6 +1045,51 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   in the sheet, a failed step after it only logged once the room stands. The read of the server's rooms an attach
   starts is waited for by nobody, so it catches everything too, and `WatchPartyFeature` drops an answer read for the
   server and profile before.
+
+## Server activity
+
+The administrator's activity indicator (docs/ui-design.md, "Activity indicator") is made of three parts.
+
+- **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it wants the
+  administrator's channels too (the lane asks for those the server's `hello` offers) and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
+  disconnected), on to `ServerActivity`. The lane takes frames up to 1 MiB whole and cuts a larger one to its head
+  (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
+  notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every
+  `sessions` and `tasks` frame, the preparation queue's but its progress readings) never has its payload kept: past
+  its first 4 KiB the socket drops the rest as it arrives (`FrameHeadFilter`, `EventsFrames.TakesWhole`), and a
+  shorter one is parsed without its `data`.
+- **`ServerActivity`** (Core, a singleton) keeps a `ServerActivityState`, a record that is replaced and never changed:
+  the administrator's channels the server accepted, the connection's state, and each source's list or null (the
+  streams, the tasks and the preparation queue are read; the scans come with the stream alone, with the libraries'
+  names read for their rows). The server
+  is the only judge of who is an acting administrator: nothing is read before a `subscribed` frame accepted a channel,
+  and `access_changed` empties the state until the next one. The scans a new connection inherits are a guess until
+  its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s while a scan of the
+  last connection may still run, leaves them not known (`Scans` null and `ScansMayBeMore`), for that connection only;
+  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
+  smaller one, so neither a stale list nor a count that scans ending made "exact" is shown. The lists are read over REST when the stream says they
+  changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
+  5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
+  403, 404, 501 or 503 on the read) is left out and not asked for again on that connection; another failure keeps what
+  was shown, and the window after it grows with each failure in a row (5 s, 10, 20, 40, then 60, or the server's
+  `Retry-After` up to five minutes), with one warning in the log per outage and a line when the list reads again.
+  While preparation jobs are on their way, their list is also read again 60 s after its last read, whether that read
+  answered or failed. A progress reading that comes while that list is being read is put into the answer too, which
+  was made before it.
+  `RealtimeEvents` tells it of every change of server, profile, role or sign-in under the lock it replaces
+  its lane in (`Follow`), and gets a number its frames come under: frames under an older number are dropped, and each
+  following has an object of its own that its reads are cancelled by and compared against, so a late answer is dropped
+  too. Everything in it is guarded by one lock; `Changed` is raised outside it, on the lane's, a read's or a timer's
+  thread, and what a listener throws there is logged and goes no further.
+- **`ServerActivityViewModel`** (Core, a singleton) shows the state on the UI thread (`IUiDispatcher`), at most four
+  times a second: a scan sends its progress as fast as it counts files, and each look groups the streams and syncs
+  every section's rows. The first news after a quiet 250 ms is looked at at once, more news within it once it is up;
+  a change of who may see the indicator at all never waits. Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
+  row the keyboard is on keeps its focus while its numbers change. The shell says where it is (`ShowsWhenIdle` on the
+  admin area's pages) and whether the panel is open; `IsVisible` is the web's rule, and also holds while there may
+  be scans nobody knows of. What the shell's keys do around the button that needs no WinUI is in Core too
+  (`ActivityIndicatorFocus`: Up at a page's top, and whether a button that goes gives focus back), as is where the
+  button lies for a page that must keep clear of it (`ActivityIndicatorPlace`).
 
 ## Discord status
 

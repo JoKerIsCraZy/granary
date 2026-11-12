@@ -1281,6 +1281,84 @@ stream's commands on Activity.
   route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
   when nothing shows.
 
+### Activity indicator
+
+For the acting administrator (whoever the server gives its administrator's channels, docs/api-contract.md 12.3), the
+web's `ServerActivity` (`components/ServerActivity.tsx`): `ServerActivityButton` on `ServerActivityViewModel`, placed
+by `MainWindow.Activity.cs`.
+
+- **The button.** A 36 px glass disc as the way back's, over the page at its top right (20 px from the edge, 12 px
+  down), with the web's pulse icon (lucide's Activity) in the accent while something is going on, muted otherwise. A
+  red count on its corner ("3", "99+" past 99) fades to half and back every two seconds, standing still while
+  Windows' animations are off (the setting is followed as it changes). The count is the web's: white, bold, 10 px on
+  its `bg-red-500`, which the web's Tailwind 4 draws as #FB2C36, about 3.8:1 as on the web. A red dot of the same red
+  at its foot once the events stream has had no connection for 4 s. Its name for a screen reader: "Server activity:
+  3 active", or "Server activity" when idle.
+- **Where it lies.** It floats: what scrolls up passes under it. A page whose own controls reach into its corner at
+  rest keeps them clear of it (`ActivityIndicatorPlace`: 20 px from the edge, 36 wide, 8 px of room): the
+  Notifications page's "Mark all read" and "Preferences" end where its room begins while it shows, in a window
+  whose column reaches that far (under 864 px of page). Nothing else does, by its markup: the admin area's pages
+  begin 40 px down with their first row's actions centred beside a two-line heading, the settings' pages 48 px down,
+  both below the button, and Home's banner has its arrows half way down and its counter at its foot.
+- **When it shows.** As the web: on the admin area's pages always; on every other page only while something is going
+  on, or while its panel is open. Also, without a count, while there may be scans nobody knows of (see Scans): with
+  none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over
+  the full player, which has the window to itself; over the pages while the
+  player is its bar. Not on the signed-out screens.
+- **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
+  "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
+  on it says "No active server activity". Otherwise a section each, a small uppercase title with its count beside it:
+  - **Streams**: a row per play method in use, a dot in the method's colour and "2 Direct Play", in the order Direct
+    Play, Remux, Direct Stream, Transcode, Unknown; "No active streams" without any. "View all ›" closes the panel and
+    opens Admin → Activity (in place when the admin area shows, else the area opens on it and Back returns).
+  - **Tasks**: a row per running scheduled task with the server's name for it. Once the task says how far it is,
+    "42%" (or "12.5%", never "100.0%" while it runs) at the right and a 6 px bar under the name; until then a spinner
+    and "Running" in the accent. "No running tasks" without any.
+  - **Scans**: a row per library scan that is queued or running: a spinner (running) or the scan icon (queued), the
+    library's name ("Library #3" while it is not known) with "Scanning…" or "Queued" at the right, under it "Full
+    library", "Subtree" or "Single file" and " · " with the path where there is one, and once the scan counts files
+    "Matching files · 1,200 / 4,800 (25%)" ("Processing files" when it does not say what it does). 25 rows at most,
+    in the stream's order, then "3 more scans queued" for every scan past them, whether it waits or runs, as on the
+    web. When the server's snapshot was full (500) there may be more scans than are known: the section's count and
+    the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity: at least 500
+    active", and the line "At least 475 more scans queued". That lasts until a snapshot that is not full, however
+    many of the known scans end (the web goes by the number it knows at the moment). The same when a connection's
+    snapshot could not be read, or did not come while scans of the last connection may still run: the scans are then
+    not known, and those the stream tells of since are the least there is. A snapshot that does not come with no
+    scan known to run says nothing, so a server that sends none does not keep the button up. Without any: "No active scans" when the stream said so; while it is away, "Connecting…"
+    or "Disconnected", since scans are known from the stream alone (the web says "No active scans" there too); and
+    while there may be more than are known, "Scans may be running" (Granary's own words, for a state the web does
+    not have). The big "No active server activity" waits for the scans to be known, all of them.
+  - **Preparing downloads** (only on a server that prepares offline downloads): its count is the jobs still to
+    finish, running, queued and waiting to retry; paused and failed ones do not count. A row for each of the first
+    three running jobs: the title ("Dark S01E03" for an episode, else the movie's title, else "File #48211"), "42%"
+    (rounded down) and a bar once its progress is known, a spinner with "Encoding" or "Remuxing" until then, and under
+    it "Transcode 1080p H.264 · gpu-1 · about 12 min left": what is made ("Remux", "Transcode", or "Transcode" with
+    the target when the video is encoded anew), the worker's name ("Node 3", "Node" or "Local server" without one)
+    and the time left at the current speed ("under 1 min left", "about 12 min left", "about 2 h left", "about 2 h 5
+    min left"), each part only when it is known. Under the rows, each line only when it has something to say: a
+    clock and "2 more running · 4 queued · 1 waiting to retry", a pause sign and "2 paused", a warning sign and, in
+    red, "1 failed in the last 24 hours". With none of it: "No downloads being prepared". A recent failure keeps the
+    sections showing where the panel would otherwise say "No active server activity", though it does not count.
+  A section whose list the server does not offer is left out; a hairline parts the sections that show.
+- **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
+  the page's top edge moves to it (a held key stops at the edge; from a row of tabs there too), Down or Left from it
+  back to where focus was on the page. Where the way back lies above, Up goes to that, as on a page without the
+  indicator, and Up from the way back goes on to the indicator (`ActivityIndicatorFocus` in Core). A button that goes
+  while it has focus (its last activity ended, or its panel closed on a page where it shows only while open) gives
+  focus back to the page first. Enter or Space opens the panel and moves into it, onto its first stop: "View all"
+  beside Streams, or the first row on a server without the streams' list. Up
+  and Down walk the link and the rows one by one in the order they are read and stop at the panel's ends, the scroller
+  following the focused row (the panel takes the two keys itself: left to the scroller they scrolled by lines, past
+  rows that never got focus). The rows are only read (`ReadingRow`: focus and one text for a screen reader, nothing
+  happens on OK): a row is one text for a screen reader, and its spinner and icons are not read by themselves (the
+  spinner is a `SilentProgressRing`: WinUI's own ring calls itself "Busy" and does not keep an accessibility view
+  it is given). A section's heading is read with its count ("Streams, 3"). Esc or the remote's Back closes the
+  panel, also while focus is still on the button, and focus is back on the button.
+- **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
+  scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
+  web shows too for a task it has no translation for).
+
 ## Full screen
 
 The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state

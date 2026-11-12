@@ -22,7 +22,8 @@ namespace Granary.App;
 
 // A TV remote on a media PC, or the keyboard alone, as Silo's TV app: the arrows move focus, OK picks, and Back climbs out
 // (BackLadder). Remotes send keys: the arrows, Enter, and Esc, Backspace or Browser Back for their Back button. Focus is
-// remembered per page, so Back and Right out of the sidebar return to the card it was on.
+// remembered per page, so Back and Right out of the sidebar return to the card it was on. Up at a page's top edge goes to
+// the administrator's activity indicator while it shows (MainWindow.Activity.cs), Down or Left from it back to the page.
 public sealed partial class MainWindow
 {
     // How long a page opened or returned to may take to show the element focus belongs on, and how often it is looked for.
@@ -199,8 +200,10 @@ public sealed partial class MainWindow
             VirtualKey.Escape when !repeat => Back(BackKey.Escape),
             VirtualKey.Back when !repeat => Back(BackKey.Backspace),
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
-            VirtualKey.Left => EnterSidebar(repeat),
+            VirtualKey.Left => EnterSidebar(repeat) || LeaveActivity(repeat),
             VirtualKey.Right => LeaveSidebar(repeat),
+            VirtualKey.Up => EnterActivity(repeat),
+            VirtualKey.Down => LeaveActivity(repeat),
             VirtualKey.Enter => ChecksRadio(repeat),
             MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
             VirtualKey.Application when !repeat => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey(),
@@ -216,6 +219,11 @@ public sealed partial class MainWindow
             return false;
         }
         if (CloseTrailer())
+        {
+            return true;
+        }
+        // The indicator's panel closes first, also while focus is still on its button.
+        if (ActivityButton.ClosePanel())
         {
             return true;
         }
@@ -346,7 +354,8 @@ public sealed partial class MainWindow
     // A radio button keeps every arrow to move along its group, and checks each one it comes to, so focus never left a row
     // of tabs (the library's Recommended / Library / Collections) or the Watch Party's Host picks / Everyone votes, and
     // Down switched tabs. An arrow towards another radio of the group still moves along it; any other way focus goes where
-    // the arrow points (Left at the page's edge into the sidebar), and with nothing that way it stays.
+    // the arrow points (Left at the page's edge into the sidebar, Up at its top to the activity indicator), and with nothing
+    // that way it stays.
     private bool LeavesRadioGroup(FocusNavigationDirection direction, bool repeat)
     {
         if (FocusedElement() is not RadioButton radio || AreaOf(radio) != FocusArea.Content || Root.XamlRoot is not { } root)
@@ -357,6 +366,12 @@ public sealed partial class MainWindow
         if (next is RadioButton other && IsSameGroup(radio, other))
         {
             return false;
+        }
+        // A row of tabs at the top of a page: Up goes on to the activity indicator, as from any other element there.
+        if (direction == FocusNavigationDirection.Up && (next is null || AreaOf(next) != FocusArea.Content))
+        {
+            EnterActivity(repeat);
+            return true;
         }
         if (next is not null && AreaOf(next) != FocusArea.Content)
         {

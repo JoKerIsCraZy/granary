@@ -226,6 +226,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
         services.AddSingleton<AdminSidebarViewModel>();
+        services.AddSingleton<ServerActivityViewModel>();
         services.AddTransient<AdminDashboardViewModel>();
         services.AddTransient<AdminActivityViewModel>();
         return services;
@@ -282,7 +283,9 @@ public static class CoreServiceCollectionExtensions
     {
         services.AddTransient<EventsApi>();
         services.AddSingleton<Func<EventsLane>>(sp => () => new EventsLane(sp.GetRequiredService<EventsApi>(),
-            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes, EventsFrames.TakesWhole),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+        services.AddSingleton<ServerActivity>();
         services.AddSingleton<RealtimeEvents>();
     }
 

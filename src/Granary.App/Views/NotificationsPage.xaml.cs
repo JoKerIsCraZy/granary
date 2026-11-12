@@ -29,10 +29,20 @@ public sealed partial class NotificationsPage : Page
     private static readonly Brush PillOnBackground = new SolidColorBrush(Color(0x1F));
     private static readonly Brush FailedBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xEF, 0x44, 0x44));
 
+    private readonly Granary.Core.ViewModels.Admin.ServerActivityViewModel _activity;
+
     public NotificationsPage()
     {
         ViewModel = App.Services.GetRequiredService<NotificationsViewModel>();
+        _activity = App.Services.GetRequiredService<Granary.Core.ViewModels.Admin.ServerActivityViewModel>();
         InitializeComponent();
+        // The indicator outlives the page: followed only while the page is in the window.
+        Loaded += (_, _) =>
+        {
+            _activity.PropertyChanged += OnActivityChanged;
+            KeepActionsClear();
+        };
+        Unloaded += (_, _) => _activity.PropertyChanged -= OnActivityChanged;
         BuildMenu(ReasonMenu, NotifiedSeriesViewModel.ReasonChoices, "SeriesReason", choice => ViewModel.Series.Reason = choice);
         BuildMenu(SeriesSortMenu, NotifiedSeriesViewModel.SortChoices, "SeriesSort", choice => ViewModel.Series.Sort = choice);
     }
@@ -94,7 +104,33 @@ public sealed partial class NotificationsPage : Page
     private static Windows.UI.Color Color(byte alpha) => Windows.UI.Color.FromArgb(alpha, 0xFF, 0xFF, 0xFF);
 
     // A column capped by MaxWidth in a ScrollViewer ends up off centre, so its width is set here.
-    private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e) => Column.Width = Math.Min(ColumnWidth, e.NewSize.Width);
+    private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Column.Width = Math.Min(ColumnWidth, e.NewSize.Width);
+        KeepActionsClear();
+    }
+
+    private void OnActivityChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Granary.Core.ViewModels.Admin.ServerActivityViewModel.IsVisible))
+        {
+            KeepActionsClear();
+        }
+    }
+
+    // The administrator's activity indicator floats over the page's top right corner (MainWindow.Activity.cs). In a window
+    // where the column reaches that far, "Mark all read" and "Preferences" lay under it, its hit area included: while it
+    // shows they end where its room begins.
+    private void KeepActionsClear()
+    {
+        double width = Scroller.ActualWidth;
+        double right = (width + Math.Min(ColumnWidth, width)) / 2 - Column.Padding.Right;
+        double inset = _activity.IsVisible ? Granary.Core.Navigation.ActivityIndicatorPlace.InsetFor(width, right) : 0;
+        if (HeaderActions.Margin.Right != inset)
+        {
+            HeaderActions.Margin = new Thickness(0, 0, inset, 0);
+        }
+    }
 
     private void OnScrollerViewChanged(object? sender, ScrollViewerViewChangedEventArgs e) => LoadMoreSeriesNearTheFoot();
 
