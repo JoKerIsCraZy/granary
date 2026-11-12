@@ -6255,6 +6255,678 @@
       "value": "Salvar"
     }
   ],
+  "web.notifications.inbox.daysAgo": [
+    {
+      "type": 0,
+      "value": "há "
+    },
+    {
+      "type": 1,
+      "value": "days"
+    },
+    {
+      "type": 0,
+      "value": " d"
+    }
+  ],
+  "web.notifications.inbox.emptyAll": [
+    {
+      "type": 0,
+      "value": "Nenhuma notificação ainda"
+    }
+  ],
+  "web.notifications.inbox.emptyHint": [
+    {
+      "type": 0,
+      "value": "As notificações aparecerão aqui quando chegarem novos episódios de séries que você favoritou, adicionou à lista para assistir ou está assistindo."
+    }
+  ],
+  "web.notifications.inbox.emptyUnread": [
+    {
+      "type": 0,
+      "value": "Nenhuma notificação não lida"
+    }
+  ],
+  "web.notifications.inbox.episodeLine": [
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.inbox.filterAll": [
+    {
+      "type": 0,
+      "value": "Todas"
+    }
+  ],
+  "web.notifications.inbox.filterSeries": [
+    {
+      "type": 0,
+      "value": "Séries"
+    }
+  ],
+  "web.notifications.inbox.filterUnread": [
+    {
+      "type": 0,
+      "value": "Não lidas"
+    }
+  ],
+  "web.notifications.inbox.filterUnreadCount": [
+    {
+      "type": 0,
+      "value": "Não lidas ("
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.notifications.inbox.followedMovieAvailable": [
+    {
+      "type": 0,
+      "value": "Um filme que você acompanha já está disponível"
+    }
+  ],
+  "web.notifications.inbox.followedSeriesAvailable": [
+    {
+      "type": 0,
+      "value": "Uma série que você acompanha já está disponível"
+    }
+  ],
+  "web.notifications.inbox.followedTitleAvailable": [
+    {
+      "type": 0,
+      "value": "Um título que você acompanha já está disponível"
+    }
+  ],
+  "web.notifications.inbox.genericTitle": [
+    {
+      "type": 0,
+      "value": "Notificação"
+    }
+  ],
+  "web.notifications.inbox.hoursAgo": [
+    {
+      "type": 0,
+      "value": "há "
+    },
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " h"
+    }
+  ],
+  "web.notifications.inbox.justNow": [
+    {
+      "type": 0,
+      "value": "Agora mesmo"
+    }
+  ],
+  "web.notifications.inbox.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar as notificações. "
+    },
+    {
+      "type": 8,
+      "value": "reload",
+      "children": [
+        {
+          "type": 0,
+          "value": "Recarregar notificações"
+        }
+      ]
+    }
+  ],
+  "web.notifications.inbox.loadMore": [
+    {
+      "type": 0,
+      "value": "Carregar mais"
+    }
+  ],
+  "web.notifications.inbox.markAllFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível marcar as notificações exibidas como lidas. "
+    },
+    {
+      "type": 8,
+      "value": "reload",
+      "children": [
+        {
+          "type": 0,
+          "value": "Recarregue a caixa de entrada"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " antes de tentar novamente."
+    }
+  ],
+  "web.notifications.inbox.markAllRead": [
+    {
+      "type": 0,
+      "value": "Marcar todas como lidas"
+    }
+  ],
+  "web.notifications.inbox.markRead": [
+    {
+      "type": 0,
+      "value": "Marcar como lida"
+    }
+  ],
+  "web.notifications.inbox.mediaRequest": [
+    {
+      "type": 0,
+      "value": "Solicitação de mídia"
+    }
+  ],
+  "web.notifications.inbox.minutesAgo": [
+    {
+      "type": 0,
+      "value": "há "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.notifications.inbox.newEpisode": [
+    {
+      "type": 0,
+      "value": "Novo episódio disponível"
+    }
+  ],
+  "web.notifications.inbox.requestApproved": [
+    {
+      "type": 0,
+      "value": "Sua solicitação foi aprovada"
+    }
+  ],
+  "web.notifications.inbox.requestAvailable": [
+    {
+      "type": 0,
+      "value": "Solicitação disponível"
+    }
+  ],
+  "web.notifications.inbox.requestAvailableBody": [
+    {
+      "type": 0,
+      "value": "Sua solicitação já está disponível"
+    }
+  ],
+  "web.notifications.inbox.requestDeclined": [
+    {
+      "type": 0,
+      "value": "Sua solicitação foi recusada"
+    }
+  ],
+  "web.notifications.inbox.requestDeclinedReason": [
+    {
+      "type": 0,
+      "value": "Sua solicitação foi recusada — "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.notifications.inbox.requestedMovieAvailable": [
+    {
+      "type": 0,
+      "value": "O filme que você solicitou já está disponível"
+    }
+  ],
+  "web.notifications.inbox.requestedSeriesAvailable": [
+    {
+      "type": 0,
+      "value": "A série que você solicitou já está disponível"
+    }
+  ],
+  "web.notifications.inbox.seeSeriesCanNotify": [
+    {
+      "type": 0,
+      "value": "Ver quais séries podem notificar você"
+    }
+  ],
+  "web.notifications.inbox.title": [
+    {
+      "type": 0,
+      "value": "Notificações"
+    }
+  ],
+  "web.notifications.preferences.continueWatching": [
+    {
+      "type": 0,
+      "value": "Continuar assistindo"
+    }
+  ],
+  "web.notifications.preferences.continueWatchingDescription": [
+    {
+      "type": 0,
+      "value": "Séries que você está assistindo"
+    }
+  ],
+  "web.notifications.preferences.enabled": [
+    {
+      "type": 0,
+      "value": "Notificações"
+    }
+  ],
+  "web.notifications.preferences.enabledDescription": [
+    {
+      "type": 0,
+      "value": "Chave geral deste perfil"
+    }
+  ],
+  "web.notifications.preferences.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos"
+    }
+  ],
+  "web.notifications.preferences.favoritesDescription": [
+    {
+      "type": 0,
+      "value": "Novos episódios das séries favoritas"
+    }
+  ],
+  "web.notifications.preferences.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar as preferências."
+    }
+  ],
+  "web.notifications.preferences.nextUp": [
+    {
+      "type": 0,
+      "value": "Próximos episódios"
+    }
+  ],
+  "web.notifications.preferences.nextUpDescription": [
+    {
+      "type": 0,
+      "value": "O próximo episódio depois do seu progresso"
+    }
+  ],
+  "web.notifications.preferences.open": [
+    {
+      "type": 0,
+      "value": "Preferências"
+    }
+  ],
+  "web.notifications.preferences.seeSeries": [
+    {
+      "type": 0,
+      "value": "Ver quais séries notificam você"
+    }
+  ],
+  "web.notifications.preferences.watchlist": [
+    {
+      "type": 0,
+      "value": "Lista para assistir"
+    }
+  ],
+  "web.notifications.preferences.watchlistDescription": [
+    {
+      "type": 0,
+      "value": "Novos episódios das séries na lista para assistir"
+    }
+  ],
+  "web.notifications.queries.episodeCode": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.notifications.queries.markReadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível marcar a notificação como lida"
+    }
+  ],
+  "web.notifications.queries.muteFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível silenciar a série"
+    }
+  ],
+  "web.notifications.queries.muted": [
+    {
+      "type": 0,
+      "value": "Série silenciada: "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.queries.savePreferencesFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar as preferências de notificação"
+    }
+  ],
+  "web.notifications.queries.undo": [
+    {
+      "type": 0,
+      "value": "Desfazer"
+    }
+  ],
+  "web.notifications.queries.unmuteFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível reativar a série"
+    }
+  ],
+  "web.notifications.reason.continueWatching": [
+    {
+      "type": 0,
+      "value": "Continuar assistindo"
+    }
+  ],
+  "web.notifications.reason.favorite": [
+    {
+      "type": 0,
+      "value": "Favorito"
+    }
+  ],
+  "web.notifications.reason.nextUp": [
+    {
+      "type": 0,
+      "value": "Próximos episódios"
+    }
+  ],
+  "web.notifications.reason.watchlist": [
+    {
+      "type": 0,
+      "value": "Lista para assistir"
+    }
+  ],
+  "web.notifications.series.allReasons": [
+    {
+      "type": 0,
+      "value": "Todos os motivos"
+    }
+  ],
+  "web.notifications.series.anyEpisodeAfter": [
+    {
+      "type": 0,
+      "value": "Qualquer episódio depois de "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.notifications.series.anyNewEpisode": [
+    {
+      "type": 0,
+      "value": "Qualquer episódio novo"
+    }
+  ],
+  "web.notifications.series.empty": [
+    {
+      "type": 0,
+      "value": "Nenhuma série notifica você ainda"
+    }
+  ],
+  "web.notifications.series.emptyHint": [
+    {
+      "type": 0,
+      "value": "As séries que você favoritar, adicionar à sua lista para assistir ou começar a assistir aparecem aqui."
+    }
+  ],
+  "web.notifications.series.filterByReason": [
+    {
+      "type": 0,
+      "value": "Filtrar por motivo"
+    }
+  ],
+  "web.notifications.series.intro": [
+    {
+      "type": 0,
+      "value": "Novos episódios destas séries notificam este perfil. Altere quais motivos contam em "
+    },
+    {
+      "type": 8,
+      "value": "prefs",
+      "children": [
+        {
+          "type": 0,
+          "value": "Preferências"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.notifications.series.introMute": [
+    {
+      "type": 0,
+      "value": "Novos episódios destas séries notificam este perfil. Altere quais motivos contam em "
+    },
+    {
+      "type": 8,
+      "value": "prefs",
+      "children": [
+        {
+          "type": 0,
+          "value": "Preferências"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " ou silencie uma série."
+    }
+  ],
+  "web.notifications.series.loadFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar as séries que notificam você. "
+    },
+    {
+      "type": 8,
+      "value": "retry",
+      "children": [
+        {
+          "type": 0,
+          "value": "Tentar novamente"
+        }
+      ]
+    }
+  ],
+  "web.notifications.series.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar mais séries."
+    }
+  ],
+  "web.notifications.series.mute": [
+    {
+      "type": 0,
+      "value": "Silenciar"
+    }
+  ],
+  "web.notifications.series.muteHint": [
+    {
+      "type": 0,
+      "value": "Parar de me notificar sobre novos episódios"
+    }
+  ],
+  "web.notifications.series.muteSeries": [
+    {
+      "type": 0,
+      "value": "Silenciar "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.series.muted": [
+    {
+      "type": 0,
+      "value": "Silenciada"
+    }
+  ],
+  "web.notifications.series.nameList": [
+    {
+      "type": 1,
+      "value": "names"
+    },
+    {
+      "type": 0,
+      "value": " e "
+    },
+    {
+      "type": 1,
+      "value": "last"
+    }
+  ],
+  "web.notifications.series.noMatch": [
+    {
+      "type": 0,
+      "value": "Nenhuma série corresponde. Tente outra pesquisa ou outro motivo."
+    }
+  ],
+  "web.notifications.series.notificationsOff": [
+    {
+      "type": 0,
+      "value": "As notificações estão desativadas"
+    }
+  ],
+  "web.notifications.series.reasonOff": [
+    {
+      "type": 0,
+      "value": "(desativado)"
+    }
+  ],
+  "web.notifications.series.reasonsOff": [
+    {
+      "type": 0,
+      "value": "As notificações de "
+    },
+    {
+      "type": 1,
+      "value": "names"
+    },
+    {
+      "type": 0,
+      "value": " estão desativadas"
+    }
+  ],
+  "web.notifications.series.search": [
+    {
+      "type": 0,
+      "value": "Pesquisar séries"
+    }
+  ],
+  "web.notifications.series.sort": [
+    {
+      "type": 0,
+      "value": "Ordenar"
+    }
+  ],
+  "web.notifications.series.sortLatestEpisode": [
+    {
+      "type": 0,
+      "value": "Episódio mais recente"
+    }
+  ],
+  "web.notifications.series.sortRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "Adicionadas recentemente"
+    }
+  ],
+  "web.notifications.series.sortReleaseYear": [
+    {
+      "type": 0,
+      "value": "Ano de lançamento"
+    }
+  ],
+  "web.notifications.series.sortTitleAsc": [
+    {
+      "type": 0,
+      "value": "Título (A–Z)"
+    }
+  ],
+  "web.notifications.series.sortTitleDesc": [
+    {
+      "type": 0,
+      "value": "Título (Z–A)"
+    }
+  ],
+  "web.notifications.series.unmute": [
+    {
+      "type": 0,
+      "value": "Reativar"
+    }
+  ],
+  "web.notifications.series.unmuteHint": [
+    {
+      "type": 0,
+      "value": "Voltar a me notificar sobre novos episódios"
+    }
+  ],
+  "web.notifications.series.unmuteSeries": [
+    {
+      "type": 0,
+      "value": "Reativar "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.series.wontNotify": [
+    {
+      "type": 0,
+      "value": "Sem notificações"
+    }
+  ],
+  "web.notifications.series.wontNotifyNow": [
+    {
+      "type": 0,
+      "value": "Sem notificações no momento"
+    }
+  ],
   "web.person.age": [
     {
       "type": 6,

@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,11 +34,54 @@ public sealed partial class NotificationsPage : Page
     {
         ViewModel = App.Services.GetRequiredService<NotificationsViewModel>();
         InitializeComponent();
-        BuildMenu(ReasonMenu, NotifiedSeriesViewModel.ReasonChoices, "SeriesReason", choice => ViewModel.Series.Reason = choice);
-        BuildMenu(SeriesSortMenu, NotifiedSeriesViewModel.SortChoices, "SeriesSort", choice => ViewModel.Series.Sort = choice);
+        BuildMenu(ReasonMenu, ViewModel.Series.ReasonChoices, "SeriesReason", choice => ViewModel.Series.Reason = choice);
+        BuildMenu(SeriesSortMenu, ViewModel.Series.SortChoices, "SeriesSort", choice => ViewModel.Series.Sort = choice);
+        ShowSeriesIntro();
+        ViewModel.Series.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(NotifiedSeriesViewModel.IntroRuns))
+            {
+                ShowSeriesIntro();
+            }
+        };
     }
 
     public NotificationsViewModel ViewModel { get; }
+
+    // The web's failures say what to do in a link inside them; here the words stand alone and the link is the button.
+    public string InboxLoadFailed => Outside("web.notifications.inbox.loadFailed", "reload");
+
+    public string InboxReload => Inside("web.notifications.inbox.loadFailed", "reload");
+
+    public string SeriesLoadFailed => Outside("web.notifications.series.loadFailed", "retry");
+
+    public string SeriesRetry => Inside("web.notifications.series.loadFailed", "retry");
+
+    private static string Outside(string key, string tag) =>
+        string.Concat(AppText.Runs(key).Where(run => !run.Tags.Contains(tag)).Select(run => run.Text)).Trim();
+
+    private static string Inside(string key, string tag) =>
+        string.Concat(AppText.Runs(key).Where(run => run.Tags.Contains(tag)).Select(run => run.Text));
+
+    // "… Change which reasons count in Preferences, or mute one series.", its Preferences a link that opens them.
+    private void ShowSeriesIntro()
+    {
+        SeriesIntro.Inlines.Clear();
+        foreach (var run in ViewModel.Series.IntroRuns)
+        {
+            if (run.Tags.Contains("prefs"))
+            {
+                var link = new Microsoft.UI.Xaml.Documents.Hyperlink { Foreground = (Brush)Application.Current.Resources["SiloForegroundBrush"] };
+                link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = run.Text });
+                link.Click += OnSeriesPreferencesClick;
+                SeriesIntro.Inlines.Add(link);
+            }
+            else
+            {
+                SeriesIntro.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = run.Text });
+            }
+        }
+    }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {

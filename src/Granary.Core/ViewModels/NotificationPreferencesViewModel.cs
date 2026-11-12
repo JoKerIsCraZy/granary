@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -116,7 +117,7 @@ public sealed partial class NotificationPreferencesViewModel : ObservableObject
             {
                 await LoadAsync();
             }
-            SaveError = "Couldn't save. Try again.";
+            SaveError = AppText.Get("web.notifications.queries.savePreferencesFailed");
             return;
         }
         Saved?.Invoke(this, EventArgs.Empty);
