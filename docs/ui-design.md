@@ -415,9 +415,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     is asked the same, since any card's title can be the hero's. A width within 5 % of a size the server keeps takes
     that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
     its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
-    as the page shows. Home loads its rows again, behind the ones shown, when it shows with a hero that needs its
-    backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window); For You reads its
-    rows on every visit but a return. Discover's titles keep TMDB's 1280 px backdrop.
+    as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
+    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
     - Full is as tall as the banner of Silo's web (`HERO_BANNER_SIZE` in its `lib/design-system.ts`): 66 % of the page's
       height, at least 380 px and at most 760 px, in the same 8 px steps (686 px on a 1080 px window's page; 760 px from

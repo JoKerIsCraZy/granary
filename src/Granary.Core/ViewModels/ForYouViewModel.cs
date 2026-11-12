@@ -60,6 +60,8 @@ public sealed partial class ForYouViewModel : ObservableObject
     private readonly INavigationService _navigation;
     private readonly ILogger<ForYouViewModel> _logger;
     private (string? ServerId, string? ProfileId)? _loadedFor;
+    // How wide the rows shown asked for their backdrops (BrowseArtwork.BackdropAsked).
+    private int _loadedBackdrop;
     private CancellationTokenSource _run = new();
     // The newest read's title of each card, by the card's id: rows kept on screen by a reload get its fresh picture addresses.
     private readonly Dictionary<string, CatalogItem> _items = new(StringComparer.Ordinal);
@@ -130,7 +132,9 @@ public sealed partial class ForYouViewModel : ObservableObject
             FollowRowsWithHero();
         }
         bool shown = _loadedFor == Key() && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
-        if (isReturn && shown)
+        // A return keeps the rows, unless the hero draws its backdrop notably wider than they asked for it: Hero size was
+        // set to Full, or the window is much wider, and the pictures shown would be soft.
+        if (isReturn && shown && !BrowseHeroLayout.DecodesAgain(_loadedBackdrop, BrowseArtwork.BackdropAsked(DisplayScale, Hero.BackdropWidth)))
         {
             return Task.CompletedTask;
         }
@@ -187,7 +191,10 @@ public sealed partial class ForYouViewModel : ObservableObject
         var taste = TasteAsync(server.BaseUri, token);
         try
         {
-            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, token, Hero.BackdropWidth);
+            double heroWidth = Hero.BackdropWidth;
+            // Taken with the asking, not with the answer: a load that fails is not tried again for its width alone.
+            _loadedBackdrop = BrowseArtwork.BackdropAsked(DisplayScale, heroWidth);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, token, heroWidth);
             var discover = await _recommendations.GetDiscoverAsync(server.BaseUri, images, token);
             var (profile, tasteFailed) = await taste;
             if (token.IsCancellationRequested)

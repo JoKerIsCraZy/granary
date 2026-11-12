@@ -58,11 +58,12 @@ public sealed class ImageSizesTests
     [Theory]
     // A hero 1920 px wide: 5 % narrower will do, as for the web.
     [InlineData(1920, 1824)]
-    [InlineData(2600, 2470)]
-    // Never past the widest size the server keeps: the original would come for every card of every row.
-    [InlineData(2700, 2560)]
-    [InlineData(3840, 2560)]
-    [InlineData(100_000, 2560)]
+    [InlineData(2560, 2432)]
+    // Never past the widest size the server keeps: the original would come for every card of every row. Within 5 % of
+    // it, it will do.
+    [InlineData(2600, 2432)]
+    [InlineData(3840, 2432)]
+    [InlineData(100_000, 2432)]
     // Narrower than backdrops are asked for anyway, or not known: as they are.
     [InlineData(1100, 1280)]
     [InlineData(0, 1280)]
@@ -76,13 +77,17 @@ public sealed class ImageSizesTests
         Assert.Equal(ImageSizes.Default with { Backdrop = backdrop }, sizes);
     }
 
-    [Fact]
-    public void WithDrawnBackdrop_KeepsBackdropsAskedForWiderAlready()
+    [Theory]
+    // 1280 px at a display scale of 150 % is wider than a hero of 1500 px needs: as it is.
+    [InlineData(1.5, 1500, 1920)]
+    // At 225 % and 300 % it is 2880 and 3840 px, past the widest size: a hero takes that size, not the original.
+    [InlineData(2.25, 3000, 2560)]
+    [InlineData(3, 3300, 2560)]
+    public void WithDrawnBackdrop_KeepsBackdropsAskedForWiderAlready_UpToTheWidestSize(double scale, double devicePixels, int backdrop)
     {
-        // 1280 px at a display scale of 225 %.
-        var scaled = ImageSizes.Default.ScaledBy(2.25);
+        var scaled = ImageSizes.Default.ScaledBy(scale);
 
-        Assert.Equal(scaled, scaled.WithDrawnBackdrop(3000));
+        Assert.Equal(scaled with { Backdrop = backdrop }, scaled.WithDrawnBackdrop(devicePixels));
     }
 
     [Theory]

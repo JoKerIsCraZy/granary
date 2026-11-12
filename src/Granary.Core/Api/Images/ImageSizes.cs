@@ -28,15 +28,15 @@ public sealed record ImageSizes(int? Poster = null, int? Backdrop = null, int? L
     /// <c>internal/artworkkey/artworkkey.go</c>, <c>VariantWidths</c>). Past it the server answers the original, up to
     /// 3840 px wide and several times the bytes. The web takes that for its banner on a very wide window; Granary does
     /// not, because its hero shows the title of any card, so every row's backdrops come at the hero's width, the wide
-    /// cards' among them. (Backdrops asked for wider anyway, <see cref="Default"/> at a display scale of 300 %, stay as
-    /// they are.)
+    /// cards' among them.
     /// </summary>
     public const int WidestHeroBackdrop = 2560;
 
     /// <summary>
     /// The same sizes with backdrops as wide as a hero draws them, <paramref name="devicePixels"/>, less
-    /// <see cref="RungSlack"/> and at most <see cref="WidestHeroBackdrop"/>; never narrower than they are asked for
-    /// already. A width not known (0, not a number) changes nothing.
+    /// <see cref="RungSlack"/>; never narrower than they are asked for already, and <see cref="WidestHeroBackdrop"/> at
+    /// most either way: at a display scale of 300 % the default width alone would fetch the original. A width not known
+    /// (0, not a number) changes nothing.
     /// </summary>
     public ImageSizes WithDrawnBackdrop(double devicePixels)
     {
@@ -44,8 +44,8 @@ public sealed record ImageSizes(int? Poster = null, int? Backdrop = null, int? L
         {
             return this;
         }
-        int drawn = (int)Math.Ceiling(Math.Min(devicePixels, WidestHeroBackdrop / (1 - RungSlack)) * (1 - RungSlack));
-        return this with { Backdrop = Math.Max(Backdrop ?? 0, Math.Min(drawn, WidestHeroBackdrop)) };
+        int drawn = (int)Math.Ceiling(Math.Min(devicePixels, WidestHeroBackdrop) * (1 - RungSlack));
+        return this with { Backdrop = Math.Min(Math.Max(Backdrop ?? 0, drawn), WidestHeroBackdrop) };
     }
 
     /// <summary>The same sizes for a display scale (for example 1.5 at 150 %), rounded to whole pixels.</summary>
