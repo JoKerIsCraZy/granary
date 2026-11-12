@@ -2965,11 +2965,15 @@ progress of a download.
   | `200`: `failure` with status `404` | leave the queue, with a line in the log: the profile cannot see the title any more |
   | `200`: any other `failure` (`500`) | wait, and go with the next send; the others of the batch leave |
   | `200` that cannot be read, names another number of items, or other items | wait, and go with the next send |
-  | `400`, `422` | are dropped, with a line in the log: the request itself is wrong |
+  | `400`, `422` for a request with one entry | is dropped, with a line in the log: the entry itself is wrong |
+  | `400`, `422` for a request with several | are sent again in halves, and those in halves, until an entry is refused by itself; the others arrive |
   | every other status (`401`, `403`, `404`, `405`, `408`, `409`, `412`, `429`, every `5xx`) | wait, and go with the next send |
   | no answer: no connection, a connection that broke off, a timeout; a profile switched to meanwhile | wait, and go with the next send |
 
-  Nothing is dropped because its fate is unknown: a position whose request may or may not have arrived is sent again,
+  The server validates a request as a whole (`validateBulkIdentity` and the body's schema): one item it cannot read
+  fails all hundred. So a refused batch says nothing about each entry, and only halving tells which is wrong; a run
+  spends at most 32 requests on it (`OfflineProgressSync.MaxSplitSends`) and leaves the rest for the next. Nothing is
+  dropped because its fate is unknown: a position whose request may or may not have arrived is sent again,
   which changes nothing on a server that has it. A read of the server's progress also settles it: a waiting position
   whose title the server lists with an `updated_at` at or after the position's own is known to be there and leaves
   unsent. A `404` or `405` for the whole request is an older server without the route, a proxy or a maintenance page,

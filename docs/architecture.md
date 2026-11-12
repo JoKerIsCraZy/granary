@@ -1601,7 +1601,9 @@ device.
   requests are bound to the account as well as the profile (`SiloRequestOptions.Account`): the authentication handler
   refuses one whose server is signed in as another account (`ProfileChangedException`), as it refuses another profile. A flush claims up to 100 pending entries, sends them, and takes the answer as api-contract
   14.7 lists it. An entry leaves the queue only when the server answered for it with success, will never take it (the
-  title is gone for the profile, or the request itself is wrong), or is known to have it (Reading back). Every other
+  title is gone for the profile, or the server refuses the entry when it is sent alone), or is known to have it
+  (Reading back). A batch the server refuses as a whole (400, 422) is sent again in halves until the entries it refuses
+  stand alone, within `MaxSplitSends` requests a run: the server fails a whole request for one item it cannot read. Every other
   one is pending again and goes with the retry `RetryInterval` (5 minutes) on: an item the server failed on, a server
   that refuses or fails for now, a request that did not arrive, and one whose answer never came. That last kind may have
   been taken, and is sent again all the same: each position carries the time it was recorded, and the server passes over

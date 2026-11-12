@@ -395,6 +395,86 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
         Assert.Equal(1, Volatile.Read(ref _told));
     }
 
+    // The server as it validates a batch: one item it cannot take fails the whole request (422); else each item succeeds.
+    private void ServerRefusesRequestsWith(params string[] bad) => _h.Silo.On(HttpMethod.Post, SyncPath, () =>
+    {
+        string body = Sends[^1].Body!;
+        var ids = System.Text.RegularExpressions.Regex.Matches(body, "\"media_item_id\":\"([^\"]+)\"").Select(m => m.Groups[1].Value).ToArray();
+        return ids.Any(bad.Contains) ? ScriptedSilo.Problem(422, "validation_failed")() : Answered(ids)();
+    });
+
+    [Theory]
+    [InlineData(5, 7)]
+    [InlineData(100, 15)]
+    public async Task OneEntryTheServerRefuses_IsDroppedAlone_AndTheOthersOfItsBatchArrive(int count, int mostRequests)
+    {
+        foreach (int n in Enumerable.Range(0, count))
+        {
+            _queue.Record(Scope7, "ep_" + n, 10_000 + n, 0);
+        }
+        ServerRefusesRequestsWith("ep_3");
+
+        await Sync().FlushAsync(readBack: false, Token);
+
+        // The batch was refused as a whole, then sent again in halves until the one entry stood alone.
+        Assert.Empty(_queue.Entries(Scope7));
+        var arrived = Sends.Where(s => !s.Body!.Contains("\"ep_3\"", StringComparison.Ordinal))
+            .SelectMany(s => System.Text.RegularExpressions.Regex.Matches(s.Body!, "\"media_item_id\":\"([^\"]+)\"").Select(m => m.Groups[1].Value)).ToList();
+        Assert.Equal(count - 1, arrived.Distinct().Count());
+        Assert.Equal(arrived.Count, arrived.Distinct().Count());
+        Assert.InRange(Sends.Count, 2, mostRequests);
+        Assert.Contains("refused 1 position(s) for good", _h.Logs.All, StringComparison.Ordinal);
+        // The pages hear that the others arrived.
+        Assert.Equal(1, Volatile.Read(ref _told));
+    }
+
+    [Fact]
+    public async Task ManyEntriesTheServerRefuses_CostABoundedNumberOfRequestsARun_AndNoneThatCanGoIsLost()
+    {
+        foreach (int n in Enumerable.Range(0, 100))
+        {
+            _queue.Record(Scope7, "ep_" + n, 10_000 + n, 0);
+        }
+        // Every odd one is refused: halving finds them one at a time.
+        ServerRefusesRequestsWith([.. Enumerable.Range(0, 100).Where(n => n % 2 == 1).Select(n => "ep_" + n)]);
+        var sync = Sync();
+
+        await sync.FlushAsync(readBack: false, Token);
+
+        // A run stops halving after its share of requests; what it did not get to waits, and nothing is dropped unjudged.
+        Assert.InRange(Sends.Count, 2, 1 + OfflineProgressSync.MaxSplitSends);
+        var left = _queue.Entries(Scope7);
+        Assert.NotEmpty(left);
+        Assert.All(left, e => Assert.Equal(OfflineProgressState.Pending, e.State));
+
+        // The next runs go on from there, each with fewer; in the end the even ones all arrived and the odd ones are gone.
+        for (int run = 0; run < 40 && _queue.Entries(Scope7).Count > 0; run++)
+        {
+            await sync.FlushAsync(readBack: false, Token);
+        }
+        Assert.Empty(_queue.Entries(Scope7));
+        var arrived = Sends.SelectMany(s => System.Text.RegularExpressions.Regex.Matches(s.Body!, "\"media_item_id\":\"ep_(\\d+)\"")
+            .Select(m => int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)).ToArray() is var ids && ids.All(n => n % 2 == 0)
+            ? ids : []).Distinct().Count();
+        Assert.Equal(50, arrived);
+    }
+
+    [Fact]
+    public async Task AHalfThatDoesNotArrive_StopsTheHalving_AndKeepsWhatIsLeft()
+    {
+        foreach (int n in Enumerable.Range(0, 4))
+        {
+            _queue.Record(Scope7, "ep_" + n, 10_000 + n, 0);
+        }
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(422, "validation_failed"), Answered("ep_0", "ep_1"), ScriptedSilo.NetworkError());
+
+        await Sync().FlushAsync(readBack: false, Token);
+
+        // The first half arrived; the connection went before the second: it waits, it is not dropped.
+        Assert.Equal(["ep_2", "ep_3"], _queue.Entries(Scope7).Select(e => e.MediaItemId));
+        Assert.Equal(3, Sends.Count);
+    }
+
     [Fact]
     public async Task AnotherProfilesEntries_WaitForThatProfile()
     {

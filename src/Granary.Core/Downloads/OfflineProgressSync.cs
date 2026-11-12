@@ -38,6 +38,13 @@ public sealed class OfflineProgressSync : IDisposable
     /// </summary>
     public static readonly TimeSpan ReadBackInterval = TimeSpan.FromMinutes(10);
 
+    /// <summary>
+    /// The most requests one run spends on halving batches the server refused, to find the entries it refuses: about twice
+    /// the halvings one bad entry among <see cref="MaxBatch"/> takes, and room for a few more. What a run does not get to waits
+    /// for the next.
+    /// </summary>
+    public const int MaxSplitSends = 32;
+
     // A listing longer than this many pages is not followed to its end (the Apple app's bound).
     private const int MaxPages = 100;
 
@@ -239,6 +246,7 @@ public sealed class OfflineProgressSync : IDisposable
         // The downloads are read once per run of the app; a run before that waits for them.
         await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
         bool sent = false;
+        var halving = new SplitBudget();
         while (IsStill(target))
         {
             var batch = _queue.Claim(scope, MaxBatch);
@@ -249,7 +257,7 @@ public sealed class OfflineProgressSync : IDisposable
             var outcome = SendOutcome.TryAgain;
             try
             {
-                outcome = await SendAsync(server, scope, batch, cancellationToken).ConfigureAwait(false);
+                outcome = await SendHalvingAsync(target, batch, halving, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -292,9 +300,48 @@ public sealed class OfflineProgressSync : IDisposable
         }
     }
 
+    // A batch, and when the server refuses the request itself (400, 422), its halves, and theirs, until the entries it
+    // refuses stand alone: the server fails a whole request for one item it cannot read, and the other 99 are not wrong for
+    // that. Only an entry refused by itself is dropped. One bad entry among a hundred costs 14 more requests; a run spends
+    // at most MaxSplitSends on it, and what it did not get to waits for the next run. Each half is sent only while the
+    // session is still the run's.
+    private async Task<SendOutcome> SendHalvingAsync(Target target, IReadOnlyList<OfflineProgressEntry> batch, SplitBudget halving,
+        CancellationToken cancellationToken)
+    {
+        var outcome = await SendAsync(target.Server, target.Scope, batch, cancellationToken).ConfigureAwait(false);
+        if (!outcome.IsRefused)
+        {
+            return outcome;
+        }
+        if (batch.Count == 1)
+        {
+            _logger.LogWarning("The server refused 1 position(s) for good; it is dropped");
+            return new SendOutcome(batch, Reached: false, GoesOn: true);
+        }
+        var done = new List<OfflineProgressEntry>();
+        bool reached = false;
+        int half = batch.Count / 2;
+        foreach (var part in new[] { batch.Take(half).ToList(), batch.Skip(half).ToList() })
+        {
+            if (halving.Left <= 0 || !IsStill(target))
+            {
+                return new SendOutcome(done, reached, GoesOn: false);
+            }
+            halving.Left--;
+            var sent = await SendHalvingAsync(target, part, halving, cancellationToken).ConfigureAwait(false);
+            done.AddRange(sent.Done);
+            reached |= sent.Reached;
+            if (!sent.GoesOn)
+            {
+                return new SendOutcome(done, reached, GoesOn: false);
+            }
+        }
+        return new SendOutcome(done, reached, GoesOn: true);
+    }
+
     // One request. The answer decides what becomes of its entries (docs/api-contract.md, 14.7): an item the server answered
     // for with success leaves, and so does one it will never take (a title the profile cannot see); a request it will never
-    // take (400, 422) is dropped whole. Everything else is sent again with the next try: an item that failed on the server's
+    // take (400, 422) is refused, which is the caller's to narrow down. Everything else is sent again with the next try: an item that failed on the server's
     // side, a server that refuses or fails for now (any other status), a request that did not get there, and one whose
     // answer never came or says nothing usable. The server may have taken that last kind, and the second send does no harm:
     // each position carries the time it was recorded, and the server passes over one that is not newer than what it has
@@ -324,8 +371,8 @@ public sealed class OfflineProgressSync : IDisposable
         }
         catch (SiloApiException ex) when (ex.Status is 400 or 422)
         {
-            _logger.LogWarning("The server refused {Count} position(s) for good ({Failure}); they are dropped", batch.Count, ApiFailureText.Describe(ex));
-            return new SendOutcome(batch, Reached: false, GoesOn: false);
+            _logger.LogInformation("The server refused a request with {Count} position(s) ({Failure})", batch.Count, ApiFailureText.Describe(ex));
+            return SendOutcome.Refused;
         }
         catch (SiloApiException ex)
         {
@@ -468,5 +515,16 @@ public sealed class OfflineProgressSync : IDisposable
     private sealed record SendOutcome(IReadOnlyList<OfflineProgressEntry> Done, bool Reached, bool GoesOn)
     {
         public static readonly SendOutcome TryAgain = new([], Reached: false, GoesOn: false);
+
+        /// <summary>The server refused the request itself: which of its entries it will not take is not known yet.</summary>
+        public static readonly SendOutcome Refused = new([], Reached: false, GoesOn: false) { IsRefused = true };
+
+        public bool IsRefused { get; private init; }
+    }
+
+    /// <summary>The requests a run may still spend on halving refused batches (<see cref="MaxSplitSends"/>).</summary>
+    private sealed class SplitBudget
+    {
+        public int Left { get; set; } = MaxSplitSends;
     }
 }
