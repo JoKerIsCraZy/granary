@@ -1123,7 +1123,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   deleted. Deleting such a row takes it off the index and queues the server's delete.
 - **A missing media file.** Someone who deletes a finished download's media file by hand, as to make room, leaves its
   folder, record and subtitles behind. The load and every `RecheckFolders` look whether a finished download's media file
-  is there (`StoredDownload.MediaMissing`), and a play that finds it gone says so at once (`MarkMediaMissing`). Such a
+  is there (`StoredDownload.MediaMissing`), and a play that finds it gone says so at once (`MarkMediaMissing`), for the
+  row as that play read it: when the server's new bytes were fetched meanwhile (another revision, or a file of another
+  name), the read looked for a file the row no longer names, and the row is left alone. Such a
   download does not play from this PC (`CanPlay`), is not the next episode, counts no space and is not offered for
   deletion; the pages show it as they show missing files ("Missing file", the Android app's status for a finished file
   that is no longer on the device), with Delete alone. The file back in its place, or the download fetched again, ends

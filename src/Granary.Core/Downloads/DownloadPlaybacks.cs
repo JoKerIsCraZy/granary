@@ -148,8 +148,9 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             if (!files.Contains(download.Record.MediaFile!))
             {
                 logger.LogWarning("The media file of download {DownloadId} is not in its folder; the title streams", id);
-                // Its row stops saying Downloaded and offering Play.
-                store.MarkMediaMissing(download.Record.Scope, id);
+                // Its row stops saying Downloaded and offering Play, unless it names another file by now: this read may be
+                // one an earlier start began, before the server's new bytes were fetched.
+                store.MarkMediaMissing(download);
                 return null;
             }
             // A folder that lists the file does not say it can be opened: one this account may not read, or that something

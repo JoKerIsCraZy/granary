@@ -241,6 +241,37 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFolderReadBegunBeforeTheDownloadsBytesWereFetchedAgain_DoesNotSayTheNewFileIsMissing()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        using var held = new ManualResetEventSlim();
+        using var reading = new ManualResetEventSlim();
+        _fixture.Playbacks.Reading = () =>
+        {
+            reading.Set();
+            held.Wait(TimeSpan.FromSeconds(10));
+        };
+        var answer = TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+
+        // The server has new bytes for the download, in another container: the old file went and the new one is whole
+        // before the folder answers the read that looks for the old one.
+        File.Delete(download.MediaPath!);
+        await File.WriteAllBytesAsync(Path.Combine(download.Folder, "media.mp4"), new byte[] { 1, 2, 3 }, LocalPlaybackFixture.Token);
+        await _fixture.Harness.Store.UpdateAsync(download.Record.Scope, "dl_1", r => r with { Revision = r.Revision + 1, MediaFile = "media.mp4" },
+            LocalPlaybackFixture.Token);
+        held.Set();
+
+        // That read found no file of the old name: its play streams, and the row of the new file is left alone.
+        Assert.Null(await answer.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+        Assert.False(_fixture.Harness.Find("dl_1")!.MediaMissing);
+        _fixture.Playbacks.Reading = null;
+        var played = await TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.NotNull(played);
+        await played.DisposeAsync();
+    }
+
+    [Fact]
     public async Task AMediaFileThatCannotBeOpened_Streams_ThoughItsFolderListsIt()
     {
         var download = await _fixture.Harness.AddPlayableAsync();

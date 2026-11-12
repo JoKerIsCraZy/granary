@@ -344,15 +344,19 @@ public sealed partial class DownloadStore
     /// <summary>
     /// A play found the finished media file of a download gone from its folder: its row says so from now on
     /// (<see cref="StoredDownload.MediaMissing"/>), until a look at the folders finds the file again. One that is not kept here,
-    /// or is marked already, is no change.
+    /// or is marked already, is no change; nor is one whose bytes were fetched again since <paramref name="looked"/> was
+    /// taken (another revision, or another file name): the file that was looked for is not the one the row names now.
     /// </summary>
-    public void MarkMediaMissing(DownloadScope scope, string downloadId)
+    public void MarkMediaMissing(StoredDownload looked)
     {
+        ArgumentNullException.ThrowIfNull(looked);
+        var sought = looked.Record;
         bool changed = false;
         Change(state =>
         {
-            var download = state.Downloads.FirstOrDefault(d => d.Record.Scope == scope && d.Record.DownloadId == downloadId);
-            if (download is not { MediaMissing: false, FilesMissing: false, Record.State: DownloadState.Completed })
+            var download = state.Downloads.FirstOrDefault(d => d.Record.Scope == sought.Scope && d.Record.DownloadId == sought.DownloadId);
+            if (download is not { MediaMissing: false, FilesMissing: false, Record.State: DownloadState.Completed }
+                || download.Record.Revision != sought.Revision || download.Record.MediaFile != sought.MediaFile)
             {
                 return state;
             }
