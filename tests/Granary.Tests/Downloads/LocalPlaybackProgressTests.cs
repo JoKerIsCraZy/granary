@@ -241,4 +241,23 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         await _fixture.Sync.LatestRun;
         Assert.Equal(OfflineProgressState.Pending, Entry.State);
     }
+
+    [Fact]
+    public async Task APlayStillOpenWhenItsAccountIsSignedOutWithItsDownloads_RecordsNothingMore()
+    {
+        _fixture.GoOffline();
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        Assert.Equal(120_000, Entry.PositionMs);
+
+        // The sign-out marks the account's downloads as going and takes what waited to be sent; then the player closes.
+        long clear = _fixture.Harness.Store.MarkCleared("srv1", "1");
+        _fixture.Queue.Remove(scope => scope == Scope7);
+        Frame(300);
+        await playback.StopAsync();
+        _fixture.Harness.Store.EndClear(clear);
+
+        Assert.Empty(_fixture.Queue.Entries(Scope7));
+    }
 }

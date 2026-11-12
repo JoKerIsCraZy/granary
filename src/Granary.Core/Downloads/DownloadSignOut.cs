@@ -21,13 +21,14 @@ public sealed record DownloadSummary(int? Count, long? Bytes);
 /// Signing out of a server or removing it takes its downloads along (docs/architecture.md, "Signing out"). The viewer is
 /// asked first, with how many go and the space they take, as the Apple app's sign-out asks; the rows, the index entries and
 /// the deletes still to send go, and their transfers stop; the server hears the deletes of the active profile's entries, within
-/// <see cref="DeleteBudget"/>; then the sign-out, while the folders go beside it. A drive or a share that does not answer holds the question
+/// <see cref="DeleteBudget"/>; then the sign-out, while the folders go beside it. The positions watched from this PC that still
+/// wait to be sent (<see cref="OfflineProgressQueue"/>) go with them, unsent: nothing of what the account watched stays behind. A drive or a share that does not answer holds the question
 /// up for at most <see cref="SummaryBudget"/>, and the sign-out for at most <see cref="StoreBudget"/> more. Only a sign-out the
 /// viewer asks for comes here: a sign-in that expired, which the authentication handler ends by itself, keeps the downloads,
 /// as the Android app does.
 /// </summary>
 public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISessionManager session, ICredentialStore credentials,
-    IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger)
+    IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger, OfflineProgressQueue? progress = null)
 {
     /// <summary>What a question before signing out says when the account signed in is not known: its downloads stay.</summary>
     public const string KeptNote = "Downloads on this PC are kept.";
@@ -179,6 +180,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     // ClearAsync's work once the clear is marked.
     private async Task TakeOffAsync(long generation, string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
+        // What was watched there and not sent yet names titles and times. It could only go out as that account, which is
+        // signed out now, or to that server, which is removed; a play still open records nothing more (LocalPlayback).
+        progress?.Remove(scope => Matches(scope, serverEntryId, accountId));
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;

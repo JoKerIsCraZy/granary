@@ -31,6 +31,9 @@ public sealed partial class LocalPlayback
     // The record's writes, in the order the positions were recorded.
     private Task _records = Task.CompletedTask;
 
+    // The store's clears as the play began: a sign-out that takes the account's downloads along since then ends the recording.
+    private readonly long _clearsSeen;
+
     // This PC holds a position of the title the server has not answered for: it is newer than what the server says.
     private bool HasUnsentProgress => _progress?.HasUnsent(_download.Record.Scope, _download.Record.MediaItemId) == true;
 
@@ -52,6 +55,12 @@ public sealed partial class LocalPlayback
     {
         if (_progress is not { } queue || _stopping || !_played)
         {
+            return;
+        }
+        if (_store?.IsClearedSince(_download.Record.Scope, _clearsSeen) == true)
+        {
+            // The account is being signed out with its downloads, or its server removed: what waited to be sent went with
+            // them (DownloadSignOut), and the player that closes now adds nothing again.
             return;
         }
         double position = _position;

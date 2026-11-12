@@ -99,6 +99,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _logger = logger;
         _audioDelay = audioDelay;
         _store = store;
+        _clearsSeen = store?.ClearGeneration ?? 0;
         _progress = progress;
         _sync = sync;
         (Title, Subtitle) = Titles();

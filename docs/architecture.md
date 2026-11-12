@@ -1613,8 +1613,11 @@ device.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
   and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
   not go by then is in the file, and the next start sends it.
-- **Signing out.** The queue's entries stay when a sign-out takes the downloads: what was watched still reaches the
-  server when that account and profile are used again.
+- **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
+  and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`), unsent: they name what was
+  watched and when, and would otherwise lie in the data folder for up to 90 days. A play still open then records
+  nothing more (`DownloadStore.IsClearedSince`). A sign-in that expired keeps them, as it keeps the downloads, and they
+  go once the account is signed in again.
 
 ## Windows App SDK
 

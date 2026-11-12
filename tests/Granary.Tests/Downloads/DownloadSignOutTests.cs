@@ -33,11 +33,22 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     private readonly InMemoryServerRegistry _registry = new();
     private readonly CredentialStore _credentials;
 
-    public DownloadSignOutTests() => _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
+    private readonly OfflineProgressQueue _progress;
 
-    public ValueTask DisposeAsync() => _h.DisposeAsync();
+    public DownloadSignOutTests()
+    {
+        _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
+        _progress = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+    }
 
-    private DownloadSignOut NewSignOut() => new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>());
+    public async ValueTask DisposeAsync()
+    {
+        await _progress.LatestSave;
+        await _h.DisposeAsync();
+    }
+
+    private DownloadSignOut NewSignOut() =>
+        new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress);
 
     // A completed download with its file on the disk.
     private async Task<StoredDownload> KeptAsync(string id, DownloadScope? scope = null)
@@ -171,6 +182,59 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.True(File.Exists(otherServer.PartPath));
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
         Assert.Equal("Signed out of NAS.", servers.Status);
+    }
+
+    [Fact]
+    public async Task SigningOut_TakesTheAccountsUnsentPositionsAlong_AndLeavesOtherAccountsAndServersAlone()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _progress.Record(Scope8, "ep_5", 60_000, 0);
+        _progress.Record(otherAccount, "ep_5", 60_000, 0);
+        _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _progress.LatestSave;
+
+        // What the account watched here and had not sent yet is not kept behind its back, on any of its profiles.
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(Scope8));
+        Assert.Single(_progress.Entries(otherAccount));
+        Assert.Single(_progress.Entries(OtherServer));
+        Assert.DoesNotContain("mv_dl_1", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "offline-progress.json"), Token),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RemovingAServer_TakesEveryAccountsUnsentPositionsThere()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(otherAccount, "ep_5", 60_000, 0);
+        _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        using var servers = await ServersAsync();
+
+        await servers.RemoveCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(otherAccount));
+        Assert.Single(_progress.Entries(OtherServer));
+    }
+
+    [Fact]
+    public async Task AnExpiredSignIn_KeepsTheUnsentPositions()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        await _credentials.SetAsync("srv1", SignedIn("1"), Token);
+        _ = NewSignOut();
+
+        await _credentials.RemoveAsync("srv1", "session-1", Token);
+        _h.SignOut();
+
+        // They go once the account is signed in again.
+        Assert.Single(_progress.Entries(Scope7));
     }
 
     [Fact]
