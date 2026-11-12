@@ -147,7 +147,7 @@ internal sealed class DownloadHarness : IAsyncDisposable
 
     /// <summary>
     /// A finished download of episode <paramref name="episode"/> of "Example Series", season 1, as its folder holds it: the
-    /// media file, the guide's manifest (<see cref="DownloadPayloads.Manifest"/>, written for episode 5), its subtitle and its still.
+    /// media file, the guide's manifest for that episode (<see cref="DownloadPayloads.Manifest"/>), its subtitle and its still.
     /// </summary>
     public async Task<StoredDownload> AddPlayableAsync(string id = "dl_1", string mediaItemId = "ep_5", int episode = 5, int season = 1,
         Func<DownloadRecord, DownloadRecord>? change = null)
@@ -169,7 +169,9 @@ internal sealed class DownloadHarness : IAsyncDisposable
             return change is null ? playable : change(playable);
         });
         File.WriteAllBytes(Path.Combine(download.Folder, "media.mkv"), [1, 2, 3]);
-        File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest(id));
+        // The manifest says of the episode what the record says: the player takes its titles and numbers from the manifest.
+        File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest(id, episodeId: download.Record.MediaItemId,
+            season: download.Record.SeasonNumber ?? season, episode: download.Record.EpisodeNumber ?? episode, title: download.Record.Title));
         File.WriteAllBytes(Path.Combine(download.Folder, SubtitleFile), SubtitleBytes);
         File.WriteAllBytes(Path.Combine(download.Folder, "poster.jpg"), PosterBytes);
         return download;

@@ -268,6 +268,9 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
 
         Assert.Equal(next.MediaPath, _fixture.Engine.Loaded[^1].Url.LocalPath);
         Assert.Empty(_streams);
+        // It is the seventh episode that plays, by what the player says of it too.
+        Frame(0);
+        Assert.Equal(("Example Series", "S1 · E7 — Chapter Seven"), (player.Title, player.Subtitle));
     }
 
     [Fact]
