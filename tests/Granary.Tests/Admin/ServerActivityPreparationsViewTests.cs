@@ -163,6 +163,39 @@ public sealed class ServerActivityPreparationsViewTests : IDisposable
     }
 
     [Fact]
+    public void MoreRunningJobsThanTheListHolds_AreStillCounted_SoTheLinesAddUp()
+    {
+        // The queue runs 260 jobs; one page of the list holds 200 of them.
+        _indicator.Show(Live(Counts(running: 260, queued: 40, retrying: 2), [.. Enumerable.Range(0, 200).Select(index => Episode("job-" + index))]));
+
+        Assert.Equal(3, _indicator.Preparations.Count);
+        Assert.Equal("257 more running · 40 queued · 2 waiting to retry", _indicator.WaitingPreparationsText);
+        Assert.Equal(302, _indicator.PreparationCount);
+    }
+
+    [Fact]
+    public void RunningJobsTheCountsDoNotKnowOfYet_AreStillListedAndCounted()
+    {
+        // The counts and the list are read in one answer, but a job may start between the server's two queries.
+        _indicator.Show(Live(Counts(running: 3), Episode("a"), Episode("b"), Episode("c"), Episode("d"), Episode("e")));
+
+        Assert.Equal("2 more running", _indicator.WaitingPreparationsText);
+    }
+
+    [Fact]
+    public void ASeriesWithoutBothItsNumbers_ReadsAsItsTitle_OrItsFile()
+    {
+        Assert.Equal("Past and Present", ServerActivityText.PreparationTitle(Episode() with { SeasonNumber = null }));
+        Assert.Equal("Past and Present", ServerActivityText.PreparationTitle(Episode() with { SeasonNumber = null, EpisodeNumber = null }));
+        Assert.Equal("File #48211", ServerActivityText.PreparationTitle(Episode() with { EpisodeNumber = null, MediaTitle = "" }));
+        // A special's season is 0.
+        Assert.Equal("Dark S00E02", ServerActivityText.PreparationTitle(Episode() with { SeasonNumber = 0, EpisodeNumber = 2 }));
+
+        _indicator.Show(Live(Counts(running: 1), Episode() with { EpisodeNumber = null }));
+        Assert.Equal(("Past and Present", "Past and Present progress"), (_indicator.Preparations[0].Title, _indicator.Preparations[0].ProgressName));
+    }
+
+    [Fact]
     public void TheLinesUnderTheJobs_SayOnlyWhatThereIs()
     {
         _indicator.Show(Live(Counts(running: 1, queued: 1200), Episode()));

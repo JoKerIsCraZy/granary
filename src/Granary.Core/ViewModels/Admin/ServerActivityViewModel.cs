@@ -305,8 +305,10 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         PreparationCount = counts.Active;
         ServerActivityRows.Sync(Preparations, [.. running.Take(MaxPreparationRows)], job => job.Id, row => row.Id,
             job => new ActivityPreparationRow(job.Id), (row, job) => row.Show(job));
-        // Running jobs past the listed ones join the waiting line, so the lines still add up to the section's count.
-        WaitingPreparationsText = ServerActivityText.WaitingPreparations(running.Count - Preparations.Count, counts.Queued, counts.Retrying);
+        // Running jobs past the listed ones join the waiting line, so the lines still add up to the section's count. By
+        // the queue's own count of them: the list is one page of at most 200 jobs (the web counts the page's).
+        int moreRunning = Math.Max(counts.Running, running.Count) - Preparations.Count;
+        WaitingPreparationsText = ServerActivityText.WaitingPreparations(moreRunning, counts.Queued, counts.Retrying);
         PausedPreparationsText = counts.Paused > 0 ? $"{ServerActivityText.Number(counts.Paused)} paused" : "";
         FailedPreparationsText = counts.FailedRecent > 0 ? $"{ServerActivityText.Number(counts.FailedRecent)} failed in the last 24 hours" : "";
         HasNoPreparations = list is not null && Preparations.Count == 0 && !HasWaitingPreparations && !HasPausedPreparations
