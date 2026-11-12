@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -50,17 +51,18 @@ internal static class RequestText
         };
     }
 
+    /// <summary>A state's word, from its code, as the web's <c>formatRequestDisplayState</c>.</summary>
     public static string StateLabel(string state) => state switch
     {
-        RequestStates.Pending => "Pending",
-        RequestStates.Approved => "Approved",
-        RequestStates.Processing => "Processing",
-        RequestStates.PartiallyAvailable => "Partially available",
-        RequestStates.Available => "Available",
-        RequestStates.Declined => "Declined",
-        RequestStates.Cancelled => "Cancelled",
-        RequestStates.Failed => "Failed",
-        _ => "Active",
+        RequestStates.Pending => AppText.Get("web.requests.status.pending"),
+        RequestStates.Approved => AppText.Get("web.requests.status.approved"),
+        RequestStates.Processing => AppText.Get("web.requests.status.processing"),
+        RequestStates.PartiallyAvailable => AppText.Get("web.requests.status.partiallyAvailable"),
+        RequestStates.Available => AppText.Get("web.requests.status.available"),
+        RequestStates.Declined => AppText.Get("web.requests.status.declined"),
+        RequestStates.Cancelled => AppText.Get("web.requests.status.cancelled"),
+        RequestStates.Failed => AppText.Get("web.requests.status.failed"),
+        _ => AppText.Get("web.requests.status.active"),
     };
 
     public static RequestBadgeLook Look(string state) => state switch
@@ -74,15 +76,17 @@ internal static class RequestText
     /// <summary>Why a title without a request cannot be requested.</summary>
     public static string ReasonLabel(string? reason) => reason switch
     {
-        "already_requested" => "Already requested",
-        "already_available" => "Available",
-        "requests_disabled" => "Requests disabled",
-        "blocked" => "Blocked",
-        "quota_exceeded" => "Request limit reached",
-        _ => "Unavailable",
+        "already_requested" => AppText.Get("web.requests.status.reason.alreadyRequested"),
+        "already_available" => AppText.Get("web.requests.status.reason.alreadyAvailable"),
+        "requests_disabled" => AppText.Get("web.requests.status.reason.requestsDisabled"),
+        "blocked" => AppText.Get("web.requests.status.reason.blocked"),
+        "quota_exceeded" => AppText.Get("web.requests.status.reason.quotaExceeded"),
+        _ => AppText.Get("web.requests.status.reason.unavailable"),
     };
 
-    public static string MediaTypeLabel(string mediaType) => mediaType == "series" ? "Series" : "Movie";
+    /// <summary>"Series" or "Movie", as the web's <c>formatMediaType</c>.</summary>
+    public static string MediaTypeLabel(string mediaType) =>
+        mediaType == "series" ? AppText.Get("web.requests.toAdd.series") : AppText.Get("web.requests.toAdd.movie");
 
     /// <summary>
     /// The owner can withdraw a request until something was sent for it: while pending, or approved with no target yet.
@@ -102,10 +106,10 @@ internal static class RequestText
             {
                 j++;
             }
-            runs.Add(j > i ? $"{sorted[i]}–{sorted[j]}" : sorted[i].ToString(English));
+            runs.Add(j > i ? $"{AppText.Number(sorted[i])}–{AppText.Number(sorted[j])}" : AppText.Number(sorted[i]));
             i = j + 1;
         }
-        return $"{(sorted.Count == 1 ? "Season" : "Seasons")} {string.Join(", ", runs)}";
+        return AppText.Get("web.requests.status.seasonList", ("count", sorted.Count), ("list", string.Join(", ", runs)));
     }
 
     /// <summary>"14 of 20 episodes in the library", counting aired episodes; "" when none has aired.</summary>
@@ -113,7 +117,7 @@ internal static class RequestText
     {
         int aired = progress.Sum(p => p.EpisodesAired);
         int have = progress.Sum(p => Math.Min(p.EpisodesAvailable, p.EpisodesAired));
-        return aired == 0 ? "" : $"{have} of {aired} {(aired == 1 ? "episode" : "episodes")} in the library";
+        return aired == 0 ? "" : AppText.Get("web.requests.status.seasonProgress", ("aired", aired), ("have", have), ("aired_text", aired));
     }
 
     /// <summary>How far the downloads are, for a bar; null while the size is unknown or the phase is not a download's.</summary>
@@ -128,21 +132,22 @@ internal static class RequestText
         switch (download.Phase)
         {
             case "queued":
-                return "Waiting to download";
+                return AppText.Get("web.requests.download.waiting");
             case "paused":
-                return "Download paused";
+                return AppText.Get("web.requests.download.paused");
             case "stalled":
-                return "Download stalled";
+                return AppText.Get("web.requests.download.stalled");
             case "importing":
-                return "Importing";
+                return AppText.Get("web.requests.download.importing");
             case "import_blocked":
-                return "Waiting for import";
+                return AppText.Get("web.requests.download.waitingForImport");
             case "downloading":
                 break;
             default:
-                return "Downloading";
+                return AppText.Get("web.requests.download.downloading");
         }
-        var parts = new List<string> { "Downloading" };
+        // The web's parts after each other, with a dot between.
+        var parts = new List<string> { AppText.Get("web.requests.download.downloading") };
         if (DownloadPercent(download) is { } percent)
         {
             // The figure as the server sent it, as the web prints it.
@@ -151,7 +156,7 @@ internal static class RequestText
         // An estimate that passed, or one the server last heard of more than ten minutes ago, is left out.
         if (download.EstimatedCompletionAt is { } eta && eta > now && now - download.UpdatedAt <= TimeSpan.FromMinutes(10))
         {
-            parts.Add($"about {HoursMinutes(eta - now)} left");
+            parts.Add(AppText.Get("web.requests.download.timeLeft", ("time", HoursMinutes(eta - now))));
         }
         return string.Join(" · ", parts);
     }
@@ -185,11 +190,14 @@ internal static class RequestText
         return days < 7 ? $"{days}d ago" : Date(request.UpdatedAt, zone);
     }
 
+    // "12 min", "2 hr", "2 hr 5 min", as the web's formatHoursMinutes words a time left.
     private static string HoursMinutes(TimeSpan span)
     {
         int total = Math.Max(1, (int)Math.Round(span.TotalMinutes, MidpointRounding.AwayFromZero));
         int hours = total / 60;
         int minutes = total % 60;
-        return hours == 0 ? $"{minutes} min" : minutes == 0 ? $"{hours} hr" : $"{hours} hr {minutes} min";
+        return hours == 0 ? AppText.Get("web.audiobooks.duration.minutes", ("minutes", minutes))
+            : minutes == 0 ? AppText.Get("web.audiobooks.duration.hours", ("hours", hours))
+            : AppText.Get("web.audiobooks.duration.hoursMinutes", ("hours", hours), ("minutes", minutes));
     }
 }

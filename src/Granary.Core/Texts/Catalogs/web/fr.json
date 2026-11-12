@@ -623,6 +623,12 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "Impossible d’envoyer la demande"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -883,6 +889,44 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.audiobooks.duration.hours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " h"
+    }
+  ],
+  "web.audiobooks.duration.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " h "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.audiobooks.duration.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -4699,6 +4743,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’annuler la demande"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "Demande envoyée"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -4775,6 +4831,32 @@
     {
       "type": 0,
       "value": "Collection supprimée"
+    }
+  ],
+  "web.common.ui.carousel.loadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger les "
+    },
+    {
+      "type": 1,
+      "value": "title_lower"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.common.ui.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "Faire défiler vers la gauche"
+    }
+  ],
+  "web.common.ui.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "Faire défiler vers la droite"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -5146,6 +5228,12 @@
     {
       "type": 0,
       "value": "Bibliothèques"
+    }
+  ],
+  "web.home.addRow.params.mediaType": [
+    {
+      "type": 0,
+      "value": "Type de média"
     }
   ],
   "web.home.addRow.rules.addAndGroup": [
@@ -6802,6 +6890,138 @@
       "value": "Genres favoris"
     }
   ],
+  "web.requests.browse.empty": [
+    {
+      "type": 0,
+      "value": "Aucun résultat. Essayez un autre tri."
+    }
+  ],
+  "web.requests.browse.genre": [
+    {
+      "type": 0,
+      "value": "Genre"
+    }
+  ],
+  "web.requests.browse.genreNotFound": [
+    {
+      "type": 0,
+      "value": "Genre introuvable."
+    }
+  ],
+  "web.requests.browse.loadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger cette page. Essayez un autre tri ou un autre type de média."
+    }
+  ],
+  "web.requests.browse.loading": [
+    {
+      "type": 0,
+      "value": "Chargement…"
+    }
+  ],
+  "web.requests.browse.movies": [
+    {
+      "type": 0,
+      "value": "Films"
+    }
+  ],
+  "web.requests.browse.network": [
+    {
+      "type": 0,
+      "value": "Chaîne"
+    }
+  ],
+  "web.requests.browse.networkNotFound": [
+    {
+      "type": 0,
+      "value": "Chaîne introuvable."
+    }
+  ],
+  "web.requests.browse.series": [
+    {
+      "type": 0,
+      "value": "Séries"
+    }
+  ],
+  "web.requests.browse.sortBy": [
+    {
+      "type": 0,
+      "value": "Trier par"
+    }
+  ],
+  "web.requests.browse.sortPopularity": [
+    {
+      "type": 0,
+      "value": "Popularité"
+    }
+  ],
+  "web.requests.browse.sortRating": [
+    {
+      "type": 0,
+      "value": "Note"
+    }
+  ],
+  "web.requests.browse.sortReleaseDate": [
+    {
+      "type": 0,
+      "value": "Date de sortie"
+    }
+  ],
+  "web.requests.browse.studio": [
+    {
+      "type": 0,
+      "value": "Studio"
+    }
+  ],
+  "web.requests.browse.studioNotFound": [
+    {
+      "type": 0,
+      "value": "Studio introuvable."
+    }
+  ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "Annuler la demande"
+    }
+  ],
+  "web.requests.cancel.actionFor": [
+    {
+      "type": 0,
+      "value": "Annuler la demande pour "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "Votre demande pour « "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " » sera retirée avant d’être envoyée à l’automatisation des téléchargements."
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "Conserver la demande"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "Annuler cette demande ?"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -6820,6 +7040,24 @@
     {
       "type": 0,
       "value": " à votre liste à voir"
+    }
+  ],
+  "web.requests.card.label": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " ("
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    },
+    {
+      "type": 0,
+      "value": ")"
     }
   ],
   "web.requests.card.onWatchlist": [
@@ -6842,10 +7080,344 @@
       "value": " de votre liste à voir"
     }
   ],
+  "web.requests.card.requestTitle": [
+    {
+      "type": 0,
+      "value": "Demander "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.card.sending": [
+    {
+      "type": 0,
+      "value": "Envoi"
+    }
+  ],
+  "web.requests.card.sendingFor": [
+    {
+      "type": 0,
+      "value": "Envoi de la demande pour "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.discoverSection.empty": [
+    {
+      "type": 0,
+      "value": "Rien ici pour le moment."
+    }
+  ],
+  "web.requests.discoverSection.fallbackTitle": [
+    {
+      "type": 0,
+      "value": "Découvrir"
+    }
+  ],
+  "web.requests.discoverSection.notFound": [
+    {
+      "type": 0,
+      "value": "Introuvable"
+    }
+  ],
+  "web.requests.discoverSection.unknown": [
+    {
+      "type": 0,
+      "value": "Cette rangée Découvrir n’existe pas."
+    }
+  ],
+  "web.requests.discoverSection.unreachable": [
+    {
+      "type": 0,
+      "value": "Impossible de joindre TMDB. Réessayez dans un instant."
+    }
+  ],
+  "web.requests.download.downloading": [
+    {
+      "type": 0,
+      "value": "Téléchargement en cours"
+    }
+  ],
+  "web.requests.download.importing": [
+    {
+      "type": 0,
+      "value": "Importation en cours"
+    }
+  ],
+  "web.requests.download.paused": [
+    {
+      "type": 0,
+      "value": "Téléchargement en pause"
+    }
+  ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "Progression du téléchargement"
+    }
+  ],
+  "web.requests.download.stalled": [
+    {
+      "type": 0,
+      "value": "Téléchargement au point mort"
+    }
+  ],
+  "web.requests.download.timeLeft": [
+    {
+      "type": 0,
+      "value": "encore "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    },
+    {
+      "type": 0,
+      "value": " environ"
+    }
+  ],
+  "web.requests.download.waiting": [
+    {
+      "type": 0,
+      "value": "En attente de téléchargement"
+    }
+  ],
+  "web.requests.download.waitingForImport": [
+    {
+      "type": 0,
+      "value": "En attente d’importation"
+    }
+  ],
+  "web.requests.hub.browseDiscover": [
+    {
+      "type": 0,
+      "value": "Parcourir l’onglet Découvrir"
+    }
+  ],
+  "web.requests.hub.cancelled": [
+    {
+      "type": 0,
+      "value": "Annulées"
+    }
+  ],
+  "web.requests.hub.discover": [
+    {
+      "type": 0,
+      "value": "Découvrir"
+    }
+  ],
+  "web.requests.hub.discoverFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de joindre TMDB : il n’y a rien à découvrir pour le moment."
+    }
+  ],
+  "web.requests.hub.empty": [
+    {
+      "type": 0,
+      "value": "Vous n’avez rien demandé."
+    }
+  ],
+  "web.requests.hub.emptyHint": [
+    {
+      "type": 0,
+      "value": "Trouvez un titre dans Découvrir ou avec la recherche, puis demandez-le depuis sa page. Il apparaîtra ici avec son statut."
+    }
+  ],
+  "web.requests.hub.inLibrary": [
+    {
+      "type": 0,
+      "value": "Dans votre bibliothèque"
+    }
+  ],
+  "web.requests.hub.intro": [
+    {
+      "type": 0,
+      "value": "Demandez des films et des séries qui ne sont pas encore dans la bibliothèque, et suivez vos demandes."
+    }
+  ],
+  "web.requests.hub.loadFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger vos demandes."
+    }
+  ],
+  "web.requests.hub.needsAttention": [
+    {
+      "type": 0,
+      "value": "Nécessite votre attention"
+    }
+  ],
+  "web.requests.hub.onTheWay": [
+    {
+      "type": 0,
+      "value": "En cours"
+    }
+  ],
+  "web.requests.hub.openInLibrary": [
+    {
+      "type": 0,
+      "value": "Ouvrir dans la bibliothèque"
+    }
+  ],
+  "web.requests.hub.openInLibraryFor": [
+    {
+      "type": 0,
+      "value": "Ouvrir "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " dans la bibliothèque"
+    }
+  ],
+  "web.requests.hub.reason": [
+    {
+      "type": 0,
+      "value": "Motif : "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.requests.hub.statusApproved": [
+    {
+      "type": 0,
+      "value": "Approuvée, pas encore envoyée à l’automatisation des téléchargements. Vous pouvez encore l’annuler."
+    }
+  ],
+  "web.requests.hub.statusAvailable": [
+    {
+      "type": 0,
+      "value": "Dans votre bibliothèque et disponible au visionnage."
+    }
+  ],
+  "web.requests.hub.statusCancelled": [
+    {
+      "type": 0,
+      "value": "Retirée avant son envoi à l’automatisation des téléchargements."
+    }
+  ],
+  "web.requests.hub.statusDeclined": [
+    {
+      "type": 0,
+      "value": "Refusée par un administrateur."
+    }
+  ],
+  "web.requests.hub.statusHelp": [
+    {
+      "type": 0,
+      "value": "Signification des statuts"
+    }
+  ],
+  "web.requests.hub.statusPartial": [
+    {
+      "type": 0,
+      "value": "Certains épisodes des saisons demandées sont arrivés."
+    }
+  ],
+  "web.requests.hub.statusPending": [
+    {
+      "type": 0,
+      "value": "En attente d’un administrateur. Vous pouvez l’annuler tant qu’elle n’est pas envoyée à l’automatisation des téléchargements."
+    }
+  ],
+  "web.requests.hub.statusProcessing": [
+    {
+      "type": 0,
+      "value": "Envoyée à l’automatisation des téléchargements."
+    }
+  ],
+  "web.requests.hub.statuses": [
+    {
+      "type": 0,
+      "value": "Statuts des demandes"
+    }
+  ],
+  "web.requests.hub.yours": [
+    {
+      "type": 0,
+      "value": "Les vôtres"
+    }
+  ],
+  "web.requests.hub.yoursIntro": [
+    {
+      "type": 0,
+      "value": "Les demandes de votre compte, regroupées selon la prochaine étape."
+    }
+  ],
+  "web.requests.request": [
+    {
+      "type": 0,
+      "value": "Demander"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "Impossible de charger plus de titres."
+    }
+  ],
+  "web.requests.seasons.choose": [
+    {
+      "type": 0,
+      "value": "Choisissez les saisons de "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " à demander."
+    }
+  ],
+  "web.requests.seasons.noSeasons": [
+    {
+      "type": 0,
+      "value": "TMDB n’indique encore aucune saison pour cette série ; la demande couvre toute la série."
+    }
+  ],
+  "web.requests.seasons.noneAired": [
+    {
+      "type": 0,
+      "value": "Aucune saison n’a encore été diffusée, la demande couvre donc toute la série, sauf si vous choisissez des saisons."
+    }
+  ],
+  "web.requests.seasons.pickUpcoming": [
+    {
+      "type": 0,
+      "value": "Choisissez les saisons à venir à demander."
+    }
+  ],
+  "web.requests.seasons.requestSeasons": [
+    {
+      "type": 0,
+      "value": "Demander "
+    },
+    {
+      "type": 1,
+      "value": "seasons"
+    }
+  ],
+  "web.requests.seasons.requestSeries": [
+    {
+      "type": 0,
+      "value": "Demander la série"
+    }
+  ],
+  "web.requests.status.active": [
+    {
+      "type": 0,
+      "value": "Active"
     }
   ],
   "web.requests.status.approved": [
@@ -6854,16 +7426,236 @@
       "value": "Approuvée"
     }
   ],
+  "web.requests.status.available": [
+    {
+      "type": 0,
+      "value": "Disponible"
+    }
+  ],
+  "web.requests.status.cancelled": [
+    {
+      "type": 0,
+      "value": "Annulée"
+    }
+  ],
+  "web.requests.status.declined": [
+    {
+      "type": 0,
+      "value": "Refusée"
+    }
+  ],
+  "web.requests.status.failed": [
+    {
+      "type": 0,
+      "value": "Échouée"
+    }
+  ],
+  "web.requests.status.partiallyAvailable": [
+    {
+      "type": 0,
+      "value": "Partiellement disponible"
+    }
+  ],
+  "web.requests.status.pending": [
+    {
+      "type": 0,
+      "value": "En attente"
+    }
+  ],
   "web.requests.status.processing": [
     {
       "type": 0,
       "value": "En traitement"
     }
   ],
+  "web.requests.status.reason.alreadyAvailable": [
+    {
+      "type": 0,
+      "value": "Disponible"
+    }
+  ],
+  "web.requests.status.reason.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "Déjà demandé"
+    }
+  ],
+  "web.requests.status.reason.blocked": [
+    {
+      "type": 0,
+      "value": "Bloqué"
+    }
+  ],
+  "web.requests.status.reason.quotaExceeded": [
+    {
+      "type": 0,
+      "value": "Limite de demandes atteinte"
+    }
+  ],
+  "web.requests.status.reason.requestsDisabled": [
+    {
+      "type": 0,
+      "value": "Demandes désactivées"
+    }
+  ],
+  "web.requests.status.reason.unavailable": [
+    {
+      "type": 0,
+      "value": "Indisponible"
+    }
+  ],
+  "web.requests.status.seasonList": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Saison "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Saisons "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Saisons "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.status.seasonProgress": [
+    {
+      "type": 6,
+      "value": "aired",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " sur "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " épisode dans la bibliothèque"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " sur "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " d’épisodes dans la bibliothèque"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " sur "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " épisodes dans la bibliothèque"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.title": [
+    {
+      "type": 0,
+      "value": "Demandes"
+    }
+  ],
   "web.requests.toAdd.heading": [
     {
       "type": 0,
       "value": "Demander un ajout"
+    }
+  ],
+  "web.requests.toAdd.movie": [
+    {
+      "type": 0,
+      "value": "Film"
+    }
+  ],
+  "web.requests.toAdd.noLibraryMatch": [
+    {
+      "type": 0,
+      "value": "Rien dans votre bibliothèque ne correspond à « "
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": " »."
+    }
+  ],
+  "web.requests.toAdd.series": [
+    {
+      "type": 0,
+      "value": "Série"
     }
   ],
   "web.search.boxSets": [

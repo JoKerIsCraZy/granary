@@ -623,6 +623,12 @@
       "value": "今週のトレンド"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "リクエストを送信できませんでした"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -883,6 +889,44 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.audiobooks.duration.hours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "時間"
+    }
+  ],
+  "web.audiobooks.duration.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "時間"
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.audiobooks.duration.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -4332,6 +4376,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "リクエストをキャンセルできませんでした"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "リクエストを送信しました"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -4408,6 +4464,28 @@
     {
       "type": 0,
       "value": "コレクションを削除しました"
+    }
+  ],
+  "web.common.ui.carousel.loadFailed": [
+    {
+      "type": 1,
+      "value": "title_lower"
+    },
+    {
+      "type": 0,
+      "value": "を読み込めませんでした。"
+    }
+  ],
+  "web.common.ui.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "左にスクロール"
+    }
+  ],
+  "web.common.ui.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "右にスクロール"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -4697,6 +4775,12 @@
     {
       "type": 0,
       "value": "ライブラリ"
+    }
+  ],
+  "web.home.addRow.params.mediaType": [
+    {
+      "type": 0,
+      "value": "メディアの種類"
     }
   ],
   "web.home.addRow.rules.addAndGroup": [
@@ -6131,6 +6215,138 @@
       "value": "よく見るジャンル"
     }
   ],
+  "web.requests.browse.empty": [
+    {
+      "type": 0,
+      "value": "一致するものがありません。別の並べ替えをお試しください。"
+    }
+  ],
+  "web.requests.browse.genre": [
+    {
+      "type": 0,
+      "value": "ジャンル"
+    }
+  ],
+  "web.requests.browse.genreNotFound": [
+    {
+      "type": 0,
+      "value": "ジャンルが見つかりません。"
+    }
+  ],
+  "web.requests.browse.loadFailed": [
+    {
+      "type": 0,
+      "value": "このページを読み込めませんでした。別の並べ替えまたはメディアの種類をお試しください。"
+    }
+  ],
+  "web.requests.browse.loading": [
+    {
+      "type": 0,
+      "value": "読み込み中…"
+    }
+  ],
+  "web.requests.browse.movies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.requests.browse.network": [
+    {
+      "type": 0,
+      "value": "ネットワーク"
+    }
+  ],
+  "web.requests.browse.networkNotFound": [
+    {
+      "type": 0,
+      "value": "ネットワークが見つかりません。"
+    }
+  ],
+  "web.requests.browse.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.requests.browse.sortBy": [
+    {
+      "type": 0,
+      "value": "並べ替え"
+    }
+  ],
+  "web.requests.browse.sortPopularity": [
+    {
+      "type": 0,
+      "value": "人気順"
+    }
+  ],
+  "web.requests.browse.sortRating": [
+    {
+      "type": 0,
+      "value": "評価順"
+    }
+  ],
+  "web.requests.browse.sortReleaseDate": [
+    {
+      "type": 0,
+      "value": "公開日順"
+    }
+  ],
+  "web.requests.browse.studio": [
+    {
+      "type": 0,
+      "value": "スタジオ"
+    }
+  ],
+  "web.requests.browse.studioNotFound": [
+    {
+      "type": 0,
+      "value": "スタジオが見つかりません。"
+    }
+  ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "リクエストをキャンセル"
+    }
+  ],
+  "web.requests.cancel.actionFor": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "のリクエストをキャンセル"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "」のリクエストは、ダウンロードの自動処理に送信される前に取り消されます。"
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "リクエストを維持"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "このリクエストをキャンセルしますか？"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -6145,6 +6361,24 @@
     {
       "type": 0,
       "value": "をウォッチリストに追加"
+    }
+  ],
+  "web.requests.card.label": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "（"
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    },
+    {
+      "type": 0,
+      "value": "）"
     }
   ],
   "web.requests.card.onWatchlist": [
@@ -6163,10 +6397,336 @@
       "value": "をウォッチリストから削除"
     }
   ],
+  "web.requests.card.requestTitle": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "をリクエスト"
+    }
+  ],
+  "web.requests.card.sending": [
+    {
+      "type": 0,
+      "value": "送信中"
+    }
+  ],
+  "web.requests.card.sendingFor": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "のリクエストを送信中"
+    }
+  ],
+  "web.requests.discoverSection.empty": [
+    {
+      "type": 0,
+      "value": "現在ここには何もありません。"
+    }
+  ],
+  "web.requests.discoverSection.fallbackTitle": [
+    {
+      "type": 0,
+      "value": "ディスカバー"
+    }
+  ],
+  "web.requests.discoverSection.notFound": [
+    {
+      "type": 0,
+      "value": "見つかりません"
+    }
+  ],
+  "web.requests.discoverSection.unknown": [
+    {
+      "type": 0,
+      "value": "このディスカバーの行は存在しません。"
+    }
+  ],
+  "web.requests.discoverSection.unreachable": [
+    {
+      "type": 0,
+      "value": "TMDBに接続できませんでした。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.requests.download.downloading": [
+    {
+      "type": 0,
+      "value": "ダウンロード中"
+    }
+  ],
+  "web.requests.download.importing": [
+    {
+      "type": 0,
+      "value": "インポート中"
+    }
+  ],
+  "web.requests.download.paused": [
+    {
+      "type": 0,
+      "value": "ダウンロード一時停止中"
+    }
+  ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "ダウンロードの進捗"
+    }
+  ],
+  "web.requests.download.stalled": [
+    {
+      "type": 0,
+      "value": "ダウンロード停止中"
+    }
+  ],
+  "web.requests.download.timeLeft": [
+    {
+      "type": 0,
+      "value": "残り約"
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.requests.download.waiting": [
+    {
+      "type": 0,
+      "value": "ダウンロード待ち"
+    }
+  ],
+  "web.requests.download.waitingForImport": [
+    {
+      "type": 0,
+      "value": "インポート待ち"
+    }
+  ],
+  "web.requests.hub.browseDiscover": [
+    {
+      "type": 0,
+      "value": "ディスカバーを見る"
+    }
+  ],
+  "web.requests.hub.cancelled": [
+    {
+      "type": 0,
+      "value": "キャンセル済み"
+    }
+  ],
+  "web.requests.hub.discover": [
+    {
+      "type": 0,
+      "value": "ディスカバー"
+    }
+  ],
+  "web.requests.hub.discoverFailed": [
+    {
+      "type": 0,
+      "value": "TMDBに接続できなかったため、現在ディスカバーに表示できるものはありません。"
+    }
+  ],
+  "web.requests.hub.empty": [
+    {
+      "type": 0,
+      "value": "まだ何もリクエストしていません。"
+    }
+  ],
+  "web.requests.hub.emptyHint": [
+    {
+      "type": 0,
+      "value": "ディスカバーや検索でタイトルを見つけ、そのページからリクエストしてください。リクエストはステータスとともにここに表示されます。"
+    }
+  ],
+  "web.requests.hub.inLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリに追加済み"
+    }
+  ],
+  "web.requests.hub.intro": [
+    {
+      "type": 0,
+      "value": "まだライブラリにない映画やシリーズをリクエストし、その状況を確認できます。"
+    }
+  ],
+  "web.requests.hub.loadFailed": [
+    {
+      "type": 0,
+      "value": "リクエストを読み込めませんでした。"
+    }
+  ],
+  "web.requests.hub.needsAttention": [
+    {
+      "type": 0,
+      "value": "要確認"
+    }
+  ],
+  "web.requests.hub.onTheWay": [
+    {
+      "type": 0,
+      "value": "準備中"
+    }
+  ],
+  "web.requests.hub.openInLibrary": [
+    {
+      "type": 0,
+      "value": "ライブラリで開く"
+    }
+  ],
+  "web.requests.hub.openInLibraryFor": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "をライブラリで開く"
+    }
+  ],
+  "web.requests.hub.reason": [
+    {
+      "type": 0,
+      "value": "理由："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.requests.hub.statusApproved": [
+    {
+      "type": 0,
+      "value": "承認済みですが、まだダウンロード自動化に送信されていません。現在もキャンセルできます。"
+    }
+  ],
+  "web.requests.hub.statusAvailable": [
+    {
+      "type": 0,
+      "value": "ライブラリにあり、視聴できます。"
+    }
+  ],
+  "web.requests.hub.statusCancelled": [
+    {
+      "type": 0,
+      "value": "ダウンロード自動化に送信される前に取り下げられました。"
+    }
+  ],
+  "web.requests.hub.statusDeclined": [
+    {
+      "type": 0,
+      "value": "管理者が却下しました。"
+    }
+  ],
+  "web.requests.hub.statusHelp": [
+    {
+      "type": 0,
+      "value": "ステータスの意味"
+    }
+  ],
+  "web.requests.hub.statusPartial": [
+    {
+      "type": 0,
+      "value": "リクエストしたシーズンの一部のエピソードが届きました。"
+    }
+  ],
+  "web.requests.hub.statusPending": [
+    {
+      "type": 0,
+      "value": "管理者の対応を待っています。ダウンロード自動化に送信されるまではキャンセルできます。"
+    }
+  ],
+  "web.requests.hub.statusProcessing": [
+    {
+      "type": 0,
+      "value": "ダウンロード自動化に送信されました。"
+    }
+  ],
+  "web.requests.hub.statuses": [
+    {
+      "type": 0,
+      "value": "リクエストのステータス"
+    }
+  ],
+  "web.requests.hub.yours": [
+    {
+      "type": 0,
+      "value": "自分のリクエスト"
+    }
+  ],
+  "web.requests.hub.yoursIntro": [
+    {
+      "type": 0,
+      "value": "このアカウントからのリクエストを、次に起こることごとにまとめています。"
+    }
+  ],
+  "web.requests.request": [
+    {
+      "type": 0,
+      "value": "リクエスト"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "さらにタイトルを読み込めませんでした。"
+    }
+  ],
+  "web.requests.seasons.choose": [
+    {
+      "type": 0,
+      "value": "リクエストする"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "のシーズンを選択してください。"
+    }
+  ],
+  "web.requests.seasons.noSeasons": [
+    {
+      "type": 0,
+      "value": "TMDBにはこのシリーズのシーズンがまだ登録されていないため、リクエストはシリーズ全体が対象になります。"
+    }
+  ],
+  "web.requests.seasons.noneAired": [
+    {
+      "type": 0,
+      "value": "まだ放送されたシーズンがないため、シーズンを選択しない場合、リクエストはシリーズ全体が対象になります。"
+    }
+  ],
+  "web.requests.seasons.pickUpcoming": [
+    {
+      "type": 0,
+      "value": "リクエストする今後のシーズンを選択してください。"
+    }
+  ],
+  "web.requests.seasons.requestSeasons": [
+    {
+      "type": 1,
+      "value": "seasons"
+    },
+    {
+      "type": 0,
+      "value": "をリクエスト"
+    }
+  ],
+  "web.requests.seasons.requestSeries": [
+    {
+      "type": 0,
+      "value": "シリーズをリクエスト"
+    }
+  ],
+  "web.requests.status.active": [
+    {
+      "type": 0,
+      "value": "進行中"
     }
   ],
   "web.requests.status.approved": [
@@ -6175,16 +6735,172 @@
       "value": "承認済み"
     }
   ],
+  "web.requests.status.available": [
+    {
+      "type": 0,
+      "value": "視聴可能"
+    }
+  ],
+  "web.requests.status.cancelled": [
+    {
+      "type": 0,
+      "value": "キャンセル済み"
+    }
+  ],
+  "web.requests.status.declined": [
+    {
+      "type": 0,
+      "value": "却下"
+    }
+  ],
+  "web.requests.status.failed": [
+    {
+      "type": 0,
+      "value": "失敗"
+    }
+  ],
+  "web.requests.status.partiallyAvailable": [
+    {
+      "type": 0,
+      "value": "一部視聴可能"
+    }
+  ],
+  "web.requests.status.pending": [
+    {
+      "type": 0,
+      "value": "保留中"
+    }
+  ],
   "web.requests.status.processing": [
     {
       "type": 0,
       "value": "処理中"
     }
   ],
+  "web.requests.status.reason.alreadyAvailable": [
+    {
+      "type": 0,
+      "value": "視聴可能"
+    }
+  ],
+  "web.requests.status.reason.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "リクエスト済み"
+    }
+  ],
+  "web.requests.status.reason.blocked": [
+    {
+      "type": 0,
+      "value": "ブロック済み"
+    }
+  ],
+  "web.requests.status.reason.quotaExceeded": [
+    {
+      "type": 0,
+      "value": "リクエスト上限に到達"
+    }
+  ],
+  "web.requests.status.reason.requestsDisabled": [
+    {
+      "type": 0,
+      "value": "リクエスト無効"
+    }
+  ],
+  "web.requests.status.reason.unavailable": [
+    {
+      "type": 0,
+      "value": "利用不可"
+    }
+  ],
+  "web.requests.status.seasonList": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "シーズン"
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.status.seasonProgress": [
+    {
+      "type": 6,
+      "value": "aired",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": "エピソード中"
+            },
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": "エピソードがライブラリにあります"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.title": [
+    {
+      "type": 0,
+      "value": "リクエスト"
+    }
+  ],
   "web.requests.toAdd.heading": [
     {
       "type": 0,
       "value": "追加をリクエスト"
+    }
+  ],
+  "web.requests.toAdd.movie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.requests.toAdd.noLibraryMatch": [
+    {
+      "type": 0,
+      "value": "ライブラリに「"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "」と一致するものはありません。"
+    }
+  ],
+  "web.requests.toAdd.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
     }
   ],
   "web.search.boxSets": [

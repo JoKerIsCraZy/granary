@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -26,12 +27,10 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
     /// </summary>
     internal const int EmptyPagesInARow = 3;
 
-    internal const string MoreFailedText = "Couldn’t load more titles.";
-
-    private static readonly SettingChoice Popularity = new("popularity", "Popularity");
-    private static readonly IReadOnlyList<SettingChoice> Sorts = [Popularity, new("vote_average", "Rating"), new("release_date", "Release date")];
-    private static readonly SettingChoice Movies = new("movie", "Movies");
-    private static readonly SettingChoice Series = new("series", "Series");
+    // The choices, worded once per page in the language on screen: the boxes find their picks in these instances.
+    private readonly SettingChoice _popularity;
+    private readonly SettingChoice _movies;
+    private readonly SettingChoice _series;
 
     private readonly ISessionManager _session;
     private readonly RequestsApi _requests;
@@ -57,6 +56,14 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         _navigation = navigation;
         _logger = logger;
         RequestNotice = requestNotice ?? CardRequestNotice.None;
+        _popularity = new("popularity", AppText.Get("web.requests.browse.sortPopularity"));
+        _movies = new("movie", AppText.Get("web.requests.browse.movies"));
+        _series = new("series", AppText.Get("web.requests.browse.series"));
+        SortChoices = [_popularity, new("vote_average", AppText.Get("web.requests.browse.sortRating")),
+            new("release_date", AppText.Get("web.requests.browse.sortReleaseDate"))];
+        MediaChoices = [_movies, _series];
+        SelectedSort = _popularity;
+        SelectedMedia = _movies;
     }
 
     public ObservableCollection<MediaCard> Cards { get; } = [];
@@ -90,16 +97,16 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
     public bool IsGenre => Browse == DiscoverBrowseKind.Genre;
 
     /// <summary>Popularity, Rating, Release date: a browse page's sorts. The same list always, so a select bound to it never loses its choice.</summary>
-    public IReadOnlyList<SettingChoice> SortChoices { get; } = Sorts;
+    public IReadOnlyList<SettingChoice> SortChoices { get; }
 
     [ObservableProperty]
-    public partial SettingChoice SelectedSort { get; set; } = Popularity;
+    public partial SettingChoice SelectedSort { get; set; }
 
     /// <summary>Movies and Series, a genre's media types.</summary>
-    public IReadOnlyList<SettingChoice> MediaChoices { get; } = [Movies, Series];
+    public IReadOnlyList<SettingChoice> MediaChoices { get; }
 
     [ObservableProperty]
-    public partial SettingChoice SelectedMedia { get; set; } = Movies;
+    public partial SettingChoice SelectedMedia { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsEmpty), nameof(HasError), nameof(IsReady), nameof(IsNotFound), nameof(HasHeaderTile),
@@ -165,8 +172,8 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         try
         {
             Browse = route.Browse;
-            SelectedSort = Popularity;
-            SelectedMedia = route.MediaType == "series" ? Series : Movies;
+            SelectedSort = _popularity;
+            SelectedMedia = route.MediaType == "series" ? _series : _movies;
         }
         finally
         {
@@ -239,7 +246,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         if (fresh)
         {
             Title = route.Title.Length > 0 ? route.Title : FallbackTitle(route);
-            Subtitle = route.Browse is null ? "" : "Loading...";
+            Subtitle = route.Browse is null ? "" : AppText.Get("web.requests.browse.loading");
             Logo = null;
             TileText = "";
         }
@@ -279,7 +286,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
                 State = Cards.Count == 0 && next is null ? LibraryLoadState.Empty : LibraryLoadState.Ready;
                 if (State == LibraryLoadState.Empty)
                 {
-                    Message = route.Browse is null ? "Nothing here right now." : "Nothing matched. Try a different sort.";
+                    Message = route.Browse is null ? AppText.Get("web.requests.discoverSection.empty") : AppText.Get("web.requests.browse.empty");
                 }
                 if (added > 0 || next is not int following || empty + 1 >= EmptyPagesInARow)
                 {
@@ -324,8 +331,8 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
             return new TitlesPage(section.Results, section.TotalPages, section.NextPage, SectionTitle.Shown(section), null);
         }
         // A select can clear its choice while its list changes; the web falls back the same way.
-        string? mediaType = kind == DiscoverBrowseKind.Genre ? SelectedMedia?.Value ?? Movies.Value : null;
-        var browse = await _requests.BrowseAsync(server, kind, route.Key, SelectedSort?.Value ?? Popularity.Value, page, mediaType, token);
+        string? mediaType = kind == DiscoverBrowseKind.Genre ? SelectedMedia?.Value ?? _movies.Value : null;
+        var browse = await _requests.BrowseAsync(server, kind, route.Key, SelectedSort?.Value ?? _popularity.Value, page, mediaType, token);
         return new TitlesPage(browse.Results, browse.TotalPages, null, browse.DisplayName, browse.LogoUrl);
     }
 
@@ -384,24 +391,31 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         if (route.Browse is { } kind)
         {
             _notFound = ex is ArgumentException or SiloApiException { Status: 404 };
-            Title = _notFound ? $"{KindLabel(kind)} not found." : Title;
+            Title = _notFound ? NotFound(kind) : Title;
             Subtitle = _notFound ? "" : KindLabel(kind);
-            Message = _notFound ? "" : "Could not load this browse page. Try a different sort or media type.";
+            Message = _notFound ? "" : AppText.Get("web.requests.browse.loadFailed");
         }
         else
         {
             _notFound = ex is ArgumentException or SiloApiException { Status: 400 or 404 or 422 };
-            Title = _notFound ? "Not found" : Title;
-            Message = _notFound ? "This Discover row doesn’t exist." : "TMDB couldn’t be reached. Try again in a moment.";
+            Title = _notFound ? AppText.Get("web.requests.discoverSection.notFound") : Title;
+            Message = _notFound ? AppText.Get("web.requests.discoverSection.unknown") : AppText.Get("web.requests.discoverSection.unreachable");
         }
         State = LibraryLoadState.Error;
     }
 
     private static string KindLabel(DiscoverBrowseKind kind) => kind switch
     {
-        DiscoverBrowseKind.Studio => "Studio",
-        DiscoverBrowseKind.Network => "Network",
-        _ => "Genre",
+        DiscoverBrowseKind.Studio => AppText.Get("web.requests.browse.studio"),
+        DiscoverBrowseKind.Network => AppText.Get("web.requests.browse.network"),
+        _ => AppText.Get("web.requests.browse.genre"),
+    };
+
+    private static string NotFound(DiscoverBrowseKind kind) => kind switch
+    {
+        DiscoverBrowseKind.Studio => AppText.Get("web.requests.browse.studioNotFound"),
+        DiscoverBrowseKind.Network => AppText.Get("web.requests.browse.networkNotFound"),
+        _ => AppText.Get("web.requests.browse.genreNotFound"),
     };
 
     // The web's names until the server's arrive: "trending_movies" is "Trending movies", "marvel-studios" "Marvel Studios".
@@ -412,7 +426,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
             return string.Join(' ', route.Key.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(Capitalized));
         }
         string words = string.Join(' ', route.Key.Split(['_', '-'], StringSplitOptions.RemoveEmptyEntries));
-        return words.Length > 0 ? Capitalized(words) : "Discover";
+        return words.Length > 0 ? Capitalized(words) : AppText.Get("web.requests.discoverSection.fallbackTitle");
     }
 
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

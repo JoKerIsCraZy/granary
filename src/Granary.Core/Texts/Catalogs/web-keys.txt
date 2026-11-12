@@ -142,6 +142,15 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# Requests, in the words of the web's hub (pages/Requests.tsx), its browse and Discover row pages
+# (pages/RequestBrowse.tsx, RequestDiscoverSection.tsx), the brand rows (components/BrandCarousel.tsx), the request
+# poster card and its toasts (components/RequestPosterCard.tsx, hooks/queries/useRequests.ts), the seasons dialog
+# (RequestSeasonsDialog.tsx) and lib/mediaRequests.ts and lib/requestDownload.ts (a time left in the audiobooks'
+# duration words): src/Granary.App/Views/RequestsPage.xaml(.cs), RequestTitlesPage.xaml,
+# src/Granary.App/Controls/BrandRow.xaml(.cs), src/Granary.Core/ViewModels/Request*.cs, MediaCardActions.cs and
+# BrowseHeroTitle.cs.
+requests.error.create
+
 # A setting's name, description and choices as Silo's settings manifest words them for every client
 # (settingsManifest.<key>.label, .description, .option.<value>), where the web's settings pages show them for the same
 # setting: src/Granary.App/Views/Settings and src/Granary.Core/ViewModels/Settings.
@@ -192,6 +201,11 @@ shuffle.nothingToPlay
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.admin.homeRows.restore.libraryFallback
+
+# More of the Requests words, as above under requests.error.create.
+web.audiobooks.duration.hours
+web.audiobooks.duration.hoursMinutes
+web.audiobooks.duration.minutes
 
 # The password change after sign-in, as the web's ChoosePassword page (pages/ChoosePassword.tsx) and, for the server's
 # limits and refusals, its account settings' password form: src/Granary.App/Views/ChangePasswordPage.xaml and
@@ -745,6 +759,10 @@ web.common.devicePlatform.kind.unknown
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
 
+# More of the Requests words, as above under requests.error.create.
+web.common.requests.toast.cancelFailed
+web.common.requests.toast.submitted
+
 # More of a library page's words, as above under catalog.sort.added.
 web.common.sort.bitrate
 web.common.sort.contentRating
@@ -763,6 +781,11 @@ web.common.toast.collections.deleteFailed
 
 # More of the Collections page's words, as above under web.collections.admin.editCollection.
 web.common.toast.collections.deleted
+
+# More of the Requests words, as above under requests.error.create.
+web.common.ui.carousel.loadFailed
+web.common.ui.carousel.scrollLeft
+web.common.ui.carousel.scrollRight
 
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
@@ -809,6 +832,11 @@ web.detail.seasons.watchedProgress
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.home.addRow.libraries
+
+# More of the Requests words, as above under requests.error.create.
+web.home.addRow.params.mediaType
+
+# More of the collection editor's words, as above under catalog.sort.author.
 web.home.addRow.rules.addAndGroup
 web.home.addRow.rules.addOrGroup
 web.home.addRow.rules.addRule
@@ -1003,19 +1031,129 @@ web.recommendations.tasteProfile
 web.recommendations.title
 web.recommendations.topGenres
 
+# More of the Requests words, as above under requests.error.create.
+web.requests.browse.empty
+web.requests.browse.genre
+web.requests.browse.genreNotFound
+web.requests.browse.loadFailed
+web.requests.browse.loading
+web.requests.browse.movies
+web.requests.browse.network
+web.requests.browse.networkNotFound
+web.requests.browse.series
+web.requests.browse.sortBy
+web.requests.browse.sortPopularity
+web.requests.browse.sortRating
+web.requests.browse.sortReleaseDate
+web.requests.browse.studio
+web.requests.browse.studioNotFound
+web.requests.cancel.action
+web.requests.cancel.actionFor
+web.requests.cancel.description
+web.requests.cancel.keep
+web.requests.cancel.title
+
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.requests.card.addToWatchlist
 web.requests.card.addToWatchlistFor
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.label
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.requests.card.onWatchlist
 web.requests.card.removeFromWatchlist
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.requestTitle
+web.requests.card.sending
+web.requests.card.sendingFor
+web.requests.discoverSection.empty
+web.requests.discoverSection.fallbackTitle
+web.requests.discoverSection.notFound
+web.requests.discoverSection.unknown
+web.requests.discoverSection.unreachable
+web.requests.download.downloading
+web.requests.download.importing
+web.requests.download.paused
+web.requests.download.progress
+web.requests.download.stalled
+web.requests.download.timeLeft
+web.requests.download.waiting
+web.requests.download.waitingForImport
+web.requests.hub.browseDiscover
+web.requests.hub.cancelled
+web.requests.hub.discover
+web.requests.hub.discoverFailed
+web.requests.hub.empty
+web.requests.hub.emptyHint
+web.requests.hub.inLibrary
+web.requests.hub.intro
+web.requests.hub.loadFailed
+web.requests.hub.needsAttention
+web.requests.hub.onTheWay
+web.requests.hub.openInLibrary
+web.requests.hub.openInLibraryFor
+web.requests.hub.reason
+web.requests.hub.statusApproved
+web.requests.hub.statusAvailable
+web.requests.hub.statusCancelled
+web.requests.hub.statusDeclined
+web.requests.hub.statusHelp
+web.requests.hub.statusPartial
+web.requests.hub.statusPending
+web.requests.hub.statusProcessing
+web.requests.hub.statuses
+web.requests.hub.yours
+web.requests.hub.yoursIntro
+web.requests.request
 
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.requests.results.loadMoreFailed
 
+# More of the Requests words, as above under requests.error.create.
+web.requests.seasons.choose
+web.requests.seasons.noSeasons
+web.requests.seasons.noneAired
+web.requests.seasons.pickUpcoming
+web.requests.seasons.requestSeasons
+web.requests.seasons.requestSeries
+web.requests.status.active
+
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.status.approved
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.available
+web.requests.status.cancelled
+web.requests.status.declined
+web.requests.status.failed
+web.requests.status.partiallyAvailable
+web.requests.status.pending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.status.processing
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.reason.alreadyAvailable
+web.requests.status.reason.alreadyRequested
+web.requests.status.reason.blocked
+web.requests.status.reason.quotaExceeded
+web.requests.status.reason.requestsDisabled
+web.requests.status.reason.unavailable
+web.requests.status.seasonList
+web.requests.status.seasonProgress
+web.requests.title
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.toAdd.heading
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.toAdd.movie
+web.requests.toAdd.noLibraryMatch
+web.requests.toAdd.series
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.search.boxSets
 
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:

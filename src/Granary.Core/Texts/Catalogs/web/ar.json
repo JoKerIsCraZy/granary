@@ -623,6 +623,12 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "requests.error.create": [
+    {
+      "type": 0,
+      "value": "فشل إرسال الطلب"
+    }
+  ],
   "settingsManifest.catalog.hide_unwatched_episode_images.description": [
     {
       "type": 0,
@@ -883,6 +889,44 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.audiobooks.duration.hours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " س"
+    }
+  ],
+  "web.audiobooks.duration.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " س "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.audiobooks.duration.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
     }
   ],
   "web.auth.choosePassword.description": [
@@ -5226,6 +5270,18 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.requests.toast.cancelFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر إلغاء الطلب"
+    }
+  ],
+  "web.common.requests.toast.submitted": [
+    {
+      "type": 0,
+      "value": "تم إرسال الطلب"
+    }
+  ],
   "web.common.sort.bitrate": [
     {
       "type": 0,
@@ -5302,6 +5358,32 @@
     {
       "type": 0,
       "value": "تم حذف المجموعة"
+    }
+  ],
+  "web.common.ui.carousel.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل "
+    },
+    {
+      "type": 1,
+      "value": "title_lower"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.common.ui.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "التمرير لليسار"
+    }
+  ],
+  "web.common.ui.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "التمرير لليمين"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -5769,6 +5851,12 @@
     {
       "type": 0,
       "value": "المكتبات"
+    }
+  ],
+  "web.home.addRow.params.mediaType": [
+    {
+      "type": 0,
+      "value": "نوع الوسائط"
     }
   ],
   "web.home.addRow.rules.addAndGroup": [
@@ -7640,6 +7728,138 @@
       "value": "أبرز الأنواع"
     }
   ],
+  "web.requests.browse.empty": [
+    {
+      "type": 0,
+      "value": "لا توجد نتائج مطابقة. جرّب ترتيبًا مختلفًا."
+    }
+  ],
+  "web.requests.browse.genre": [
+    {
+      "type": 0,
+      "value": "النوع"
+    }
+  ],
+  "web.requests.browse.genreNotFound": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على النوع."
+    }
+  ],
+  "web.requests.browse.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل صفحة التصفح هذه. جرّب ترتيبًا أو نوع وسائط مختلفًا."
+    }
+  ],
+  "web.requests.browse.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ التحميل..."
+    }
+  ],
+  "web.requests.browse.movies": [
+    {
+      "type": 0,
+      "value": "الأفلام"
+    }
+  ],
+  "web.requests.browse.network": [
+    {
+      "type": 0,
+      "value": "الشبكة"
+    }
+  ],
+  "web.requests.browse.networkNotFound": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على الشبكة."
+    }
+  ],
+  "web.requests.browse.series": [
+    {
+      "type": 0,
+      "value": "المسلسلات"
+    }
+  ],
+  "web.requests.browse.sortBy": [
+    {
+      "type": 0,
+      "value": "الترتيب حسب"
+    }
+  ],
+  "web.requests.browse.sortPopularity": [
+    {
+      "type": 0,
+      "value": "الشعبية"
+    }
+  ],
+  "web.requests.browse.sortRating": [
+    {
+      "type": 0,
+      "value": "التقييم"
+    }
+  ],
+  "web.requests.browse.sortReleaseDate": [
+    {
+      "type": 0,
+      "value": "تاريخ الإصدار"
+    }
+  ],
+  "web.requests.browse.studio": [
+    {
+      "type": 0,
+      "value": "الاستوديو"
+    }
+  ],
+  "web.requests.browse.studioNotFound": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على الاستوديو."
+    }
+  ],
+  "web.requests.cancel.action": [
+    {
+      "type": 0,
+      "value": "إلغاء الطلب"
+    }
+  ],
+  "web.requests.cancel.actionFor": [
+    {
+      "type": 0,
+      "value": "إلغاء طلب "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.cancel.description": [
+    {
+      "type": 0,
+      "value": "سيُسحب طلبك لـ«"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "» قبل إرساله إلى أتمتة التنزيل."
+    }
+  ],
+  "web.requests.cancel.keep": [
+    {
+      "type": 0,
+      "value": "الإبقاء على الطلب"
+    }
+  ],
+  "web.requests.cancel.title": [
+    {
+      "type": 0,
+      "value": "إلغاء هذا الطلب؟"
+    }
+  ],
   "web.requests.card.addToWatchlist": [
     {
       "type": 0,
@@ -7658,6 +7878,24 @@
     {
       "type": 0,
       "value": " إلى قائمة المشاهدة"
+    }
+  ],
+  "web.requests.card.label": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " ("
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    },
+    {
+      "type": 0,
+      "value": ")"
     }
   ],
   "web.requests.card.onWatchlist": [
@@ -7680,10 +7918,344 @@
       "value": " من قائمة المشاهدة"
     }
   ],
+  "web.requests.card.requestTitle": [
+    {
+      "type": 0,
+      "value": "طلب "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.card.sending": [
+    {
+      "type": 0,
+      "value": "جارٍ الإرسال"
+    }
+  ],
+  "web.requests.card.sendingFor": [
+    {
+      "type": 0,
+      "value": "جارٍ إرسال طلب "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.discoverSection.empty": [
+    {
+      "type": 0,
+      "value": "لا يوجد شيء هنا حاليًا."
+    }
+  ],
+  "web.requests.discoverSection.fallbackTitle": [
+    {
+      "type": 0,
+      "value": "استكشاف"
+    }
+  ],
+  "web.requests.discoverSection.notFound": [
+    {
+      "type": 0,
+      "value": "غير موجود"
+    }
+  ],
+  "web.requests.discoverSection.unknown": [
+    {
+      "type": 0,
+      "value": "صف «استكشاف» هذا غير موجود."
+    }
+  ],
+  "web.requests.discoverSection.unreachable": [
+    {
+      "type": 0,
+      "value": "تعذّر الوصول إلى TMDB. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.requests.download.downloading": [
+    {
+      "type": 0,
+      "value": "جارٍ التنزيل"
+    }
+  ],
+  "web.requests.download.importing": [
+    {
+      "type": 0,
+      "value": "جارٍ الاستيراد"
+    }
+  ],
+  "web.requests.download.paused": [
+    {
+      "type": 0,
+      "value": "التنزيل متوقف مؤقتًا"
+    }
+  ],
+  "web.requests.download.progress": [
+    {
+      "type": 0,
+      "value": "تقدم التنزيل"
+    }
+  ],
+  "web.requests.download.stalled": [
+    {
+      "type": 0,
+      "value": "التنزيل متعثر"
+    }
+  ],
+  "web.requests.download.timeLeft": [
+    {
+      "type": 0,
+      "value": "يتبقى "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    },
+    {
+      "type": 0,
+      "value": " تقريبًا"
+    }
+  ],
+  "web.requests.download.waiting": [
+    {
+      "type": 0,
+      "value": "في انتظار التنزيل"
+    }
+  ],
+  "web.requests.download.waitingForImport": [
+    {
+      "type": 0,
+      "value": "في انتظار الاستيراد"
+    }
+  ],
+  "web.requests.hub.browseDiscover": [
+    {
+      "type": 0,
+      "value": "تصفّح «استكشاف»"
+    }
+  ],
+  "web.requests.hub.cancelled": [
+    {
+      "type": 0,
+      "value": "الطلبات الملغاة"
+    }
+  ],
+  "web.requests.hub.discover": [
+    {
+      "type": 0,
+      "value": "استكشاف"
+    }
+  ],
+  "web.requests.hub.discoverFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر الوصول إلى TMDB، لذا لا يوجد ما يمكن استكشافه الآن."
+    }
+  ],
+  "web.requests.hub.empty": [
+    {
+      "type": 0,
+      "value": "لم تطلب أي شيء بعد."
+    }
+  ],
+  "web.requests.hub.emptyHint": [
+    {
+      "type": 0,
+      "value": "ابحث عن عنوان في «استكشاف» أو عبر البحث، واطلبه من صفحته. سيظهر هنا مع حالته."
+    }
+  ],
+  "web.requests.hub.inLibrary": [
+    {
+      "type": 0,
+      "value": "في مكتبتك"
+    }
+  ],
+  "web.requests.hub.intro": [
+    {
+      "type": 0,
+      "value": "اطلب أفلامًا ومسلسلات غير موجودة في المكتبة بعد، وتابع طلباتك."
+    }
+  ],
+  "web.requests.hub.loadFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل طلباتك."
+    }
+  ],
+  "web.requests.hub.needsAttention": [
+    {
+      "type": 0,
+      "value": "بحاجة إلى انتباه"
+    }
+  ],
+  "web.requests.hub.onTheWay": [
+    {
+      "type": 0,
+      "value": "في الطريق"
+    }
+  ],
+  "web.requests.hub.openInLibrary": [
+    {
+      "type": 0,
+      "value": "فتح في المكتبة"
+    }
+  ],
+  "web.requests.hub.openInLibraryFor": [
+    {
+      "type": 0,
+      "value": "فتح "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " في المكتبة"
+    }
+  ],
+  "web.requests.hub.reason": [
+    {
+      "type": 0,
+      "value": "السبب: "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.requests.hub.statusApproved": [
+    {
+      "type": 0,
+      "value": "تمت الموافقة عليه، ولم يُرسل بعد إلى أتمتة التنزيل. لا يزال بإمكانك إلغاؤه."
+    }
+  ],
+  "web.requests.hub.statusAvailable": [
+    {
+      "type": 0,
+      "value": "في مكتبتك وجاهز للمشاهدة."
+    }
+  ],
+  "web.requests.hub.statusCancelled": [
+    {
+      "type": 0,
+      "value": "سُحب قبل إرساله إلى أتمتة التنزيل."
+    }
+  ],
+  "web.requests.hub.statusDeclined": [
+    {
+      "type": 0,
+      "value": "رفضه أحد المسؤولين."
+    }
+  ],
+  "web.requests.hub.statusHelp": [
+    {
+      "type": 0,
+      "value": "ما معنى الحالات"
+    }
+  ],
+  "web.requests.hub.statusPartial": [
+    {
+      "type": 0,
+      "value": "وصلت بعض حلقات المواسم المطلوبة."
+    }
+  ],
+  "web.requests.hub.statusPending": [
+    {
+      "type": 0,
+      "value": "بانتظار أحد المسؤولين. يمكنك إلغاؤه إلى أن يُرسل إلى أتمتة التنزيل."
+    }
+  ],
+  "web.requests.hub.statusProcessing": [
+    {
+      "type": 0,
+      "value": "أُرسل إلى أتمتة التنزيل."
+    }
+  ],
+  "web.requests.hub.statuses": [
+    {
+      "type": 0,
+      "value": "حالات الطلب"
+    }
+  ],
+  "web.requests.hub.yours": [
+    {
+      "type": 0,
+      "value": "طلباتك"
+    }
+  ],
+  "web.requests.hub.yoursIntro": [
+    {
+      "type": 0,
+      "value": "الطلبات من حسابك، مجمّعة حسب ما سيحدث بعد ذلك."
+    }
+  ],
+  "web.requests.request": [
+    {
+      "type": 0,
+      "value": "طلب"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "تعذّر تحميل المزيد من العناوين."
+    }
+  ],
+  "web.requests.seasons.choose": [
+    {
+      "type": 0,
+      "value": "اختر مواسم "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " التي تريد طلبها."
+    }
+  ],
+  "web.requests.seasons.noSeasons": [
+    {
+      "type": 0,
+      "value": "لا يدرج TMDB أي مواسم لهذا المسلسل بعد؛ يشمل الطلب المسلسل كاملًا."
+    }
+  ],
+  "web.requests.seasons.noneAired": [
+    {
+      "type": 0,
+      "value": "لم يُعرض أي موسم بعد، لذا يشمل الطلب المسلسل كاملًا ما لم تختر مواسم."
+    }
+  ],
+  "web.requests.seasons.pickUpcoming": [
+    {
+      "type": 0,
+      "value": "اختر المواسم القادمة التي تريد طلبها."
+    }
+  ],
+  "web.requests.seasons.requestSeasons": [
+    {
+      "type": 0,
+      "value": "طلب "
+    },
+    {
+      "type": 1,
+      "value": "seasons"
+    }
+  ],
+  "web.requests.seasons.requestSeries": [
+    {
+      "type": 0,
+      "value": "طلب المسلسل"
+    }
+  ],
+  "web.requests.status.active": [
+    {
+      "type": 0,
+      "value": "نشط"
     }
   ],
   "web.requests.status.approved": [
@@ -7692,16 +8264,324 @@
       "value": "تمت الموافقة"
     }
   ],
+  "web.requests.status.available": [
+    {
+      "type": 0,
+      "value": "متاح"
+    }
+  ],
+  "web.requests.status.cancelled": [
+    {
+      "type": 0,
+      "value": "ملغى"
+    }
+  ],
+  "web.requests.status.declined": [
+    {
+      "type": 0,
+      "value": "مرفوض"
+    }
+  ],
+  "web.requests.status.failed": [
+    {
+      "type": 0,
+      "value": "فشل"
+    }
+  ],
+  "web.requests.status.partiallyAvailable": [
+    {
+      "type": 0,
+      "value": "متاح جزئيًا"
+    }
+  ],
+  "web.requests.status.pending": [
+    {
+      "type": 0,
+      "value": "قيد الانتظار"
+    }
+  ],
   "web.requests.status.processing": [
     {
       "type": 0,
       "value": "قيد المعالجة"
     }
   ],
+  "web.requests.status.reason.alreadyAvailable": [
+    {
+      "type": 0,
+      "value": "متاح"
+    }
+  ],
+  "web.requests.status.reason.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "مطلوب بالفعل"
+    }
+  ],
+  "web.requests.status.reason.blocked": [
+    {
+      "type": 0,
+      "value": "محظور"
+    }
+  ],
+  "web.requests.status.reason.quotaExceeded": [
+    {
+      "type": 0,
+      "value": "بلغت حد الطلبات"
+    }
+  ],
+  "web.requests.status.reason.requestsDisabled": [
+    {
+      "type": 0,
+      "value": "الطلبات معطّلة"
+    }
+  ],
+  "web.requests.status.reason.unavailable": [
+    {
+      "type": 0,
+      "value": "غير متاح"
+    }
+  ],
+  "web.requests.status.seasonList": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المواسم "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الموسم "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الموسمان "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المواسم "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المواسم "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المواسم "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.status.seasonProgress": [
+    {
+      "type": 6,
+      "value": "aired",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة في المكتبة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة في المكتبة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من حلقتين في المكتبة"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقات في المكتبة"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقةً في المكتبة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " من "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " حلقة في المكتبة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.title": [
+    {
+      "type": 0,
+      "value": "الطلبات"
+    }
+  ],
   "web.requests.toAdd.heading": [
     {
       "type": 0,
       "value": "طلب للإضافة"
+    }
+  ],
+  "web.requests.toAdd.movie": [
+    {
+      "type": 0,
+      "value": "فيلم"
+    }
+  ],
+  "web.requests.toAdd.noLibraryMatch": [
+    {
+      "type": 0,
+      "value": "لا شيء في مكتبتك يطابق «"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "»."
+    }
+  ],
+  "web.requests.toAdd.series": [
+    {
+      "type": 0,
+      "value": "مسلسل"
     }
   ],
   "web.search.boxSets": [

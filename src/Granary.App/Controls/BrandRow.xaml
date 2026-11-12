@@ -116,11 +116,11 @@
 
             <!-- Mouse users get arrows; touch and touchpads scroll directly, keyboard users tab through. -->
             <Button x:Name="PreviousButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
-                    Margin="-18,0,0,0" Visibility="Collapsed" Click="OnPreviousClick" IsTabStop="False" AutomationProperties.Name="Scroll left">
+                    Margin="-18,0,0,0" Visibility="Collapsed" Click="OnPreviousClick" IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.carousel.scrollLeft')}">
                 <FontIcon Glyph="&#xE76B;" FontSize="14" />
             </Button>
             <Button x:Name="NextButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                    Margin="0,0,-18,0" Visibility="Collapsed" Click="OnNextClick" IsTabStop="False" AutomationProperties.Name="Scroll right">
+                    Margin="0,0,-18,0" Visibility="Collapsed" Click="OnNextClick" IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.carousel.scrollRight')}">
                 <FontIcon Glyph="&#xE76C;" FontSize="14" />
             </Button>
         </Grid>

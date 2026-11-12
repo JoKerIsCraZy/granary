@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -118,10 +119,10 @@ public sealed partial class RequestsPage : Page
             {
                 XamlRoot = XamlRoot,
                 Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-                Title = "Cancel this request?",
-                Content = $"Your request for \"{row.Title}\" will be withdrawn before it is sent to the download automation.",
-                PrimaryButtonText = "Cancel request",
-                CloseButtonText = "Keep request",
+                Title = AppText.Get("web.requests.cancel.title"),
+                Content = AppText.Get("web.requests.cancel.description", ("title", row.Title)),
+                PrimaryButtonText = AppText.Get("web.requests.cancel.action"),
+                CloseButtonText = AppText.Get("web.requests.cancel.keep"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)

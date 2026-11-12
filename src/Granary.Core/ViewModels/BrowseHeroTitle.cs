@@ -89,7 +89,7 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
         string?[] parts =
         [
             result.Year is int year and > 0 ? year.ToString(CultureInfo.InvariantCulture) : null,
-            result.MediaType == "series" ? "Series" : "Movie",
+            RequestText.MediaTypeLabel(result.MediaType),
             state,
         ];
         return new BrowseHeroTitle(
