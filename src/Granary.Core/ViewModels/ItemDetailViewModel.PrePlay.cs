@@ -44,6 +44,27 @@ public sealed partial class ItemDetailViewModel
     [ObservableProperty]
     public partial PrePlayPickers Pickers { get; private set; } = PrePlayPickers.None;
 
+    /// <summary>
+    /// The accent badges after a movie's or episode's facts, as the web's QualityBadges: "1080P", "DV HDR10", "DD+ ATMOS"
+    /// for the file the Version picker shows, so another pick there changes them. None for a series or season.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasQualityBadges))]
+    public partial IReadOnlyList<string> QualityBadges { get; private set; } = [];
+
+    public bool HasQualityBadges => QualityBadges.Count > 0;
+
+    // Whatever changes the pickers changes the file they show. An audio or subtitle pick makes new pickers for the same
+    // file: the list then stays the one it is, and the hero keeps its badges.
+    partial void OnPickersChanged(PrePlayPickers value)
+    {
+        var badges = _prePlayItem is { } item ? Detail.QualityBadges.For(item, value.Version) : [];
+        if (!badges.SequenceEqual(QualityBadges))
+        {
+            QualityBadges = badges;
+        }
+    }
+
     /// <summary>Picks <paramref name="option"/>'s file for Play. Another file starts its audio and subtitles from Auto again: their ordinals are the file's own.</summary>
     [RelayCommand]
     private void SelectVersion(DetailVersionOption? option)

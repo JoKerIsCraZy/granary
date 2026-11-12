@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
+  Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
+  Version picker.
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
