@@ -52,8 +52,12 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
     public int SleepTimerMinutes { get; init; } = DefaultSleepTimerMinutes;
 }
 
-/// <summary>Reads <see cref="PlaybackPreferences"/>; playback starts with the defaults when the server cannot say.</summary>
-public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<PlaybackPreferencesReader> logger)
+/// <summary>
+/// Reads <see cref="PlaybackPreferences"/>; playback starts with the defaults when the server cannot say. Every answer is
+/// kept on this PC for the profile (<see cref="KeptPlaybackSettings"/>), and <see cref="ReadOrKeptAsync"/> falls back on
+/// what was kept, for a download played without the server.
+/// </summary>
+public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<PlaybackPreferencesReader> logger, KeptPlaybackSettings? kept = null)
 {
     internal static readonly string[] Keys =
     [
@@ -105,14 +109,24 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     private const int MaxBitrateKbps = 1_000_000;
     private const double MaxSkipSeconds = 600;
 
-    public async Task<PlaybackPreferences> ReadAsync(Uri server, CancellationToken cancellationToken)
+    public Task<PlaybackPreferences> ReadAsync(Uri server, CancellationToken cancellationToken) => ReadAsync(server, orKept: false, cancellationToken);
+
+    /// <summary>
+    /// As <see cref="ReadAsync(Uri, CancellationToken)"/>, for a play that goes on without the server: a batch the server
+    /// could not be asked for (no connection, no answer before <paramref name="cancellationToken"/> ended, a server or proxy
+    /// that fails) is the one last kept on this PC for the acting profile. A batch the server refuses (a key it does not
+    /// know) is its answer, as ever, and one never kept is the defaults.
+    /// </summary>
+    public Task<PlaybackPreferences> ReadOrKeptAsync(Uri server, CancellationToken cancellationToken) => ReadAsync(server, orKept: true, cancellationToken);
+
+    private async Task<PlaybackPreferences> ReadAsync(Uri server, bool orKept, CancellationToken cancellationToken)
     {
-        var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", cancellationToken);
-        var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
-        var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", cancellationToken);
-        var sleepTimer = ReadBatchAsync(server, SleepTimerKeys, "Sleep timer", cancellationToken);
-        var audioDelay = ReadAudioDelayAsync(server, cancellationToken);
-        var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
+        var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", orKept, cancellationToken);
+        var markers = ReadBatchAsync(server, MarkerKeys, "Marker", orKept, cancellationToken);
+        var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", orKept, cancellationToken);
+        var sleepTimer = ReadBatchAsync(server, SleepTimerKeys, "Sleep timer", orKept, cancellationToken);
+        var audioDelay = ReadAudioDelayAsync(server, orKept, cancellationToken);
+        var preferences = await ReadMainAsync(server, orKept, cancellationToken).ConfigureAwait(false);
         if (await subtitles.ConfigureAwait(false) is { } subtitleValues)
         {
             int delay = Number(subtitleValues.Find(SubtitleKeys[1])) is { } ms ? (int)Math.Clamp(Math.Round(ms), -MaxSubtitleDelayMs, MaxSubtitleDelayMs) : 0;
@@ -141,11 +155,35 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         return preferences with { AudioDelayMs = delayMs, AudioDelayRefused = delayRefused };
     }
 
-    private async Task<(int? Milliseconds, bool Refused)> ReadAudioDelayAsync(Uri server, CancellationToken cancellationToken)
+    // One batch as the server answers it, kept for the acting profile; with orKept, the one last kept when the server
+    // could not be asked. The profile is read before the request: an answer that came for another one is not kept as its.
+    private async Task<EffectiveSettings> GetAsync(Uri server, string[] keys, bool orKept, CancellationToken cancellationToken)
+    {
+        string? owner = kept?.Owner();
+        try
+        {
+            var values = await settings.GetEffectiveAsync(server, keys, cancellationToken).ConfigureAwait(false);
+            if (owner is not null && kept!.Owner() == owner)
+            {
+                kept.Keep(owner, keys, values);
+            }
+            return values;
+        }
+        catch (Exception ex) when (orKept && owner is not null && IsUnreachable(ex) && kept!.Find(owner, keys) is { } last)
+        {
+            logger.LogInformation("Settings could not be read from the server ({Failure}); the ones last read on this PC are used", ApiFailureText.Describe(ex));
+            return last;
+        }
+    }
+
+    // The server was not asked, or could not answer: nothing it says about the keys.
+    private static bool IsUnreachable(Exception ex) => ex is HttpRequestException or OperationCanceledException or SiloApiException { Status: >= 500 };
+
+    private async Task<(int? Milliseconds, bool Refused)> ReadAudioDelayAsync(Uri server, bool orKept, CancellationToken cancellationToken)
     {
         try
         {
-            var values = await settings.GetEffectiveAsync(server, AudioDelayKeys, cancellationToken).ConfigureAwait(false);
+            var values = await GetAsync(server, AudioDelayKeys, orKept, cancellationToken).ConfigureAwait(false);
             return (AudioDelay.FromSetting(values.Find(AudioDelay.Key)), false);
         }
         catch (SiloApiException ex) when (ex.Status == 422)
@@ -160,11 +198,11 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         }
     }
 
-    private async Task<EffectiveSettings?> ReadBatchAsync(Uri server, string[] keys, string name, CancellationToken cancellationToken)
+    private async Task<EffectiveSettings?> ReadBatchAsync(Uri server, string[] keys, string name, bool orKept, CancellationToken cancellationToken)
     {
         try
         {
-            return await settings.GetEffectiveAsync(server, keys, cancellationToken).ConfigureAwait(false);
+            return await GetAsync(server, keys, orKept, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
@@ -195,12 +233,12 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
                 : defaults.NextUpPromptSeconds);
     }
 
-    private async Task<PlaybackPreferences> ReadMainAsync(Uri server, CancellationToken cancellationToken)
+    private async Task<PlaybackPreferences> ReadMainAsync(Uri server, bool orKept, CancellationToken cancellationToken)
     {
         EffectiveSettings values;
         try
         {
-            values = await settings.GetEffectiveAsync(server, Keys, cancellationToken).ConfigureAwait(false);
+            values = await GetAsync(server, Keys, orKept, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {

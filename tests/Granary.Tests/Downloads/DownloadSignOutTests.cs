@@ -39,16 +39,24 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     {
         _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
         _progress = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        _settings = new(() => new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>()));
     }
 
     public async ValueTask DisposeAsync()
     {
         await _progress.LatestSave;
+        if (_settings.IsValueCreated)
+        {
+            await _settings.Value.LatestSave;
+        }
         await _h.DisposeAsync();
     }
 
+    private readonly Lazy<Granary.Core.Playback.KeptPlaybackSettings> _settings;
+
     private DownloadSignOut NewSignOut() =>
-        new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress);
+        new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress, _settings.Value);
 
     // A completed download with its file on the disk.
     private async Task<StoredDownload> KeptAsync(string id, DownloadScope? scope = null)
@@ -193,11 +201,16 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         _progress.Record(Scope8, "ep_5", 60_000, 0);
         _progress.Record(otherAccount, "ep_5", 60_000, 0);
         _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        _settings.Value.Keep("srv1/1/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        _settings.Value.Keep("srv1/2/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
         using var servers = await ServersAsync();
 
         await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
         await _progress.LatestSave;
 
+        // The settings kept for its plays without the server go too.
+        Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(_settings.Value.Find("srv1/2/7", ["a"]));
         // What the account watched here and had not sent yet is not kept behind its back, on any of its profiles.
         Assert.Empty(_progress.Entries(Scope7));
         Assert.Empty(_progress.Entries(Scope8));

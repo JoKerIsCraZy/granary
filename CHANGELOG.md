@@ -14,7 +14,8 @@ release's section is what its update says it changes (docs/release.md).
   stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
   server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
-  tracks, subtitles, chapters and Skip Intro, and the next episode plays when it is downloaded too. What you watch offline
+  tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
+  read them, and the next episode plays when it is downloaded too. What you watch offline
   goes back to your Silo server once Granary reaches it again; signing out of a server or removing it also forgets what
   was not sent yet. The Downloads page has Play on each download, says Missing file for
   one whose file was deleted outside Granary, and Reclaim

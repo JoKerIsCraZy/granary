@@ -116,6 +116,12 @@ public sealed record DownloadRecord
     /// </summary>
     public bool IsWatched { get; init; }
 
+    /// <summary>
+    /// The title's subtitle preference as the server last said it, when a play from this PC read the title's state: a play
+    /// without the server starts the subtitle it names. Null until a play read it.
+    /// </summary>
+    public DownloadSubtitlePreference? SubtitlePreference { get; init; }
+
     /// <summary>When the manifest was last read from the server.</summary>
     public DateTimeOffset? ManifestReadAt { get; init; }
 
@@ -133,6 +139,13 @@ public sealed record DownloadRecord
         init => field = value ?? new Dictionary<string, string>();
     } = new Dictionary<string, string>();
 }
+
+/// <summary>
+/// Which subtitle a title starts with, as the server resolves it for the profile (the watch detail's effective subtitle
+/// fields): the language (null for no preference, empty for none), the mode (<c>auto</c>, <c>always</c>, <c>off</c>), whether
+/// forced subtitles show, and the track the profile last chose on the title.
+/// </summary>
+public sealed record DownloadSubtitlePreference(string? Language, string Mode, bool ShowForced, Api.Playback.WatchSubtitleSignature? Signature);
 
 /// <summary>
 /// A download with its folder. <see cref="FilesMissing"/>: its files cannot be used, so the row stays with what the index says

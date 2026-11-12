@@ -470,4 +470,44 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
 
         Assert.False(_fixture.Harness.Playing.Contains(DownloadHarness.Scope7, "dl_1"));
     }
+
+    [Fact]
+    public async Task WithoutTheServer_ADownloadStartsWithTheSettingsAndTheSubtitleItHadWhenTheServerLastSaid()
+    {
+        // Played once with the server: the profile watches at 1.5x with large yellow subtitles, always on, in English.
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK, """
+            { "items": [
+                { "key": "player.playback_speed", "value": 1.5, "source": "profile_device" },
+                { "key": "playback.subtitle_appearance", "value": { "fontSize": "xlarge", "fontColor": "#ffff00" }, "source": "profile" },
+                { "key": "player.subtitle_sync_ms", "value": 250, "source": "profile" }
+              ], "revision": 3 }
+            """));
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.WatchPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK,
+            LocalPlaybackFixture.Watch(preferences: """, "effective_subtitle_language": "en", "effective_subtitle_mode": "always" """)));
+        var online = await _fixture.PlayingAsync();
+        await online.StopAsync();
+        await online.DisposeAsync();
+        Assert.Equal(new DownloadSubtitlePreference("en", "always", true, null), _fixture.Harness.Find("dl_1")!.Record.SubtitlePreference);
+
+        _fixture.GoOffline();
+        var playback = await _fixture.StartAsync(PlayRequest.FromStart("ep_5"));
+        _fixture.Engine.RaiseState(LocalPlaybackFixture.Frame(0));
+
+        Assert.Equal((1.5, 250), (playback!.Speed, playback.SubtitleDelayMs));
+        Assert.Equal((1.5, 68d, "#ffff00"), (_fixture.Engine.Speed, _fixture.Engine.SubtitleLook!.FontSize, _fixture.Engine.SubtitleLook.FontColor));
+        // The English subtitle kept beside the media shows, as with the server.
+        Assert.Equal("local:sidecar:0", playback.SubtitleTrack);
+    }
+
+    [Fact]
+    public async Task ADownloadNeverPlayedWithTheServer_StartsWithTheDefaults_WithoutIt()
+    {
+        _fixture.GoOffline();
+
+        var playback = await _fixture.PlayingAsync();
+
+        Assert.Equal((1d, 0), (playback.Speed, playback.SubtitleDelayMs));
+        Assert.Equal(SubtitleAppearance.Default, _fixture.Engine.SubtitleLook);
+        Assert.Null(playback.SubtitleTrack);
+    }
 }

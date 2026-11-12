@@ -241,7 +241,8 @@ public sealed partial class LocalPlayback
 
     // What a stream would start with. The title page's pick names a track of the server's listing: the track here that is
     // like it shows (Off is a pick too). Without one, the automatic choice from the profile's preference, which the title's
-    // state on the server carries; without the server, the preference is the server's default: none.
+    // state on the server carries; without the server, the preference the title had when the server last said
+    // (DownloadRecord.SubtitlePreference), and for a download never played with the server, the server's default: none.
     private LocalSubtitle? StartSubtitle()
     {
         if (_choice is { SubtitleTrack: { } picked } choice)
@@ -262,10 +263,31 @@ public sealed partial class LocalPlayback
             s.Item.HearingImpaired, s.Item.Source, NeedsBurnIn: false)).ToList();
         string? audioLanguage = AudioTrack is { } audio && audio < AudioTracks.Count ? AudioTracks[audio].Language : null;
         var preference = _detail is { } detail
-            ? new SubtitlePreference(string.IsNullOrWhiteSpace(detail.EffectiveSubtitleLanguage) ? null : detail.EffectiveSubtitleLanguage,
-                detail.SubtitleMode, detail.ShowForcedSubtitles, audioLanguage, detail.EffectiveSubtitleTrackSignature)
-            : new SubtitlePreference(null, SubtitlePreferenceModes.Auto, ShowForced: true, audioLanguage);
+            ? new SubtitlePreference(PreferredLanguage(detail), detail.SubtitleMode, detail.ShowForcedSubtitles, audioLanguage,
+                detail.EffectiveSubtitleTrackSignature)
+            : _download.Record.SubtitlePreference is { } kept
+                ? new SubtitlePreference(kept.Language, kept.Mode, kept.ShowForced, audioLanguage, kept.Signature)
+                : new SubtitlePreference(null, SubtitlePreferenceModes.Auto, ShowForced: true, audioLanguage);
         return SubtitleAutoSelection.Resolve(candidates, preference) is { } resolved ? _subtitles[resolved.SelectionIndex] : null;
+    }
+
+    private static string? PreferredLanguage(WatchDetail detail) =>
+        string.IsNullOrWhiteSpace(detail.EffectiveSubtitleLanguage) ? null : detail.EffectiveSubtitleLanguage;
+
+    // The title's subtitle preference as the server just said it stays with the download, for a play without the server.
+    // It is the title's own: the server resolves it from the profile's preference and what the profile chose for the series.
+    private void KeepSubtitlePreference(WatchDetail? detail)
+    {
+        if (detail is null)
+        {
+            return;
+        }
+        var preference = new DownloadSubtitlePreference(PreferredLanguage(detail), detail.SubtitleMode, detail.ShowForcedSubtitles,
+            detail.EffectiveSubtitleTrackSignature);
+        if (preference != _download.Record.SubtitlePreference)
+        {
+            _records = KeepAsync(_records, r => r with { SubtitlePreference = preference });
+        }
     }
 
     // The track here in the picked one's language, with its forced and hearing-impaired marks; of several, one from the same

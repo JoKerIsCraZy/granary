@@ -1487,9 +1487,21 @@ while the server answers.
   them.
 - **What the server adds.** With a server signed in, the start reads the profile's playback settings
   (`PlaybackPreferencesReader`) and the title's watch detail side by side, within `LocalPlayback.PreferencesBudget`
-  (3 s); what does not come in time is done without: the settings' defaults, and no watch detail. Android reads the watch
-  detail for a local play the same way. From the watch detail come the profile's subtitle preference, the tracks the
-  title page's picks name, and where the profile left the title.
+  (3 s); what does not come in time is done without. Android reads the watch detail for a local play the same way. From
+  the watch detail come the profile's subtitle preference, the tracks the title page's picks name, and where the profile
+  left the title.
+- **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
+  `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
+  `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys
+  at a time and whole, as the server sent it; an answer that came after another profile became the active one is not
+  kept. A download's start reads with `ReadOrKeptAsync`: a batch the server could not be asked for (no connection, no
+  answer within the budget, a `5xx`) is the kept one, so the subtitle look, the subtitle and audio delays, the speed,
+  the skips, the marker settings and the sleep timer's duration are the profile's; a batch the server refuses (`422`,
+  a key it does not know) is its answer, and a profile whose settings were never read here gets the defaults. A
+  stream's read never takes a kept batch. The title's subtitle preference is the title's own, since the server resolves
+  it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
+  the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
+  that takes the downloads, and a server's removal, forget the kept settings of those accounts.
 - **Where it starts.** Start over starts at 0. A resume starts where the profile left the title: the server's point when
   the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). This PC's own also holds while it has a position
   of the title the server has not answered for (`OfflineProgressQueue.HasUnsent`): that one is the newer, whatever the
@@ -1506,8 +1518,9 @@ while the server answers.
   read into the player when it is picked (`AddSubtitleAsync`), once; a track of the file shows at once. The subtitle the
   title starts with is the one a stream would start with: the title page's pick (Off included), found among the tracks
   here by its language and its forced and hearing-impaired marks; else `SubtitleAutoSelection.Resolve` over the tracks
-  here with the watch detail's preference. Without the watch detail the preference is the server's default, which shows
-  none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
+  here with the watch detail's preference. Without the watch detail the preference is the one the title had when the
+  server last said (Without the server), and for a download never played with the server, the server's default, which
+  shows none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
 - **Settings changed while it plays.** The speed, the subtitle delay, auto-play and the sleep timer's duration hold in
   the player at once and are saved to the server under a stream's keys, as the download's profile only
   (`SetValueAsProfileAsync`), when a server was signed in as the title started; a save that does not arrive is logged and

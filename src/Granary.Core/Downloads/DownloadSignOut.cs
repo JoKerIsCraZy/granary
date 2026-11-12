@@ -28,7 +28,8 @@ public sealed record DownloadSummary(int? Count, long? Bytes);
 /// as the Android app does.
 /// </summary>
 public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISessionManager session, ICredentialStore credentials,
-    IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger, OfflineProgressQueue? progress = null)
+    IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger, OfflineProgressQueue? progress = null,
+    Playback.KeptPlaybackSettings? settings = null)
 {
     /// <summary>What a question before signing out says when the account signed in is not known: its downloads stay.</summary>
     public const string KeptNote = "Downloads on this PC are kept.";
@@ -183,6 +184,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         // What was watched there and not sent yet names titles and times. It could only go out as that account, which is
         // signed out now, or to that server, which is removed; a play still open records nothing more (LocalPlayback).
         progress?.Remove(scope => Matches(scope, serverEntryId, accountId));
+        // The settings kept for a play without the server have no download left to serve.
+        settings?.Remove(serverEntryId, accountId);
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;

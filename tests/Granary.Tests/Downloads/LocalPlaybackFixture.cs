@@ -37,6 +37,8 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
         AudioDelay = new AudioDelay(new SettingsApi(Harness.Silo.Http), Harness.Session, new ImmediateDispatcher(), Harness.Time,
             Harness.Logs.For<AudioDelay>());
         Playbacks = new DownloadPlaybacks(Harness.Store, Harness.Session, Create, Harness.Time, Harness.Logs.For<DownloadPlaybacks>());
+        KeptSettings = new KeptPlaybackSettings(Path.Combine(Harness.Directory, "data", "playback-settings.json"), Harness.Session,
+            Harness.Logs.For<KeptPlaybackSettings>());
     }
 
     public DownloadHarness Harness { get; } = new();
@@ -54,6 +56,9 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public OfflineProgressSync Sync { get; }
 
     public DownloadPlaybacks Playbacks { get; }
+
+    /// <summary>The playback settings as the server last answered them, for a play without it.</summary>
+    public KeptPlaybackSettings KeptSettings { get; }
 
     /// <summary>The playbacks that run and their stops, as the player counts them.</summary>
     public PlaybackStops Stops { get; } = new();
@@ -114,7 +119,8 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     {
         var settings = new SettingsApi(Harness.Silo.Http);
         var playback = new LocalPlayback(media, Engine, new ImmediateDispatcher(), Harness.Session,
-            new PlaybackPreferencesReader(settings, Harness.Logs.For<PlaybackPreferencesReader>()), new WatchApi(Harness.Silo.Http), settings, Device,
+            new PlaybackPreferencesReader(settings, Harness.Logs.For<PlaybackPreferencesReader>(), KeptSettings), new WatchApi(Harness.Silo.Http),
+            settings, Device,
             Harness.Time, Harness.Logs.For<LocalPlayback>(), AudioDelay, Harness.Store, Queue, Sync, Harness.Playing);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
@@ -158,6 +164,7 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
         Sync.Dispose();
         await Sync.LatestRun;
         await Queue.LatestSave;
+        await KeptSettings.LatestSave;
         await Harness.DisposeAsync();
     }
 }

@@ -239,6 +239,8 @@ public static class CoreServiceCollectionExtensions
     // exits, as transient disposables resolved from the root provider would be.
     private static void AddPlayback(IServiceCollection services)
     {
+        services.AddSingleton(sp => new KeptPlaybackSettings(KeptPlaybackSettings.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<ILogger<KeptPlaybackSettings>>()));
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();

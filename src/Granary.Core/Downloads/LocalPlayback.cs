@@ -15,7 +15,9 @@ namespace Granary.Core.Downloads;
 /// engine, and the title, tracks, chapters and marked parts come from the manifest kept beside it. As in Silo's apps
 /// (Android's <c>PlayerViewModel.tryLocalPlayback</c>, Apple's <c>OfflinePlaybackContext</c>), it opens no playback session
 /// on the server, online or not. While the server answers, it adds what only the server knows: the profile's settings, its
-/// subtitle preference and where the profile left the title on another device.
+/// subtitle preference and where the profile left the title on another device. Without the server, the settings are the
+/// ones last read on this PC (<see cref="KeptPlaybackSettings"/>) and the subtitle preference the one the title last had
+/// (<see cref="DownloadRecord.SubtitlePreference"/>).
 /// </summary>
 /// <remarks>
 /// Used on the UI thread, as a <see cref="ServerPlayback"/> is: engine events are posted there. After the stop it leaves the
@@ -23,7 +25,7 @@ namespace Granary.Core.Downloads;
 /// </remarks>
 public sealed partial class LocalPlayback : IServerPlayback
 {
-    /// <summary>How long the start waits for the server's settings and the title's state; without them, the defaults.</summary>
+    /// <summary>How long the start waits for the server's settings and the title's state; without them, what this PC kept of them.</summary>
     public static readonly TimeSpan PreferencesBudget = TimeSpan.FromSeconds(3);
 
     /// <summary>How long the stop waits for the server to take the last position; a slower send goes on by itself.</summary>
@@ -200,6 +202,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         {
             return;
         }
+        KeepSubtitlePreference(detail);
         Preferences = preferences;
         _engine.SetSubtitleLook(preferences.Subtitles);
         _subtitleDelayMs = preferences.SubtitleDelayMs;
@@ -224,7 +227,8 @@ public sealed partial class LocalPlayback : IServerPlayback
         _engine.SetPaused(false);
     }
 
-    // The profile's settings and the title as the server has it, each within the budget, or neither: a download plays without.
+    // The profile's settings and the title as the server has it, each within the budget, or neither: a download plays without,
+    // with the settings this PC last read for the profile.
     private async Task<(PlaybackPreferences Preferences, WatchDetail? Detail)> ReadFromServerAsync()
     {
         if (_server is not { } server)
@@ -241,10 +245,11 @@ public sealed partial class LocalPlayback : IServerPlayback
     {
         try
         {
-            return await _preferenceReader.ReadAsync(server, cancellationToken);
+            return await _preferenceReader.ReadOrKeptAsync(server, cancellationToken);
         }
         catch (Exception ex) when (ex is OperationCanceledException || ApiFailureText.IsRequestFailure(ex))
         {
+            // Nothing was ever kept for this profile either.
             _logger.LogInformation("The playback settings did not come in time ({Failure}); the download plays with the defaults", ApiFailureText.Describe(ex));
             return PlaybackPreferences.Default;
         }
