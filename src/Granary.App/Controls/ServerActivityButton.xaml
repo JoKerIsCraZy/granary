@@ -111,6 +111,7 @@
         <Style x:Key="ActivityRowWorkingStyle" TargetType="TextBlock" BasedOn="{StaticResource ActivityRowNumberStyle}">
             <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
         </Style>
+        <!-- For the rows' SilentProgressRing, which a screen reader is told nothing of: the row reads its whole text. -->
         <Style x:Key="ActivitySpinnerStyle" TargetType="ProgressRing">
             <Setter Property="Width" Value="12" />
             <Setter Property="Height" Value="12" />
@@ -156,7 +157,7 @@
                             <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
                                        Style="{StaticResource ActivityRowNumberStyle}" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Visibility="{x:Bind IsWorking, Mode=OneWay}">
-                                <ProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
+                                <controls:SilentProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
                                 <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource ActivityRowWorkingStyle}" />
                             </StackPanel>
                         </Grid>
@@ -180,7 +181,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid Width="14" Height="14" Margin="0,2,0,0" VerticalAlignment="Top">
-                            <ProgressRing IsActive="{x:Bind IsRunning, Mode=OneWay}" Visibility="{x:Bind IsRunning, Mode=OneWay}"
+                            <controls:SilentProgressRing IsActive="{x:Bind IsRunning, Mode=OneWay}" Visibility="{x:Bind IsRunning, Mode=OneWay}"
                                           Style="{StaticResource ActivitySpinnerStyle}" Width="14" Height="14" />
                             <FontIcon Glyph="&#xEE6F;" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
                                       Visibility="{x:Bind IsQueued, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
@@ -220,7 +221,7 @@
                             <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" Visibility="{x:Bind HasProgress, Mode=OneWay}"
                                        Style="{StaticResource ActivityRowNumberStyle}" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Visibility="{x:Bind IsWorking, Mode=OneWay}">
-                                <ProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
+                                <controls:SilentProgressRing IsActive="{x:Bind IsWorking, Mode=OneWay}" Style="{StaticResource ActivitySpinnerStyle}" />
                                 <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource ActivityRowWorkingStyle}" />
                             </StackPanel>
                         </Grid>
