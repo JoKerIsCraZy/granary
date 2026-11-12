@@ -95,6 +95,12 @@ public partial class App : Application
         var downloads = Services.GetRequiredService<DownloadQueue>();
         downloads.Start();
         _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
+        // What was watched from this PC goes to the server once it can be reached, and its progress comes back
+        // (docs/architecture.md, "Offline progress"). The last position of a title that plays as Granary closes is kept
+        // with its stop, which the window waits for.
+        var progress = Services.GetRequiredService<OfflineProgressSync>();
+        progress.Start();
+        _window.Closed += (_, _) => progress.Dispose();
         // The server's accent recolours Granary as it arrives, and with every other server.
         var accent = Services.GetRequiredService<ServerAccent>();
         accent.PropertyChanged += (_, e) =>

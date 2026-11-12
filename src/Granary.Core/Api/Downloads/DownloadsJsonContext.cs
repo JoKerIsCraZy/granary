@@ -14,4 +14,7 @@ namespace Granary.Core.Api.Downloads;
 [JsonSerializable(typeof(DownloadEntry))]
 [JsonSerializable(typeof(DownloadStatusEvent))]
 [JsonSerializable(typeof(OfflineManifest))]
+[JsonSerializable(typeof(ProgressSyncBody))]
+[JsonSerializable(typeof(ProgressSyncResult))]
+[JsonSerializable(typeof(ProgressListPage))]
 internal sealed partial class DownloadsJsonContext : JsonSerializerContext;

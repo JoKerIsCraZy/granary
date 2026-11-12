@@ -69,6 +69,9 @@ public sealed class CompositionRootTests
         // A title on this PC plays from it, and the next episode can come from this PC too.
         Assert.Same(provider.GetRequiredService<DownloadPlaybacks>(), provider.GetRequiredService<DownloadPlaybacks>());
         Assert.IsType<DownloadUpNext>(provider.GetRequiredService<IUpNextSource>());
+        // One queue keeps what was watched from this PC, and one sync sends it.
+        Assert.Same(provider.GetRequiredService<OfflineProgressQueue>(), provider.GetRequiredService<OfflineProgressQueue>());
+        Assert.Same(provider.GetRequiredService<OfflineProgressSync>(), provider.GetRequiredService<OfflineProgressSync>());
         var record = new DownloadRecord
         {
             DownloadId = "dl_1", Scope = new DownloadScope("srv1", "1", "7"), MediaItemId = "mv_1", Title = "Example Movie", Quality = "original",

@@ -333,6 +333,12 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
+        // What a download played from this PC recorded, kept in the data directory until the server took it, and the sync
+        // that sends it and reads the server's progress back; the app starts it.
+        services.AddTransient<ProgressSyncApi>();
+        services.AddSingleton(sp => new OfflineProgressQueue(OfflineProgressQueue.DefaultPath, sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<OfflineProgressQueue>>()));
+        services.AddSingleton<OfflineProgressSync>();
         // A title whose download is on this PC plays from it: the player asks before it streams.
         services.AddSingleton<Func<LocalMedia, LocalPlayback>>(sp => media => ActivatorUtilities.CreateInstance<LocalPlayback>(sp, media));
         services.AddSingleton<DownloadPlaybacks>();

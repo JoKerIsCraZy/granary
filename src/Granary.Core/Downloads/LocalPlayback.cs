@@ -70,7 +70,10 @@ public sealed partial class LocalPlayback : IServerPlayback
         IPlaybackDevicePreferences device,
         TimeProvider time,
         ILogger<LocalPlayback> logger,
-        AudioDelay? audioDelay = null)
+        AudioDelay? audioDelay = null,
+        DownloadStore? store = null,
+        OfflineProgressQueue? progress = null,
+        OfflineProgressSync? sync = null)
     {
         ArgumentNullException.ThrowIfNull(media);
         if (media.Download.MediaPath is null)
@@ -90,6 +93,9 @@ public sealed partial class LocalPlayback : IServerPlayback
         _time = time;
         _logger = logger;
         _audioDelay = audioDelay;
+        _store = store;
+        _progress = progress;
+        _sync = sync;
         (Title, Subtitle) = Titles();
         MediaInfo = Info();
         _engine.StateChanged += OnEngineStateChanged;
@@ -242,7 +248,8 @@ public sealed partial class LocalPlayback : IServerPlayback
     /// <summary>
     /// Where the title starts: 0 to start over; else where the profile left it, rewound by this PC's Rewind on resume
     /// (<see cref="ResumeRewind"/>) unless the request suppresses it, as a stream starts. The point is the server's while it
-    /// answers, and this PC's own when it does not. One at the title's very end starts over (the Apple app's
+    /// answers; this PC's own when it does not, or when this PC recorded one the server has not answered for yet
+    /// (<see cref="HasUnsentProgress"/>): that one is the newer. One at the title's very end starts over (the Apple app's
     /// <c>resolvedResumePosition</c>).
     /// </summary>
     private double StartSeconds(PlayRequest request, WatchDetail? detail)
@@ -252,7 +259,7 @@ public sealed partial class LocalPlayback : IServerPlayback
             return 0;
         }
         double local = (_download.Record.ResumeMs ?? 0) / 1000.0;
-        double position = detail is not null ? detail.UserData?.PositionSeconds ?? 0 : local;
+        double position = detail is not null && !HasUnsentProgress ? detail.UserData?.PositionSeconds ?? 0 : local;
         if (position <= 0 || !double.IsFinite(position) || (DurationSeconds is { } duration && position >= duration - EndMargin))
         {
             return 0;
@@ -287,10 +294,14 @@ public sealed partial class LocalPlayback : IServerPlayback
         {
             return Task.CompletedTask;
         }
+        // Read now: the engine stops right after this call, and its idle state would read as position 0.
+        RecordProgress(isFinal: true);
         _stopping = true;
+        StopProgress();
         StopAudioDelay();
         SaveSettingsNow();
-        return _saves;
+        // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then.
+        return Task.WhenAll(_saves, _records, _progress?.LatestSave ?? Task.CompletedTask);
     }
 
     public async ValueTask DisposeAsync()
@@ -298,9 +309,11 @@ public sealed partial class LocalPlayback : IServerPlayback
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
         StopAudioDelay();
+        StopProgress();
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
         await _saves.ConfigureAwait(false);
+        await _records.ConfigureAwait(false);
     }
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));
@@ -323,11 +336,14 @@ public sealed partial class LocalPlayback : IServerPlayback
         }
         _position = state.Position.TotalSeconds;
         _paused = state.IsPaused;
+        _engineDuration = state.Duration?.TotalSeconds;
         if (_started)
         {
             return;
         }
         _started = true;
+        _played = true;
+        StartProgress();
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         if (_pendingSeek is { } target)
         {
@@ -350,11 +366,14 @@ public sealed partial class LocalPlayback : IServerPlayback
             Fail();
             return;
         }
-        if (DurationSeconds is { } duration && _position >= duration - EndTolerance)
+        bool atItsEnd = (DurationSeconds ?? _engineDuration) is not { } duration || _position >= duration - EndTolerance;
+        if (atItsEnd && (DurationSeconds ?? _engineDuration) is { } length)
         {
             // Played to its end: that is where the viewer is, whatever the last position read said.
-            _position = duration;
+            _position = length;
         }
+        RecordProgress(isFinal: true, playedToTheEnd: atItsEnd);
+        StopProgress();
         _started = false;
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
     });
@@ -367,6 +386,9 @@ public sealed partial class LocalPlayback : IServerPlayback
         {
             return;
         }
+        // Where the viewer got to before the file broke off is kept.
+        RecordProgress(isFinal: true);
+        StopProgress();
         _loadId = 0;
         _started = false;
         _engine.Stop();

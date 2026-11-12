@@ -108,6 +108,12 @@ public sealed record DownloadRecord
     /// <summary>When <see cref="ResumeMs"/> was recorded, on this PC or as the server says; the newer of two positions wins.</summary>
     public DateTimeOffset? ResumeAt { get; init; }
 
+    /// <summary>
+    /// The profile has watched it: it played to its end or past nine tenths on this PC, or the server says so (its
+    /// <c>completed</c>, which holds once the server's progress is read). The Downloads page suggests deleting such downloads.
+    /// </summary>
+    public bool IsWatched { get; init; }
+
     /// <summary>When the manifest was last read from the server.</summary>
     public DateTimeOffset? ManifestReadAt { get; init; }
 

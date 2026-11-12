@@ -1483,8 +1483,9 @@ while the server answers.
   detail for a local play the same way. From the watch detail come the profile's subtitle preference, the tracks the
   title page's picks name, and where the profile left the title.
 - **Where it starts.** Start over starts at 0. A resume starts where the profile left the title: the server's point when
-  the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). A point within 5 s of the end starts over (the
-  Apple app's `resolvedResumePosition`). This PC's Rewind on resume applies as for a stream (`ResumeRewind`; not to a
+  the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). This PC's own also holds while it has a position
+  of the title the server has not answered for (`OfflineProgressQueue.HasUnsent`): that one is the newer, whatever the
+  server still says. A point within 5 s of the end starts over (the Apple app's `resolvedResumePosition`). This PC's Rewind on resume applies as for a stream (`ResumeRewind`; not to a
   change of episode), though neither app rewinds a local play: the setting is the viewer's for every resume on this PC.
 - **Audio.** The file holds every track. It starts with the title page's pick where that names a track of this file (the
   same ordinal for the same file, else the first track of that language, for a copy the server prepared with fewer
@@ -1517,6 +1518,55 @@ while the server answers.
   again."; Apple: its error wall with Retry).
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
   name and drops its folder, which lies under the Windows user's own folder and names them.
+
+### Offline progress
+
+A play from this PC has no server session to report through, so its progress takes the path the server has for offline
+clients (docs/api-contract.md, 14.7), as Silo's Apple app does; the Android app keeps a download's progress on the
+device.
+
+- **Recording.** `LocalPlayback` records where the viewer is every `ProgressInterval` (10 s) once the first frame showed,
+  at the stop, at the title's end and when the file breaks off, but only when the position moved by a second or more
+  since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
+  device meanwhile. Nothing is recorded before the first frame. Each record goes to two places. The download's own record
+  takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
+  position, the length and the time, in whole milliseconds, for the server.
+- **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine
+  tenths of it, is marked watched on this PC at once (`DownloadRecord.IsWatched`, the Apple app's latch) and resumes from
+  0, as the server sets a watched title's position back. The mark stays through a rewatch. The server's own threshold
+  decides in the end: its answer replaces the mark when the progress is read back.
+- **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
+  (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending, on its
+  way (`Sending`, claimed by a send) or held. Every change is made under one lock and holds at once; the file follows,
+  written whole (`SafeFile`) off the caller's thread, one write at a time with the state as it is then. The queue is read
+  once, at its first use: an entry found on its way was in a request when Granary closed and is held; one older than 90
+  days is let go (its server or profile is gone); anything a file says that is no entry is left out.
+- **Sending.** `OfflineProgressSync` runs one flush at a time on the thread pool. It sends only the active profile's
+  entries, as that profile (`ProgressSyncApi`, `SiloRequestOptions.Profile`), so another profile's wait until it is used
+  again, also behind a PIN. A flush claims up to 100 pending entries, waits until the file says they are on their way,
+  sends them once, and takes the answer as api-contract 14.7 lists it: answered, they leave; a server that asks to come
+  back, or a request that never left, keeps them pending for the retry `RetryInterval` (5 minutes) on; a request that left
+  without a usable answer holds them, never sent again by themselves, since the server may have taken them (the Apple
+  app's model); a request the server will never take is dropped and logged. A position recorded while its older one was
+  on its way is another entry, which that answer does not touch.
+- **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the app's start, when the
+  session changes (a sign-in, a profile that becomes active), when the connection changes, and at the retry. So while the
+  server can be reached, a position arrives within seconds, as a session's sample would; without it, it waits.
+- **Reading back.** After a flush, the server's whole progress listing is read (every page) when the caller wanted it
+  (the stop, the start, a session or connection change, a retry), the profile has downloads, and either the flush sent
+  something or the last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. A position on
+  the way asks for no read. For each download the listing names, the later of the server's `updated_at` and the record's
+  `ResumeAt` holds, the server's on a tie (the Apple app's `mergeProgress`): its position becomes `ResumeMs`, its time
+  `ResumeAt`, its `completed` `IsWatched`. That is how a position made on another device reaches a download, how an older
+  offline position never moves a newer one back (the entry went out with the time it was recorded, so the server kept its
+  own), and how the server's word on watched arrives. A listing that breaks off changes nothing. A complete one lets the
+  profile's held entries go: what the server has is known. A row missing from the listing changes nothing, since the
+  listing is live.
+- **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record,
+  and the window waits for a player's stop as it closes (`PlaybackStops`). Nothing is sent at the close: the next start
+  sends what waits.
+- **Signing out.** The queue's entries stay when a sign-out takes the downloads: what was watched still reaches the
+  server when that account and profile are used again.
 
 ## Windows App SDK
 

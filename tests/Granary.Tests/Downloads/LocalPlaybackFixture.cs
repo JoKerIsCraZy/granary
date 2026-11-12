@@ -1,4 +1,5 @@
 using System.Net;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
 using Granary.Core.Downloads;
@@ -17,12 +18,21 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public const string EpisodeId = "ep_5";
     public const string SettingsPath = "api/v2/settings/values/effective";
     public const string WatchPath = "api/v2/watch/" + EpisodeId;
+    public const string SyncPath = "api/v2/sync/progress";
+    public const string ProgressPath = "api/v2/progress";
 
     public LocalPlaybackFixture()
     {
         Harness.Silo.On(HttpMethod.Get, SettingsPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "revision": 1 }"""));
         Harness.Silo.On(HttpMethod.Get, WatchPath, ScriptedSilo.Json(HttpStatusCode.OK, Watch()));
         Harness.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.playback_speed", ScriptedSilo.NoContent());
+        Harness.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "items": [ { "index": 0, "media_item_id": "ep_5", "status": "success" } ], "summary": { "total": 1, "succeeded": 1, "failed": 0 } }"""));
+        Harness.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "page": { "has_more": false } }"""));
+        Queue = new OfflineProgressQueue(Path.Combine(Harness.Directory, "data", "offline-progress.json"), Harness.Time,
+            Harness.Logs.For<OfflineProgressQueue>());
+        Sync = new OfflineProgressSync(Queue, new ProgressSyncApi(Harness.Silo.Http), Harness.Store, Harness.Session, Harness.Network, Harness.Time,
+            Harness.Logs.For<OfflineProgressSync>());
         AudioDelay = new AudioDelay(new SettingsApi(Harness.Silo.Http), Harness.Session, new ImmediateDispatcher(), Harness.Time,
             Harness.Logs.For<AudioDelay>());
         Playbacks = new DownloadPlaybacks(Harness.Store, Harness.Session, Create, Harness.Time, Harness.Logs.For<DownloadPlaybacks>());
@@ -35,6 +45,12 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public InMemoryPlaybackDevicePreferences Device { get; } = new();
 
     public AudioDelay AudioDelay { get; }
+
+    /// <summary>The positions recorded on this PC that the server has not taken yet.</summary>
+    public OfflineProgressQueue Queue { get; }
+
+    /// <summary>Sends them, a moment after each record (<see cref="OfflineProgressSync.Settle"/> of the harness's clock).</summary>
+    public OfflineProgressSync Sync { get; }
 
     public DownloadPlaybacks Playbacks { get; }
 
@@ -76,6 +92,8 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     {
         Harness.Silo.On(HttpMethod.Get, SettingsPath, ScriptedSilo.NetworkError());
         Harness.Silo.On(HttpMethod.Get, WatchPath, ScriptedSilo.NetworkError());
+        Harness.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+        Harness.Silo.On(HttpMethod.Get, ProgressPath, ScriptedSilo.NetworkError());
     }
 
     /// <summary>The file carries a forced English subtitle (stream 1) and a German one (stream 2), as the player lists them.</summary>
@@ -90,7 +108,7 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
         var settings = new SettingsApi(Harness.Silo.Http);
         var playback = new LocalPlayback(media, Engine, new ImmediateDispatcher(), Harness.Session,
             new PlaybackPreferencesReader(settings, Harness.Logs.For<PlaybackPreferencesReader>()), new WatchApi(Harness.Silo.Http), settings, Device,
-            Harness.Time, Harness.Logs.For<LocalPlayback>(), AudioDelay);
+            Harness.Time, Harness.Logs.For<LocalPlayback>(), AudioDelay, Harness.Store, Queue, Sync);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
     }
@@ -120,5 +138,19 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
     public static PlaybackSnapshot Frame(double seconds, bool paused = false) =>
         new(true, paused, TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(7200), null, HasStarted: true);
 
-    public ValueTask DisposeAsync() => Harness.DisposeAsync();
+    /// <summary>Lets the flush a record asked for run, and waits for it and for what it wrote.</summary>
+    public async Task FlushedAsync()
+    {
+        Harness.Time.Advance(OfflineProgressSync.Settle);
+        await Sync.LatestRun;
+        await Queue.LatestSave;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Sync.Dispose();
+        await Sync.LatestRun;
+        await Queue.LatestSave;
+        await Harness.DisposeAsync();
+    }
 }

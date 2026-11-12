@@ -2289,8 +2289,9 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
-- `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are
-  for offline sync and out of MVP scope.
+- `POST /api/v2/sync/progress` (batch, **milliseconds**) carries the progress of a download played
+  from this PC (14.7); streamed playback reports through its session. The progress bootstrap
+  snapshots are not used.
 - **Multi-part items** (a version with `presentation_part_total > 1`, grouped in watch detail's
   `playback_variants[{ variant_id, parts[{ part_index, versions[], default_file_id }], part_count, total_duration_seconds }]`):
   session progress persists nothing for them (10.1). Resume must then be reported item-absolute
@@ -2750,7 +2751,7 @@ HDR with libplacebo. An honest, conservative first report:
 ### 13.3 Not in the MVP
 
 Control socket and `plan_invalidated_v1`, `buffering_quality_v1`, the realtime events socket,
-the LAN local route, trickplay, `/sync/progress` and progress bootstrap, external (OIDC) sign-in,
+the LAN local route, trickplay, progress bootstrap (`/sync/progress` came with downloads, 14.7), external (OIDC) sign-in,
 signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 
 ### 13.4 Open questions for the Phase 1 spike
@@ -2917,6 +2918,45 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   that cannot be sent is kept (`pending_deletes`) and sent while its profile is the active one; a client error drops it.
   Signing out of a server or removing it sends the active profile's deletes there first, for at most 10 s, and keeps none
   after: the files go all the same, and other profiles' entries stay on the server.
+
+### 14.7 Offline progress
+
+A download played from this PC opens no playback session (docs/architecture.md, "Playing a download"), so its progress
+goes through the two operations the server has for it (`silo-server/docs/downloads-api.md`, section 7;
+`silo-server/internal/apiv2/progress.go`, `internal/api/handlers/progress.go`). `Api/Downloads/ProgressSyncApi`; both
+are sent as the profile the progress belongs to. Silo's Apple app uses them the same way; the Android app sends no
+progress of a download.
+
+- `POST /api/v2/sync/progress` (profile) with `{ "items": [{ "media_item_id", "position_ms", "duration_ms", "updated_at" }] }`,
+  1 to 100 items, no `media_item_id` twice → `200 { "items": [{ "index", "media_item_id", "status" }], "summary" }`, one
+  result for each item by its `index`; `status` is `success` or `failure` (with a `failure` problem object).
+  - `media_item_id` is the film's or the episode's own id. Positions and lengths are whole milliseconds; `duration_ms` is
+    0 when unknown. `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
+    offset, `2026-10-01T12:00:00+00:00`). The server replaces one more than 2 minutes ahead of its clock with its own
+    time, and answers `422` for one it cannot read.
+  - The server keeps the later of an item's `updated_at` and what it has (last write wins), so a position recorded
+    offline never moves a newer one from another device. An older or equal one is a `success` that changes nothing.
+  - The server decides completion with its own threshold (`playback.watched_threshold`, 90 by default): a position past
+    it marks the title watched and stores its position as 0. Watched is a latch: a later, lower position does not unwatch.
+    A position below `playback.min_resume_threshold` of the length is not stored (also a `success`).
+  - Granary does not send `force_overwrite` or `client_ref`.
+- `GET /api/v2/progress?limit=200[&cursor=]` (profile) → `{ "items": [{ "media_item_id", "position_seconds",
+  "duration_seconds", "completed", "updated_at" }], "page": { "has_more", "next_cursor" } }`, newest change first; `limit`
+  is at most 200. There is no "changed since": the whole listing is read, `cursor` only continues it, and a cursor is not
+  kept for another read. The listing is live, so a row missing from one read is no proof that it was deleted; Granary
+  takes nothing from a missing row. It does not use the `status` and `library_id` filters or the progress bootstrap
+  snapshots.
+- What Granary sends and when is in docs/architecture.md, "Offline progress". How each answer of the send is taken:
+
+  | Answer | The entries |
+  |---|---|
+  | `200` with a result for each item | leave the queue, `success` and `failure` alike |
+  | `401`, `403`, `408`, `429`, `502`, `503`, a profile switched to meanwhile, a request that never left (no connection, no name, no TLS) | wait, and go with the next send |
+  | no answer after the request left, a timeout, an answer that cannot be read or names fewer items, `500`, `504` and other `5xx` | are held: the server may have taken them, so they are not sent again |
+  | any other `4xx` (`400`, `404`, `422`) | are dropped, with a line in the log |
+
+  The Apple app drops the entries on every status that is not in its wait list, `5xx` included; Granary holds them on a
+  server failure and waits on `502`, since a reverse proxy answers so while a self-hosted server restarts.
 
 ## Appendix: where docs and code disagree
 
