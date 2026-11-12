@@ -28,7 +28,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>As the web's staleTime for the library list and its preferences.</summary>
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
-    // How long Switch profile and Sign out wait for an audio delay changed a moment before to be saved.
+    // How long Switch Profile and Logout wait for an audio delay changed a moment before to be saved.
     private static readonly TimeSpan AudioDelayWait = TimeSpan.FromSeconds(2);
 
     private readonly ISessionManager _session;

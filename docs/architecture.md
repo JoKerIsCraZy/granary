@@ -590,7 +590,7 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   switched to meanwhile does not lose it (the one before stays signed in) and a profile its server no longer acts as is
   never written for the new one. Saves of one profile go one after another, so the latest value is the one its server
   keeps; another profile's never wait for them, so a save that hangs on one server does not hold back the profile acting
-  now. Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
+  now. Switch Profile and Logout in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
   does not answer does not stop them. A timer that was due as a later change came saves nothing; a failed save is logged
   and the value holds for this run; a read that answers after a change made here, once another profile acts, after a
   newer read was taken or after a save of that profile went through, is dropped, as its answer is older than the value
