@@ -25,6 +25,11 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
     /// <summary>For tests: runs on the read's thread before the folder is read, as a drive that does not answer holds it.</summary>
     internal Action? Reading { get; set; }
 
+    // The reads of download folders under way, by folder. A read the budget gave up on runs on until the drive answers or
+    // fails: the next Play or Retry of that title waits for the same read instead of holding one more thread.
+    private readonly Lock _gate = new();
+    private readonly Dictionary<string, Task<LocalMedia?>> _reads = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// The active profile's download <paramref name="request"/> would play, as far as the store knows without reading the disk;
     /// null when the title streams.
@@ -68,8 +73,17 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             {
                 return null;
             }
-            var media = await Task.Run(() => Read(download, request), cancellationToken).WaitAsync(ReadBudget, time, cancellationToken);
-            return media is null ? null : playbacks(media);
+            if (await ReadOnce(download).WaitAsync(ReadBudget, time, cancellationToken) is not { } read)
+            {
+                return null;
+            }
+            // The record names the version only when the viewer chose one; the manifest always says which file came.
+            if (request.Choice is { IsVersionPicked: true } choice && read.Manifest.MediaFileId is { Length: > 0 } fileId && choice.FileId != fileId)
+            {
+                return null;
+            }
+            // The download as it is now: the read may be one an earlier start began.
+            return playbacks(read with { Download = download });
         }
         catch (TimeoutException)
         {
@@ -83,8 +97,33 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
         }
     }
 
+    // The read of the download's folder: the one under way, else a new one.
+    private Task<LocalMedia?> ReadOnce(StoredDownload download)
+    {
+        lock (_gate)
+        {
+            if (_reads.TryGetValue(download.Folder, out var running))
+            {
+                return running;
+            }
+            var read = Task.Run(() => Read(download));
+            _reads[download.Folder] = read;
+            _ = read.ContinueWith(done =>
+            {
+                lock (_gate)
+                {
+                    if (_reads.TryGetValue(download.Folder, out var kept) && kept == done)
+                    {
+                        _reads.Remove(download.Folder);
+                    }
+                }
+            }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            return read;
+        }
+    }
+
     // On the thread pool: the folder can be on a drive that is slow to answer.
-    private LocalMedia? Read(StoredDownload download, PlayRequest request)
+    private LocalMedia? Read(StoredDownload download)
     {
         string id = download.Record.DownloadId;
         try
@@ -102,11 +141,6 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             if (manifest.DownloadId != id)
             {
                 logger.LogWarning("The manifest of download {DownloadId} is another download's; the title streams", id);
-                return null;
-            }
-            // The record names the version only when the viewer chose one; the manifest always says which file came.
-            if (request.Choice is { IsVersionPicked: true } choice && manifest.MediaFileId is { Length: > 0 } fileId && choice.FileId != fileId)
-            {
                 return null;
             }
             return new LocalMedia(download, manifest, files);

@@ -28,6 +28,10 @@ public sealed class MpvLogClassifierTests
     // A folder alone goes whole: its last part can be the Windows user's name.
     [InlineData("Watching directory C:\\Users\\elena", "Watching directory …")]
     [InlineData("Config dir: \"C:\\Users\\Elena Moreau\\AppData\\Roaming\\mpv\"", "Config dir: \"…\"")]
+    // So does a folder with a dot in its name: only a name of a file the player reads is kept.
+    [InlineData("Watching directory C:\\Users\\elena.moreau", "Watching directory …")]
+    [InlineData("Watching directory \\\\nas\\home\\e.moreau", "Watching directory …")]
+    [InlineData("Reading config file C:\\Users\\elena.moreau\\AppData\\Local\\Granary\\mpv\\mpv.conf", "Reading config file …\\mpv.conf")]
     public void Redact_KeepsALocalFilesName_ButNotItsFolder(string line, string expected)
     {
         // A download lies under the Windows user's folder, which names them; the file's name is enough to diagnose.

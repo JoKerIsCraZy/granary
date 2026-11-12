@@ -1466,7 +1466,9 @@ while the server answers.
   with the download. A download the server no longer has (`IsNoLongerAvailable`) still plays.
 - **Reading the folder.** The store's rows answer in memory, so a title without a download costs no wait and no thread
   hop. A download's folder is read on the thread pool (its file names and `manifest.json`, a `LocalMedia`) within
-  `DownloadPlaybacks.ReadBudget` (3 s of the `TimeProvider`): a share that does not answer lets the title stream. A title
+  `DownloadPlaybacks.ReadBudget` (3 s of the `TimeProvider`): a share that does not answer lets the title stream. The
+  read it gave up on runs on until the drive answers or fails, and a folder has one read at a time: Play or Retry
+  pressed again meanwhile waits for that same read, so a dead share holds one thread, not one for each press. A title
   started before the downloads were first read waits for that read, within the same budget. `PlayerViewModel` counts its
   starts, so one that waited for a folder goes on only while it is still the latest and the viewer has not left; until
   its playback is there, the engine's state is not taken for the new title's (`PlaysDirectly`), since the engine may
@@ -1528,10 +1530,14 @@ while the server answers.
   followed while the title plays, as a stream follows it.
 - **The next episode.** `DownloadUpNext` is the player's `IUpNextSource`, over the server's `UpNextSource`. The server's
   answer comes first, so a series goes on in its order; the episode it names starts through `PlayAsync` as any title, so
-  it plays from this PC when it is downloaded too and streams when it is not. When the server names none within
-  `DownloadUpNext.ServerBudget` (5 s of the `TimeProvider`), as without a connection, the active profile's finished
-  downloads of the series answer: the next by season and episode after the playing one (the specials only from a
-  special), with its title and no still; an episode that is not on this PC is passed over. A server that only takes
+  it plays from this PC when it is downloaded too and streams when it is not. When the server cannot be asked
+  (`UpNextSource.FindNextAsync` says whether it answered), or does not answer within `DownloadUpNext.ServerBudget` (5 s
+  of the `TimeProvider`), the active profile's finished downloads of the series answer: the next by season and episode
+  after the playing one (the specials only from a special; after the last special the first season, as the server's
+  lists are read), with its title and no still; an episode that is not on this PC is passed over. A server that answers
+  "none" is taken at its word: the series ends there for this profile, also when a later episode is still on this PC,
+  as one the profile may no longer see (a maturity limit, a library taken away) or the server dropped; that download
+  still plays from its row. A server that only takes
   longer than the budget is still waited for when no download follows, so a slow server names the next episode of a title
   that streams as before. The previous episode is the one
   before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
@@ -1542,8 +1548,9 @@ while the server answers.
   of it, else the manifest's) is such a file, not the title's end: it is not marked watched and nothing plays next, as the
   Apple app says "The downloaded video file ends early." Where the viewer got to is kept either way.
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
-  name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no file's
-  name, a folder, goes whole.
+  name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
+  of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
+  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau").
 
 ### Offline progress
 

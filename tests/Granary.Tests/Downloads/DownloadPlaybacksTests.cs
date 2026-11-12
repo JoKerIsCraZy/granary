@@ -170,4 +170,35 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
 
         Assert.IsType<LocalPlayback>(await playbacks.TryCreateAsync(PlayRequest.Resume("ep_5"), LocalPlaybackFixture.Token));
     }
+
+    [Fact]
+    public async Task PlayPressedAgainWhileAFolderDoesNotAnswer_WaitsForTheSameRead_NotOneMore()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var held = new ManualResetEventSlim();
+        int reads = 0;
+        _fixture.Playbacks.Reading = () =>
+        {
+            Interlocked.Increment(ref reads);
+            held.Wait(TimeSpan.FromSeconds(10));
+        };
+
+        // Three presses on a share that does not answer: each gives up after the budget.
+        foreach (int _ in Enumerable.Range(0, 3))
+        {
+            var start = TryAsync(PlayRequest.Resume("ep_5"));
+            await DownloadHarness.Until(() => Volatile.Read(ref reads) == 1, "the folder is being read");
+            _fixture.Harness.Time.Advance(DownloadPlaybacks.ReadBudget);
+            Assert.Null(await start.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
+        }
+
+        // One thread waits for the drive, not three.
+        Assert.Equal(1, Volatile.Read(ref reads));
+
+        // The drive answers: the next press plays.
+        held.Set();
+        var played = await TryAsync(PlayRequest.Resume("ep_5")).WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+        Assert.NotNull(played);
+        await played.DisposeAsync();
+    }
 }

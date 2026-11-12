@@ -32,9 +32,19 @@ public static partial class MpvLogClassifier
     [GeneratedRegex(@"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^""\r\n]*", RegexOptions.CultureInvariant)]
     private static partial Regex LocalPath();
 
-    // A file's name at the start of a path's last part: anything, a dot and a short extension.
-    [GeneratedRegex(@"^[\\/][^\\/]*\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9])", RegexOptions.CultureInvariant)]
+    // A file's name at the start of a path's last part: anything, a dot and a short extension (the group).
+    [GeneratedRegex(@"^[\\/][^\\/]*\.([A-Za-z0-9]{1,8})(?![A-Za-z0-9])", RegexOptions.CultureInvariant)]
     private static partial Regex FileName();
+
+    // What mpv plays and reads: media, subtitles, fonts, and its own configuration and scripts. A last part that ends in
+    // anything else is as likely a folder with a dot in its name, which can be the Windows user's ("elena.moreau").
+    private static readonly HashSet<string> FileExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "mkv", "mp4", "m4v", "mov", "avi", "webm", "ts", "m2ts", "mts", "mpg", "mpeg", "wmv", "flv", "ogv", "3gp", "part",
+        "mka", "m4a", "mp3", "flac", "aac", "ac3", "eac3", "dts", "ogg", "opus", "wav",
+        "srt", "ass", "ssa", "vtt", "sub", "idx", "sup", "smi",
+        "ttf", "otf", "ttc", "conf", "lua", "js", "json", "glsl", "hook", "log",
+    };
 
     public static MpvNetworkFailure Classify(string prefix, string text)
     {
@@ -70,11 +80,11 @@ public static partial class MpvLogClassifier
             ? "<redacted: line contained an Authorization header>"
             : LogRedactor.Redact(LocalPath().Replace(UrlQuery().Replace(text, "$1?…"), WithoutFolder));
 
-    // "C:\Videos\clip.mkv" as "…\clip.mkv", with what followed it on the line. A path that ends in no file's name is a
-    // folder, whose last part can be the Windows user's own: it goes whole.
+    // "C:\Videos\clip.mkv" as "…\clip.mkv", with what followed it on the line. A path that ends in no name of a file mpv
+    // would read is a folder, whose last part can be the Windows user's own, also with a dot in it: it goes whole.
     private static string WithoutFolder(Match path)
     {
         string last = path.Value[path.Value.LastIndexOfAny(['\\', '/'])..];
-        return FileName().IsMatch(last) ? "…" + last : "…";
+        return FileName().Match(last) is { Success: true } name && FileExtensions.Contains(name.Groups[1].Value) ? "…" + last : "…";
     }
 }
