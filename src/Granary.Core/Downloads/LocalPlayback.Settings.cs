@@ -174,12 +174,15 @@ public sealed partial class LocalPlayback
             using var timeout = new CancellationTokenSource(SaveTimeout, _time);
             try
             {
-                // As the download's profile only: a profile switched to meanwhile gets none of this one's choices.
-                string profile = _download.Record.Scope.ProfileId;
-                await _settings.SetValueAsProfileAsync(server, key, value, scope, profile, timeout.Token);
+                // As the download's account and profile only, as its progress goes (OfflineProgressSync): a profile switched
+                // to meanwhile gets none of this one's choices, nor does another account signed in there, whose profile
+                // may carry the same id.
+                var owner = _download.Record.Scope;
+                await _settings.SetValueAsAccountProfileAsync(server, key, value, scope, owner.AccountId, owner.ProfileId, timeout.Token);
                 if (clearDevice)
                 {
-                    await _settings.ClearValueAsProfileAsync(server, key, SettingScopes.ProfileDevice, profile, timeout.Token);
+                    await _settings.ClearValueAsAccountProfileAsync(server, key, SettingScopes.ProfileDevice, owner.AccountId, owner.ProfileId,
+                        timeout.Token);
                     _deviceDelayCleared = true;
                 }
             }

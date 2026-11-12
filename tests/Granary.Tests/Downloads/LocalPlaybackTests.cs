@@ -412,7 +412,25 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
         var save = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Put, "api/v2/settings/values/player.playback_speed"));
         Assert.Contains("1.5", save.Body, StringComparison.Ordinal);
         Assert.Contains("scope=profile_device", save.Uri.Query, StringComparison.Ordinal);
-        Assert.Equal("7", save.AsProfile);
+        Assert.Equal(("1", "7"), (save.AsAccount, save.AsProfile));
+    }
+
+    [Fact]
+    public async Task AnotherAccountSignedInWhileADownloadPlays_GetsNoneOfItsSettings_ThoughItsProfileHasTheSameId()
+    {
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.subtitle_sync_ms", ScriptedSilo.NoContent());
+        // Account 2 signs in on the same server, and its profile is 7 too.
+        _fixture.Silo.ActingProfile = () => "7";
+        _fixture.Silo.ActingAccount = () => "2";
+
+        playback.SetSpeed(1.5);
+        playback.SetSubtitleDelay(300);
+        await playback.StopAsync();
+
+        // What account 1's viewer chose is theirs: it holds for the title and is written to nobody else.
+        Assert.Equal(1.5, _fixture.Engine.Speed);
+        Assert.DoesNotContain(_fixture.Silo.Sent, r => r.Method == HttpMethod.Put);
     }
 
     [Fact]

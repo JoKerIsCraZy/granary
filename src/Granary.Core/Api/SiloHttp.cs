@@ -104,6 +104,25 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>As the 204 <c>SendAsProfileAsync</c> with a body, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task SendAsAccountProfileAsync<TRequest>(HttpMethod method, Uri server, string path, string accountId, string profileId, TRequest body,
+        JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        request.Content = JsonContent.Create(body, requestType);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the bodiless 204 <c>SendAsProfileAsync</c>, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task SendAsAccountProfileAsync(HttpMethod method, Uri server, string path, string accountId, string profileId,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>As <c>GetAsProfileAsync</c>, bound to account <paramref name="accountId"/> as well.</summary>
     public async Task<TResponse> GetAsAccountProfileAsync<TResponse>(Uri server, string path, string accountId, string profileId,
         JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
