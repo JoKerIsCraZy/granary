@@ -1265,9 +1265,17 @@ by `MainWindow.Activity.cs`.
 
 - **The button.** A 36 px glass disc as the way back's, over the page at its top right (20 px from the edge, 12 px
   down), with the web's pulse icon (lucide's Activity) in the accent while something is going on, muted otherwise. A
-  red count on its corner ("3", "99+" past 99) fades to half and back every two seconds, standing still when Windows'
-  animations are off. A red dot at its foot once the events stream has had no connection for 4 s. Its name for a
-  screen reader: "Server activity: 3 active", or "Server activity" when idle.
+  red count on its corner ("3", "99+" past 99) fades to half and back every two seconds, standing still while
+  Windows' animations are off (the setting is followed as it changes). The count is the web's: white, bold, 10 px on
+  its `bg-red-500`, which the web's Tailwind 4 draws as #FB2C36, about 3.8:1 as on the web. A red dot of the same red
+  at its foot once the events stream has had no connection for 4 s. Its name for a screen reader: "Server activity:
+  3 active", or "Server activity" when idle.
+- **Where it lies.** It floats: what scrolls up passes under it. A page whose own controls reach into its corner at
+  rest keeps them clear of it (`ActivityIndicatorPlace`: 20 px from the edge, 36 wide, 8 px of room): the
+  Notifications page's "Mark all read" and "Preferences" end where its room begins while it shows, in a window
+  whose column reaches that far (under 864 px of page). Nothing else does, by its markup: the admin area's pages
+  begin 40 px down with their first row's actions centred beside a two-line heading, the settings' pages 48 px down,
+  both below the button, and Home's banner has its arrows half way down and its counter at its foot.
 - **When it shows.** As the web: on the admin area's pages always; on every other page only while something is going
   on, or while its panel is open. Also, without a count, while there may be scans nobody knows of (see Scans): with
   none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over

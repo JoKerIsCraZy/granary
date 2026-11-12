@@ -61,6 +61,8 @@
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="FontSize" Value="10" />
             <Setter Property="Foreground" Value="{StaticResource SiloPrimaryBrush}" />
+            <!-- Read with its section's heading (SectionName), not as a bare number after it. -->
+            <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         </Style>
         <Style x:Key="ActivityLinkStyle" TargetType="HyperlinkButton">
             <Setter Property="Padding" Value="4,2" />
@@ -276,7 +278,7 @@
                                         <Grid Margin="0,0,0,8">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock Text="STREAMS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                           AutomationProperties.Name="Streams" />
+                                                           AutomationProperties.Name="{x:Bind SectionName('Streams', ViewModel.StreamCountText, ViewModel.HasStreams), Mode=OneWay}" />
                                                 <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasStreams, Mode=OneWay}">
                                                     <TextBlock Text="{x:Bind ViewModel.StreamCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                                 </Border>
@@ -301,7 +303,7 @@
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsTasks, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                                             <TextBlock Text="TASKS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                       AutomationProperties.Name="Tasks" />
+                                                       AutomationProperties.Name="{x:Bind SectionName('Tasks', ViewModel.TaskCountText, ViewModel.HasTasks), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasTasks, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.TaskCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                             </Border>
@@ -318,7 +320,7 @@
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsScans, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                                             <TextBlock Text="SCANS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                       AutomationProperties.Name="Scans" />
+                                                       AutomationProperties.Name="{x:Bind SectionName('Scans', ViewModel.ScanCountText, ViewModel.HasScans), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasScans, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.ScanCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                             </Border>
@@ -342,7 +344,8 @@
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsPreparations, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                                             <TextBlock Text="PREPARING DOWNLOADS" Style="{StaticResource ActivitySectionTitleStyle}"
-                                                       AutomationProperties.HeadingLevel="Level3" AutomationProperties.Name="Preparing downloads" />
+                                                       AutomationProperties.HeadingLevel="Level3"
+                                                       AutomationProperties.Name="{x:Bind SectionName('Preparing downloads', ViewModel.PreparationCountText, ViewModel.HasPreparations), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasPreparations, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.PreparationCountText, Mode=OneWay}"
                                                            Style="{StaticResource ActivityCountChipTextStyle}" />
@@ -392,16 +395,19 @@
             </Button.Flyout>
         </Button>
 
-        <!-- How much is going on: the web's red count on the corner, breathing once every two seconds. -->
+        <!--
+            How much is going on: the web's count on the corner, breathing once every two seconds. White, bold and 10 px on
+            the web's bg-red-500, which its Tailwind 4 draws as #FB2C36: about 3.8:1, the web's own contrast.
+        -->
         <Border x:Name="Badge" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-3,0" MinWidth="18" Height="18"
-                CornerRadius="9" Padding="4,0" Background="#FFEF4444" IsHitTestVisible="False"
+                CornerRadius="9" Padding="4,0" Background="#FFFB2C36" IsHitTestVisible="False"
                 Visibility="{x:Bind ViewModel.HasActivity, Mode=OneWay}">
             <TextBlock Text="{x:Bind ViewModel.BadgeText, Mode=OneWay}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="10"
                        Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
                        AutomationProperties.AccessibilityView="Raw" />
         </Border>
         <!-- The events stream has stayed away for a while: what shows may be old. -->
-        <Ellipse HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Width="14" Height="14" Fill="#FFEF4444"
+        <Ellipse HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Width="14" Height="14" Fill="#FFFB2C36"
                  Stroke="{StaticResource SiloBackgroundBrush}" StrokeThickness="2" IsHitTestVisible="False"
                  Visibility="{x:Bind ViewModel.ShowsConnectionProblem, Mode=OneWay}" />
     </Grid>
