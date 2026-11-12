@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Diagnostics;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -31,7 +32,10 @@ public sealed partial class PlaybackSettingsViewModel
 
     /// <summary>Up and Down in the player (<see cref="IPlaybackDevicePreferences.UpDown"/>), the TV app's way first.</summary>
     public IReadOnlyList<SettingChoice> UpDownChoices { get; } =
-        [new("controls", "Controls and menus"), new("volume", "Volume")];
+    [
+        new("controls", AppText.Get("granary.settings.playback.upDownControls")),
+        new("volume", AppText.Get("granary.settings.playback.upDownVolume")),
+    ];
 
     [ObservableProperty]
     public partial SettingChoice? SelectedUpDown { get; set; }
@@ -52,8 +56,10 @@ public sealed partial class PlaybackSettingsViewModel
     public IReadOnlyList<SettingChoice> StillWatchingChoices { get; } =
     [
         .. AutoPlayStreak.ThresholdPresets.Select(episodes =>
-            new SettingChoice(SettingValues.Invariant(episodes), episodes == 0 ? "Unlimited" : $"{SettingValues.Invariant(episodes)} episodes")),
-        new SettingChoice(CustomChoice, "Custom"),
+            new SettingChoice(SettingValues.Invariant(episodes), episodes == 0
+                ? AppText.Get("web.settings.limitField.unlimited")
+                : AppText.Get("web.settings.value.episodes", ("count", episodes), ("value", AppText.Number(episodes))))),
+        new SettingChoice(CustomChoice, AppText.Get("web.settings.value.custom")),
     ];
 
     [ObservableProperty]
@@ -180,9 +186,9 @@ public sealed partial class PlaybackSettingsViewModel
         string? file = await Task.Run(_mpvConfig.EnsureConfigFile);
         string message = file is null
             ? _mpvConfig.ConfigFileIsFolder
-                ? $"mpv.conf in {_mpvConfig.Directory} is a folder. Rename or remove it, then try again."
-                : $"Couldn't create mpv.conf in {_mpvConfig.Directory}."
-            : _files.OpenFile(file) ? "" : $"Couldn't open mpv.conf. You'll find it in {_mpvConfig.Directory}.";
+                ? AppText.Get("granary.settings.mpv.configIsFolder", ("folder", _mpvConfig.Directory))
+                : AppText.Get("granary.settings.mpv.createFailed", ("folder", _mpvConfig.Directory))
+            : _files.OpenFile(file) ? "" : AppText.Get("granary.settings.mpv.openFileFailed", ("folder", _mpvConfig.Directory));
         SayMpvConfig(request, message);
     }
 
@@ -192,7 +198,7 @@ public sealed partial class PlaybackSettingsViewModel
     {
         int request = StartMpvConfigRequest();
         bool opened = await Task.Run(_mpvConfig.EnsureDirectory) && _files.OpenFolder(_mpvConfig.Directory);
-        SayMpvConfig(request, opened ? "" : $"Couldn't open {_mpvConfig.Directory}.");
+        SayMpvConfig(request, opened ? "" : AppText.Get("granary.settings.mpv.openFolderFailed", ("folder", _mpvConfig.Directory)));
     }
 
     /// <summary>Shows Granary's log folder, which names what the player did with mpv.conf; the data folder before the first log.</summary>
@@ -201,16 +207,15 @@ public sealed partial class PlaybackSettingsViewModel
     {
         int request = StartMpvConfigRequest();
         bool opened = _files.OpenFolder(FileLoggerProvider.DefaultDirectory) || _files.OpenFolder(AppPaths.DataDirectory);
-        SayMpvConfig(request, opened ? "" : $"Couldn't open {FileLoggerProvider.DefaultDirectory}.");
+        SayMpvConfig(request, opened ? "" : AppText.Get("granary.settings.mpv.openFolderFailed", ("folder", FileLoggerProvider.DefaultDirectory)));
     }
 
     internal static string StatusText(MpvConfigState state) => state.Use switch
     {
-        MpvConfigUse.NotUsed => $"Your mpv.conf was not used: {state.Reason}. The log has the details.",
-        MpvConfigUse.StoppedDuringPlayback => $"Granary stopped using your mpv.conf: {state.Reason}. The log has the details.",
-        MpvConfigUse.NotApplied => "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.",
-        MpvConfigUse.Used when state.KeptOptions > 0 =>
-            $"Granary kept {state.KeptOptions} of its own options from your mpv.conf. The log names them.",
+        MpvConfigUse.NotUsed => AppText.Get("granary.settings.mpv.status.notUsed", ("reason", state.Reason)),
+        MpvConfigUse.StoppedDuringPlayback => AppText.Get("granary.settings.mpv.status.stopped", ("reason", state.Reason)),
+        MpvConfigUse.NotApplied => AppText.Get("granary.settings.mpv.status.notApplied"),
+        MpvConfigUse.Used when state.KeptOptions > 0 => AppText.Get("granary.settings.mpv.status.kept", ("count", state.KeptOptions)),
         _ => "",
     };
 

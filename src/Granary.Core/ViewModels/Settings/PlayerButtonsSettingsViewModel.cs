@@ -3,6 +3,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -89,10 +90,35 @@ public sealed partial class PlayerButtonRowViewModel : ObservableObject
 
     public PlayerButton Button => _info.Button;
 
-    public string Label => _info.Label;
+    public string Label => Button switch
+    {
+        PlayerButton.Volume => AppText.Get("granary.settings.playerButtons.volume"),
+        PlayerButton.SleepTimer => AppText.Get("granary.settings.playerButtons.sleepTimer"),
+        PlayerButton.Audio => AppText.Get("granary.settings.playerButtons.audio"),
+        PlayerButton.Subtitles => AppText.Get("granary.settings.playerButtons.subtitles"),
+        PlayerButton.Chapters => AppText.Get("granary.settings.playerButtons.chapters"),
+        PlayerButton.Settings => AppText.Get("granary.settings.playerButtons.settings"),
+        PlayerButton.EditMarkers => AppText.Get("granary.settings.playerButtons.editMarkers"),
+        PlayerButton.PlaybackInfo => AppText.Get("granary.settings.playerButtons.playbackInfo"),
+        PlayerButton.MiniView => AppText.Get("granary.settings.playerButtons.miniView"),
+        PlayerButton.Fill => AppText.Get("granary.settings.playerButtons.fill"),
+        PlayerButton.FullScreen => AppText.Get("granary.settings.playerButtons.fullScreen"),
+        _ => _info.Label,
+    };
 
     /// <summary>When it shows, or what it holds; null when there is nothing to say.</summary>
-    public string? Note => _info.Note;
+    public string? Note => Button switch
+    {
+        PlayerButton.Volume => AppText.Get("granary.settings.playerButtons.volumeNote"),
+        PlayerButton.SleepTimer => AppText.Get("granary.settings.playerButtons.sleepTimerNote"),
+        PlayerButton.Audio => AppText.Get("granary.settings.playerButtons.audioNote"),
+        PlayerButton.Subtitles => AppText.Get("granary.settings.playerButtons.subtitlesNote"),
+        PlayerButton.Chapters => AppText.Get("granary.settings.playerButtons.chaptersNote"),
+        PlayerButton.Settings => AppText.Get("granary.settings.playerButtons.settingsNote"),
+        PlayerButton.EditMarkers => AppText.Get("granary.settings.playerButtons.editMarkersNote"),
+        PlayerButton.FullScreen => AppText.Get("granary.settings.playerButtons.fullScreenNote"),
+        _ => null,
+    };
 
     [ObservableProperty]
     public partial bool IsShown { get; set; }

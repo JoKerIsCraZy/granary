@@ -8,6 +8,7 @@ using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Settings;
@@ -20,8 +21,9 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string AutoQualityDescription = "Plays the original file whenever your device and connection can handle it.";
-    public const string QualityDescriptionText = "The resolution your profile should request when playback begins.";
+    public static string AutoQualityDescription => AppText.Get("web.settings.playback.quality.autoDescription");
+
+    public static string QualityDescriptionText => AppText.Get("web.settings.playback.quality.description");
 
     private static readonly string[] Keys =
     [
@@ -84,16 +86,32 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
 
     public IReadOnlyList<SettingChoice> QualityChoices { get; } =
     [
-        new("auto", "Auto"), new("480p", "480p"), new("720p", "720p"), new("1080p", "1080p"), new("2160p", "2160p / 4K"),
+        new("auto", AppText.Get("settingsManifest.playback.preferred_quality.option.auto")),
+        new("480p", AppText.Get("settingsManifest.playback.preferred_quality.option.480p")),
+        new("720p", AppText.Get("settingsManifest.playback.preferred_quality.option.720p")),
+        new("1080p", AppText.Get("settingsManifest.playback.preferred_quality.option.1080p")),
+        new("2160p", AppText.Get("settingsManifest.playback.preferred_quality.option.2160p")),
     ];
 
-    public IReadOnlyList<SettingChoice> BufferingChoices { get; } = [new("never", "Never"), new("ask", "Ask first"), new("always", "Automatically")];
+    public IReadOnlyList<SettingChoice> BufferingChoices { get; } =
+    [
+        new("never", AppText.Get("settingsManifest.playback.buffering_quality_mode.option.never")),
+        new("ask", AppText.Get("settingsManifest.playback.buffering_quality_mode.option.ask")),
+        new("always", AppText.Get("settingsManifest.playback.buffering_quality_mode.option.always")),
+    ];
 
     public IReadOnlyList<SettingChoice> IntroSkipChoices { get; } =
-        [new("never", "Never"), new("ask", "Ask to skip"), new("always", "Skip automatically")];
+    [
+        new("never", AppText.Get("settingsManifest.playback.intro_skip_mode.option.never")),
+        new("ask", AppText.Get("settingsManifest.playback.intro_skip_mode.option.ask")),
+        new("always", AppText.Get("settingsManifest.playback.intro_skip_mode.option.always")),
+    ];
 
     public IReadOnlyList<SettingChoice> SkipChoices { get; } =
-        [.. new[] { 5, 10, 15, 30, 45, 60, 90 }.Select(s => new SettingChoice(SettingValues.Invariant(s), $"{s} seconds"))];
+    [
+        .. new[] { 5, 10, 15, 30, 45, 60, 90 }.Select(s => new SettingChoice(SettingValues.Invariant(s),
+            AppText.Get("web.settings.playback.seek.seconds", ("count", s), ("count_text", AppText.Number(s))))),
+    ];
 
     [ObservableProperty]
     public partial bool IsLoading { get; private set; } = true;
@@ -148,7 +166,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     [NotifyCanExecuteChangedFor(nameof(TestSpeedCommand))]
     public partial bool IsTestingSpeed { get; private set; }
 
-    public string TestSpeedText => IsTestingSpeed ? "Testing…" : "Test speed";
+    public string TestSpeedText =>
+        IsTestingSpeed ? AppText.Get("web.settings.playbackConnection.testing") : AppText.Get("web.settings.playbackConnection.test");
 
     /// <summary>Why the last test did not measure, as the web says it; empty otherwise. Some messages hide themselves again.</summary>
     [ObservableProperty]
@@ -200,7 +219,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken) || ex is InvalidOperationException)
         {
             _logger.LogInformation("The playback settings could not be read: {Failure}", ApiFailureText.Describe(ex));
-            ErrorMessage = "Could not load the playback settings. " + ApiFailureText.Describe(ex);
+            ErrorMessage = AppText.Get("granary.settings.playback.loadFailed", ("reason", ApiFailureText.Describe(ex)));
         }
         finally
         {
@@ -224,7 +243,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogInformation("The learned limit could not be reset: {Failure}", ApiFailureText.Describe(ex));
-            ErrorMessage = "Couldn't reset the limit. Try again.";
+            ErrorMessage = AppText.Get("web.settings.playbackConnection.resetFailed");
         }
     }
 
@@ -253,19 +272,19 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
                     break;
                 case SpeedTestStatus.Metered:
                     // The link turned metered: the row says why instead.
-                    _meteredNote = MeteredNote(_network.Current) ?? MeteredText;
+                    _meteredNote = MeteredNote(_network.Current) ?? AppText.Get("web.settings.playbackConnection.skippedMetered");
                     ShowConnection();
                     break;
                 case SpeedTestStatus.RateLimited:
                     int seconds = outcome.RetryAfterSeconds;
-                    Say(string.Create(CultureInfo.InvariantCulture, $"Try again in {seconds} {(seconds == 1 ? "second" : "seconds")}"),
+                    Say(AppText.Get("web.settings.playbackConnection.rateLimited", ("count", seconds), ("count_text", AppText.Number(seconds))),
                         TimeSpan.FromSeconds(seconds));
                     break;
                 case SpeedTestStatus.NotSaved:
-                    Say("Couldn't save the speed test. Try again.");
+                    Say(AppText.Get("web.settings.playbackConnection.notSaved"));
                     break;
                 case SpeedTestStatus.Failed:
-                    Say("Couldn't measure the connection speed. Try again.");
+                    Say(AppText.Get("web.settings.playbackConnection.testFailed"));
                     break;
             }
         }
@@ -314,12 +333,10 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         }
     }
 
-    private const string MeteredText = "Speed tests are skipped on metered networks.";
-
     // A link paid for by the byte is not tested, and a reading taken on another link does not describe it.
     private static string? MeteredNote(NetworkLink link) =>
-        link.Transport == NetworkTransports.Cellular ? "Speed tests are skipped on cellular, and the Cellular quality settings apply."
-        : link.IsMetered ? MeteredText
+        link.Transport == NetworkTransports.Cellular ? AppText.Get("web.settings.playbackConnection.skippedCellular")
+        : link.IsMetered ? AppText.Get("web.settings.playbackConnection.skippedMetered")
         : null;
 
     private void Apply(IReadOnlyDictionary<string, EffectiveSetting> values)
@@ -372,7 +389,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     // "No limit", the ladder, and a stored value off the ladder (another client's), so it reads as itself.
     private void ApplyBitrate(int? kbps)
     {
-        var choices = new List<SettingChoice> { new("", "No limit") };
+        var choices = new List<SettingChoice> { new("", AppText.Get("web.settings.value.noLimit")) };
         choices.AddRange(BitrateLadderKbps.Select(k => new SettingChoice(SettingValues.Invariant(k), Rate(k))));
         if (kbps is { } stored && !BitrateLadderKbps.Contains(stored))
         {
@@ -422,11 +439,14 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         ShowsLearnedLimit = ShowsBuffering && !ignoresLimit && limit is not null;
         LearnedLimitText = limit is null
             ? ""
-            : $"Limited to {ConnectionRate(limit.Kbps)} after buffering on {limit.ObservedAt.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture)}";
+            : AppText.Get("web.settings.playbackConnection.learnedLimit", ("rate", ConnectionRate(limit.Kbps)),
+                ("date", limit.ObservedAt.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture)));
         ConnectionSpeedText = _meteredNote ?? SpeedText(_connection);
         ShowsTestSpeed = _meteredNote is null;
         long? budget = ignoresLimit && limit is not null ? null : _connection?.AutoBudgetKbps;
-        BudgetText = budget is { } kbps && _meteredNote is null ? $"Auto plays videos up to {ConnectionRate(kbps)} without converting them." : "";
+        BudgetText = budget is { } kbps && _meteredNote is null
+            ? AppText.Get("web.settings.playbackConnection.autoBudget", ("rate", ConnectionRate(kbps)))
+            : "";
     }
 
     // The highest reading kept for this connection: a test, or else the best playback throughput, a lower bound.
@@ -434,21 +454,23 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     {
         if (state?.Probe is { } probe)
         {
-            string rate = probe.LowerBound ? $"Faster than {ConnectionRate(probe.Kbps)}" : ConnectionRate(probe.Kbps);
+            string rate = probe.LowerBound
+                ? AppText.Get("web.settings.playbackConnection.fasterThan", ("rate", ConnectionRate(probe.Kbps)))
+                : ConnectionRate(probe.Kbps);
             string transport = probe.Transport switch
             {
-                "wifi" => "Wi-Fi",
-                "ethernet" => "Ethernet",
-                "cellular" => "cellular",
-                _ => "this connection",
+                "wifi" => AppText.Get("web.settings.playbackConnection.transport.wifi"),
+                "ethernet" => AppText.Get("web.settings.playbackConnection.transport.ethernet"),
+                "cellular" => AppText.Get("web.settings.playbackConnection.transport.cellular"),
+                _ => AppText.Get("web.settings.playbackConnection.transport.unknown"),
             };
-            return $"{rate} · measured {Ago(probe.MeasuredAt)} on {transport}";
+            return AppText.Get("web.settings.playbackConnection.measured", ("rate", rate), ("ago", Ago(probe.MeasuredAt)), ("transport", transport));
         }
         if (state?.PlaybackSample is { } sample)
         {
-            return $"Faster than {ConnectionRate(sample.Kbps)} · seen during playback {Ago(sample.MeasuredAt)}";
+            return AppText.Get("web.settings.playbackConnection.seenDuringPlayback", ("rate", ConnectionRate(sample.Kbps)), ("ago", Ago(sample.MeasuredAt)));
         }
-        return "Not measured yet";
+        return AppText.Get("web.settings.playbackConnection.notMeasured");
     }
 
     // "just now", "3 minutes ago", "2 hours ago", "4 days ago".
@@ -457,10 +479,19 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         int minutes = Math.Max(0, (int)(_time.GetUtcNow() - at).TotalMinutes);
         if (minutes < 1)
         {
-            return "just now";
+            return AppText.Get("web.settings.playbackConnection.ago.justNow");
         }
-        var (count, unit) = minutes < 60 ? (minutes, "minute") : minutes < 24 * 60 ? (minutes / 60, "hour") : (minutes / (24 * 60), "day");
-        return string.Create(CultureInfo.InvariantCulture, $"{count} {unit}{(count == 1 ? "" : "s")} ago");
+        if (minutes < 60)
+        {
+            return AppText.Get("web.settings.playbackConnection.ago.minutes", ("count", minutes), ("count_text", AppText.Number(minutes)));
+        }
+        int hours = minutes / 60;
+        if (hours < 24)
+        {
+            return AppText.Get("web.settings.playbackConnection.ago.hours", ("count", hours), ("count_text", AppText.Number(hours)));
+        }
+        int days = hours / 24;
+        return AppText.Get("web.settings.playbackConnection.ago.days", ("count", days), ("count_text", AppText.Number(days)));
     }
 
     // Rounded down, as every Silo client shows a speed or a limit: one decimal below 10 Mbps, whole Mbps above.
@@ -478,7 +509,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         {
             QualityDescription = value.Value == "auto" ? AutoQualityDescription : QualityDescriptionText;
             Save(SettingKeys.PreferredQuality, value, () => SelectedQuality, v => SelectedQuality = v, SettingValues.Json(value.Value),
-                "Failed to save preferred quality");
+                AppText.Get("web.settings.playback.quality.saveFailed"));
         }
     }
 
@@ -488,7 +519,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         if (value is not null)
         {
             Save(SettingKeys.MaxBitrateKbps, value, () => SelectedBitrate, v => SelectedBitrate = v,
-                value.Value.Length == 0 ? null : SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save maximum bitrate");
+                value.Value.Length == 0 ? null : SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), AppText.Get("web.settings.playback.maxBitrate.saveFailed"));
         }
     }
 
@@ -530,7 +561,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         if (value is not null)
         {
             Save(SettingKeys.SkipBackSeconds, value, () => SelectedRewind, v => SelectedRewind = v,
-                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save rewind interval for video");
+                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), AppText.Get("web.settings.playback.seek.video.rewindSaveFailed"));
         }
     }
 
@@ -539,14 +570,15 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         if (value is not null)
         {
             Save(SettingKeys.SkipForwardSeconds, value, () => SelectedFastForward, v => SelectedFastForward = v,
-                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save fast-forward interval for video");
+                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), AppText.Get("web.settings.playback.seek.video.forwardSaveFailed"));
         }
     }
 
     // Saved after the saves before it; a refusal puts the control back to what the server holds, unless the viewer
     // has moved it on since. A null value is a reset.
-    private void Save<T>(string key, T value, Func<T> shown, Action<T> show, JsonElement? json, string failure = "Failed to save playback setting")
+    private void Save<T>(string key, T value, Func<T> shown, Action<T> show, JsonElement? json, string? failure = null)
     {
+        failure ??= AppText.Get("web.settings.playback.saveFailed");
         if (_applying)
         {
             return;

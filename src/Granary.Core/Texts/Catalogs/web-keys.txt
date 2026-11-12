@@ -102,11 +102,36 @@ settingsManifest.catalog.hide_unwatched_episode_overviews.description
 settingsManifest.catalog.hide_unwatched_episode_overviews.label
 settingsManifest.catalog.show_advisory_age.label
 settingsManifest.playback.audio_language.unsetLabel
+settingsManifest.playback.auto_play_next.label
+settingsManifest.playback.auto_skip_credits.description
+settingsManifest.playback.auto_skip_credits.label
+settingsManifest.playback.auto_skip_recap.label
+settingsManifest.playback.buffering_quality_mode.description
+settingsManifest.playback.buffering_quality_mode.label
+settingsManifest.playback.buffering_quality_mode.option.always
+settingsManifest.playback.buffering_quality_mode.option.ask
+settingsManifest.playback.buffering_quality_mode.option.never
+settingsManifest.playback.intro_skip_mode.label
+settingsManifest.playback.intro_skip_mode.option.always
+settingsManifest.playback.intro_skip_mode.option.ask
+settingsManifest.playback.intro_skip_mode.option.never
+settingsManifest.playback.max_bitrate_kbps.label
+settingsManifest.playback.preferred_quality.label
+settingsManifest.playback.preferred_quality.option.1080p
+settingsManifest.playback.preferred_quality.option.2160p
+settingsManifest.playback.preferred_quality.option.480p
+settingsManifest.playback.preferred_quality.option.720p
+settingsManifest.playback.preferred_quality.option.auto
 settingsManifest.playback.show_forced_subtitles.label
 settingsManifest.playback.subtitle_language.unsetLabel
 settingsManifest.playback.subtitle_mode.option.always
 settingsManifest.playback.subtitle_mode.option.auto
 settingsManifest.playback.subtitle_mode.option.off
+settingsManifest.player.audio_sync_ms.description
+settingsManifest.player.audio_sync_ms.label
+settingsManifest.player.passout_threshold.label
+settingsManifest.player.resume_rewind_seconds.description
+settingsManifest.player.resume_rewind_seconds.label
 settingsManifest.ui.theme_music_enabled.description
 settingsManifest.ui.theme_music_enabled.label
 settingsManifest.ui.theme_music_loop.description
@@ -185,7 +210,9 @@ web.search.placeholderProminent
 # (LanguageSettingsView.xaml, LanguageSettingsViewModel.cs, SubtitleAppearanceEditor.cs, which the player's Appearance
 # panel shares, and src/Granary.App/Controls/SubtitlePreview.cs), as SubtitleAppearanceSettings.tsx and
 # lib/subtitleAppearance.ts; Devices (DevicesSettingsView.xaml, DevicesViewModel.cs and .Actions.cs, DeviceRows.cs and
-# DeviceText.cs), as the web's SignedInSessions.tsx, lib/loginSessionDevice.ts, DeviceSettings.tsx and DeviceList.tsx.
+# DeviceText.cs), as the web's SignedInSessions.tsx, lib/loginSessionDevice.ts, DeviceSettings.tsx and DeviceList.tsx;
+# Playback (PlaybackSettingsView.xaml, PlaybackSettingsViewModel.cs and .Device.cs, AudioDelaySettingsViewModel.cs), as
+# PlaybackSettings.tsx, PlaybackConnection.tsx, the Sound group of DeviceSettingGroups.tsx and lib/settingsDisplay.ts.
 web.settings.cardOverlay.adjust
 web.settings.cardOverlay.adjustLabel
 web.settings.cardOverlay.badgesDescription
@@ -220,6 +247,8 @@ web.settings.device.resetFailed
 web.settings.device.title
 web.settings.device.useProfileSettings
 web.settings.device.usingNow
+web.settings.deviceGroups.sound.description
+web.settings.deviceGroups.sound.title
 web.settings.deviceList.group.current
 web.settings.deviceList.group.earlier
 web.settings.deviceList.group.week
@@ -242,6 +271,7 @@ web.settings.interface.posterStandard
 web.settings.interface.postersTitle
 web.settings.interface.title
 web.settings.interface.unsupportedTitle
+web.settings.limitField.unlimited
 web.settings.nav.group.account
 web.settings.nav.group.appearance
 web.settings.nav.group.playback
@@ -330,7 +360,59 @@ web.settings.overlays.preset.square.description
 web.settings.overlays.preset.square.label
 web.settings.overlays.preset.vibrant.description
 web.settings.overlays.preset.vibrant.label
+web.settings.playback.autoPlayNext.description
+web.settings.playback.maxBitrate.description
+web.settings.playback.maxBitrate.saveFailed
+web.settings.playback.nextEpisode.previewDescription
+web.settings.playback.nextEpisode.previewLabel
+web.settings.playback.nextEpisode.title
+web.settings.playback.quality.autoDescription
+web.settings.playback.quality.description
+web.settings.playback.quality.groupDescription
+web.settings.playback.quality.saveFailed
+web.settings.playback.quality.title
+web.settings.playback.saveFailed
+web.settings.playback.seek.description
+web.settings.playback.seek.forwardInterval
+web.settings.playback.seek.rewindInterval
+web.settings.playback.seek.seconds
+web.settings.playback.seek.title
+web.settings.playback.seek.video.forwardDescription
+web.settings.playback.seek.video.forwardSaveFailed
+web.settings.playback.seek.video.rewindDescription
+web.settings.playback.seek.video.rewindSaveFailed
+web.settings.playback.seek.videoDescription
+web.settings.playback.seek.videoTitle
+web.settings.playback.skipping.introModeDescription
+web.settings.playback.skipping.recapDescription
+web.settings.playback.skipping.title
+web.settings.playback.subtitle
 web.settings.playback.title
+web.settings.playbackConnection.ago.days
+web.settings.playbackConnection.ago.hours
+web.settings.playbackConnection.ago.justNow
+web.settings.playbackConnection.ago.minutes
+web.settings.playbackConnection.autoBudget
+web.settings.playbackConnection.fasterThan
+web.settings.playbackConnection.learnedLimit
+web.settings.playbackConnection.measured
+web.settings.playbackConnection.notMeasured
+web.settings.playbackConnection.notSaved
+web.settings.playbackConnection.rateLimited
+web.settings.playbackConnection.reset
+web.settings.playbackConnection.resetFailed
+web.settings.playbackConnection.seenDuringPlayback
+web.settings.playbackConnection.skippedCellular
+web.settings.playbackConnection.skippedMetered
+web.settings.playbackConnection.speed
+web.settings.playbackConnection.test
+web.settings.playbackConnection.testFailed
+web.settings.playbackConnection.testing
+web.settings.playbackConnection.title
+web.settings.playbackConnection.transport.cellular
+web.settings.playbackConnection.transport.ethernet
+web.settings.playbackConnection.transport.unknown
+web.settings.playbackConnection.transport.wifi
 web.settings.resetButton.label
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
@@ -467,6 +549,10 @@ web.settings.titlePages.spoilersDescription
 web.settings.titlePages.spoilersTitle
 web.settings.titlePages.subtitle
 web.settings.titlePages.title
+web.settings.value.custom
+web.settings.value.episodes
+web.settings.value.milliseconds
+web.settings.value.noLimit
 
 # The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
 # display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
