@@ -277,4 +277,196 @@ public sealed class ServerActivityViewModelTests : IDisposable
         _activity.Follow(null);
         Assert.False(_indicator.IsAvailable);
     }
+
+    private static EventsFrame ScanProgress(int processed) => EventsFrames.Parse(
+        $$"""{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "p", "timestamp": "t", "data": { "id": "a", "library_id": 1, "mode": "library", "trigger": "manual", "status": "running", "result": { "total_files": 4800, "files_processed": {{processed}} } } }""")!;
+
+    // An indicator of its own on a dispatcher that counts, following a connection the server gave the scans.
+    private (ServerActivityViewModel Indicator, LookCounter Looks, long Feed) Following()
+    {
+        var looks = new LookCounter();
+        var indicator = new ServerActivityViewModel(_activity, looks, _clock);
+        long feed = _activity.Follow(ScriptedSilo.Base);
+        _activity.Connection(feed, EventsConnection.Live);
+        _activity.Handle(feed, EventsFrames.Parse("""{ "type": "subscribed", "request_id": "req-1", "channels": ["scans"] }""")!);
+        _activity.Handle(feed, EventsFrames.Parse("""{ "type": "snapshot", "channel": "scans", "timestamp": "t", "data": [] }""")!);
+        // What is still to be shown of that, and a quiet moment after it.
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+        looks.Count = 0;
+        return (indicator, looks, feed);
+    }
+
+    [Fact]
+    public void NewsThatComesFasterThanFourTimesASecond_IsShownAtOnce_AndThenOncePerInterval()
+    {
+        var (indicator, looks, feed) = Following();
+        using var _ = indicator;
+
+        // A scan that counts its files tells of every step.
+        for (int processed = 1; processed <= 100; processed++)
+        {
+            _activity.Handle(feed, ScanProgress(processed));
+        }
+
+        // The first step shows at once, the rest wait.
+        Assert.Equal(1, looks.Count);
+        Assert.Equal("Processing files · 1 / 4,800 (0%)", Assert.Single(indicator.Scans).ProgressText);
+        _clock.Advance(ServerActivityViewModel.ShowInterval - TimeSpan.FromMilliseconds(1));
+        Assert.Equal(1, looks.Count);
+
+        // Then the latest of them, once.
+        _clock.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.Equal(2, looks.Count);
+        Assert.Equal("Processing files · 100 / 4,800 (2%)", indicator.Scans[0].ProgressText);
+
+        // More news within the next interval waits for its end; without any, nothing more is looked at.
+        _activity.Handle(feed, ScanProgress(150));
+        Assert.Equal(2, looks.Count);
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+        Assert.Equal(3, looks.Count);
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+        Assert.Equal(3, looks.Count);
+
+        // After a quiet interval the next news shows at once again.
+        _activity.Handle(feed, ScanProgress(200));
+        Assert.Equal(4, looks.Count);
+        Assert.Equal("Processing files · 200 / 4,800 (4%)", indicator.Scans[0].ProgressText);
+    }
+
+    [Fact]
+    public void WhoMaySeeTheIndicator_IsNeverKeptWaiting()
+    {
+        var (indicator, looks, feed) = Following();
+        using var _ = indicator;
+        _activity.Handle(feed, ScanProgress(1));
+        Assert.Equal(1, looks.Count);
+
+        // Another profile, within the interval of the last look.
+        _activity.Follow(null);
+
+        Assert.False(indicator.IsAvailable);
+        Assert.Empty(indicator.Scans);
+    }
+
+    [Fact]
+    public void ALookTheDispatcherDropped_CostsThatLook_AndNoMore()
+    {
+        var (indicator, looks, feed) = Following();
+        using var _ = indicator;
+        looks.Drops = true;
+        _activity.Handle(feed, ScanProgress(1));
+        Assert.Empty(indicator.Scans);
+
+        looks.Drops = false;
+        _activity.Handle(feed, ScanProgress(2));
+        _clock.Advance(ServerActivityViewModel.ShowInterval);
+
+        Assert.Equal("Processing files · 2 / 4,800 (0%)", Assert.Single(indicator.Scans).ProgressText);
+    }
+
+    [Fact]
+    public void ARunningTaskWithoutAName_GoesByItsKey()
+    {
+        _indicator.Show(Live() with { Tasks = [Scheduled("cleanup_orphans", "", "running", 12)] });
+
+        var row = Assert.Single(_indicator.Tasks);
+        Assert.Equal("cleanup_orphans", row.Name);
+        Assert.Equal("cleanup_orphans, 12%", row.ReadText);
+
+        // Its name shows in the same row once the server gives one.
+        _indicator.Show(Live() with { Tasks = [Scheduled("cleanup_orphans", "Clean Up Orphans", "running", 12)] });
+        Assert.Equal("Clean Up Orphans", row.Name);
+    }
+
+    [Fact]
+    public void RowsThatChangePlaces_StayTheSameRows_InTheNewOrder()
+    {
+        _indicator.Show(Live() with { Tasks = [Scheduled("a", "A", "running"), Scheduled("b", "B", "running"), Scheduled("c", "C", "running")] });
+        var (a, b, c) = (_indicator.Tasks[0], _indicator.Tasks[1], _indicator.Tasks[2]);
+
+        _indicator.Show(Live() with { Tasks = [Scheduled("c", "C", "running"), Scheduled("d", "D", "running"), Scheduled("a", "A", "running", 30)] });
+
+        Assert.Equal(["c", "d", "a"], _indicator.Tasks.Select(row => row.Key));
+        Assert.Same(c, _indicator.Tasks[0]);
+        Assert.Same(a, _indicator.Tasks[2]);
+        Assert.Equal("30%", a.StatusText);
+        Assert.DoesNotContain(b, _indicator.Tasks);
+    }
+
+    [Fact]
+    public void ItemsThatShareAKey_GetARowEach_AndLeaveNoneBehind()
+    {
+        // The server names every task once; a list that does not must still come out as long as it is.
+        _indicator.Show(Live() with { Tasks = [Scheduled("a", "First", "running"), Scheduled("a", "Second", "running"), Scheduled("b", "B", "running")] });
+        Assert.Equal(["a", "a", "b"], _indicator.Tasks.Select(row => row.Key));
+        Assert.Equal(3, _indicator.TaskCount);
+
+        _indicator.Show(Live() with { Tasks = [Scheduled("b", "B", "running"), Scheduled("a", "Second", "running")] });
+        Assert.Equal(["b", "a"], _indicator.Tasks.Select(row => row.Key));
+
+        _indicator.Show(Live() with { Tasks = [] });
+        Assert.Empty(_indicator.Tasks);
+    }
+
+    [Fact]
+    public void OnAGermanWindows_TheNumbersStayAsTheWebWritesThemInEnglish()
+    {
+        var before = (System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CultureInfo.CurrentUICulture);
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.CurrentUICulture = new("de-DE");
+
+            _indicator.Show(Live() with
+            {
+                Tasks = [Scheduled("refresh_metadata", "Refresh Metadata", "running", 41.5)],
+                Scans = [.. Enumerable.Range(0, 1300).Select(index => new AdminScanRun
+                {
+                    Id = "s" + index,
+                    Status = "running",
+                    LibraryId = 1234,
+                    Mode = "library",
+                    Result = new AdminScanResult { TotalFiles = 4800, FilesProcessed = 1200 },
+                })],
+                Preparations = new AdminDownloadPreparationList
+                {
+                    Counts = new AdminDownloadPreparationCounts { Running = 1, Queued = 1200, Paused = 2500, FailedRecent = 1100 },
+                    Items = [new AdminDownloadPreparation { Id = "job-1", State = "running", MediaTitle = "Dune", Progress = new AdminDownloadPreparationProgress(1275.5, 3000, 1.5) }],
+                },
+            });
+
+            Assert.Equal("41.5%", _indicator.Tasks[0].StatusText);
+            Assert.Equal(("Library #1234", "Processing files · 1,200 / 4,800 (25%)"), (_indicator.Scans[0].LibraryName, _indicator.Scans[0].ProgressText));
+            Assert.Equal("1,275 more scans queued", _indicator.MoreScansText);
+            Assert.Equal(("42%", "Transcode · about 19 min left"), (_indicator.Preparations[0].StatusText, _indicator.Preparations[0].DetailText));
+            Assert.Equal(("1,200 queued", "2,500 paused", "1,100 failed in the last 24 hours"),
+                (_indicator.WaitingPreparationsText, _indicator.PausedPreparationsText, _indicator.FailedPreparationsText));
+            Assert.Equal("Server activity: 2502 active", _indicator.Name);
+        }
+        finally
+        {
+            (System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CultureInfo.CurrentUICulture) = before;
+        }
+    }
+
+    /// <summary>Runs what is posted at once and counts it, or drops it as a dispatcher that is shutting down does.</summary>
+    private sealed class LookCounter : Granary.Core.Abstractions.IUiDispatcher
+    {
+        public int Count { get; set; }
+
+        public bool Drops { get; set; }
+
+        public bool HasThreadAccess => true;
+
+        public void Post(Action action)
+        {
+            if (Drops)
+            {
+                return;
+            }
+            Count++;
+            action();
+        }
+    }
 }

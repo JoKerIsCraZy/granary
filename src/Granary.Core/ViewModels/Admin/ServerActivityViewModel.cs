@@ -13,10 +13,18 @@ namespace Granary.Core.ViewModels.Admin;
 /// the admin area's pages it shows always, elsewhere only while something is going on, or may be, or its panel is open.
 /// Its texts are the web's.
 /// </summary>
+/// <remarks>
+/// The server's news comes on other threads and as fast as a scan counts its files. It is shown at once when nothing was
+/// shown for <see cref="ShowInterval"/>, and otherwise once that time is up, whatever came meanwhile; who may see the
+/// indicator at all is never kept waiting.
+/// </remarks>
 public sealed partial class ServerActivityViewModel : ObservableObject, IDisposable
 {
     /// <summary>How long the stream may be without a connection before the button says so, as the web waits.</summary>
     public static readonly TimeSpan ConnectionProblemDelay = TimeSpan.FromSeconds(4);
+
+    /// <summary>The least time between two looks at the server's activity: four a second.</summary>
+    public static readonly TimeSpan ShowInterval = TimeSpan.FromMilliseconds(250);
 
     /// <summary>The most scans the panel lists; the rest are counted in a line under them.</summary>
     public const int MaxScanRows = 25;
@@ -27,7 +35,13 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     private readonly ServerActivity _activity;
     private readonly IUiDispatcher _dispatcher;
     private readonly ITimer _problem;
-    private int _posted;
+    private readonly ITimer _pace;
+    private readonly Lock _paceGate = new();
+    // Within ShowInterval of a look, and whether news came since: both the pace lock's.
+    private bool _isPacing;
+    private bool _hasNews;
+    // What the last look showed of who may see the indicator; read on the threads the news comes on.
+    private volatile bool _showsAvailable;
     private bool _isOffline;
 
     public ServerActivityViewModel(ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time)
@@ -36,6 +50,7 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         _activity = activity;
         _dispatcher = dispatcher;
         _problem = time.CreateTimer(_ => _dispatcher.Post(ShowConnectionProblem), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _pace = time.CreateTimer(_ => OnPaced(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _activity.Changed += OnActivityChanged;
         Show(_activity.State);
     }
@@ -234,12 +249,14 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     {
         _activity.Changed -= OnActivityChanged;
         _problem.Dispose();
+        _pace.Dispose();
     }
 
     /// <summary>Shows <paramref name="state"/>; on the UI thread.</summary>
     internal void Show(ServerActivityState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        _showsAvailable = state.IsAvailable;
         IsAvailable = state.IsAvailable;
         ShowConnection(state);
         var sessions = state.Sessions ?? [];
@@ -297,18 +314,43 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         return counts.Active;
     }
 
-    // The news comes on the stream's or a read's thread, in bursts: one look at the latest state per burst.
+    // The news comes on the stream's, a read's or a timer's thread, and a scan sends its progress as fast as it counts.
+    // The first news is looked at at once and starts ShowInterval; more news within it waits for its end. Nothing here
+    // depends on the posted look having run, so one the dispatcher dropped costs that look and no more.
     private void OnActivityChanged(object? sender, EventArgs e)
     {
-        if (Interlocked.Exchange(ref _posted, 1) == 0)
+        // Who may see the indicator at all (another profile, an access change) never waits.
+        bool isUrgent = _activity.State.IsAvailable != _showsAvailable;
+        lock (_paceGate)
         {
-            _dispatcher.Post(() =>
+            if (_isPacing && !isUrgent)
             {
-                Volatile.Write(ref _posted, 0);
-                Show(_activity.State);
-            });
+                _hasNews = true;
+                return;
+            }
+            _isPacing = true;
+            _hasNews = false;
+            _pace.Change(ShowInterval, Timeout.InfiniteTimeSpan);
         }
+        _dispatcher.Post(ShowLatest);
     }
+
+    private void OnPaced()
+    {
+        lock (_paceGate)
+        {
+            if (!_hasNews)
+            {
+                _isPacing = false;
+                return;
+            }
+            _hasNews = false;
+            _pace.Change(ShowInterval, Timeout.InfiniteTimeSpan);
+        }
+        _dispatcher.Post(ShowLatest);
+    }
+
+    private void ShowLatest() => Show(_activity.State);
 
     // As the web's useDelayedConnectionProblem: the dot comes only once the stream stayed away, and goes at once.
     private void ShowConnection(ServerActivityState state)

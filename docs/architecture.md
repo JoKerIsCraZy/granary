@@ -1074,8 +1074,10 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   following has an object of its own that its reads are cancelled by and compared against, so a late answer is dropped
   too. Everything in it is guarded by one lock; `Changed` is raised outside it, on the lane's, a read's or a timer's
   thread, and what a listener throws there is logged and goes no further.
-- **`ServerActivityViewModel`** (Core, a singleton) shows the state on the UI thread (`IUiDispatcher`, one look at the
-  latest state per burst of changes). Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
+- **`ServerActivityViewModel`** (Core, a singleton) shows the state on the UI thread (`IUiDispatcher`), at most four
+  times a second: a scan sends its progress as fast as it counts files, and each look groups the streams and syncs
+  every section's rows. The first news after a quiet 250 ms is looked at at once, more news within it once it is up;
+  a change of who may see the indicator at all never waits. Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
   row the keyboard is on keeps its focus while its numbers change. The shell says where it is (`ShowsWhenIdle` on the
   admin area's pages) and whether the panel is open; `IsVisible` is the web's rule.
 
