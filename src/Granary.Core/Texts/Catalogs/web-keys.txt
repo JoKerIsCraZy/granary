@@ -4,12 +4,16 @@
 
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
 # src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
-# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs).
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
+# list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
+# had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
 common.back
 common.cancel
+common.changeServer
 common.done
 common.retry
 common.save
+common.signOut
 common.tryAgain
 
 # The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
@@ -89,6 +93,29 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
+# the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
+# src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
+# src/Granary.Core/ViewModels/DeviceSignInViewModel.cs, and the address line in
+# src/Granary.App/Controls/DeviceSignInPanel.xaml.cs.
+web.auth.login.device.continueOnPhone
+web.auth.login.device.denied
+web.auth.login.device.description
+web.auth.login.device.failed
+web.auth.login.device.generatingCode
+web.auth.login.device.goToAndEnter
+web.auth.login.device.showQrCode
+web.auth.login.device.signedIn
+web.auth.login.device.title
+web.auth.login.device.waiting
+web.auth.login.heading
+web.auth.login.signingIn
+web.auth.loginSubtitle.default
+web.auth.oauthFailure.accountDisabled
+web.auth.password
+web.auth.signIn
+web.auth.username
+
 # Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
 web.catalog.page.doneSelecting
 
@@ -100,3 +127,49 @@ web.common.ui.loadError.timeout
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
+# components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
+# PinLockout in src/Granary.Core/ViewModels/ProfilePickerViewModel.cs, and AccessibleName in
+# src/Granary.Core/ViewModels/ProfileItemViewModel.cs.
+web.profiles.picker.documentTitle
+web.profiles.picker.pinProtected
+web.profiles.picker.title
+web.profiles.pin.incorrect
+web.profiles.pin.label
+web.profiles.pin.lockedLater
+web.profiles.pin.lockedMinutes
+web.profiles.pin.title
+web.profiles.pin.verifying
+
+# The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
+# src/Granary.App/Views/SearchPage.xaml.
+web.search.label
+web.search.placeholderProminent
+
+# The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
+# display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
+# src/Granary.App/Controls/SidebarSectionHeader.xaml.cs, and the entries' names in
+# src/Granary.Core/ViewModels/SidebarLayout.cs, which Settings' sidebar editor shows too.
+web.shell.pageBack.goBack
+web.shell.sidebar.admin
+web.shell.sidebar.calendar
+web.shell.sidebar.collapse
+web.shell.sidebar.collections
+web.shell.sidebar.discover
+web.shell.sidebar.expand
+web.shell.sidebar.favorites
+web.shell.sidebar.forYou
+web.shell.sidebar.history
+web.shell.sidebar.home
+web.shell.sidebar.libraries
+web.shell.sidebar.logout
+web.shell.sidebar.notifications
+web.shell.sidebar.profileMenu
+web.shell.sidebar.requests
+web.shell.sidebar.search
+web.shell.sidebar.settings
+web.shell.sidebar.switchProfile
+web.shell.sidebar.watchParty
+web.shell.sidebar.watchlist
+web.shell.sidebar.yourStuff

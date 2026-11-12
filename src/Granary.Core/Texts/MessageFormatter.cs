@@ -140,6 +140,9 @@ internal sealed class MessageFormatter
         return (plural.Options.TryGetValue(category, out var branch) ? branch : plural.Options[PluralRules.Other], counted);
     }
 
+    /// <summary>A number as the language writes it (<see cref="TextLanguage.Number"/>).</summary>
+    public string Number(decimal number) => Grouped(number);
+
     // Intl.NumberFormat's default: grouped, up to three decimals.
     private string Grouped(decimal number)
     {

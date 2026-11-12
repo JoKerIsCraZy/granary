@@ -170,7 +170,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
-  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout, in the web's words; the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
@@ -928,7 +928,7 @@ says why above the sections.
   sync offset. Try again." in 13 px muted in the slider's place with a Retry outline button, as the Devices page does,
   and a server that does not know the setting (422) has no Sound group; a title that plays, in the mini player too,
   follows a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as
-  the app closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is
+  the app closes, or before Switch Profile and Logout; an `audio-delay` of your own mpv.conf stays while the offset is
   0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
@@ -1121,8 +1121,8 @@ says why above the sections.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
-  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
-  standalone servers page, which shares the question before removing.
+  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Change server" (the apps' words)
+  still opens the standalone servers page, which shares the question before removing.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

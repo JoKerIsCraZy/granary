@@ -11,6 +11,12 @@
       "value": "取消"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "更换服务器"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -27,6 +33,12 @@
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "退出登录"
     }
   ],
   "common.tryAgain": [
@@ -503,6 +515,126 @@
       "value": "本周热门"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "请在手机上继续。"
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "批准被拒绝。请生成新代码后重试。"
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "扫描二维码，在手机上登录，然后批准此设备。"
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "设备登录失败"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "正在生成代码……"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "或前往"
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "并输入"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "显示二维码"
+    }
+  ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "已登录。正在加载个人资料……"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "改用手机登录"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "正在等待手机上的批准……"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "登录"
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "正在登录……"
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "使用现有账户登录。"
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "此账户已停用。"
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "密码"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "登录"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "用户名"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -525,6 +657,248 @@
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "个人资料"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "（受PIN保护）"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "谁在观看？"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "PIN不正确"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "PIN错误次数过多。请稍后重试。"
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "PIN错误次数过多。请在"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分钟后重试。"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "输入"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "的PIN"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "正在验证……"
+    }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "搜索"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "搜索电影、剧集……"
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "返回"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "管理"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "日历"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "收起"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "合集"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "发现"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "展开"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "收藏"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "为你推荐"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "观看历史"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "首页"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "退出登录"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "通知"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "的菜单"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "请求"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "搜索"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "设置"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "切换个人资料"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "待看清单"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "我的内容"
     }
   ]
 }

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -139,7 +140,7 @@ public sealed partial class DeviceSignInViewModel : ObservableObject, IDisposabl
         UserCode = code?.UserCode ?? "";
         VerificationText = code?.VerificationText ?? "";
         QrPayload = code?.QrPayload ?? "";
-        ExpiryText = code is null ? "" : $"Valid until {FormatTime(code.ExpiresAt)}";
+        ExpiryText = code is null ? "" : AppText.Get("granary.signIn.device.validUntil", ("time", FormatTime(code.ExpiresAt)));
         IsOpened = state.Status == DeviceSignInStatus.Opened;
         IsWaiting = state.Status is DeviceSignInStatus.GettingCode or DeviceSignInStatus.WaitingForApproval
             or DeviceSignInStatus.Opened or DeviceSignInStatus.Unreachable or DeviceSignInStatus.TooManyRequests;
@@ -149,17 +150,19 @@ public sealed partial class DeviceSignInViewModel : ObservableObject, IDisposabl
     private string FormatTime(DateTimeOffset value) =>
         TimeZoneInfo.ConvertTime(value, _time.LocalTimeZone).ToString("t", CultureInfo.CurrentCulture);
 
+    // The web login's words where it shows the same step (pages/Login.tsx); the retries and a server without the code are
+    // Granary's own.
     private static string Describe(DeviceSignInStatus status) => status switch
     {
-        DeviceSignInStatus.GettingCode => "Getting a sign-in code…",
-        DeviceSignInStatus.WaitingForApproval => "Waiting for approval…",
-        DeviceSignInStatus.Opened => "Code opened. Continue on your phone.",
-        DeviceSignInStatus.Unreachable => "Cannot reach the server. Still trying…",
-        DeviceSignInStatus.TooManyRequests => "Too many requests. Trying again shortly…",
-        DeviceSignInStatus.Approved => "Signed in.",
-        DeviceSignInStatus.Denied => "The sign-in was declined.",
-        DeviceSignInStatus.Unavailable => "This server does not offer sign-in with a code. Use your password.",
-        DeviceSignInStatus.Failed => "Sign-in with a code did not work.",
+        DeviceSignInStatus.GettingCode => AppText.Get("web.auth.login.device.generatingCode"),
+        DeviceSignInStatus.WaitingForApproval => AppText.Get("web.auth.login.device.waiting"),
+        DeviceSignInStatus.Opened => AppText.Get("web.auth.login.device.continueOnPhone"),
+        DeviceSignInStatus.Unreachable => AppText.Get("granary.signIn.device.unreachable"),
+        DeviceSignInStatus.TooManyRequests => AppText.Get("granary.signIn.device.tooManyRequests"),
+        DeviceSignInStatus.Approved => AppText.Get("web.auth.login.device.signedIn"),
+        DeviceSignInStatus.Denied => AppText.Get("web.auth.login.device.denied"),
+        DeviceSignInStatus.Unavailable => AppText.Get("granary.signIn.device.unavailable"),
+        DeviceSignInStatus.Failed => AppText.Get("web.auth.login.device.failed"),
         _ => "",
     };
 

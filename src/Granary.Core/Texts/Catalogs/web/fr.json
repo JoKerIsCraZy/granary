@@ -11,6 +11,12 @@
       "value": "Annuler"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Changer de serveur"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -27,6 +33,12 @@
     {
       "type": 0,
       "value": "Enregistrer"
+    }
+  ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Se déconnecter"
     }
   ],
   "common.tryAgain": [
@@ -503,6 +515,126 @@
       "value": "Tendances de la semaine"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continuez sur votre téléphone."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "L’approbation a été refusée. Générez un nouveau code pour réessayer."
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Scannez un code, connectez-vous sur votre téléphone, puis approuvez cet appareil."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Échec de la connexion avec l’appareil"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Génération du code…"
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Ou accédez à "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " et saisissez"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Afficher le code QR"
+    }
+  ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Connexion réussie. Chargement des profils…"
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Utiliser plutôt votre téléphone"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "En attente d’approbation sur votre téléphone…"
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Se connecter à "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Connexion…"
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Connectez-vous avec un compte existant."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "Ce compte est désactivé."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Mot de passe"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Se connecter"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Nom d’utilisateur"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -525,6 +657,276 @@
     {
       "type": 0,
       "value": "Enregistrer"
+    }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "Profils"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (protégé par PIN)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "Qui regarde ?"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "PIN incorrect"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "Trop de PIN incorrects. Réessayez plus tard."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Trop de PIN incorrects. Réessayez dans "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minute."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Trop de PIN incorrects. Réessayez dans "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutes."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Trop de PIN incorrects. Réessayez dans "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minutes."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "Saisissez le PIN de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "Vérification…"
+    }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "Rechercher"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "Rechercher des films, des séries…"
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "Retour"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "Administration"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "Calendrier"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "Réduire "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "Découvrir"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "Développer "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "Favoris"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "Pour vous"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "Historique"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "Accueil"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "Bibliothèques"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "Se déconnecter"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "Notifications"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 0,
+      "value": "Menu de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "Demandes"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "Rechercher"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "Paramètres"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "Changer de profil"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "Liste à voir"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "Vos contenus"
     }
   ]
 }

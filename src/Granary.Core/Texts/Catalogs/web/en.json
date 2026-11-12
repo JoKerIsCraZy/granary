@@ -11,6 +11,12 @@
       "value": "Cancel"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Change server"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -27,6 +33,12 @@
     {
       "type": 0,
       "value": "Save"
+    }
+  ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Sign out"
     }
   ],
   "common.tryAgain": [
@@ -503,6 +515,126 @@
       "value": "Trending This Week"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continue on your phone."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "Approval was denied. Start a new code to try again."
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Scan a code, sign in there, and approve this device."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "Device sign-in failed"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Generating code..."
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "Or go to "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " and enter"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Show QR code"
+    }
+  ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Signed in. Loading profiles..."
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Use your phone instead"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Waiting for approval on your phone..."
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Sign in to "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Signing in..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Sign in with an existing account."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "This account is disabled."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Password"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Sign in"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Username"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -525,6 +657,260 @@
     {
       "type": 0,
       "value": "Save"
+    }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "Profiles"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (PIN protected)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "Who's watching?"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "Incorrect PIN"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "Too many incorrect PINs. Try again later."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Too many incorrect PINs. Try again in "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minute."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Too many incorrect PINs. Try again in "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minutes."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "Enter PIN for "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "Verifying..."
+    }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "Search"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "Search movies, series..."
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "Go back"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "Admin"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "Calendar"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "Collapse "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "Discover"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "Expand "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "Favorites"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "For You"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "History"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "Home"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "Libraries"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "Logout"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "Notifications"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " menu"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "Requests"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "Search"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "Settings"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "Switch Profile"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "Watchlist"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "Your Stuff"
     }
   ]
 }

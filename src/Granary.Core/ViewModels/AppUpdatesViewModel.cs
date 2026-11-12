@@ -2,6 +2,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.Updates;
 using Microsoft.Extensions.Logging;
 
@@ -137,7 +138,8 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>The downloaded release's version, once one is ready to apply.</summary>
     public string? ReadyVersion => IsReady ? Release?.Version : null;
 
-    public string NoticeText => ReadyVersion is { } version ? $"Granary {version} is ready to install" : "";
+    /// <summary>The shell's notice of a ready update: "Granary 0.2.0 is ready to install".</summary>
+    public string NoticeText => ReadyVersion is { } version ? AppText.Get("granary.update.notice", ("version", version)) : "";
 
     /// <summary>What the ready release changes, as it was packed with; empty without.</summary>
     public string ReleaseNotes => IsReady ? Release?.Notes ?? "" : "";

@@ -141,7 +141,7 @@ public sealed class ProfilePickerViewModelTests
 
         Assert.True(harness.ViewModel.IsPinPromptOpen);
         Assert.Equal("p-kid", harness.ViewModel.PinProfile?.Id);
-        Assert.Equal("Enter the PIN for tom", harness.ViewModel.PinPromptTitle);
+        Assert.Equal("Enter PIN for tom", harness.ViewModel.PinPromptTitle);
         Assert.Empty(harness.Session.Calls);
         Assert.Single(harness.Silo.Sent);
     }
@@ -177,17 +177,30 @@ public sealed class ProfilePickerViewModelTests
         await harness.ViewModel.SubmitPinCommand.ExecuteAsync(Pin);
 
         Assert.Single(harness.Silo.SentTo(HttpMethod.Post, KidPinPath));
-        Assert.Equal("That PIN is not right.", harness.ViewModel.PinError);
+        Assert.Equal("Incorrect PIN", harness.ViewModel.PinError);
         Assert.True(harness.ViewModel.IsPinPromptOpen);
         Assert.False(harness.ViewModel.IsVerifyingPin);
         Assert.Empty(harness.Session.Calls);
     }
 
+    [Fact]
+    public void AWait_IsWholeMinutes_RoundedUp_AtLeastOne_AndNeverPastWhatANumberHolds()
+    {
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.Zero));
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.FromSeconds(20)));
+        Assert.Equal(2, ApiFailureText.WholeMinutes(TimeSpan.FromSeconds(61)));
+        Assert.Equal(1, ApiFailureText.WholeMinutes(TimeSpan.FromMinutes(-5)));
+        // A server may name any wait; the longest a TimeSpan holds is over ten billion minutes.
+        Assert.Equal(int.MaxValue, ApiFailureText.WholeMinutes(TimeSpan.MaxValue));
+    }
+
     [Theory]
-    [InlineData(240, "Too many attempts. Try again in 4 minutes.")]
-    [InlineData(61, "Too many attempts. Try again in 2 minutes.")]
-    [InlineData(20, "Too many attempts. Try again in 1 minute.")]
-    [InlineData(-1, "Too many attempts. Try again in a few minutes.")]
+    [InlineData(240, "Too many incorrect PINs. Try again in 4 minutes.")]
+    // The number is grouped, as the web's numberText writes it.
+    [InlineData(72_000, "Too many incorrect PINs. Try again in 1,200 minutes.")]
+    [InlineData(61, "Too many incorrect PINs. Try again in 2 minutes.")]
+    [InlineData(20, "Too many incorrect PINs. Try again in 1 minute.")]
+    [InlineData(-1, "Too many incorrect PINs. Try again later.")]
     public async Task SubmitPin_Lockout_ShowsWhenToTryAgain(int retryAfterSeconds, string expected)
     {
         using var harness = new Harness();

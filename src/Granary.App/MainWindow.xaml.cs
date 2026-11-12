@@ -3,6 +3,7 @@ using Granary.App.Services;
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -187,9 +188,11 @@ public sealed partial class MainWindow : Window
     public AppUpdatesViewModel Updates { get; }
 
     // Instance method because x:Bind function bindings call it on the window.
-    public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
+    public string ProfileMenuName(string profileName) => AppText.Get("web.shell.sidebar.profileMenu", ("name", profileName));
 
-    public string NotificationsName(int unread) => unread > 0 ? $"Notifications, {unread} unread" : "Notifications";
+    public string NotificationsName(int unread) => unread > 0
+        ? AppText.Get("granary.shell.notificationsUnread", ("count", unread))
+        : AppText.Get("web.shell.sidebar.notifications");
 
     // The library entries follow the header; NavigationView has no item template for mixed static and bound items.
     private void ShowLibraries()

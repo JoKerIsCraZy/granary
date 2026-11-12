@@ -3,8 +3,8 @@
     x:Class="Granary.App.Controls.DeviceSignInPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    IsTabStop="True" UseSystemFocusVisuals="True" CornerRadius="10"
-    AutomationProperties.Name="Sign in with a code">
+    xmlns:t="using:Granary.Core.Texts"
+    IsTabStop="True" UseSystemFocusVisuals="True" CornerRadius="10">
 
     <!-- Silo's web: a framed box in the login card with the code on white, where to enter it, and the progress. -->
     <Border Padding="16" CornerRadius="10" BorderThickness="1" BorderBrush="#9928282E" Background="#80141417">
@@ -16,16 +16,17 @@
                         Visibility="{x:Bind ViewModel.HasCode, Mode=OneWay}"
                         Opacity="{x:Bind QrOpacity(ViewModel.IsOpened), Mode=OneWay}">
                     <Image x:Name="QrImage" Stretch="Uniform"
-                           AutomationProperties.Name="QR code to sign in. Scan it with your phone's camera." />
+                           AutomationProperties.Name="{x:Bind t:AppText.Get('granary.signIn.device.qrImage')}" />
                 </Border>
             </Grid>
 
             <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasCode, Mode=OneWay}">
-                <!-- One line, so the spaces come only from the Run texts. -->
-                <TextBlock Style="{StaticResource SiloAuthTextStyle}" TextAlignment="Center"><Run Text="Or go to " /><Run Text="{x:Bind ViewModel.VerificationText, Mode=OneWay}" Foreground="{StaticResource SiloForegroundBrush}" /><Run Text=" and enter" /></TextBlock>
+                <!-- "Or go to silo.example.org/activate and enter", the address brighter: its runs come from the code-behind (ShowGoTo). -->
+                <TextBlock x:Name="GoToText" Style="{StaticResource SiloAuthTextStyle}" TextAlignment="Center" />
                 <TextBlock Text="{x:Bind ViewModel.UserCode, Mode=OneWay}" IsTextSelectionEnabled="True" HorizontalAlignment="Center"
                            FontFamily="Cascadia Mono, Consolas" FontSize="24" FontWeight="SemiBold" CharacterSpacing="120"
-                           Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HelpText="Sign-in code" />
+                           Foreground="{StaticResource SiloForegroundBrush}"
+                           AutomationProperties.HelpText="{x:Bind t:AppText.Get('granary.signIn.device.code')}" />
                 <TextBlock Text="{x:Bind ViewModel.ExpiryText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" HorizontalAlignment="Center" />
             </StackPanel>
 
@@ -41,7 +42,7 @@
                            VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
             </Grid>
 
-            <Button Content="Get a new code" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}"
+            <Button Content="{x:Bind t:AppText.Get('granary.signIn.device.newCode')}" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}"
                     Visibility="{x:Bind ViewModel.CanRetry, Mode=OneWay}" />
         </StackPanel>
     </Border>

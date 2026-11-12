@@ -11,6 +11,12 @@
       "value": "إلغاء"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "تغيير الخادم"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -27,6 +33,12 @@
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج"
     }
   ],
   "common.tryAgain": [
@@ -503,6 +515,126 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "تابع على هاتفك."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "رُفضت الموافقة. أنشئ رمزًا جديدًا لتحاول مرة أخرى."
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "امسح رمزًا، وسجّل الدخول هناك، ثم وافق على هذا الجهاز."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "فشل تسجيل الدخول عبر الجهاز"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "جارٍ إنشاء الرمز..."
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "أو انتقل إلى "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " وأدخل"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "عرض رمز QR"
+    }
+  ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "تم تسجيل الدخول. جارٍ تحميل الملفات الشخصية..."
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "استخدم هاتفك بدلًا من ذلك"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "في انتظار الموافقة على هاتفك..."
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول إلى "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "جارٍ تسجيل الدخول..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "سجّل الدخول بحساب موجود."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "هذا الحساب معطّل."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "كلمة المرور"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "تسجيل الدخول"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "اسم المستخدم"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -525,6 +657,316 @@
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "الملفات الشخصية"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (محمي برمز PIN)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "من يشاهد؟"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "رمز PIN غير صحيح"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى لاحقًا."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد دقيقتين."
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقائق."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقةً."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "محاولات كثيرة جدًا برمز PIN غير صحيح. حاول مرة أخرى بعد "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "أدخل رمز PIN لـ "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "جارٍ التحقق..."
+    }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "بحث"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "البحث عن أفلام ومسلسلات..."
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "رجوع"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "الإدارة"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "التقويم"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "طي "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "المجموعات"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "استكشاف"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "توسيع "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "المفضلة"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "لك"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "السجل"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "الرئيسية"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "المكتبات"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "تسجيل الخروج"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "الإشعارات"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 0,
+      "value": "قائمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "الطلبات"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "بحث"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "الإعدادات"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "تبديل الملف الشخصي"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "قائمة المشاهدة"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "محتواك"
     }
   ]
 }

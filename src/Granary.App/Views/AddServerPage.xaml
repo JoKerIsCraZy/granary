@@ -25,7 +25,8 @@
     </Page.Resources>
 
     <!-- Silo's web login card with the words of the apps' server screen. -->
-    <ContentControl Style="{StaticResource SiloAuthShellStyle}">
+    <!-- The shell's lockup takes its line under Granary's name from Tag (SiloAuthShellStyle). -->
+    <ContentControl Style="{StaticResource SiloAuthShellStyle}" Tag="{x:Bind t:AppText.Get('granary.auth.tagline')}">
         <StackPanel Spacing="24">
             <StackPanel Spacing="8">
                 <Grid>
@@ -34,14 +35,15 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Image Style="{StaticResource SiloAuthMarkStyle}" />
-                    <TextBlock Grid.Column="1" Text="Connect to your Silo server" Style="{StaticResource SiloAuthTitleTextStyle}"
+                    <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('granary.addServer.title')}" Style="{StaticResource SiloAuthTitleTextStyle}"
                                VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
                 </Grid>
-                <TextBlock Text="Type the address you use for Silo." Style="{StaticResource SiloAuthLeadTextStyle}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('granary.addServer.lead')}" Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
 
             <StackPanel Spacing="16">
-                <TextBox x:Name="AddressBox" Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090"
+                <TextBox x:Name="AddressBox" Header="{x:Bind t:AppText.Get('granary.addServer.address')}"
+                         PlaceholderText="{x:Bind t:AppText.Get('granary.addServer.addressPlaceholder')}"
                          Style="{StaticResource SiloAuthTextBoxStyle}" InputScope="Url" KeyDown="OnAddressKeyDown"
                          Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -50,7 +52,7 @@
                     identity, in a rounded card of rows with hairlines between them. Nothing shows until one is found.
                 -->
                 <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasFound, Mode=OneWay}">
-                    <TextBlock Text="Found nearby" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('granary.addServer.foundNearby')}" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                AutomationProperties.HeadingLevel="Level2" />
                     <Border Padding="2" CornerRadius="12" Background="#12FFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1">
                         <ContentControl IsTabStop="False" HorizontalContentAlignment="Stretch" IsEnabled="{x:Bind Idle(ViewModel.IsBusy), Mode=OneWay}">
@@ -81,7 +83,7 @@
                                                         <!-- Plain HTTP, in the amber of the sign-in's consent to it. -->
                                                         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2,0,0" Visibility="{x:Bind IsUnencrypted}">
                                                             <FontIcon Glyph="&#xE785;" FontSize="11" Foreground="#FFFBBF24" />
-                                                            <TextBlock Text="Not encrypted" FontSize="12" Foreground="#FFFBBF24" />
+                                                            <TextBlock Text="{x:Bind t:AppText.Get('granary.addServer.notEncrypted')}" FontSize="12" Foreground="#FFFBBF24" />
                                                         </StackPanel>
                                                     </StackPanel>
                                                     <ProgressRing Grid.Column="2" Width="16" Height="16" IsActive="{x:Bind IsConnecting}"

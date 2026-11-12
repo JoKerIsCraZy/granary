@@ -11,6 +11,12 @@
       "value": "Cancelar"
     }
   ],
+  "common.changeServer": [
+    {
+      "type": 0,
+      "value": "Cambiar servidor"
+    }
+  ],
   "common.done": [
     {
       "type": 0,
@@ -27,6 +33,12 @@
     {
       "type": 0,
       "value": "Guardar"
+    }
+  ],
+  "common.signOut": [
+    {
+      "type": 0,
+      "value": "Cerrar sesión"
     }
   ],
   "common.tryAgain": [
@@ -503,6 +515,126 @@
       "value": "Tendencias de esta semana"
     }
   ],
+  "web.auth.login.device.continueOnPhone": [
+    {
+      "type": 0,
+      "value": "Continúa en tu teléfono."
+    }
+  ],
+  "web.auth.login.device.denied": [
+    {
+      "type": 0,
+      "value": "Se rechazó la aprobación. Genera un código nuevo para volver a intentarlo."
+    }
+  ],
+  "web.auth.login.device.description": [
+    {
+      "type": 0,
+      "value": "Escanea un código, inicia sesión allí y aprueba este dispositivo."
+    }
+  ],
+  "web.auth.login.device.failed": [
+    {
+      "type": 0,
+      "value": "No se pudo iniciar sesión con el dispositivo"
+    }
+  ],
+  "web.auth.login.device.generatingCode": [
+    {
+      "type": 0,
+      "value": "Generando código..."
+    }
+  ],
+  "web.auth.login.device.goToAndEnter": [
+    {
+      "type": 0,
+      "value": "O ve a "
+    },
+    {
+      "type": 8,
+      "value": "address",
+      "children": [
+        {
+          "type": 1,
+          "value": "url"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " y escribe"
+    }
+  ],
+  "web.auth.login.device.showQrCode": [
+    {
+      "type": 0,
+      "value": "Mostrar código QR"
+    }
+  ],
+  "web.auth.login.device.signedIn": [
+    {
+      "type": 0,
+      "value": "Sesión iniciada. Cargando perfiles..."
+    }
+  ],
+  "web.auth.login.device.title": [
+    {
+      "type": 0,
+      "value": "Usa tu teléfono en su lugar"
+    }
+  ],
+  "web.auth.login.device.waiting": [
+    {
+      "type": 0,
+      "value": "Esperando la aprobación en tu teléfono..."
+    }
+  ],
+  "web.auth.login.heading": [
+    {
+      "type": 0,
+      "value": "Iniciar sesión en "
+    },
+    {
+      "type": 1,
+      "value": "server"
+    }
+  ],
+  "web.auth.login.signingIn": [
+    {
+      "type": 0,
+      "value": "Iniciando sesión..."
+    }
+  ],
+  "web.auth.loginSubtitle.default": [
+    {
+      "type": 0,
+      "value": "Inicia sesión con una cuenta existente."
+    }
+  ],
+  "web.auth.oauthFailure.accountDisabled": [
+    {
+      "type": 0,
+      "value": "Esta cuenta está desactivada."
+    }
+  ],
+  "web.auth.password": [
+    {
+      "type": 0,
+      "value": "Contraseña"
+    }
+  ],
+  "web.auth.signIn": [
+    {
+      "type": 0,
+      "value": "Iniciar sesión"
+    }
+  ],
+  "web.auth.username": [
+    {
+      "type": 0,
+      "value": "Nombre de usuario"
+    }
+  ],
   "web.catalog.page.doneSelecting": [
     {
       "type": 0,
@@ -525,6 +657,276 @@
     {
       "type": 0,
       "value": "Guardar"
+    }
+  ],
+  "web.profiles.picker.documentTitle": [
+    {
+      "type": 0,
+      "value": "Perfiles"
+    }
+  ],
+  "web.profiles.picker.pinProtected": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (protegido con PIN)"
+    }
+  ],
+  "web.profiles.picker.title": [
+    {
+      "type": 0,
+      "value": "¿Quién está viendo?"
+    }
+  ],
+  "web.profiles.pin.incorrect": [
+    {
+      "type": 0,
+      "value": "PIN incorrecto"
+    }
+  ],
+  "web.profiles.pin.label": [
+    {
+      "type": 0,
+      "value": "PIN"
+    }
+  ],
+  "web.profiles.pin.lockedLater": [
+    {
+      "type": 0,
+      "value": "Demasiados PIN incorrectos. Vuelve a intentarlo más tarde."
+    }
+  ],
+  "web.profiles.pin.lockedMinutes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Demasiados PIN incorrectos. Vuelve a intentarlo en "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minuto."
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Demasiados PIN incorrectos. Vuelve a intentarlo en "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutos."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Demasiados PIN incorrectos. Vuelve a intentarlo en "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " minutos."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.pin.title": [
+    {
+      "type": 0,
+      "value": "Introduce el PIN de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.profiles.pin.verifying": [
+    {
+      "type": 0,
+      "value": "Verificando…"
+    }
+  ],
+  "web.search.label": [
+    {
+      "type": 0,
+      "value": "Buscar"
+    }
+  ],
+  "web.search.placeholderProminent": [
+    {
+      "type": 0,
+      "value": "Buscar películas, series..."
+    }
+  ],
+  "web.shell.pageBack.goBack": [
+    {
+      "type": 0,
+      "value": "Volver"
+    }
+  ],
+  "web.shell.sidebar.admin": [
+    {
+      "type": 0,
+      "value": "Administración"
+    }
+  ],
+  "web.shell.sidebar.calendar": [
+    {
+      "type": 0,
+      "value": "Calendario"
+    }
+  ],
+  "web.shell.sidebar.collapse": [
+    {
+      "type": 0,
+      "value": "Contraer "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.collections": [
+    {
+      "type": 0,
+      "value": "Colecciones"
+    }
+  ],
+  "web.shell.sidebar.discover": [
+    {
+      "type": 0,
+      "value": "Descubrir"
+    }
+  ],
+  "web.shell.sidebar.expand": [
+    {
+      "type": 0,
+      "value": "Expandir "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos"
+    }
+  ],
+  "web.shell.sidebar.forYou": [
+    {
+      "type": 0,
+      "value": "Para ti"
+    }
+  ],
+  "web.shell.sidebar.history": [
+    {
+      "type": 0,
+      "value": "Historial"
+    }
+  ],
+  "web.shell.sidebar.home": [
+    {
+      "type": 0,
+      "value": "Inicio"
+    }
+  ],
+  "web.shell.sidebar.libraries": [
+    {
+      "type": 0,
+      "value": "Bibliotecas"
+    }
+  ],
+  "web.shell.sidebar.logout": [
+    {
+      "type": 0,
+      "value": "Cerrar sesión"
+    }
+  ],
+  "web.shell.sidebar.notifications": [
+    {
+      "type": 0,
+      "value": "Notificaciones"
+    }
+  ],
+  "web.shell.sidebar.profileMenu": [
+    {
+      "type": 0,
+      "value": "Menú de "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.shell.sidebar.requests": [
+    {
+      "type": 0,
+      "value": "Solicitudes"
+    }
+  ],
+  "web.shell.sidebar.search": [
+    {
+      "type": 0,
+      "value": "Buscar"
+    }
+  ],
+  "web.shell.sidebar.settings": [
+    {
+      "type": 0,
+      "value": "Configuración"
+    }
+  ],
+  "web.shell.sidebar.switchProfile": [
+    {
+      "type": 0,
+      "value": "Cambiar de perfil"
+    }
+  ],
+  "web.shell.sidebar.watchParty": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.shell.sidebar.watchlist": [
+    {
+      "type": 0,
+      "value": "Lista para ver"
+    }
+  ],
+  "web.shell.sidebar.yourStuff": [
+    {
+      "type": 0,
+      "value": "Lo tuyo"
     }
   ]
 }

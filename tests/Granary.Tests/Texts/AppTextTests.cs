@@ -29,6 +29,26 @@ public sealed partial class AppTextTests
     }
 
     [Fact]
+    public void Capitals_FollowTheLanguageOnScreen()
+    {
+        Assert.Equal("YOUR STUFF", AppText.Upper(AppText.Get("web.shell.sidebar.yourStuff")));
+
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("de", AppText.Language.Culture.Name);
+        Assert.Equal("DEINE INHALTE", AppText.Upper(AppText.Get("web.shell.sidebar.yourStuff")));
+    }
+
+    [Fact]
+    public void ANumber_IsGroupedAsTheLanguageOnScreenWritesIt()
+    {
+        Assert.Equal("1,234", AppText.Number(1234));
+        Assert.Equal("7", AppText.Number(7));
+
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("1.234", AppText.Number(1234));
+    }
+
+    [Fact]
     public async Task ALanguageInUse_StaysInItsOwnFlow_AndEndsWithIt()
     {
         Task<string> elsewhere;

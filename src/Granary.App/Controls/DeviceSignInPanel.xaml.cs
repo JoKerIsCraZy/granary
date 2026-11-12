@@ -1,10 +1,15 @@
 using System.ComponentModel;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using QRCoder;
 using Windows.Storage.Streams;
@@ -32,6 +37,8 @@ public sealed partial class DeviceSignInPanel : UserControl
         ViewModel = ActivatorUtilities.CreateInstance<DeviceSignInViewModel>(App.Services, flow);
         _logger = App.Services.GetRequiredService<ILogger<DeviceSignInPanel>>();
         InitializeComponent();
+        // The root's own name, set here rather than by an x:Bind on the root element.
+        AutomationProperties.SetName(this, AppText.Get("granary.signIn.device.panel"));
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         Unloaded += (_, _) => Stop();
     }
@@ -47,8 +54,34 @@ public sealed partial class DeviceSignInPanel : UserControl
     // Instance method because x:Bind function bindings call it on the control.
     public double QrOpacity(bool isOpened) => isOpened ? 0.4 : 1.0;
 
+    // "Or go to <address>{url}</address> and enter", as the web's login: the address in the foreground colour, where the
+    // language puts it.
+    private void ShowGoTo()
+    {
+        GoToText.Inlines.Clear();
+        if (ViewModel.VerificationText.Length == 0)
+        {
+            return;
+        }
+        var addressBrush = (Brush)Application.Current.Resources["SiloForegroundBrush"];
+        foreach (var part in AppText.Runs("web.auth.login.device.goToAndEnter", ("url", ViewModel.VerificationText)))
+        {
+            var run = new Run { Text = part.Text };
+            if (part.Tags.Contains("address"))
+            {
+                run.Foreground = addressBrush;
+            }
+            GoToText.Inlines.Add(run);
+        }
+    }
+
     private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(DeviceSignInViewModel.VerificationText))
+        {
+            ShowGoTo();
+            return;
+        }
         if (e.PropertyName != nameof(DeviceSignInViewModel.QrPayload))
         {
             return;

@@ -6,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -55,7 +56,7 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
     private Task SignOutAsync(ServerItemViewModel? server) => RunAsync(server, async s =>
     {
         await _session.SignOutAsync(s.Id);
-        return $"Signed out of {s.Name}.";
+        return AppText.Get("granary.servers.signedOut", ("name", s.Name));
     });
 
     /// <summary>
@@ -82,8 +83,8 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
             await _session.ActivateServerAsync(next);
         }
         return signedOut
-            ? $"Removed {s.Name}."
-            : $"Removed {s.Name}. The server did not confirm the sign-out.";
+            ? AppText.Get("granary.servers.removed", ("name", s.Name))
+            : AppText.Get("granary.servers.removedUnconfirmed", ("name", s.Name));
     });
 
     [RelayCommand]
@@ -100,14 +101,14 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
     internal static string Describe(Exception error, string serverName) => error switch
     {
         JsonException or HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse } =>
-            $"{serverName} sent an answer Granary does not understand. Check the server address.",
-        HttpRequestException => $"Could not reach {serverName}. Check the connection and try again.",
-        TaskCanceledException => $"{serverName} did not answer in time. Try again.",
-        SiloApiException { Status: 429 } => $"{serverName} is busy. Wait a moment and try again.",
-        SiloApiException { Status: >= 500 } => $"{serverName} has a problem right now. Try again later.",
-        SiloApiException api => $"{serverName} refused the request ({api.Code}).",
-        CryptographicException => "Granary could not read or save its sign-in data on this computer.",
-        _ => "Granary could not save its settings on this computer. Try again.",
+            AppText.Get("granary.servers.error.unexpected", ("name", serverName)),
+        HttpRequestException => AppText.Get("granary.servers.error.unreachable", ("name", serverName)),
+        TaskCanceledException => AppText.Get("granary.servers.error.timeout", ("name", serverName)),
+        SiloApiException { Status: 429 } => AppText.Get("granary.servers.error.busy", ("name", serverName)),
+        SiloApiException { Status: >= 500 } => AppText.Get("granary.servers.error.serverProblem", ("name", serverName)),
+        SiloApiException api => AppText.Get("granary.servers.error.refused", ("name", serverName), ("code", api.Code)),
+        CryptographicException => AppText.Get("granary.servers.error.signInData"),
+        _ => AppText.Get("granary.servers.error.settings"),
     };
 
     // JsonException: a proxy or another app answered 200 with something that is not Silo JSON.
