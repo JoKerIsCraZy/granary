@@ -238,7 +238,8 @@ public sealed partial class MainWindow
     }
 
     // A trigger pages: focus goes on, row by row, until most of what showed has gone by, and the page follows it. Where
-    // nothing can take focus (a long text) the page itself scrolls.
+    // nothing can take focus (a long text), and where nothing more lies that way (a long text under the page's last
+    // button), the page itself scrolls and focus stays.
     private void PagePad(FocusNavigationDirection way)
     {
         var focused = FocusedElement();
@@ -249,19 +250,30 @@ public sealed partial class MainWindow
         if (focused is not UIElement from || !IsWithin(from, scroller) || scroller.Content is not UIElement content
             || ScopeOf(from) is not { } scope)
         {
-            double by = scroller.ViewportHeight * PageShare * (way == FocusNavigationDirection.Down ? 1 : -1);
-            scroller.ChangeView(null, scroller.VerticalOffset + by, null);
+            ScrollPage(scroller, way);
             return;
         }
         double start = TopIn(from, content);
-        for (int step = 0; step < PageSteps && PadControls.Move(way, scope); step++)
+        int steps = 0;
+        while (steps < PageSteps && PadControls.Move(way, scope))
         {
+            steps++;
             if (FocusedElement() is not UIElement now || !IsWithin(now, scroller)
                 || Math.Abs(TopIn(now, content) - start) >= scroller.ViewportHeight * PageShare)
             {
                 break;
             }
         }
+        if (steps == 0)
+        {
+            ScrollPage(scroller, way);
+        }
+    }
+
+    private static void ScrollPage(ScrollViewer scroller, FocusNavigationDirection way)
+    {
+        double by = scroller.ViewportHeight * PageShare * (way == FocusNavigationDirection.Down ? 1 : -1);
+        scroller.ChangeView(null, scroller.VerticalOffset + by, null);
     }
 
     private static double TopIn(UIElement element, UIElement content) => element.TransformToVisual(content).TransformPoint(default).Y;
