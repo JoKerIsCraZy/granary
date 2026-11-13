@@ -1462,7 +1462,8 @@ The view models of the sign-out paths take it (optional, so they work without it
   than keeping what a sign-out was to take; a file written after it names it by its content, so the same damaged note
   does so once. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
   run, and the entries are back at the next start unless the file could be written before Granary closed. The queue of
-  positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress").
+  positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress"), and so do the
+  playback settings kept for a play without the server (`playback-settings.json.removed`; see "Playing a download").
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.
@@ -1529,7 +1530,10 @@ while the server answers.
   title's subtitle preference is the title's own, since the server resolves
   it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
   the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
-  that takes the downloads, and a server's removal, forget the kept settings of those accounts. The account is still
+  that takes the downloads, and a server's removal, forget the kept settings of those accounts. That is noted in
+  `playback-settings.json.removed` before the file is written ("Signing out", "What was removed is noted"), so they stay
+  forgotten after the next start also when the file could not be read through the sign-out, or its write did not get
+  through; settings the server answers for the same account after it signed in again are kept. The account is still
   signed in then, while the server hears the deletes, and a settings read that answers in that time would keep them
   anew: `Keep` keeps nothing for an account whose clear is under way (`DownloadStore.IsClearPending`, from `MarkCleared`
   to `EndClear`; see "Signing out"). After a sign-out that failed the clear has ended, and the account's next read is

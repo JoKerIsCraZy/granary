@@ -20,6 +20,8 @@ namespace Granary.Core.Playback;
 /// differs from the one kept. It is a copy of what the server has: one that cannot be read or written is logged, and playback
 /// goes on without it. It is never written before it was read: a file that cannot be read now (something has it open) holds
 /// the other profiles' settings, so each write tries the read again first, and what was kept meanwhile joins what it holds.
+/// What a sign-out forgets (<see cref="Remove"/>) is noted beside the file first (<see cref="RemovalNote"/>), so it also
+/// holds when the file cannot be read or written before Granary closes.
 /// </remarks>
 public sealed class KeptPlaybackSettings
 {
@@ -30,10 +32,11 @@ public sealed class KeptPlaybackSettings
     private readonly Lock _gate = new();
 
     // Under the lock: each owner's batches by their keys, with the JSON they were kept as, to tell a change. What the file
-    // held joins them once it is read (_loaded); until then they are this run's only, and what was forgotten meanwhile is
-    // remembered for what the file still holds.
+    // held joins them once it is read (_loaded); until then they are this run's only.
     private readonly Dictionary<string, Dictionary<string, Kept>> _owners = new(StringComparer.Ordinal);
-    private readonly List<string> _removedUnread = [];
+
+    // What was forgotten and the file may still hold, this run's and an earlier one's.
+    private readonly RemovalNote _note;
     private bool _loadTried;
     private bool _loaded;
     private bool _readFailureSaid;
@@ -51,6 +54,7 @@ public sealed class KeptPlaybackSettings
         _session = session;
         _logger = logger;
         _downloads = downloads;
+        _note = new RemovalNote(_path, "the playback settings kept on this PC", logger);
     }
 
     /// <summary><c>playback-settings.json</c> in the data folder.</summary>
@@ -127,6 +131,11 @@ public sealed class KeptPlaybackSettings
     /// Forgets what is kept for an account on a server, or for every account there (<paramref name="accountId"/> null): a
     /// sign-out the viewer asked for, or the server's removal.
     /// </summary>
+    /// <remarks>
+    /// The removal is noted beside the file before the file is written (<see cref="RemovalNote"/>), and the file is written
+    /// whatever this run held: the file may hold more than the run does, as when it could not be read yet or an earlier
+    /// write did not get through.
+    /// </remarks>
     public void Remove(string serverEntryId, string? accountId)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverEntryId);
@@ -134,16 +143,8 @@ public sealed class KeptPlaybackSettings
         lock (_gate)
         {
             var owners = Loaded();
-            var gone = owners.Keys.Where(owner => owner.StartsWith(prefix, StringComparison.Ordinal)).ToList();
-            if (!_loaded)
-            {
-                _removedUnread.Add(prefix);
-            }
-            else if (gone.Count == 0)
-            {
-                return;
-            }
-            foreach (string owner in gone)
+            _note.Add(serverEntryId, accountId);
+            foreach (string owner in owners.Keys.Where(owner => owner.StartsWith(prefix, StringComparison.Ordinal)).ToList())
             {
                 owners.Remove(owner);
             }
@@ -167,6 +168,11 @@ public sealed class KeptPlaybackSettings
         {
             _loadTried = true;
             TryLoad();
+            // A note an earlier run left goes once the file is written without what it names.
+            if (_note.Waits)
+            {
+                Save();
+            }
         }
         return _owners;
     }
@@ -174,6 +180,12 @@ public sealed class KeptPlaybackSettings
     // Under the lock. Sets _loaded once what the file holds is in _owners: no file, a file read, or one that is no such file.
     private void TryLoad()
     {
+        // The note first: what a sign-out forgot is out of what the file holds before a play can start with it. While the
+        // note cannot be read, the file counts as unread too.
+        if (!_note.TryRead())
+        {
+            return;
+        }
         KeptSettingsFile? file = null;
         try
         {
@@ -199,10 +211,12 @@ public sealed class KeptPlaybackSettings
             }
             return;
         }
-        // JSON can say null for every member. What this run kept before the file could be read is the newer of a batch's two.
+        // JSON can say null for every member, and anything for an owner. What this run kept before the file could be read is
+        // the newer of a batch's two.
         foreach (var (owner, batches) in file?.Profiles ?? [])
         {
-            if (owner is not { Length: > 0 } || batches is null || _removedUnread.Any(prefix => owner.StartsWith(prefix, StringComparison.Ordinal)))
+            if (owner?.Split('/') is not [{ Length: > 0 } server, { Length: > 0 } account, { Length: > 0 }] || batches is null
+                || _note.Covers(server, account, file?.AfterRemovals))
             {
                 continue;
             }
@@ -218,7 +232,6 @@ public sealed class KeptPlaybackSettings
                 }
             }
         }
-        _removedUnread.Clear();
         _loaded = true;
     }
 
@@ -235,10 +248,17 @@ public sealed class KeptPlaybackSettings
 
     private void Write()
     {
-        KeptSettingsFile file;
+        // A change from here on starts a write of its own.
         lock (_gate)
         {
             _saveWaits = false;
+        }
+        // What a sign-out forgot is noted before the file is touched: the file may not be readable now, or its write may
+        // not get through, and Granary may close before either works.
+        _note.Save();
+        KeptSettingsFile file;
+        lock (_gate)
+        {
             if (!_loaded)
             {
                 TryLoad();
@@ -252,6 +272,7 @@ public sealed class KeptPlaybackSettings
             {
                 Profiles = Loaded().ToDictionary(owner => owner.Key,
                     owner => owner.Value.ToDictionary(batch => batch.Key, batch => batch.Value.Values, StringComparer.Ordinal), StringComparer.Ordinal),
+                AfterRemovals = _note.Ids(),
             };
         }
         try
@@ -264,7 +285,9 @@ public sealed class KeptPlaybackSettings
         {
             // Whatever the disk does, the chain of writes goes on. Only the kind, as above.
             _logger.LogWarning("The playback settings could not be kept on this PC ({Failure})", ex.GetType().Name);
+            return;
         }
+        _note.Done(file.AfterRemovals);
     }
 
     private sealed record Kept(EffectiveSettings Values, string Json);
@@ -276,6 +299,12 @@ internal sealed record KeptSettingsFile
     public int Version { get; init; } = 1;
 
     public Dictionary<string, Dictionary<string, EffectiveSettings>> Profiles { get; init; } = [];
+
+    /// <summary>
+    /// The removals of a sign-out's note (<see cref="RemovalNote"/>) this file was written without: a note still on the
+    /// disk takes nothing more out of it. Null for none.
+    /// </summary>
+    public IReadOnlyList<string>? AfterRemovals { get; init; }
 }
 
 [JsonSourceGenerationOptions(

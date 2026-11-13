@@ -245,6 +245,51 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASignOutWhileItsFilesCouldNotBeRead_LeavesNothingOfTheAccounts_AfterGranaryStartedAgain()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        string progressPath = Path.Combine(_h.Directory, "data", "offline-progress.json");
+        string settingsPath = Path.Combine(_h.Directory, "data", "playback-settings.json");
+        await KeptAsync("dl_1");
+        // An earlier run left positions to send and kept settings; this one has not read either file yet.
+        var earlier = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        earlier.Record(Scope7, "mv_dl_1", 60_000, 0);
+        earlier.Record(Scope8, "ep_5", 60_000, 0);
+        earlier.Record(otherAccount, "ep_6", 60_000, 0);
+        await earlier.LatestSave;
+        var earlierSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+        earlierSettings.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 1));
+        earlierSettings.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 1));
+        await earlierSettings.LatestSave;
+
+        // Something has both files open through the sign-out, and Granary closes before it lets go.
+        using (new FileStream(progressPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(settingsPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            using var servers = await ServersAsync();
+            await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+            await _progress.LatestSave;
+            await _settings.Value.LatestSave;
+        }
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        var next = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+
+        // Nothing of the account's is there to send or to play with; the other account's is.
+        Assert.Empty(next.Claim(Scope7, 10));
+        Assert.Empty(next.Claim(Scope8, 10));
+        Assert.Single(next.Entries(otherAccount));
+        Assert.Null(nextSettings.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(nextSettings.Find("srv1/2/7", ["a"]));
+        await next.LatestSave;
+        await nextSettings.LatestSave;
+        string progress = await File.ReadAllTextAsync(progressPath, Token);
+        Assert.DoesNotContain("mv_dl_1", progress, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_5", progress, StringComparison.Ordinal);
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(settingsPath, Token), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ASettingsAnswerThatComesWhileTheAccountIsSignedOut_IsNotKeptForIt()
     {
         await KeptAsync("dl_1");

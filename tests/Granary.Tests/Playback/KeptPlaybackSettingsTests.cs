@@ -316,4 +316,181 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.NotNull(kept.Find("srv1/2/7", ["a"]));
         Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
     }
+
+    // Where a sign-out notes what it forgot, until the file is written without it.
+    private string NotePath => FilePath + ".removed";
+
+    // Four owners on the disk: the account's two profiles, another account there, and one on a server whose id starts alike.
+    private async Task FourOnTheDiskAsync()
+    {
+        var before = Open();
+        foreach (string owner in (string[])["srv1/1/7", "srv1/1/8", "srv1/2/7", "srv10/1/7"])
+        {
+            before.Keep(owner, ["a"], new EffectiveSettings([], 3));
+        }
+        await before.LatestSave;
+    }
+
+    [Theory]
+    [InlineData("1", true)]
+    [InlineData(null, false)]
+    public async Task WhatWasForgottenWhileTheFileCouldNotBeRead_StaysForgotten_AfterGranaryStartedAgain(string? accountId, bool otherAccountStays)
+    {
+        await FourOnTheDiskAsync();
+        var kept = Open();
+
+        // Something has the file open through the sign-out or the server's removal, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            kept.Remove("srv1", accountId);
+            await kept.LatestSave;
+        }
+        var next = Open();
+
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv1/1/8", ["a"]));
+        Assert.Equal(otherAccountStays, next.Find("srv1/2/7", ["a"]) is not null);
+        Assert.NotNull(next.Find("srv10/1/7", ["a"]));
+        await next.LatestSave;
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        // The file is written without them: the note has done its work.
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task ASignOutWhoseWriteDidNotGetThrough_StillHolds_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        var kept = Open();
+        Assert.NotNull(kept.Find("srv1/1/7", ["a"]));
+
+        // The file was read; something reads it as the sign-out writes it, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+        var next = Open();
+
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv1/1/8", ["a"]));
+        Assert.NotNull(next.Find("srv1/2/7", ["a"]));
+    }
+
+    [Fact]
+    public async Task WhatIsKeptForTheSameAccountAfterItSignedInAgain_Stays_AlsoWhileTheNoteOfItsSignOutIsStillThere()
+    {
+        await FourOnTheDiskAsync();
+        var kept = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+
+        // The next start writes the file without them, but something has the note open: it cannot be deleted. The account
+        // signs in again, and the server's answer is kept for it.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            var next = Open();
+            Assert.Null(next.Find("srv1/1/7", ["a"]));
+            next.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 9));
+            await next.LatestSave;
+        }
+        Assert.True(File.Exists(NotePath));
+        var third = Open();
+
+        // The file was written after the note: the note takes nothing that was kept since, and goes with the next write.
+        Assert.Equal(9, third.Find("srv1/1/7", ["a"])!.Revision);
+        Assert.Null(third.Find("srv1/1/8", ["a"]));
+        await third.LatestSave;
+        Assert.False(File.Exists(NotePath));
+        Assert.Equal(9, Open().Find("srv1/1/7", ["a"])!.Revision);
+    }
+
+    [Fact]
+    public async Task ASignOutThatCannotEvenBeNoted_SaysSo_WithoutNamingWhoseOrWhere_AndStillHoldsForThisRun()
+    {
+        await FourOnTheDiskAsync();
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var kept = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+
+        Assert.Contains("could not be noted", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("srv1", _logs.All, StringComparison.Ordinal);
+
+        // This run still knows: the next write reads the file and writes it without them.
+        kept.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));
+        await kept.LatestSave;
+        Assert.Null(kept.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(kept.Find("srv1/2/7", ["a"]));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task WhileTheNoteOfASignOutCannotBeRead_NothingTheFileHoldsIsUsed_AndTheFileIsNotWritten()
+    {
+        await FourOnTheDiskAsync();
+        var kept = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+        string keptText = await File.ReadAllTextAsync(FilePath, Token);
+        var next = Open();
+
+        // The note may name anyone: until it says whom, nobody's settings of the file are used.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Null(next.Find("srv1/1/7", ["a"]));
+            Assert.Null(next.Find("srv10/1/7", ["a"]));
+            next.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));
+            await next.LatestSave;
+        }
+        Assert.Equal(keptText, await File.ReadAllTextAsync(FilePath, Token));
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+
+        // Once it can be read, the next write takes out what it names; the others' settings are back.
+        next.Keep("srv10/1/7", ["c"], new EffectiveSettings([], 4));
+        await next.LatestSave;
+
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv1/1/8", ["a"]));
+        Assert.NotNull(next.Find("srv1/2/7", ["a"]));
+        Assert.Equal((3L, 4L), (next.Find("srv10/1/7", ["a"])!.Revision, next.Find("srv10/1/7", ["b"])!.Revision));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task ANoteOfASignOutThatNoLongerSaysWhose_ForgetsEverythingTheFileHolds_RatherThanKeepWhatWasToGo()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, "{ not json", Token);
+        var next = Open();
+
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv10/1/7", ["a"]));
+        // What the server answers from now on is kept as ever.
+        next.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));
+        await next.LatestSave;
+
+        Assert.False(File.Exists(NotePath));
+        var third = Open();
+        Assert.Null(third.Find("srv10/1/7", ["a"]));
+        Assert.NotNull(third.Find("srv10/1/7", ["b"]));
+        Assert.DoesNotContain("srv1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.Contains("damaged", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+    }
 }
