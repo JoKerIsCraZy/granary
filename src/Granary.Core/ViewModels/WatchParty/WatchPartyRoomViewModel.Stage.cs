@@ -6,6 +6,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.WatchParty;
@@ -58,7 +59,7 @@ public sealed partial class WatchPartyRoomViewModel
     public bool ShowsVotingEmpty => ShowsVoting && HasNoLeader;
 
     /// <summary>"NOW PLAYING", "UP NEXT", "FIRST SUGGESTION"…</summary>
-    public string HeroEyebrow => (ShowsPlaying ? "Now playing" : ShowsVoting ? LeaderEyebrow : StagedEyebrow).ToUpperInvariant();
+    public string HeroEyebrow => AppText.Upper(ShowsPlaying ? AppText.Get("web.watchTogether.playing.eyebrow") : ShowsVoting ? LeaderEyebrow : StagedEyebrow);
 
     /// <summary><c>live</c> (green) while playing, <c>leading</c> (amber) for a leader with votes, <c>muted</c> otherwise.</summary>
     public string HeroTone => ShowsPlaying ? "live" : ShowsVoting && IsLeading ? "leading" : "muted";
@@ -72,27 +73,36 @@ public sealed partial class WatchPartyRoomViewModel
 
     /// <summary>"FIRST SUGGESTION", or "LEADING · 2 OF 3 VOTES" once there are votes.</summary>
     public string LeaderEyebrow => Leader is { VoteCount: > 0 } leader
-        ? $"Leading · {leader.VoteCount} of {_party.Suggestions.Sum(s => s.VoteCount)} votes"
-        : "First suggestion";
+        ? AppText.Get("web.watchTogether.voting.leading", ("votes", leader.VoteCount), ("total", TotalVotes),
+            ("total_text", AppText.Number(TotalVotes)))
+        : AppText.Get("web.watchTogether.voting.firstSuggestion");
+
+    private int TotalVotes => _party.Suggestions.Sum(s => s.VoteCount);
+
+    /// <summary>The host's name, or "the host" as the vote's sentences name one without a name.</summary>
+    private string VotingHostName => Room?.Host?.DisplayName is { Length: > 0 } name ? name : AppText.Get("web.watchTogether.voting.theHost");
 
     public bool IsLeading => Leader is { VoteCount: > 0 };
 
-    public string LeaderCaption => IsHost ? "Start the leader, or play any suggestion below" : $"Starts when {HostName} presses play";
+    public string LeaderCaption => IsHost
+        ? AppText.Get("web.watchTogether.voting.hostCaption")
+        : AppText.Get("web.watchTogether.voting.guestCaption", ("host", VotingHostName));
 
     /// <summary>"▶ Play Evan Allmächtig for everyone".</summary>
-    public string PlayLeaderLabel => Leader is { } leader ? $"Play {leader.Title} for everyone" : "";
+    public string PlayLeaderLabel => Leader is { } leader ? AppText.Get("web.watchTogether.voting.playForEveryone", ("title", leader.Title)) : "";
 
-    public string VotingEmptyText =>
-        $"Anyone can add one from the shelf below. The room votes, and {(IsHost ? "you start" : $"{HostName} starts")} whatever wins.";
+    public string VotingEmptyText => IsHost
+        ? AppText.Get("web.watchTogether.voting.emptyHost")
+        : AppText.Get("web.watchTogether.voting.emptyGuest", ("host", VotingHostName));
 
-    /// <summary>The suggestions' heading: "SUGGESTIONS · RANKED BY VOTES", "SUGGESTIONS · 3" or "AFTER THIS · STILL OPEN FOR SUGGESTIONS".</summary>
-    public string SuggestionsHeading => IsPlaying ? "After this · still open for suggestions"
-        : IsVote ? "Suggestions · ranked by votes"
-        : $"Suggestions · {_party.Suggestions.Count}";
+    /// <summary>The suggestions' heading: "Suggestions · ranked by votes", "Suggestions · 3" or "After this · still open for suggestions".</summary>
+    public string SuggestionsHeading => IsPlaying ? AppText.Get("web.watchTogether.playing.afterTitle")
+        : IsVote ? AppText.Get("web.watchTogether.voting.ranked")
+        : AppText.Get("web.watchTogether.lobby.suggestionsCount", ("count", _party.Suggestions.Count));
 
     public string SuggestionsHint => IsPlaying ? ""
-        : IsVote ? "One vote each · change it any time"
-        : IsHost ? "Queue one to put it up next." : "The host decides what plays.";
+        : IsVote ? AppText.Get("web.watchTogether.voting.oneVote")
+        : IsHost ? AppText.Get("watchParty.strip.manager") : AppText.Get("watchParty.strip.guest");
 
     public bool HasSuggestionsHint => SuggestionsHint.Length > 0;
 
@@ -101,32 +111,32 @@ public sealed partial class WatchPartyRoomViewModel
 
     public bool HasNoSuggestions => SuggestionRows.Count == 0;
 
-    public string SuggestionsEmptyText => IsPlaying
-        ? "Nothing queued for after. Browse below to suggest something."
-        : "Nothing suggested yet. Browse below to add the first.";
+    public string SuggestionsEmptyText => IsPlaying ? AppText.Get("web.watchTogether.playing.empty") : AppText.Get("web.watchTogether.voting.empty");
 
     /// <summary>The host plays the vote's leader for everyone.</summary>
     [RelayCommand(CanExecute = nameof(CanAct))]
-    private Task PlayLeaderAsync() => Leader is { } leader ? HostAsync(() => _party.PromoteAsync(leader.Id), "Could not start that") : Task.CompletedTask;
+    private Task PlayLeaderAsync() => Leader is { } leader
+        ? HostAsync(() => _party.PromoteAsync(leader.Id), AppText.Get("web.watchTogether.actions.promoteFailed"))
+        : Task.CompletedTask;
 
     /// <summary>A vote on or off.</summary>
     [RelayCommand]
     private Task VoteAsync(WatchPartySuggestionRow? row) => row is { CanVote: true }
-        ? MemberAsync(() => _party.SetVoteAsync(row.Id, !row.VotedByMe), "Vote failed")
+        ? MemberAsync(() => _party.SetVoteAsync(row.Id, !row.VotedByMe), AppText.Get("web.watchTogether.room.voteFailed"))
         : Task.CompletedTask;
 
     /// <summary>The host's "Play this" (in a vote room) or "Queue this" (a host-pick lobby stages it).</summary>
     [RelayCommand]
     private Task PromoteAsync(WatchPartySuggestionRow? row) => row is { CanPromote: true }
         ? IsVote
-            ? HostAsync(() => _party.PromoteAsync(row.Id), "Could not start that")
-            : HostAsync(() => _party.StageAsync(row.Suggestion.ContentId), "That couldn't be queued")
+            ? HostAsync(() => _party.PromoteAsync(row.Id), AppText.Get("web.watchTogether.actions.promoteFailed"))
+            : HostAsync(() => _party.StageAsync(row.Suggestion.ContentId), AppText.Get("web.watchTogether.actions.stageFailed"))
         : Task.CompletedTask;
 
     /// <summary>Takes a suggestion back.</summary>
     [RelayCommand]
     private Task DeleteSuggestionAsync(WatchPartySuggestionRow? row) => row is { CanDelete: true }
-        ? MemberAsync(() => _party.RemoveSuggestionAsync(row.Id), "Could not remove that")
+        ? MemberAsync(() => _party.RemoveSuggestionAsync(row.Id), AppText.Get("web.watchTogether.room.removeFailed"))
         : Task.CompletedTask;
 
     private async Task MemberAsync(Func<Task> action, string failure)
@@ -137,7 +147,7 @@ public sealed partial class WatchPartyRoomViewModel
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
-            _logger.LogWarning(ex, "{Failure}", failure);
+            _logger.LogWarning(ex, "A member's action in the Watch Party failed");
             Say(ex is Api.SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : failure);
         }
     }
@@ -183,13 +193,13 @@ public sealed partial class WatchPartyRoomViewModel
                 SuggestionRows.Move(at, i);
             }
             row.Suggestion = suggestion;
-            row.SuggesterName = names.GetValueOrDefault(suggestion.SuggesterKey) ?? "Someone";
+            row.SuggesterName = names.GetValueOrDefault(suggestion.SuggesterKey) ?? AppText.Get("web.watchTogether.common.someone");
             row.Share = maxVotes > 0 ? (double)suggestion.VoteCount / maxVotes : 0;
             row.IsLeading = votes && i == 0 && suggestion.VoteCount > 0;
             row.ShowsVotes = votes;
             row.CanVote = votes;
             row.CanPromote = IsHost && !IsPlaying;
-            row.PromoteLabel = IsVote ? "Play this" : "Queue this";
+            row.PromoteLabel = IsVote ? AppText.Get("web.watchTogether.suggestions.playThis") : AppText.Get("web.watchTogether.lobby.queueThis");
             row.CanDelete = IsHost || suggestion.SuggesterProfileId == profile;
             var poster = server is null ? null : ArtworkUrl.Resolve(server, suggestion.PosterUrl);
             if (!Equals(row.PosterUrl, poster))
@@ -250,7 +260,7 @@ public sealed partial class WatchPartyRoomViewModel
             HeroBackdrop = ArtworkUrl.Resolve(server.BaseUri, item.BackdropUrl);
             if (content == Room?.SelectedContentId)
             {
-                _party.NoteTitle(HeroHeadline);
+                _party.NoteTitle(WatchPartyText.StoredHeadline(item));
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -262,7 +272,7 @@ public sealed partial class WatchPartyRoomViewModel
             _logger.LogWarning(ex, "Could not read the stage's title");
             if (_heroShown == content && HeroHeadline.Length == 0)
             {
-                HeroHeadline = "Unavailable";
+                HeroHeadline = AppText.Get("web.watchTogether.hero.unavailable");
             }
         }
     }
@@ -282,11 +292,12 @@ public sealed partial class WatchPartyRoomViewModel
         }
         string state = room.PlaybackState switch
         {
-            WatchPartyPlaybackStates.Playing => "Playing",
-            WatchPartyPlaybackStates.Waiting => "Waiting for everyone to buffer",
-            _ => "Paused",
+            WatchPartyPlaybackStates.Playing => AppText.Get("web.watchTogether.playing.playing"),
+            WatchPartyPlaybackStates.Waiting => AppText.Get("web.watchTogether.playing.waiting"),
+            _ => AppText.Get("web.watchTogether.playing.paused"),
         };
-        PlayingCaption = $"{Clock(position)} · {state} · {room.MemberCount} here";
+        PlayingCaption = AppText.Get("web.watchTogether.playing.caption", ("clock", Clock(position)), ("state", state), ("count", room.MemberCount),
+            ("count_text", AppText.Number(room.MemberCount)));
     }
 
     private void OnCardChosen(object? sender, WatchPartyShelfCard card)
@@ -336,7 +347,7 @@ public sealed partial class WatchPartyRoomViewModel
         {
             if (Candidate.Stages)
             {
-                if (await HostAsync(() => _party.StageAsync(choice.ContentId), "That couldn't be queued"))
+                if (await HostAsync(() => _party.StageAsync(choice.ContentId), AppText.Get("web.watchTogether.actions.stageFailed")))
                 {
                     DismissCandidate();
                 }
@@ -347,13 +358,13 @@ public sealed partial class WatchPartyRoomViewModel
             await _party.SuggestAsync(new WatchPartySuggestionCreate(id, choice.ContentId, choice.ContentType, choice.Title, choice.Subtitle,
                 choice.PosterPath));
             _suggestion = null;
-            Say($"Suggested {choice.Title}");
+            Say(AppText.Get("web.watchTogether.room.suggested", ("title", choice.Title)));
             DismissCandidate();
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not suggest a title");
-            Say(ex is Api.SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : "Could not suggest that");
+            Say(ex is Api.SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : AppText.Get("web.watchTogether.common.suggestFailed"));
         }
         finally
         {

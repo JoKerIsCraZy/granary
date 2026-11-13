@@ -15,9 +15,28 @@
 # (components/collections/CollectionGuidedRulesEditor.tsx, and the rule builder's for the audio and subtitle languages):
 # src/Granary.App/Controls/CatalogFiltersButton.xaml(.cs).
 catalog.sort.added
+
+# A profile's own collection made or changed, in the words of the web's editor (components/collections/editor,
+# fields/ArtworkFields.tsx, fields/OrderBlock.tsx, lib/collections/copy.ts and copyEditor.ts), its smart rules
+# (homeRows/addRow/RuleBuilder.tsx, catalog/FilterRuleRow.tsx, collectionBuilderFields.ts, LibraryMultiSelect.tsx), the
+# save bar and the question before leaving (SaveBar.tsx, UnsavedChangesGuard.tsx), and the image checks of the title
+# images dialog: src/Granary.App/Views/CollectionEditorPage*, src/Granary.Core/ViewModels/Collections/*.
+catalog.sort.author
+
+# More of a library page's words, as above under catalog.sort.added.
 catalog.sort.imdbRating
+
+# More of the collection editor's words, as above under catalog.sort.author.
+catalog.sort.narrator
+
+# More of a library page's words, as above under catalog.sort.added.
 catalog.sort.released
 catalog.sort.resolution
+
+# More of the collection editor's words, as above under catalog.sort.author.
+catalog.sort.series
+
+# More of a library page's words, as above under catalog.sort.added.
 catalog.sort.title
 catalog.sort.year
 
@@ -123,6 +142,13 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# Requests, in the words of the web's hub (pages/Requests.tsx), its browse and Discover row pages
+# (pages/RequestBrowse.tsx, RequestDiscoverSection.tsx), the brand rows (components/BrandCarousel.tsx), the request
+# poster card and its toasts (components/RequestPosterCard.tsx, hooks/queries/useRequests.ts), the seasons dialog
+# (RequestSeasonsDialog.tsx) and lib/mediaRequests.ts and lib/requestDownload.ts (a time left in the audiobooks'
+# duration words): src/Granary.App/Views/RequestsPage.xaml(.cs), RequestTitlesPage.xaml,
+# src/Granary.App/Controls/BrandRow.xaml(.cs), src/Granary.Core/ViewModels/Request*.cs, MediaCardActions.cs and
+# BrowseHeroTitle.cs.
 # A title known only from TMDB, in the words of the web's TitleDetail and ExternalTitleContent pages, its request bar
 # (RequestActionBar.tsx), its cancel dialog (CancelRequestDialog.tsx), the request and watchlist toasts
 # (hooks/queries/useRequests.ts, watchlistTitles.ts) and the seasons' words of RequestSeasonsDialog.tsx and
@@ -178,6 +204,31 @@ settingsManifest.ui.title_art.label
 
 # More of a library page's words, as above under catalog.sort.added.
 shuffle.nothingToPlay
+
+# Watch Together, in the words of the web's hub, room and start sheet (pages/watchtogether, components/watchtogether)
+# and its player's Watch Party panel and notices (player/components/WatchTogetherPanel.tsx, VideoPlayer.tsx):
+# src/Granary.App/Views/WatchPartyPage.xaml(.cs), WatchPartyRoomPage.xaml(.cs), src/Granary.App/Controls/StartPartyPanel.xaml(.cs),
+# src/Granary.Core/ViewModels/WatchParty, and the room's notices in src/Granary.Core/WatchParty/WatchPartyPlaybackBinding.cs.
+watchParty.button.imReady
+watchParty.button.suggest
+watchParty.connection.disconnected
+watchParty.end.confirm
+watchParty.options.everyoneVotes
+watchParty.page.start
+watchParty.seat.host
+watchParty.strip.guest
+watchParty.strip.manager
+watchParty.theHost
+watchParty.title
+watchParty.whoSeen.inProgress
+watchParty.whoSeen.title
+watchParty.whoSeen.watched
+
+# More of the collection editor's words, as above under catalog.sort.author.
+# More of the Requests words, as above under requests.error.create.
+web.audiobooks.duration.hours
+web.audiobooks.duration.hoursMinutes
+web.audiobooks.duration.minutes
 
 # The password change after sign-in, as the web's ChoosePassword page (pages/ChoosePassword.tsx) and, for the server's
 # limits and refusals, its account settings' password form: src/Granary.App/Views/ChangePasswordPage.xaml and
@@ -276,9 +327,13 @@ web.catalog.filters.badgeYearRange
 web.catalog.filters.badgeYearTo
 web.catalog.filters.clearAll
 web.catalog.filters.heading
-web.catalog.filters.locked
+
+# More of the collection editor's words, as above under catalog.sort.author: a picked library known only by its number,
+# as the web's catalog filters name one (components/catalog/CatalogFiltersPanel.tsx).
+web.catalog.filters.libraryFallback
 
 # More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.locked
 web.catalog.filters.open
 web.catalog.filters.removeBadge
 web.catalog.grid.noItems
@@ -353,6 +408,32 @@ web.catalog.page.titleCount
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.watchlist
 web.catalog.page.watchlistSubtitle
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.catalog.rules.amount
+web.catalog.rules.condition
+web.catalog.rules.field
+web.catalog.rules.fieldEpisodeTitle
+web.catalog.rules.fieldLastRead
+web.catalog.rules.fieldRead
+web.catalog.rules.no
+web.catalog.rules.notEditable
+web.catalog.rules.notEditableLabel
+web.catalog.rules.pickOne
+web.catalog.rules.pickValue
+web.catalog.rules.rangeFrom
+web.catalog.rules.rangeTo
+web.catalog.rules.remove
+web.catalog.rules.removeRule
+web.catalog.rules.unit
+web.catalog.rules.unitDays
+web.catalog.rules.unitMonths
+web.catalog.rules.unitWeeks
+web.catalog.rules.unitYears
+web.catalog.rules.value
+web.catalog.rules.yes
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.search.scopeLabel
 
 # More of a library page's words, as above under catalog.sort.added.
@@ -368,23 +449,241 @@ web.catalog.sort.watchHistory
 web.collections.actions.delete
 web.collections.actions.moreActions
 
-# A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
-# MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
-# pickers and prePlaySelection.ts), its cast row (components/CastCarousel.tsx, castCrewGroups.ts), its stars
-# (components/StarRating.tsx), More Like This (components/RecommendationGrid.tsx), the start sheet's line for a series
-# (StartPartySheet.tsx), the track preference toasts, and for the Info dialog the field names of the web's metadata
-# editor and Media Info: src/Granary.App/Views/ItemDetailPage.xaml(.cs), src/Granary.App/Controls/DetailHero.xaml(.cs),
-# DetailInfoPanel, DetailShelf, DetailExtrasSection, StarRating and TrailerOverlay, and ItemDetailViewModel*.cs and
-# Detail/ (DetailFacts, DetailText, DetailCredits, ExtraKinds, PrePlayText, PrePlayPickers, PrePlayOptions) in
-# src/Granary.Core/ViewModels.
+# Add to a collection, as the web's dialog (components/AddToCollectionDialog.tsx):
+# src/Granary.App/Controls/AddToCollectionPanel.xaml and
+# src/Granary.Core/ViewModels/Collections/AddToCollectionViewModel.cs, and its title where a title's page opens it
+# (src/Granary.App/Controls/DetailHero.xaml.cs).
+web.collections.addToCollection.added
+web.collections.addToCollection.createAndAdd
+web.collections.addToCollection.createFailed
+web.collections.addToCollection.find
+web.collections.addToCollection.firstHelp
+web.collections.addToCollection.firstTitle
+web.collections.addToCollection.loadFailed
+web.collections.addToCollection.loading
+web.collections.addToCollection.namePlaceholder
+web.collections.addToCollection.newManual
+web.collections.addToCollection.noMatches
+web.collections.addToCollection.removed
 web.collections.addToCollection.title
+
+# The Collections page, as the web shows it (pages/Collections.tsx and Collections.cards.tsx, the collections ⋯ menu
+# (components/collections/CollectionActionsMenu.tsx), the poster card (CollectionPosterCard.tsx), its meta line
+# (editor/CollectionMetaLine.tsx), the New collection picker (NewCollectionPicker.tsx) and lib/collections/copy.ts):
+# src/Granary.App/Views/CollectionsPage.xaml(.cs), src/Granary.App/Controls/NewCollectionPicker.xaml(.cs),
+# src/Granary.Core/ViewModels/CollectionsViewModel*.cs, CollectionCards.cs and ServerCollectionsViewModel.cs.
+web.collections.admin.editCollection
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.facetPlaceholder
+web.collections.builder.fieldActor
+web.collections.builder.fieldAdded
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.collections.builder.fieldAudioLanguage
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.fieldBitrate
+web.collections.builder.fieldContentRating
+web.collections.builder.fieldCountry
+web.collections.builder.fieldDecade
+web.collections.builder.fieldDirector
+web.collections.builder.fieldDolbyVision
+web.collections.builder.fieldFavorited
+web.collections.builder.fieldGenre
+web.collections.builder.fieldHdr
+web.collections.builder.fieldInProgress
+web.collections.builder.fieldInWatchlist
+web.collections.builder.fieldLastAirDate
+web.collections.builder.fieldLastWatched
+web.collections.builder.fieldLatestEpisodeAdded
+web.collections.builder.fieldNetwork
+web.collections.builder.fieldOriginalLanguage
+web.collections.builder.fieldProducer
+web.collections.builder.fieldRatingImdb
+web.collections.builder.fieldRatingRtAudience
+web.collections.builder.fieldRatingRtCritic
+web.collections.builder.fieldRatingTmdb
+web.collections.builder.fieldReleaseDate
+web.collections.builder.fieldResolution
+web.collections.builder.fieldRuntime
+web.collections.builder.fieldShowTitle
+web.collections.builder.fieldStatus
+web.collections.builder.fieldStudio
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.collections.builder.fieldSubtitleLanguage
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.fieldTitle
+web.collections.builder.fieldType
+web.collections.builder.fieldWatched
+web.collections.builder.fieldWriter
+web.collections.builder.fieldYear
+web.collections.builder.groupFile
+web.collections.builder.groupLibrary
+web.collections.builder.groupPeople
+web.collections.builder.groupTitle
+web.collections.builder.groupYou
+web.collections.builder.opAbove
+web.collections.builder.opAfter
+web.collections.builder.opAtLeast
+web.collections.builder.opAtMost
+web.collections.builder.opBefore
+web.collections.builder.opBeginsWith
+web.collections.builder.opBelow
+web.collections.builder.opBetween
+web.collections.builder.opContains
+web.collections.builder.opEndsWith
+web.collections.builder.opInLast
+web.collections.builder.opIs
+web.collections.builder.opIsNot
+web.collections.builder.opNotContains
+web.collections.builder.opNotInLast
+web.collections.builder.statusMatched
+web.collections.builder.statusPending
+web.collections.builder.statusUnmatched
+web.collections.builder.typeMovies
+web.collections.builder.typeShows
+web.collections.builder.unitKbps
+web.collections.builder.unitMinutes
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.addToCollectionFootnote
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.allMyLibraries
+web.collections.copy.allMyLibrariesInSentence
+web.collections.copy.allYourLibraries
+web.collections.copy.cantBeUndone
+web.collections.copy.conflictTitle
+web.collections.copy.createdButNotAdded
+web.collections.copy.fieldDescription
+web.collections.copy.fieldLibraries
+web.collections.copy.fieldLimit
+web.collections.copy.fieldName
+web.collections.copy.fieldOrder
+web.collections.copy.fieldRules
+web.collections.copy.fieldShowOnly
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.goodForManualPersonal
+web.collections.copy.goodForSmart
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.inCollections
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.inThisCollection
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.kindSentenceManual
+web.collections.copy.kindSentenceSmart
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.lookPoster
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.madeButNotAdded
+web.collections.copy.manualTitleCount
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.nameItThenCreate
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.newCollection
+web.collections.copy.newCollectionHelpPersonal
+web.collections.copy.newCollectionNext
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.noLimit
+web.collections.copy.noPoster
+web.collections.copy.notCreatedYet
+web.collections.copy.notSaved
+web.collections.copy.orderHelp
+web.collections.copy.personalDeleteDescriptionShared
+web.collections.copy.personalRulesNote
+web.collections.copy.personalTabHelp
+web.collections.copy.posterAwaitsCollage
+web.collections.copy.posterIsCollage
+web.collections.copy.previewEmpty
+web.collections.copy.previewEmptyHelp
+web.collections.copy.previewFailed
+web.collections.copy.previewLive
+web.collections.copy.previewMatches
+web.collections.copy.removedTitle
+web.collections.copy.rulesCaption
+web.collections.copy.saveFailedWithError
+web.collections.copy.showOnTabLabel
+web.collections.copy.showToOtherProfilesHelp
+web.collections.copy.showToOtherProfilesLabel
+web.collections.copy.slotPoster
+web.collections.copy.smartCreateHint
+web.collections.copy.smartCreateHintNone
+web.collections.copy.smartUpdatesItself
+web.collections.copy.storedSortLine
+web.collections.copy.titlesAlreadySaved
+web.collections.copy.titlesCaptionCreate
+web.collections.copy.titlesCaptionPersonal
+web.collections.copy.titlesEmpty
+web.collections.copy.titlesReadyToAdd
+web.collections.copy.titlesSaved
+web.collections.copy.unshareConsequence
+web.collections.copy.unshareConsequenceOthers
+web.collections.copy.unshareWarning
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.collections.deleteDialog.delete
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.details.content
+web.collections.details.descriptionLabel
+web.collections.details.label
+web.collections.details.showOnlyHelp
+web.collections.details.watchState
+web.collections.displayFilters.media.all
+web.collections.displayFilters.media.movie
+web.collections.displayFilters.media.series
+web.collections.displayFilters.watch.all
+web.collections.displayFilters.watch.unwatched
+web.collections.displayFilters.watch.watched
+web.collections.editor.backToCollections
+web.collections.editor.conflictFields
+web.collections.editor.conflictSaveAgain
+web.collections.editor.createCollection
+web.collections.editor.keepMine
+web.collections.editor.rowLinkLabel
+web.collections.editor.rulesHeading
+web.collections.editor.useTheirs
+web.collections.editorHeader.open
+web.collections.editorPage.allCollections
+web.collections.editorPage.loadFailedTitle
+web.collections.editorPage.loading
+web.collections.editorPage.notFoundPersonal
+web.collections.editorPage.notFoundPersonalHelp
+web.collections.fields.artworkPreview
+web.collections.fields.artworkRemovedOnSave
+web.collections.fields.artworkSaveFailed
+web.collections.fields.artworkSavesOnSave
+web.collections.fields.changeArtwork
+web.collections.fields.clear
+web.collections.fields.clearStoredSort
+web.collections.fields.collage
+web.collections.fields.direction
+web.collections.fields.directionLabel
+web.collections.fields.imageLink
+web.collections.fields.maxTitlesSuffix
+web.collections.fields.order
+web.collections.fields.pasteALink
+web.collections.fields.removeArtwork
+web.collections.fields.sortAlphabetical
+web.collections.fields.sortBy
+web.collections.fields.sortWithDirection
+web.collections.fields.uploadImage
+web.collections.fields.useLink
+web.collections.fields.useTheCollage
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.collections.guidedRules.any
 web.collections.guidedRules.contentRating
 web.collections.guidedRules.decade
@@ -401,9 +700,81 @@ web.collections.guidedRules.yearFromPlaceholder
 web.collections.guidedRules.yearTo
 web.collections.guidedRules.yearToPlaceholder
 
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.list.syncFailed
+web.collections.list.syncingNow
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.look.change
+web.collections.look.heading
+web.collections.manual.add
+web.collections.manual.addFailed
+web.collections.manual.addTitle
+web.collections.manual.heading
+web.collections.manual.loadFailed
+web.collections.manual.moveTitle
+web.collections.manual.noMatches
+web.collections.manual.pagedNote
+web.collections.manual.reloadFromStart
+web.collections.manual.removeFailed
+web.collections.manual.removeTitle
+web.collections.manual.restoreFailed
+web.collections.manual.saving
+web.collections.manual.searchFailed
+web.collections.manual.searching
+web.collections.manual.showAll
+web.collections.manual.showFewer
+web.collections.manual.tryAgainSentence
+web.collections.manual.typeLabel
+web.collections.manual.undo
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.metaLine.titleCount
+web.collections.newPicker.goodFor
+web.collections.page.filterAll
+web.collections.page.filterLabel
+web.collections.page.loadMore
+web.collections.page.stopSharing
+web.collections.page.stopSharingTitle
+web.collections.page.subtitle
+web.collections.page.subtitleShared
+web.collections.page.title
+web.collections.page.wallMine
+web.collections.page.wallServer
+web.collections.page.wallShared
+
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.collections.pageActions.deleteTitle
 web.collections.pageActions.edit
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.personalOwnership.anotherProfile
+web.collections.posterCard.byOwner
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.preview.matchingTitles
+web.collections.preview.showing
+web.collections.scope.changedWhileEditing
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.tags.shared
+web.collections.toast.addFailed
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.toast.notShared
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.toast.removeItemFailed
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.toast.sharedWithProfiles
+web.collections.toast.sharingFailed
+web.collections.types.kindManual
+web.collections.types.kindSmart
+web.collections.types.kindSynced
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.whereItShows.heading
 
 # A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
 # src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
@@ -417,6 +788,7 @@ web.common.devicePlatform.kind.unknown
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
 
+# More of the Requests words, as above under requests.error.create.
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.common.requests.toast.cancelFailed
 web.common.requests.toast.submitted
@@ -437,7 +809,18 @@ web.common.sort.tmdbRating
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.common.toast.collections.deleteFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.common.toast.collections.deleted
+
+# A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
+# MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
+# pickers and prePlaySelection.ts), its cast row (components/CastCarousel.tsx, castCrewGroups.ts), its stars
+# (components/StarRating.tsx), More Like This (components/RecommendationGrid.tsx), the start sheet's line for a series
+# (StartPartySheet.tsx), the track preference toasts, and for the Info dialog the field names of the web's metadata
+# editor and Media Info: src/Granary.App/Views/ItemDetailPage.xaml(.cs), src/Granary.App/Controls/DetailHero.xaml(.cs),
+# DetailInfoPanel, DetailShelf, DetailExtrasSection, StarRating and TrailerOverlay, and ItemDetailViewModel*.cs and
+# Detail/ (DetailFacts, DetailText, DetailCredits, ExtraKinds, PrePlayText, PrePlayPickers, PrePlayOptions) in
+# src/Granary.Core/ViewModels.
 web.common.toast.subtitles.resetPreferenceFailed
 web.common.toast.subtitles.savePreferenceFailed
 
@@ -450,6 +833,11 @@ web.common.toast.watchlist.removed
 web.common.toast.watchlist.requestedNotice
 web.common.toast.watchlist.updateFailed
 
+# More of the Requests words, as above under requests.error.create.
+web.common.ui.carousel.loadFailed
+web.common.ui.carousel.scrollLeft
+web.common.ui.carousel.scrollRight
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
@@ -461,7 +849,7 @@ web.common.ui.loadError.timeout
 web.common.ui.loadMore.button
 web.common.ui.loadMore.loading
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.actions.addToCollection
 web.detail.actions.addToFavorites
 web.detail.actions.addToWatchlist
@@ -475,7 +863,7 @@ web.detail.actions.markSeriesWatched
 web.detail.actions.markUnwatched
 web.detail.actions.markWatched
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.actions.moreActions
 web.detail.actions.play
 web.detail.actions.playEpisode
@@ -516,7 +904,7 @@ web.detail.boxSet.unavailableTitle
 web.detail.boxSet.watchedFraction
 web.detail.boxSet.watchedOf
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.breadcrumb.label
 web.detail.carousel.scrollLeft
 web.detail.carousel.scrollRight
@@ -530,14 +918,14 @@ web.detail.castCrew.writers
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.episodeCode
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.episodes.heading
 web.detail.episodes.moreEpisodes
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.episodes.nowViewing
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.episodes.numbered
 web.detail.extras.heading
 web.detail.extras.kind.behindTheScenes
@@ -560,7 +948,7 @@ web.detail.extras.kindGroup.trailer
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.hero.typeMovie
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.hero.typeSeries
 web.detail.mediaInfo.audio
 web.detail.mediaInfo.defaultBadge
@@ -581,25 +969,25 @@ web.detail.mediaInfo.video
 web.detail.overview.createdBy
 web.detail.overview.directedBy
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.overview.revealHidden
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.overview.tmdbVotes
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.itemLoadFailed
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.page.loadFailedBody
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.loadingDetails
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.page.titleLoadFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.unavailableBody
 web.detail.page.unavailableTitle
 
@@ -617,21 +1005,21 @@ web.detail.request.stopNotifying
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.episodeCount
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.seasons.heading
 web.detail.seasons.noEpisodes
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.numbered
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.seasons.specials
 web.detail.seasons.totalCount
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.watchedProgress
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.sections.cast
 web.detail.sections.castAndCrew
 web.detail.subtitles.button
@@ -648,6 +1036,39 @@ web.detail.trailers.playerDescription
 web.detail.versions.fileIdFallback
 web.detail.versions.numbered
 web.detail.versions.versionButton
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.home.addRow.libraries
+
+# More of the Requests words, as above under requests.error.create.
+web.home.addRow.params.mediaType
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.home.addRow.rules.addAndGroup
+web.home.addRow.rules.addOrGroup
+web.home.addRow.rules.addRule
+web.home.addRow.rules.groupMatchLabel
+web.home.addRow.rules.groupSentence
+web.home.addRow.rules.howGroupsCombine
+web.home.addRow.rules.howRulesCombine
+web.home.addRow.rules.joinAnd
+web.home.addRow.rules.joinOr
+web.home.addRow.rules.kindOfTitles
+web.home.addRow.rules.matchAll
+web.home.addRow.rules.matchAny
+web.home.addRow.rules.noRulesCollectionYet
+web.home.addRow.rules.removeGroup
+web.home.addRow.rules.scopeAll
+web.home.addRow.rules.scopeAudiobook
+web.home.addRow.rules.scopeEbook
+web.home.addRow.rules.scopeEpisode
+web.home.addRow.rules.scopeManga
+web.home.addRow.rules.scopeMovie
+web.home.addRow.rules.scopeSeries
+web.home.addRow.rules.scopeVideo
+web.home.addRow.rules.sentenceAll
+web.home.addRow.rules.sentenceNamed
+web.home.addRow.rules.sentencePicked
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.home.continueWatching.episodeLabelWithTitle
@@ -681,7 +1102,7 @@ web.home.sectionRow.seriesType
 web.item.card.play
 web.item.card.watched
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.item.dialog.fieldTitle
 web.item.editMetadata.contentRating
 web.item.editMetadata.countries
@@ -692,6 +1113,10 @@ web.item.editMetadata.overview
 web.item.editMetadata.ratings
 web.item.editMetadata.studios
 web.item.editMetadata.tagline
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.item.images.tooLarge
+web.item.images.wrongType
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
 # Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
@@ -706,7 +1131,7 @@ web.item.menu.removeFromNextUp
 web.item.menu.removeFromWatchlist
 web.item.menu.showInRecommendations
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.item.rating.label
 web.item.rating.stars
 
@@ -753,6 +1178,97 @@ web.library.watchlist.titlesHintRequested
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
 
+# Notifications, in the words of the web's inbox (pages/Notifications.tsx), its preferences and series list
+# (components/notifications, hooks/queries/notifications.ts): src/Granary.App/Views/NotificationsPage.xaml(.cs) and the
+# Notification* and NotifiedSeries* view models and texts in src/Granary.Core/ViewModels.
+web.notifications.inbox.daysAgo
+web.notifications.inbox.emptyAll
+web.notifications.inbox.emptyHint
+web.notifications.inbox.emptyUnread
+web.notifications.inbox.episodeLine
+web.notifications.inbox.filterAll
+web.notifications.inbox.filterSeries
+web.notifications.inbox.filterUnread
+web.notifications.inbox.filterUnreadCount
+web.notifications.inbox.followedMovieAvailable
+web.notifications.inbox.followedSeriesAvailable
+web.notifications.inbox.followedTitleAvailable
+web.notifications.inbox.genericTitle
+web.notifications.inbox.hoursAgo
+web.notifications.inbox.justNow
+web.notifications.inbox.loadFailed
+web.notifications.inbox.loadMore
+web.notifications.inbox.markAllFailed
+web.notifications.inbox.markAllRead
+web.notifications.inbox.markRead
+web.notifications.inbox.mediaRequest
+web.notifications.inbox.minutesAgo
+web.notifications.inbox.newEpisode
+web.notifications.inbox.requestApproved
+web.notifications.inbox.requestAvailable
+web.notifications.inbox.requestAvailableBody
+web.notifications.inbox.requestDeclined
+web.notifications.inbox.requestDeclinedReason
+web.notifications.inbox.requestedMovieAvailable
+web.notifications.inbox.requestedSeriesAvailable
+web.notifications.inbox.seeSeriesCanNotify
+web.notifications.inbox.title
+web.notifications.preferences.continueWatching
+web.notifications.preferences.continueWatchingDescription
+web.notifications.preferences.enabled
+web.notifications.preferences.enabledDescription
+web.notifications.preferences.favorites
+web.notifications.preferences.favoritesDescription
+web.notifications.preferences.loadFailed
+web.notifications.preferences.nextUp
+web.notifications.preferences.nextUpDescription
+web.notifications.preferences.open
+web.notifications.preferences.seeSeries
+web.notifications.preferences.watchlist
+web.notifications.preferences.watchlistDescription
+web.notifications.queries.episodeCode
+web.notifications.queries.markReadFailed
+web.notifications.queries.muteFailed
+web.notifications.queries.muted
+web.notifications.queries.savePreferencesFailed
+web.notifications.queries.undo
+web.notifications.queries.unmuteFailed
+web.notifications.reason.continueWatching
+web.notifications.reason.favorite
+web.notifications.reason.nextUp
+web.notifications.reason.watchlist
+web.notifications.series.allReasons
+web.notifications.series.anyEpisodeAfter
+web.notifications.series.anyNewEpisode
+web.notifications.series.empty
+web.notifications.series.emptyHint
+web.notifications.series.filterByReason
+web.notifications.series.intro
+web.notifications.series.introMute
+web.notifications.series.loadFailed
+web.notifications.series.loadMoreFailed
+web.notifications.series.mute
+web.notifications.series.muteHint
+web.notifications.series.muteSeries
+web.notifications.series.muted
+web.notifications.series.nameList
+web.notifications.series.noMatch
+web.notifications.series.notificationsOff
+web.notifications.series.reasonOff
+web.notifications.series.reasonsOff
+web.notifications.series.search
+web.notifications.series.sort
+web.notifications.series.sortLatestEpisode
+web.notifications.series.sortRecentlyAdded
+web.notifications.series.sortReleaseYear
+web.notifications.series.sortTitleAsc
+web.notifications.series.sortTitleDesc
+web.notifications.series.unmute
+web.notifications.series.unmuteHint
+web.notifications.series.unmuteSeries
+web.notifications.series.wontNotify
+web.notifications.series.wontNotifyNow
+
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.person.age
 web.person.born
@@ -780,11 +1296,43 @@ web.player.controls.editMarkers
 web.player.controls.fillScreen
 web.player.controls.playbackInfo
 web.player.controls.volume
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.room.inviteNotReady
+web.player.room.noticeTitle
+web.player.room.onlyHostCanControl
+web.player.room.onlyHostCanSeek
+web.player.room.reconnecting
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.sleepTimer.trigger
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.player.tracks.resetAudioFailed
 web.player.tracks.saveAudioFailed
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.watchTogether.allowPause
+web.player.watchTogether.codePending
+web.player.watchTogether.connectionReplaced
+web.player.watchTogether.member.buffering
+web.player.watchTogether.member.connected
+web.player.watchTogether.member.ready
+web.player.watchTogether.member.syncing
+web.player.watchTogether.policy.guestsCanPause
+web.player.watchTogether.policy.hostControls
+web.player.watchTogether.policy.hostOnly
+web.player.watchTogether.policy.youCanPause
+web.player.watchTogether.selfName
+web.player.watchTogether.setHostOnly
+web.player.watchTogether.syncingRoom
+web.player.watchTogether.viewerCount
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.profiles.libraries.count
+web.profiles.librarySelect.libraryFallback
+web.profiles.librarySelect.more
+web.profiles.librarySelect.pair
 
 # The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
 # components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
@@ -817,7 +1365,7 @@ web.recommendations.fallbackTopRated
 web.recommendations.favoriteDirectors
 web.recommendations.loadFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.recommendations.moreLikeThis
 
 # More of For You's words, as above under web.recommendations.emptyBody.
@@ -831,8 +1379,26 @@ web.recommendations.tasteProfile
 web.recommendations.title
 web.recommendations.topGenres
 
+# More of the Requests words, as above under requests.error.create.
+web.requests.browse.empty
+web.requests.browse.genre
+web.requests.browse.genreNotFound
+web.requests.browse.loadFailed
+web.requests.browse.loading
+web.requests.browse.movies
+web.requests.browse.network
+web.requests.browse.networkNotFound
+web.requests.browse.series
+web.requests.browse.sortBy
+web.requests.browse.sortPopularity
+web.requests.browse.sortRating
+web.requests.browse.sortReleaseDate
+web.requests.browse.studio
+web.requests.browse.studioNotFound
+
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.requests.cancel.action
+web.requests.cancel.actionFor
 web.requests.cancel.description
 web.requests.cancel.keep
 web.requests.cancel.title
@@ -840,36 +1406,125 @@ web.requests.cancel.title
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.requests.card.addToWatchlist
 web.requests.card.addToWatchlistFor
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.label
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.requests.card.onWatchlist
 web.requests.card.removeFromWatchlist
 
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.requestTitle
+web.requests.card.sending
+web.requests.card.sendingFor
+web.requests.discoverSection.empty
+web.requests.discoverSection.fallbackTitle
+web.requests.discoverSection.notFound
+web.requests.discoverSection.unknown
+web.requests.discoverSection.unreachable
+web.requests.download.downloading
+web.requests.download.importing
+web.requests.download.paused
+
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.requests.download.progress
+web.requests.download.stalled
+web.requests.download.timeLeft
+web.requests.download.waiting
+web.requests.download.waitingForImport
+web.requests.hub.browseDiscover
+web.requests.hub.cancelled
+web.requests.hub.discover
+web.requests.hub.discoverFailed
+web.requests.hub.empty
+web.requests.hub.emptyHint
+web.requests.hub.inLibrary
+web.requests.hub.intro
+web.requests.hub.loadFailed
+web.requests.hub.needsAttention
+web.requests.hub.onTheWay
+web.requests.hub.openInLibrary
+web.requests.hub.openInLibraryFor
+web.requests.hub.reason
+web.requests.hub.statusApproved
+web.requests.hub.statusAvailable
+web.requests.hub.statusCancelled
+web.requests.hub.statusDeclined
+web.requests.hub.statusHelp
+web.requests.hub.statusPartial
+web.requests.hub.statusPending
+web.requests.hub.statusProcessing
+web.requests.hub.statuses
+web.requests.hub.yours
+web.requests.hub.yoursIntro
+web.requests.request
 
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.requests.results.loadMoreFailed
 
 # More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.seasons.all
 web.requests.seasons.allAvailable
 web.requests.seasons.alreadyRequested
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.seasons.choose
 web.requests.seasons.inLibrary
+web.requests.seasons.latest
+web.requests.seasons.noSeasons
+web.requests.seasons.noneAired
 web.requests.seasons.notAired
 web.requests.seasons.notAnnounced
 web.requests.seasons.partlyInLibrary
+web.requests.seasons.pickUpcoming
 web.requests.seasons.reason
+web.requests.seasons.requestSeasons
+web.requests.seasons.requestSeries
 web.requests.seasons.requested
 web.requests.seasons.season
 web.requests.seasons.seasonNamed
+web.requests.seasons.title
+web.requests.seasons.upcoming
+web.requests.status.active
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.status.approved
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.available
+web.requests.status.cancelled
+web.requests.status.declined
+web.requests.status.failed
+web.requests.status.partiallyAvailable
+web.requests.status.pending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.status.processing
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.reason.alreadyAvailable
+web.requests.status.reason.alreadyRequested
+web.requests.status.reason.blocked
+web.requests.status.reason.quotaExceeded
+web.requests.status.reason.requestsDisabled
+web.requests.status.reason.unavailable
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.requests.status.seasonEpisodes
+web.requests.status.seasonList
+web.requests.status.seasonProgress
+web.requests.title
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.requests.toAdd.heading
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.toAdd.movie
+web.requests.toAdd.noLibraryMatch
+web.requests.toAdd.series
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.search.boxSets
 
 # The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
@@ -1269,6 +1924,9 @@ web.shell.sidebar.watchParty
 web.shell.sidebar.watchlist
 web.shell.sidebar.yourStuff
 
+# More of the collection editor's words, as above under catalog.sort.author.
+web.shell.unsavedChanges.description
+
 # The question before unsaved edits are thrown away, as the web's (components/UnsavedChangesGuard.tsx): the mpv.conf
 # editor in src/Granary.Core/ViewModels/Settings/MpvConfigEditorViewModel.cs.
 web.shell.unsavedChanges.discard
@@ -1277,13 +1935,274 @@ web.shell.unsavedChanges.title
 # More of a library page's words, as above under catalog.sort.added.
 web.shuffle.startFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.ui.close
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.ui.personSearch.placeholder
 
 # More of the password change's words, as above under web.auth.choosePassword.description.
 web.ui.saving
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.watchTogether.actions.endRoomFailed
+web.watchTogether.actions.guestControlOff
+web.watchTogether.actions.guestControlOn
+web.watchTogether.actions.inviteCopied
+web.watchTogether.actions.inviteCopiedWithCode
+web.watchTogether.actions.inviteCopyFailed
+web.watchTogether.actions.modeFailed
+web.watchTogether.actions.notConnected
+web.watchTogether.actions.promoteFailed
+web.watchTogether.actions.stageFailed
+web.watchTogether.actions.startFailed
+web.watchTogether.actions.stopFailed
+web.watchTogether.actions.updateRoomFailed
+web.watchTogether.activity.episodeTitle
+web.watchTogether.activity.joined
+web.watchTogether.activity.left
+web.watchTogether.activity.mode
+web.watchTogether.activity.modeHostPick
+web.watchTogether.activity.modeVote
+web.watchTogether.activity.playbackPaused
+web.watchTogether.activity.playbackResumed
+web.watchTogether.activity.policy
+web.watchTogether.activity.ready
+web.watchTogether.activity.staged
+web.watchTogether.activity.started
+web.watchTogether.activity.stopped
+web.watchTogether.activity.suggested
+web.watchTogether.activity.timeHours
+web.watchTogether.activity.timeMinutes
+web.watchTogether.activity.timeNow
+web.watchTogether.activity.titleLoading
+web.watchTogether.activity.unready
+web.watchTogether.activity.unstaged
+web.watchTogether.activity.unsuggested
+web.watchTogether.browse.chipAll
+web.watchTogether.browse.chipMovies
+web.watchTogether.browse.chipRecent
+web.watchTogether.browse.chipSeries
+web.watchTogether.browse.chipTogether
+web.watchTogether.browse.chipWatchlists
+web.watchTogether.browse.collapsed
+web.watchTogether.browse.collapsedHintPick
+web.watchTogether.browse.collapsedHintSuggest
+web.watchTogether.browse.emptyAll
+web.watchTogether.browse.emptyMovies
+web.watchTogether.browse.emptyRecent
+web.watchTogether.browse.emptySeries
+web.watchTogether.browse.emptyTogether
+web.watchTogether.browse.emptyWatchlists
+web.watchTogether.browse.filterLabel
+web.watchTogether.browse.hide
+web.watchTogether.browse.noMatches
+web.watchTogether.browse.recentMovies
+web.watchTogether.browse.recentSeries
+web.watchTogether.browse.resultCount
+web.watchTogether.browse.searchFailed
+web.watchTogether.browse.searchLabel
+web.watchTogether.browse.searchPlaceholder
+web.watchTogether.browse.searchResults
+web.watchTogether.browse.sectionPick
+web.watchTogether.browse.sectionSuggest
+web.watchTogether.browse.togetherHint
+web.watchTogether.browse.togetherTitle
+web.watchTogether.browse.watchlistsHint
+web.watchTogether.browse.watchlistsTitle
+web.watchTogether.candidate.stageForRoom
+web.watchTogether.candidate.stageIt
+web.watchTogether.candidate.suggestThis
+web.watchTogether.common.change
+web.watchTogether.common.codeCopied
+web.watchTogether.common.episodeCode
+web.watchTogether.common.episodeNumber
+web.watchTogether.common.hostPicks
+web.watchTogether.common.movie
+web.watchTogether.common.policyGuestPlayPause
+web.watchTogether.common.policyHostOnly
+web.watchTogether.common.replaces
+web.watchTogether.common.roomInactive
+web.watchTogether.common.roomNotFound
+web.watchTogether.common.season
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.watchTogether.common.series
+web.watchTogether.common.someone
+web.watchTogether.common.specials
+web.watchTogether.common.suggestFailed
+web.watchTogether.connection.connected
+web.watchTogether.connection.connecting
+web.watchTogether.endDialog.description
+web.watchTogether.endDialog.title
+web.watchTogether.hero.episode
+web.watchTogether.hero.episodeTitled
+web.watchTogether.hero.movieYear
+web.watchTogether.hero.unavailable
+web.watchTogether.hub.codeLabel
+web.watchTogether.hub.codePlaceholder
+web.watchTogether.hub.create
+web.watchTogether.hub.createFailed
+web.watchTogether.hub.creating
+web.watchTogether.hub.fromTitleHint
+web.watchTogether.hub.headline
+web.watchTogether.hub.hostPickCaption
+web.watchTogether.hub.howItWorks
+web.watchTogether.hub.intro
+web.watchTogether.hub.join
+web.watchTogether.hub.joinFailed
+web.watchTogether.hub.joinTitle
+web.watchTogether.hub.joining
+web.watchTogether.hub.modeGroup
+web.watchTogether.hub.paste
+web.watchTogether.hub.pasteLabel
+web.watchTogether.hub.recentChecking
+web.watchTogether.hub.recentEnded
+web.watchTogether.hub.recentHosted
+web.watchTogether.hub.recentJoined
+web.watchTogether.hub.recentLive
+web.watchTogether.hub.recentTitle
+web.watchTogether.hub.recentUnknown
+web.watchTogether.hub.rejoin
+web.watchTogether.hub.startBody
+web.watchTogether.hub.stepOpenCaption
+web.watchTogether.hub.stepOpenTitle
+web.watchTogether.hub.stepShareCaption
+web.watchTogether.hub.stepShareTitle
+web.watchTogether.hub.stepSyncCaption
+web.watchTogether.hub.stepSyncTitle
+web.watchTogether.hub.voteCaption
+web.watchTogether.inviteBar.code
+web.watchTogether.inviteBar.guestsCanPause
+web.watchTogether.inviteBar.hostControls
+web.watchTogether.inviteBar.label
+web.watchTogether.inviteBar.link
+web.watchTogether.inviteBar.shareCode
+web.watchTogether.lobby.guestBody
+web.watchTogether.lobby.guestCaption
+web.watchTogether.lobby.hostBody
+web.watchTogether.lobby.nothingOn
+web.watchTogether.lobby.openVoting
+web.watchTogether.lobby.queueThis
+web.watchTogether.lobby.readyDone
+web.watchTogether.lobby.roomOpen
+web.watchTogether.lobby.startAlone
+web.watchTogether.lobby.startEveryone
+web.watchTogether.lobby.suggestionsCount
+web.watchTogether.lobby.upNext
+web.watchTogether.lobby.upNextGuest
+web.watchTogether.lobby.waitingGuest
+web.watchTogether.movie.close
+web.watchTogether.movie.newForEveryone
+web.watchTogether.movie.notSeen
+web.watchTogether.movie.onWatchlist
+web.watchTogether.movie.percentIn
+web.watchTogether.movie.rewatchForEveryone
+web.watchTogether.movie.seenOf
+web.watchTogether.movie.startedOf
+web.watchTogether.picker.moreMembers
+web.watchTogether.picker.rowHint
+web.watchTogether.playing.afterTitle
+web.watchTogether.playing.caption
+web.watchTogether.playing.empty
+web.watchTogether.playing.eyebrow
+web.watchTogether.playing.guestNote
+web.watchTogether.playing.hostNote
+web.watchTogether.playing.paused
+web.watchTogether.playing.playing
+web.watchTogether.playing.rejoin
+web.watchTogether.playing.stop
+web.watchTogether.playing.waiting
+web.watchTogether.presence.ready
+web.watchTogether.rail.activity
+web.watchTogether.rail.activityEmpty
+web.watchTogether.rail.people
+web.watchTogether.rail.peopleEmpty
+web.watchTogether.rail.stateBuffering
+web.watchTogether.rail.stateConnected
+web.watchTogether.rail.statePaused
+web.watchTogether.rail.stateReady
+web.watchTogether.rail.stateWatching
+web.watchTogether.rail.you
+web.watchTogether.room.backToHub
+web.watchTogether.room.changeUpNext
+web.watchTogether.room.closed
+web.watchTogether.room.closedBody
+web.watchTogether.room.ended
+web.watchTogether.room.firstSuggestionFailed
+web.watchTogether.room.forbidden
+web.watchTogether.room.guestFooter
+web.watchTogether.room.hostFooter
+web.watchTogether.room.inviteNotReady
+web.watchTogether.room.rejoin
+web.watchTogether.room.removeFailed
+web.watchTogether.room.replacedTitle
+web.watchTogether.room.suggestAfter
+web.watchTogether.room.suggested
+web.watchTogether.room.unavailable
+web.watchTogether.room.unknownHost
+web.watchTogether.room.voteFailed
+web.watchTogether.series.close
+web.watchTogether.series.episodes
+web.watchTogether.series.pickedEpisode
+web.watchTogether.series.runtime
+web.watchTogether.series.seasons
+web.watchTogether.startSheet.allowPause
+web.watchTogether.startSheet.allowPauseHint
+web.watchTogether.startSheet.choose
+web.watchTogether.startSheet.chooseEpisode
+web.watchTogether.startSheet.create
+web.watchTogether.startSheet.createFailed
+web.watchTogether.startSheet.creating
+web.watchTogether.startSheet.episode
+web.watchTogether.startSheet.episodeTitle
+web.watchTogether.startSheet.episodeWithCode
+web.watchTogether.startSheet.eyebrow
+web.watchTogether.startSheet.footnote
+web.watchTogether.startSheet.hostPickCaptionEmpty
+web.watchTogether.startSheet.hostPickCaptionTarget
+web.watchTogether.startSheet.howToPick
+web.watchTogether.startSheet.keepPick
+web.watchTogether.startSheet.noEpisodes
+web.watchTogether.startSheet.policyFailed
+web.watchTogether.startSheet.policyGuestsCanPause
+web.watchTogether.startSheet.policyHostOnly
+web.watchTogether.startSheet.policyHostOnlyFailed
 web.watchTogether.startSheet.seriesSeasons
+web.watchTogether.startSheet.stageFailed
 web.watchTogether.startSheet.title
+web.watchTogether.startSheet.voteCaptionEmpty
+web.watchTogether.startSheet.voteCaptionTarget
+web.watchTogether.startSheet.watched
+web.watchTogether.strip.changeMode
+web.watchTogether.strip.copyCode
+web.watchTogether.strip.copyInvite
+web.watchTogether.strip.endRoom
+web.watchTogether.strip.inviteLink
+web.watchTogether.strip.leave
+web.watchTogether.strip.leaveLabel
+web.watchTogether.strip.live
+web.watchTogether.strip.modeYou
+web.watchTogether.strip.playing
+web.watchTogether.strip.voting
+web.watchTogether.suggestions.leading
+web.watchTogether.suggestions.note
+web.watchTogether.suggestions.playThis
+web.watchTogether.suggestions.remove
+web.watchTogether.suggestions.unvote
+web.watchTogether.suggestions.vote
+web.watchTogether.suggestions.voteMark
+web.watchTogether.suggestions.votes
+web.watchTogether.voting.empty
+web.watchTogether.voting.emptyGuest
+web.watchTogether.voting.emptyHost
+web.watchTogether.voting.firstSuggestion
+web.watchTogether.voting.guestCaption
+web.watchTogether.voting.hostCaption
+web.watchTogether.voting.leading
+web.watchTogether.voting.noSuggestions
+web.watchTogether.voting.oneVote
+web.watchTogether.voting.open
+web.watchTogether.voting.playForEveryone
+web.watchTogether.voting.ranked
+web.watchTogether.voting.theHost

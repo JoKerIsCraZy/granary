@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -31,6 +32,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
         _collections = collections;
         _time = time;
         _logger = logger;
+        Count();
     }
 
     /// <summary>The collections the search keeps, in the profile's order.</summary>
@@ -63,7 +65,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
     public partial string Notice { get; private set; } = "";
 
     [ObservableProperty]
-    public partial string FooterText { get; private set; } = "Not in a collection yet";
+    public partial string FooterText { get; private set; } = "";
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 
@@ -80,12 +82,12 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
     public bool HasNotice => Notice.Length > 0;
 
     /// <summary>"No collections match "x"." when the search keeps none.</summary>
-    public string NoMatchText => $"No collections match “{Search.Trim()}”.";
+    public string NoMatchText => AppText.Get("web.collections.addToCollection.noMatches", ("query", Search.Trim()));
 
     public bool HasNoMatch => HasCollections && Shown.Count == 0;
 
     /// <summary>"Name it and Dark goes straight in. …" for the first collection.</summary>
-    public string FirstCollectionText => $"Name it and {ItemTitle} goes straight in. You can add more titles and change the order later.";
+    public string FirstCollectionText => AppText.Get("web.collections.addToCollection.firstHelp", ("title", ItemTitle));
 
     /// <summary>Reads the profile's own manual collections and which hold <paramref name="contentId"/>.</summary>
     public async Task LoadAsync(string contentId, string title)
@@ -148,14 +150,14 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
             {
                 await _collections.RemoveItemAsync(server.BaseUri, row.Id, _contentId);
             }
-            _ = FlashAsync(row, add ? "Added" : "Removed");
+            _ = FlashAsync(row, add ? AppText.Get("web.collections.addToCollection.added") : AppText.Get("web.collections.addToCollection.removed"));
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not change a collection from a title's page");
             row.IsIn = !add;
             Count();
-            Notice = add ? "Failed to add to collection" : "Failed to remove item";
+            Notice = add ? AppText.Get("web.collections.toast.addFailed") : AppText.Get("web.collections.toast.removeItemFailed");
         }
         finally
         {
@@ -184,7 +186,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
             catch (Exception ex) when (LibraryErrors.IsExpected(ex))
             {
                 _logger.LogWarning(ex, "Could not make a collection from a title's page");
-                Notice = "Couldn't make the collection";
+                Notice = AppText.Get("web.collections.addToCollection.createFailed");
                 return;
             }
             // Its tick waits until the title went in.
@@ -198,12 +200,12 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
             {
                 await _collections.AddItemAsync(server.BaseUri, made.Id, _contentId, 0);
                 row.IsIn = true;
-                _ = FlashAsync(row, "Added");
+                _ = FlashAsync(row, AppText.Get("web.collections.addToCollection.added"));
             }
             catch (Exception ex) when (LibraryErrors.IsExpected(ex))
             {
                 _logger.LogWarning(ex, "Made a collection but could not add the title to it");
-                Notice = $"Made {made.Name}, but couldn't add {ItemTitle}";
+                Notice = AppText.Get("web.collections.copy.madeButNotAdded", ("collection", made.Name), ("title", ItemTitle));
             }
             finally
             {
@@ -237,7 +239,7 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
     private void Count()
     {
         int count = _all.Count(r => r.IsIn);
-        FooterText = count == 0 ? "Not in a collection yet" : count == 1 ? "In 1 collection" : $"In {count} collections";
+        FooterText = AppText.Get("web.collections.copy.inCollections", ("count", count), ("count_text", AppText.Number(count)));
     }
 
     private async Task FlashAsync(CollectionChoiceRow row, string text)
@@ -260,7 +262,7 @@ public sealed partial class CollectionChoiceRow : ObservableObject
     {
         Id = collection.Id;
         Name = collection.Name;
-        Meta = "Manual · " + CollectionEditorText.Titles(collection.ItemCount);
+        Meta = AppText.Get("web.collections.copy.manualTitleCount", ("count", collection.ItemCount), ("count_text", AppText.Number(collection.ItemCount)));
         IsShared = collection.IsShared;
         PosterUrl = posterUrl;
         IsIn = isIn;

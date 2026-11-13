@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -40,13 +41,19 @@ public sealed partial class RequestsViewModel : ObservableObject
     /// <summary>How many of the account's requests Yours shows, as the web.</summary>
     public const int MineShown = 100;
 
-    internal const string CancelFailedText = "Couldn't cancel the request. Try again.";
+    internal static string CancelFailedText => AppText.Get("web.common.requests.toast.cancelFailed");
 
     /// <summary>How often Yours is read again while a request downloads, and how old it may be when the page shows again.</summary>
     public static readonly TimeSpan DownloadPollInterval = TimeSpan.FromSeconds(30);
 
-    private static readonly (string Key, string Title)[] Groups =
-        [("attention", "Needs attention"), ("on_the_way", "On the way"), ("in_library", "In your library"), ("cancelled", "Cancelled")];
+    // The groups of Yours in their order, each worded when shown.
+    private static readonly (string Key, string TitleKey)[] Groups =
+    [
+        ("attention", "web.requests.hub.needsAttention"),
+        ("on_the_way", "web.requests.hub.onTheWay"),
+        ("in_library", "web.requests.hub.inLibrary"),
+        ("cancelled", "web.requests.hub.cancelled"),
+    ];
 
     private readonly ISessionManager _session;
     private readonly RequestsApi _requests;
@@ -85,9 +92,10 @@ public sealed partial class RequestsViewModel : ObservableObject
         Hero.PropertyChanged += OnHeroChanged;
         BrandRows =
         [
-            new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
-            new(DiscoverBrowseKind.Network, "Networks", RetryBrandsAsync),
-            new(DiscoverBrowseKind.Genre, "Genres", RetryBrandsAsync),
+            // The titles Silo gives these rows.
+            new(DiscoverBrowseKind.Studio, AppText.Get("home.section.discoverStudios"), RetryBrandsAsync),
+            new(DiscoverBrowseKind.Network, AppText.Get("home.section.discoverNetworks"), RetryBrandsAsync),
+            new(DiscoverBrowseKind.Genre, AppText.Get("home.section.discoverGenres"), RetryBrandsAsync),
         ];
     }
 
@@ -160,14 +168,15 @@ public sealed partial class RequestsViewModel : ObservableObject
     /// <summary>What each state means, as the web's "What the statuses mean".</summary>
     public IReadOnlyList<RequestStatusHelp> StatusHelp { get; } =
     [
-        Help(RequestStates.Pending, "Waiting for an admin. You can cancel it until it is sent to the download automation."),
-        Help(RequestStates.Approved, "Approved, not yet sent to the download automation. You can still cancel it."),
-        Help(RequestStates.Processing, "Sent to the download automation."),
-        Help(RequestStates.PartiallyAvailable, "Some episodes of the requested seasons have arrived."),
-        Help(RequestStates.Available, "In your library and ready to watch."),
-        Help(RequestStates.Declined, "An admin declined it."),
-        Help(RequestStates.Cancelled, "Withdrawn before it was sent to the download automation."),
-        Help(RequestStates.Failed, "Silo or the download automation hit an error."),
+        Help(RequestStates.Pending, AppText.Get("web.requests.hub.statusPending")),
+        Help(RequestStates.Approved, AppText.Get("web.requests.hub.statusApproved")),
+        Help(RequestStates.Processing, AppText.Get("web.requests.hub.statusProcessing")),
+        Help(RequestStates.PartiallyAvailable, AppText.Get("web.requests.hub.statusPartial")),
+        Help(RequestStates.Available, AppText.Get("web.requests.hub.statusAvailable")),
+        Help(RequestStates.Declined, AppText.Get("web.requests.hub.statusDeclined")),
+        Help(RequestStates.Cancelled, AppText.Get("web.requests.hub.statusCancelled")),
+        // Without the web's "You can remove it…": Granary has no Remove request.
+        Help(RequestStates.Failed, AppText.Get("granary.requests.statusFailed")),
     ];
 
     /// <summary>
@@ -517,15 +526,15 @@ public sealed partial class RequestsViewModel : ObservableObject
         var now = _time.GetUtcNow();
         var zone = _time.LocalTimeZone;
         var rows = requests.Select(r => (Group: GroupOf(r), Row: RowOf(r, now, zone))).ToList();
-        foreach (var (key, title) in Groups)
+        foreach (var (key, titleKey) in Groups)
         {
             var members = rows.Where(r => r.Group == key).Select(r => r.Row).ToList();
             if (members.Count > 0)
             {
-                RequestGroups.Add(new RequestGroupViewModel(title, members));
+                RequestGroups.Add(new RequestGroupViewModel(AppText.Get(titleKey), members));
             }
         }
-        YoursCount = requests.Count > 0 ? requests.Count.ToString(CultureInfo.InvariantCulture) : "";
+        YoursCount = requests.Count > 0 ? AppText.Number(requests.Count) : "";
     }
 
     private static string GroupOf(MediaRequest request) => RequestText.DisplayState(request.Status, request.Outcome, request.State) switch
@@ -568,7 +577,9 @@ public sealed partial class RequestsViewModel : ObservableObject
             DownloadText = request.Download is { } download ? RequestText.Download(download, now) : "",
             DownloadPercent = request.Download is { } bar ? RequestText.DownloadPercent(bar) : null,
             Dates = dates,
-            Note = isError ? request.LastError! : string.IsNullOrWhiteSpace(request.OutcomeReason) ? "" : $"Reason: {request.OutcomeReason}",
+            // The server's own words, as it wrote them.
+            Note = isError ? request.LastError!
+                : string.IsNullOrWhiteSpace(request.OutcomeReason) ? "" : AppText.Get("web.requests.hub.reason", ("reason", request.OutcomeReason)),
             IsError = isError,
             LibraryContentId = string.IsNullOrWhiteSpace(request.LibraryContentId) ? null : request.LibraryContentId,
             CanCancel = RequestText.CanCancel(request),

@@ -12,20 +12,33 @@ internal sealed class TextOutput(bool keepRuns)
     private readonly List<TextRun>? _runs = keepRuns ? [] : null;
     private readonly List<string> _tags = [];
     private List<string>? _problems;
+    // Nothing was written since the last tag opened: closing it leaves an empty run that marks its place.
+    private bool _emptyTag;
 
     public IReadOnlyList<string> Problems => _problems ?? [];
 
-    public void Append(string text) => _text.Append(text);
+    public void Append(string text)
+    {
+        _text.Append(text);
+        _emptyTag &= text.Length == 0;
+    }
 
     public void Open(string tag)
     {
         EndRun();
         _tags.Add(tag);
+        _emptyTag = true;
     }
 
     public void Close()
     {
         EndRun();
+        // An empty tag ("<match></match>") is where the web puts a control: its place is kept as a run without text.
+        if (_emptyTag && _runs is not null)
+        {
+            _runs.Add(new TextRun("", [.. _tags]));
+        }
+        _emptyTag = false;
         _tags.RemoveAt(_tags.Count - 1);
     }
 

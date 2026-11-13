@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Collections;
 using Microsoft.Extensions.Logging;
@@ -34,12 +35,14 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
             return [];
         }
         // The editor takes manual and smart collections; a synced list is changed where it syncs from.
-        List<CardMenuEntry> entries = collection.IsManual || collection.IsSmart ? [new("Edit collection", EditCollectionCommand)] : [];
+        List<CardMenuEntry> entries = collection.IsManual || collection.IsSmart
+            ? [new(AppText.Get("web.collections.admin.editCollection"), EditCollectionCommand)]
+            : [];
         if (_otherProfiles.Count > 0)
         {
-            entries.Add(new("Show to other profiles", ToggleSharingCommand, collection.IsShared));
+            entries.Add(new(AppText.Get("web.collections.copy.showToOtherProfilesLabel"), ToggleSharingCommand, collection.IsShared));
         }
-        entries.Add(new("Delete…", DeleteCollectionCommand));
+        entries.Add(new(AppText.Get("web.collections.actions.delete"), DeleteCollectionCommand));
         return entries;
     }
 
@@ -62,8 +65,8 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
             return;
         }
         bool share = !collection.IsShared;
-        if (!share && !await _confirmation.AskAsync($"Stop sharing {collection.Name}?", CollectionEditorText.UnshareConsequence(_otherProfiles),
-                "Stop sharing"))
+        if (!share && !await _confirmation.AskAsync(AppText.Get("web.collections.page.stopSharingTitle", ("name", collection.Name)),
+                CollectionEditorText.UnshareConsequence(_otherProfiles), AppText.Get("web.collections.page.stopSharing")))
         {
             return;
         }
@@ -75,12 +78,12 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
             await _collections.UpdateAsync(server.BaseUri, collection.Id, read.Version, change.ToUpdate());
             // The collection as read now, with the list's poster, which a single collection's answer leaves out.
             Replace(read.Value with { IsShared = share, PosterUrl = collection.PosterUrl }, server.BaseUri);
-            Say(share ? "Shown to other profiles" : "Only you see it now", failed: false);
+            Say(share ? AppText.Get("web.collections.toast.sharedWithProfiles") : AppText.Get("web.collections.toast.notShared"), failed: false);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not change a collection's sharing");
-            Say(ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Couldn't change sharing", failed: true);
+            Say(ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : AppText.Get("web.collections.toast.sharingFailed"), failed: true);
         }
     }
 
@@ -97,7 +100,8 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
         try
         {
             var read = await _collections.GetAsync(server.BaseUri, collection.Id);
-            if (!await _confirmation.AskAsync($"Delete “{collection.Name}”?", CollectionEditorText.DeleteDescription(read.Value.IsShared), "Delete"))
+            if (!await _confirmation.AskAsync(AppText.Get("web.collections.pageActions.deleteTitle", ("name", collection.Name)),
+                CollectionEditorText.DeleteDescription(read.Value.IsShared), AppText.Get("web.collections.deleteDialog.delete")))
             {
                 return;
             }
@@ -108,12 +112,12 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
                 Own.Remove(shown);
             }
             OwnCount = Own.Count;
-            Say("Collection deleted", failed: false);
+            Say(AppText.Get("web.common.toast.collections.deleted"), failed: false);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not delete a collection");
-            Say(ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Failed to delete", failed: true);
+            Say(ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : AppText.Get("web.common.toast.collections.deleteFailed"), failed: true);
         }
     }
 

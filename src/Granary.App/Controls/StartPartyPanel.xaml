@@ -10,7 +10,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:wp="using:Granary.Core.ViewModels.WatchParty">
+    xmlns:wp="using:Granary.Core.ViewModels.WatchParty"
+    xmlns:t="using:Granary.Core.Texts">
 
     <UserControl.Resources>
         <!-- The web's small capitals above a part: 11 px, semibold, 0.18 em apart, muted. -->
@@ -40,8 +41,8 @@
 
     <StackPanel x:Name="Sheet" Width="400" Spacing="16">
         <StackPanel Spacing="6">
-            <TextBlock Text="WATCH TOGETHER" Style="{StaticResource EyebrowStyle}" />
-            <TextBlock Text="Start a party with this" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="20"
+            <TextBlock Text="{x:Bind Eyebrow}" Style="{StaticResource EyebrowStyle}" />
+            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.startSheet.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="20"
                        AutomationProperties.HeadingLevel="Level1" />
         </StackPanel>
 
@@ -72,13 +73,13 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="2" VerticalAlignment="Center">
-                    <TextBlock Text="EPISODE" Style="{StaticResource EyebrowStyle}" />
+                    <TextBlock Text="{x:Bind EpisodeHeading}" Style="{StaticResource EyebrowStyle}" />
                     <TextBlock Text="{x:Bind ViewModel.EpisodeText, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
                                FontSize="14" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
                 <Button x:Name="ChangeButton" Grid.Column="1" Style="{StaticResource GhostButtonStyle}" VerticalAlignment="Center"
                         Content="{x:Bind ViewModel.ChangeLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ChooseCommand}"
-                        AutomationProperties.Name="{x:Bind controls:StartPartyPanel.ChangeName(ViewModel.ChangeLabel), Mode=OneWay}" />
+                        AutomationProperties.Name="{x:Bind ViewModel.ChangeName, Mode=OneWay}" />
             </Grid>
         </Border>
 
@@ -86,7 +87,7 @@
         <Border Style="{StaticResource SubtlePanelStyle}" Padding="12" Visibility="{x:Bind ViewModel.IsChoosing, Mode=OneWay}">
             <StackPanel Spacing="12">
                 <ItemsRepeater x:Name="SeasonPills" ItemsSource="{x:Bind ViewModel.Seasons}" XYFocusKeyboardNavigation="Enabled"
-                               AutomationProperties.Name="Seasons">
+                               AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.series.seasons')}">
                     <ItemsRepeater.Layout>
                         <controls:WrapLayout HorizontalSpacing="6" VerticalSpacing="6" />
                     </ItemsRepeater.Layout>
@@ -103,7 +104,7 @@
                 </ItemsRepeater>
                 <ScrollViewer MaxHeight="256" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl x:Name="EpisodeRows" ItemsSource="{x:Bind ViewModel.Episodes}" IsTabStop="False" XYFocusKeyboardNavigation="Enabled"
-                                  AutomationProperties.Name="Episodes">
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.series.episodes')}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="wp:StartPartyEpisode">
                                 <Button Click="OnEpisodeClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="8"
@@ -117,7 +118,8 @@
                                         <TextBlock Text="{x:Bind Number}" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                                    Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1" Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="2" Text="watched" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center"
+                                        <TextBlock Grid.Column="2" Text="{x:Bind controls:StartPartyPanel.WatchedMark}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
+                                                   VerticalAlignment="Center"
                                                    Visibility="{x:Bind IsWatched}" />
                                     </Grid>
                                 </Button>
@@ -126,30 +128,34 @@
                     </ItemsControl>
                 </ScrollViewer>
                 <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"
-                              Visibility="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}" AutomationProperties.Name="Loading the episodes" />
-                <TextBlock Text="No playable episodes here." FontSize="14" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center"
+                              Visibility="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.watchParty.loadingEpisodes')}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.startSheet.noEpisodes')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center"
                            Margin="0,8" Visibility="{x:Bind ViewModel.HasNoEpisodes, Mode=OneWay}" />
-                <Button x:Name="KeepButton" Content="Keep the current pick" Style="{StaticResource GhostButtonStyle}" HorizontalAlignment="Left"
+                <Button x:Name="KeepButton" Content="{x:Bind t:AppText.Get('web.watchTogether.startSheet.keepPick')}" Style="{StaticResource GhostButtonStyle}"
+                        HorizontalAlignment="Left"
                         Command="{x:Bind ViewModel.KeepCurrentCommand}" />
             </StackPanel>
         </Border>
 
         <!-- The web's radiogroup "How to pick": two cards, their captions naming what the title becomes. -->
-        <StackPanel Spacing="8" AutomationProperties.Name="How to pick">
-            <TextBlock Text="HOW TO PICK" Style="{StaticResource EyebrowStyle}" />
+        <StackPanel Spacing="8" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.startSheet.howToPick')}">
+            <TextBlock Text="{x:Bind HowToPickHeading}" Style="{StaticResource EyebrowStyle}" />
             <RadioButton GroupName="StartPartyMode" Style="{StaticResource SiloModeCardStyle}" CornerRadius="8" Padding="12,10" PreviewKeyDown="OnModeKeyDown"
                          IsChecked="{x:Bind ViewModel.IsHostPick, Mode=TwoWay}"
-                         AutomationProperties.Name="Host picks" AutomationProperties.HelpText="{x:Bind ViewModel.HostPickCaption, Mode=OneWay}">
+                         AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.common.hostPicks')}"
+                         AutomationProperties.HelpText="{x:Bind ViewModel.HostPickCaption, Mode=OneWay}">
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Host picks" Style="{StaticResource SiloModeTitleTextStyle}" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.common.hostPicks')}" Style="{StaticResource SiloModeTitleTextStyle}" />
                     <TextBlock Text="{x:Bind ViewModel.HostPickCaption, Mode=OneWay}" Style="{StaticResource SiloModeCaptionTextStyle}" />
                 </StackPanel>
             </RadioButton>
             <RadioButton GroupName="StartPartyMode" Style="{StaticResource SiloModeCardStyle}" CornerRadius="8" Padding="12,10" PreviewKeyDown="OnModeKeyDown"
                          IsChecked="{x:Bind ViewModel.IsVoteMode, Mode=TwoWay}"
-                         AutomationProperties.Name="Everyone votes" AutomationProperties.HelpText="{x:Bind ViewModel.VoteCaption, Mode=OneWay}">
+                         AutomationProperties.Name="{x:Bind t:AppText.Get('watchParty.options.everyoneVotes')}"
+                         AutomationProperties.HelpText="{x:Bind ViewModel.VoteCaption, Mode=OneWay}">
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Everyone votes" Style="{StaticResource SiloModeTitleTextStyle}" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('watchParty.options.everyoneVotes')}" Style="{StaticResource SiloModeTitleTextStyle}" />
                     <TextBlock Text="{x:Bind ViewModel.VoteCaption, Mode=OneWay}" Style="{StaticResource SiloModeCaptionTextStyle}" />
                 </StackPanel>
             </RadioButton>
@@ -161,12 +167,14 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="Allow guests to pause" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" />
-                <TextBlock Text="Otherwise only you control playback" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.startSheet.allowPause')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                           FontSize="14" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.startSheet.allowPauseHint')}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
             </StackPanel>
             <ToggleSwitch Grid.Column="1" MinWidth="0" OnContent="" OffContent="" VerticalAlignment="Center"
                           IsOn="{x:Bind ViewModel.GuestsCanPause, Mode=TwoWay}"
-                          AutomationProperties.Name="Allow guests to pause" AutomationProperties.HelpText="Otherwise only you control playback" />
+                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.startSheet.allowPause')}"
+                          AutomationProperties.HelpText="{x:Bind t:AppText.Get('web.watchTogether.startSheet.allowPauseHint')}" />
         </Grid>
 
         <Border Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" CornerRadius="8" Padding="12,10" BorderThickness="1"
@@ -177,7 +185,7 @@
 
         <Button x:Name="CreateButton" Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}"
                 HorizontalAlignment="Stretch" MinHeight="44" Command="{x:Bind ViewModel.CreateCommand}" />
-        <TextBlock Text="You'll land in the room. Nothing plays until you start it. The room can see what members are mid-way through."
+        <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.startSheet.footnote')}"
                    FontSize="12" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" TextAlignment="Center" />
     </StackPanel>
 </UserControl>

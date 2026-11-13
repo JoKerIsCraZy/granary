@@ -170,7 +170,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         viewModel.SeekTo(600);
 
         Assert.Empty(Playback.Seeks);
-        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.Equal("Only the host can seek the room.", viewModel.NoticeMessage);
         Assert.False(viewModel.CanSeekInRoom);
     }
 
@@ -197,7 +197,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         viewModel.SeekToAdjacentChapter(forward: true);
 
         Assert.Empty(Playback.Seeks);
-        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.Equal("Only the host can seek the room.", viewModel.NoticeMessage);
         Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
     }
 

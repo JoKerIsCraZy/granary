@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -37,7 +38,7 @@ public sealed partial class RequestBrandRowViewModel : ObservableObject
     public string Title { get; }
 
     /// <summary>"Could not load studios."</summary>
-    public string FailureText => $"Could not load {Title.ToLowerInvariant()}.";
+    public string FailureText => AppText.Get("web.common.ui.carousel.loadFailed", ("title_lower", Title.ToLower(AppText.Language.Culture)));
 
     public ObservableCollection<RequestBrandTile> Tiles { get; } = [];
 

@@ -261,7 +261,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   description not saved · Titles are already saved." with Discard and Save. Titles save as they change; the rest at
   the version it was read at, merged when it changed elsewhere, with Use theirs / Keep mine for a field changed in both
   places. Leaving with something not saved asks "Discard unsaved changes?". A Smart collection has Rules instead of
-  Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:", one line
+  Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:" (its boxes
+  where the language's sentence puts them, and a screen reader hears each line as a group named "Show … from …", then
+  its boxes; the libraries box names one library, two as "Movies, Kids", or more as
+  "Movies +2 more", as the web's library picker), one line
   per rule (field, condition, and a value control that fits: text, number with its unit, a range, Yes/No, a list, a
   facet or person with suggestions, a date or "in the last 30 days"), later groups joined by "and" or "or", Add rule and
   Add an "or" group; a rule these controls can't show reads "Not editable here" and stays as saved until removed. Then
@@ -270,7 +273,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   still save."). Before Create the save bar says how many match now; the meta line adds "Updates itself as titles are
   added". Last comes Look, while the server takes artwork: closed, one line with the poster's thumbnail, "Poster: a
   collage of its titles" (an image, a new image, a collage once its titles have posters, none) and Change; open, the
-  112 px tile with its pencil menu (Upload image… for a JPEG, PNG or WebP of 10 MB at most, Paste a link… with the
+  112 px tile with its pencil menu (Upload image… for a JPEG, PNG or WebP of 10 MiB at most, Paste a link… with the
   "Poster image link" box, Use the collage or Remove poster), the caption, and "The new poster saves when you press
   Save." with Undo. The poster is part of the draft ("Poster not saved"); it saves after the collection, and one that
   fails stays with "Couldn't save the poster. …" and Retry while the card opens by itself. After a save without a
@@ -804,9 +807,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   votes" / "Anyone suggests, the room votes." (radius 12; the chosen one on #232328 with a half-foreground border, its
   icon full, the other's muted at 60 %). Create Watch Party opens an empty room that picks so. Host picks is chosen on
   every visit, as the web keeps the choice only on its page. Under the button the web's hint in 12 px muted text,
-  "Already know what you want to watch? Open its page and choose Start a Watch Party from the menu.", the entry's name in
-  the foreground; the web names it "Start a party with this", its sheet's title, while its menu says Start a Watch
-  Party, so the hint names the menu entry (Detail pages, above). Join a party says "Got a code from
+  "Already know what you want to watch? Open its page and choose Start a party with this from the menu.", the name in
+  the foreground: in the web's words, it names the start sheet's title, while the menu says Start a Watch Party (Detail
+  pages, above). Join a party says "Got a code from
   the host? Enter it here, or paste the invite link." (the web's second sentence, "Invite links open straight into the
   room.", is not true here: links opened from outside the app do not reach it). Its code box is the web's (Consolas
   18 px, 0.3 em apart, a code in capitals as it is typed, a pasted link as it is), its text kept in the middle; Paste and
@@ -818,13 +821,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   together.", or "Watch Party joined on another device" over the server's reason with Rejoin Watch Party; its close
   button leaves the room on this device and puts it away. "YOUR RECENT PARTIES" lists the rooms of the last day: the
   title, Live / Checking… / Status unavailable / Ended, "Your room" or "Joined", the code, and Rejoin while it is on or
-  ENDED once it is not. "How it works" has three steps ("Open a room / Create one here.", "Share the code", "Watch in
-  sync").
+  ENDED once it is not. "How it works" has three steps ("Open a room / Create one here, or start from any movie or
+  episode page.", "Share the code", "Watch in sync").
 - The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip ("● Live · 1 here", "Voting
   · 1 here" or "Playing · 3 here"; the code chip, copied by a click; Invite link; the host's "Host picks · you ▾" menu
   with Everyone votes, a plain "Host picks" / "Everyone votes" chip for guests and while playing; "● Connected",
-  Leave, and the host's red End room, asked first). The stage changes with the room: a card chosen from the shelf
-  (its facts and "WHO'S SEEN IT" for a movie, a season and episode to pick for a series; "Stage it for the room" in a
+  Leave, and the host's red End room, asked first as the web asks, "End watch party?" / "End the watch party for
+  everyone?" with End Party). The stage changes with the room: a card chosen from the shelf
+  (its facts and "WHO'S SEEN IT" for a movie, a season and its episodes, "E3 · The Hollow · 44m", to pick for a series;
+  "Stage it for the room" in a
   host-pick lobby for its host, "Suggest this" everywhere else, then "Suggested …" as the web's toast); "NOW PLAYING"
   with the room's clock ("12:04 · Playing · 3 here"), Rejoin playback and the host's Stop for everyone; the vote's
   hero ("FIRST SUGGESTION" or "LEADING · 2 OF 3 VOTES", "Evan Allmächtig (2007)", "1h 36m · PG · Fantasy, Komödie ·

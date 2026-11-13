@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.WatchParty;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
@@ -119,7 +120,7 @@ public sealed partial class PlayerViewModel
     {
         if (sender == _party)
         {
-            ShowPartyNotice(new PlaybackNotice("Watch Party", text, IsWarning: true));
+            ShowPartyNotice(new PlaybackNotice(AppText.Get("web.player.room.noticeTitle"), text, IsWarning: true));
         }
     }
 

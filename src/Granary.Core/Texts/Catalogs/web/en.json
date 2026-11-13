@@ -5,10 +5,22 @@
       "value": "Date Added"
     }
   ],
+  "catalog.sort.author": [
+    {
+      "type": 0,
+      "value": "Author"
+    }
+  ],
   "catalog.sort.imdbRating": [
     {
       "type": 0,
       "value": "IMDb Rating"
+    }
+  ],
+  "catalog.sort.narrator": [
+    {
+      "type": 0,
+      "value": "Narrator"
     }
   ],
   "catalog.sort.released": [
@@ -21,6 +33,12 @@
     {
       "type": 0,
       "value": "Resolution"
+    }
+  ],
+  "catalog.sort.series": [
+    {
+      "type": 0,
+      "value": "Series"
     }
   ],
   "catalog.sort.title": [
@@ -869,6 +887,128 @@
       "value": "Nothing here can be played."
     }
   ],
+  "watchParty.button.imReady": [
+    {
+      "type": 0,
+      "value": "I'm ready"
+    }
+  ],
+  "watchParty.button.suggest": [
+    {
+      "type": 0,
+      "value": "Suggest"
+    }
+  ],
+  "watchParty.connection.disconnected": [
+    {
+      "type": 0,
+      "value": "Disconnected"
+    }
+  ],
+  "watchParty.end.confirm": [
+    {
+      "type": 0,
+      "value": "End Party"
+    }
+  ],
+  "watchParty.options.everyoneVotes": [
+    {
+      "type": 0,
+      "value": "Everyone votes"
+    }
+  ],
+  "watchParty.page.start": [
+    {
+      "type": 0,
+      "value": "Start a party"
+    }
+  ],
+  "watchParty.seat.host": [
+    {
+      "type": 0,
+      "value": "Host"
+    }
+  ],
+  "watchParty.strip.guest": [
+    {
+      "type": 0,
+      "value": "The host decides what plays."
+    }
+  ],
+  "watchParty.strip.manager": [
+    {
+      "type": 0,
+      "value": "Queue one to put it up next."
+    }
+  ],
+  "watchParty.theHost": [
+    {
+      "type": 0,
+      "value": "The host"
+    }
+  ],
+  "watchParty.title": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "watchParty.whoSeen.inProgress": [
+    {
+      "type": 0,
+      "value": "In progress"
+    }
+  ],
+  "watchParty.whoSeen.title": [
+    {
+      "type": 0,
+      "value": "Who's seen it"
+    }
+  ],
+  "watchParty.whoSeen.watched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.audiobooks.duration.hours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " hr"
+    }
+  ],
+  "web.audiobooks.duration.hoursMinutes": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": " hr "
+    },
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.audiobooks.duration.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
   "web.auth.choosePassword.description": [
     {
       "type": 0,
@@ -1449,6 +1589,16 @@
       "value": "Filters"
     }
   ],
+  "web.catalog.filters.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Library "
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
   "web.catalog.filters.locked": [
     {
       "type": 0,
@@ -1900,6 +2050,138 @@
       "value": "Things you've saved to watch later."
     }
   ],
+  "web.catalog.rules.amount": [
+    {
+      "type": 0,
+      "value": "Amount"
+    }
+  ],
+  "web.catalog.rules.condition": [
+    {
+      "type": 0,
+      "value": "Condition"
+    }
+  ],
+  "web.catalog.rules.field": [
+    {
+      "type": 0,
+      "value": "Field"
+    }
+  ],
+  "web.catalog.rules.fieldEpisodeTitle": [
+    {
+      "type": 0,
+      "value": "Episode title"
+    }
+  ],
+  "web.catalog.rules.fieldLastRead": [
+    {
+      "type": 0,
+      "value": "Last read"
+    }
+  ],
+  "web.catalog.rules.fieldRead": [
+    {
+      "type": 0,
+      "value": "Read"
+    }
+  ],
+  "web.catalog.rules.no": [
+    {
+      "type": 0,
+      "value": "No"
+    }
+  ],
+  "web.catalog.rules.notEditable": [
+    {
+      "type": 0,
+      "value": "Not editable here"
+    }
+  ],
+  "web.catalog.rules.notEditableLabel": [
+    {
+      "type": 0,
+      "value": "Rule not editable here"
+    }
+  ],
+  "web.catalog.rules.pickOne": [
+    {
+      "type": 0,
+      "value": "Pick one"
+    }
+  ],
+  "web.catalog.rules.pickValue": [
+    {
+      "type": 0,
+      "value": "Pick a value"
+    }
+  ],
+  "web.catalog.rules.rangeFrom": [
+    {
+      "type": 0,
+      "value": "From"
+    }
+  ],
+  "web.catalog.rules.rangeTo": [
+    {
+      "type": 0,
+      "value": "To"
+    }
+  ],
+  "web.catalog.rules.remove": [
+    {
+      "type": 0,
+      "value": "Remove"
+    }
+  ],
+  "web.catalog.rules.removeRule": [
+    {
+      "type": 0,
+      "value": "Remove rule"
+    }
+  ],
+  "web.catalog.rules.unit": [
+    {
+      "type": 0,
+      "value": "Unit"
+    }
+  ],
+  "web.catalog.rules.unitDays": [
+    {
+      "type": 0,
+      "value": "days"
+    }
+  ],
+  "web.catalog.rules.unitMonths": [
+    {
+      "type": 0,
+      "value": "months"
+    }
+  ],
+  "web.catalog.rules.unitWeeks": [
+    {
+      "type": 0,
+      "value": "weeks"
+    }
+  ],
+  "web.catalog.rules.unitYears": [
+    {
+      "type": 0,
+      "value": "years"
+    }
+  ],
+  "web.catalog.rules.value": [
+    {
+      "type": 0,
+      "value": "Value"
+    }
+  ],
+  "web.catalog.rules.yes": [
+    {
+      "type": 0,
+      "value": "Yes"
+    }
+  ],
   "web.catalog.search.scopeLabel": [
     {
       "type": 0,
@@ -1948,10 +2230,164 @@
       "value": "More actions"
     }
   ],
+  "web.collections.addToCollection.added": [
+    {
+      "type": 0,
+      "value": "Added"
+    }
+  ],
+  "web.collections.addToCollection.createAndAdd": [
+    {
+      "type": 0,
+      "value": "Create and add"
+    }
+  ],
+  "web.collections.addToCollection.createFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't make the collection"
+    }
+  ],
+  "web.collections.addToCollection.find": [
+    {
+      "type": 0,
+      "value": "Find one of your collections"
+    }
+  ],
+  "web.collections.addToCollection.firstHelp": [
+    {
+      "type": 0,
+      "value": "Name it and "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " goes straight in. You can add more titles and change the order later."
+    }
+  ],
+  "web.collections.addToCollection.firstTitle": [
+    {
+      "type": 0,
+      "value": "Start your first collection"
+    }
+  ],
+  "web.collections.addToCollection.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't load your collections"
+    }
+  ],
+  "web.collections.addToCollection.loading": [
+    {
+      "type": 0,
+      "value": "Loading collections…"
+    }
+  ],
+  "web.collections.addToCollection.namePlaceholder": [
+    {
+      "type": 0,
+      "value": "e.g. Ghibli Night"
+    }
+  ],
+  "web.collections.addToCollection.newManual": [
+    {
+      "type": 0,
+      "value": "New manual collection"
+    }
+  ],
+  "web.collections.addToCollection.noMatches": [
+    {
+      "type": 0,
+      "value": "No collections match \""
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "\"."
+    }
+  ],
+  "web.collections.addToCollection.removed": [
+    {
+      "type": 0,
+      "value": "Removed"
+    }
+  ],
   "web.collections.addToCollection.title": [
     {
       "type": 0,
       "value": "Add to a collection"
+    }
+  ],
+  "web.collections.admin.editCollection": [
+    {
+      "type": 0,
+      "value": "Edit collection"
+    }
+  ],
+  "web.collections.builder.facetPlaceholder": [
+    {
+      "type": 5,
+      "value": "facet",
+      "options": {
+        "genre": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a genre"
+            }
+          ]
+        },
+        "studio": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a studio"
+            }
+          ]
+        },
+        "network": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a network"
+            }
+          ]
+        },
+        "country": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a country"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Pick a rating"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.builder.fieldActor": [
+    {
+      "type": 0,
+      "value": "Actor"
+    }
+  ],
+  "web.collections.builder.fieldAdded": [
+    {
+      "type": 0,
+      "value": "Added"
     }
   ],
   "web.collections.builder.fieldAudioLanguage": [
@@ -1960,16 +2396,1622 @@
       "value": "Audio language"
     }
   ],
+  "web.collections.builder.fieldBitrate": [
+    {
+      "type": 0,
+      "value": "Bitrate"
+    }
+  ],
+  "web.collections.builder.fieldContentRating": [
+    {
+      "type": 0,
+      "value": "Content rating"
+    }
+  ],
+  "web.collections.builder.fieldCountry": [
+    {
+      "type": 0,
+      "value": "Country"
+    }
+  ],
+  "web.collections.builder.fieldDecade": [
+    {
+      "type": 0,
+      "value": "Decade"
+    }
+  ],
+  "web.collections.builder.fieldDirector": [
+    {
+      "type": 0,
+      "value": "Director"
+    }
+  ],
+  "web.collections.builder.fieldDolbyVision": [
+    {
+      "type": 0,
+      "value": "Dolby Vision"
+    }
+  ],
+  "web.collections.builder.fieldFavorited": [
+    {
+      "type": 0,
+      "value": "Favorited"
+    }
+  ],
+  "web.collections.builder.fieldGenre": [
+    {
+      "type": 0,
+      "value": "Genre"
+    }
+  ],
+  "web.collections.builder.fieldHdr": [
+    {
+      "type": 0,
+      "value": "HDR"
+    }
+  ],
+  "web.collections.builder.fieldInProgress": [
+    {
+      "type": 0,
+      "value": "In progress"
+    }
+  ],
+  "web.collections.builder.fieldInWatchlist": [
+    {
+      "type": 0,
+      "value": "In watchlist"
+    }
+  ],
+  "web.collections.builder.fieldLastAirDate": [
+    {
+      "type": 0,
+      "value": "Latest episode aired"
+    }
+  ],
+  "web.collections.builder.fieldLastWatched": [
+    {
+      "type": 0,
+      "value": "Last watched"
+    }
+  ],
+  "web.collections.builder.fieldLatestEpisodeAdded": [
+    {
+      "type": 0,
+      "value": "Latest episode added"
+    }
+  ],
+  "web.collections.builder.fieldNetwork": [
+    {
+      "type": 0,
+      "value": "Network"
+    }
+  ],
+  "web.collections.builder.fieldOriginalLanguage": [
+    {
+      "type": 0,
+      "value": "Original language"
+    }
+  ],
+  "web.collections.builder.fieldProducer": [
+    {
+      "type": 0,
+      "value": "Producer"
+    }
+  ],
+  "web.collections.builder.fieldRatingImdb": [
+    {
+      "type": 0,
+      "value": "IMDb rating"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtAudience": [
+    {
+      "type": 0,
+      "value": "RT audience score"
+    }
+  ],
+  "web.collections.builder.fieldRatingRtCritic": [
+    {
+      "type": 0,
+      "value": "RT critic score"
+    }
+  ],
+  "web.collections.builder.fieldRatingTmdb": [
+    {
+      "type": 0,
+      "value": "TMDB rating"
+    }
+  ],
+  "web.collections.builder.fieldReleaseDate": [
+    {
+      "type": 0,
+      "value": "Release date"
+    }
+  ],
+  "web.collections.builder.fieldResolution": [
+    {
+      "type": 0,
+      "value": "Resolution"
+    }
+  ],
+  "web.collections.builder.fieldRuntime": [
+    {
+      "type": 0,
+      "value": "Duration"
+    }
+  ],
+  "web.collections.builder.fieldShowTitle": [
+    {
+      "type": 0,
+      "value": "Show title"
+    }
+  ],
+  "web.collections.builder.fieldStatus": [
+    {
+      "type": 0,
+      "value": "Status"
+    }
+  ],
+  "web.collections.builder.fieldStudio": [
+    {
+      "type": 0,
+      "value": "Studio"
+    }
+  ],
   "web.collections.builder.fieldSubtitleLanguage": [
     {
       "type": 0,
       "value": "Subtitle language"
     }
   ],
+  "web.collections.builder.fieldTitle": [
+    {
+      "type": 0,
+      "value": "Title"
+    }
+  ],
+  "web.collections.builder.fieldType": [
+    {
+      "type": 0,
+      "value": "Type"
+    }
+  ],
+  "web.collections.builder.fieldWatched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.collections.builder.fieldWriter": [
+    {
+      "type": 0,
+      "value": "Writer"
+    }
+  ],
+  "web.collections.builder.fieldYear": [
+    {
+      "type": 0,
+      "value": "Year"
+    }
+  ],
+  "web.collections.builder.groupFile": [
+    {
+      "type": 0,
+      "value": "File"
+    }
+  ],
+  "web.collections.builder.groupLibrary": [
+    {
+      "type": 0,
+      "value": "Library"
+    }
+  ],
+  "web.collections.builder.groupPeople": [
+    {
+      "type": 0,
+      "value": "People"
+    }
+  ],
+  "web.collections.builder.groupTitle": [
+    {
+      "type": 0,
+      "value": "Title"
+    }
+  ],
+  "web.collections.builder.groupYou": [
+    {
+      "type": 0,
+      "value": "You"
+    }
+  ],
+  "web.collections.builder.opAbove": [
+    {
+      "type": 0,
+      "value": "is above"
+    }
+  ],
+  "web.collections.builder.opAfter": [
+    {
+      "type": 0,
+      "value": "is after"
+    }
+  ],
+  "web.collections.builder.opAtLeast": [
+    {
+      "type": 0,
+      "value": "is at least"
+    }
+  ],
+  "web.collections.builder.opAtMost": [
+    {
+      "type": 0,
+      "value": "is at most"
+    }
+  ],
+  "web.collections.builder.opBefore": [
+    {
+      "type": 0,
+      "value": "is before"
+    }
+  ],
+  "web.collections.builder.opBeginsWith": [
+    {
+      "type": 0,
+      "value": "begins with"
+    }
+  ],
+  "web.collections.builder.opBelow": [
+    {
+      "type": 0,
+      "value": "is below"
+    }
+  ],
+  "web.collections.builder.opBetween": [
+    {
+      "type": 0,
+      "value": "is between"
+    }
+  ],
+  "web.collections.builder.opContains": [
+    {
+      "type": 0,
+      "value": "contains"
+    }
+  ],
+  "web.collections.builder.opEndsWith": [
+    {
+      "type": 0,
+      "value": "ends with"
+    }
+  ],
+  "web.collections.builder.opInLast": [
+    {
+      "type": 0,
+      "value": "is in the last"
+    }
+  ],
+  "web.collections.builder.opIs": [
+    {
+      "type": 0,
+      "value": "is"
+    }
+  ],
+  "web.collections.builder.opIsNot": [
+    {
+      "type": 0,
+      "value": "is not"
+    }
+  ],
+  "web.collections.builder.opNotContains": [
+    {
+      "type": 0,
+      "value": "does not contain"
+    }
+  ],
+  "web.collections.builder.opNotInLast": [
+    {
+      "type": 0,
+      "value": "is not in the last"
+    }
+  ],
+  "web.collections.builder.statusMatched": [
+    {
+      "type": 0,
+      "value": "matched"
+    }
+  ],
+  "web.collections.builder.statusPending": [
+    {
+      "type": 0,
+      "value": "pending"
+    }
+  ],
+  "web.collections.builder.statusUnmatched": [
+    {
+      "type": 0,
+      "value": "unmatched"
+    }
+  ],
+  "web.collections.builder.typeMovies": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.collections.builder.typeShows": [
+    {
+      "type": 0,
+      "value": "Shows"
+    }
+  ],
+  "web.collections.builder.unitKbps": [
+    {
+      "type": 0,
+      "value": "kbps"
+    }
+  ],
+  "web.collections.builder.unitMinutes": [
+    {
+      "type": 0,
+      "value": "min"
+    }
+  ],
+  "web.collections.copy.addToCollectionFootnote": [
+    {
+      "type": 0,
+      "value": "Only manual collections take titles by hand. Ticking saves right away."
+    }
+  ],
+  "web.collections.copy.allMyLibraries": [
+    {
+      "type": 0,
+      "value": "All my libraries"
+    }
+  ],
+  "web.collections.copy.allMyLibrariesInSentence": [
+    {
+      "type": 0,
+      "value": "all my libraries"
+    }
+  ],
+  "web.collections.copy.allYourLibraries": [
+    {
+      "type": 0,
+      "value": "All your libraries"
+    }
+  ],
+  "web.collections.copy.cantBeUndone": [
+    {
+      "type": 0,
+      "value": "This can't be undone."
+    }
+  ],
+  "web.collections.copy.conflictTitle": [
+    {
+      "type": 0,
+      "value": "This collection changed since you opened it."
+    }
+  ],
+  "web.collections.copy.createdButNotAdded": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Created, but couldn't add "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Created, but couldn't add "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.fieldDescription": [
+    {
+      "type": 0,
+      "value": "Description"
+    }
+  ],
+  "web.collections.copy.fieldLibraries": [
+    {
+      "type": 0,
+      "value": "Libraries"
+    }
+  ],
+  "web.collections.copy.fieldLimit": [
+    {
+      "type": 0,
+      "value": "Max titles"
+    }
+  ],
+  "web.collections.copy.fieldName": [
+    {
+      "type": 0,
+      "value": "Name"
+    }
+  ],
+  "web.collections.copy.fieldOrder": [
+    {
+      "type": 0,
+      "value": "Order"
+    }
+  ],
+  "web.collections.copy.fieldRules": [
+    {
+      "type": 0,
+      "value": "Rules"
+    }
+  ],
+  "web.collections.copy.fieldShowOnly": [
+    {
+      "type": 0,
+      "value": "Show only"
+    }
+  ],
+  "web.collections.copy.goodForManualPersonal": [
+    {
+      "type": 0,
+      "value": "a director's best, movie night, a watch order."
+    }
+  ],
+  "web.collections.copy.goodForSmart": [
+    {
+      "type": 0,
+      "value": "90s comedies, unwatched 4K, Christmas movies."
+    }
+  ],
+  "web.collections.copy.inCollections": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "=0": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Not in a collection yet"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "In "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " collection"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "In "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " collections"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.inThisCollection": [
+    {
+      "type": 0,
+      "value": "In this collection"
+    }
+  ],
+  "web.collections.copy.kindSentenceManual": [
+    {
+      "type": 0,
+      "value": "You pick the titles and put them in order."
+    }
+  ],
+  "web.collections.copy.kindSentenceSmart": [
+    {
+      "type": 0,
+      "value": "Titles that match your rules. It fills itself and keeps up as titles are added."
+    }
+  ],
+  "web.collections.copy.lookPoster": [
+    {
+      "type": 5,
+      "value": "state",
+      "options": {
+        "awaitingCollage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a collage once its titles have posters"
+            }
+          ]
+        },
+        "collage": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a collage of its titles"
+            }
+          ]
+        },
+        "new": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: a new image"
+            }
+          ]
+        },
+        "saved": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: an image"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster: none"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.copy.madeButNotAdded": [
+    {
+      "type": 0,
+      "value": "Made "
+    },
+    {
+      "type": 1,
+      "value": "collection"
+    },
+    {
+      "type": 0,
+      "value": ", but couldn't add "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.manualTitleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Manual · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Manual · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.nameItThenCreate": [
+    {
+      "type": 0,
+      "value": "Name it, then create it."
+    }
+  ],
+  "web.collections.copy.newCollection": [
+    {
+      "type": 0,
+      "value": "New collection"
+    }
+  ],
+  "web.collections.copy.newCollectionHelpPersonal": [
+    {
+      "type": 0,
+      "value": "What decides what's in it? Only you can change it. Next you'll name it, fill it and choose who sees it."
+    }
+  ],
+  "web.collections.copy.newCollectionNext": [
+    {
+      "type": 0,
+      "value": "Next: name it and fill it in, on its own page."
+    }
+  ],
+  "web.collections.copy.noLimit": [
+    {
+      "type": 0,
+      "value": "No limit"
+    }
+  ],
+  "web.collections.copy.noPoster": [
+    {
+      "type": 0,
+      "value": "No poster"
+    }
+  ],
+  "web.collections.copy.notCreatedYet": [
+    {
+      "type": 0,
+      "value": "Not created yet"
+    }
+  ],
+  "web.collections.copy.notSaved": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": " not saved"
+    }
+  ],
+  "web.collections.copy.orderHelp": [
+    {
+      "type": 0,
+      "value": "A profile that picks its own sort while browsing keeps that choice."
+    }
+  ],
+  "web.collections.copy.personalDeleteDescriptionShared": [
+    {
+      "type": 0,
+      "value": "It's removed for you and every profile you share it with. This can't be undone."
+    }
+  ],
+  "web.collections.copy.personalRulesNote": [
+    {
+      "type": 0,
+      "value": "“All my libraries” follows the libraries this profile can see. Rules about you, like Watched, are offered only here."
+    }
+  ],
+  "web.collections.copy.personalTabHelp": [
+    {
+      "type": 0,
+      "value": "For you and anyone you share it with"
+    }
+  ],
+  "web.collections.copy.posterAwaitsCollage": [
+    {
+      "type": 0,
+      "value": "A collage once its titles have posters"
+    }
+  ],
+  "web.collections.copy.posterIsCollage": [
+    {
+      "type": 0,
+      "value": "Collage of its titles"
+    }
+  ],
+  "web.collections.copy.previewEmpty": [
+    {
+      "type": 0,
+      "value": "No titles match yet"
+    }
+  ],
+  "web.collections.copy.previewEmptyHelp": [
+    {
+      "type": 0,
+      "value": "You can still save. Titles that match later join on their own."
+    }
+  ],
+  "web.collections.copy.previewFailed": [
+    {
+      "type": 0,
+      "value": "The preview didn't load. You can still save."
+    }
+  ],
+  "web.collections.copy.previewLive": [
+    {
+      "type": 0,
+      "value": "Live preview"
+    }
+  ],
+  "web.collections.copy.previewMatches": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " title matches"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total"
+            },
+            {
+              "type": 0,
+              "value": " titles match"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.removedTitle": [
+    {
+      "type": 0,
+      "value": "Removed "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.copy.rulesCaption": [
+    {
+      "type": 0,
+      "value": "Titles that match are in the collection. New matches join on their own."
+    }
+  ],
+  "web.collections.copy.saveFailedWithError": [
+    {
+      "type": 0,
+      "value": "Couldn't save · "
+    },
+    {
+      "type": 1,
+      "value": "error"
+    }
+  ],
+  "web.collections.copy.showOnTabLabel": [
+    {
+      "type": 0,
+      "value": "Show on the Collections tab"
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesHelp": [
+    {
+      "type": 0,
+      "value": "Every profile on this account sees it, minus titles it can't access. Nobody else on the server can see it."
+    }
+  ],
+  "web.collections.copy.showToOtherProfilesLabel": [
+    {
+      "type": 0,
+      "value": "Show to other profiles"
+    }
+  ],
+  "web.collections.copy.slotPoster": [
+    {
+      "type": 0,
+      "value": "Poster"
+    }
+  ],
+  "web.collections.copy.smartCreateHint": [
+    {
+      "type": 1,
+      "value": "matches"
+    },
+    {
+      "type": 0,
+      "value": " now. New ones join on their own."
+    }
+  ],
+  "web.collections.copy.smartCreateHintNone": [
+    {
+      "type": 0,
+      "value": "Nothing matches yet. Titles that match later join on their own."
+    }
+  ],
+  "web.collections.copy.smartUpdatesItself": [
+    {
+      "type": 0,
+      "value": "Updates itself as titles are added"
+    }
+  ],
+  "web.collections.copy.storedSortLine": [
+    {
+      "type": 0,
+      "value": "A saved default sort, "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    },
+    {
+      "type": 0,
+      "value": ", wins over this Order."
+    }
+  ],
+  "web.collections.copy.titlesAlreadySaved": [
+    {
+      "type": 0,
+      "value": "Titles are already saved."
+    }
+  ],
+  "web.collections.copy.titlesCaptionCreate": [
+    {
+      "type": 0,
+      "value": "Pick titles now. They're added when you press Create collection."
+    }
+  ],
+  "web.collections.copy.titlesCaptionPersonal": [
+    {
+      "type": 0,
+      "value": "In the order you see them. Titles save as you add, remove or drag them."
+    }
+  ],
+  "web.collections.copy.titlesEmpty": [
+    {
+      "type": 0,
+      "value": "No titles yet. Search above to add the first."
+    }
+  ],
+  "web.collections.copy.titlesReadyToAdd": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " title ready to add"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " titles ready to add"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.titlesSaved": [
+    {
+      "type": 0,
+      "value": "Saved"
+    }
+  ],
+  "web.collections.copy.unshareConsequence": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": " loses it, including rows they made from it."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "names"
+            },
+            {
+              "type": 0,
+              "value": " lose it, including rows they made from it."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.copy.unshareConsequenceOthers": [
+    {
+      "type": 0,
+      "value": "Other profiles lose it, including rows they made from it."
+    }
+  ],
+  "web.collections.copy.unshareWarning": [
+    {
+      "type": 0,
+      "value": "When you save, "
+    },
+    {
+      "type": 1,
+      "value": "consequence"
+    }
+  ],
   "web.collections.deleteDialog.delete": [
     {
       "type": 0,
       "value": "Delete"
+    }
+  ],
+  "web.collections.details.content": [
+    {
+      "type": 0,
+      "value": "Content"
+    }
+  ],
+  "web.collections.details.descriptionLabel": [
+    {
+      "type": 1,
+      "value": "field"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "muted",
+      "children": [
+        {
+          "type": 0,
+          "value": "Optional"
+        }
+      ]
+    }
+  ],
+  "web.collections.details.label": [
+    {
+      "type": 0,
+      "value": "Name and description"
+    }
+  ],
+  "web.collections.details.showOnlyHelp": [
+    {
+      "type": 0,
+      "value": "Hides titles while browsing, for example the ones you've finished. Nothing is removed."
+    }
+  ],
+  "web.collections.details.watchState": [
+    {
+      "type": 0,
+      "value": "Watch state"
+    }
+  ],
+  "web.collections.displayFilters.media.all": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.displayFilters.media.movie": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.collections.displayFilters.media.series": [
+    {
+      "type": 0,
+      "value": "Shows"
+    }
+  ],
+  "web.collections.displayFilters.watch.all": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.displayFilters.watch.unwatched": [
+    {
+      "type": 0,
+      "value": "Unwatched"
+    }
+  ],
+  "web.collections.displayFilters.watch.watched": [
+    {
+      "type": 0,
+      "value": "Watched"
+    }
+  ],
+  "web.collections.editor.backToCollections": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.collections.editor.conflictFields": [
+    {
+      "type": 1,
+      "value": "fields"
+    },
+    {
+      "type": 0,
+      "value": " changed in both places."
+    }
+  ],
+  "web.collections.editor.conflictSaveAgain": [
+    {
+      "type": 0,
+      "value": "Save again to keep your changes."
+    }
+  ],
+  "web.collections.editor.createCollection": [
+    {
+      "type": 0,
+      "value": "Create collection"
+    }
+  ],
+  "web.collections.editor.keepMine": [
+    {
+      "type": 0,
+      "value": "Keep mine"
+    }
+  ],
+  "web.collections.editor.rowLinkLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    }
+  ],
+  "web.collections.editor.rulesHeading": [
+    {
+      "type": 0,
+      "value": "Rules"
+    }
+  ],
+  "web.collections.editor.useTheirs": [
+    {
+      "type": 0,
+      "value": "Use theirs"
+    }
+  ],
+  "web.collections.editorHeader.open": [
+    {
+      "type": 0,
+      "value": "Open"
+    }
+  ],
+  "web.collections.editorPage.allCollections": [
+    {
+      "type": 0,
+      "value": "All collections"
+    }
+  ],
+  "web.collections.editorPage.loadFailedTitle": [
+    {
+      "type": 0,
+      "value": "Couldn't load this collection"
+    }
+  ],
+  "web.collections.editorPage.loading": [
+    {
+      "type": 0,
+      "value": "Loading collection editor…"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonal": [
+    {
+      "type": 0,
+      "value": "This collection isn't available"
+    }
+  ],
+  "web.collections.editorPage.notFoundPersonalHelp": [
+    {
+      "type": 0,
+      "value": "It may have been deleted, or you may not have access to it."
+    }
+  ],
+  "web.collections.fields.artworkPreview": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster preview"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Backdrop preview"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkRemovedOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The poster is removed when you save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The backdrop is removed when you save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSaveFailed": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Couldn't save the poster. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Couldn't save the backdrop. "
+            },
+            {
+              "type": 1,
+              "value": "error"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.artworkSavesOnSave": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The new poster saves when you press Save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "The new backdrop saves when you press Save. "
+            },
+            {
+              "type": 8,
+              "value": "undo",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "Undo"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.changeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Change poster"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Change backdrop"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.clear": [
+    {
+      "type": 0,
+      "value": "Clear"
+    }
+  ],
+  "web.collections.fields.clearStoredSort": [
+    {
+      "type": 0,
+      "value": "Clear the saved default sort, "
+    },
+    {
+      "type": 1,
+      "value": "sort"
+    }
+  ],
+  "web.collections.fields.collage": [
+    {
+      "type": 0,
+      "value": "Collage"
+    }
+  ],
+  "web.collections.fields.direction": [
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "za": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        },
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Newest first"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Oldest first"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Highest first"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Lowest first"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.directionLabel": [
+    {
+      "type": 0,
+      "value": "Direction"
+    }
+  ],
+  "web.collections.fields.imageLink": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Poster image link"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Backdrop image link"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.maxTitlesSuffix": [
+    {
+      "type": 0,
+      "value": "max titles"
+    }
+  ],
+  "web.collections.fields.order": [
+    {
+      "type": 0,
+      "value": "Order"
+    }
+  ],
+  "web.collections.fields.pasteALink": [
+    {
+      "type": 0,
+      "value": "Paste a link…"
+    }
+  ],
+  "web.collections.fields.removeArtwork": [
+    {
+      "type": 5,
+      "value": "slot",
+      "options": {
+        "poster": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Remove poster"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Remove backdrop"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortAlphabetical": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "az": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A–Z"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Z–A"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.sortBy": [
+    {
+      "type": 0,
+      "value": "Sort by"
+    }
+  ],
+  "web.collections.fields.sortWithDirection": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 5,
+      "value": "direction",
+      "options": {
+        "newest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "newest first"
+            }
+          ]
+        },
+        "oldest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "oldest first"
+            }
+          ]
+        },
+        "highest": {
+          "value": [
+            {
+              "type": 0,
+              "value": "highest first"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "lowest first"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.fields.uploadImage": [
+    {
+      "type": 0,
+      "value": "Upload image…"
+    }
+  ],
+  "web.collections.fields.useLink": [
+    {
+      "type": 0,
+      "value": "Use link"
+    }
+  ],
+  "web.collections.fields.useTheCollage": [
+    {
+      "type": 0,
+      "value": "Use the collage"
     }
   ],
   "web.collections.guidedRules.any": [
@@ -2066,6 +4108,346 @@
       "value": "e.g. 2025"
     }
   ],
+  "web.collections.list.syncFailed": [
+    {
+      "type": 0,
+      "value": "Sync failed"
+    }
+  ],
+  "web.collections.list.syncingNow": [
+    {
+      "type": 0,
+      "value": "Syncing now"
+    }
+  ],
+  "web.collections.look.change": [
+    {
+      "type": 0,
+      "value": "Change"
+    }
+  ],
+  "web.collections.look.heading": [
+    {
+      "type": 0,
+      "value": "Look"
+    }
+  ],
+  "web.collections.manual.add": [
+    {
+      "type": 0,
+      "value": "Add"
+    }
+  ],
+  "web.collections.manual.addFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't add "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.addTitle": [
+    {
+      "type": 0,
+      "value": "Add a title"
+    }
+  ],
+  "web.collections.manual.heading": [
+    {
+      "type": 0,
+      "value": "Titles"
+    }
+  ],
+  "web.collections.manual.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't load the titles."
+    }
+  ],
+  "web.collections.manual.moveTitle": [
+    {
+      "type": 0,
+      "value": "Move "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.noMatches": [
+    {
+      "type": 0,
+      "value": "No titles match."
+    }
+  ],
+  "web.collections.manual.pagedNote": [
+    {
+      "type": 0,
+      "value": "Showing up to 200 titles. Reordering is available when the whole collection fits on one page."
+    }
+  ],
+  "web.collections.manual.reloadFromStart": [
+    {
+      "type": 0,
+      "value": "Reload from start"
+    }
+  ],
+  "web.collections.manual.removeFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.removeTitle": [
+    {
+      "type": 0,
+      "value": "Remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.collections.manual.restoreFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't put back "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "detail"
+    }
+  ],
+  "web.collections.manual.saving": [
+    {
+      "type": 0,
+      "value": "Saving…"
+    }
+  ],
+  "web.collections.manual.searchFailed": [
+    {
+      "type": 0,
+      "value": "The search didn't work."
+    }
+  ],
+  "web.collections.manual.searching": [
+    {
+      "type": 0,
+      "value": "Searching…"
+    }
+  ],
+  "web.collections.manual.showAll": [
+    {
+      "type": 0,
+      "value": "Show all "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.collections.manual.showFewer": [
+    {
+      "type": 0,
+      "value": "Show fewer"
+    }
+  ],
+  "web.collections.manual.tryAgainSentence": [
+    {
+      "type": 0,
+      "value": "Try again."
+    }
+  ],
+  "web.collections.manual.typeLabel": [
+    {
+      "type": 5,
+      "value": "type",
+      "options": {
+        "movie": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Movie"
+            }
+          ]
+        },
+        "series": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Show"
+            }
+          ]
+        },
+        "season": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Season"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Episode"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.collections.manual.undo": [
+    {
+      "type": 0,
+      "value": "Undo"
+    }
+  ],
+  "web.collections.metaLine.titleCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " title"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " titles"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.collections.newPicker.goodFor": [
+    {
+      "type": 0,
+      "value": "Good for"
+    }
+  ],
+  "web.collections.page.filterAll": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.collections.page.filterLabel": [
+    {
+      "type": 0,
+      "value": "Show"
+    }
+  ],
+  "web.collections.page.loadMore": [
+    {
+      "type": 0,
+      "value": "Load more"
+    }
+  ],
+  "web.collections.page.stopSharing": [
+    {
+      "type": 0,
+      "value": "Stop sharing"
+    }
+  ],
+  "web.collections.page.stopSharingTitle": [
+    {
+      "type": 0,
+      "value": "Stop sharing "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "?"
+    }
+  ],
+  "web.collections.page.subtitle": [
+    {
+      "type": 0,
+      "value": "Yours and the server's."
+    }
+  ],
+  "web.collections.page.subtitleShared": [
+    {
+      "type": 0,
+      "value": "Yours, the ones other profiles share with you, and the server's."
+    }
+  ],
+  "web.collections.page.title": [
+    {
+      "type": 0,
+      "value": "Collections"
+    }
+  ],
+  "web.collections.page.wallMine": [
+    {
+      "type": 0,
+      "value": "Your collections"
+    }
+  ],
+  "web.collections.page.wallServer": [
+    {
+      "type": 0,
+      "value": "Server collections"
+    }
+  ],
+  "web.collections.page.wallShared": [
+    {
+      "type": 0,
+      "value": "Shared with me"
+    }
+  ],
   "web.collections.pageActions.deleteTitle": [
     {
       "type": 0,
@@ -2084,6 +4466,104 @@
     {
       "type": 0,
       "value": "Edit"
+    }
+  ],
+  "web.collections.personalOwnership.anotherProfile": [
+    {
+      "type": 0,
+      "value": "Another profile"
+    }
+  ],
+  "web.collections.posterCard.byOwner": [
+    {
+      "type": 0,
+      "value": "by "
+    },
+    {
+      "type": 1,
+      "value": "owner"
+    }
+  ],
+  "web.collections.preview.matchingTitles": [
+    {
+      "type": 0,
+      "value": "Matching titles"
+    }
+  ],
+  "web.collections.preview.showing": [
+    {
+      "type": 0,
+      "value": "showing "
+    },
+    {
+      "type": 1,
+      "value": "shown"
+    }
+  ],
+  "web.collections.scope.changedWhileEditing": [
+    {
+      "type": 0,
+      "value": "This collection changed while you were editing. Reload it and review your changes before saving again."
+    }
+  ],
+  "web.collections.tags.shared": [
+    {
+      "type": 0,
+      "value": "Shared"
+    }
+  ],
+  "web.collections.toast.addFailed": [
+    {
+      "type": 0,
+      "value": "Failed to add to collection"
+    }
+  ],
+  "web.collections.toast.notShared": [
+    {
+      "type": 0,
+      "value": "Only you see it now"
+    }
+  ],
+  "web.collections.toast.removeItemFailed": [
+    {
+      "type": 0,
+      "value": "Failed to remove item"
+    }
+  ],
+  "web.collections.toast.sharedWithProfiles": [
+    {
+      "type": 0,
+      "value": "Shown to other profiles"
+    }
+  ],
+  "web.collections.toast.sharingFailed": [
+    {
+      "type": 0,
+      "value": "Couldn't change sharing"
+    }
+  ],
+  "web.collections.types.kindManual": [
+    {
+      "type": 0,
+      "value": "Manual"
+    }
+  ],
+  "web.collections.types.kindSmart": [
+    {
+      "type": 0,
+      "value": "Smart"
+    }
+  ],
+  "web.collections.types.kindSynced": [
+    {
+      "type": 0,
+      "value": "Synced list"
+    }
+  ],
+  "web.collections.whereItShows.heading": [
+    {
+      "type": 0,
+      "value": "Where it shows"
     }
   ],
   "web.common.devicePlatform.kind.desktop": [
@@ -2252,6 +4732,12 @@
       "value": "Failed to delete"
     }
   ],
+  "web.common.toast.collections.deleted": [
+    {
+      "type": 0,
+      "value": "Collection deleted"
+    }
+  ],
   "web.common.toast.subtitles.resetPreferenceFailed": [
     {
       "type": 0,
@@ -2328,6 +4814,32 @@
     {
       "type": 0,
       "value": "Failed to update your watchlist"
+    }
+  ],
+  "web.common.ui.carousel.loadFailed": [
+    {
+      "type": 0,
+      "value": "Could not load "
+    },
+    {
+      "type": 1,
+      "value": "title_lower"
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.common.ui.carousel.scrollLeft": [
+    {
+      "type": 0,
+      "value": "Scroll left"
+    }
+  ],
+  "web.common.ui.carousel.scrollRight": [
+    {
+      "type": 0,
+      "value": "Scroll right"
     }
   ],
   "web.common.ui.loadError.generic": [
@@ -3416,6 +5928,519 @@
       "value": "Version"
     }
   ],
+  "web.home.addRow.libraries": [
+    {
+      "type": 0,
+      "value": "Libraries"
+    }
+  ],
+  "web.home.addRow.params.mediaType": [
+    {
+      "type": 0,
+      "value": "Media type"
+    }
+  ],
+  "web.home.addRow.rules.addAndGroup": [
+    {
+      "type": 0,
+      "value": "Add an “and” group"
+    }
+  ],
+  "web.home.addRow.rules.addOrGroup": [
+    {
+      "type": 0,
+      "value": "Add an “or” group"
+    }
+  ],
+  "web.home.addRow.rules.addRule": [
+    {
+      "type": 0,
+      "value": "Add rule"
+    }
+  ],
+  "web.home.addRow.rules.groupMatchLabel": [
+    {
+      "type": 0,
+      "value": "How group "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    },
+    {
+      "type": 0,
+      "value": "'s rules combine"
+    }
+  ],
+  "web.home.addRow.rules.groupSentence": [
+    {
+      "type": 8,
+      "value": "join",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "titles that match"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "match",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "of these:"
+        }
+      ]
+    }
+  ],
+  "web.home.addRow.rules.howGroupsCombine": [
+    {
+      "type": 0,
+      "value": "How the groups combine"
+    }
+  ],
+  "web.home.addRow.rules.howRulesCombine": [
+    {
+      "type": 0,
+      "value": "How the rules combine"
+    }
+  ],
+  "web.home.addRow.rules.joinAnd": [
+    {
+      "type": 0,
+      "value": "and"
+    }
+  ],
+  "web.home.addRow.rules.joinOr": [
+    {
+      "type": 0,
+      "value": "or"
+    }
+  ],
+  "web.home.addRow.rules.kindOfTitles": [
+    {
+      "type": 0,
+      "value": "Kind of titles"
+    }
+  ],
+  "web.home.addRow.rules.matchAll": [
+    {
+      "type": 0,
+      "value": "all"
+    }
+  ],
+  "web.home.addRow.rules.matchAny": [
+    {
+      "type": 0,
+      "value": "any"
+    }
+  ],
+  "web.home.addRow.rules.noRulesCollectionYet": [
+    {
+      "type": 0,
+      "value": "No rules yet. Add one to choose which titles it holds."
+    }
+  ],
+  "web.home.addRow.rules.removeGroup": [
+    {
+      "type": 0,
+      "value": "Remove group "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.home.addRow.rules.scopeAll": [
+    {
+      "type": 0,
+      "value": "all titles"
+    }
+  ],
+  "web.home.addRow.rules.scopeAudiobook": [
+    {
+      "type": 0,
+      "value": "audiobooks"
+    }
+  ],
+  "web.home.addRow.rules.scopeEbook": [
+    {
+      "type": 0,
+      "value": "ebooks"
+    }
+  ],
+  "web.home.addRow.rules.scopeEpisode": [
+    {
+      "type": 0,
+      "value": "episodes"
+    }
+  ],
+  "web.home.addRow.rules.scopeManga": [
+    {
+      "type": 0,
+      "value": "manga"
+    }
+  ],
+  "web.home.addRow.rules.scopeMovie": [
+    {
+      "type": 0,
+      "value": "movies"
+    }
+  ],
+  "web.home.addRow.rules.scopeSeries": [
+    {
+      "type": 0,
+      "value": "shows"
+    }
+  ],
+  "web.home.addRow.rules.scopeVideo": [
+    {
+      "type": 0,
+      "value": "movies and shows"
+    }
+  ],
+  "web.home.addRow.rules.sentenceAll": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentenceNamed": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from the"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 6,
+          "value": "count",
+          "options": {
+            "one": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "library"
+                }
+              ]
+            },
+            "other": {
+              "value": [
+                {
+                  "type": 0,
+                  "value": "libraries"
+                }
+              ]
+            }
+          },
+          "offset": 0,
+          "pluralType": "cardinal"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
+  "web.home.addRow.rules.sentencePicked": [
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "Show"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "scope",
+      "children": []
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "w",
+      "children": [
+        {
+          "type": 0,
+          "value": "from the"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "libraries",
+      "children": []
+    },
+    {
+      "type": 5,
+      "value": "rules",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 8,
+              "value": "break",
+              "children": []
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "that match"
+                }
+              ]
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "match",
+              "children": []
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 8,
+              "value": "w",
+              "children": [
+                {
+                  "type": 0,
+                  "value": "of these:"
+                }
+              ]
+            }
+          ]
+        },
+        "other": {
+          "value": []
+        }
+      }
+    }
+  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,
@@ -3670,6 +6695,18 @@
     {
       "type": 0,
       "value": "Tagline"
+    }
+  ],
+  "web.item.images.tooLarge": [
+    {
+      "type": 0,
+      "value": "Images can be at most 10 MiB"
+    }
+  ],
+  "web.item.images.wrongType": [
+    {
+      "type": 0,
+      "value": "Choose a JPEG, PNG or WebP image"
     }
   ],
   "web.item.menu.addToFavorites": [
@@ -4028,6 +7065,662 @@
       "value": "Save"
     }
   ],
+  "web.notifications.inbox.daysAgo": [
+    {
+      "type": 1,
+      "value": "days"
+    },
+    {
+      "type": 0,
+      "value": "d ago"
+    }
+  ],
+  "web.notifications.inbox.emptyAll": [
+    {
+      "type": 0,
+      "value": "No notifications yet"
+    }
+  ],
+  "web.notifications.inbox.emptyHint": [
+    {
+      "type": 0,
+      "value": "You will be notified here when new episodes arrive for series you favorite, watchlist, or are watching."
+    }
+  ],
+  "web.notifications.inbox.emptyUnread": [
+    {
+      "type": 0,
+      "value": "No unread notifications"
+    }
+  ],
+  "web.notifications.inbox.episodeLine": [
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.inbox.filterAll": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.notifications.inbox.filterSeries": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
+  "web.notifications.inbox.filterUnread": [
+    {
+      "type": 0,
+      "value": "Unread"
+    }
+  ],
+  "web.notifications.inbox.filterUnreadCount": [
+    {
+      "type": 0,
+      "value": "Unread ("
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.notifications.inbox.followedMovieAvailable": [
+    {
+      "type": 0,
+      "value": "A movie you followed is now available"
+    }
+  ],
+  "web.notifications.inbox.followedSeriesAvailable": [
+    {
+      "type": 0,
+      "value": "A series you followed is now available"
+    }
+  ],
+  "web.notifications.inbox.followedTitleAvailable": [
+    {
+      "type": 0,
+      "value": "A title you followed is now available"
+    }
+  ],
+  "web.notifications.inbox.genericTitle": [
+    {
+      "type": 0,
+      "value": "Notification"
+    }
+  ],
+  "web.notifications.inbox.hoursAgo": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "h ago"
+    }
+  ],
+  "web.notifications.inbox.justNow": [
+    {
+      "type": 0,
+      "value": "Just now"
+    }
+  ],
+  "web.notifications.inbox.loadFailed": [
+    {
+      "type": 0,
+      "value": "Could not load notifications. "
+    },
+    {
+      "type": 8,
+      "value": "reload",
+      "children": [
+        {
+          "type": 0,
+          "value": "Reload notifications"
+        }
+      ]
+    }
+  ],
+  "web.notifications.inbox.loadMore": [
+    {
+      "type": 0,
+      "value": "Load more"
+    }
+  ],
+  "web.notifications.inbox.markAllFailed": [
+    {
+      "type": 0,
+      "value": "Could not mark the displayed notifications read. "
+    },
+    {
+      "type": 8,
+      "value": "reload",
+      "children": [
+        {
+          "type": 0,
+          "value": "Reload inbox"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " before trying again."
+    }
+  ],
+  "web.notifications.inbox.markAllRead": [
+    {
+      "type": 0,
+      "value": "Mark all read"
+    }
+  ],
+  "web.notifications.inbox.markRead": [
+    {
+      "type": 0,
+      "value": "Mark as read"
+    }
+  ],
+  "web.notifications.inbox.mediaRequest": [
+    {
+      "type": 0,
+      "value": "Media request"
+    }
+  ],
+  "web.notifications.inbox.minutesAgo": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "m ago"
+    }
+  ],
+  "web.notifications.inbox.newEpisode": [
+    {
+      "type": 0,
+      "value": "New episode available"
+    }
+  ],
+  "web.notifications.inbox.requestApproved": [
+    {
+      "type": 0,
+      "value": "Your request was approved"
+    }
+  ],
+  "web.notifications.inbox.requestAvailable": [
+    {
+      "type": 0,
+      "value": "Request available"
+    }
+  ],
+  "web.notifications.inbox.requestAvailableBody": [
+    {
+      "type": 0,
+      "value": "Your request is now available"
+    }
+  ],
+  "web.notifications.inbox.requestDeclined": [
+    {
+      "type": 0,
+      "value": "Your request was declined"
+    }
+  ],
+  "web.notifications.inbox.requestDeclinedReason": [
+    {
+      "type": 0,
+      "value": "Your request was declined — "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.notifications.inbox.requestedMovieAvailable": [
+    {
+      "type": 0,
+      "value": "Your requested movie is now available"
+    }
+  ],
+  "web.notifications.inbox.requestedSeriesAvailable": [
+    {
+      "type": 0,
+      "value": "Your requested series is now available"
+    }
+  ],
+  "web.notifications.inbox.seeSeriesCanNotify": [
+    {
+      "type": 0,
+      "value": "See which series can notify you"
+    }
+  ],
+  "web.notifications.inbox.title": [
+    {
+      "type": 0,
+      "value": "Notifications"
+    }
+  ],
+  "web.notifications.preferences.continueWatching": [
+    {
+      "type": 0,
+      "value": "Continue Watching"
+    }
+  ],
+  "web.notifications.preferences.continueWatchingDescription": [
+    {
+      "type": 0,
+      "value": "Series you are actively watching"
+    }
+  ],
+  "web.notifications.preferences.enabled": [
+    {
+      "type": 0,
+      "value": "Notifications"
+    }
+  ],
+  "web.notifications.preferences.enabledDescription": [
+    {
+      "type": 0,
+      "value": "Master switch for this profile"
+    }
+  ],
+  "web.notifications.preferences.favorites": [
+    {
+      "type": 0,
+      "value": "Favorites"
+    }
+  ],
+  "web.notifications.preferences.favoritesDescription": [
+    {
+      "type": 0,
+      "value": "New episodes of favorited series"
+    }
+  ],
+  "web.notifications.preferences.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn’t load preferences."
+    }
+  ],
+  "web.notifications.preferences.nextUp": [
+    {
+      "type": 0,
+      "value": "Next Up"
+    }
+  ],
+  "web.notifications.preferences.nextUpDescription": [
+    {
+      "type": 0,
+      "value": "The next episode after your progress"
+    }
+  ],
+  "web.notifications.preferences.open": [
+    {
+      "type": 0,
+      "value": "Preferences"
+    }
+  ],
+  "web.notifications.preferences.seeSeries": [
+    {
+      "type": 0,
+      "value": "See which series notify you"
+    }
+  ],
+  "web.notifications.preferences.watchlist": [
+    {
+      "type": 0,
+      "value": "Watchlist"
+    }
+  ],
+  "web.notifications.preferences.watchlistDescription": [
+    {
+      "type": 0,
+      "value": "New episodes of watchlisted series"
+    }
+  ],
+  "web.notifications.queries.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.notifications.queries.markReadFailed": [
+    {
+      "type": 0,
+      "value": "Failed to mark notification read"
+    }
+  ],
+  "web.notifications.queries.muteFailed": [
+    {
+      "type": 0,
+      "value": "Failed to mute the series"
+    }
+  ],
+  "web.notifications.queries.muted": [
+    {
+      "type": 0,
+      "value": "Muted "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.queries.savePreferencesFailed": [
+    {
+      "type": 0,
+      "value": "Failed to save notification preferences"
+    }
+  ],
+  "web.notifications.queries.undo": [
+    {
+      "type": 0,
+      "value": "Undo"
+    }
+  ],
+  "web.notifications.queries.unmuteFailed": [
+    {
+      "type": 0,
+      "value": "Failed to unmute the series"
+    }
+  ],
+  "web.notifications.reason.continueWatching": [
+    {
+      "type": 0,
+      "value": "Continue Watching"
+    }
+  ],
+  "web.notifications.reason.favorite": [
+    {
+      "type": 0,
+      "value": "Favorite"
+    }
+  ],
+  "web.notifications.reason.nextUp": [
+    {
+      "type": 0,
+      "value": "Next Up"
+    }
+  ],
+  "web.notifications.reason.watchlist": [
+    {
+      "type": 0,
+      "value": "Watchlist"
+    }
+  ],
+  "web.notifications.series.allReasons": [
+    {
+      "type": 0,
+      "value": "All reasons"
+    }
+  ],
+  "web.notifications.series.anyEpisodeAfter": [
+    {
+      "type": 0,
+      "value": "Any episode after "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.notifications.series.anyNewEpisode": [
+    {
+      "type": 0,
+      "value": "Any new episode"
+    }
+  ],
+  "web.notifications.series.empty": [
+    {
+      "type": 0,
+      "value": "No series notify you yet"
+    }
+  ],
+  "web.notifications.series.emptyHint": [
+    {
+      "type": 0,
+      "value": "Series you favorite, add to your watchlist, or start watching show up here."
+    }
+  ],
+  "web.notifications.series.filterByReason": [
+    {
+      "type": 0,
+      "value": "Filter by reason"
+    }
+  ],
+  "web.notifications.series.intro": [
+    {
+      "type": 0,
+      "value": "New episodes of these series notify this profile. Change which reasons count in "
+    },
+    {
+      "type": 8,
+      "value": "prefs",
+      "children": [
+        {
+          "type": 0,
+          "value": "Preferences"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.notifications.series.introMute": [
+    {
+      "type": 0,
+      "value": "New episodes of these series notify this profile. Change which reasons count in "
+    },
+    {
+      "type": 8,
+      "value": "prefs",
+      "children": [
+        {
+          "type": 0,
+          "value": "Preferences"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": ", or mute one series."
+    }
+  ],
+  "web.notifications.series.loadFailed": [
+    {
+      "type": 0,
+      "value": "Could not load the series that notify you. "
+    },
+    {
+      "type": 8,
+      "value": "retry",
+      "children": [
+        {
+          "type": 0,
+          "value": "Retry"
+        }
+      ]
+    }
+  ],
+  "web.notifications.series.loadMoreFailed": [
+    {
+      "type": 0,
+      "value": "Couldn’t load more series."
+    }
+  ],
+  "web.notifications.series.mute": [
+    {
+      "type": 0,
+      "value": "Mute"
+    }
+  ],
+  "web.notifications.series.muteHint": [
+    {
+      "type": 0,
+      "value": "Stop notifying me about new episodes"
+    }
+  ],
+  "web.notifications.series.muteSeries": [
+    {
+      "type": 0,
+      "value": "Mute "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.series.muted": [
+    {
+      "type": 0,
+      "value": "Muted"
+    }
+  ],
+  "web.notifications.series.nameList": [
+    {
+      "type": 1,
+      "value": "names"
+    },
+    {
+      "type": 0,
+      "value": " and "
+    },
+    {
+      "type": 1,
+      "value": "last"
+    }
+  ],
+  "web.notifications.series.noMatch": [
+    {
+      "type": 0,
+      "value": "No series match. Try another search or reason."
+    }
+  ],
+  "web.notifications.series.notificationsOff": [
+    {
+      "type": 0,
+      "value": "Notifications are off"
+    }
+  ],
+  "web.notifications.series.reasonOff": [
+    {
+      "type": 0,
+      "value": "(off)"
+    }
+  ],
+  "web.notifications.series.reasonsOff": [
+    {
+      "type": 1,
+      "value": "names"
+    },
+    {
+      "type": 0,
+      "value": " notifications are off"
+    }
+  ],
+  "web.notifications.series.search": [
+    {
+      "type": 0,
+      "value": "Search series"
+    }
+  ],
+  "web.notifications.series.sort": [
+    {
+      "type": 0,
+      "value": "Sort"
+    }
+  ],
+  "web.notifications.series.sortLatestEpisode": [
+    {
+      "type": 0,
+      "value": "Latest episode"
+    }
+  ],
+  "web.notifications.series.sortRecentlyAdded": [
+    {
+      "type": 0,
+      "value": "Recently added"
+    }
+  ],
+  "web.notifications.series.sortReleaseYear": [
+    {
+      "type": 0,
+      "value": "Release year"
+    }
+  ],
+  "web.notifications.series.sortTitleAsc": [
+    {
+      "type": 0,
+      "value": "Title (A–Z)"
+    }
+  ],
+  "web.notifications.series.sortTitleDesc": [
+    {
+      "type": 0,
+      "value": "Title (Z–A)"
+    }
+  ],
+  "web.notifications.series.unmute": [
+    {
+      "type": 0,
+      "value": "Unmute"
+    }
+  ],
+  "web.notifications.series.unmuteHint": [
+    {
+      "type": 0,
+      "value": "Notify me about new episodes again"
+    }
+  ],
+  "web.notifications.series.unmuteSeries": [
+    {
+      "type": 0,
+      "value": "Unmute "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.notifications.series.wontNotify": [
+    {
+      "type": 0,
+      "value": "Won’t notify"
+    }
+  ],
+  "web.notifications.series.wontNotifyNow": [
+    {
+      "type": 0,
+      "value": "Won’t notify right now"
+    }
+  ],
   "web.person.age": [
     {
       "type": 6,
@@ -4212,6 +7905,36 @@
       "value": "Volume"
     }
   ],
+  "web.player.room.inviteNotReady": [
+    {
+      "type": 0,
+      "value": "Invite link is not ready yet."
+    }
+  ],
+  "web.player.room.noticeTitle": [
+    {
+      "type": 0,
+      "value": "Watch Party"
+    }
+  ],
+  "web.player.room.onlyHostCanControl": [
+    {
+      "type": 0,
+      "value": "Only the host can control playback."
+    }
+  ],
+  "web.player.room.onlyHostCanSeek": [
+    {
+      "type": 0,
+      "value": "Only the host can seek the room."
+    }
+  ],
+  "web.player.room.reconnecting": [
+    {
+      "type": 0,
+      "value": "Reconnecting to room. Controls are temporarily unavailable."
+    }
+  ],
   "web.player.sleepTimer.trigger": [
     {
       "type": 0,
@@ -4228,6 +7951,230 @@
     {
       "type": 0,
       "value": "Failed to save audio preference"
+    }
+  ],
+  "web.player.watchTogether.allowPause": [
+    {
+      "type": 0,
+      "value": "Allow Pause"
+    }
+  ],
+  "web.player.watchTogether.codePending": [
+    {
+      "type": 0,
+      "value": "..."
+    }
+  ],
+  "web.player.watchTogether.connectionReplaced": [
+    {
+      "type": 0,
+      "value": "This profile joined the Watch Party on another device."
+    }
+  ],
+  "web.player.watchTogether.member.buffering": [
+    {
+      "type": 0,
+      "value": "Buffering"
+    }
+  ],
+  "web.player.watchTogether.member.connected": [
+    {
+      "type": 0,
+      "value": "Connected"
+    }
+  ],
+  "web.player.watchTogether.member.ready": [
+    {
+      "type": 0,
+      "value": "Ready"
+    }
+  ],
+  "web.player.watchTogether.member.syncing": [
+    {
+      "type": 0,
+      "value": "Syncing"
+    }
+  ],
+  "web.player.watchTogether.policy.guestsCanPause": [
+    {
+      "type": 0,
+      "value": "Guests can pause & resume"
+    }
+  ],
+  "web.player.watchTogether.policy.hostControls": [
+    {
+      "type": 0,
+      "value": "Host controls playback"
+    }
+  ],
+  "web.player.watchTogether.policy.hostOnly": [
+    {
+      "type": 0,
+      "value": "Only you control playback"
+    }
+  ],
+  "web.player.watchTogether.policy.youCanPause": [
+    {
+      "type": 0,
+      "value": "You can pause & resume"
+    }
+  ],
+  "web.player.watchTogether.selfName": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " (you)"
+    }
+  ],
+  "web.player.watchTogether.setHostOnly": [
+    {
+      "type": 0,
+      "value": "Host Only"
+    }
+  ],
+  "web.player.watchTogether.syncingRoom": [
+    {
+      "type": 0,
+      "value": "Syncing room state"
+    }
+  ],
+  "web.player.watchTogether.viewerCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " viewer"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " viewers"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.libraries.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " library"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " libraries"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Library"
+    }
+  ],
+  "web.profiles.librarySelect.more": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " more"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "name"
+            },
+            {
+              "type": 0,
+              "value": " +"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " more"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.profiles.librarySelect.pair": [
+    {
+      "type": 1,
+      "value": "first"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "second"
     }
   ],
   "web.profiles.picker.documentTitle": [
@@ -4502,10 +8449,110 @@
       "value": "Top Genres"
     }
   ],
+  "web.requests.browse.empty": [
+    {
+      "type": 0,
+      "value": "Nothing matched. Try a different sort."
+    }
+  ],
+  "web.requests.browse.genre": [
+    {
+      "type": 0,
+      "value": "Genre"
+    }
+  ],
+  "web.requests.browse.genreNotFound": [
+    {
+      "type": 0,
+      "value": "Genre not found."
+    }
+  ],
+  "web.requests.browse.loadFailed": [
+    {
+      "type": 0,
+      "value": "Could not load this browse page. Try a different sort or media type."
+    }
+  ],
+  "web.requests.browse.loading": [
+    {
+      "type": 0,
+      "value": "Loading..."
+    }
+  ],
+  "web.requests.browse.movies": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.requests.browse.network": [
+    {
+      "type": 0,
+      "value": "Network"
+    }
+  ],
+  "web.requests.browse.networkNotFound": [
+    {
+      "type": 0,
+      "value": "Network not found."
+    }
+  ],
+  "web.requests.browse.series": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
+  "web.requests.browse.sortBy": [
+    {
+      "type": 0,
+      "value": "Sort by"
+    }
+  ],
+  "web.requests.browse.sortPopularity": [
+    {
+      "type": 0,
+      "value": "Popularity"
+    }
+  ],
+  "web.requests.browse.sortRating": [
+    {
+      "type": 0,
+      "value": "Rating"
+    }
+  ],
+  "web.requests.browse.sortReleaseDate": [
+    {
+      "type": 0,
+      "value": "Release date"
+    }
+  ],
+  "web.requests.browse.studio": [
+    {
+      "type": 0,
+      "value": "Studio"
+    }
+  ],
+  "web.requests.browse.studioNotFound": [
+    {
+      "type": 0,
+      "value": "Studio not found."
+    }
+  ],
   "web.requests.cancel.action": [
     {
       "type": 0,
       "value": "Cancel request"
+    }
+  ],
+  "web.requests.cancel.actionFor": [
+    {
+      "type": 0,
+      "value": "Cancel request for "
+    },
+    {
+      "type": 1,
+      "value": "title"
     }
   ],
   "web.requests.cancel.description": [
@@ -4554,6 +8601,24 @@
       "value": " to your watchlist"
     }
   ],
+  "web.requests.card.label": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " ("
+    },
+    {
+      "type": 1,
+      "value": "meta"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
   "web.requests.card.onWatchlist": [
     {
       "type": 0,
@@ -4574,16 +8639,296 @@
       "value": " from your watchlist"
     }
   ],
+  "web.requests.card.requestTitle": [
+    {
+      "type": 0,
+      "value": "Request "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.card.sending": [
+    {
+      "type": 0,
+      "value": "Sending"
+    }
+  ],
+  "web.requests.card.sendingFor": [
+    {
+      "type": 0,
+      "value": "Sending request for "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.requests.discoverSection.empty": [
+    {
+      "type": 0,
+      "value": "Nothing here right now."
+    }
+  ],
+  "web.requests.discoverSection.fallbackTitle": [
+    {
+      "type": 0,
+      "value": "Discover"
+    }
+  ],
+  "web.requests.discoverSection.notFound": [
+    {
+      "type": 0,
+      "value": "Not found"
+    }
+  ],
+  "web.requests.discoverSection.unknown": [
+    {
+      "type": 0,
+      "value": "This Discover row doesn’t exist."
+    }
+  ],
+  "web.requests.discoverSection.unreachable": [
+    {
+      "type": 0,
+      "value": "TMDB couldn’t be reached. Try again in a moment."
+    }
+  ],
+  "web.requests.download.downloading": [
+    {
+      "type": 0,
+      "value": "Downloading"
+    }
+  ],
+  "web.requests.download.importing": [
+    {
+      "type": 0,
+      "value": "Importing"
+    }
+  ],
+  "web.requests.download.paused": [
+    {
+      "type": 0,
+      "value": "Download paused"
+    }
+  ],
   "web.requests.download.progress": [
     {
       "type": 0,
       "value": "Download progress"
     }
   ],
+  "web.requests.download.stalled": [
+    {
+      "type": 0,
+      "value": "Download stalled"
+    }
+  ],
+  "web.requests.download.timeLeft": [
+    {
+      "type": 0,
+      "value": "about "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    },
+    {
+      "type": 0,
+      "value": " left"
+    }
+  ],
+  "web.requests.download.waiting": [
+    {
+      "type": 0,
+      "value": "Waiting to download"
+    }
+  ],
+  "web.requests.download.waitingForImport": [
+    {
+      "type": 0,
+      "value": "Waiting for import"
+    }
+  ],
+  "web.requests.hub.browseDiscover": [
+    {
+      "type": 0,
+      "value": "Browse Discover"
+    }
+  ],
+  "web.requests.hub.cancelled": [
+    {
+      "type": 0,
+      "value": "Cancelled"
+    }
+  ],
+  "web.requests.hub.discover": [
+    {
+      "type": 0,
+      "value": "Discover"
+    }
+  ],
+  "web.requests.hub.discoverFailed": [
+    {
+      "type": 0,
+      "value": "TMDB couldn’t be reached, so there is nothing to discover right now."
+    }
+  ],
+  "web.requests.hub.empty": [
+    {
+      "type": 0,
+      "value": "You haven’t requested anything."
+    }
+  ],
+  "web.requests.hub.emptyHint": [
+    {
+      "type": 0,
+      "value": "Find a title on Discover or with search, and request it from its page. It shows up here with its status."
+    }
+  ],
+  "web.requests.hub.inLibrary": [
+    {
+      "type": 0,
+      "value": "In your library"
+    }
+  ],
+  "web.requests.hub.intro": [
+    {
+      "type": 0,
+      "value": "Ask for movies and series that aren’t in the library yet, and follow your requests."
+    }
+  ],
+  "web.requests.hub.loadFailed": [
+    {
+      "type": 0,
+      "value": "Couldn’t load your requests."
+    }
+  ],
+  "web.requests.hub.needsAttention": [
+    {
+      "type": 0,
+      "value": "Needs attention"
+    }
+  ],
+  "web.requests.hub.onTheWay": [
+    {
+      "type": 0,
+      "value": "On the way"
+    }
+  ],
+  "web.requests.hub.openInLibrary": [
+    {
+      "type": 0,
+      "value": "Open in library"
+    }
+  ],
+  "web.requests.hub.openInLibraryFor": [
+    {
+      "type": 0,
+      "value": "Open "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " in library"
+    }
+  ],
+  "web.requests.hub.reason": [
+    {
+      "type": 0,
+      "value": "Reason: "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.requests.hub.statusApproved": [
+    {
+      "type": 0,
+      "value": "Approved, not yet sent to the download automation. You can still cancel it."
+    }
+  ],
+  "web.requests.hub.statusAvailable": [
+    {
+      "type": 0,
+      "value": "In your library and ready to watch."
+    }
+  ],
+  "web.requests.hub.statusCancelled": [
+    {
+      "type": 0,
+      "value": "Withdrawn before it was sent to the download automation."
+    }
+  ],
+  "web.requests.hub.statusDeclined": [
+    {
+      "type": 0,
+      "value": "An admin declined it."
+    }
+  ],
+  "web.requests.hub.statusHelp": [
+    {
+      "type": 0,
+      "value": "What the statuses mean"
+    }
+  ],
+  "web.requests.hub.statusPartial": [
+    {
+      "type": 0,
+      "value": "Some episodes of the requested seasons have arrived."
+    }
+  ],
+  "web.requests.hub.statusPending": [
+    {
+      "type": 0,
+      "value": "Waiting for an admin. You can cancel it until it is sent to the download automation."
+    }
+  ],
+  "web.requests.hub.statusProcessing": [
+    {
+      "type": 0,
+      "value": "Sent to the download automation."
+    }
+  ],
+  "web.requests.hub.statuses": [
+    {
+      "type": 0,
+      "value": "Request statuses"
+    }
+  ],
+  "web.requests.hub.yours": [
+    {
+      "type": 0,
+      "value": "Yours"
+    }
+  ],
+  "web.requests.hub.yoursIntro": [
+    {
+      "type": 0,
+      "value": "Requests from your account, grouped by what happens next."
+    }
+  ],
+  "web.requests.request": [
+    {
+      "type": 0,
+      "value": "Request"
+    }
+  ],
   "web.requests.results.loadMoreFailed": [
     {
       "type": 0,
       "value": "Couldn’t load more titles."
+    }
+  ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "All seasons"
     }
   ],
   "web.requests.seasons.allAvailable": [
@@ -4598,10 +8943,42 @@
       "value": "This series already has an open request."
     }
   ],
+  "web.requests.seasons.choose": [
+    {
+      "type": 0,
+      "value": "Choose the seasons of "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " to request."
+    }
+  ],
   "web.requests.seasons.inLibrary": [
     {
       "type": 0,
       "value": "In library"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "Latest season"
+    }
+  ],
+  "web.requests.seasons.noSeasons": [
+    {
+      "type": 0,
+      "value": "TMDB lists no seasons for this series yet; the request covers the whole series."
+    }
+  ],
+  "web.requests.seasons.noneAired": [
+    {
+      "type": 0,
+      "value": "No season has aired yet, so the request covers the whole series unless you pick seasons."
     }
   ],
   "web.requests.seasons.notAired": [
@@ -4622,6 +8999,12 @@
       "value": "Partly in library"
     }
   ],
+  "web.requests.seasons.pickUpcoming": [
+    {
+      "type": 0,
+      "value": "Pick the upcoming seasons to request."
+    }
+  ],
   "web.requests.seasons.reason": [
     {
       "type": 1,
@@ -4630,6 +9013,22 @@
     {
       "type": 0,
       "value": "."
+    }
+  ],
+  "web.requests.seasons.requestSeasons": [
+    {
+      "type": 0,
+      "value": "Request "
+    },
+    {
+      "type": 1,
+      "value": "seasons"
+    }
+  ],
+  "web.requests.seasons.requestSeries": [
+    {
+      "type": 0,
+      "value": "Request series"
     }
   ],
   "web.requests.seasons.requested": [
@@ -4666,16 +9065,106 @@
       "value": "name"
     }
   ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "Request seasons"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "Upcoming seasons"
+    }
+  ],
+  "web.requests.status.active": [
+    {
+      "type": 0,
+      "value": "Active"
+    }
+  ],
   "web.requests.status.approved": [
     {
       "type": 0,
       "value": "Approved"
     }
   ],
+  "web.requests.status.available": [
+    {
+      "type": 0,
+      "value": "Available"
+    }
+  ],
+  "web.requests.status.cancelled": [
+    {
+      "type": 0,
+      "value": "Cancelled"
+    }
+  ],
+  "web.requests.status.declined": [
+    {
+      "type": 0,
+      "value": "Declined"
+    }
+  ],
+  "web.requests.status.failed": [
+    {
+      "type": 0,
+      "value": "Failed"
+    }
+  ],
+  "web.requests.status.partiallyAvailable": [
+    {
+      "type": 0,
+      "value": "Partially available"
+    }
+  ],
+  "web.requests.status.pending": [
+    {
+      "type": 0,
+      "value": "Pending"
+    }
+  ],
   "web.requests.status.processing": [
     {
       "type": 0,
       "value": "Processing"
+    }
+  ],
+  "web.requests.status.reason.alreadyAvailable": [
+    {
+      "type": 0,
+      "value": "Available"
+    }
+  ],
+  "web.requests.status.reason.alreadyRequested": [
+    {
+      "type": 0,
+      "value": "Already requested"
+    }
+  ],
+  "web.requests.status.reason.blocked": [
+    {
+      "type": 0,
+      "value": "Blocked"
+    }
+  ],
+  "web.requests.status.reason.quotaExceeded": [
+    {
+      "type": 0,
+      "value": "Request limit reached"
+    }
+  ],
+  "web.requests.status.reason.requestsDisabled": [
+    {
+      "type": 0,
+      "value": "Requests disabled"
+    }
+  ],
+  "web.requests.status.reason.unavailable": [
+    {
+      "type": 0,
+      "value": "Unavailable"
     }
   ],
   "web.requests.status.seasonEpisodes": [
@@ -4712,10 +9201,126 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.requests.status.seasonList": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Season "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Seasons "
+            },
+            {
+              "type": 1,
+              "value": "list"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.status.seasonProgress": [
+    {
+      "type": 6,
+      "value": "aired",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " episode in the library"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "have"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "aired_text"
+            },
+            {
+              "type": 0,
+              "value": " episodes in the library"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.requests.title": [
+    {
+      "type": 0,
+      "value": "Requests"
+    }
+  ],
   "web.requests.toAdd.heading": [
     {
       "type": 0,
       "value": "Request to add"
+    }
+  ],
+  "web.requests.toAdd.movie": [
+    {
+      "type": 0,
+      "value": "Movie"
+    }
+  ],
+  "web.requests.toAdd.noLibraryMatch": [
+    {
+      "type": 0,
+      "value": "Nothing in your library matches “"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "”."
+    }
+  ],
+  "web.requests.toAdd.series": [
+    {
+      "type": 0,
+      "value": "Series"
     }
   ],
   "web.search.boxSets": [
@@ -7656,6 +12261,12 @@
       "value": "Your Stuff"
     }
   ],
+  "web.shell.unsavedChanges.description": [
+    {
+      "type": 0,
+      "value": "This page has edits that were never saved. Leaving now throws them away."
+    }
+  ],
   "web.shell.unsavedChanges.discard": [
     {
       "type": 0,
@@ -7680,16 +12291,1896 @@
       "value": "Close"
     }
   ],
+  "web.ui.personSearch.placeholder": [
+    {
+      "type": 0,
+      "value": "Search people..."
+    }
+  ],
   "web.ui.saving": [
     {
       "type": 0,
       "value": "Saving..."
     }
   ],
+  "web.watchTogether.actions.endRoomFailed": [
+    {
+      "type": 0,
+      "value": "Failed to end room"
+    }
+  ],
+  "web.watchTogether.actions.guestControlOff": [
+    {
+      "type": 0,
+      "value": "Room is now host controlled"
+    }
+  ],
+  "web.watchTogether.actions.guestControlOn": [
+    {
+      "type": 0,
+      "value": "Guests can now pause and resume"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopied": [
+    {
+      "type": 0,
+      "value": "Invite copied. Room code"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopiedWithCode": [
+    {
+      "type": 0,
+      "value": "Invite copied. Room code "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.watchTogether.actions.inviteCopyFailed": [
+    {
+      "type": 0,
+      "value": "Failed to copy invite link"
+    }
+  ],
+  "web.watchTogether.actions.modeFailed": [
+    {
+      "type": 0,
+      "value": "Could not change how the room picks"
+    }
+  ],
+  "web.watchTogether.actions.notConnected": [
+    {
+      "type": 0,
+      "value": "Not connected to the room yet"
+    }
+  ],
+  "web.watchTogether.actions.promoteFailed": [
+    {
+      "type": 0,
+      "value": "Could not start that suggestion"
+    }
+  ],
+  "web.watchTogether.actions.stageFailed": [
+    {
+      "type": 0,
+      "value": "Could not stage that"
+    }
+  ],
+  "web.watchTogether.actions.startFailed": [
+    {
+      "type": 0,
+      "value": "Could not start playback"
+    }
+  ],
+  "web.watchTogether.actions.stopFailed": [
+    {
+      "type": 0,
+      "value": "Could not stop playback"
+    }
+  ],
+  "web.watchTogether.actions.updateRoomFailed": [
+    {
+      "type": 0,
+      "value": "Failed to update room"
+    }
+  ],
+  "web.watchTogether.activity.episodeTitle": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " · S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.activity.joined": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " joined"
+    }
+  ],
+  "web.watchTogether.activity.left": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " left"
+    }
+  ],
+  "web.watchTogether.activity.mode": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " switched the room to "
+    },
+    {
+      "type": 1,
+      "value": "mode"
+    }
+  ],
+  "web.watchTogether.activity.modeHostPick": [
+    {
+      "type": 0,
+      "value": "host picks"
+    }
+  ],
+  "web.watchTogether.activity.modeVote": [
+    {
+      "type": 0,
+      "value": "everyone votes"
+    }
+  ],
+  "web.watchTogether.activity.playbackPaused": [
+    {
+      "type": 0,
+      "value": "Playback paused"
+    }
+  ],
+  "web.watchTogether.activity.playbackResumed": [
+    {
+      "type": 0,
+      "value": "Playback resumed"
+    }
+  ],
+  "web.watchTogether.activity.policy": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " set "
+    },
+    {
+      "type": 1,
+      "value": "policy"
+    }
+  ],
+  "web.watchTogether.activity.ready": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " is ready"
+    }
+  ],
+  "web.watchTogether.activity.staged": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " queued "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.activity.started": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " started "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.activity.stopped": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " stopped "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.activity.suggested": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " suggested "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.activity.timeHours": [
+    {
+      "type": 1,
+      "value": "hours"
+    },
+    {
+      "type": 0,
+      "value": "h"
+    }
+  ],
+  "web.watchTogether.activity.timeMinutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "m"
+    }
+  ],
+  "web.watchTogether.activity.timeNow": [
+    {
+      "type": 0,
+      "value": "now"
+    }
+  ],
+  "web.watchTogether.activity.titleLoading": [
+    {
+      "type": 0,
+      "value": "…"
+    }
+  ],
+  "web.watchTogether.activity.unready": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " is no longer ready"
+    }
+  ],
+  "web.watchTogether.activity.unstaged": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " cleared the queue"
+    }
+  ],
+  "web.watchTogether.activity.unsuggested": [
+    {
+      "type": 1,
+      "value": "who"
+    },
+    {
+      "type": 0,
+      "value": " removed "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.browse.chipAll": [
+    {
+      "type": 0,
+      "value": "All"
+    }
+  ],
+  "web.watchTogether.browse.chipMovies": [
+    {
+      "type": 0,
+      "value": "Movies"
+    }
+  ],
+  "web.watchTogether.browse.chipRecent": [
+    {
+      "type": 0,
+      "value": "Recent"
+    }
+  ],
+  "web.watchTogether.browse.chipSeries": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
+  "web.watchTogether.browse.chipTogether": [
+    {
+      "type": 0,
+      "value": "Together"
+    }
+  ],
+  "web.watchTogether.browse.chipWatchlists": [
+    {
+      "type": 0,
+      "value": "Watchlists"
+    }
+  ],
+  "web.watchTogether.browse.collapsed": [
+    {
+      "type": 0,
+      "value": "Browse"
+    }
+  ],
+  "web.watchTogether.browse.collapsedHintPick": [
+    {
+      "type": 0,
+      "value": "Search or browse what the room has in common to pick something."
+    }
+  ],
+  "web.watchTogether.browse.collapsedHintSuggest": [
+    {
+      "type": 0,
+      "value": "Search or browse what the room has in common to suggest something."
+    }
+  ],
+  "web.watchTogether.browse.emptyAll": [
+    {
+      "type": 0,
+      "value": "Nothing to browse yet. Search for something above."
+    }
+  ],
+  "web.watchTogether.browse.emptyMovies": [
+    {
+      "type": 0,
+      "value": "No movies in the library yet. Search for one above."
+    }
+  ],
+  "web.watchTogether.browse.emptyRecent": [
+    {
+      "type": 0,
+      "value": "Nothing added recently."
+    }
+  ],
+  "web.watchTogether.browse.emptySeries": [
+    {
+      "type": 0,
+      "value": "No series in the library yet. Search for one above."
+    }
+  ],
+  "web.watchTogether.browse.emptyTogether": [
+    {
+      "type": 0,
+      "value": "Nothing in progress for two or more of you yet."
+    }
+  ],
+  "web.watchTogether.browse.emptyWatchlists": [
+    {
+      "type": 0,
+      "value": "Nobody in the room has anything on their watchlist."
+    }
+  ],
+  "web.watchTogether.browse.filterLabel": [
+    {
+      "type": 0,
+      "value": "Filter"
+    }
+  ],
+  "web.watchTogether.browse.hide": [
+    {
+      "type": 0,
+      "value": "Hide browse"
+    }
+  ],
+  "web.watchTogether.browse.noMatches": [
+    {
+      "type": 0,
+      "value": "No matches for “"
+    },
+    {
+      "type": 1,
+      "value": "query"
+    },
+    {
+      "type": 0,
+      "value": "”. Try another title, or clear the filter."
+    }
+  ],
+  "web.watchTogether.browse.recentMovies": [
+    {
+      "type": 0,
+      "value": "Recently added movies"
+    }
+  ],
+  "web.watchTogether.browse.recentSeries": [
+    {
+      "type": 0,
+      "value": "Recently added series"
+    }
+  ],
+  "web.watchTogether.browse.resultCount": [
+    {
+      "type": 0,
+      "value": "· "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.browse.searchFailed": [
+    {
+      "type": 0,
+      "value": "Could not search."
+    }
+  ],
+  "web.watchTogether.browse.searchLabel": [
+    {
+      "type": 0,
+      "value": "Search movies and series"
+    }
+  ],
+  "web.watchTogether.browse.searchPlaceholder": [
+    {
+      "type": 0,
+      "value": "Search movies, series, episodes…"
+    }
+  ],
+  "web.watchTogether.browse.searchResults": [
+    {
+      "type": 0,
+      "value": "Search results"
+    }
+  ],
+  "web.watchTogether.browse.sectionPick": [
+    {
+      "type": 0,
+      "value": "Browse to pick"
+    }
+  ],
+  "web.watchTogether.browse.sectionSuggest": [
+    {
+      "type": 0,
+      "value": "Browse to suggest"
+    }
+  ],
+  "web.watchTogether.browse.togetherHint": [
+    {
+      "type": 0,
+      "value": "in progress for 2+ of you"
+    }
+  ],
+  "web.watchTogether.browse.togetherTitle": [
+    {
+      "type": 0,
+      "value": "Continue watching together"
+    }
+  ],
+  "web.watchTogether.browse.watchlistsHint": [
+    {
+      "type": 0,
+      "value": "anyone in the room"
+    }
+  ],
+  "web.watchTogether.browse.watchlistsTitle": [
+    {
+      "type": 0,
+      "value": "On your watchlists"
+    }
+  ],
+  "web.watchTogether.candidate.stageForRoom": [
+    {
+      "type": 0,
+      "value": "Stage it for the room"
+    }
+  ],
+  "web.watchTogether.candidate.stageIt": [
+    {
+      "type": 0,
+      "value": "Stage it"
+    }
+  ],
+  "web.watchTogether.candidate.suggestThis": [
+    {
+      "type": 0,
+      "value": "Suggest this"
+    }
+  ],
+  "web.watchTogether.common.change": [
+    {
+      "type": 0,
+      "value": "Change"
+    }
+  ],
+  "web.watchTogether.common.codeCopied": [
+    {
+      "type": 0,
+      "value": "Room code "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " copied"
+    }
+  ],
+  "web.watchTogether.common.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.common.episodeNumber": [
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
+  "web.watchTogether.common.hostPicks": [
+    {
+      "type": 0,
+      "value": "Host picks"
+    }
+  ],
+  "web.watchTogether.common.movie": [
+    {
+      "type": 0,
+      "value": "Movie"
+    }
+  ],
+  "web.watchTogether.common.policyGuestPlayPause": [
+    {
+      "type": 0,
+      "value": "guests can pause"
+    }
+  ],
+  "web.watchTogether.common.policyHostOnly": [
+    {
+      "type": 0,
+      "value": "host controls playback"
+    }
+  ],
+  "web.watchTogether.common.replaces": [
+    {
+      "type": 0,
+      "value": "Replaces "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.common.roomInactive": [
+    {
+      "type": 0,
+      "value": "That room is no longer active."
+    }
+  ],
+  "web.watchTogether.common.roomNotFound": [
+    {
+      "type": 0,
+      "value": "Room not found."
+    }
+  ],
+  "web.watchTogether.common.season": [
+    {
+      "type": 0,
+      "value": "Season "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
   "web.watchTogether.common.series": [
     {
       "type": 0,
       "value": "Series"
+    }
+  ],
+  "web.watchTogether.common.someone": [
+    {
+      "type": 0,
+      "value": "Someone"
+    }
+  ],
+  "web.watchTogether.common.specials": [
+    {
+      "type": 0,
+      "value": "Specials"
+    }
+  ],
+  "web.watchTogether.common.suggestFailed": [
+    {
+      "type": 0,
+      "value": "Could not suggest that"
+    }
+  ],
+  "web.watchTogether.connection.connected": [
+    {
+      "type": 0,
+      "value": "Connected"
+    }
+  ],
+  "web.watchTogether.connection.connecting": [
+    {
+      "type": 0,
+      "value": "Connecting…"
+    }
+  ],
+  "web.watchTogether.endDialog.description": [
+    {
+      "type": 0,
+      "value": "End the watch party for everyone?"
+    }
+  ],
+  "web.watchTogether.endDialog.title": [
+    {
+      "type": 0,
+      "value": "End watch party?"
+    }
+  ],
+  "web.watchTogether.hero.episode": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " — S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.watchTogether.hero.episodeTitled": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " — S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " \""
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "\""
+    }
+  ],
+  "web.watchTogether.hero.movieYear": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " ("
+    },
+    {
+      "type": 1,
+      "value": "year"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.watchTogether.hero.unavailable": [
+    {
+      "type": 0,
+      "value": "Unavailable"
+    }
+  ],
+  "web.watchTogether.hub.codeLabel": [
+    {
+      "type": 0,
+      "value": "Room code"
+    }
+  ],
+  "web.watchTogether.hub.codePlaceholder": [
+    {
+      "type": 0,
+      "value": "ABCD1234"
+    }
+  ],
+  "web.watchTogether.hub.create": [
+    {
+      "type": 0,
+      "value": "Create Watch Party"
+    }
+  ],
+  "web.watchTogether.hub.createFailed": [
+    {
+      "type": 0,
+      "value": "Failed to create room."
+    }
+  ],
+  "web.watchTogether.hub.creating": [
+    {
+      "type": 0,
+      "value": "Creating..."
+    }
+  ],
+  "web.watchTogether.hub.fromTitleHint": [
+    {
+      "type": 0,
+      "value": "Already know what you want to watch? Open its page and choose "
+    },
+    {
+      "type": 8,
+      "value": "item",
+      "children": [
+        {
+          "type": 0,
+          "value": "Start a party with this"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " from the menu."
+    }
+  ],
+  "web.watchTogether.hub.headline": [
+    {
+      "type": 0,
+      "value": "Watch together, wherever everyone is."
+    }
+  ],
+  "web.watchTogether.hub.hostPickCaption": [
+    {
+      "type": 0,
+      "value": "You choose, everyone watches."
+    }
+  ],
+  "web.watchTogether.hub.howItWorks": [
+    {
+      "type": 0,
+      "value": "How it works"
+    }
+  ],
+  "web.watchTogether.hub.intro": [
+    {
+      "type": 0,
+      "value": "Open a room, share the code, and everyone plays in sync. The host picks what's on, or the whole room votes."
+    }
+  ],
+  "web.watchTogether.hub.join": [
+    {
+      "type": 0,
+      "value": "Join Watch Party"
+    }
+  ],
+  "web.watchTogether.hub.joinFailed": [
+    {
+      "type": 0,
+      "value": "Failed to join room."
+    }
+  ],
+  "web.watchTogether.hub.joinTitle": [
+    {
+      "type": 0,
+      "value": "Join a party"
+    }
+  ],
+  "web.watchTogether.hub.joining": [
+    {
+      "type": 0,
+      "value": "Joining..."
+    }
+  ],
+  "web.watchTogether.hub.modeGroup": [
+    {
+      "type": 0,
+      "value": "How the room picks"
+    }
+  ],
+  "web.watchTogether.hub.paste": [
+    {
+      "type": 0,
+      "value": "Paste"
+    }
+  ],
+  "web.watchTogether.hub.pasteLabel": [
+    {
+      "type": 0,
+      "value": "Paste room code"
+    }
+  ],
+  "web.watchTogether.hub.recentChecking": [
+    {
+      "type": 0,
+      "value": "Checking…"
+    }
+  ],
+  "web.watchTogether.hub.recentEnded": [
+    {
+      "type": 0,
+      "value": "Ended"
+    }
+  ],
+  "web.watchTogether.hub.recentHosted": [
+    {
+      "type": 0,
+      "value": "Your room"
+    }
+  ],
+  "web.watchTogether.hub.recentJoined": [
+    {
+      "type": 0,
+      "value": "Joined"
+    }
+  ],
+  "web.watchTogether.hub.recentLive": [
+    {
+      "type": 0,
+      "value": "Live"
+    }
+  ],
+  "web.watchTogether.hub.recentTitle": [
+    {
+      "type": 0,
+      "value": "Your recent parties"
+    }
+  ],
+  "web.watchTogether.hub.recentUnknown": [
+    {
+      "type": 0,
+      "value": "Status unavailable"
+    }
+  ],
+  "web.watchTogether.hub.rejoin": [
+    {
+      "type": 0,
+      "value": "Rejoin"
+    }
+  ],
+  "web.watchTogether.hub.startBody": [
+    {
+      "type": 0,
+      "value": "Open an empty room now and pick what to watch once people arrive."
+    }
+  ],
+  "web.watchTogether.hub.stepOpenCaption": [
+    {
+      "type": 0,
+      "value": "Create one here, or start from any movie or episode page."
+    }
+  ],
+  "web.watchTogether.hub.stepOpenTitle": [
+    {
+      "type": 0,
+      "value": "Open a room"
+    }
+  ],
+  "web.watchTogether.hub.stepShareCaption": [
+    {
+      "type": 0,
+      "value": "Send the invite link or the eight-letter code to whoever is watching."
+    }
+  ],
+  "web.watchTogether.hub.stepShareTitle": [
+    {
+      "type": 0,
+      "value": "Share the code"
+    }
+  ],
+  "web.watchTogether.hub.stepSyncCaption": [
+    {
+      "type": 0,
+      "value": "Play, pause, and seek together. The room ends two minutes after the host drops off."
+    }
+  ],
+  "web.watchTogether.hub.stepSyncTitle": [
+    {
+      "type": 0,
+      "value": "Watch in sync"
+    }
+  ],
+  "web.watchTogether.hub.voteCaption": [
+    {
+      "type": 0,
+      "value": "Anyone suggests, the room votes."
+    }
+  ],
+  "web.watchTogether.inviteBar.code": [
+    {
+      "type": 0,
+      "value": "Code"
+    }
+  ],
+  "web.watchTogether.inviteBar.guestsCanPause": [
+    {
+      "type": 0,
+      "value": "Guests can pause"
+    }
+  ],
+  "web.watchTogether.inviteBar.hostControls": [
+    {
+      "type": 0,
+      "value": "Host controls playback"
+    }
+  ],
+  "web.watchTogether.inviteBar.label": [
+    {
+      "type": 0,
+      "value": "Invite"
+    }
+  ],
+  "web.watchTogether.inviteBar.link": [
+    {
+      "type": 0,
+      "value": "Link"
+    }
+  ],
+  "web.watchTogether.inviteBar.shareCode": [
+    {
+      "type": 0,
+      "value": "Share the code to let people in."
+    }
+  ],
+  "web.watchTogether.lobby.guestBody": [
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " is deciding. Anything you pick below goes in as a suggestion."
+    }
+  ],
+  "web.watchTogether.lobby.guestCaption": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Starts when "
+            },
+            {
+              "type": 1,
+              "value": "host"
+            },
+            {
+              "type": 0,
+              "value": " presses play · "
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Starts when "
+            },
+            {
+              "type": 1,
+              "value": "host"
+            },
+            {
+              "type": 0,
+              "value": " presses play · "
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.lobby.hostBody": [
+    {
+      "type": 0,
+      "value": "Pick something below and it lands here for everyone to see. Or let the room decide."
+    }
+  ],
+  "web.watchTogether.lobby.nothingOn": [
+    {
+      "type": 0,
+      "value": "Nothing on yet"
+    }
+  ],
+  "web.watchTogether.lobby.openVoting": [
+    {
+      "type": 0,
+      "value": "Open the floor to votes"
+    }
+  ],
+  "web.watchTogether.lobby.queueThis": [
+    {
+      "type": 0,
+      "value": "Queue this"
+    }
+  ],
+  "web.watchTogether.lobby.readyDone": [
+    {
+      "type": 0,
+      "value": "Ready ✓"
+    }
+  ],
+  "web.watchTogether.lobby.roomOpen": [
+    {
+      "type": 0,
+      "value": "Room is open"
+    }
+  ],
+  "web.watchTogether.lobby.startAlone": [
+    {
+      "type": 0,
+      "value": "Start alone anyway"
+    }
+  ],
+  "web.watchTogether.lobby.startEveryone": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Start for everyone · "
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": "/"
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Start for everyone · "
+            },
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": "/"
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.lobby.suggestionsCount": [
+    {
+      "type": 0,
+      "value": "Suggestions · "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.lobby.upNext": [
+    {
+      "type": 0,
+      "value": "Up next"
+    }
+  ],
+  "web.watchTogether.lobby.upNextGuest": [
+    {
+      "type": 0,
+      "value": "Up next · "
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " queued this"
+    }
+  ],
+  "web.watchTogether.lobby.waitingGuest": [
+    {
+      "type": 0,
+      "value": "Waiting for a guest to join"
+    }
+  ],
+  "web.watchTogether.movie.close": [
+    {
+      "type": 0,
+      "value": "Close details"
+    }
+  ],
+  "web.watchTogether.movie.newForEveryone": [
+    {
+      "type": 0,
+      "value": "new for everyone"
+    }
+  ],
+  "web.watchTogether.movie.notSeen": [
+    {
+      "type": 0,
+      "value": "Hasn't seen it"
+    }
+  ],
+  "web.watchTogether.movie.onWatchlist": [
+    {
+      "type": 0,
+      "value": "On their watchlist"
+    }
+  ],
+  "web.watchTogether.movie.percentIn": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "% in"
+    }
+  ],
+  "web.watchTogether.movie.rewatchForEveryone": [
+    {
+      "type": 0,
+      "value": "a rewatch for everyone"
+    }
+  ],
+  "web.watchTogether.movie.seenOf": [
+    {
+      "type": 1,
+      "value": "seen"
+    },
+    {
+      "type": 0,
+      "value": " of "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    }
+  ],
+  "web.watchTogether.movie.startedOf": [
+    {
+      "type": 1,
+      "value": "started"
+    },
+    {
+      "type": 0,
+      "value": " of "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " started"
+    }
+  ],
+  "web.watchTogether.picker.moreMembers": [
+    {
+      "type": 0,
+      "value": "+"
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.watchTogether.picker.rowHint": [
+    {
+      "type": 0,
+      "value": "· "
+    },
+    {
+      "type": 1,
+      "value": "hint"
+    }
+  ],
+  "web.watchTogether.playing.afterTitle": [
+    {
+      "type": 0,
+      "value": "After this · still open for suggestions"
+    }
+  ],
+  "web.watchTogether.playing.caption": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "clock"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "state"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "clock"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "state"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.playing.empty": [
+    {
+      "type": 0,
+      "value": "Nothing queued for after. Browse below to suggest something."
+    }
+  ],
+  "web.watchTogether.playing.eyebrow": [
+    {
+      "type": 0,
+      "value": "Now playing"
+    }
+  ],
+  "web.watchTogether.playing.guestNote": [
+    {
+      "type": 0,
+      "value": "Playback keeps going for the others. Rejoining puts you at the room's position."
+    }
+  ],
+  "web.watchTogether.playing.hostNote": [
+    {
+      "type": 0,
+      "value": "Playback keeps going for the others. Stopping brings everyone back here to pick something else."
+    }
+  ],
+  "web.watchTogether.playing.paused": [
+    {
+      "type": 0,
+      "value": "Paused"
+    }
+  ],
+  "web.watchTogether.playing.playing": [
+    {
+      "type": 0,
+      "value": "Playing"
+    }
+  ],
+  "web.watchTogether.playing.rejoin": [
+    {
+      "type": 0,
+      "value": "Rejoin playback"
+    }
+  ],
+  "web.watchTogether.playing.stop": [
+    {
+      "type": 0,
+      "value": "Stop for everyone"
+    }
+  ],
+  "web.watchTogether.playing.waiting": [
+    {
+      "type": 0,
+      "value": "Waiting for everyone to buffer"
+    }
+  ],
+  "web.watchTogether.presence.ready": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "ready"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " ready"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.rail.activity": [
+    {
+      "type": 0,
+      "value": "Activity"
+    }
+  ],
+  "web.watchTogether.rail.activityEmpty": [
+    {
+      "type": 0,
+      "value": "Things people do in the room show up here."
+    }
+  ],
+  "web.watchTogether.rail.people": [
+    {
+      "type": 0,
+      "value": "People"
+    }
+  ],
+  "web.watchTogether.rail.peopleEmpty": [
+    {
+      "type": 0,
+      "value": "No one here yet. Share the invite to fill the room."
+    }
+  ],
+  "web.watchTogether.rail.stateBuffering": [
+    {
+      "type": 0,
+      "value": "Buffering"
+    }
+  ],
+  "web.watchTogether.rail.stateConnected": [
+    {
+      "type": 0,
+      "value": "Connected"
+    }
+  ],
+  "web.watchTogether.rail.statePaused": [
+    {
+      "type": 0,
+      "value": "Paused"
+    }
+  ],
+  "web.watchTogether.rail.stateReady": [
+    {
+      "type": 0,
+      "value": "Ready"
+    }
+  ],
+  "web.watchTogether.rail.stateWatching": [
+    {
+      "type": 0,
+      "value": "Watching"
+    }
+  ],
+  "web.watchTogether.rail.you": [
+    {
+      "type": 0,
+      "value": "(you)"
+    }
+  ],
+  "web.watchTogether.room.backToHub": [
+    {
+      "type": 0,
+      "value": "Back to Watch Party"
+    }
+  ],
+  "web.watchTogether.room.changeUpNext": [
+    {
+      "type": 0,
+      "value": "Change what's up next"
+    }
+  ],
+  "web.watchTogether.room.closed": [
+    {
+      "type": 0,
+      "value": "The room has ended."
+    }
+  ],
+  "web.watchTogether.room.closedBody": [
+    {
+      "type": 0,
+      "value": "Start a new watch party or join another room to keep watching together."
+    }
+  ],
+  "web.watchTogether.room.ended": [
+    {
+      "type": 0,
+      "value": "That watch party is no longer active."
+    }
+  ],
+  "web.watchTogether.room.firstSuggestionFailed": [
+    {
+      "type": 0,
+      "value": "Could not add the first suggestion"
+    }
+  ],
+  "web.watchTogether.room.forbidden": [
+    {
+      "type": 0,
+      "value": "You don't have access to this watch party."
+    }
+  ],
+  "web.watchTogether.room.guestFooter": [
+    {
+      "type": 0,
+      "value": "Host: "
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "policy"
+    }
+  ],
+  "web.watchTogether.room.hostFooter": [
+    {
+      "type": 0,
+      "value": "If you drop, the room waits 2 minutes for you before it ends."
+    }
+  ],
+  "web.watchTogether.room.inviteNotReady": [
+    {
+      "type": 0,
+      "value": "Invite link isn't ready yet"
+    }
+  ],
+  "web.watchTogether.room.rejoin": [
+    {
+      "type": 0,
+      "value": "Rejoin Watch Party"
+    }
+  ],
+  "web.watchTogether.room.removeFailed": [
+    {
+      "type": 0,
+      "value": "Could not remove that"
+    }
+  ],
+  "web.watchTogether.room.replacedTitle": [
+    {
+      "type": 0,
+      "value": "Watch Party joined on another device"
+    }
+  ],
+  "web.watchTogether.room.suggestAfter": [
+    {
+      "type": 0,
+      "value": "Suggest something for after"
+    }
+  ],
+  "web.watchTogether.room.suggested": [
+    {
+      "type": 0,
+      "value": "Suggested "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.room.unavailable": [
+    {
+      "type": 0,
+      "value": "Room is unavailable."
+    }
+  ],
+  "web.watchTogether.room.unknownHost": [
+    {
+      "type": 0,
+      "value": "unknown"
+    }
+  ],
+  "web.watchTogether.room.voteFailed": [
+    {
+      "type": 0,
+      "value": "Vote failed"
+    }
+  ],
+  "web.watchTogether.series.close": [
+    {
+      "type": 0,
+      "value": "Close series"
+    }
+  ],
+  "web.watchTogether.series.episodes": [
+    {
+      "type": 0,
+      "value": "Episodes"
+    }
+  ],
+  "web.watchTogether.series.pickedEpisode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " “"
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "”"
+    }
+  ],
+  "web.watchTogether.series.runtime": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "m"
+    }
+  ],
+  "web.watchTogether.series.seasons": [
+    {
+      "type": 0,
+      "value": "Seasons"
+    }
+  ],
+  "web.watchTogether.startSheet.allowPause": [
+    {
+      "type": 0,
+      "value": "Allow guests to pause"
+    }
+  ],
+  "web.watchTogether.startSheet.allowPauseHint": [
+    {
+      "type": 0,
+      "value": "Otherwise only you control playback"
+    }
+  ],
+  "web.watchTogether.startSheet.choose": [
+    {
+      "type": 0,
+      "value": "Choose"
+    }
+  ],
+  "web.watchTogether.startSheet.chooseEpisode": [
+    {
+      "type": 0,
+      "value": "Choose an episode"
+    }
+  ],
+  "web.watchTogether.startSheet.create": [
+    {
+      "type": 0,
+      "value": "Create party & copy invite"
+    }
+  ],
+  "web.watchTogether.startSheet.createFailed": [
+    {
+      "type": 0,
+      "value": "Could not create the room"
+    }
+  ],
+  "web.watchTogether.startSheet.creating": [
+    {
+      "type": 0,
+      "value": "Creating…"
+    }
+  ],
+  "web.watchTogether.startSheet.episode": [
+    {
+      "type": 0,
+      "value": "Episode"
+    }
+  ],
+  "web.watchTogether.startSheet.episodeTitle": [
+    {
+      "type": 0,
+      "value": "\""
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "\""
+    }
+  ],
+  "web.watchTogether.startSheet.episodeWithCode": [
+    {
+      "type": 1,
+      "value": "code"
+    },
+    {
+      "type": 0,
+      "value": " \""
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "\""
+    }
+  ],
+  "web.watchTogether.startSheet.eyebrow": [
+    {
+      "type": 0,
+      "value": "Watch Together"
+    }
+  ],
+  "web.watchTogether.startSheet.footnote": [
+    {
+      "type": 0,
+      "value": "You'll land in the room. Nothing plays until you start it. The room can see what members are mid-way through."
+    }
+  ],
+  "web.watchTogether.startSheet.hostPickCaptionEmpty": [
+    {
+      "type": 0,
+      "value": "Nothing is up next. You start it when everyone is here."
+    }
+  ],
+  "web.watchTogether.startSheet.hostPickCaptionTarget": [
+    {
+      "type": 0,
+      "value": "This is up next. You start it when everyone is here."
+    }
+  ],
+  "web.watchTogether.startSheet.howToPick": [
+    {
+      "type": 0,
+      "value": "How to pick"
+    }
+  ],
+  "web.watchTogether.startSheet.keepPick": [
+    {
+      "type": 0,
+      "value": "Keep the current pick"
+    }
+  ],
+  "web.watchTogether.startSheet.noEpisodes": [
+    {
+      "type": 0,
+      "value": "No playable episodes here."
+    }
+  ],
+  "web.watchTogether.startSheet.policyFailed": [
+    {
+      "type": 0,
+      "value": "Room created, but guests can't pause yet. Change it from the room."
+    }
+  ],
+  "web.watchTogether.startSheet.policyGuestsCanPause": [
+    {
+      "type": 0,
+      "value": "Guests can pause in this party. Change it from the room."
+    }
+  ],
+  "web.watchTogether.startSheet.policyHostOnly": [
+    {
+      "type": 0,
+      "value": "Only you control playback in this party. Change it from the room."
+    }
+  ],
+  "web.watchTogether.startSheet.policyHostOnlyFailed": [
+    {
+      "type": 0,
+      "value": "Room created, but guests can still pause. Change it from the room."
     }
   ],
   "web.watchTogether.startSheet.seriesSeasons": [
@@ -7734,10 +14225,462 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.watchTogether.startSheet.stageFailed": [
+    {
+      "type": 0,
+      "value": "Room created, but that item couldn't be queued. Pick it from the room."
+    }
+  ],
   "web.watchTogether.startSheet.title": [
     {
       "type": 0,
       "value": "Start a party with this"
+    }
+  ],
+  "web.watchTogether.startSheet.voteCaptionEmpty": [
+    {
+      "type": 0,
+      "value": "Nothing is the first suggestion. Anyone can add and vote."
+    }
+  ],
+  "web.watchTogether.startSheet.voteCaptionTarget": [
+    {
+      "type": 0,
+      "value": "This is the first suggestion. Anyone can add and vote."
+    }
+  ],
+  "web.watchTogether.startSheet.watched": [
+    {
+      "type": 0,
+      "value": "watched"
+    }
+  ],
+  "web.watchTogether.strip.changeMode": [
+    {
+      "type": 0,
+      "value": "Change how the room picks"
+    }
+  ],
+  "web.watchTogether.strip.copyCode": [
+    {
+      "type": 0,
+      "value": "Copy room code "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.watchTogether.strip.copyInvite": [
+    {
+      "type": 0,
+      "value": "Copy invite link"
+    }
+  ],
+  "web.watchTogether.strip.endRoom": [
+    {
+      "type": 0,
+      "value": "End room"
+    }
+  ],
+  "web.watchTogether.strip.inviteLink": [
+    {
+      "type": 0,
+      "value": "Invite link"
+    }
+  ],
+  "web.watchTogether.strip.leave": [
+    {
+      "type": 0,
+      "value": "Leave"
+    }
+  ],
+  "web.watchTogether.strip.leaveLabel": [
+    {
+      "type": 0,
+      "value": "Leave room"
+    }
+  ],
+  "web.watchTogether.strip.live": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Live · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Live · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.strip.modeYou": [
+    {
+      "type": 0,
+      "value": "· you"
+    }
+  ],
+  "web.watchTogether.strip.playing": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Playing · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Playing · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.strip.voting": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Voting · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Voting · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " here"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.suggestions.leading": [
+    {
+      "type": 0,
+      "value": "Leading"
+    }
+  ],
+  "web.watchTogether.suggestions.note": [
+    {
+      "type": 0,
+      "value": ": “"
+    },
+    {
+      "type": 1,
+      "value": "note"
+    },
+    {
+      "type": 0,
+      "value": "”"
+    }
+  ],
+  "web.watchTogether.suggestions.playThis": [
+    {
+      "type": 0,
+      "value": "Play this"
+    }
+  ],
+  "web.watchTogether.suggestions.remove": [
+    {
+      "type": 0,
+      "value": "Remove "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.suggestions.unvote": [
+    {
+      "type": 0,
+      "value": "Remove your vote for "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.suggestions.vote": [
+    {
+      "type": 0,
+      "value": "Vote for "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.watchTogether.suggestions.voteMark": [
+    {
+      "type": 0,
+      "value": "✓"
+    }
+  ],
+  "web.watchTogether.suggestions.votes": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " vote"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " votes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.voting.empty": [
+    {
+      "type": 0,
+      "value": "Nothing suggested yet. Browse below to add the first."
+    }
+  ],
+  "web.watchTogether.voting.emptyGuest": [
+    {
+      "type": 0,
+      "value": "Anyone can add one from the shelf below. The room votes, and "
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " starts whatever wins."
+    }
+  ],
+  "web.watchTogether.voting.emptyHost": [
+    {
+      "type": 0,
+      "value": "Anyone can add one from the shelf below. The room votes, and you start whatever wins."
+    }
+  ],
+  "web.watchTogether.voting.firstSuggestion": [
+    {
+      "type": 0,
+      "value": "First suggestion"
+    }
+  ],
+  "web.watchTogether.voting.guestCaption": [
+    {
+      "type": 0,
+      "value": "Starts when "
+    },
+    {
+      "type": 1,
+      "value": "host"
+    },
+    {
+      "type": 0,
+      "value": " presses play"
+    }
+  ],
+  "web.watchTogether.voting.hostCaption": [
+    {
+      "type": 0,
+      "value": "Start the leader, or play any suggestion below"
+    }
+  ],
+  "web.watchTogether.voting.leading": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Leading · "
+            },
+            {
+              "type": 1,
+              "value": "votes"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " votes"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Leading · "
+            },
+            {
+              "type": 1,
+              "value": "votes"
+            },
+            {
+              "type": 0,
+              "value": " of "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " votes"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.watchTogether.voting.noSuggestions": [
+    {
+      "type": 0,
+      "value": "No suggestions yet"
+    }
+  ],
+  "web.watchTogether.voting.oneVote": [
+    {
+      "type": 0,
+      "value": "One vote each · change it any time"
+    }
+  ],
+  "web.watchTogether.voting.open": [
+    {
+      "type": 0,
+      "value": "Voting is open"
+    }
+  ],
+  "web.watchTogether.voting.playForEveryone": [
+    {
+      "type": 0,
+      "value": "Play "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " for everyone"
+    }
+  ],
+  "web.watchTogether.voting.ranked": [
+    {
+      "type": 0,
+      "value": "Suggestions · ranked by votes"
+    }
+  ],
+  "web.watchTogether.voting.theHost": [
+    {
+      "type": 0,
+      "value": "the host"
     }
   ]
 }

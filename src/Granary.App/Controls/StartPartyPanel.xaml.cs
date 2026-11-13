@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.WatchParty;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,8 +30,17 @@ public sealed partial class StartPartyPanel : UserControl
     // Static because x:Bind function bindings in the templates call them on the type.
     public static ImageSource? Blur(string hash) => Thumbhashes.Get(hash);
 
-    /// <summary>The Change button says what it changes.</summary>
-    public static string ChangeName(string label) => label == "Choose" ? "Choose an episode" : "Change the episode";
+    /// <summary>"WATCH TOGETHER" above the sheet's title.</summary>
+    public string Eyebrow => AppText.Upper(AppText.Get("web.watchTogether.startSheet.eyebrow"));
+
+    /// <summary>"EPISODE" above the episode the party puts up.</summary>
+    public string EpisodeHeading => AppText.Upper(AppText.Get("web.watchTogether.startSheet.episode"));
+
+    /// <summary>"HOW TO PICK" above the two cards.</summary>
+    public string HowToPickHeading => AppText.Upper(AppText.Get("web.watchTogether.startSheet.howToPick"));
+
+    /// <summary>"watched" beside an episode of the chooser, read where each row is made.</summary>
+    public static string WatchedMark => AppText.Get("web.watchTogether.startSheet.watched");
 
     /// <summary>The web's season pills: the chosen one white on dark text, the others raised with muted text.</summary>
     public static Brush PillBackground(bool selected) => Resource(selected ? "SiloForegroundBrush" : "SiloSurfaceRaisedBrush");

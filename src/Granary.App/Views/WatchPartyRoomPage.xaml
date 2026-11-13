@@ -79,7 +79,10 @@
                         </Border>
                         <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6,6,6,8" Padding="6,1" CornerRadius="8" Background="#99000000"
                                 BorderBrush="#26FFFFFF" BorderThickness="1" Visibility="{x:Bind IsSeries}">
-                            <TextBlock Text="Series &#x203A;" FontSize="10" FontWeight="SemiBold" Foreground="White" />
+                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                <TextBlock Text="{x:Bind views:WatchPartyRoomPage.SeriesPill}" FontSize="10" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="&#x203A;" FontSize="10" FontWeight="SemiBold" Foreground="White" />
+                            </StackPanel>
                         </Border>
                         <ProgressBar VerticalAlignment="Bottom" Value="{x:Bind ProgressPercent}" Maximum="100" Visibility="{x:Bind HasProgress}" IsHitTestVisible="False" />
                     </Grid>
@@ -111,27 +114,31 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <Button Style="{StaticResource PillButtonStyle}" Click="OnCopyCodeClick" AutomationProperties.Name="{x:Bind views:WatchPartyRoomPage.CopyCodeName(ViewModel.Code), Mode=OneWay}"
-                            ToolTipService.ToolTip="Copy the code">
+                            ToolTipService.ToolTip="{x:Bind views:WatchPartyRoomPage.CopyCodeName(ViewModel.Code), Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="{x:Bind ViewModel.Code, Mode=OneWay}" FontFamily="Consolas" FontWeight="SemiBold" CharacterSpacing="200" />
                             <FontIcon Glyph="&#xE8C8;" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource PillButtonStyle}" Click="OnCopyLinkClick" AutomationProperties.Name="Copy invite link"
+                    <Button Style="{StaticResource PillButtonStyle}" Click="OnCopyLinkClick" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.strip.copyInvite')}"
                             Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE71B;" FontSize="11" />
-                            <TextBlock Text="Invite link" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.strip.inviteLink')}" />
                         </StackPanel>
                     </Button>
                     <DropDownButton CornerRadius="14" Padding="12,3" MinHeight="28" FontSize="12" Visibility="{x:Bind ViewModel.CanSwitchMode, Mode=OneWay}"
-                                    AutomationProperties.Name="Change how the room picks">
-                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.ModeMenuLabel(ViewModel.ModeLabel), Mode=OneWay}" />
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.strip.changeMode')}">
+                        <!-- "Host picks · you", as the web's two parts. -->
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="{x:Bind ViewModel.ModeLabel, Mode=OneWay}" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.strip.modeYou')}" />
+                        </StackPanel>
                         <DropDownButton.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                <MenuFlyoutItem Text="Host picks" Command="{x:Bind ViewModel.SwitchModeCommand}" CommandParameter="host_pick"
+                                <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.watchTogether.common.hostPicks')}" Command="{x:Bind ViewModel.SwitchModeCommand}" CommandParameter="host_pick"
                                                 IsEnabled="{x:Bind ViewModel.IsVote, Mode=OneWay}" />
-                                <MenuFlyoutItem Text="Everyone votes" Command="{x:Bind ViewModel.SwitchModeCommand}" CommandParameter="vote"
+                                <MenuFlyoutItem Text="{x:Bind t:AppText.Get('watchParty.options.everyoneVotes')}" Command="{x:Bind ViewModel.SwitchModeCommand}" CommandParameter="vote"
                                                 IsEnabled="{x:Bind views:WatchPartyRoomPage.Not(ViewModel.IsVote), Mode=OneWay}" />
                             </MenuFlyout>
                         </DropDownButton.Flyout>
@@ -145,15 +152,17 @@
                         <Ellipse Width="8" Height="8" Fill="{x:Bind views:WatchPartyRoomPage.ConnectionDot(ViewModel.IsLive), Mode=OneWay}" VerticalAlignment="Center" />
                         <TextBlock Text="{x:Bind ViewModel.ConnectionLabel, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.LeaveCommand}" AutomationProperties.Name="Leave room">
+                    <Button Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.LeaveCommand}"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.strip.leaveLabel')}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE89B;" FontSize="12" />
-                            <TextBlock Text="Leave" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.strip.leave')}" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource SmallButtonStyle}" Click="OnEndRoomClick" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}"
-                            AutomationProperties.Name="End room" Background="#FFDC2626" Foreground="White" BorderBrush="#FFDC2626">
-                        <TextBlock Text="End room" />
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.strip.endRoom')}" Background="#FFDC2626" Foreground="White"
+                            BorderBrush="#FFDC2626">
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.strip.endRoom')}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -185,8 +194,9 @@
 
                         <!-- No room on this device. A room that is over shows nothing: the page goes on to the hub, which says why. -->
                         <StackPanel Spacing="12" Margin="0,64" HorizontalAlignment="Center" Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasRoom), Mode=OneWay}">
-                            <TextBlock Text="You're not in a Watch Party." Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" />
-                            <Button Content="Back to Watch Party" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.LeaveCommand}" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('granary.watchParty.notInRoom')}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" />
+                            <Button Content="{x:Bind t:AppText.Get('web.watchTogether.room.backToHub')}" Style="{StaticResource SiloSecondaryButtonStyle}"
+                                    HorizontalAlignment="Center" Command="{x:Bind ViewModel.LeaveCommand}" />
                         </StackPanel>
 
                         <StackPanel Spacing="20" Visibility="{x:Bind ViewModel.ShowsRoom, Mode=OneWay}">
@@ -205,7 +215,8 @@
                                             <TextBlock Text="{x:Bind ViewModel.Candidate.Headline, Mode=OneWay}" FontSize="22" FontFamily="{StaticResource SiloFontSemiBold}"
                                                        FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,40,0" AutomationProperties.HeadingLevel="Level2" />
                                             <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                    Command="{x:Bind ViewModel.Candidate.DismissCommand}" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
+                                                    Command="{x:Bind ViewModel.Candidate.DismissCommand}" AutomationProperties.Name="{x:Bind ViewModel.Candidate.CloseName, Mode=OneWay}"
+                                                    ToolTipService.ToolTip="{x:Bind ViewModel.Candidate.CloseName, Mode=OneWay}">
                                                 <FontIcon Glyph="&#xE711;" FontSize="12" />
                                             </Button>
                                         </Grid>
@@ -214,7 +225,7 @@
                                         <!-- A movie: who in the room has seen it. -->
                                         <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsMovie, Mode=OneWay}">
                                             <Grid>
-                                                <TextBlock Text="WHO'S SEEN IT" Style="{StaticResource EyebrowStyle}" />
+                                                <TextBlock Text="{x:Bind WhoSeenHeading}" Style="{StaticResource EyebrowStyle}" />
                                                 <TextBlock Text="{x:Bind ViewModel.Candidate.SeenSummary, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" HorizontalAlignment="Right" />
                                             </Grid>
                                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Candidate.Seen}">
@@ -236,7 +247,7 @@
                                                             <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                                 <FontIcon Glyph="&#xE8A4;" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind OnWatchlist}"
-                                                                          AutomationProperties.Name="On their watchlist" />
+                                                                          AutomationProperties.Name="{x:Bind views:WatchPartyRoomPage.OnWatchlistName}" />
                                                                 <TextBlock Text="{x:Bind State}" Style="{StaticResource SmallMutedStyle}" />
                                                             </StackPanel>
                                                         </Grid>
@@ -247,9 +258,9 @@
                                         <!-- A series: a season, then an episode. -->
                                         <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsSeries, Mode=OneWay}">
                                             <ComboBox ItemsSource="{x:Bind ViewModel.Candidate.Seasons}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedSeason, Mode=TwoWay}"
-                                                      DisplayMemberPath="Label" MinWidth="180" AutomationProperties.Name="Season" />
+                                                      DisplayMemberPath="Label" MinWidth="180" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.series.seasons')}" />
                                             <ListView ItemsSource="{x:Bind ViewModel.Candidate.Episodes}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedEpisode, Mode=TwoWay}"
-                                                      SelectionMode="Single" MaxHeight="260" AutomationProperties.Name="Episodes">
+                                                      SelectionMode="Single" MaxHeight="260" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.series.episodes')}">
                                                 <ListView.ItemTemplate>
                                                     <DataTemplate x:DataType="wp:WatchPartyEpisodeRow">
                                                         <TextBlock Text="{x:Bind Label}" FontSize="13" TextTrimming="CharacterEllipsis" />
@@ -304,13 +315,13 @@
                                                     <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RejoinPlaybackCommand}">
                                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                                             <FontIcon Glyph="&#xE768;" FontSize="12" />
-                                                            <TextBlock Text="Rejoin playback" />
+                                                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.playing.rejoin')}" />
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.StopCommand}" Visibility="{x:Bind ViewModel.CanStop, Mode=OneWay}">
                                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                                             <FontIcon Glyph="&#xE71A;" FontSize="11" />
-                                                            <TextBlock Text="Stop for everyone" />
+                                                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.playing.stop')}" />
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -332,7 +343,8 @@
                                                         <TextBlock Text="{x:Bind ViewModel.StartLabel, Mode=OneWay}" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Content="Change" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ChangeCommand}"
+                                                <Button Content="{x:Bind t:AppText.Get('web.watchTogether.common.change')}" Style="{StaticResource SiloSecondaryButtonStyle}"
+                                                        Command="{x:Bind ViewModel.ChangeCommand}"
                                                         Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
                                                 <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.ToggleReadyCommand}"
                                                         Visibility="{x:Bind ViewModel.CanMarkReady, Mode=OneWay}">
@@ -350,8 +362,8 @@
                             <!-- Voting, with nothing suggested yet. -->
                             <Border Style="{StaticResource PanelStyle}" Padding="24,36" Visibility="{x:Bind ViewModel.ShowsVotingEmpty, Mode=OneWay}">
                                 <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                    <TextBlock Text="VOTING IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
-                                    <TextBlock Text="No suggestions yet" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind VotingOpenHeading}" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.voting.noSuggestions')}" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
                                     <TextBlock Text="{x:Bind ViewModel.VotingEmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="400" TextAlignment="Center" />
                                 </StackPanel>
                             </Border>
@@ -359,14 +371,14 @@
                             <!-- The open lobby. -->
                             <Border Style="{StaticResource PanelStyle}" BorderBrush="#33FFFFFF" Padding="24,40" Visibility="{x:Bind ViewModel.ShowsEmptyLobby, Mode=OneWay}">
                                 <StackPanel Spacing="12" HorizontalAlignment="Center">
-                                    <TextBlock Text="ROOM IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
-                                    <TextBlock Text="Nothing on yet" FontSize="28" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind RoomOpenHeading}" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.lobby.nothingOn')}" FontSize="28" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
                                     <TextBlock Text="{x:Bind ViewModel.LobbyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="448" TextAlignment="Center" />
                                     <Button Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"
                                             Command="{x:Bind ViewModel.OpenVotingCommand}" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <FontIcon Glyph="&#xE8FB;" FontSize="13" />
-                                            <TextBlock Text="Open the floor to votes" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.lobby.openVoting')}" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -398,7 +410,7 @@
                                                     <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes, Mode=OneWay}"
                                                             Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe), Mode=OneWay}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe), Mode=OneWay}"
                                                             AutomationProperties.Name="{x:Bind VoteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind VoteName, Mode=OneWay}">
-                                                        <TextBlock Text="&#x2713;" FontSize="12" Foreground="{StaticResource SiloOnPrimaryBrush}" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
+                                                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.VoteMark}" FontSize="12" Foreground="{StaticResource SiloOnPrimaryBrush}" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
                                                     </Button>
                                                     <Border Grid.Column="1" Width="32" Height="48" CornerRadius="4" Background="{StaticResource SiloSurfaceRaisedBrush}">
                                                         <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl), Mode=OneWay}" Stretch="UniformToFill" />
@@ -408,7 +420,7 @@
                                                             <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                                             <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
                                                             <Border Padding="6,1" CornerRadius="8" Background="#26FBBF24" Visibility="{x:Bind IsLeading, Mode=OneWay}" VerticalAlignment="Center">
-                                                                <TextBlock Text="LEADING" FontSize="10" FontWeight="SemiBold" Foreground="#FFFCD34D" />
+                                                                <TextBlock Text="{x:Bind views:WatchPartyRoomPage.LeadingBadge}" FontSize="10" FontWeight="SemiBold" Foreground="#FFFCD34D" />
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="{x:Bind By, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" />
@@ -446,28 +458,30 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="INVITE" Style="{StaticResource EyebrowStyle}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind InviteHeading}" Style="{StaticResource EyebrowStyle}" VerticalAlignment="Center" />
                                     <Border Grid.Column="1" Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="6" Padding="10,6"
                                             Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
                                         <TextBlock Text="{x:Bind ViewModel.InviteText, Mode=OneWay}" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                                                    TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
                                     </Border>
-                                    <TextBlock Grid.Column="1" Text="Share the code to let people in." Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
+                                    <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.shareCode')}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
                                                Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasInviteLink), Mode=OneWay}" />
                                     <Button Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Click="OnCopyLinkClick" Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <FontIcon Glyph="&#xE71B;" FontSize="11" />
-                                            <TextBlock Text="Link" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.link')}" />
                                         </StackPanel>
                                     </Button>
                                     <Button Grid.Column="3" Style="{StaticResource SmallButtonStyle}" Click="OnCopyCodeClick">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <FontIcon Glyph="&#xE8C8;" FontSize="11" />
-                                            <TextBlock Text="Code" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.code')}" />
                                         </StackPanel>
                                     </Button>
                                     <ToggleSwitch Grid.Column="4" MinWidth="0" IsOn="{x:Bind ViewModel.GuestsCanPause, Mode=OneWay}" Toggled="OnPolicyToggled"
-                                                  OnContent="Guests can pause" OffContent="Guests can pause" AutomationProperties.Name="Guests can pause"
+                                                  OnContent="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.guestsCanPause')}"
+                                                  OffContent="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.guestsCanPause')}"
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.inviteBar.guestsCanPause')}"
                                                   Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
                                     <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.PolicyText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
                                                Visibility="{x:Bind ViewModel.IsGuest, Mode=OneWay}" />
@@ -500,22 +514,31 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Grid>
-                                        <TextBox Text="{x:Bind ViewModel.Shelf.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search movies, series, episodes&#x2026;"
-                                                 AutomationProperties.Name="Search movies and series" MinHeight="40" Padding="36,9,8,8" CornerRadius="8" />
+                                        <TextBox Text="{x:Bind ViewModel.Shelf.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 PlaceholderText="{x:Bind t:AppText.Get('web.watchTogether.browse.searchPlaceholder')}"
+                                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.browse.searchLabel')}" MinHeight="40" Padding="36,9,8,8"
+                                                 CornerRadius="8" />
                                         <FontIcon Glyph="&#xE721;" FontSize="14" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                                                   Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" />
                                     </Grid>
                                     <controls:PillChoices Grid.Column="1" ItemsSource="{x:Bind ViewModel.Shelf.Chips}" SelectedItem="{x:Bind ViewModel.Shelf.SelectedChip, Mode=TwoWay}"
-                                                          VerticalAlignment="Center" AutomationProperties.Name="Filter" />
+                                                          VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.browse.filterLabel')}" />
                                     <Button Grid.Column="2" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Shelf.FoldCommand}"
-                                            Visibility="{x:Bind ViewModel.Shelf.IsCollapsible, Mode=OneWay}" AutomationProperties.Name="Hide browse" ToolTipService.ToolTip="Hide browse">
+                                            Visibility="{x:Bind ViewModel.Shelf.IsCollapsible, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.browse.hide')}"
+                                            ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.watchTogether.browse.hide')}">
                                         <FontIcon Glyph="&#xE70E;" FontSize="12" />
                                     </Button>
                                 </Grid>
 
                                 <!-- Search results: scanned, not flicked through. -->
-                                <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Shelf.IsSearching, Mode=OneWay}">
-                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.Shelf.ResultsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
+                                <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Shelf.IsSearching, Mode=OneWay}"
+                                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.browse.searchResults')}">
+                                    <!-- "SEARCH RESULTS" and "· 4", as the web's heading and count. -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Bind SearchResultsHeading}" Style="{StaticResource EyebrowStyle}" />
+                                        <TextBlock Text="{x:Bind ViewModel.Shelf.ResultsCount, Mode=OneWay}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.Shelf.HasSearchState, Mode=OneWay}">
                                         <TextBlock Text="{x:Bind ViewModel.Shelf.SearchState, Mode=OneWay}" Style="{StaticResource MutedStyle}" VerticalAlignment="Center" />
                                         <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.Shelf.RetrySearchCommand}"
@@ -576,20 +599,21 @@
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" Spacing="4" Padding="12,6,12,0" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1">
                         <RadioButton x:Name="PeopleTab" GroupName="RailTabs" Style="{StaticResource SiloLineTabStyle}" IsChecked="True" Checked="OnRailTabChecked"
-                                     AutomationProperties.Name="People">
+                                     AutomationProperties.Name="{x:Bind t:AppText.Get('web.watchTogether.rail.people')}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="People" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.rail.people')}" />
                                 <Border Padding="6,0" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Center">
                                     <TextBlock Text="{x:Bind ViewModel.PeopleCount, Mode=OneWay}" FontSize="10" FontWeight="SemiBold" />
                                 </Border>
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton x:Name="ActivityTab" GroupName="RailTabs" Content="Activity" Style="{StaticResource SiloLineTabStyle}" Checked="OnRailTabChecked" />
+                        <RadioButton x:Name="ActivityTab" GroupName="RailTabs" Content="{x:Bind t:AppText.Get('web.watchTogether.rail.activity')}" Style="{StaticResource SiloLineTabStyle}"
+                                     Checked="OnRailTabChecked" />
                     </StackPanel>
 
                     <ScrollViewer x:Name="PeoplePanel" Grid.Row="1">
                         <StackPanel Padding="0,6">
-                            <TextBlock Text="No one here yet. Share the invite to fill the room." Style="{StaticResource MutedStyle}" TextAlignment="Center" Margin="16,24"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.rail.peopleEmpty')}" Style="{StaticResource MutedStyle}" TextAlignment="Center" Margin="16,24"
                                        Visibility="{x:Bind ViewModel.HasNoMembers, Mode=OneWay}" />
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Members}">
                                 <ItemsRepeater.ItemTemplate>
@@ -608,9 +632,9 @@
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBlock Text="{x:Bind Name}" FontSize="14" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
                                                     <Border Padding="6,1" CornerRadius="8" BorderBrush="#1AFFFFFF" BorderThickness="1" Visibility="{x:Bind IsHost}" VerticalAlignment="Center">
-                                                        <TextBlock Text="HOST" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource SiloMutedBrush}" />
+                                                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.HostBadge}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource SiloMutedBrush}" />
                                                     </Border>
-                                                    <TextBlock Text="(you)" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind IsSelf}" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.YouMark}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind IsSelf}" VerticalAlignment="Center" />
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                                     <FontIcon Glyph="&#xE73E;" FontSize="10" Foreground="#FF34D399" Visibility="{x:Bind ShowsReadyTick}" />
@@ -627,7 +651,7 @@
 
                     <ScrollViewer x:Name="ActivityPanel" Grid.Row="1" Visibility="Collapsed">
                         <StackPanel Padding="16,12" Spacing="12">
-                            <TextBlock Text="Things people do in the room show up here." Style="{StaticResource MutedStyle}" TextAlignment="Center" Margin="0,12"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.watchTogether.rail.activityEmpty')}" Style="{StaticResource MutedStyle}" TextAlignment="Center" Margin="0,12"
                                        Visibility="{x:Bind ViewModel.HasNoActivity, Mode=OneWay}" />
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.ActivityRows}">
                                 <ItemsRepeater.Layout>

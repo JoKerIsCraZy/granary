@@ -6,6 +6,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
@@ -120,16 +121,17 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     /// <summary>The stage: "ROOM IS OPEN / Nothing on yet".</summary>
     public bool ShowsEmptyLobby => !HasCandidate && !IsPlaying && !IsVote && IsLobbyEmpty;
 
-    public string HostName => Room?.Host?.DisplayName is { Length: > 0 } name ? name : "The host";
+    /// <summary>The host's name, or "The host" as the lobby's sentences name one without a name.</summary>
+    public string HostName => Room?.Host?.DisplayName is { Length: > 0 } name ? name : AppText.Get("watchParty.theHost");
 
     /// <summary>"Live · 1 here", "Voting · 1 here" or "Playing · 3 here".</summary>
-    public string PhaseLabel => Room is not { } room ? "Connecting…"
-        : room.IsPlaying ? $"Playing · {room.MemberCount} here"
-        : IsVote ? $"Voting · {room.MemberCount} here"
-        : $"Live · {room.MemberCount} here";
+    public string PhaseLabel => Room is not { } room ? AppText.Get("web.watchTogether.connection.connecting")
+        : room.IsPlaying ? AppText.Get("web.watchTogether.strip.playing", ("count", room.MemberCount), ("count_text", AppText.Number(room.MemberCount)))
+        : IsVote ? AppText.Get("web.watchTogether.strip.voting", ("count", room.MemberCount), ("count_text", AppText.Number(room.MemberCount)))
+        : AppText.Get("web.watchTogether.strip.live", ("count", room.MemberCount), ("count_text", AppText.Number(room.MemberCount)));
 
     /// <summary>"Host picks" or "Everyone votes".</summary>
-    public string ModeLabel => IsVote ? "Everyone votes" : "Host picks";
+    public string ModeLabel => IsVote ? AppText.Get("watchParty.options.everyoneVotes") : AppText.Get("web.watchTogether.common.hostPicks");
 
     /// <summary>The host switches how the room picks while nothing plays.</summary>
     public bool CanSwitchMode => IsHost && !IsPlaying;
@@ -139,11 +141,11 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     /// <summary>"Connected", "Connecting…", "Reconnecting…" or "Disconnected".</summary>
     public string ConnectionLabel => _party.ConnectionState switch
     {
-        _ when _party.End is not null => "Disconnected",
-        WatchPartyConnectionState.Connected => "Connected",
-        WatchPartyConnectionState.Connecting when _wasConnected => "Reconnecting…",
-        WatchPartyConnectionState.Connecting => "Connecting…",
-        _ => _wasConnected ? "Reconnecting…" : "Disconnected",
+        _ when _party.End is not null => AppText.Get("watchParty.connection.disconnected"),
+        WatchPartyConnectionState.Connected => AppText.Get("web.watchTogether.connection.connected"),
+        WatchPartyConnectionState.Connecting when _wasConnected => AppText.Get("granary.watchParty.reconnecting"),
+        WatchPartyConnectionState.Connecting => AppText.Get("web.watchTogether.connection.connecting"),
+        _ => _wasConnected ? AppText.Get("granary.watchParty.reconnecting") : AppText.Get("watchParty.connection.disconnected"),
     };
 
     public bool IsLive => _party.IsConnected;
@@ -152,10 +154,12 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     /// <summary>The empty lobby's words: the host's moves, or what guests do meanwhile.</summary>
     public string LobbyText => IsHost
-        ? "Pick something below and it lands here for everyone to see. Or let the room decide."
-        : $"{HostName} is deciding. Anything you pick below goes in as a suggestion.";
+        ? AppText.Get("web.watchTogether.lobby.hostBody")
+        : AppText.Get("web.watchTogether.lobby.guestBody", ("host", HostName));
 
-    public string StagedEyebrow => IsHost ? "Up next" : $"Up next · {HostName} queued this";
+    public string StagedEyebrow => IsHost
+        ? AppText.Get("web.watchTogether.lobby.upNext")
+        : AppText.Get("web.watchTogether.lobby.upNextGuest", ("host", HostName));
 
     public string StagedCaption
     {
@@ -163,8 +167,11 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         {
             var (ready, total) = GuestsReady();
             return IsHost
-                ? total > 0 ? $"{ready} of {total} ready" : "Waiting for a guest to join"
-                : $"Starts when {HostName} presses play · {ready} of {total} ready";
+                ? total > 0
+                    ? AppText.Get("web.watchTogether.presence.ready", ("ready", ready), ("total", total), ("total_text", AppText.Number(total)))
+                    : AppText.Get("web.watchTogether.lobby.waitingGuest")
+                : AppText.Get("web.watchTogether.lobby.guestCaption",
+                    ("host", HostName), ("ready", ready), ("total", total), ("total_text", AppText.Number(total)));
         }
     }
 
@@ -173,7 +180,9 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         get
         {
             var (ready, total) = GuestsReady();
-            return total > 0 ? $"Start for everyone · {ready}/{total} ready" : "Start alone anyway";
+            return total > 0
+                ? AppText.Get("web.watchTogether.lobby.startEveryone", ("ready", ready), ("total", total), ("total_text", AppText.Number(total)))
+                : AppText.Get("web.watchTogether.lobby.startAlone");
         }
     }
 
@@ -182,17 +191,17 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     public bool IsSelfReady => Room?.Self?.LobbyReady == true;
 
-    public string ReadyLabel => IsSelfReady ? "Ready ✓" : "I'm ready";
+    public string ReadyLabel => IsSelfReady ? AppText.Get("web.watchTogether.lobby.readyDone") : AppText.Get("watchParty.button.imReady");
 
     public bool CanStop => IsHost && _feature.Capabilities?.StopPlayback != false;
 
-    public string StopHint => IsHost
-        ? "Playback keeps going for the others. Stopping brings everyone back here to pick something else."
-        : "Playback keeps going for the others. Rejoining puts you at the room's position.";
+    public string StopHint => IsHost ? AppText.Get("web.watchTogether.playing.hostNote") : AppText.Get("web.watchTogether.playing.guestNote");
 
     public bool GuestsCanPause => Room?.GuestsCanPause == true;
 
-    public string PolicyText => GuestsCanPause ? "Guests can pause" : "Host controls playback";
+    public string PolicyText => GuestsCanPause
+        ? AppText.Get("web.watchTogether.inviteBar.guestsCanPause")
+        : AppText.Get("web.watchTogether.inviteBar.hostControls");
 
     /// <summary>The invitation as a link to the server's web client, for the Link copy.</summary>
     public Uri? InviteLink => _party.InviteLink;
@@ -247,15 +256,15 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanAct))]
-    private Task StartAsync() => HostAsync(_party.StartAsync, "Could not start playback");
+    private Task StartAsync() => HostAsync(_party.StartAsync, AppText.Get("web.watchTogether.actions.startFailed"));
 
     [RelayCommand(CanExecute = nameof(CanAct))]
-    private Task StopAsync() => HostAsync(_party.StopAsync, "Could not stop playback");
+    private Task StopAsync() => HostAsync(_party.StopAsync, AppText.Get("web.watchTogether.actions.stopFailed"));
 
     /// <summary>The host switches the lobby to host picks or to voting.</summary>
     [RelayCommand]
     private Task SwitchModeAsync(string? mode) => mode is WatchPartySelectionModes.HostPick or WatchPartySelectionModes.Vote && mode != Room?.SelectionMode
-        ? HostAsync(() => _party.SetSelectionModeAsync(mode), "Could not change how the room picks")
+        ? HostAsync(() => _party.SetSelectionModeAsync(mode), AppText.Get("web.watchTogether.actions.modeFailed"))
         : Task.CompletedTask;
 
     /// <summary>"Open the floor to votes".</summary>
@@ -263,14 +272,15 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private Task OpenVotingAsync() => SwitchModeAsync(WatchPartySelectionModes.Vote);
 
     [RelayCommand]
-    private Task ToggleGuestsCanPauseAsync() => HostAsync(() => _party.SetGuestsCanPauseAsync(!GuestsCanPause), "Could not change who controls playback");
+    private Task ToggleGuestsCanPauseAsync() =>
+        HostAsync(() => _party.SetGuestsCanPauseAsync(!GuestsCanPause), AppText.Get("web.watchTogether.actions.updateRoomFailed"));
 
     [RelayCommand]
     private async Task ToggleReadyAsync()
     {
         if (!await _party.SendAsync(WatchPartyFrames.LobbyReady(!IsSelfReady)))
         {
-            Say(WatchPartyPlaybackBinding.ReconnectingText);
+            Say(AppText.Get("web.watchTogether.actions.notConnected"));
         }
     }
 
@@ -307,7 +317,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not end the Watch Party");
-            Say("Could not end the room. " + LibraryErrors.Describe(ex));
+            Say(WatchPartyText.Failed(AppText.Get("web.watchTogether.actions.endRoomFailed"), LibraryErrors.Describe(ex)));
         }
     }
 
@@ -332,8 +342,8 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
-            _logger.LogWarning(ex, "{Failure}", failure);
-            Say($"{failure}. {LibraryErrors.Describe(ex)}");
+            _logger.LogWarning(ex, "A host's action in the Watch Party failed");
+            Say(WatchPartyText.Failed(failure, LibraryErrors.Describe(ex)));
             return false;
         }
         finally
@@ -433,7 +443,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         {
             Shelf.IsOpen = false;
         }
-        Shelf.FoldedLabel = IsPlaying ? "Suggest something for after" : "Change what's up next";
+        Shelf.FoldedLabel = IsPlaying ? AppText.Get("web.watchTogether.room.suggestAfter") : AppText.Get("web.watchTogether.room.changeUpNext");
         if (!HasCandidate)
         {
             Shelf.SelectedId = IsStaged ? Room?.SelectedContentId : null;

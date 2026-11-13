@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
 
@@ -63,7 +64,9 @@ public sealed partial class StartPartyViewModel
             var ordered = seasons.Items.OrderBy(s => DetailFacts.IsSpecials(s) ? 1 : 0).ThenBy(s => s.SeasonNumber).ToList();
             foreach (var season in ordered)
             {
-                Seasons.Add(new StartPartySeason(season.SeasonNumber, DetailFacts.IsSpecials(season) ? "Specials" : $"Season {season.SeasonNumber}"));
+                Seasons.Add(new StartPartySeason(season.SeasonNumber, DetailFacts.IsSpecials(season)
+                    ? AppText.Get("web.watchTogether.common.specials")
+                    : AppText.Get("web.watchTogether.common.season", ("number", season.SeasonNumber))));
             }
             int? opensOn = Request?.SeasonNumber is { } number && ordered.Any(s => s.SeasonNumber == number)
                 ? number

@@ -109,7 +109,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <FontIcon Glyph="&#xEA8F;" FontSize="22" Foreground="{StaticResource SiloForegroundBrush}" />
-                    <TextBlock Text="Notifications" FontSize="24" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.inbox.title')}" FontSize="24" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -117,77 +117,83 @@
                             Visibility="{x:Bind ViewModel.ShowsMarkAllRead, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE73E;" FontSize="14" />
-                            <TextBlock Text="Mark all read" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.inbox.markAllRead')}" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="PreferencesButton" Style="{StaticResource SiloSecondaryButtonStyle}" AutomationProperties.Name="Preferences">
+                    <Button x:Name="PreferencesButton" Style="{StaticResource SiloSecondaryButtonStyle}"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.open')}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE713;" FontSize="14" />
-                            <TextBlock Text="Preferences" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.open')}" />
                         </StackPanel>
                         <Button.Flyout>
                             <Flyout x:Name="PreferencesFlyout" Placement="BottomEdgeAlignedRight" Opening="OnPreferencesOpening">
                                 <StackPanel Width="300" Spacing="14">
                                     <ProgressRing IsActive="{x:Bind ViewModel.Preferences.IsLoading, Mode=OneWay}"
                                                   Visibility="{x:Bind ViewModel.Preferences.IsLoading, Mode=OneWay}" Width="24" Height="24"
-                                                  AutomationProperties.Name="Loading preferences" />
+                                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notifications.preferencesLoading')}" />
                                 <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Preferences.HasError, Mode=OneWay}">
-                                    <TextBlock Text="Couldn't load preferences." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.loadFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
                                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Preferences.LoadCommand}" />
                                 </StackPanel>
                                 <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.Preferences.IsReady, Mode=OneWay}">
                                     <Grid>
                                         <StackPanel>
-                                            <TextBlock Text="Notifications" Style="{StaticResource PreferenceLabelStyle}" />
-                                            <TextBlock Text="Master switch for this profile" Style="{StaticResource SiloCaptionTextStyle}" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.enabled')}" Style="{StaticResource PreferenceLabelStyle}" />
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.enabledDescription')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                         </StackPanel>
                                         <ToggleSwitch HorizontalAlignment="Right" MinWidth="0" OnContent="" OffContent=""
-                                                      IsOn="{x:Bind ViewModel.Preferences.Enabled, Mode=TwoWay}" AutomationProperties.Name="Notifications" />
+                                                      IsOn="{x:Bind ViewModel.Preferences.Enabled, Mode=TwoWay}"
+                                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.enabled')}" />
                                     </Grid>
                                     <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
                                     <StackPanel Spacing="12" Opacity="{x:Bind views:NotificationsPage.SwitchOpacity(ViewModel.Preferences.Enabled), Mode=OneWay}">
                                         <Grid>
                                             <StackPanel>
-                                                <TextBlock Text="Favorites" Style="{StaticResource PreferenceLabelStyle}" />
-                                                <TextBlock Text="New episodes of favorited series" Style="{StaticResource SiloCaptionTextStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.favorites')}" Style="{StaticResource PreferenceLabelStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.favoritesDescription')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                             </StackPanel>
                                             <ToggleSwitch HorizontalAlignment="Right" MinWidth="0" OnContent="" OffContent=""
                                                           IsEnabled="{x:Bind ViewModel.Preferences.Enabled, Mode=OneWay}"
-                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyFavorites, Mode=TwoWay}" AutomationProperties.Name="Favorites" />
+                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyFavorites, Mode=TwoWay}"
+                                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.favorites')}" />
                                         </Grid>
                                         <Grid>
                                             <StackPanel>
-                                                <TextBlock Text="Watchlist" Style="{StaticResource PreferenceLabelStyle}" />
-                                                <TextBlock Text="New episodes of watchlisted series" Style="{StaticResource SiloCaptionTextStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.watchlist')}" Style="{StaticResource PreferenceLabelStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.watchlistDescription')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                             </StackPanel>
                                             <ToggleSwitch HorizontalAlignment="Right" MinWidth="0" OnContent="" OffContent=""
                                                           IsEnabled="{x:Bind ViewModel.Preferences.Enabled, Mode=OneWay}"
-                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyWatchlist, Mode=TwoWay}" AutomationProperties.Name="Watchlist" />
+                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyWatchlist, Mode=TwoWay}"
+                                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.watchlist')}" />
                                         </Grid>
                                         <Grid>
                                             <StackPanel>
-                                                <TextBlock Text="Continue Watching" Style="{StaticResource PreferenceLabelStyle}" />
-                                                <TextBlock Text="Series you are actively watching" Style="{StaticResource SiloCaptionTextStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.continueWatching')}" Style="{StaticResource PreferenceLabelStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.continueWatchingDescription')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                             </StackPanel>
                                             <ToggleSwitch HorizontalAlignment="Right" MinWidth="0" OnContent="" OffContent=""
                                                           IsEnabled="{x:Bind ViewModel.Preferences.Enabled, Mode=OneWay}"
-                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyContinueWatching, Mode=TwoWay}" AutomationProperties.Name="Continue Watching" />
+                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyContinueWatching, Mode=TwoWay}"
+                                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.continueWatching')}" />
                                         </Grid>
                                         <Grid>
                                             <StackPanel>
-                                                <TextBlock Text="Next Up" Style="{StaticResource PreferenceLabelStyle}" />
-                                                <TextBlock Text="The next episode after your progress" Style="{StaticResource SiloCaptionTextStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.nextUp')}" Style="{StaticResource PreferenceLabelStyle}" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.preferences.nextUpDescription')}" Style="{StaticResource SiloCaptionTextStyle}" />
                                             </StackPanel>
                                             <ToggleSwitch HorizontalAlignment="Right" MinWidth="0" OnContent="" OffContent=""
                                                           IsEnabled="{x:Bind ViewModel.Preferences.Enabled, Mode=OneWay}"
-                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyNextUp, Mode=TwoWay}" AutomationProperties.Name="Next Up" />
+                                                          IsOn="{x:Bind ViewModel.Preferences.NotifyNextUp, Mode=TwoWay}"
+                                                          AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.preferences.nextUp')}" />
                                         </Grid>
                                     </StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Preferences.SaveError, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                                                Foreground="{StaticResource SiloDestructiveBrush}" />
                                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}">
                                         <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
-                                        <HyperlinkButton Content="See which series notify you" Padding="0" FontSize="14"
+                                        <HyperlinkButton Content="{x:Bind t:AppText.Get('web.notifications.preferences.seeSeries')}" Padding="0" FontSize="14"
                                                          Foreground="{StaticResource SiloPrimaryBrush}" Click="OnSeeSeriesClick" />
                                     </StackPanel>
                                 </StackPanel>
@@ -199,7 +205,7 @@
             </Grid>
 
             <controls:PillChoices ItemsSource="{x:Bind ViewModel.Filters, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedFilter, Mode=TwoWay}"
-                                  AutomationProperties.Name="Show" />
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notifications.filtersName')}" />
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsInboxView, Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
@@ -208,10 +214,10 @@
                            Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />
 
                 <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading notifications" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notifications.loading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
-                    <TextBlock Text="Could not load notifications." Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
-                    <Button Content="Reload notifications" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <TextBlock Text="{x:Bind InboxLoadFailed}" Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
+                    <Button Content="{x:Bind InboxReload}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.LoadCommand}" />
                 </StackPanel>
                 <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="10" Margin="0,64" HorizontalAlignment="Center">
@@ -219,8 +225,8 @@
                     <TextBlock Text="{x:Bind ViewModel.EmptyTitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                HorizontalAlignment="Center" />
                     <TextBlock MaxWidth="380" Style="{StaticResource SiloCaptionTextStyle}" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
-                               Text="You will be notified here when new episodes arrive for series you favorite, watchlist, or are watching." />
-                    <HyperlinkButton Content="See which series can notify you" FontSize="13" HorizontalAlignment="Center" Foreground="{StaticResource SiloPrimaryBrush}"
+                               Text="{x:Bind t:AppText.Get('web.notifications.inbox.emptyHint')}" />
+                    <HyperlinkButton Content="{x:Bind t:AppText.Get('web.notifications.inbox.seeSeriesCanNotify')}" FontSize="13" HorizontalAlignment="Center" Foreground="{StaticResource SiloPrimaryBrush}"
                                      Command="{x:Bind ViewModel.ShowSeriesCommand}" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}" />
                 </StackPanel>
 
@@ -277,7 +283,8 @@
                                 </Button>
                                 <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
                                         Command="{x:Bind MarkReadCommand}" CommandParameter="{x:Bind}" Visibility="{x:Bind IsUnread, Mode=OneWay}"
-                                        AutomationProperties.Name="Mark as read" ToolTipService.ToolTip="Mark as read">
+                                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.inbox.markRead')}"
+                                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.notifications.inbox.markRead')}">
                                     <FontIcon Glyph="&#xE73E;" FontSize="12" />
                                 </Button>
                             </Grid>
@@ -285,17 +292,14 @@
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
 
-                <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,8,0,0"
+                <Button Content="{x:Bind t:AppText.Get('web.notifications.inbox.loadMore')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,8,0,0"
                         Command="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.CanLoadMore, Mode=OneWay}" />
             </StackPanel>
 
             <!-- The Series view: the series that notify, then those that won't, as the web's NotifiedSeriesList. -->
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesView, Mode=OneWay}">
-                <TextBlock FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="12,0">
-                    <!-- The line break between the runs is the space before "Preferences"; none comes before ", or mute". -->
-                    <Run Text="New episodes of these series notify this profile. Change which reasons count in" />
-                    <Hyperlink Click="OnSeriesPreferencesClick" Foreground="{StaticResource SiloForegroundBrush}"><Run Text="Preferences" /></Hyperlink><Run Text="{x:Bind ViewModel.Series.IntroEnd, Mode=OneWay}" />
-                </TextBlock>
+                <!-- The web's intro, its Preferences a link that opens them: filled in code from the message. -->
+                <TextBlock x:Name="SeriesIntro" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="12,0" />
 
                 <Grid ColumnSpacing="8" Margin="12,0">
                     <Grid.ColumnDefinitions>
@@ -303,18 +307,18 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBox Text="{x:Bind ViewModel.Series.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search series"
-                             AutomationProperties.Name="Search series" MinHeight="36" Padding="34,7,8,6" VerticalContentAlignment="Center" CornerRadius="8" />
+                    <TextBox Text="{x:Bind ViewModel.Series.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{x:Bind t:AppText.Get('web.notifications.series.search')}"
+                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.series.search')}" MinHeight="36" Padding="34,7,8,6" VerticalContentAlignment="Center" CornerRadius="8" />
                     <FontIcon Glyph="&#xE721;" FontSize="14" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                               Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" />
                     <DropDownButton Grid.Column="1" Style="{StaticResource SeriesMenuButtonStyle}" Content="{x:Bind ViewModel.Series.Reason.Label, Mode=OneWay}"
-                                    AutomationProperties.Name="Filter by reason">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.series.filterByReason')}">
                         <DropDownButton.Flyout>
                             <MenuFlyout x:Name="ReasonMenu" Placement="BottomEdgeAlignedRight" Opening="OnReasonMenuOpening" />
                         </DropDownButton.Flyout>
                     </DropDownButton>
                     <DropDownButton Grid.Column="2" Style="{StaticResource SeriesMenuButtonStyle}" Content="{x:Bind ViewModel.Series.Sort.Label, Mode=OneWay}"
-                                    AutomationProperties.Name="Sort">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.notifications.series.sort')}">
                         <DropDownButton.Flyout>
                             <MenuFlyout x:Name="SeriesSortMenu" Placement="BottomEdgeAlignedRight" Opening="OnSeriesSortMenuOpening" />
                         </DropDownButton.Flyout>
@@ -330,27 +334,27 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{x:Bind ViewModel.Series.Notice, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" VerticalAlignment="Center"
                                Foreground="{x:Bind NoticeBrush(ViewModel.Series.NoticeFailed), Mode=OneWay}" />
-                    <Button Grid.Column="1" Content="Undo" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.UndoCommand}"
+                    <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('web.notifications.queries.undo')}" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.UndoCommand}"
                             Visibility="{x:Bind ViewModel.Series.CanUndo, Mode=OneWay}" />
                     <Button Grid.Column="2" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Series.DismissNoticeCommand}"
-                            AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notice.dismiss')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.notice.dismiss')}">
                         <FontIcon Glyph="&#xE711;" FontSize="12" />
                     </Button>
                 </Grid>
 
                 <ProgressRing IsActive="{x:Bind ViewModel.Series.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Series.IsLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading series" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.notifications.seriesLoading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.Series.HasError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" Margin="12,0">
-                    <TextBlock Text="Could not load the series that notify you." FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
-                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.LoadCommand}" />
+                    <TextBlock Text="{x:Bind SeriesLoadFailed}" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
+                    <Button Content="{x:Bind SeriesRetry}" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.LoadCommand}" />
                 </StackPanel>
-                <TextBlock Text="No series match. Try another search or reason." FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.series.noMatch')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                            HorizontalAlignment="Center" Margin="0,64" Visibility="{x:Bind ViewModel.Series.IsFilteredEmpty, Mode=OneWay}" />
                 <StackPanel Visibility="{x:Bind ViewModel.Series.IsBareEmpty, Mode=OneWay}" Spacing="10" Margin="0,80" HorizontalAlignment="Center">
                     <FontIcon Glyph="&#xE7ED;" FontSize="40" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.5" HorizontalAlignment="Center" />
-                    <TextBlock Text="No series notify you yet" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.series.empty')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" />
                     <TextBlock MaxWidth="380" Style="{StaticResource SiloCaptionTextStyle}" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
-                               Text="Series you favorite, add to your watchlist, or start watching show up here." />
+                               Text="{x:Bind t:AppText.Get('web.notifications.series.emptyHint')}" />
                 </StackPanel>
 
                 <!-- Other filters or a mute being read: the lists stay, dimmed, until the new ones come. -->
@@ -366,7 +370,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Won&#x2019;t notify" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.notifications.series.wontNotify')}" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                        Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                             <Border Grid.Column="1" Height="1" Background="{StaticResource SiloBorderBrush}" VerticalAlignment="Center" />
                         </Grid>
@@ -377,7 +381,7 @@
                         </ItemsRepeater>
                     </StackPanel>
                     <ProgressRing IsActive="{x:Bind ViewModel.Series.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Series.IsLoadingMore, Mode=OneWay}"
-                                  Width="24" Height="24" Margin="0,16" HorizontalAlignment="Center" AutomationProperties.Name="Loading more series" />
+                                  Width="24" Height="24" Margin="0,16" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.loadMore.loading')}" />
                     <StackPanel Visibility="{x:Bind ViewModel.Series.HasLoadMoreError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.Series.LoadMoreError, Mode=OneWay}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                                    HorizontalAlignment="Center" />

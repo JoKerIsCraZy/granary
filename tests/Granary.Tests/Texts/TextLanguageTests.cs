@@ -186,6 +186,18 @@ public sealed class TextLanguageTests
     }
 
     [Fact]
+    public void Runs_KeepAnEmptyTagsPlace_ForTheControlThatGoesThere()
+    {
+        var english = TextFixtures.Language("en");
+
+        var runs = english.Runs("web.home.addRow.rules.groupSentence", []);
+
+        Assert.Equal(["join", "", "w", "", "match", "", "w"], runs.Select(run => string.Join('/', run.Tags)));
+        Assert.Equal(["", " ", "titles that match", " ", "", " ", "of these:"], runs.Select(run => run.Text));
+        Assert.Equal(" titles that match  of these:", english.Get("web.home.addRow.rules.groupSentence", []));
+    }
+
+    [Fact]
     public void Runs_OfATagFirst_StartWithIt()
     {
         var french = TextFixtures.Language("fr");

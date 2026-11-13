@@ -47,7 +47,7 @@ public sealed partial class CollectionsPage : Page
             var dialog = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "New collection",
+                Title = AppText.Get("web.collections.copy.newCollection"),
                 Content = picker,
                 CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,

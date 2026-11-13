@@ -1,8 +1,10 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.WatchParty;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
@@ -22,13 +24,36 @@ public sealed partial class WatchPartyPage : Page
     {
         ViewModel = App.Services.GetRequiredService<WatchPartyHubViewModel>();
         InitializeComponent();
+        ShowFromTitleHint();
     }
 
     public WatchPartyHubViewModel ViewModel { get; }
 
+    /// <summary>"WATCH PARTY" above the headline.</summary>
+    public string Eyebrow => AppText.Upper(AppText.Get("watchParty.title"));
+
+    /// <summary>"YOUR RECENT PARTIES".</summary>
+    public string RecentHeading => AppText.Upper(AppText.Get("web.watchTogether.hub.recentTitle"));
+
     public static double Dim(bool dimmed) => dimmed ? 0.6 : 1;
 
-    public static string RejoinName(string title) => $"Rejoin {title}";
+    public static string RejoinName(string title) => AppText.Get("granary.watchParty.rejoinRoom", ("title", title));
+
+    // "Already know what you want to watch? … choose <item>Start a party with this</item> from the menu.": the name in the
+    // foreground, where the language puts it.
+    private void ShowFromTitleHint()
+    {
+        var nameBrush = (Brush)Application.Current.Resources["SiloForegroundBrush"];
+        foreach (var part in AppText.Runs("web.watchTogether.hub.fromTitleHint"))
+        {
+            var run = new Run { Text = part.Text };
+            if (part.Tags.Contains("item"))
+            {
+                run.Foreground = nameBrush;
+            }
+            FromTitleHint.Inlines.Add(run);
+        }
+    }
 
     // A mode card's icon: the foreground when chosen, else muted at 60 %, as the web's.
     public static Brush ModeIconBrush(bool chosen) =>

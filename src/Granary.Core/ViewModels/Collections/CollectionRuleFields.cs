@@ -1,4 +1,7 @@
+using System.Collections.Frozen;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -40,10 +43,10 @@ public sealed record RuleField(string Value, string Label, string Group, IReadOn
     /// <summary>The catalog facet a value is picked from: genre, studio, network, country, content_rating.</summary>
     public string? Facet { get; init; }
 
-    /// <summary>"Pick a genre".</summary>
+    /// <summary>"Pick a genre", in the language on screen.</summary>
     public string? Placeholder { get; init; }
 
-    /// <summary>"min", "kbps".</summary>
+    /// <summary>"min", "kbps", in the language on screen.</summary>
     public string? Unit { get; init; }
 
     /// <summary>original, audio or subtitle.</summary>
@@ -59,92 +62,180 @@ public sealed record RuleField(string Value, string Label, string Group, IReadOn
     public bool NoEpisodeValue { get; init; }
 }
 
-/// <summary>The fields, groups, kinds of title and sorts of a smart collection's rules.</summary>
+/// <summary>
+/// The fields, groups, kinds of title and sorts of a smart collection's rules, in the words of the web's
+/// <c>collectionBuilderFields.ts</c>, <c>RuleBuilder</c> and <c>OrderBlock</c>, in the language on screen. The fields are made
+/// once for each language, since every rule looks its field up on each keystroke and preview; the other lists are built
+/// when asked for, and a view model keeps the lists its boxes pick from.
+/// </summary>
 public static class CollectionRuleFields
 {
     /// <summary>The conditions that take a span ("30d") rather than a date.</summary>
     public static readonly IReadOnlySet<string> RelativeDateOperators = new HashSet<string>(StringComparer.Ordinal) { "in_last", "not_in_last" };
 
-    public static IReadOnlyList<(string Key, string Label)> Groups { get; } =
-        [("title", "Title"), ("people", "People"), ("file", "File"), ("you", "You"), ("library", "Library")];
+    // The fields in each language they were asked in, held weakly so a language a test made goes with it.
+    private static readonly ConditionalWeakTable<TextLanguage, FieldSet> Made = new();
+
+    public static IReadOnlyList<(string Key, string Label)> Groups =>
+    [
+        ("title", AppText.Get("web.collections.builder.groupTitle")),
+        ("people", AppText.Get("web.collections.builder.groupPeople")),
+        ("file", AppText.Get("web.collections.builder.groupFile")),
+        ("you", AppText.Get("web.collections.builder.groupYou")),
+        ("library", AppText.Get("web.collections.builder.groupLibrary")),
+    ];
 
     /// <summary>The kinds of title, lower-case as the rules' sentence reads them ("Show movies from …").</summary>
-    public static IReadOnlyList<SettingChoice> Scopes { get; } =
+    public static IReadOnlyList<SettingChoice> Scopes =>
     [
-        new("all", "all titles"), new("video", "movies and shows"), new("movie", "movies"), new("series", "shows"),
-        new("episode", "episodes"), new("audiobook", "audiobooks"), new("ebook", "ebooks"), new("manga", "manga"),
+        new("all", AppText.Get("web.home.addRow.rules.scopeAll")),
+        new("video", AppText.Get("web.home.addRow.rules.scopeVideo")),
+        new("movie", AppText.Get("web.home.addRow.rules.scopeMovie")),
+        new("series", AppText.Get("web.home.addRow.rules.scopeSeries")),
+        new("episode", AppText.Get("web.home.addRow.rules.scopeEpisode")),
+        new("audiobook", AppText.Get("web.home.addRow.rules.scopeAudiobook")),
+        new("ebook", AppText.Get("web.home.addRow.rules.scopeEbook")),
+        new("manga", AppText.Get("web.home.addRow.rules.scopeManga")),
     ];
 
-    public static IReadOnlyList<SettingChoice> InLastUnits { get; } = [new("d", "days"), new("w", "weeks"), new("m", "months"), new("y", "years")];
-
-    public static IReadOnlyList<SettingChoice> YesNo { get; } = [new("true", "Yes"), new("false", "No")];
-
-    private static readonly RuleOperator[] IsOperators = [new("is", "is"), new("is_not", "is not")];
-
-    private static readonly RuleOperator[] NumberOperators =
-        [new("gte", "is at least"), new("lte", "is at most"), new("gt", "is above"), new("lt", "is below"), new("between", "is between")];
-
-    private static readonly RuleOperator[] TextOperators =
+    public static IReadOnlyList<SettingChoice> InLastUnits =>
     [
-        new("contains", "contains"), new("not_contains", "does not contain"), new("is", "is"), new("is_not", "is not"),
-        new("begins_with", "begins with"), new("ends_with", "ends with"),
+        new("d", AppText.Get("web.catalog.rules.unitDays")),
+        new("w", AppText.Get("web.catalog.rules.unitWeeks")),
+        new("m", AppText.Get("web.catalog.rules.unitMonths")),
+        new("y", AppText.Get("web.catalog.rules.unitYears")),
     ];
 
-    private static readonly RuleOperator[] DateOperators =
-        [new("in_last", "is in the last"), new("not_in_last", "is not in the last"), new("lt", "is before"), new("gt", "is after"), new("between", "is between")];
+    public static IReadOnlyList<SettingChoice> YesNo => [new("true", AppText.Get("web.catalog.rules.yes")), new("false", AppText.Get("web.catalog.rules.no"))];
 
-    private static readonly RuleOperator[] SwitchOperators = [new("is", "is")];
+    private static RuleOperator Is => new("is", AppText.Get("web.collections.builder.opIs"));
+
+    private static RuleOperator IsNot => new("is_not", AppText.Get("web.collections.builder.opIsNot"));
+
+    private static RuleOperator Between => new("between", AppText.Get("web.collections.builder.opBetween"));
+
+    private static RuleOperator[] IsOperators => [Is, IsNot];
+
+    private static RuleOperator[] NumberOperators =>
+    [
+        new("gte", AppText.Get("web.collections.builder.opAtLeast")),
+        new("lte", AppText.Get("web.collections.builder.opAtMost")),
+        new("gt", AppText.Get("web.collections.builder.opAbove")),
+        new("lt", AppText.Get("web.collections.builder.opBelow")),
+        Between,
+    ];
+
+    private static RuleOperator[] TextOperators =>
+    [
+        new("contains", AppText.Get("web.collections.builder.opContains")),
+        new("not_contains", AppText.Get("web.collections.builder.opNotContains")),
+        Is,
+        IsNot,
+        new("begins_with", AppText.Get("web.collections.builder.opBeginsWith")),
+        new("ends_with", AppText.Get("web.collections.builder.opEndsWith")),
+    ];
+
+    private static RuleOperator[] DateOperators =>
+    [
+        new("in_last", AppText.Get("web.collections.builder.opInLast")),
+        new("not_in_last", AppText.Get("web.collections.builder.opNotInLast")),
+        new("lt", AppText.Get("web.collections.builder.opBefore")),
+        new("gt", AppText.Get("web.collections.builder.opAfter")),
+        Between,
+    ];
+
+    private static RuleOperator[] SwitchOperators => [Is];
 
     /// <summary>In field-picker order: Title, People, File, You, Library.</summary>
-    public static IReadOnlyList<RuleField> All { get; } =
+    public static IReadOnlyList<RuleField> All => Fields.All;
+
+    /// <summary>A field by its name ("rating" is the IMDb rating); null for one this app does not know.</summary>
+    public static RuleField? Find(string field) => Fields.ByValue.GetValueOrDefault(field == "rating" ? "rating_imdb" : field);
+
+    private static FieldSet Fields => Made.GetValue(AppText.Language, static _ => new FieldSet(Build()));
+
+    private sealed class FieldSet(IReadOnlyList<RuleField> all)
+    {
+        public IReadOnlyList<RuleField> All { get; } = all;
+
+        public FrozenDictionary<string, RuleField> ByValue { get; } = all.ToFrozenDictionary(f => f.Value, StringComparer.Ordinal);
+    }
+
+    private static RuleField[] Build() =>
     [
-        new("title", "Title", "title", TextOperators, RuleInput.Text) { Extended = true },
-        new("show_title", "Show title", "title", TextOperators, RuleInput.Text) { EpisodesOnly = true },
-        Facet("genre", "Genre", "genre", [.. IsOperators, new("contains", "contains", Hidden: true)]),
-        Facet("studio", "Studio", "studio"),
-        Facet("network", "Network", "network"),
-        Facet("country", "Country", "country"),
-        Facet("content_rating", "Content rating", "rating"),
-        Language("original_language", "Original language", "title", "original"),
-        new("type", "Type", "title", IsOperators, RuleInput.Select) { Options = [new("movie", "Movies"), new("series", "Shows")] },
-        new("year", "Year", "title", [.. IsOperators, .. NumberOperators], RuleInput.Number) { IsNumber = true, SupportsRange = true },
-        new("decade", "Decade", "title", IsOperators, RuleInput.Select) { IsNumber = true, Options = Decades(), Extended = true },
-        Date("release_date", "Release date", "title"),
-        Date("last_air_date", "Latest episode aired", "title") with { ShowsOnly = true, Extended = true },
-        new("runtime", "Duration", "title", NumberOperators, RuleInput.Number) { IsNumber = true, SupportsRange = true, Unit = "min", Extended = true },
-        Rating("rating_imdb", "IMDb rating"),
-        Rating("rating_tmdb", "TMDB rating") with { Extended = true },
-        Rating("rating_rt_critic", "RT critic score") with { Extended = true, NoEpisodeValue = true },
-        Rating("rating_rt_audience", "RT audience score") with { Extended = true, NoEpisodeValue = true },
-        new("status", "Status", "title", IsOperators, RuleInput.Select)
+        new("title", AppText.Get("web.collections.builder.fieldTitle"), "title", TextOperators, RuleInput.Text) { Extended = true },
+        new("show_title", AppText.Get("web.collections.builder.fieldShowTitle"), "title", TextOperators, RuleInput.Text) { EpisodesOnly = true },
+        Facet("genre", AppText.Get("web.collections.builder.fieldGenre"),
+            [.. IsOperators, new("contains", AppText.Get("web.collections.builder.opContains"), Hidden: true)]),
+        Facet("studio", AppText.Get("web.collections.builder.fieldStudio")),
+        Facet("network", AppText.Get("web.collections.builder.fieldNetwork")),
+        Facet("country", AppText.Get("web.collections.builder.fieldCountry")),
+        Facet("content_rating", AppText.Get("web.collections.builder.fieldContentRating")),
+        Language("original_language", AppText.Get("web.collections.builder.fieldOriginalLanguage"), "title", "original"),
+        new("type", AppText.Get("web.collections.builder.fieldType"), "title", IsOperators, RuleInput.Select)
         {
-            Options = [new("pending", "pending"), new("matched", "matched"), new("unmatched", "unmatched")],
+            Options = [new("movie", AppText.Get("web.collections.builder.typeMovies")), new("series", AppText.Get("web.collections.builder.typeShows"))],
+        },
+        new("year", AppText.Get("web.collections.builder.fieldYear"), "title", [.. IsOperators, .. NumberOperators], RuleInput.Number)
+        {
+            IsNumber = true,
+            SupportsRange = true,
+        },
+        new("decade", AppText.Get("web.collections.builder.fieldDecade"), "title", IsOperators, RuleInput.Select)
+        {
+            IsNumber = true,
+            Options = Decades(),
+            Extended = true,
+        },
+        Date("release_date", AppText.Get("web.collections.builder.fieldReleaseDate"), "title"),
+        Date("last_air_date", AppText.Get("web.collections.builder.fieldLastAirDate"), "title") with { ShowsOnly = true, Extended = true },
+        new("runtime", AppText.Get("web.collections.builder.fieldRuntime"), "title", NumberOperators, RuleInput.Number)
+        {
+            IsNumber = true,
+            SupportsRange = true,
+            Unit = AppText.Get("web.collections.builder.unitMinutes"),
+            Extended = true,
+        },
+        Rating("rating_imdb", AppText.Get("web.collections.builder.fieldRatingImdb")),
+        Rating("rating_tmdb", AppText.Get("web.collections.builder.fieldRatingTmdb")) with { Extended = true },
+        Rating("rating_rt_critic", AppText.Get("web.collections.builder.fieldRatingRtCritic")) with { Extended = true, NoEpisodeValue = true },
+        Rating("rating_rt_audience", AppText.Get("web.collections.builder.fieldRatingRtAudience")) with { Extended = true, NoEpisodeValue = true },
+        new("status", AppText.Get("web.collections.builder.fieldStatus"), "title", IsOperators, RuleInput.Select)
+        {
+            Options =
+            [
+                new("pending", AppText.Get("web.collections.builder.statusPending")),
+                new("matched", AppText.Get("web.collections.builder.statusMatched")),
+                new("unmatched", AppText.Get("web.collections.builder.statusUnmatched")),
+            ],
             Hidden = true,
         },
-        Person("actor", "Actor"),
-        Person("director", "Director"),
-        Person("writer", "Writer"),
-        Person("producer", "Producer"),
-        new("resolution", "Resolution", "file", IsOperators, RuleInput.Select)
+        Person("actor", AppText.Get("web.collections.builder.fieldActor")),
+        Person("director", AppText.Get("web.collections.builder.fieldDirector")),
+        Person("writer", AppText.Get("web.collections.builder.fieldWriter")),
+        Person("producer", AppText.Get("web.collections.builder.fieldProducer")),
+        new("resolution", AppText.Get("web.collections.builder.fieldResolution"), "file", IsOperators, RuleInput.Select)
         {
             Options = [.. new[] { "480p", "720p", "1080p", "2160p", "4320p" }.Select(r => new SettingChoice(r, r))],
         },
-        Switch("hdr", "HDR", "file"),
-        Switch("dolby_vision", "Dolby Vision", "file"),
-        Language("audio_language", "Audio language", "file", "audio"),
-        Language("subtitle_language", "Subtitle language", "file", "subtitle"),
-        new("bitrate", "Bitrate", "file", NumberOperators, RuleInput.Number) { IsNumber = true, SupportsRange = true, Unit = "kbps" },
-        Switch("watched", "Watched", "you") with { Personalized = true },
-        Switch("favorited", "Favorited", "you") with { Personalized = true },
-        Switch("in_watchlist", "In watchlist", "you") with { Personalized = true },
-        Switch("in_progress", "In progress", "you") with { Personalized = true },
-        Date("last_watched", "Last watched", "you") with { Personalized = true },
-        Date("added_at", "Added", "library"),
-        Date("latest_episode_added", "Latest episode added", "library") with { ShowsOnly = true, Extended = true },
+        Switch("hdr", AppText.Get("web.collections.builder.fieldHdr"), "file"),
+        Switch("dolby_vision", AppText.Get("web.collections.builder.fieldDolbyVision"), "file"),
+        Language("audio_language", AppText.Get("web.collections.builder.fieldAudioLanguage"), "file", "audio"),
+        Language("subtitle_language", AppText.Get("web.collections.builder.fieldSubtitleLanguage"), "file", "subtitle"),
+        new("bitrate", AppText.Get("web.collections.builder.fieldBitrate"), "file", NumberOperators, RuleInput.Number)
+        {
+            IsNumber = true,
+            SupportsRange = true,
+            Unit = AppText.Get("web.collections.builder.unitKbps"),
+        },
+        Switch("watched", AppText.Get("web.collections.builder.fieldWatched"), "you") with { Personalized = true },
+        Switch("favorited", AppText.Get("web.collections.builder.fieldFavorited"), "you") with { Personalized = true },
+        Switch("in_watchlist", AppText.Get("web.collections.builder.fieldInWatchlist"), "you") with { Personalized = true },
+        Switch("in_progress", AppText.Get("web.collections.builder.fieldInProgress"), "you") with { Personalized = true },
+        Date("last_watched", AppText.Get("web.collections.builder.fieldLastWatched"), "you") with { Personalized = true },
+        Date("added_at", AppText.Get("web.collections.builder.fieldAdded"), "library"),
+        Date("latest_episode_added", AppText.Get("web.collections.builder.fieldLatestEpisodeAdded"), "library") with { ShowsOnly = true, Extended = true },
     ];
-
-    /// <summary>A field by its name ("rating" is the IMDb rating); null for one this app does not know.</summary>
-    public static RuleField? Find(string field) => All.FirstOrDefault(f => f.Value == (field == "rating" ? "rating_imdb" : field));
 
     /// <summary>
     /// The fields a new rule can pick for a kind of title, as the web's <c>getFilterRuleFieldOptions</c>: the newer ones
@@ -185,53 +276,70 @@ public static class CollectionRuleFields
             null or "all" or "video" => "all",
             _ => scope,
         };
-        return [.. SortOptions.Where(s => s.Value == keep || Applies(s, relevance)).Select(s => new SettingChoice(s.Value, s.Label))];
+        return [.. SortOptions.Where(s => s.Value == keep || Applies(s, relevance)).Select(s => new SettingChoice(s.Value, SortName(s.Value)))];
     }
 
-    /// <summary>How each direction reads for a sort: "A–Z", "Newest first", "Highest first".</summary>
-    public static (string Desc, string Asc) Directions(string field) => field switch
+    /// <summary>A sort's name, as the web's <c>querySortOptions.ts</c> labels it ("Date Added"); its field for one it does not know.</summary>
+    public static string SortName(string field) => field switch
     {
-        "title" or "author" or "narrator" or "series" => ("Z–A", "A–Z"),
-        "added_at" or "release_date" or "last_air_date" or "latest_episode_added" or "year" or "date_viewed" => ("Newest first", "Oldest first"),
-        _ => ("Highest first", "Lowest first"),
+        "author" => AppText.Get("catalog.sort.author"),
+        "narrator" => AppText.Get("catalog.sort.narrator"),
+        "series" => AppText.Get("catalog.sort.series"),
+        _ => new LibrarySortOption(field, StartsDescending: false).Label,
     };
+
+    /// <summary>How each direction reads for a sort: "A–Z", "Newest first", "Highest first".</summary>
+    public static (string Desc, string Asc) Directions(string field)
+    {
+        var (desc, asc) = DirectionsOf(field);
+        return (AppText.Get("web.collections.fields.direction", ("direction", desc)), AppText.Get("web.collections.fields.direction", ("direction", asc)));
+    }
 
     /// <summary>"Title A–Z", "Date Added, newest first": a saved default sort, as its line names it.</summary>
     public static string SortLabel(string field, string? order)
     {
-        string name = SortOptions.FirstOrDefault(s => s.Value == field)?.Label ?? field;
-        var (desc, asc) = Directions(field);
+        var (desc, asc) = DirectionsOf(field);
         string direction = (order is "asc" or "desc" ? order : Api.Catalog.SmartSort.DefaultOrder(field)) == "asc" ? asc : desc;
-        return field is "title" or "author" or "narrator" or "series" ? $"{name} {direction}" : $"{name}, {direction.ToLowerInvariant()}";
+        return field is "title" or "author" or "narrator" or "series"
+            ? AppText.Get("web.collections.fields.sortAlphabetical", ("name", SortName(field)), ("direction", direction))
+            : AppText.Get("web.collections.fields.sortWithDirection", ("name", SortName(field)), ("direction", direction));
     }
 
-    private sealed record SortOption(string Value, string Label, string[] Scopes);
+    // Which way each direction reads for a sort, as the web's OrderBlock names them: A–Z, newest first, highest first.
+    private static (string Desc, string Asc) DirectionsOf(string field) => field switch
+    {
+        "title" or "author" or "narrator" or "series" => ("za", "az"),
+        "added_at" or "release_date" or "last_air_date" or "latest_episode_added" or "year" or "date_viewed" => ("newest", "oldest"),
+        _ => ("highest", "lowest"),
+    };
+
+    private sealed record SortOption(string Value, string[] Scopes);
 
     private static readonly string[] VideoScopes = ["movie", "series", "episode"];
     private static readonly string[] MediaScopes = [.. VideoScopes, "audiobook", "ebook"];
 
     private static readonly SortOption[] SortOptions =
     [
-        new("title", "Title", [.. MediaScopes, "manga"]),
-        new("added_at", "Date Added", [.. MediaScopes, "manga"]),
-        new("release_date", "Release Date", [.. MediaScopes, "manga"]),
-        new("last_air_date", "Latest Episode Air Date", ["series", "episode"]),
-        new("latest_episode_added", "Latest Episode Added", ["series"]),
-        new("year", "Year", [.. MediaScopes, "manga"]),
-        new("content_rating", "Content Rating", VideoScopes),
-        new("runtime", "Duration", MediaScopes),
-        new("rating_imdb", "IMDb Rating", VideoScopes),
-        new("rating_tmdb", "TMDB Rating", VideoScopes),
-        new("rating_rt_critic", "RT Critic Rating", VideoScopes),
-        new("rating_rt_audience", "RT Audience Rating", VideoScopes),
-        new("resolution", "Resolution", VideoScopes),
-        new("bitrate", "Bitrate", MediaScopes),
-        new("progress", "Progress", [.. MediaScopes, "manga"]),
-        new("date_viewed", "Date Viewed", [.. MediaScopes, "manga"]),
-        new("plays", "Plays", [.. MediaScopes, "manga"]),
-        new("author", "Author", ["audiobook", "ebook", "manga"]),
-        new("narrator", "Narrator", ["audiobook"]),
-        new("series", "Series", ["audiobook", "ebook"]),
+        new("title", [.. MediaScopes, "manga"]),
+        new("added_at", [.. MediaScopes, "manga"]),
+        new("release_date", [.. MediaScopes, "manga"]),
+        new("last_air_date", ["series", "episode"]),
+        new("latest_episode_added", ["series"]),
+        new("year", [.. MediaScopes, "manga"]),
+        new("content_rating", VideoScopes),
+        new("runtime", MediaScopes),
+        new("rating_imdb", VideoScopes),
+        new("rating_tmdb", VideoScopes),
+        new("rating_rt_critic", VideoScopes),
+        new("rating_rt_audience", VideoScopes),
+        new("resolution", VideoScopes),
+        new("bitrate", MediaScopes),
+        new("progress", [.. MediaScopes, "manga"]),
+        new("date_viewed", [.. MediaScopes, "manga"]),
+        new("plays", [.. MediaScopes, "manga"]),
+        new("author", ["audiobook", "ebook", "manga"]),
+        new("narrator", ["audiobook"]),
+        new("series", ["audiobook", "ebook"]),
     ];
 
     // "all" is the video baseline: a sort offered there applies to movies, shows and episodes alike.
@@ -240,14 +348,19 @@ public static class CollectionRuleFields
 
     private static RuleField Relabelled(RuleField field, string scope) => (field.Value, scope) switch
     {
-        ("title", "episode") => field with { Label = "Episode title" },
-        ("watched", "ebook" or "manga") => field with { Label = "Read" },
-        ("last_watched", "ebook" or "manga") => field with { Label = "Last read" },
+        ("title", "episode") => field with { Label = AppText.Get("web.catalog.rules.fieldEpisodeTitle") },
+        ("watched", "ebook" or "manga") => field with { Label = AppText.Get("web.catalog.rules.fieldRead") },
+        ("last_watched", "ebook" or "manga") => field with { Label = AppText.Get("web.catalog.rules.fieldLastRead") },
         _ => field,
     };
 
-    private static RuleField Facet(string value, string label, string noun, RuleOperator[]? operators = null) =>
-        new(value, label, "title", operators ?? IsOperators, RuleInput.Facet) { Facet = value, Placeholder = $"Pick a {noun}" };
+    // "Pick a genre", … and "Pick a rating" for the content rating, as the web's facetPlaceholder.
+    private static RuleField Facet(string value, string label, RuleOperator[]? operators = null) =>
+        new(value, label, "title", operators ?? IsOperators, RuleInput.Facet)
+        {
+            Facet = value,
+            Placeholder = AppText.Get("web.collections.builder.facetPlaceholder", ("facet", value)),
+        };
 
     private static RuleField Person(string value, string label) => new(value, label, "people", IsOperators, RuleInput.Person);
 
@@ -268,7 +381,8 @@ public static class CollectionRuleFields
         var decades = new List<SettingChoice>();
         for (int decade = latest; decade >= 1900; decade -= 10)
         {
-            decades.Add(new SettingChoice(decade.ToString(CultureInfo.InvariantCulture), $"{decade.ToString(CultureInfo.InvariantCulture)}s"));
+            decades.Add(new SettingChoice(decade.ToString(CultureInfo.InvariantCulture),
+                AppText.Get("web.collections.guidedRules.decadeOption", ("decade", decade.ToString(CultureInfo.InvariantCulture)))));
         }
         return decades;
     }

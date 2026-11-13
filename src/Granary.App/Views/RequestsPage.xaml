@@ -24,20 +24,20 @@
                   Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.HasHeroTitle, Hero.Sizes), Mode=OneWay}">
         <StackPanel Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.HasHeroTitle, Hero.Sizes), Mode=OneWay}" Spacing="24">
             <StackPanel Spacing="6">
-                <TextBlock Text="Requests" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock Text="Ask for movies and series that aren’t in the library yet, and follow your requests." Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.requests.title')}" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.intro')}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
             </StackPanel>
 
             <Grid>
                 <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource SiloBorderBrush}" />
-                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="Requests view">
-                    <RadioButton GroupName="RequestTabs" Content="Discover" Style="{StaticResource SiloLineTabStyle}"
+                <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.requests.tabsName')}">
+                    <RadioButton GroupName="RequestTabs" Content="{x:Bind t:AppText.Get('web.requests.hub.discover')}" Style="{StaticResource SiloLineTabStyle}"
                                  IsChecked="{x:Bind ViewModel.IsDiscoverTab, Mode=OneWay}" Checked="OnDiscoverChecked" />
-                    <RadioButton GroupName="RequestTabs" Style="{StaticResource SiloLineTabStyle}" AutomationProperties.Name="Yours"
+                    <RadioButton GroupName="RequestTabs" Style="{StaticResource SiloLineTabStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.hub.yours')}"
                                  IsChecked="{x:Bind ViewModel.IsYoursTab, Mode=OneWay}" Checked="OnYoursChecked">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="Yours" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.yours')}" />
                             <Border MinWidth="20" Height="20" Padding="6,0" CornerRadius="10" Background="#33FFFFFF"
                                     Visibility="{x:Bind ViewModel.HasYoursCount, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.YoursCount, Mode=OneWay}" FontSize="10" FontFamily="{StaticResource SiloFontSemiBold}"
@@ -54,14 +54,14 @@
                 <TextBlock Text="{x:Bind ViewModel.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
                            Visibility="{x:Bind ViewModel.RequestNotice.HasText, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
                 <ProgressRing IsActive="{x:Bind ViewModel.IsDiscoverLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsDiscoverLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles to discover" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.requests.discoverLoading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.HasDiscoverError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="TMDB couldn’t be reached, so there is nothing to discover right now." Style="{StaticResource SiloBodyTextStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.discoverFailed')}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryDiscoverCommand}" />
                 </StackPanel>
-                <TextBlock Visibility="{x:Bind ViewModel.IsDiscoverEmpty, Mode=OneWay}" Text="Nothing to discover right now." Margin="0,48"
+                <TextBlock Visibility="{x:Bind ViewModel.IsDiscoverEmpty, Mode=OneWay}" Text="{x:Bind t:AppText.Get('granary.requests.discoverEmpty')}" Margin="0,48"
                            HorizontalAlignment="Center" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.DiscoverRows}">
                     <ItemsRepeater.Layout>
@@ -105,17 +105,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Requests from your account, grouped by what happens next." Style="{StaticResource SiloBodyTextStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.yoursIntro')}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
                     <!-- A plain button: the link style is a HyperlinkButton's, which cannot carry a flyout. -->
                     <Button Grid.Column="1" Background="Transparent" BorderThickness="0" Padding="8,4" Foreground="{StaticResource SiloMutedBrush}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE946;" FontSize="14" />
-                            <TextBlock Text="What the statuses mean" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.statusHelp')}" />
                         </StackPanel>
                         <Button.Flyout>
                             <Flyout Placement="BottomEdgeAlignedRight">
-                                <ItemsRepeater Width="320" ItemsSource="{x:Bind ViewModel.StatusHelp}" AutomationProperties.Name="Request statuses">
+                                <ItemsRepeater Width="320" ItemsSource="{x:Bind ViewModel.StatusHelp}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.hub.statuses')}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Spacing="10" />
                                     </ItemsRepeater.Layout>
@@ -144,18 +144,18 @@
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
                            Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />
                 <ProgressRing IsActive="{x:Bind ViewModel.IsYoursLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsYoursLoading, Mode=OneWay}"
-                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading your requests" />
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.requests.yoursLoading')}" />
                 <StackPanel Visibility="{x:Bind ViewModel.HasYoursError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="Couldn’t load your requests." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.loadFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                TextAlignment="Center" />
                     <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryYoursCommand}" />
                 </StackPanel>
                 <StackPanel Visibility="{x:Bind ViewModel.IsYoursEmpty, Mode=OneWay}" Spacing="10" Margin="0,48" HorizontalAlignment="Center">
-                    <TextBlock Text="You haven’t requested anything." Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
-                    <TextBlock MaxWidth="380" Text="Find a title on Discover or with search, and request it from its page. It shows up here with its status."
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.empty')}" Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
+                    <TextBlock MaxWidth="380" Text="{x:Bind t:AppText.Get('web.requests.hub.emptyHint')}"
                                Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
-                    <Button Content="Browse Discover" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('web.requests.hub.browseDiscover')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.SelectTabCommand}" CommandParameter="{x:Bind DiscoverTab}" />
                 </StackPanel>
 
@@ -198,7 +198,7 @@
                                                     <TextBlock Text="{x:Bind Details}" Style="{StaticResource SiloCaptionTextStyle}" />
                                                     <StackPanel Spacing="4" Width="256" HorizontalAlignment="Left" Visibility="{x:Bind HasDownload}">
                                                         <ProgressBar Value="{x:Bind DownloadValue}" Maximum="100" Visibility="{x:Bind HasDownloadBar}"
-                                                                     Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="Download progress" />
+                                                                     Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.download.progress')}" />
                                                         <TextBlock Text="{x:Bind DownloadText}" Style="{StaticResource SiloCaptionTextStyle}" />
                                                     </StackPanel>
                                                     <TextBlock Text="{x:Bind Dates}" Style="{StaticResource SiloCaptionTextStyle}" />
@@ -210,10 +210,10 @@
                                                             Tag="{x:Bind}" Click="OnOpenInLibraryClick" AutomationProperties.Name="{x:Bind OpenName}">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                                             <FontIcon Glyph="&#xE8F1;" FontSize="13" />
-                                                            <TextBlock Text="Open in library" />
+                                                            <TextBlock Text="{x:Bind t:AppText.Get('web.requests.hub.openInLibrary')}" />
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Content="Cancel request" Style="{StaticResource SiloSecondaryButtonStyle}" Visibility="{x:Bind CanCancel}"
+                                                    <Button Content="{x:Bind t:AppText.Get('web.requests.cancel.action')}" Style="{StaticResource SiloSecondaryButtonStyle}" Visibility="{x:Bind CanCancel}"
                                                             IsEnabled="{x:Bind views:RequestsPage.Not(IsCancelling), Mode=OneWay}"
                                                             Tag="{x:Bind}" Click="OnCancelClick" AutomationProperties.Name="{x:Bind CancelName}" />
                                                 </StackPanel>

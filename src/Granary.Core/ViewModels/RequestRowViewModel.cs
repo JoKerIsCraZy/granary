@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -63,9 +64,9 @@ public sealed partial class RequestRowViewModel : ObservableObject
     [ObservableProperty]
     public partial bool IsCancelling { get; internal set; }
 
-    public string CancelName => $"Cancel request for {Title}";
+    public string CancelName => AppText.Get("web.requests.cancel.actionFor", ("title", Title));
 
-    public string OpenName => $"Open {Title} in library";
+    public string OpenName => AppText.Get("web.requests.hub.openInLibraryFor", ("title", Title));
 }
 
 /// <summary>Requests sharing what happens next: "Needs attention 2".</summary>

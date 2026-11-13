@@ -132,7 +132,9 @@ public sealed class NotifiedSeriesViewModelTests
         Assert.Equal([new ReasonPill("Favorite", true)], series.Silenced[0].Pills);
         Assert.Equal(["Mute", "Mute", "Unmute", "Mute"], series.Notifying.Concat(series.Silenced).Select(r => r.MuteLabel));
         Assert.True(series.CanMute);
-        Assert.Equal(", or mute one series.", series.IntroEnd);
+        Assert.Equal("New episodes of these series notify this profile. Change which reasons count in Preferences, or mute one series.",
+            string.Concat(series.IntroRuns.Select(run => run.Text)));
+        Assert.Equal("Preferences", Assert.Single(series.IntroRuns, run => run.Tags.Contains("prefs")).Text);
         Assert.Contains("status=active&limit=50&image_size=small&sort=title", SeriesQueries());
         Assert.Contains("status=inactive&limit=50&image_size=small&sort=title", SeriesQueries());
     }
@@ -222,12 +224,12 @@ public sealed class NotifiedSeriesViewModelTests
     {
         var series = (await SeriesViewAsync()).Series;
 
-        series.Reason = NotifiedSeriesViewModel.ReasonChoices[1];
+        series.Reason = series.ReasonChoices[1];
         await WaitUntilAsync(() => SeriesQueries().Count(q => q.Contains("reason=favorite", StringComparison.Ordinal)) == 2);
-        series.Sort = NotifiedSeriesViewModel.SortChoices[4];
+        series.Sort = series.SortChoices[4];
 
         await WaitUntilAsync(() => SeriesQueries().Contains("status=inactive&limit=50&image_size=small&reason=favorite&sort=-year"));
-        Assert.Equal("Title (A–Z)", NotifiedSeriesViewModel.SortChoices[0].Label);
+        Assert.Equal("Title (A–Z)", series.SortChoices[0].Label);
     }
 
     [Fact]
@@ -358,10 +360,10 @@ public sealed class NotifiedSeriesViewModelTests
         var page = await SeriesViewAsync();
         var series = page.Series;
         _held = 2;
-        series.Sort = NotifiedSeriesViewModel.SortChoices[1];
+        series.Sort = series.SortChoices[1];
         await WaitUntilAsync(() => series.IsRefreshing && _held == 0);
 
-        series.Reason = NotifiedSeriesViewModel.ReasonChoices[1];
+        series.Reason = series.ReasonChoices[1];
         await WaitUntilAsync(() => !series.IsRefreshing);
         _gate.SetResult();
         await Task.Delay(50, TestContext.Current.CancellationToken);
@@ -378,7 +380,7 @@ public sealed class NotifiedSeriesViewModelTests
         Assert.True(series.LoadMoreCommand.CanExecute(null));
         _held = 2;
 
-        series.Sort = NotifiedSeriesViewModel.SortChoices[2];
+        series.Sort = series.SortChoices[2];
         await WaitUntilAsync(() => series.IsRefreshing);
 
         Assert.False(series.LoadMoreCommand.CanExecute(null));
@@ -393,7 +395,7 @@ public sealed class NotifiedSeriesViewModelTests
     {
         var series = (await SeriesViewAsync()).Series;
         _held = 2;
-        series.Sort = NotifiedSeriesViewModel.SortChoices[2];
+        series.Sort = series.SortChoices[2];
         await WaitUntilAsync(() => series.IsRefreshing);
 
         _harness.Session.State = SessionState.NoServer;
