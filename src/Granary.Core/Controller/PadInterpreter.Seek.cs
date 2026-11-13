@@ -3,7 +3,8 @@ namespace Granary.Core.Controller;
 // Seeking in the player. Left and Right on the picture add steps, larger the longer the direction is held
 // (PadTuning.SeekStep); the triggers scrub at a speed set by how far they are pulled. Either way the player first hears
 // only where the seek would land (SeekPreview), and then of one seek: when a trigger is let go, or once no step was
-// added for a moment. A stream, and a Watch Party's room, get one request rather than one for every step.
+// added for a moment, or at once when a menu opens over it. A stream, and a Watch Party's room, get one request rather
+// than one for every step.
 public sealed partial class PadInterpreter
 {
     // Seconds from where the seek began, how far it can go back and on from there, and when it last changed.

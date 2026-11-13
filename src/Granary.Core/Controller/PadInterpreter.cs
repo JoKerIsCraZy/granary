@@ -169,6 +169,12 @@ public sealed partial class PadInterpreter
             TakeVolume(rightX, rightY);
             TakeScrub(leftTrigger, rightTrigger, step);
         }
+        else
+        {
+            // A menu opened over a seek under way: the seek is sent now, where the bar showed it, rather than held
+            // back for as long as the menu stays.
+            SendSeek();
+        }
         if (context.Mode == PadMode.Player)
         {
             SendSeekWhenDue();

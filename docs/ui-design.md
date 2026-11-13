@@ -994,6 +994,8 @@ In the full player:
 
 With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
 In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
+A seek being made when a menu opens (a trigger still pulled, or a step still waiting) is sent at once, to where the seek
+bar showed it.
 
 Always:
 

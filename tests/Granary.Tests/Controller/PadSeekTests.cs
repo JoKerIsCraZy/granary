@@ -222,6 +222,62 @@ public sealed class PadSeekTests
     }
 
     [Fact]
+    public void AMenuOpenedMidScrub_SeeksAtOnceToWhereTheBarShowed()
+    {
+        var held = _bench.Hold(FullRightTrigger, Second);
+        // Y with the trigger still pulled: the press opens the menu, and the reading after it finds focus there.
+        held.AddRange(_bench.Read(new PadReading(PadButtons.Y, RightTrigger: 1)));
+        _bench.Context = _bench.Context with { Focus = PadFocus.Menu };
+
+        var opened = _bench.Read(new PadReading(PadButtons.Y, RightTrigger: 1));
+        var inMenu = _bench.Hold(FullRightTrigger, Second);
+        inMenu.AddRange(_bench.Rest(Second));
+
+        Assert.Empty(Commits(held));
+        Assert.Equal([PadAction.Of(PadActionKind.SeekCommit, Previews(held)[^1])], opened);
+        Assert.Empty(inMenu);
+        Assert.True(_bench.Pad.IsIdle);
+    }
+
+    [Fact]
+    public void AMenuOpenedOverAStepThatWaits_SeeksAtOnce()
+    {
+        _bench.Tap(PadButtons.DPadRight);
+        _bench.Context = _bench.Context with { Focus = PadFocus.Menu };
+
+        var opened = _bench.Read(default);
+        var after = _bench.Rest(Second);
+
+        Assert.Equal([PadAction.Of(PadActionKind.SeekCommit, 30)], opened);
+        Assert.Empty(after);
+    }
+
+    [Fact]
+    public void AMenuOpenedWhileADirectionSeeks_SeeksAtOnce_AndTheHeldDirectionMovesNothingInIt()
+    {
+        var held = _bench.Hold(PadButtons.DPadLeft, Second);
+        _bench.Context = _bench.Context with { Focus = PadFocus.Menu };
+
+        var opened = _bench.Read(PadButtons.DPadLeft);
+        var inMenu = _bench.Hold(PadButtons.DPadLeft, Second);
+
+        Assert.Equal([PadAction.Of(PadActionKind.SeekCommit, Previews(held)[^1])], opened);
+        Assert.Empty(inMenu);
+    }
+
+    [Fact]
+    public void AMenuOpenedOverASeekBackWhereItBegan_SeeksNothing()
+    {
+        _bench.Tap(PadButtons.DPadRight);
+        _bench.Tap(PadButtons.DPadLeft);
+        _bench.Tap(PadButtons.DPadLeft);
+        _bench.Tap(PadButtons.DPadLeft);
+        _bench.Context = _bench.Context with { Focus = PadFocus.Menu };
+
+        Assert.Equal([new PadAction(PadActionKind.SeekCancel)], _bench.Read(default));
+    }
+
+    [Fact]
     public void ASeekThatWaits_KeepsThePadFromIdling()
     {
         _bench.Tap(PadButtons.DPadRight);
