@@ -965,16 +965,6 @@
       "value": "تمت المشاهدة"
     }
   ],
-  "web.admin.homeRows.restore.libraryFallback": [
-    {
-      "type": 0,
-      "value": "المكتبة "
-    },
-    {
-      "type": 1,
-      "value": "id"
-    }
-  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,

@@ -965,16 +965,6 @@
       "value": "已观看"
     }
   ],
-  "web.admin.homeRows.restore.libraryFallback": [
-    {
-      "type": 0,
-      "value": "媒体库"
-    },
-    {
-      "type": 1,
-      "value": "id"
-    }
-  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,

@@ -965,16 +965,6 @@
       "value": "Vu"
     }
   ],
-  "web.admin.homeRows.restore.libraryFallback": [
-    {
-      "type": 0,
-      "value": "Bibliothèque "
-    },
-    {
-      "type": 1,
-      "value": "id"
-    }
-  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,

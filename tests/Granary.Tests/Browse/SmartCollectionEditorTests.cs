@@ -104,6 +104,18 @@ public sealed class SmartCollectionEditorTests
     }
 
     [Fact]
+    public async Task ALibraryThisProfileNoLongerSees_StaysPicked_ByItsNumber()
+    {
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved.Replace("\"library_ids\": [1]", "\"library_ids\": [1, 99]", StringComparison.Ordinal), "\"rev-1\""));
+
+        var editor = await EditAsync();
+
+        var gone = Assert.Single(editor.Rules.Libraries, l => l.Id == 99);
+        Assert.Equal(("Library 99", true, false), (gone.Name, gone.IsPicked, gone.IsKnown));
+        Assert.Equal("Filme +1 more", editor.Rules.LibrariesText);
+    }
+
+    [Fact]
     public async Task AChangedRule_IsSaved_WithWhatTheAppDoesNotKnowKept()
     {
         var editor = await EditAsync();

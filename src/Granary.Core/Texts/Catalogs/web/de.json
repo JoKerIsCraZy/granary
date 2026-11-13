@@ -973,16 +973,6 @@
       "value": "Gesehen"
     }
   ],
-  "web.admin.homeRows.restore.libraryFallback": [
-    {
-      "type": 0,
-      "value": "Mediathek "
-    },
-    {
-      "type": 1,
-      "value": "id"
-    }
-  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,

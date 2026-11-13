@@ -388,7 +388,7 @@ public sealed partial class SmartRulesViewModel : ObservableObject
         // A picked library this profile no longer sees stays picked, by its number.
         foreach (long id in picked.Where(id => Libraries.All(l => l.Id != id)))
         {
-            Libraries.Add(new LibraryPick(id, AppText.Get("web.admin.homeRows.restore.libraryFallback", ("id", id.ToString(CultureInfo.InvariantCulture))),
+            Libraries.Add(new LibraryPick(id, AppText.Get("granary.collections.rules.libraryById", "id", id.ToString(CultureInfo.InvariantCulture)),
                 true, LibraryPicked) { IsKnown = false });
         }
     }

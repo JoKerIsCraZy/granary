@@ -965,16 +965,6 @@
       "value": "Assistido"
     }
   ],
-  "web.admin.homeRows.restore.libraryFallback": [
-    {
-      "type": 0,
-      "value": "Biblioteca "
-    },
-    {
-      "type": 1,
-      "value": "id"
-    }
-  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,

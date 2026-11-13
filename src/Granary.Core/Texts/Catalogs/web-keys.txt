@@ -219,7 +219,6 @@ watchParty.whoSeen.title
 watchParty.whoSeen.watched
 
 # More of the collection editor's words, as above under catalog.sort.author.
-web.admin.homeRows.restore.libraryFallback
 
 # More of the Requests words, as above under requests.error.create.
 web.audiobooks.duration.hours
