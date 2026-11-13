@@ -297,6 +297,9 @@ public static class CoreServiceCollectionExtensions
         // title preview's is. The stream and the indicator both follow it.
         services.AddSingleton(sp => new ActivityIndicatorSetting(ActivityIndicatorSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<ActivityIndicatorSetting>>()));
+        // The server answering again after it could not be reached: the stream, Retry and the downloads' capability say
+        // so, and the positions recorded offline go at once.
+        services.AddSingleton<ServerRecovery>();
         services.AddSingleton<RealtimeEvents>();
     }
 

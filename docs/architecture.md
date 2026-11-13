@@ -1780,9 +1780,17 @@ device.
   server only caps a time more than 2 minutes ahead of its own. A position sent a second time after such a cap can get a
   later time than the first send did. Granary does not correct for a wrong clock.
 - **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the stop, at the app's
-  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, and at the
-  retry. So while the server can be reached, a position arrives within seconds, as a session's sample would; without it,
-  it waits.
+  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, at the
+  retry, and as soon as Granary hears from the server again while positions wait. So while the server can be reached, a
+  position arrives within seconds, as a session's sample would; without it, it waits.
+- **The server back.** A server that comes back on the same network is none of the session's or the link's changes, so
+  `ServerRecovery` says when Granary hears from it again: the Downloads page's Retry finding it (`OfflineStart`), the
+  events connection subscribing after a connection of its lane that could not (`RealtimeEvents`; the server's end of a
+  connection every five minutes, with the next one at once, is no recovery), and the downloads capability read after a
+  read of the same profile's that failed (`DownloadsFeature`). Each says so once per recovery. While the active profile has
+  pending positions, `OfflineProgressSync` then flushes through the same 2 s settle and reads back, so a recovery that
+  several of them tell is one run; with nothing waiting it starts none. The retry stays the fallback: a send after a
+  recovery that fails again waits for it as before.
 - **Telling the pages.** Home's Continue Watching and Next Up and a title's page load again when a playback stops
   (`ViewerStateChanges`, raised by `PlaybackStops`). A stream's stop has told the server by then. A download's stop
   therefore waits for its last position to be sent (`LocalPlayback.StopAsync` flushes, for at most `StopSendBudget`, 3 s),

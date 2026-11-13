@@ -301,7 +301,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
   button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
   ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
-  Home opens as from the sidebar, so a download that plays in the minimized player plays on; while it still can't be
+  Home opens as from the sidebar, so a download that plays in the minimized player plays on, and what was watched offline
+  goes to the server a moment later (docs/architecture.md, "Offline progress"); while it still can't be
   reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
   "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's

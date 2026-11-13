@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,11 @@ namespace Granary.Core.Downloads;
 /// downloads open instead of Home, as Silo's Android app opens its downloads, and the Downloads page says so with a Retry.
 /// Only the start asks: a profile without downloads on this PC, and a start without a remembered profile, start as ever,
 /// and losing the server while Granary runs moves nobody. The server is asked what it lets the profile download, the call
-/// the downloads make anyway; a problem of its own means it is there, also a refusal.
+/// the downloads make anyway; a problem of its own means it is there, also a refusal. A Retry that finds it says so
+/// (<see cref="ServerRecovery"/>), so what waited for the server goes at once.
 /// </summary>
 public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, ISessionManager session, TimeProvider time,
-    ILogger<OfflineStart> logger) : ObservableObject
+    ILogger<OfflineStart> logger, ServerRecovery? recovery = null) : ObservableObject
 {
     /// <summary>
     /// How long the start waits in all, for the downloads to be read from the disk and then for the server's answer: the
@@ -100,7 +102,12 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
             return false;
         }
         // Another server or profile since the question went out: the session took the note away, and the shell has routed.
-        return reachable && Clear(scope);
+        if (!reachable || !Clear(scope))
+        {
+            return false;
+        }
+        recovery?.Report("Retry");
+        return true;
     }
 
     // The index is in the data folder, but its load also looks into the downloads folder, which can be a drive that sleeps

@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -18,8 +19,10 @@ namespace Granary.Core.Downloads;
 /// </summary>
 /// <remarks>
 /// One run at a time (<c>_running</c>), on the thread pool, and at most one more waiting for it, which takes every wish made
-/// meanwhile; <see cref="FlushSoon"/> and the session's and the link's changes only set a timer. A run claims entries from the
-/// queue, which keeps its own lock, and changes the downloads through the store. Nothing here is awaited by the player.
+/// meanwhile; <see cref="FlushSoon"/> and the session's and the link's changes only set a timer, and so does the server
+/// answering again (<see cref="ServerRecovery"/>) while positions wait: what several of them tell at once goes in one run. A
+/// run claims entries from the queue, which keeps its own lock, and changes the downloads through the store. Nothing here is
+/// awaited by the player.
 /// </remarks>
 public sealed class OfflineProgressSync : IDisposable
 {
@@ -56,6 +59,7 @@ public sealed class OfflineProgressSync : IDisposable
     private readonly ViewerStateChanges _changes;
     private readonly TimeProvider _time;
     private readonly ILogger<OfflineProgressSync> _logger;
+    private readonly ServerRecovery? _recovery;
     private readonly Lock _gate = new();
     private readonly SemaphoreSlim _running = new(1, 1);
     private readonly CancellationTokenSource _stopped = new();
@@ -79,7 +83,7 @@ public sealed class OfflineProgressSync : IDisposable
     private DownloadScope? _sentUnreadFor;
 
     public OfflineProgressSync(OfflineProgressQueue queue, ProgressSyncApi api, DownloadStore store, ISessionManager session, INetworkLink network,
-        ViewerStateChanges changes, TimeProvider time, ILogger<OfflineProgressSync> logger)
+        ViewerStateChanges changes, TimeProvider time, ILogger<OfflineProgressSync> logger, ServerRecovery? recovery = null)
     {
         _queue = queue;
         _api = api;
@@ -89,6 +93,7 @@ public sealed class OfflineProgressSync : IDisposable
         _changes = changes;
         _time = time;
         _logger = logger;
+        _recovery = recovery;
     }
 
     /// <summary>The run started most recently; done once it ended, however it ended.</summary>
@@ -105,7 +110,8 @@ public sealed class OfflineProgressSync : IDisposable
 
     /// <summary>
     /// Follows the session and the connection from now on: a profile that becomes active, a server that is signed in to and
-    /// a link that changes each flush what waits and read the server's progress back, and so does the start itself.
+    /// a link that changes each flush what waits and read the server's progress back, and so does the start itself. The
+    /// server answering again flushes what waits, rather than leaving it to the next <see cref="RetryInterval"/>.
     /// </summary>
     public void Start()
     {
@@ -119,6 +125,10 @@ public sealed class OfflineProgressSync : IDisposable
         }
         _session.Changed += OnChanged;
         _network.Changed += OnChanged;
+        if (_recovery is not null)
+        {
+            _recovery.Recovered += OnRecovered;
+        }
         // Off this thread, which is the UI's at the app's start: the player's first look at the queue finds it read.
         _ = _queue.LoadAsync();
         FlushSoon(readBack: true);
@@ -166,11 +176,25 @@ public sealed class OfflineProgressSync : IDisposable
         }
         _session.Changed -= OnChanged;
         _network.Changed -= OnChanged;
+        if (_recovery is not null)
+        {
+            _recovery.Recovered -= OnRecovered;
+        }
         _stopped.Cancel();
     }
 
     // Raised on any thread.
     private void OnChanged(object? sender, EventArgs e) => FlushSoon(readBack: true);
+
+    // The server answers again (Retry found it, the events connection is back, the capability was read after a failure),
+    // any thread: the active profile's positions that wait go now, as their retry would have sent them. Nothing waits: no run.
+    private void OnRecovered(object? sender, EventArgs e)
+    {
+        if (Acting() is { } target && _queue.Entries(target.Scope).Any(entry => entry.State == OfflineProgressState.Pending))
+        {
+            FlushSoon(readBack: true);
+        }
+    }
 
     private Task Run()
     {
