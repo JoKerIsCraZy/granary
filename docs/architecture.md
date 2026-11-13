@@ -1446,6 +1446,22 @@ The view models of the sign-out paths take it (optional, so they work without it
   nothing of them. The removal takes only downloads added before its clear (`RemoveWhereAsync` takes the clear's
   generation, and each row the `ClearGeneration` it was added at; rows read from the disk count as older than any clear),
   so a download the same account started after signing in again, while the drive was still being read, stays.
+- **What was removed is noted.** A file that keeps entries for each server and account is never written before it was
+  read, and a write can fail; a Granary that closed before the file could be written would find a signed-out account's
+  entries in it again. So a removal is first noted beside the file (`RemovalNote`): `<file>.removed`, as
+  `{ "version": 1, "removals": [ { "id": …, "server_entry_id": …, "account_id": … } ] }`, without `account_id` for a
+  server's removal. It names the server's entry and the account, never a title, a position or a time. The note is
+  written in the file's own chain of writes, before the file is touched. Every start reads it before the file and leaves
+  out what it names, before anything of the file is shown, sent or used; the file is then written without them, and the
+  note is deleted. Each removal has an id of its own, and a file written without a removal names its id
+  (`after_removals`): a note that could not be deleted takes nothing out of a file that names it, so what the same
+  account records after it signed in again stays. No clock is compared, so one that was set back changes nothing. A
+  removal while a note is there is written into the same note. A note that cannot be read now (something has it open)
+  may name anyone: the file counts as unread until it can be, so nothing of it is used and it is not written. A note that
+  no longer says whose entries were to go takes everything the file holds, since losing what was kept is the lesser harm
+  than keeping what a sign-out was to take; a file written after it names it by its content, so the same damaged note
+  does so once. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
+  run, and the entries are back at the next start unless the file could be written before Granary closed.
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.
