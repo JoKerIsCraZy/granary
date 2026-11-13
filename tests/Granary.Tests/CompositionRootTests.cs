@@ -77,6 +77,8 @@ public sealed class CompositionRootTests
         Assert.Same(provider.GetRequiredService<OfflineProgressSync>(), provider.GetRequiredService<OfflineProgressSync>());
         // The shell asks at the start whether the server is there, and the Downloads page shows what it found.
         Assert.Same(provider.GetRequiredService<OfflineStart>(), provider.GetRequiredService<OfflineStart>());
+        // Every card's Download entries come from one place for the app, which the cards ask as their menus open.
+        Assert.Same(provider.GetRequiredService<CardDownloads>(), provider.GetRequiredService<CardDownloads>());
         var record = new DownloadRecord
         {
             DownloadId = "dl_1", Scope = new DownloadScope("srv1", "1", "7"), MediaItemId = "mv_1", Title = "Example Movie", Quality = "original",

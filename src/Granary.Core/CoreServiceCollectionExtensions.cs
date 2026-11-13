@@ -339,6 +339,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
             () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
         services.AddSingleton<DownloadActions>();
+        // Every film's, episode's and season's card has Download in its menu; its dialog reads the title's files as it opens.
+        services.AddSingleton<DownloadOfferReader>();
+        services.AddSingleton<CardDownloads>();
         // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.

@@ -21,8 +21,6 @@ public sealed partial class DownloadOptionsPanel : UserControl
 
     public DownloadOptionsViewModel ViewModel { get; }
 
-    public string Description => DownloadOptionsViewModel.Description;
-
     public string Footer => DownloadOptionsViewModel.Footer;
 
     /// <summary>The server's qualities as the pills take them.</summary>

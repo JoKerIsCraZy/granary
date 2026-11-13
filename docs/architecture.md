@@ -1457,9 +1457,17 @@ client guide.
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
   `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
   `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
-  (`ItemDetailDownloadsTests`). A season's episode cards get their entries from the page: a `MediaCardView` asks the
-  nearest `ICardMenuHost` above it (a `MediaGrid`, or `ItemDetailPage`, whose list is its view model) as its menu opens,
-  except in a `MediaRow`.
+  (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
+  version rows with their sizes, the runtime, a season's episodes with a file that are not on this PC).
+- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's and season's card its entries, which
+  `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
+  Interested: from `DownloadActions.StateOf` and `CanDownload` alone, so a menu never waits for the server. The menu items run the entries' commands on Click rather
+  than binding them, since a command of the app's would hold every item a menu ever made. A card carries no files, so its
+  Download opens the dialog at once (`DownloadActions.OfferReadAsync`, `DownloadOptionsViewModel.ForReading`) and
+  `DownloadOfferReader` reads the title as its page reads it (`GET /api/v2/catalog/items/{id}`; a season with
+  `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
+  can be tried again; one the dialog closed on is cancelled and shows nothing. No page adds download entries to its
+  cards: `ICardMenuHost` is left to the collections' grid.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
   reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow

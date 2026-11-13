@@ -14,7 +14,7 @@ public sealed record TitleDownloadState(bool IsShown, string Label, bool OpensDo
 }
 
 /// <summary>
-/// The title page's Download items and its episode cards' entries. "Download" is the web's overflow item
+/// The title page's Download items, and the cards' (<see cref="CardDownloads"/>). "Download" is the web's overflow item
 /// (<c>pages/ItemDetail/components/ActionBar.tsx</c>) and opens the download dialog while the server lets this profile
 /// download; a title on this PC reads its status as the apps do ("Downloading · 42%", "Downloaded"), opens the Downloads page
 /// and can be deleted after asking, whatever the server says now. One for the app; each title page follows the downloads
@@ -95,6 +95,25 @@ public sealed class DownloadActions
         var options = _options();
         options.ForSeason(request, seasonTitle, knownBytes);
         return _dialog.ShowAsync(options);
+    }
+
+    /// <summary>
+    /// The download dialog for a card's film, episode or season, whose files the card does not carry: it opens at once and
+    /// reads what to offer while it shows (<paramref name="read"/>), and the read stops once it closes.
+    /// </summary>
+    public async Task OfferReadAsync(Func<CancellationToken, Task<DownloadOffer>> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        var options = _options();
+        options.ForReading(read);
+        try
+        {
+            await _dialog.ShowAsync(options);
+        }
+        finally
+        {
+            options.StopReading();
+        }
     }
 
     /// <summary>Deletes the download of a film or an episode from this PC, after asking; the server hears it once the files are gone.</summary>

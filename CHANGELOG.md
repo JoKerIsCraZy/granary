@@ -23,6 +23,9 @@ release's section is what its update says it changes (docs/release.md).
   watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
   with Retry.
+- **Download from any card:** the ⋯ menu of a film's, an episode's or a season's card has Download wherever the card
+  shows, on Home, in a library, in search, in a collection and on a title's page. A title on this PC shows how its
+  download stands there instead, which opens the Downloads page, with Delete download beside it.
 - **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
   is A, Circle is B, Square is X and Triangle is Y. The D-pad or the left stick moves, A picks, B goes
   back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the

@@ -16,7 +16,7 @@ namespace Granary.App.Views;
 /// items follow the app's downloads only while it shows: from <see cref="OnNavigatedTo"/> until it is left or unloads, so the
 /// downloads, which live as long as the app, never hold it (<c>ItemDetailDownloadsTests</c>).
 /// </summary>
-public sealed partial class ItemDetailPage : Page, IArrivalFocus, ICardMenuHost
+public sealed partial class ItemDetailPage : Page, IArrivalFocus
 {
     public ItemDetailPage()
     {
@@ -30,9 +30,6 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus, ICardMenuHost
     public ItemDetailViewModel ViewModel { get; }
 
     Control? IArrivalFocus.ArrivalFocus => Hero.ArrivalFocus;
-
-    // A season's episode cards get Download, or their download's status and Delete download, in their ⋯ menu.
-    ICardMenuSource? ICardMenuHost.CardMenu => ViewModel;
 
     /// <summary>A remote's Play anywhere on the page plays the title as its Play does; false while it cannot.</summary>
     internal bool PlayFromKey()
