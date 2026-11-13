@@ -3020,6 +3020,68 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   (`SiloControlPairingLink`). Both ignore parameters they do not know and read no identity from the link. A phone keeps
   the link's address and port, and finds the receiver again by `id` over DNS-SD or dials them.
 
+### 15.4 Messages
+
+- **Envelope.** UTF-8 JSON, `{"type": "<kind>", "v": 2, "<kindKey>": {…}}`, the payload under the kind in camelCase
+  (`handoffOffer` for `handoff_offer`); `ping` and `pong` have none, `close` an optional `{"reason": "…"}`. Members are
+  camelCase, members without a value are left out, unknown members are ignored. The phones send the payload before
+  `"v"`; order does not matter. Protocol version 2 only: Android lists `[2]`, Apple `[1, 2]`. Granary's code is
+  `SiloCastMessages` with its own source-generated `SiloCastJsonContext`; Granary escapes only what JSON must, so
+  "Elena's PC" goes out as it is.
+- **Reading** follows silo-roku's `protocol.bs` `decode`: a frame that is not a JSON object with a text `type`, nests
+  deeper than 16, names a member twice, or is a known type whose payload lacks a required member or has one of the
+  wrong kind is malformed and ends the connection. An unknown `type`, a type only a receiver sends (`state`, `error`,
+  `handoff_ready`, `handoff_challenge`) and a `control` with an unknown `name` (old phones still send
+  `set_hdr_enabled`) are skipped and the connection stays. `close` is read leniently: a payload that is not
+  `{"reason": "<text>"}` is no reason, never a broken frame.
+- **What Granary handles**, required members in bold:
+
+  | Type | Payload | What Granary keeps |
+  |---|---|---|
+  | `hello` | **`role`** (`phone` or `tv`), **`deviceName`**, **`deviceId`**, **`supportedVersions`** (integers), `serverId`, `serverName`, `serverIdentity`, `features` (text), `passive`, `clientKind` | all but `clientKind` |
+  | `control` | **`name`**, and one of `seconds`, `trackId` (integer), `speed`, `volume`, `value`, `enabled`, `milliseconds` (integer) | all |
+  | `launch` | **`serverId`**, **`playback`** {**`contentId`**, **`startFromBeginning`**, `fileId`, `audioTrackIndex`, `subtitleTrackIndex`, `libraryId` (integers), `resumePosition`, `pinsVersion`} | all but `libraryId`; `fileId` as text; a track index outside a 32-bit integer is dropped |
+  | `handoff_offer` | **`requestId`**, **`serverId`**, **`serverURL`**, **`profileId`**, `serverName`, `profileName`, `title`, `serverIdentity`, `serverEndpoints`, `resumeToken`, `replaceConfirmed`, `replacingContentId` | `requestId`, `serverId`, `serverIdentity`, `profileId`, `replaceConfirmed`, `replacingContentId`: the phone's addresses and token are dropped as the frame is read, so nothing later can contact them |
+  | `handoff_cancel` | **`requestId`**, **`reason`**, `message` | `requestId` |
+  | `presence` | **`passive`** | all |
+  | `ping`, `pong` | none | |
+  | `close` | `reason` | `reason` |
+
+- **Control names** (`SiloCastControls`): `play`, `pause`, `play_pause`, `seek` (`seconds`, absolute), `stop`,
+  `select_audio_track` (`trackId`), `select_subtitle_track` (`trackId`, absent for off), `set_playback_speed`
+  (`speed`), `set_quality` (`value`), `set_video_gravity` (`value`: `fit` or `fill`), `set_subtitle_sync_ms`
+  (`milliseconds`), `set_subtitle_position` (`value`: `bottom`, `lower-third`, `top`), `set_volume` (`volume`, 0 to 1),
+  `set_muted` (`enabled`), `play_next`.
+- **What Granary sends:**
+
+  | Type | Payload |
+  |---|---|
+  | `hello` | `role: "tv"` (every Silo receiver says `tv`), `deviceName` (the PC's name), `deviceId` (the receiver id), `serverId`, `serverName`, `serverIdentity` when known, `supportedVersions: [2]`, `features`: `multi_controller`, `close_reason`, `resume_token`, `replace_confirmation`, `presence`. Not the Roku app's `volume_mute_only` and `no_playback_speed`: Granary sets a level and a speed |
+  | `state` | below |
+  | `error` | `code`, `message`; the phone shows the message as it is |
+  | `handoff_ready` | `requestId`, `serverId`, `profileId`, `sessionExpiresAt` (UTC to the second, `2026-11-14T19:17:36Z`; required, nothing reads it), `reused: true`, `resumeToken` |
+  | `handoff_cancel` | `requestId`, `reason`, `message` |
+  | `ping`, `pong` | none |
+  | `close` | `reason`, only to a phone that lists `close_reason`; otherwise bare |
+
+- **`state`** (`SiloCastState`). The Android phone fails to decode a `state` without any of these, and drops the
+  session: **`title`**, **`isPlaying`**, **`isLoading`**, **`isBuffering`**, **`currentTime`**, **`duration`** (seconds in
+  the title's own time), **`audioTracks`**, **`subtitleTracks`** (`{kind, trackId, title, detail?}`, `trackId` an
+  integer that is the receiver's own number), **`qualityOptions`** (`{id, label, detail?}`), **`activeQualityId`**,
+  **`isQualitySwitching`**, **`playbackSpeed`**, **`videoGravity`**, **`hdrEnabled`**, **`supportsVideoGravity`**,
+  **`supportsHDRToggle`** (always `false`), **`volume`** (0 to 1), **`isMuted`**, **`hasNextEpisode`**. Optional:
+  `contentId`, `subtitle` (the episode line), `selectedAudioTrackId`, `selectedSubtitleTrackId`, `subtitleSyncMs`,
+  `supportsSubtitleDelay`, `supportsSubtitlePosition` (always `false`), `nextEpisodeTitle`, `error`. Granary never
+  sends `sessionId`, `posterUrl` or `overview`; Silo's Roku app does not send the last two either: image addresses can
+  carry signed query strings, and the phones look artwork up by `contentId`. The idle state is `title: "Ready"`, no
+  `contentId`, empty lists, `activeQualityId: "auto"`, `videoGravity: "fit"`, volume 1.
+- **Error codes** (`SiloCastErrors`): `unauthorized`, `version_unsupported`, `server_mismatch`, `player_not_ready`,
+  `command_failed`, `rate_limited`, `too_many_controllers`, `handoff_required`, `launch_pending`, `launch_failed`,
+  `watch_party_active`. **Close reasons** (`SiloCastCloseReasons`): `replaced`, `tv_disconnected`,
+  `too_many_controllers`, `timeout`, `unauthorized`. **Cancel reasons** (`SiloCastCancelReasons`): `superseded`,
+  `replace_confirmation_required`, `watch_party_active`, `version_unsupported`, `launch_pending`, `handoff_failed`,
+  `controller_cancelled`.
+
 ## Appendix: where docs and code disagree
 
 These were found while deriving this document. The code is authoritative; the entries explain why
