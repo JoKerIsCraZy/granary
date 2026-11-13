@@ -46,6 +46,26 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
         Assert.True(feature.IsOffered);
     }
 
+    // As at a start without the server: the Downloads page is open, and its sidebar entry must not wait for an answer
+    // that takes the connection's whole timeout to fail.
+    [Fact]
+    public async Task AProfileWithDownloads_HasTheEntry_BeforeTheServerAnswers()
+    {
+        var late = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => late.Task);
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        var feature = Feature();
+
+        var refresh = feature.RefreshAsync(Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == 1, "the capability was asked for");
+
+        Assert.True(feature.IsOffered);
+        Assert.False(feature.CanDownload);
+        late.SetException(new HttpRequestException(HttpRequestError.ConnectionError));
+        await refresh;
+        Assert.True(feature.IsOffered);
+    }
+
     [Fact]
     public async Task AnotherProfilesDownloads_DoNotOfferTheEntry()
     {

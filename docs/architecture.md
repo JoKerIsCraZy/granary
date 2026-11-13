@@ -1331,6 +1331,8 @@ client guide.
 - **Offered.** `DownloadsFeature` reads the capability once per server, account and profile (a failed read again after a
   minute, a cancelled one at the next refresh; a late answer for a profile that is no longer the active one is dropped): `CanDownload` when it is `enabled && allowed`, as Silo's Apple app gates it, and `IsOffered` (the sidebar's
   entry) then or while the profile has downloads on this PC, which stay playable and deletable whatever the server says.
+  Downloads on this PC show the entry before the capability is read, so it never waits for a server that cannot be
+  reached, whose read can take the connection's whole timeout to fail.
 - **One create.** `StartAsync` creates the server's entry for one film or episode: a film's `content_id` is its own id,
   an episode's its series with the episode as `episode_id`, the version the viewer chose, the preset, `caps` from this PC's
   playback report and `expected_revision: 0`. A second press while a create for the same title runs, or for a title the
