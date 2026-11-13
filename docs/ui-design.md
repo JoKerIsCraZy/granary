@@ -749,8 +749,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
-    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
-    as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
+    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is as near its middle as it
+    can stand with a whole card at the row's start (`RowCentring`), or as far as the row scrolls: a whole number of cards
+    in, which is where the row's arrows leave it too. Between two such places the card stands before the middle, so more
+    of the episodes after it show. The web's carousel scrolls the card to the very middle; that cut the card at the
+    row's start in two, and its buttons with it under the pointer. A new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
     episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then

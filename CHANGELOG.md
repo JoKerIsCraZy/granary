@@ -44,6 +44,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
+  arrows. They opened with the page's own card in the very middle, which cut the card at the row's start in two.
 - The picture at the top of Home, For You and Discover shows its upper part, as on Silo's web, where it was cut around
   its middle and took the heads off many pictures. With Hero size set to Full it runs over the whole width, as on the
   web.
