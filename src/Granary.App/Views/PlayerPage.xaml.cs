@@ -141,6 +141,7 @@ public sealed partial class PlayerPage : Page
         _modes.Changed += OnWindowModeChanged;
         ShowWindowMode();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ViewModel.ViewerSought += OnViewerSought;
         _taskbarToolbar ??= new PlayerTaskbarToolbar(ViewModel, App.Services.GetRequiredService<ITaskbarToolbar>(),
             App.Services.GetRequiredService<IUiDispatcher>());
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
@@ -164,6 +165,7 @@ public sealed partial class PlayerPage : Page
     {
         _modes.Changed -= OnWindowModeChanged;
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        ViewModel.ViewerSought -= OnViewerSought;
         StopInput();
         StopAutoHide();
         StopNextUpStill();

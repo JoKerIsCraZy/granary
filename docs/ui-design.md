@@ -968,14 +968,14 @@ On the pages, and in the minimized player's bar:
 | Pad | Does |
 |---|---|
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
-| A | Presses what has focus, as OK. Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
+| A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
 | B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
 | X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
-| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
 
@@ -989,7 +989,7 @@ In the full player:
 | D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
 | D-pad up and down | On the picture: the bar shows with focus on Play/Pause. On a control: move focus. The volume slider is passed by, as for a remote. |
 | LT, RT | Scrub back and forward while held, from 5 to 180 seconds a second by how far the trigger is pulled; the seek bar shows the target, and one seek is sent when the trigger is let go. The scrub stops at the title's start and at its end likewise. |
-| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. |
+| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. A seek being made is called off first, so it never lands over the jump. |
 | Right stick up and down | Volume by 5, again while held. |
 | Y | The audio menu when there is a track to choose, else the subtitles', else the playback settings (what Down opens for a remote). Pressed while a menu is open it closes that. |
 | Menu | The playback settings menu; likewise. |
@@ -1000,8 +1000,10 @@ In the full player:
 With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
 In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
 A seek being made when a menu opens (a trigger still pulled, or a step still waiting) is sent at once, to where the seek
-bar showed it. A that closes the player presses nothing on the page behind it, whether it is still held when the page
-shows or was let go just before.
+bar showed it. A seek made otherwise meanwhile (a key, a click or drag on the seek bar, a skip button, a chapter, the
+D-pad on the focused seek bar) replaces it: the pad's is dropped unsent, and a trigger or a direction still held does nothing more until it is let
+go, as after a chapter jump. A that closes the player presses nothing on the page behind it, whether it is still held
+when the page shows or was let go just before.
 
 Always:
 
@@ -1014,7 +1016,7 @@ Always:
 - A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
   dropped rather than sent, a button it held presses nothing (a short A that ends with the pad is no press), a button
   found down when a pad that could not be read is read again is no press either, and any pad that comes (back) works at
-  once. Several pads count as one.
+  once. Several pads count as one, each trigger as far as the pad that pulls it furthest.
 - Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
 - PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
   or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. L2 and R2 count by how far they

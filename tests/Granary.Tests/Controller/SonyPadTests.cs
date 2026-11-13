@@ -151,4 +151,15 @@ public sealed class SonyPadTests
 
         Assert.Equal(new PadReading(PadButtons.A, LeftX: 1), reading);
     }
+
+    [Fact]
+    public void AShortReading_AfterTheOrderOfTheAxesIsKnown_IsReadAsFarAsItGoes()
+    {
+        _pad.Read(Buttons(), RestByUsage, PadButtons.None);
+
+        var reading = _pad.Read([false, true, false, false, false, false, false, true], [1, 0.5], PadButtons.None);
+
+        // The right stick rests and the pressed trigger counts as pulled home, as before the order was known.
+        Assert.Equal(new PadReading(PadButtons.A | PadButtons.RightTrigger, LeftX: 1, RightTrigger: 1), reading);
+    }
 }
