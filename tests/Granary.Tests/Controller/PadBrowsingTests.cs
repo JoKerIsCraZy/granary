@@ -247,6 +247,28 @@ public sealed class PadBrowsingTests
     }
 
     [Fact]
+    public void AReadingThatFailed_IsNoPadAtRest()
+    {
+        // A pad at rest with nothing held need not be handed over (IsIdle); a reading that failed must be.
+        Assert.False(PadInterpreter.IsAtRest(PadReading.Failed));
+    }
+
+    [Fact]
+    public void AButtonPressedWhileAPadAtRestCouldNotBeRead_DoesNothingUntilItIsPressedAgain()
+    {
+        _bench.Rest(Second);
+        _bench.Read(PadReading.Failed);
+
+        var held = _bench.Hold(PadButtons.A, TimeSpan.FromMilliseconds(100));
+        var up = _bench.Read(default);
+        var again = _bench.Tap(PadButtons.A);
+
+        Assert.Empty(held);
+        Assert.Empty(up);
+        Assert.Equal([new PadAction(PadActionKind.Activate)], again);
+    }
+
+    [Fact]
     public void AHeldIntoThePlayer_PausesNothing()
     {
         _bench.Read(PadButtons.A);

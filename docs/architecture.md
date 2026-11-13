@@ -1178,8 +1178,10 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   presses each button once, since the readings are merged before anything is decided.
   A pad on its way out can fail its last readings. Such a reading is no pad at
   rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
-  interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). No PlayStation pad
-  was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
+  interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). `IsAtRest` is false
+  for it, so the window hands it over also when the pad lay idle before, and a button found down when readings come
+  back is no press.
+  No PlayStation pad was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
 - **Reading costs nothing without a pad, and a tick with one at rest.** Windows tells of pads that come and go; a timer
   runs only while there is one and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while
   the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached

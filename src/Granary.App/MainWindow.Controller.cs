@@ -91,7 +91,9 @@ public sealed partial class MainWindow
         try
         {
             var reading = ReadPads();
-            // A pad lying on the table: nothing to decide, and nothing of the window is even looked at.
+            // A pad lying on the table: nothing to decide, and nothing of the window is even looked at. A reading that
+            // failed is no pad at rest (IsAtRest) and goes on, so that a button down when the pad is read again is no
+            // press.
             if (_pad.IsIdle && PadInterpreter.IsAtRest(reading))
             {
                 return;

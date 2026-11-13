@@ -81,9 +81,14 @@ public sealed partial class PadInterpreter
     /// </summary>
     public bool IsIdle => !_spendsAll && !IsActive && !_hasSeek;
 
-    /// <summary>No button is down and both sticks and triggers are inside their dead zones.</summary>
+    /// <summary>
+    /// No button is down and both sticks and triggers are inside their dead zones. A reading that failed
+    /// (<see cref="PadReading.HasFailed"/>) is no pad at rest: nothing is known of the pad, and the reading has to be
+    /// handed over so that what was held is forgotten.
+    /// </summary>
     public static bool IsAtRest(PadReading reading) =>
-        (reading.Buttons & ~Triggers) == PadButtons.None
+        !reading.HasFailed
+        && (reading.Buttons & ~Triggers) == PadButtons.None
         && PadSticks.PastDeadZone(reading.LeftX, reading.LeftY, PadTuning.LeftStickDeadZone) == (0, 0)
         && PadSticks.PastDeadZone(reading.RightX, reading.RightY, PadTuning.RightStickDeadZone) == (0, 0)
         && Pressure(reading.LeftTrigger, reading.Buttons.HasFlag(PadButtons.LeftTrigger)) == 0
