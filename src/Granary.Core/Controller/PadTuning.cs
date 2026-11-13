@@ -10,11 +10,11 @@ public static class PadTuning
     /// <summary>Below this a trigger counts as at rest (XInput's 30 of 255).</summary>
     public const double TriggerDeadZone = 0.12;
 
-    /// <summary>A stick is a direction from here on, and stays one down to <see cref="StickRelease"/>.</summary>
+    /// <summary>A stick is a direction from here on, and stays one until it falls under <see cref="StickRelease"/>.</summary>
     public const double StickPress = 0.7;
     public const double StickRelease = 0.5;
 
-    /// <summary>A trigger is pressed from here on, and stays so down to <see cref="TriggerRelease"/>.</summary>
+    /// <summary>A trigger is pressed from here on, and stays so until it is back at <see cref="TriggerRelease"/>.</summary>
     public const double TriggerPress = 0.5;
     public const double TriggerRelease = 0.3;
 
