@@ -1209,6 +1209,33 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   keyboard would open. Button pictures: `GamepadReader` is where each pad's kind is known. A swap of confirm and back:
   one mapping, in `PadInterpreter.TakeButtons`.
 
+## Phone remote
+
+Silo's phone apps can control Granary's player over the local network: Granary is a receiver of the Roku type at level
+`sealed` (docs/api-contract.md, 15). The code is in `Granary.Core/Remote`. The switch is
+`IPlaybackDevicePreferences.PhoneRemote` (`phone_remote` in `playback-device.json`), off by default and kept on this PC,
+not in a profile.
+
+### Pairing
+
+- **One key per PC.** `RemotePairing` draws a 16-byte key (`RandomNumberGenerator`) the first time the receiver needs
+  one and keeps it until Reset Pairing Code: across restarts, the switch turned off and on, sign-out, and a change of
+  server or profile. A new key at every start would make every phone scan again. Reset is the only way to take a
+  phone's access away: all phones share the one key, so there is no list of phones and no removing one.
+- **Where the key lives.** In `ISecretStore` under `phone-remote/pairing-key`, in base64, which `DpapiSecretStore`
+  encrypts for the Windows user, and in memory; in no settings file, log or exception. `PairingMaterial.ToString` shows
+  the receiver id only. Sign-out and the removal of a server remove only `server/{id}/…` keys (`CredentialStore`), so
+  the key stays. When the store has no key, or none that is 16 bytes (another Windows user, a reset profile), a new one
+  is drawn and phones scan again.
+- **The receiver id** is a GUID made once per data folder, in `phone-remote.json` (`{ "receiver_id": "…" }`), written
+  whole beside the file and moved over it. It is not the device id Granary sends to servers, and not a secret: phones
+  keep the key under it and find the PC again by it. A file that holds no id is replaced by a new one; a disk that
+  fails to read throws instead, so a passing lock never changes the id.
+- **Why the two are kept apart.** With the id outside the secret store, a lost store means a new key under the old id: a
+  phone then says the PC's pairing code has changed, instead of keeping a dead receiver beside a new one.
+- Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for
+  the rest of the run. Nothing here logs a value.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

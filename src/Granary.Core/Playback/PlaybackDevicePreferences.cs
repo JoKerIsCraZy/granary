@@ -40,6 +40,15 @@ public interface IPlaybackDevicePreferences
     event EventHandler? DiscordStatusChanged;
 
     /// <summary>
+    /// Silo's phone app may control this PC's player (<see cref="Remote.RemotePairing"/>): only while it is on does Granary
+    /// listen on the local network and advertise itself there. Off by default.
+    /// </summary>
+    bool PhoneRemote { get; }
+
+    /// <summary>Raised on the caller's thread when <see cref="PhoneRemote"/> was turned on or off, so the receiver starts or stops.</summary>
+    event EventHandler? PhoneRemoteChanged;
+
+    /// <summary>
     /// The player's volume and mute as the viewer last left them on this PC, which every title starts with, over a volume or
     /// mute in the viewer's mpv.conf; null until the viewer first changes either, so mpv's own hold (full and not muted,
     /// unless that mpv.conf says otherwise).
@@ -74,6 +83,8 @@ public interface IPlaybackDevicePreferences
 
     Task SetDiscordStatusAsync(bool enabled);
 
+    Task SetPhoneRemoteAsync(bool enabled);
+
     /// <summary>Saves <see cref="Volume"/>, its level brought into 0 to 100 first (full when it is not a number).</summary>
     Task SetVolumeAsync(PlayerVolume volume);
 
@@ -106,10 +117,12 @@ public sealed record PlayerVolume(double Percent, bool IsMuted);
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
 /// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
-/// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false, "player_full_screen": true }</c>).
+/// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false, "player_full_screen": true,
+/// "phone_remote": true }</c>).
 /// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
 /// the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
-/// Discord's status stays as it is, the player keeps mpv's own volume and opens in a window, as by default; a value it does
+/// Discord's status stays as it is, the player keeps mpv's own volume and opens in a window, and no phone controls this
+/// PC, as by default; a value it does
 /// not know, or one an older file lacks, is the default. A volume out of range is brought into it; one that is not a
 /// number, or a mute or full screen that is not true or false, is as if it were not there, and with only one of volume and
 /// mute the other is full or not muted. A choice that cannot be written is
@@ -134,6 +147,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile int _passoutThreshold;
     private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
+    private volatile bool _phoneRemote;
     private volatile PlayerVolume? _volume;
     private volatile bool _playerFullScreen;
     // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
@@ -156,6 +170,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             ? (int)seconds
             : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
+        _phoneRemote = file?.PhoneRemote == true;
         _volume = file is { Volume: not null } or { Muted: not null }
             ? new PlayerVolume(VolumeLevel(file.Volume ?? FullVolume), file.Muted == true)
             : null;
@@ -179,6 +194,10 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DiscordStatus => _discordStatus;
 
     public event EventHandler? DiscordStatusChanged;
+
+    public bool PhoneRemote => _phoneRemote;
+
+    public event EventHandler? PhoneRemoteChanged;
 
     public PlayerVolume? Volume => _volume;
 
@@ -275,6 +294,18 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return save;
     }
 
+    public Task SetPhoneRemoteAsync(bool enabled)
+    {
+        bool changed = enabled != _phoneRemote;
+        _phoneRemote = enabled;
+        var save = QueueSave();
+        if (changed)
+        {
+            PhoneRemoteChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return save;
+    }
+
     private PlaybackDeviceFile? Load()
     {
         try
@@ -305,6 +336,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                     TimeLeft = _timeLeft,
                     ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
+                    PhoneRemote = _phoneRemote,
                     Volume = _volume?.Percent,
                     Muted = _volume?.IsMuted,
                     PlayerFullScreen = _playerFullScreen,
@@ -341,6 +373,9 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
     public double? ResumeRewindSeconds { get; init; }
 
     public bool? DiscordStatus { get; init; }
+
+    // Missing from an older file: the phone remote stays off.
+    public bool? PhoneRemote { get; init; }
 
     // Only once the viewer changed the volume or the mute. Both read leniently, as ResumeRewindSeconds is: a value typed
     // into the file that is not one only loses itself, not the file's other choices.

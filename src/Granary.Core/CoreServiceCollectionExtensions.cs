@@ -25,6 +25,7 @@ using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
+using Granary.Core.Remote;
 using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
@@ -166,6 +167,9 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
+        // The phone remote's one pairing key for this PC, in the secret store, and the receiver's id beside it.
+        services.AddSingleton(sp => new RemotePairing(sp.GetRequiredService<ISecretStore>(), RemotePairing.DefaultIdFilePath,
+            sp.GetRequiredService<ILogger<RemotePairing>>()));
         // Whether a title opens the player in full screen, as it was last left on this PC.
         services.AddSingleton<PlayerFullScreen>();
         // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.
