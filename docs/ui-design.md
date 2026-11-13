@@ -1841,7 +1841,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
   or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
-  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. The other keys
+  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. A control of
+  the hidden bar is none the viewer is on: one the mouse pressed keeps focus as the bar hides, and the prompt takes it
+  from there, so Enter does not press that control unseen. The other keys
   go on as on the picture: Space plays and pauses, Left and Right skip, Up brings the controls. When the prompt goes,
   focus is the picture's again (`PlayerPage.SkipPrompt.cs`).
 - **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
