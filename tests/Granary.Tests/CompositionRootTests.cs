@@ -72,6 +72,8 @@ public sealed class CompositionRootTests
         // One queue keeps what was watched from this PC, and one sync sends it.
         Assert.Same(provider.GetRequiredService<OfflineProgressQueue>(), provider.GetRequiredService<OfflineProgressQueue>());
         Assert.Same(provider.GetRequiredService<OfflineProgressSync>(), provider.GetRequiredService<OfflineProgressSync>());
+        // The shell asks at the start whether the server is there, and the Downloads page shows what it found.
+        Assert.Same(provider.GetRequiredService<OfflineStart>(), provider.GetRequiredService<OfflineStart>());
         var record = new DownloadRecord
         {
             DownloadId = "dl_1", Scope = new DownloadScope("srv1", "1", "7"), MediaItemId = "mv_1", Title = "Example Movie", Quality = "original",
@@ -115,5 +117,8 @@ public sealed class CompositionRootTests
         Assert.Equal(ProblemCodes.RateLimited, exception.Code);
         Assert.Equal(TimeSpan.FromSeconds(5), exception.RetryAfter);
         Assert.Equal("Silo API returned 429 rate_limited", exception.Message);
+        // A problem the server wrote names its type; a status alone can be anyone's answer.
+        Assert.True(exception.HasProblem);
+        Assert.False(new SiloApiException(403, ApiProblem.FromStatus(403)).HasProblem);
     }
 }

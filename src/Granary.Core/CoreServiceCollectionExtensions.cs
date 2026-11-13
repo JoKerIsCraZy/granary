@@ -345,6 +345,9 @@ public static class CoreServiceCollectionExtensions
         // A title whose download is on this PC plays from it: the player asks before it streams.
         services.AddSingleton<Func<LocalMedia, LocalPlayback>>(sp => media => ActivatorUtilities.CreateInstance<LocalPlayback>(sp, media));
         services.AddSingleton<DownloadPlaybacks>();
+        // A start that cannot reach the server opens the downloads: the shell asks it once, and the Downloads page shows
+        // its note and Retry.
+        services.AddSingleton<OfflineStart>();
     }
 
     // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,

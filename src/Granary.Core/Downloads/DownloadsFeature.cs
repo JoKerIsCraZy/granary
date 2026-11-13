@@ -10,8 +10,8 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// Whether the server lets this profile download (<c>GET /api/v2/capabilities/downloads</c>), as Silo's Apple app gates it:
 /// Download actions show only when it does. The sidebar's Downloads entry shows then, or while the profile has downloads on
-/// this PC, which stay playable and deletable whatever the server says. Read once per profile; a failed read is tried again
-/// after <see cref="RetryAfter"/>.
+/// this PC, which stay playable and deletable whatever the server says, and show the entry before the server answered. Read
+/// once per profile; a failed read is tried again after <see cref="RetryAfter"/>.
 /// </summary>
 public sealed partial class DownloadsFeature : ObservableObject
 {
@@ -58,6 +58,13 @@ public sealed partial class DownloadsFeature : ObservableObject
             return;
         }
         await _store.LoadAsync(cancellationToken);
+        // Downloads on this PC show the entry whatever the server says, so it does not wait for an answer: a server that
+        // cannot be reached can take the connection's whole timeout to fail, while the Downloads page is already open.
+        // Not for a profile that is no longer the active one: its downloads are not the next one's.
+        if (DownloadScope.Of(_session) == scope && _store.In(scope).Count > 0)
+        {
+            IsOffered = true;
+        }
         if (_readFor != scope && !(_failed is { } failed && failed.Scope == scope && _time.GetUtcNow() - failed.At < RetryAfter))
         {
             await ReadAsync(scope, server.BaseUri, cancellationToken);

@@ -247,6 +247,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   as the title page does. Each has a tooltip and its name for
   screen readers. A click on the row opens the film's or the episode's page. After a Delete, and when the transfer button
   goes, the focus moves to the row (after a Delete, the one now in its place). The sidebar's page has no Back disc.
+  When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
+  instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
+  the header, above Reclaim Watched and the list, an informational `InfoBar` that cannot be closed says "Can't reach
+  your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
+  button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
+  ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
+  Home opens as from the sidebar, so a download that plays in the minimized player plays on; while it still can't be
+  reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
+  "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -1002,7 +1011,8 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms), focus on
-the first page's start (TV remote, above). The
+the first page's start (TV remote, above). A profile with downloads on this PC also waits here, for at most 5 s, for
+the server's first answer, and its Downloads page comes when there is none (Downloads, above). The
 player shows the loading loop (a stretch of the ring runs clockwise round at an even pace, unseen across the G's opening,
 so it slips out at the upper end as it comes back in at the lower one; play breathes; 1.4 s a round) on a dark disc
 while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
