@@ -38,6 +38,7 @@ to the root of the named repository.
 11. [Markers, intro skip, chapters, and trickplay](#11-markers-intro-skip-chapters-and-trickplay)
 12. [Realtime events](#12-realtime-events)
 13. [Consequences for the Windows client](#13-consequences-for-the-windows-client)
+15. [Control from Silo's phone apps (SiloCast)](#15-control-from-silos-phone-apps-silocast)
 - [Appendix: where docs and code disagree](#appendix-where-docs-and-code-disagree)
 
 ## 1. Which API: `/api/v2` only
@@ -2900,6 +2901,59 @@ signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together
   M mute, C captions, Left/Right skip by the profile intervals, Up/Down volume ±5 %; keys are
   ignored while a text field or menu has focus.
 - Enable the SMTC "Next" button only when a next episode has been resolved (10.7).
+
+## 15. Control from Silo's phone apps (SiloCast)
+
+**This is not a server endpoint.** It is a protocol on the local network between Silo's own clients, which the Android
+app calls SiloCast and the Apple app SiloControl: a phone finds a receiver (DNS-SD, or a scanned link) and connects to
+it directly, and the server takes no part. Granary is a receiver of the Roku type (`_silocast-roku._tcp`) at level
+`sealed`, the type Silo's Roku app is; it never speaks TLS or level `plain`. The reference is silo-roku's
+`docs/silocontrol.md` with `source/control/`; the phones' side is silo-android's `cast/` and `common/lan/` and
+silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
+
+### 15.1 Framing and the sealed channel
+
+- **A frame** is a 4-byte big-endian unsigned length, then that many bytes (`SiloCastFrame`). At `sealed` the length
+  counts the sealed body. Granary reads at most **64 KiB** a frame, the Roku type's own limit (the phones accept 1 MiB),
+  and at most **1 KiB** for a connection's first frame, the only one it reads from a peer that has not shown the key.
+  A longer announced length ends the connection before its body is read; the length is read unsigned, so a high bit
+  never makes it negative.
+- **`sealed_hello`.** Each side opens with one plain frame, the phone first:
+
+  ```json
+  {"type": "sealed_hello", "v": 1, "keyId": "<first 8 hex digits of SHA-256(key)>", "nonce": "<16 bytes, base64url>"}
+  ```
+
+  The key id is compared in lower case. A receiver that holds no key with that id answers a plain `close` with reason
+  `unauthorized` and drops the connection; a phone takes an answer with another key id as a refusal. Granary reads
+  nothing else before the key is shown: a first frame that is not a well-formed `sealed_hello` (not JSON, deeper than
+  one object, a member twice, a key id that is not 8 hex digits, a nonce that is not 16 bytes) is a refusal.
+- **Session keys**, HKDF-SHA256 with one output block each:
+
+  ```text
+  prk    = HMAC-SHA256(salt = phoneNonce || receiverNonce, key)
+  encKey = HMAC-SHA256(prk, "silo-cast-sealed-1 enc" || 0x01)[0..15]
+  macKey = HMAC-SHA256(prk, "silo-cast-sealed-1 mac" || 0x01)
+  ```
+
+  Silo's Roku app derives a third key, `ivKey` (`"silo-cast-sealed-1 iv"`), and makes each frame's IV from it. Any
+  IV that cannot be predicted will do for the reader; Granary draws a random one per frame and does not derive `ivKey`.
+- **A frame body** after the opening frames, `direction` being `0x01` from the phone and `0x02` from the receiver:
+
+  ```text
+  seq (8 bytes, big-endian, from 0 in each direction) || iv (16) || ciphertext || tag (32)
+  ciphertext = AES-128-CBC(encKey, iv, JSON, PKCS#7)
+  tag        = HMAC-SHA256(macKey, "silo-cast-sealed-1" || direction || seq || iv || ciphertext)
+  ```
+
+- **What closes a connection.** The reader checks the length (at least one block of ciphertext, whole blocks only), then
+  the tag in constant time, then that `seq` is exactly the next number from that side, and only then decrypts. A frame
+  that fails any check (tampered, replayed, reordered, sealed by the other side or under another key, bad padding), a
+  length over the cap, and a peer that closes inside a frame all end the connection without an answer.
+- Granary meets Silo's vectors byte for byte (`tests/Granary.Tests/Remote/SealedVectorTests`): silo-roku's
+  `tests/control/sealed.spec.bs`, which silo-android's `SiloCastSealedTest.kt` and silo-apple's
+  `SiloControlSealedTests.swift` repeat.
+- The channel has no forward secrecy: the session keys come from the pairing key and two nonces that cross in the clear.
 
 ## Appendix: where docs and code disagree
 
