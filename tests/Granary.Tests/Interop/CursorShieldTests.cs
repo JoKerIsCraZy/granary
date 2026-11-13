@@ -377,18 +377,32 @@ public sealed partial class CursorShieldTests
     }
 
     [Fact]
-    public void TheMousesBackButton_IsHandedToTheOwner_AndNoOtherButton()
+    public void TheMousesBackButton_IsHandedToTheOwner()
     {
         using var stage = new Stage();
         stage.Shield.Cover(0, 0, 300, 200);
 
         nint back = SendMessageW(stage.Shield.Window, WmXDown, 1 << 16, At(50, 60));
-        SendMessageW(stage.Shield.Window, WmXDown, 2 << 16, At(50, 60));
-        SendMessageW(stage.Shield.Window, 0x0204, 0, At(50, 60)); // The right button.
-        SendMessageW(stage.Shield.Window, 0x0207, 0, At(50, 60)); // The middle button.
 
         Assert.Equal(1, back);
         Assert.Equal(["back pressed"], stage.Owner.Seen);
+    }
+
+    [Theory]
+    [InlineData(0x0204u, 0)] // The right button.
+    [InlineData(0x0207u, 0)] // The middle button.
+    [InlineData(0x020Bu, 2)] // The mouse's forward button.
+    public void AnotherButtonOfTheMouse_WakesTheOwner_AndClicksNothing(uint message, int extraButton)
+    {
+        // The pointer is in use: the cursor is to show. But only the left button clicks what lies under the shield.
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+
+        SendMessageW(stage.Shield.Window, message, extraButton << 16, At(50, 60));
+        SendMessageW(stage.Shield.Window, message + 1, extraButton << 16, At(50, 60)); // Its release.
+
+        Assert.Equal(["woken Mouse"], stage.Owner.Seen);
+        Assert.NotEqual(stage.Shield.Window, GetCapture());
     }
 
     [Fact]
@@ -499,6 +513,8 @@ public sealed partial class CursorShieldTests
         }
 
         public void BackPressed() => Seen.Add("back pressed");
+
+        public void Woken(ShieldPointer pointer) => Seen.Add($"woken {pointer}");
     }
 
     [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]

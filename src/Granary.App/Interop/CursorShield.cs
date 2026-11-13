@@ -32,6 +32,12 @@ internal interface ICursorShieldOwner
 
     /// <summary>The mouse's back button went down on the shield.</summary>
     void BackPressed();
+
+    /// <summary>
+    /// Another button went down on the shield (the right one, the middle one, the mouse's forward button): the pointer is
+    /// in use, but nothing is clicked.
+    /// </summary>
+    void Woken(ShieldPointer pointer);
 }
 
 /// <summary>
@@ -66,6 +72,8 @@ internal sealed unsafe partial class CursorShield : IDisposable
     private const uint WmLeftDown = 0x0201;
     private const uint WmLeftUp = 0x0202;
     private const uint WmLeftDouble = 0x0203;
+    private const uint WmRightDown = 0x0204;
+    private const uint WmMiddleDown = 0x0207;
     private const uint WmXDown = 0x020B;
     private const uint WmCaptureChanged = 0x0215;
 
@@ -288,6 +296,12 @@ internal sealed unsafe partial class CursorShield : IDisposable
             case WmXDown when ((wParam >> 16) & 0xFFFF) == BackButton:
                 _owner.BackPressed();
                 return 1;
+            case WmRightDown:
+            case WmMiddleDown:
+            case WmXDown:
+                // Told, and left to Windows: no click comes of these.
+                _owner.Woken(PointerOf(GetMessageExtraInfo()));
+                return null;
             case WmNcDestroy:
                 Forget(window);
                 return null;

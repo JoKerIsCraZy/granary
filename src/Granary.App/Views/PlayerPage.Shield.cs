@@ -160,6 +160,13 @@ public sealed partial class PlayerPage : ICursorShieldOwner
     void ICursorShieldOwner.Clicked(ShieldPointer pointer, bool isSecond) =>
         OnShield("a click", page => page.ClickedOnShield(DeviceOf(pointer), isSecond));
 
+    // The right or the middle button: the cursor and the controls show, as with any press WinUI sees.
+    void ICursorShieldOwner.Woken(ShieldPointer pointer) => OnShield("a press", page =>
+    {
+        page.PressedOnPage(DeviceOf(pointer));
+        page._cursorWindow?.NotePointerPress();
+    });
+
     void ICursorShieldOwner.BackPressed() => OnShield("the mouse's back button", static page => page._cursorWindow?.GoBackByMouse());
 
     // Called inside the shield's window message: nothing may escape.

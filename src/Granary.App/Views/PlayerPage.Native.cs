@@ -33,6 +33,9 @@ public sealed partial class PlayerPage
     [LibraryImport("user32.dll")]
     private static partial nint LoadCursorW(nint instance, nint name);
 
+    [LibraryImport("user32.dll")]
+    private static partial uint GetDoubleClickTime();
+
     // For the log's account of a cursor over the shield: which window was under the pointer, and which one is in front.
     [LibraryImport("user32.dll")]
     private static unsafe partial int GetClassNameW(nint window, char* name, int capacity);

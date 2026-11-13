@@ -1,6 +1,7 @@
 using Granary.App.Controls;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Player;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -26,6 +27,12 @@ public sealed partial class PlayerPage
 
     private DispatcherQueueTimer _clickTimer = null!;
     private bool _clickToggled;
+
+    // How far, in view pixels, the second click of a double click may be from the first.
+    private const double DoubleClickReach = 16;
+
+    // Tells a double click also when its first click went to the cursor's shield and only the second to WinUI.
+    private readonly PlayerClicks _clicks = new(TimeProvider.System);
 
     // Whether the viewer last pressed a key rather than a mouse button: focus given back to a button shows then.
     private bool _lastInputWasKey;
@@ -71,6 +78,9 @@ public sealed partial class PlayerPage
     }
 
     private void StopInput() => _clickTimer.Stop();
+
+    // The time Windows allows between the two clicks of a double click, as the viewer set it.
+    private static TimeSpan SystemDoubleClickTime() => TimeSpan.FromMilliseconds(GetDoubleClickTime());
 
     private void TogglePause()
     {
@@ -480,6 +490,14 @@ public sealed partial class PlayerPage
             ToggleControls();
             return;
         }
+        // The second click of a double click that WinUI reports as a click of its own: it never saw the first, which went
+        // to the cursor's shield and took the shield away.
+        if (ScreenPointer() is { } at
+            && _clicks.IsSecond(at.X, at.Y, SystemDoubleClickTime(), DoubleClickReach * (XamlRoot?.RasterizationScale ?? 1)))
+        {
+            SurfaceDoubleTapped(device);
+            return;
+        }
         _clickToggled = false;
         _clickTimer.Stop();
         _clickTimer.Start();
@@ -487,7 +505,8 @@ public sealed partial class PlayerPage
 
     private void SurfaceDoubleTapped(PointerDeviceType device)
     {
-        if (device == PointerDeviceType.Touch)
+        // Not a second time for one pair: WinUI may tell a double click the page already told from its two clicks.
+        if (device == PointerDeviceType.Touch || !_clicks.TakesDouble(SystemDoubleClickTime()))
         {
             return;
         }
