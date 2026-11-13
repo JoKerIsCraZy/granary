@@ -1,5 +1,6 @@
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Detail;
 
@@ -27,14 +28,14 @@ public sealed record DetailExtra(string ContentId, string Title, string Duration
         string title = titled ? extra.Title!.Trim() : ExtraKinds.GroupLabel(extra.Kind);
         string duration = extra.DurationSeconds is long seconds and > 0 ? DetailFacts.Clock(seconds) : "";
         // The kind is said once: a card named by its group says it already.
-        string?[] spoken = [title, titled ? ExtraKinds.Label(extra.Kind) : null, duration, "plays the extra"];
+        string?[] spoken = [title, titled ? ExtraKinds.Label(extra.Kind) : null, duration];
         return new DetailExtra(
             extra.ContentId,
             title,
             duration,
             ArtworkUrl.Resolve(server, extra.StillUrl),
             string.IsNullOrWhiteSpace(extra.StillThumbhash) ? null : extra.StillThumbhash,
-            string.Join(", ", spoken.Where(part => !string.IsNullOrEmpty(part))));
+            AppText.Get("granary.detail.extraName", ("extra", string.Join(", ", spoken.Where(part => !string.IsNullOrEmpty(part))))));
     }
 }
 
@@ -42,8 +43,8 @@ public sealed record DetailExtra(string ContentId, string Title, string Duration
 /// <param name="Label">The web's group label, "Deleted Scenes"; screen readers hear the heading in these words.</param>
 public sealed record DetailExtraGroup(string Label, IReadOnlyList<DetailExtra> Extras)
 {
-    /// <summary>The heading as shown, in capitals as the web's.</summary>
-    public string Heading => Label.ToUpperInvariant();
+    /// <summary>The heading as shown, in capitals as the web's CSS shows it.</summary>
+    public string Heading => AppText.Upper(Label);
 
     /// <summary>
     /// The extras by kind: the groups in the order their kinds first come, each extra in the server's order (the server

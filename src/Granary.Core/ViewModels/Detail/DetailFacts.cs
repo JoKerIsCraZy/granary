@@ -41,12 +41,7 @@ public static class DetailFacts
     public static string? Subtitle(CatalogItemDetail item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Type != CatalogItemTypes.Season || string.IsNullOrWhiteSpace(item.Title))
-        {
-            return null;
-        }
-        string title = item.Title.Trim();
-        return title == DetailText.SeasonLabel(item.SeasonNumber ?? 0) ? null : title;
+        return item.Type == CatalogItemTypes.Season && DetailText.IsOwnSeasonName(item.SeasonNumber ?? 0, item.Title) ? item.Title.Trim() : null;
     }
 
     /// <summary>The runtime in minutes: the played (or first) file's duration, else the metadata runtime (web: selectedMediaSummary).</summary>
@@ -77,7 +72,7 @@ public static class DetailFacts
         {
             return [];
         }
-        string seriesTitle = string.IsNullOrWhiteSpace(item.SeriesTitle) ? "Series" : item.SeriesTitle.Trim();
+        string seriesTitle = string.IsNullOrWhiteSpace(item.SeriesTitle) ? AppText.Get("web.detail.hero.typeSeries") : item.SeriesTitle.Trim();
         var crumbs = new List<DetailCrumb> { new(seriesTitle, Blank(item.SeriesId), IsFirst: true) };
         if (item.Type == CatalogItemTypes.Season)
         {
@@ -93,18 +88,16 @@ public static class DetailFacts
         }
         if (item.EpisodeNumber is { } episode)
         {
-            crumbs.Add(new DetailCrumb($"Episode {episode}", null, IsFirst: false));
+            crumbs.Add(new DetailCrumb(AppText.Get("web.detail.episodes.numbered", ("episode", episode)), null, IsFirst: false));
         }
         return crumbs;
     }
-
-    public const string ResumeLabel = "Resume";
 
     /// <summary>
     /// The primary button. A movie or episode resumes when it has a resume point. A series or season resumes
     /// an episode in progress, plays the next one when partly watched, and otherwise starts at the beginning
     /// (web: resolveLeafPrimaryAction, resolveSeriesPrimaryAction: "Start From Episode 1", or "Browse Series"
-    /// with nothing to play; the season's "Play First Episode").
+    /// with nothing to play; the season's "Play First Episode"; an episode's "Play Episode").
     /// </summary>
     public static DetailPlayAction PlayAction(CatalogItemDetail item, WatchRollup? watch, string? firstEpisodeId = null)
     {
@@ -114,21 +107,29 @@ public static class DetailFacts
             string? next = Blank(item.PlayContentId);
             if (next is not null && (watch is { InProgressCount: > 0 } || watch?.IsInProgress == true))
             {
-                return new DetailPlayAction(ResumeLabel, next);
+                return new DetailPlayAction(AppText.Get("web.detail.actions.resume"), next, Resumes: true);
             }
             if (next is not null && watch is { WatchedCount: > 0, Played: false })
             {
-                return new DetailPlayAction("Play Next", next);
+                return new DetailPlayAction(AppText.Get("web.detail.actions.playNext"), next);
             }
             if (item.Type == CatalogItemTypes.Season)
             {
-                return new DetailPlayAction("Play First Episode", Blank(firstEpisodeId) ?? next);
+                return new DetailPlayAction(AppText.Get("web.detail.actions.playFirstEpisode"), Blank(firstEpisodeId) ?? next);
             }
-            return next is null ? new DetailPlayAction("Browse Series", null) : new DetailPlayAction("Start From Episode 1", next);
+            return next is null
+                ? new DetailPlayAction(AppText.Get("web.detail.actions.browseSeries"), null)
+                : new DetailPlayAction(AppText.Get("web.detail.actions.startFromFirstEpisode", ("episode", 1)), next);
         }
+        string target = Blank(item.PlayContentId) ?? item.ContentId;
         // Watched items store position 0, so any position is a live resume point, a rewatch included.
-        bool resume = watch?.IsInProgress == true || watch?.PositionSeconds > 0;
-        return new DetailPlayAction(resume ? ResumeLabel : "Play", Blank(item.PlayContentId) ?? item.ContentId);
+        if (watch?.IsInProgress == true || watch?.PositionSeconds > 0)
+        {
+            return new DetailPlayAction(AppText.Get("web.detail.actions.resume"), target, Resumes: true);
+        }
+        return new DetailPlayAction(item.Type == CatalogItemTypes.Episode
+            ? AppText.Get("web.detail.actions.playEpisode")
+            : AppText.Get("web.detail.actions.play"), target);
     }
 
     /// <summary>The web's getWatchedActionLabel (pages/ItemDetail/watchedState.ts).</summary>
@@ -150,9 +151,10 @@ public static class DetailFacts
 
     /// <summary>
     /// The one line under the title: a movie's "2026 · 1h 58m · R · Mystery, Thriller", a
-    /// series' air years, rating, regular seasons and genres, a season's year and episodes, an episode's
-    /// "S3 E1 · 47m · 8 Jan 2021 · TV-MA". Unknown parts are left out. With <paramref name="showsAdvisoryAge"/>, a movie's
-    /// or series' <see cref="AdvisoryAge"/> follows its rating, as the web's MetadataBadges places it.
+    /// series' air years, rating, regular seasons ("3 Seasons") and genres, a season's year and episodes ("10 Episodes"),
+    /// an episode's "S3 E1 · 47m · 8 Jan 2021 · TV-MA", the counts in the words of the web's MetadataBadges. Unknown parts
+    /// are left out. With <paramref name="showsAdvisoryAge"/>, a movie's or series' <see cref="AdvisoryAge"/> follows its
+    /// rating, as the web's MetadataBadges places it.
     /// </summary>
     public static string MetaLine(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null,
         bool showsAdvisoryAge = false)
@@ -167,13 +169,13 @@ public static class DetailFacts
                 DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year),
                 item.ContentRating,
                 advisory,
-                Counted(seasons?.Count(s => !IsSpecials(s)) is > 0 and var regular ? regular : item.SeasonCount, "season", "seasons"),
+                SeasonsBadge(seasons?.Count(s => !IsSpecials(s)) is > 0 and var regular ? regular : item.SeasonCount),
                 genres,
             ],
             CatalogItemTypes.Season =>
             [
                 DetailText.YearOf(item.AirDate) ?? DetailText.YearOf(item.ReleaseDate) ?? DetailText.Year(item.Year),
-                Counted(item.EpisodeCount ?? listedEpisodes, "episode", "episodes"),
+                EpisodesBadge(item.EpisodeCount ?? listedEpisodes),
             ],
             CatalogItemTypes.Episode =>
             [
@@ -207,6 +209,7 @@ public static class DetailFacts
         {
             return null;
         }
+        // The sources' own names, which no language translates.
         string? source = item.AdvisorySource?.Trim() switch
         {
             "commonsense" => "Common Sense",
@@ -214,8 +217,8 @@ public static class DetailFacts
             _ => null,
         };
         return source is null
-            ? string.Create(CultureInfo.InvariantCulture, $"{age}+")
-            : string.Create(CultureInfo.InvariantCulture, $"{source} {age}+");
+            ? AppText.Get("web.detail.badges.advisory", ("age", age))
+            : AppText.Get("web.detail.badges.advisorySource", ("source", source), ("age", age));
     }
 
     /// <summary>
@@ -237,17 +240,17 @@ public static class DetailFacts
             Upper(version.CodecAudio),
             SizeText(version.FileSize),
         }.Where(p => !string.IsNullOrEmpty(p)));
-        return line.Length > 0 ? "Available version: " + line : null;
+        return line.Length > 0 ? AppText.Get("granary.detail.availableVersion", ("version", line)) : null;
     }
 
-    /// <summary>The primary button's words: a movie or episode says where it resumes ("Resume from 1:02:33"), else the action's own.</summary>
+    /// <summary>The primary button's words: a movie or episode says where it resumes ("Resume at 1:02:33"), else the action's own.</summary>
     public static string PlayButtonText(CatalogItemDetail item, WatchRollup? watch, DetailPlayAction action)
     {
         ArgumentNullException.ThrowIfNull(item);
         ArgumentNullException.ThrowIfNull(action);
         bool leaf = item.Type is not (CatalogItemTypes.Series or CatalogItemTypes.Season);
-        return leaf && action.Label == ResumeLabel && watch?.PositionSeconds is >= 1 and var position
-            ? "Resume from " + Clock(position)
+        return leaf && action.Resumes && watch?.PositionSeconds is >= 1 and var position
+            ? AppText.Get("web.detail.actions.resumeAt", ("time", Clock(position)))
             : action.Label;
     }
 
@@ -268,58 +271,64 @@ public static class DetailFacts
         var played = PlayedVersion(item);
         ArgumentNullException.ThrowIfNull(item);
         var sections = new List<DetailInfoSection>();
-        Add("Details",
+        // The labels are the web's for the same fields where it has them: its metadata editor's and its Media Info's.
+        Add(AppText.Get("granary.detail.info.details"),
         [
-            Row("Title", DisplayTitle(item)),
-            Row("Original title", item.OriginalTitle is { } original && original.Trim() != item.Title.Trim() ? original : null),
-            Row(item.Type == CatalogItemTypes.Series ? "Aired" : "Released", item.Type switch
+            Row(AppText.Get("web.item.dialog.fieldTitle"), DisplayTitle(item)),
+            Row(AppText.Get("web.item.editMetadata.originalTitle"),
+                item.OriginalTitle is { } original && original.Trim() != item.Title.Trim() ? original : null),
+            item.Type == CatalogItemTypes.Series
+                ? Row(AppText.Get("granary.detail.info.aired"), DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year))
+                : Row(AppText.Get("granary.detail.info.released"), item.Type == CatalogItemTypes.Movie
+                    ? DetailText.Date(item.ReleaseDate) ?? DetailText.Year(item.Year)
+                    : DetailText.Date(item.AirDate ?? item.ReleaseDate)),
+            Row(AppText.Get("granary.detail.info.season"), item.Type == CatalogItemTypes.Season ? DetailText.SeasonLabel(item.SeasonNumber ?? 0) : null),
+            Row(AppText.Get("web.detail.seasons.heading"), item.Type == CatalogItemTypes.Series ? SeasonsBadge(seasonCount) : null),
+            Row(AppText.Get("web.detail.episodes.heading"), item.Type switch
             {
-                CatalogItemTypes.Series => DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year),
-                CatalogItemTypes.Movie => DetailText.Date(item.ReleaseDate) ?? DetailText.Year(item.Year),
-                _ => DetailText.Date(item.AirDate ?? item.ReleaseDate),
-            }),
-            Row("Season", item.Type == CatalogItemTypes.Season ? DetailText.SeasonLabel(item.SeasonNumber ?? 0) : null),
-            Row("Seasons", item.Type == CatalogItemTypes.Series ? Counted(seasonCount, "season", "seasons") : null),
-            Row("Episodes", item.Type switch
-            {
-                CatalogItemTypes.Series => Counted(episodeCount, "episode", "episodes"),
-                CatalogItemTypes.Season => Counted(item.EpisodeCount ?? listedEpisodes, "episode", "episodes"),
+                CatalogItemTypes.Series => EpisodesBadge(episodeCount),
+                CatalogItemTypes.Season => EpisodesBadge(item.EpisodeCount ?? listedEpisodes),
                 _ => null,
             }),
-            Row("Runtime", DetailText.Runtime(RuntimeMinutes(item))),
-            Row("Rating", item.ContentRating),
-            Row("Genres", Joined(item.Genres)),
-            Row("Countries", Joined(item.Countries)),
-            Row("Studios", Joined(item.Studios)),
-            Row("Networks", Joined(item.Networks)),
-            Row("Ratings", Ratings(item) is { Count: > 0 } ratings ? string.Join(" · ", ratings.Select(r => r.AccessibleName)) : null),
-            Row("Tagline", item.Tagline),
-            Row("Overview", withOverview ? item.Overview : null),
+            Row(AppText.Get("granary.detail.info.runtime"), DetailText.Runtime(RuntimeMinutes(item))),
+            Row(AppText.Get("web.item.editMetadata.contentRating"), item.ContentRating),
+            Row(AppText.Get("web.item.editMetadata.genres"), Joined(item.Genres)),
+            Row(AppText.Get("web.item.editMetadata.countries"), Joined(item.Countries)),
+            Row(AppText.Get("web.item.editMetadata.studios"), Joined(item.Studios)),
+            Row(AppText.Get("web.item.editMetadata.networks"), Joined(item.Networks)),
+            Row(AppText.Get("web.item.editMetadata.ratings"),
+                Ratings(item) is { Count: > 0 } ratings ? string.Join(" · ", ratings.Select(r => r.AccessibleName)) : null),
+            Row(AppText.Get("web.item.editMetadata.tagline"), item.Tagline),
+            Row(AppText.Get("web.item.editMetadata.overview"), withOverview ? item.Overview : null, isSelectable: true),
         ]);
-        Add("Cast", [.. item.Cast
+        Add(AppText.Get("web.detail.sections.cast"), [.. item.Cast
             .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name))
             .OrderBy(c => c.Order)
             .Take(InfoCast)
             .Select(c => Row(c.Name, string.IsNullOrWhiteSpace(c.Character) ? "—" : c.Character))]);
-        Add("Crew", [.. item.Crew
+        // The jobs as the server names them: values of the server, as the web's CrewList shows those it has no words for.
+        Add(AppText.Get("web.detail.castCrew.crew"), [.. item.Crew
             .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name) && !string.IsNullOrWhiteSpace(c.Job))
             .GroupBy(c => c.Job.Trim(), StringComparer.Ordinal)
             .Select(g => Row(g.Key, string.Join(", ", g.Select(c => c.Name.Trim()).Distinct(StringComparer.Ordinal))))]);
         for (int i = 0; i < item.Versions.Count; i++)
         {
             var version = item.Versions[i];
-            Add(item.Versions.Count == 1 ? "File" : string.Create(CultureInfo.InvariantCulture, $"File {i + 1}"),
+            // Several files as the web's Media Info numbers them: "Version 2".
+            Add(item.Versions.Count == 1 ? AppText.Get("granary.detail.info.file") : AppText.Get("web.detail.versions.numbered", ("number", i + 1)),
             [
-                Row("Edition", version.EditionRaw),
-                Row("Resolution", MediaCardFactory.ResolutionText(OverlayOf(version))),
-                Row("Video", Upper(version.CodecVideo)),
-                Row("Audio", ReferenceEquals(version, played)
+                Row(AppText.Get("web.detail.mediaInfo.row.edition"), version.EditionRaw),
+                Row(AppText.Get("web.detail.mediaInfo.row.resolution"), MediaCardFactory.ResolutionText(OverlayOf(version))),
+                Row(AppText.Get("web.detail.mediaInfo.video"), Upper(version.CodecVideo)),
+                Row(AppText.Get("web.detail.mediaInfo.audio"), ReferenceEquals(version, played)
                     ? MediaCardFactory.AudioText(item.OverlaySummary) ?? Upper(version.CodecAudio)
                     : Upper(version.CodecAudio)),
-                Row("Container", Upper(version.Container)),
-                Row("Size", SizeText(version.FileSize)),
-                Row("Bitrate", version.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{version.Bitrate / 1000d:0.#} Mb/s") : null),
-                Row("Duration", version.Duration > 0 ? DetailText.Runtime((int)Math.Round(version.Duration / 60d, MidpointRounding.AwayFromZero)) : null),
+                Row(AppText.Get("web.detail.mediaInfo.row.container"), Upper(version.Container)),
+                Row(AppText.Get("web.detail.mediaInfo.row.fileSize"), SizeText(version.FileSize)),
+                Row(AppText.Get("web.detail.mediaInfo.row.bitrate"),
+                    version.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{version.Bitrate / 1000d:0.#} Mb/s") : null),
+                Row(AppText.Get("web.detail.mediaInfo.row.duration"),
+                    version.Duration > 0 ? DetailText.Runtime((int)Math.Round(version.Duration / 60d, MidpointRounding.AwayFromZero)) : null),
             ]);
         }
         return sections;
@@ -333,15 +342,21 @@ public static class DetailFacts
             }
         }
 
-        static DetailInfoRow? Row(string label, string? value) =>
-            string.IsNullOrWhiteSpace(value) ? null : new DetailInfoRow(label.Trim(), value.Trim());
+        static DetailInfoRow? Row(string label, string? value, bool isSelectable = false) =>
+            string.IsNullOrWhiteSpace(value) ? null : new DetailInfoRow(label.Trim(), value.Trim(), isSelectable);
 
         static string? Joined(IReadOnlyList<string> values) =>
             values.Any(v => !string.IsNullOrWhiteSpace(v)) ? string.Join(", ", values.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v.Trim())) : null;
     }
 
-    private static string? Counted(int? count, string singular, string plural) =>
-        count is > 0 and var n ? DetailText.Count(n, singular, plural) : null;
+    // "3 Seasons", "10 Episodes", as the web's MetadataBadges count them; null without a count.
+    internal static string? SeasonsBadge(int? count) => count is > 0 and var n
+        ? AppText.Get("web.detail.badges.seasons", ("count", n), ("count_text", AppText.Number(n)))
+        : null;
+
+    internal static string? EpisodesBadge(int? count) => count is > 0 and var n
+        ? AppText.Get("web.detail.badges.episodes", ("count", n), ("count_text", AppText.Number(n)))
+        : null;
 
     private static string? Upper(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToUpperInvariant();
 

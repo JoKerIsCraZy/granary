@@ -44,7 +44,7 @@ public sealed class ItemDetailTitlePageTests
 
         var detail = await OpenAsync(fixture, SeriesId);
 
-        Assert.Equal("2021–2026 · TV-MA · MDBList 16+ · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
+        Assert.Equal("2021–2026 · TV-MA · MDBList 16+ · 3 Seasons · Crime, Drama, Mystery", detail.MetaLine);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class ItemDetailTitlePageTests
 
         await settings.SetShowsAdvisoryAgeAsync(true);
 
-        Assert.Equal("2021–2026 · TV-MA · MDBList 16+ · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
+        Assert.Equal("2021–2026 · TV-MA · MDBList 16+ · 3 Seasons · Crime, Drama, Mystery", detail.MetaLine);
     }
 
     [Fact]

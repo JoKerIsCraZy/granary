@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -37,7 +38,8 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
     }
 
     // Static because x:Bind function bindings in item templates call them without the page.
-    public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";
+    public static string SeasonName(string title, string caption, bool isWatched) =>
+        isWatched ? $"{title}, {caption}, {AppText.Get("web.item.card.watched")}" : $"{title}, {caption}";
 
     // The backdrop's placeholder. The view model passes "" for none rather than null: x:Bind skips a function whose
     // argument is null, and a page shown again for another title would keep the last one's picture.

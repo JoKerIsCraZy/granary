@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Profiles;
 
@@ -137,7 +138,7 @@ public sealed class TitleViewModelTests
         Assert.Equal(603, body.GetProperty("tmdb_id").GetInt64());
         Assert.Equal("/matrix.jpg", body.GetProperty("poster_path").GetString());
         Assert.False(body.TryGetProperty("seasons", out _));
-        Assert.Equal("Requested The Matrix", title.Notice);
+        Assert.Equal("Request submitted", title.Notice);
         Assert.Equal(2, _harness.Count(MoviePath));
     }
 
@@ -151,7 +152,7 @@ public sealed class TitleViewModelTests
 
         Assert.Single(_harness.Silo.SentTo(HttpMethod.Post, "api/v2/requests"));
         Assert.True(title.IsNoticeError);
-        Assert.Equal("Couldn't send the request. Try again.", title.Notice);
+        Assert.Equal("Failed to submit request", title.Notice);
     }
 
     [Fact]
@@ -231,7 +232,8 @@ public sealed class TitleViewModelTests
 
         await title.ToggleWatchlistCommand.ExecuteAsync(null);
 
-        Assert.Equal("Added to your watchlist and requested. We'll let you know when The Matrix is available.", title.Notice);
+        Assert.Equal($"Added to your watchlist and requested{Environment.NewLine}We'll let you know when The Matrix is available. It moves into your watchlist on its own.",
+            title.Notice);
         Assert.Empty(_harness.Silo.SentTo(HttpMethod.Put, "api/v2/watchlist/titles/movie/603")[0].Body ?? "");
     }
 
@@ -364,7 +366,7 @@ public sealed class TitleViewModelTests
         Assert.True(title.IsStale);
         Assert.False(title.CanAct);
         Assert.False(title.RequestCommand.CanExecute(null));
-        Assert.Equal("Requested The Matrix. Reload to see where it stands now.", title.Notice);
+        Assert.Equal($"Request submitted{Environment.NewLine}Reload to see where it stands now.", title.Notice);
 
         await title.RetryCommand.ExecuteAsync(null);
         Assert.False(title.IsStale);
@@ -458,6 +460,14 @@ public sealed class TitleViewModelTests
     [InlineData(25840, "25.8K votes")]
     [InlineData(1250000, "1.3M votes")]
     public void Votes_AreCounted_Compactly(int count, string text) => Assert.Equal(text, TitleText.Votes(count));
+
+    [Fact]
+    public void Votes_InAnotherLanguage_AreTheWholeNumberInItsWords()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+
+        Assert.Equal("25.840 Stimmen", TitleText.Votes(25840));
+    }
 
     [Fact]
     public async Task TheApi_TakesOnlyMoviesAndSeries()

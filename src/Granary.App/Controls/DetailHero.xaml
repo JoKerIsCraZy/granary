@@ -12,7 +12,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:t="using:Granary.Core.Texts">
 
     <UserControl.Resources>
         <SolidColorBrush x:Key="DetailMetaBrush" Color="#99EDEDED" />
@@ -136,7 +136,7 @@
 
         <StackPanel x:Name="Column" Padding="48,100,48,0" Spacing="14" HorizontalAlignment="Left">
             <ItemsRepeater Margin="-4,0,0,0" ItemsSource="{x:Bind ViewModel.Breadcrumbs, Mode=OneWay}"
-                           Visibility="{x:Bind ViewModel.HasBreadcrumbs, Mode=OneWay}" AutomationProperties.Name="Breadcrumb">
+                           Visibility="{x:Bind ViewModel.HasBreadcrumbs, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.breadcrumb.label')}">
                 <ItemsRepeater.Layout>
                     <StackLayout Orientation="Horizontal" Spacing="2" />
                 </ItemsRepeater.Layout>
@@ -183,7 +183,7 @@
                 <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
                            TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.MetaLine), Mode=OneWay}" />
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.QualityBadges, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasQualityBadges, Mode=OneWay}"
-                               AutomationProperties.Name="Quality">
+                               AutomationProperties.Name="{x:Bind t:AppText.Get('granary.detail.quality')}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="8" />
                     </ItemsRepeater.Layout>
@@ -211,7 +211,7 @@
                              Visibility="{x:Bind ViewModel.IsOverviewHidden, Mode=OneWay}">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <FontIcon Glyph="&#xED1A;" FontSize="14" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
-                    <TextBlock Text="{x:Bind vm:ItemDetailViewModel.OverviewHiddenText}" VerticalAlignment="Center" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.detail.overview.revealHidden')}" VerticalAlignment="Center" />
                 </StackPanel>
             </HyperlinkButton>
 
@@ -225,7 +225,8 @@
                 </Button>
                 <Button x:Name="StartOverButton" Style="{StaticResource HeroIconButtonStyle}" Command="{x:Bind ViewModel.StartOverCommand}"
                         Visibility="{x:Bind ViewModel.CanStartOver, Mode=OneWay}"
-                        AutomationProperties.Name="Start over" ToolTipService.ToolTip="Start over">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.actions.playFromBeginning')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.detail.actions.playFromBeginning')}">
                     <FontIcon x:Name="StartOverIcon" Glyph="&#xE72C;" FontSize="19" />
                 </Button>
                 <Button x:Name="WatchedButton" Style="{StaticResource HeroSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchedCommand}"
@@ -237,10 +238,10 @@
                     </StackPanel>
                 </Button>
                 <Button x:Name="InfoButton" Style="{StaticResource HeroSecondaryButtonStyle}" Click="OnInfoClick"
-                        AutomationProperties.Name="Info: details, cast, crew and files">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('granary.detail.infoButtonName')}">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <FontIcon x:Name="InfoIcon" Glyph="&#xE946;" FontSize="20" />
-                        <TextBlock Text="Info" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.detail.infoButton')}" />
                     </StackPanel>
                 </Button>
                 <Button x:Name="FavoriteButton" Style="{StaticResource HeroIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFavoriteCommand}"
@@ -256,7 +257,8 @@
                 <!-- Movies and series have the watchlist and collections; an episode or a season only a Watch Party to start. -->
                 <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}"
                         Visibility="{x:Bind controls:DetailHero.Either(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}"
-                        AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.actions.moreActions')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.detail.actions.moreActions')}">
                     <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="19" RenderTransformOrigin="0.5,0.5">
                         <FontIcon.RenderTransform>
                             <RotateTransform Angle="90" />
@@ -270,14 +272,14 @@
                                     <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}">
+                            <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.detail.actions.addToCollection')}" Click="OnAddToCollectionClick" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE8F4;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <!-- The web's Watch Together group in its overflow menu (ActionBar.tsx), after the others. -->
                             <MenuFlyoutSeparator Visibility="{x:Bind controls:DetailHero.Both(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}" />
-                            <MenuFlyoutItem Text="Start a Watch Party" Click="OnStartWatchPartyClick" Visibility="{x:Bind Party.IsOffered, Mode=OneWay}">
+                            <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.detail.actions.startWatchParty')}" Click="OnStartWatchPartyClick" Visibility="{x:Bind Party.IsOffered, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE716;" />
                                 </MenuFlyoutItem.Icon>
@@ -298,7 +300,7 @@
                         AutomationProperties.Name="{x:Bind ViewModel.Pickers.VersionName, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <FontIcon Glyph="&#xE93C;" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="Version" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.detail.versions.versionButton')}" VerticalAlignment="Center" />
                         <TextBlock Text="{x:Bind ViewModel.Pickers.VersionSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
                         <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
@@ -345,7 +347,7 @@
                         AutomationProperties.Name="{x:Bind ViewModel.Pickers.AudioName, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <FontIcon Glyph="&#xE767;" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="Audio" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.detail.audio.button')}" VerticalAlignment="Center" />
                         <TextBlock Text="{x:Bind ViewModel.Pickers.AudioSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
                         <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
@@ -376,7 +378,7 @@
                                                             <TextBlock Text="{x:Bind Channels}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
                                                         </Border>
                                                         <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsDefault}">
-                                                            <TextBlock Text="DEFAULT" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                            <TextBlock Text="{x:Bind controls:DetailHero.DefaultChip}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
                                                         </Border>
                                                     </StackPanel>
                                                     <TextBlock Text="{x:Bind Description}" Style="{StaticResource DetailPickerDetailTextStyle}"
@@ -398,7 +400,7 @@
                         AutomationProperties.Name="{x:Bind ViewModel.Pickers.SubtitleName, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <FontIcon Glyph="&#xE7F0;" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="Subs" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.detail.subtitles.button')}" VerticalAlignment="Center" />
                         <TextBlock Text="{x:Bind ViewModel.Pickers.SubtitleSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
                         <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
@@ -429,13 +431,13 @@
                                                                 <TextBlock Text="{x:Bind Format}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
                                                             </Border>
                                                             <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsForced}">
-                                                                <TextBlock Text="FORCED" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                                <TextBlock Text="{x:Bind controls:DetailHero.ForcedChip}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
                                                             </Border>
                                                             <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsHearingImpaired}">
-                                                                <TextBlock Text="HI" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                                <TextBlock Text="{x:Bind controls:DetailHero.HearingImpairedChip}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
                                                             </Border>
                                                             <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsDefault}">
-                                                                <TextBlock Text="DEFAULT" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                                <TextBlock Text="{x:Bind controls:DetailHero.DefaultChip}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="{x:Bind Description}" Style="{StaticResource DetailPickerDetailTextStyle}"

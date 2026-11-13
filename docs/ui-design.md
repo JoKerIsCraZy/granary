@@ -352,8 +352,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
   state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
   watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
-  available for someone else's open request, IMDb and TMDB in the browser, the download's progress; then Seasons (with
-  "In library", "Requested", "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
+  available for someone else's open request, IMDb and TMDB in the browser, the download's progress; what an action did,
+  or why it failed, under the buttons in the web's toast words ("Request submitted", "Failed to submit request", "Added
+  to your watchlist" with the toast's second line on a line of its own); then Seasons (with "In library", "Requested",
+  "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
 - Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under
@@ -568,9 +570,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     no badge. Another pick in the Version picker changes them (`QualityBadges` in Core, `ItemDetailViewModel.QualityBadges`).
     They stand 12 px after the text and 8 apart, centred on its line; where the line leaves no room they go under it
     together (`WrapPanel`). A series or a season has none, as on the web. A screen reader reads each badge after the line.
-  - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
-    point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
-    → Rewind on resume sets a lead-in), Start over,
+  - Granary's own buttons one size up: the Play pill in the accent ("Play", an episode's "Play Episode", or "Resume at
+    1:02:33" for a movie or episode in the web's words: the saved point, which is also where playback starts unless
+    Settings → Playback → This PC → Rewind on resume sets a lead-in), Play from Beginning (a round button),
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a
@@ -585,7 +587,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     player is up, full or minimized, a change only marks the page, which reads once when the playback's stop has reached
     the server; a change during the page's own load is read once the load, its rows included, is done. The page's own
     Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left off: the Play pill ("Resume
-    from" the new point, a series' or season's next episode), Mark Watched, the episode rows, a series' season cards and
+    at" the new point, a series' or season's next episode), Mark Watched, the episode rows, a series' season cards and
     More Episodes, all from one reading: if any of its reads fails, the page keeps all it shows and the next change reads
     again. A change that comes while the page's own Mark Watched is on its way is read once that is done. A page left
     meanwhile reads it all when it opens again.
@@ -649,7 +651,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     default first), with its format and FORCED, HI and DEFAULT chips, its own title (an external file's name without its
     folders) under it. Downloaded subtitles and
     "Search for Subtitles…" are left out before playback, as in Silo's apps; the player has them.
-  - Play, Resume and Start over play the chosen file with the chosen tracks. Picking another file starts its audio and
+  - Play, Resume and Play from Beginning play the chosen file with the chosen tracks. Picking another file starts its audio and
     subtitles from Auto again. Audio and subtitle picks (Off included) are also saved for the title, for its series on an
     episode, and Auto forgets the saved one, as the web's detail page and Apple's client save them; the page then reads
     the item again. Until that answer is in, Auto shows as "Auto" alone (its row without a track), since what the server
@@ -661,7 +663,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     new ones the next time it opens. A series or season page has no pickers: it plays an episode.
   - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios, a series' regular seasons
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as
-    its badge words it), never a file's name or path. The web's chips, ratings, credits and version lines are there
+    its badge words it; "File", or "Version 1", "Version 2" as the web's Media Info numbers several), never a file's name
+    or path. The labels are the web's for the same fields where it has them ("Original Title", "Content Rating", "File
+    Size"). The web's chips, ratings, credits and version lines are there
     instead of in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
     selected.
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px

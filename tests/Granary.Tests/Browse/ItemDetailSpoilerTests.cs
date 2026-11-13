@@ -118,7 +118,6 @@ public sealed class ItemDetailSpoilerTests
 
         Assert.True(detail.IsOverviewHidden);
         Assert.False(detail.ShowsOverview);
-        Assert.Equal("Description hidden until you watch. Show it", ItemDetailViewModel.OverviewHiddenText);
         // The Info dialog does not give it away either.
         Assert.DoesNotContain(detail.InfoSections.SelectMany(s => s.Rows), row => row.Label == "Overview");
         // The page's own title and its backdrop stay, as on the web.
