@@ -749,8 +749,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
-    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
-    as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
+    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is as near its middle as it
+    can stand with a whole card at the row's start (`RowCentring`): a whole number of cards in, which is where the
+    row's arrows leave it too. Near the row's end, where that place lies past what the row scrolls, the view starts on
+    the last whole card it can while the page's card is whole in it; only for the row's very last cards does it go to
+    the row's end, where the card before the view is cut, as at the end of any row. Between two such places the card stands before the middle, so more
+    of the episodes after it show. The web's carousel scrolls the card to the very middle; that cut the card at the
+    row's start in two, and its buttons with it under the pointer. A new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
     episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then
@@ -1884,13 +1889,18 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, a look every 250 ms checks that Windows still draws the hidden one over the picture. A
-  tester's log showed Windows drawing its arrow there all the same, at once or after a while, with WinUI answering
-  `WM_SETCURSOR` with the arrow though the page's cursor was the blank one. So the look asks the window again, and when
-  the arrow stays, sets the blank cursor past WinUI (`SetCursor` with `BlankCursor.Handle`), which holds until the
-  mouse's next move. The log says what brought a hidden cursor back (how far the mouse moved and how
-  long it had lain still, or a finger or pen), how far the mouse went while the cursor showed (a hand goes hundreds of
-  pixels, a knock on the desk a few), and when Windows drew its arrow by itself.
+  While the cursor is hidden, Granary's windows answer Windows' question for the cursor themselves
+  (`CursorWindowHook`, a subclass on the main window and every window in it that takes `WM_SETCURSOR` for the client
+  area and sets `BlankCursor.Handle` while the pointer is over the picture), so neither WinUI nor the window's class can
+  put an arrow or a hand back, whatever the page's elements say, and whichever of the windows Windows asks; logs had
+  shown WinUI answering with the arrow though the page's cursor was the blank one, and a blank cursor set from a timer
+  not holding. The hook lets go when the cursor shows, the page unloads or a window is destroyed; the title bar, menus
+  and other windows keep their cursors. A look every 250 ms still checks what Windows draws: a visible cursor over the
+  picture is asked away once more, and the log says whether that helped, which of Granary's windows lay under the
+  pointer, whether Granary or another program was in front, and how many requests the hook had answered since the
+  cursor hid. The log also says what brought a hidden cursor back (how far the mouse moved and how long it had lain
+  still, or a finger or pen) and how far the mouse went while the cursor showed.
+
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,

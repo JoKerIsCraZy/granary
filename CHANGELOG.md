@@ -56,6 +56,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
+  arrows, also for an episode near the season's end. They opened with the page's own card in the very middle, which cut
+  the card at the row's start in two.
 - The picture at the top of Home, For You and Discover shows its upper part, as on Silo's web, where it was cut around
   its middle and took the heads off many pictures. With Hero size set to Full it runs over the whole width, as on the
   web.
@@ -69,7 +72,8 @@ release's section is what its update says it changes (docs/release.md).
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
   also when the mouse lies still. It no longer comes back by itself when the mouse did not move, nor stays when Windows
-  draws its arrow over the picture all the same.
+  or the page itself asks for an arrow or a hand over the picture: while the cursor is hidden, the player answers every
+  such request with the hidden one.
 - With a TV remote, the arrows in the player go past the volume slider again on a display scaled above 100 %, such as a
   TV at 150 %. There focus stopped on the slider, every arrow changed the volume, and the buttons beside it (audio,
   subtitles and the rest) were out of reach.
