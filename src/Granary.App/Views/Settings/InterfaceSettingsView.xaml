@@ -409,12 +409,12 @@
             Granary's own: on Silo's web the administrator's activity indicator (ServerActivityButton) is always there.
             Only for an administrator's account; kept for this profile on this PC (ActivityIndicatorSetting).
         -->
-        <controls:SettingsGroup Title="Server activity" Visibility="{x:Bind ActivityIndicator.IsOffered, Mode=OneWay}"
-                                Description="What your Silo server is doing, for its administrators. Kept for this profile on this PC.">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Activity indicator"
-                                  Description="A button at the top right shows the streams, tasks, scans and downloads being prepared. Off, it never shows.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.serverActivity.title')}" Visibility="{x:Bind ActivityIndicator.IsOffered, Mode=OneWay}"
+                                Description="{x:Bind t:AppText.Get('granary.settings.serverActivity.description')}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.activityIndicator.label')}"
+                                  Description="{x:Bind t:AppText.Get('granary.settings.activityIndicator.description')}">
                 <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ActivityIndicator.IsShown, Mode=TwoWay}"
-                              AutomationProperties.Name="Activity indicator" />
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.activityIndicator.label')}" />
             </controls:SettingsRow>
         </controls:SettingsGroup>
 
