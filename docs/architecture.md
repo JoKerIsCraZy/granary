@@ -1764,18 +1764,28 @@ offline mode: no app-wide offline state, no banner on other pages, and nothing s
   that server, account and profile the answer is no, with nothing asked of the server: a start without downloads costs
   no request and waits for none. Another profile's downloads do not count.
 - **The question.** `GET /api/v2/capabilities/downloads` as that profile, the call the downloads make anyway, within
-  `OfflineStart.Budget` (5 s; the request is cancelled when it runs out). Not reachable: a transport error
-  (`HttpRequestException`, which is also an answer that is no Silo server's, as a network's sign-in page gives), no
-  answer within the budget, and 502, 503 or 504, which a reverse proxy or a tunnel says in the server's place. Any
-  other answer is a server that is there, also 401, 403, 429 and 500: Home opens and says what the server said.
-- **Reading the downloads.** The store's load also looks into the downloads folder, which can be a drive that sleeps
-  or a share that does not answer, so it gets the same budget; when it runs out, or the load fails, Granary starts as
-  without downloads. The check never throws: whatever goes wrong in it is logged by its kind and Home opens.
+  what is left of `OfflineStart.Budget` (the request is cancelled when it runs out). Not reachable:
+  - a transport error (`HttpRequestException`, which is also a 200 that is no Silo server's, as a network's sign-in page
+    gives);
+  - no answer in time;
+  - an error status without a problem the server wrote (`SiloApiException.HasProblem` false: the body names no problem
+    type), whatever the status: a proxy's or a filter's own 401, 403 or 404, a sign-in page's 511. `SiloHttp` raises
+    those from the status alone, and Home could only show an error for them;
+  - 502, 503, 504, 520 to 527 and 530, which a reverse proxy or a tunnel says in the server's place, as Silo's Android
+    app tells them (`isGatewayOrTunnelFailureStatus`), also with a problem body.
+
+  Any other problem is a server that is there, also 401, 403, 429 and 500: Home opens and says what the server said.
+- **One budget.** The read of the downloads and the question share `OfflineStart.Budget` (5 s), so the check ends
+  within it and under the start screen's 6 s: what the read took, the server has less. The store's load also looks
+  into the downloads folder, which can be a drive that sleeps or a share that does not answer; when the budget runs out
+  on it, or the load fails, Granary starts as without downloads (the load itself goes on beside, for the pages). The
+  check never throws: whatever goes wrong in it is logged by its kind and Home opens. A Retry has the whole budget for
+  its answer.
 - **Routing.** While the check runs, the shell holds its routing (`_holdsRoute`): the session says where it stands
   while it is restored, and that would open Home under the start screen ahead of the downloads. Offline, the shell
   shows the navigation (`IsSignedIn`), remembers the state as routed and resets to `AppRoute.Downloads`, so an account
   update that follows moves nobody; any other state change routes as ever. The start screen stays up while the check
-  runs (docs/ui-design.md, the mark); only a store and a server that both use their whole budget outlast its 6 s.
+  runs (docs/ui-design.md, the mark).
 - **The note.** `OfflineStart.IsOffline` holds from then until a `RetryAsync` reaches the server, or the session leaves
   the server, account or profile the start was for (a sign-out, another profile, another server): it follows
   `ISessionManager.Changed` only while it is set. `DownloadsViewModel` shows it as `ShowsOfflineNote` between `Attach`
@@ -1783,11 +1793,11 @@ offline mode: no app-wide offline state, no banner on other pages, and nothing s
   `OfflineStart`, which lives as long as the app, when the page is left (`OfflineStartTests`).
 - **Retry.** `RetryConnectionCommand` asks the same question again. Reachable, and the page still shown: Home opens
   with `INavigationService.ShowSection`, as the sidebar's Home does, not with a reset, which is a new start and would
-  close a download playing in the minimized player. An answer that comes after the page was left moves nobody; the note
-  is gone all the same. The command stays executable while it asks (`IsRetrying` guards a second press), so the button
+  close a download playing in the minimized player. An answer that comes after the page was left moves nobody, also
+  when the viewer is back on it by then (the page counts its showings); the note is gone all the same. The command stays executable while it asks (`IsRetrying` guards a second press), so the button
   is not disabled under the focus.
 - **Not done.** The server coming back is noticed only by Retry: the note stays while the viewer browses pages that
-  load again. Losing the server while Granary runs moves nobody and shows no note; the pages' own errors say it.
+  load again. With the server there, the capability is read twice at a start, once here and once by `DownloadsFeature`. Losing the server while Granary runs moves nobody and shows no note; the pages' own errors say it.
 - **The sidebar's entry.** `DownloadsFeature.IsOffered` is set from the downloads on this PC before the capability is
   read ("Starting and deleting"), so Downloads is in the sidebar as its page opens.
 

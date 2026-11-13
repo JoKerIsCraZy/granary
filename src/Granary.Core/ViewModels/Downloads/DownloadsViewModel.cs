@@ -64,6 +64,9 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly Lock _gate = new();
     private readonly HashSet<string> _progressed = new(StringComparer.Ordinal);
     private bool _attached;
+
+    // How often the page was shown: a Retry's answer moves only the showing it was pressed in.
+    private int _attaches;
     private bool _posted;
     private bool _changed;
 
@@ -136,6 +139,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
                 return;
             }
             _attached = true;
+            _attaches++;
             // A refresh posted before the page was left may never have run.
             _posted = false;
             _changed = false;
@@ -180,7 +184,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     /// Asks the server again after a start without it, and opens Home once it answers, as the sidebar's Home does: a
     /// download that plays in the minimized player plays on, which a new start (<see cref="INavigationService.ResetTo"/>)
     /// would close. It stays executable while it asks, so the button keeps the focus; a second press asks nothing more.
-    /// An answer that comes after the page was left moves the viewer nowhere.
+    /// An answer that comes after the page was left moves the viewer nowhere, also when they are back on it by then.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task RetryConnectionAsync()
@@ -190,6 +194,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             return;
         }
         IsRetrying = true;
+        int shown;
+        lock (_gate)
+        {
+            shown = _attaches;
+        }
         bool reachable = false;
         try
         {
@@ -205,7 +214,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         bool shows;
         lock (_gate)
         {
-            shows = _attached;
+            shows = _attached && _attaches == shown;
         }
         if (reachable && shows)
         {

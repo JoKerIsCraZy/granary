@@ -2812,8 +2812,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   download's files go (14.6); a read that fails leaves it off. `proxy_delivery` is not used: see `/file-proxy` in 14.4.
   A start of a profile that has downloads on this PC also asks it first, within 5 s, to find out whether the server is
   there at all (`OfflineStart`, docs/architecture.md "Offline start"): no connection, no answer in time, an answer that
-  is not a Silo server's, and 502, 503 or 504 open the Downloads page instead of Home; any other answer, also a
-  refusal, is a server that is there. The answer itself is not used.
+  is not a Silo server's (a success that is no JSON, or an error status whose body is no problem with a `type`:
+  `SiloApiException.HasProblem`), and 502, 503, 504, 520 to 527 or 530 open the Downloads page instead of Home; any
+  other problem, also a refusal, is a server that is there. The answer itself is not used.
 
 ### 14.2 Create
 

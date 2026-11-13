@@ -12,14 +12,14 @@ namespace Granary.Core.Downloads;
 /// downloads open instead of Home, as Silo's Android app opens its downloads, and the Downloads page says so with a Retry.
 /// Only the start asks: a profile without downloads on this PC, and a start without a remembered profile, start as ever,
 /// and losing the server while Granary runs moves nobody. The server is asked what it lets the profile download, the call
-/// the downloads make anyway; any answer of its own means it is there, also a refusal.
+/// the downloads make anyway; a problem of its own means it is there, also a refusal.
 /// </summary>
 public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, ISessionManager session, TimeProvider time,
     ILogger<OfflineStart> logger) : ObservableObject
 {
     /// <summary>
-    /// How long the start waits for the server's answer, and before that for the downloads to be read from the disk: the
-    /// start screen stays up meanwhile.
+    /// How long the start waits in all, for the downloads to be read from the disk and then for the server's answer: the
+    /// start screen stays up meanwhile, and gives way after 6 s whatever it waits for. A Retry has as long for its answer.
     /// </summary>
     public static readonly TimeSpan Budget = TimeSpan.FromSeconds(5);
 
@@ -48,8 +48,11 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
         }
         try
         {
-            if (!await HasDownloadsAsync(scope, cancellationToken).ConfigureAwait(false)
-                || await IsReachableAsync(server.BaseUri, scope.ProfileId, cancellationToken).ConfigureAwait(false))
+            // One budget for the read and the question: what the read took, the server has less.
+            using var budget = new CancellationTokenSource(Budget, time);
+            using var within = CancellationTokenSource.CreateLinkedTokenSource(budget.Token, cancellationToken);
+            if (!await HasDownloadsAsync(scope, within.Token, cancellationToken).ConfigureAwait(false)
+                || await IsReachableAsync(server.BaseUri, scope.ProfileId, within.Token, cancellationToken).ConfigureAwait(false))
             {
                 return false;
             }
@@ -87,7 +90,9 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
         bool reachable;
         try
         {
-            reachable = await IsReachableAsync(server.BaseUri, scope.ProfileId, cancellationToken).ConfigureAwait(false);
+            using var budget = new CancellationTokenSource(Budget, time);
+            using var within = CancellationTokenSource.CreateLinkedTokenSource(budget.Token, cancellationToken);
+            reachable = await IsReachableAsync(server.BaseUri, scope.ProfileId, within.Token, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -100,13 +105,14 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
 
     // The index is in the data folder, but its load also looks into the downloads folder, which can be a drive that sleeps
     // or a share that does not answer: the start goes on without the downloads then.
-    private async Task<bool> HasDownloadsAsync(DownloadScope scope, CancellationToken cancellationToken)
+    private async Task<bool> HasDownloadsAsync(DownloadScope scope, CancellationToken within, CancellationToken cancellationToken)
     {
         try
         {
-            await store.LoadAsync(cancellationToken).WaitAsync(Budget, time, cancellationToken).ConfigureAwait(false);
+            // The load itself goes on beside: it is the store's, and the pages wait for it too.
+            await store.LoadAsync(CancellationToken.None).WaitAsync(within).ConfigureAwait(false);
         }
-        catch (TimeoutException)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning("The downloads on this PC were not read within {Seconds} s; Granary starts without looking for its server",
                 (int)Budget.TotalSeconds);
@@ -115,18 +121,17 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
         return store.In(scope).Count > 0;
     }
 
-    // Reachable is a server that answers at all, also with a refusal: Home then says what it said. Not reachable: no
-    // connection, no answer within the budget, an answer that is no Silo server's (a network's sign-in page), and a
-    // gateway answering in the server's place (502, 503, 504).
-    private async Task<bool> IsReachableAsync(Uri server, string profileId, CancellationToken cancellationToken)
+    // Reachable is a server that answers, also with a refusal, as long as the refusal is a problem it wrote: Home then says
+    // what it said. Not reachable: no connection, no answer within the budget (within), an answer that is no Silo
+    // server's (a network's sign-in page, an error page without a problem, whatever its status), and a gateway or a tunnel
+    // answering in the server's place.
+    private async Task<bool> IsReachableAsync(Uri server, string profileId, CancellationToken within, CancellationToken cancellationToken)
     {
-        using var budget = new CancellationTokenSource(Budget, time);
-        using var asking = CancellationTokenSource.CreateLinkedTokenSource(budget.Token, cancellationToken);
-        var asked = api.GetCapabilityAsync(server, profileId, asking.Token);
+        var asked = api.GetCapabilityAsync(server, profileId, within);
         try
         {
             // Also ends a request that does not let go when it is cancelled.
-            await asked.WaitAsync(asking.Token).ConfigureAwait(false);
+            await asked.WaitAsync(within).ConfigureAwait(false);
             return true;
         }
         catch (HttpRequestException ex)
@@ -136,18 +141,23 @@ public sealed partial class OfflineStart(DownloadStore store, DownloadsApi api, 
         }
         catch (SiloApiException ex)
         {
-            logger.LogInformation("The server answered {Status} when asked whether it is there", ex.Status);
-            return ex.Status is not (502 or 503 or 504);
+            logger.LogInformation("The answer to whether the server is there was {Status}, {Kind}", ex.Status,
+                ex.HasProblem ? "a problem of the server's" : "not a problem of the server's");
+            return ex.HasProblem && !IsGatewayStatus(ex.Status);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             // The budget, or the connection's own timeout. Whatever the request still answers, nobody waits for it.
             _ = asked.ContinueWith(static late => _ = late.Exception, CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-            logger.LogInformation("The server did not answer within {Seconds} s", (int)Budget.TotalSeconds);
+            logger.LogInformation("The server did not answer in time");
             return false;
         }
     }
+
+    // What a reverse proxy or a tunnel answers when the server behind it is down, as Silo's Android app tells them
+    // (PlaybackSessionLifecycle.kt, isGatewayOrTunnelFailureStatus): 502, 503, 504, a tunnel's 520 to 527, and 530.
+    private static bool IsGatewayStatus(int status) => status is 502 or 503 or 504 or (>= 520 and <= 527) or 530;
 
     // Follows the session from here on, so a sign-out or another profile takes the note away. False when that already
     // happened while the server was asked.

@@ -117,5 +117,8 @@ public sealed class CompositionRootTests
         Assert.Equal(ProblemCodes.RateLimited, exception.Code);
         Assert.Equal(TimeSpan.FromSeconds(5), exception.RetryAfter);
         Assert.Equal("Silo API returned 429 rate_limited", exception.Message);
+        // A problem the server wrote names its type; a status alone can be anyone's answer.
+        Assert.True(exception.HasProblem);
+        Assert.False(new SiloApiException(403, ApiProblem.FromStatus(403)).HasProblem);
     }
 }

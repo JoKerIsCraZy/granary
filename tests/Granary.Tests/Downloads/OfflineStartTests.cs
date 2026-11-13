@@ -169,11 +169,19 @@ public sealed class OfflineStartTests : IAsyncDisposable
         Assert.False(offline.IsOffline);
     }
 
-    // What a reverse proxy or a tunnel says when the server behind it is down.
+    // What a reverse proxy or a tunnel says when the server behind it is down, as Silo's Android app tells them
+    // (PlaybackSessionLifecycle.kt, isGatewayOrTunnelFailureStatus).
     [Theory]
     [InlineData(502)]
     [InlineData(503)]
     [InlineData(504)]
+    [InlineData(520)]
+    [InlineData(521)]
+    [InlineData(522)]
+    [InlineData(523)]
+    [InlineData(524)]
+    [InlineData(527)]
+    [InlineData(530)]
     public async Task AGatewayAnsweringInTheServersPlace_IsNotTheServer(int status)
     {
         await _h.AddAsync("dl_1", DownloadState.Completed);
@@ -195,6 +203,40 @@ public sealed class OfflineStartTests : IAsyncDisposable
         {
             Content = new StringContent("<html>Bad gateway</html>", Encoding.UTF8, "text/html"),
         }));
+
+        await Shell(Offline()).StartAsync(cancellationToken: Token);
+
+        Assert.Equal([AppRoute.Downloads], _navigation.Resets);
+    }
+
+    // A refusal the server did not write: a network's sign-in page (511), a proxy's or a filter's own 403 or 404. The
+    // server's own refusals are problems; Home could only show an error for these, and the downloads would be out of reach.
+    [Theory]
+    [InlineData(401)]
+    [InlineData(403)]
+    [InlineData(404)]
+    [InlineData(511)]
+    public async Task AnErrorPageThatIsNotTheServers_IsNotTheServer(int status)
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => Task.FromResult(new HttpResponseMessage((HttpStatusCode)status)
+        {
+            Content = new StringContent("<html>Sign in to this network</html>", Encoding.UTF8, "text/html"),
+        }));
+        var offline = Offline();
+
+        await Shell(offline).StartAsync(cancellationToken: Token);
+
+        Assert.Equal([AppRoute.Downloads], _navigation.Resets);
+        Assert.True(offline.IsOffline);
+    }
+
+    // JSON, but no problem of the server's: it names no type.
+    [Fact]
+    public async Task AnErrorInJsonThatIsNoProblemOfTheServers_IsNotTheServer()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.Forbidden, "{ }"));
 
         await Shell(Offline()).StartAsync(cancellationToken: Token);
 
@@ -272,6 +314,41 @@ public sealed class OfflineStartTests : IAsyncDisposable
             Assert.Equal([AppRoute.Home], _navigation.Resets);
             Assert.False(offline.IsOffline);
             Assert.Empty(_h.Silo.Sent);
+        }
+        finally
+        {
+            released.Set();
+            await store.LoadAsync(Token);
+        }
+    }
+
+    // The start screen waits at most 6 s: the read of the downloads and the question share the 5 s.
+    [Fact]
+    public async Task ASlowReadAndASilentServer_EndTogetherAfter5s()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.OnCancellable(HttpMethod.Get, CapabilityPath, _ => new TaskCompletionSource<HttpResponseMessage>().Task);
+        var store = _h.UnreadStore();
+        // Not disposed: the load's thread may still be waking from it.
+        var released = new ManualResetEventSlim();
+        store.Loading = () => released.Wait(TimeSpan.FromSeconds(30));
+        try
+        {
+            var offline = Offline(store);
+            var starting = Shell(offline).StartAsync(cancellationToken: Token);
+            await _h.Time.WaitForTimerAsync(Token);
+
+            _h.Time.Advance(TimeSpan.FromSeconds(3));
+            released.Set();
+            await Until(() => Asked.Count == 1, "the server was asked");
+            _h.Time.Advance(TimeSpan.FromSeconds(2) - TimeSpan.FromMilliseconds(1));
+            Assert.False(starting.IsCompleted);
+            _h.Time.Advance(TimeSpan.FromMilliseconds(1));
+            await starting.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+            Assert.Equal(OfflineStart.Budget, _h.Time.Elapsed);
+            Assert.Equal([AppRoute.Downloads], _navigation.Resets);
+            Assert.True(offline.IsOffline);
         }
         finally
         {
@@ -528,6 +605,29 @@ public sealed class OfflineStartTests : IAsyncDisposable
 
         Assert.Single(_navigation.Navigations);
         Assert.False(offline.IsOffline);
+        Assert.False(page.IsRetrying);
+    }
+
+    // Left and shown again before the answer: the viewer came back from somewhere else, and is not sent off by a press
+    // from before.
+    [Fact]
+    public async Task ARetryAnsweredAfterThePageWasLeftAndShownAgain_MovesNobody()
+    {
+        var (offline, page) = await StartedWithoutTheServerAsync();
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => answer.Task);
+        var retrying = page.RetryConnectionCommand.ExecuteAsync(null);
+        await Until(() => Asked.Count == 2, "the server was asked again");
+
+        page.Detach();
+        page.Attach();
+        await page.SpaceRead;
+        answer.SetResult(CapabilityAnswer());
+        await retrying;
+
+        Assert.Single(_navigation.Navigations);
+        Assert.False(offline.IsOffline);
+        Assert.False(page.ShowsOfflineNote);
         Assert.False(page.IsRetrying);
     }
 
