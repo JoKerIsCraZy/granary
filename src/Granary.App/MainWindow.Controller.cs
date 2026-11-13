@@ -259,9 +259,11 @@ public sealed partial class MainWindow
 #if DEBUG
     // The debug remote's pad (Debugging/RemoteWindow.cs): a pad at rest for a moment, then the reading for as long as it
     // is held, then at rest again so the press is let go, and then no pad. The rest before it matters: a pad's first
-    // reading is no press (PadInterpreter), so a button down from the start would do nothing.
+    // reading is no press (PadInterpreter), so a button down from the start would do nothing. The rest after it lasts
+    // longer than a seek waits for its next step: the pad went away before a seek made with Left or Right was sent, and
+    // the seek was dropped with it.
     private const long DebugPadLeadIn = 100;
-    private const long DebugPadRest = 300;
+    private static readonly long DebugPadRest = (long)PadTuning.SeekCommitDelay.TotalMilliseconds + 300;
     private PadReading _debugPad;
     private long _debugPadFrom;
     private long _debugPadUntil;
