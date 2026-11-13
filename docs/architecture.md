@@ -326,7 +326,9 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
 - Secrets live in one DPAPI-protected file per Windows user (`DpapiSecretStore`) in local app data. A file
   that can no longer be decrypted is set aside as `.unreadable-<time>`; the user signs in again.
 - Logs go to `%LOCALAPPDATA%\Granary\logs`. Every line passes `LogRedactor`; mpv log lines that mention an
-  `Authorization` header are dropped whole. Tokens never reach a log.
+  `Authorization` header are dropped whole. Tokens never reach a log. A local path in an mpv line loses its folders,
+  which can name the Windows user: a file mpv reads keeps its name (of a name with spaces, the last word), and a path
+  that ends in no such file goes whole (`MpvLogClassifier.Redact`).
 - Media requests of server playback go through the loopback media proxy (see Server playback), which adds
   the headers per request; mpv itself gets none. mpv reports a refused request only in its log (as end of
   file), so the engine watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of
@@ -1119,6 +1121,16 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   reads the disk on the caller's thread, so the queue's loop calls it, never the UI thread. A folder that is there with a
   record that cannot be read is damaged (`StoredDownload.IsDamaged`, said in the log once): its row stays until it is
   deleted. Deleting such a row takes it off the index and queues the server's delete.
+- **A missing media file.** Someone who deletes a finished download's media file by hand, as to make room, leaves its
+  folder, record and subtitles behind. The load and every `RecheckFolders` look whether a finished download's media file
+  is there (`StoredDownload.MediaMissing`), and a play that finds it gone says so at once (`MarkMediaMissing`), for the
+  row as that play read it: when the server's new bytes were fetched meanwhile (another revision, or a file of another
+  name), the read looked for a file the row no longer names, and the row is left alone. Such a
+  download does not play from this PC (`CanPlay`), is not the next episode, counts no space and is not offered for
+  deletion; the pages show it as they show missing files ("Missing file", the Android app's status for a finished file
+  that is no longer on the device), with Delete alone. The file back in its place, or the download fetched again, ends
+  it. The Downloads page asks for a look as it shows (`DownloadManager.LookAtFiles` → `DownloadQueue.RecheckSoon`), off
+  the UI thread as every look.
 - **Writes.** A change holds at once for `In`, `All` and `Find`, which answer snapshots, and `Changed` follows on the
   caller's thread. The files are written one at a time behind a `SemaphoreSlim`, off the caller's thread, each with the
   latest state, so the last write is the latest, and each is on the disk before it replaces the file. A new download starts
@@ -1149,9 +1161,13 @@ names allow is near 300; a longer chosen folder adds its own length. So a path c
 - .NET's own file calls take such paths, which covers the store, the transfer and the page's artwork. `WindowsDiskSpace`
   asks Windows in the extended form (`\\?\`) for a path that long.
 - `app.manifest` declares `longPathAware`: it costs nothing, and once the system's `LongPathsEnabled` is on, libmpv's and
-  Windows' own calls in Granary take long paths too. Without that setting, playing a download whose path passes 260 may
-  fail in libmpv (Part 2 plays the local file), and File Explorer or a Windows dialog may not open such a folder: a shorter
-  downloads folder avoids both.
+  Windows' own calls in Granary take long paths too. Without that setting, File Explorer or a Windows dialog may not open
+  such a folder: a shorter downloads folder avoids that.
+- Playing does not depend on that setting. libmpv puts the path of the file it plays into the extended form itself, so a
+  media file over 260 characters plays. It opens a subtitle file as given, which Windows refuses over 260, so
+  `MpvPlaybackEngine.AddSubtitleAsync` hands such a path over in the extended form (`ExtendedPath`: `\\?\`, `\\?\UNC\` for
+  a share). `MpvPlaybackEngineTests.AFileWhoseFullPathIsLongerThan260Characters_Plays_WithASubtitleFileBesideIt` holds
+  both, in a test process that is not long-path aware, which is what the whole app is without `LongPathsEnabled`.
 - The names are not made shorter: the layout keeps every id apart and is already on disk, and a long downloads folder
   could pass 260 whatever the names.
 
@@ -1420,7 +1436,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses for itself
   (403, 404, …) does not stop the others; no answer, a sign-in the server no longer takes (401), a busy server (429), a
   profile switch or the end of the budget stops them all, since the next ones would fare no better. Then the sign-out, once the index
-  without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
+  without them is written, and with it what went out of the positions still to send and the kept playback settings (see
+  "What was removed is noted"), or after `StoreBudget` (5 s) at most: those writes were started before the server was
+  told, run beside each other and share the one budget. An index that is not
+  written in time (a disk or a write before it that does not answer) is
   logged and written once it can be, and the sign-out goes on. If Granary closes before that write gets through, the index
   on disk still names the downloads, and they are back at the next start: clears hold only for the run. This is accepted;
   the next sign-out of that account takes them along. The folders go after the index, beside the sign-out
@@ -1430,12 +1449,303 @@ The view models of the sign-out paths take it (optional, so they work without it
   nothing of them. The removal takes only downloads added before its clear (`RemoveWhereAsync` takes the clear's
   generation, and each row the `ClearGeneration` it was added at; rows read from the disk count as older than any clear),
   so a download the same account started after signing in again, while the drive was still being read, stays.
+- **What was removed is noted.** A file that keeps entries for each server and account is never written before it was
+  read, and a write can fail; a Granary that closed before the file could be written would find a signed-out account's
+  entries in it again. So a removal is first noted beside the file (`RemovalNote`): `<file>.removed`, as
+  `{ "version": 1, "removals": [ { "id": …, "server_entry_id": …, "account_id": … } ] }`, without `account_id` for a
+  server's removal. It names the server's entry and the account, never a title, a position or a time. The note is
+  written in the file's own chain of writes, before the file is touched. The sign-out waits for that write
+  (`WaitForNotesAsync`: each file's `LatestSave`, read right after its `Remove`, is the write with the removal or one
+  behind it in the same chain), beside the index and within the same `StoreBudget`, so a Granary that closes right after
+  the sign-out finds the note, or the file without the entries, at its next start. Writes that do not come in time are
+  logged, without whose or where, and the sign-out goes on. Downloads that could not be read leave no index to wait
+  for; the notes are waited for all the same, so that sign-out takes up to two `StoreBudget`s. Every start reads the note before the file and leaves
+  out what it names, before anything of the file is shown, sent or used; the file is then written without them, and the
+  note is deleted. Each removal has an id of its own, and a file written without a removal names its id
+  (`after_removals`): a note that could not be deleted takes nothing out of a file that names it, so what the same
+  account records after it signed in again stays. No clock is compared, so one that was set back changes nothing. A
+  removal while a note is there is written into the same note. A note that cannot be read now (something has it open)
+  may name anyone: the file counts as unread until it can be, so nothing of it is used and it is not written. A note that
+  no longer says whose entries were to go takes everything the file holds, since losing what was kept is the lesser harm
+  than keeping what a sign-out was to take; a file written after it names it by its content, so the same damaged note
+  does so once. A removal while such a note is still there writes it into the note too, as a removal without
+  `server_entry_id` under the id the file names (`damaged-…`), and it is read back under that id: it still takes nothing
+  that was recorded since. Any other removal without `server_entry_id` is not Granary's, and its note counts as damaged.
+  A note of a newer `version` than this build writes is taken the same way, on purpose: a later Granary may
+  mean more by it than this one reads out of it, so its removals are not taken for this version's. One that names no
+  version is read as version 1; there is no earlier form. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
+  run, and the entries are back at the next start unless the note or the file could be written before Granary closed.
+  Nothing else may change such a file before that, least of all after a sign-out, so a write that ended with the removal
+  in no note and the file not written (it could not be read, or its write failed) is tried again by itself
+  (`RemovalNote.NotWritten`): after 5 s, then twice as long each time up to 5 minutes, for as long as Granary runs,
+  until the note or the file is on the disk. The failure is logged once, not at every try. The queue of
+  positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress"), and so do the
+  playback settings kept for a play without the server (`playback-settings.json.removed`; see "Playing a download").
+  Two cases stay unprotected. When the note cannot be written, or not within the sign-out's budget, and Granary closes
+  before a later try gets the note or the file through, the account's entries are back at the next start; the sign-out
+  does not tell the viewer so, only the log does. And a note that can never
+  be read keeps its file from being loaded or written for that run: nothing the file holds is shown, sent or used, and
+  what is recorded or kept meanwhile holds for the run only.
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.
 - **An expired sign-in.** When the server no longer takes the session, the authentication handler signs out by itself,
   without the viewer's command. Nothing comes here and the downloads stay, as the Android app keeps them: they show again
   when that account signs in there, and its next sign-out or the server's removal takes them along.
+
+### Playing a download
+
+A title whose download is whole on this PC plays from it, with the server or without: local first, as Silo's Android app
+plays (`PlayerViewModel.tryLocalPlayback`), where the Apple app asks "Downloaded on This Device" or "Stream from Server"
+while the server answers.
+
+- **Which titles.** `PlayerViewModel.PlayAsync` asks `DownloadPlaybacks.TryCreateAsync` before it makes a server
+  playback. It answers a `LocalPlayback` for a title of the active profile (`DownloadScope.Of`) whose record is completed
+  with a media file, whose folder is there, and whose manifest and media file can be read. Everything else streams, as
+  before: a title without such a download; a download whose media file or manifest is gone or unreadable (Android streams
+  those without a word; the log says which); a Watch Party, whose room plays one file for everyone; and a version the
+  viewer picked themselves on the title page (`PrePlayChoice.IsVersionPicked`) that is not the downloaded one (the
+  record's `MediaFileId`, else the manifest's `media_file_id`). Android plays the download there too; Granary lets the
+  pick win, so the Version picker stays the way to stream another file of a downloaded title. Picked tracks alone stay
+  with the download. A download the server no longer has (`IsNoLongerAvailable`) still plays.
+- **Reading the folder.** The store's rows answer in memory, so a title without a download costs no wait and no thread
+  hop. A download's folder is read on the thread pool (its file names and `manifest.json`, a `LocalMedia`) within
+  `DownloadPlaybacks.ReadBudget` (3 s of the `TimeProvider`): a share that does not answer lets the title stream. The
+  read it gave up on runs on until the drive answers or fails, and a folder has one read at a time: Play or Retry
+  pressed again meanwhile waits for that same read, so a dead share holds one thread, not one for each press. A title
+  started before the downloads were first read waits for that read, within the same budget. `PlayerViewModel` counts its
+  starts, so one that waited for a folder goes on only while it is still the latest and the viewer has not left; until
+  its playback is there, the engine's state is not taken for the new title's (`PlaysDirectly`), since the engine may
+  still report the title before. The read opens the media file too: a folder that lists a file does not say it can be
+  opened, and one this account may not read, or that something holds for itself, streams. After the read the download
+  is looked up once more for the profile that is active then: a profile switched to during the read gets no playback
+  of the other profile's download, which would record that profile's progress.
+- **No server session.** `LocalPlayback` implements `IServerPlayback`, so the player page and everything that follows
+  the player work as for a stream: the seek bar, chapters and skip pills, the next episode, the sleep timer, the kept
+  volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It
+  loads the media file straight into the engine (`MediaSource.Local`, no proxy route, no headers) and opens no playback
+  session, online or not, as both apps: the server's Activity page does not list it, and there is no quality, no other
+  version, no trickplay, no subtitle sync, no Add Subtitles and no marker editing (`PlayingFileId` is null, which hides
+  the last two). `SessionId` is null.
+- **What comes from where.** The title's two lines, its length, its audio tracks, chapters and marked parts come from
+  the manifest (`PlaybackStarter.EpisodeTitles` and `PlaybackMediaInfo.OfEpisode`/`OfTitle`, shared with a stream's; the
+  first intro and every recap, credits and preview part, as `PlaybackMarker.Of` takes a stream's). The picture for
+  Windows' media controls is the poster or still kept in the folder, a `file:` address the app reads from the disk
+  (`WindowsMediaControls`), as the Apple app shows its `posterFileURL`. The Discord status words the title from the same
+  `PlaybackMediaInfo`; its poster and page come from TMDB through the server, so without a connection it shows without
+  them.
+- **What the server adds.** With a server signed in, the start reads the profile's playback settings
+  (`PlaybackPreferencesReader`) and the title's watch detail side by side, within `LocalPlayback.PreferencesBudget`
+  (3 s); what does not come in time is done without. Android reads the watch detail for a local play the same way. From
+  the watch detail come the profile's subtitle preference, the tracks the title page's picks name, and where the profile
+  left the title.
+- **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
+  `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
+  `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys
+  at a time and whole, as the server sent it; an answer that came after another profile became the active one is not
+  kept. A download's start reads with `ReadOrKeptAsync`: a batch the server could not be asked for (no connection, no
+  answer within the budget, a `5xx`) is the kept one, so the subtitle look, the subtitle and audio delays, the speed,
+  the skips, the marker settings and the sleep timer's duration are the profile's; a batch the server refuses (`422`,
+  a key it does not know) is its answer, and a profile whose settings were never read here gets the defaults. A
+  stream's read never takes a kept batch. The file is never written before it was read: one that cannot be read
+  now is read again before each write, so one profile's start does not write the other profiles' settings away. The
+  title's subtitle preference is the title's own, since the server resolves
+  it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
+  the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
+  that takes the downloads, and a server's removal, forget the kept settings of those accounts. That is noted in
+  `playback-settings.json.removed` before the file is written ("Signing out", "What was removed is noted"), so they stay
+  forgotten after the next start also when the file could not be read through the sign-out, or its write did not get
+  through; settings the server answers for the same account after it signed in again are kept. The account is still
+  signed in then, while the server hears the deletes, and a settings read that answers in that time would keep them
+  anew: `Keep` keeps nothing for an account whose clear is under way (`DownloadStore.IsClearPending`, from `MarkCleared`
+  to `EndClear`; see "Signing out"). After a sign-out that failed the clear has ended, and the account's next read is
+  kept as ever.
+- **Where it starts.** Start over starts at 0. A resume starts where the profile left the title: the server's point when
+  the watch detail came, else this PC's own (`DownloadRecord.ResumeMs`). This PC's own also holds while it has a position
+  of the title the server has not answered for (`OfflineProgressQueue.HasUnsent`): that one is the newer, whatever the
+  server still says. A point within 5 s of the end starts over (the Apple app's `resolvedResumePosition`). This PC's Rewind on resume applies as for a stream (`ResumeRewind`; not to a
+  change of episode), though neither app rewinds a local play: the setting is the viewer's for every resume on this PC.
+- **Audio.** The file holds every track. It starts with the title page's pick where that names a track of this file (the
+  same ordinal for the same file, else the first track of that language, for a copy the server prepared with fewer
+  tracks), else with the manifest's `selected_audio_track_index`. A pick in the player switches in the file
+  (`SetAudioStream`); it is not saved for the series.
+- **Subtitles.** The files kept beside the media are listed from the manifest (`local:sidecar:<n>`;
+  `DownloadAssets.SubtitleFile` names each from its reference, and one that never arrived is left out, as in both apps).
+  With the first frame the tracks the file carries itself join them (`local:stream:<id>`, from
+  `IPlaybackEngine.ReadSubtitleTracks`, mpv's `track-list`), since no manifest lists those. A file beside the media is
+  read into the player when it is picked (`AddSubtitleAsync`), once; a track of the file shows at once. The subtitle the
+  title starts with is the one a stream would start with: the title page's pick (Off included), found among the tracks
+  here by its language and its forced and hearing-impaired marks; else `SubtitleAutoSelection.Resolve` over the tracks
+  here with the watch detail's preference. Without the watch detail the preference is the one the title had when the
+  server last said (Without the server), and for a download never played with the server, the server's default, which
+  shows none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
+- **Settings changed while it plays.** The speed, the subtitle delay, auto-play and the sleep timer's duration hold in
+  the player at once and are saved to the server under a stream's keys, as the download's account and profile only
+  (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when a server was signed
+  in as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
+  signed in on that server by the time one goes out, and its profile may carry the same id: such a save is refused
+  unsent. A save that does not arrive is logged and the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
+  followed while the title plays, as a stream follows it.
+- **The next episode.** `DownloadUpNext` is the player's `IUpNextSource`, over the server's `UpNextSource`. The server's
+  answer comes first, so a series goes on in its order; the episode it names starts through `PlayAsync` as any title, so
+  it plays from this PC when it is downloaded too and streams when it is not. When the server cannot be asked
+  (`UpNextSource.FindNextAsync` says whether it answered), or does not answer within `DownloadUpNext.ServerBudget` (5 s
+  of the `TimeProvider`), the active profile's finished downloads of the series answer: the next by season and episode
+  after the playing one (the specials only from a special; after the last special the first season, as the server's
+  lists are read), with its title and no still; an episode that is not on this PC is passed over. A server that answers
+  "none" is taken at its word: the series ends there for this profile, also when a later episode is still on this PC,
+  as one the profile may no longer see (a maturity limit, a library taken away) or the server dropped; that download
+  still plays from its row. A server that only takes
+  longer than the budget is still waited for when no download follows, so a slow server names the next episode of a title
+  that streams as before. The previous episode is the one
+  before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
+  the device; Android plays a next episode from its download when the server named it. On Deck stays the server's.
+- **A file that will not play.** The player says "This download can't be played. Try again, or delete it and download
+  it again." with Retry, which tries the file again. Nothing streams in its place, as in both apps (Android: "Playback failed. Please try
+  again."; Apple: its error wall with Retry). A file that ends more than 30 s before its length is such a file, not the
+  title's end: it is not marked watched and nothing plays next, as the Apple app says "The downloaded video file ends
+  early." The length is the longer of the player's own reading of the file and the manifest's: the file's alone would
+  let a shorter file put in the download's place, which plays through by its own word, pass for the title. Where the
+  viewer got to is kept either way, also past nine tenths, where a title left by choice would start over: Retry and the
+  next play go on from where the file broke off.
+- **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
+  name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
+  of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
+  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau").
+
+### Offline progress
+
+A play from this PC has no server session to report through, so its progress takes the path the server has for offline
+clients (docs/api-contract.md, 14.7), as Silo's Apple app does; the Android app keeps a download's progress on the
+device.
+
+- **Recording.** `LocalPlayback` records where the viewer is every `ProgressInterval` (10 s) once the first frame showed,
+  at the stop, at the title's end and when the file breaks off, but only when the position moved by a second or more
+  since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
+  device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
+  recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
+  before the first frame. A title's times never go backwards: a position is
+  stamped in a later whole second than the one it replaces in the queue, than the last one this play recorded, and
+  than the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
+  now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get
+  the newest position passed over by the server as an old one. A whole second, because a server on SQLite keeps no more
+  of a time (`userdb/progress.go`): it cuts a stamp to its second, passes over a position of the second it already has,
+  and still answers success, after which the entry would leave the queue unheard. A stamp that has to be moved on is
+  the start of the next second after what was known; one the clock already puts in a later second stays as the clock
+  reads. Positions of one title that follow each other within a second therefore run a second ahead for each, in their
+  order; a play records one every 10 s, so the clock is past them again with the next. Each record goes to two places. The download's own record
+  takes `ResumeMs` and `ResumeAt`, which the next play from this PC starts from. `OfflineProgressQueue.Record` takes the
+  position, the length and the time, in whole milliseconds, for the server.
+- **Watched.** A title that played to its end (within 30 s of its length, or of unknown length), or was left past nine
+  tenths of it, resumes from 0 next time, as the server sets a watched title's position back (the Apple app's latch).
+  Whether it is watched (`DownloadRecord.IsWatched`) is another matter, since that mark is what gets a download
+  suggested for deletion: it is set only by a play that reached the title's end, or by the server, whose threshold an
+  admin sets (`playback.watched_threshold`), when its progress is read back: `completed` with the position at 0. A
+  play left past nine tenths is a guess and sets no mark; a server set to 95 % answers such a title with its position
+  and no `completed`, and the download then resumes there. A title that is watched again loses the mark with the first
+  position of the new watch, and the server's `completed`, which stays through a rewatch, does not bring it back while
+  the row holds a position: the mark returns when that watch ends. The Downloads page suggests deleting
+  the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
+  them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
+  about that are still watched, each as a single delete goes. A download that plays is neither suggested nor deleted
+  that way: `LocalPlayback` marks it in `PlayingDownloads` from the moment it is made until it is let go, since a title
+  counts as watched while its credits still run and the player stays up, minimized, over the Downloads page (Silo's
+  Android app keeps the same mark, `ActivePlaybackFile`). The row's own Delete still deletes it.
+- **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
+  (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending or on
+  its way (`Sending`, claimed by a send); which, only the run knows, so after a Granary that closed during a send every
+  entry is pending again and is sent. Every change is made under one lock and holds at once; the file follows, written
+  whole (`SafeFile`) off the caller's thread, one write at a time with the state as it is then. The file is read once,
+  on the thread pool as the sync starts (`LoadAsync`), else at its first use: an entry older than 90 days is let go (its
+  server or profile is gone), and anything the file says that is no entry is left out.
+- **The file is never written before it was read.** A file that cannot be read now (a virus scanner has it open at the
+  start, a sharing violation) is left as it is: what this run records is kept in memory, each write tries the read again
+  first, and once it works the file's entries join this run's, the newer of a title's two holding. A file that is not a
+  queue at all is moved aside as `offline-progress.json.bad` before a new one is written. A write that was cut off
+  between its temporary file and the move leaves `offline-progress.json.<id>.tmp` behind; the read deletes those older
+  than a minute.
+- **Sending.** `OfflineProgressSync` runs one flush at a time on the thread pool. It sends only the active profile's
+  entries, as that profile (`ProgressSyncApi`, `SiloRequestOptions.Profile`), so another profile's wait until it is used
+  again, also behind a PIN. A run belongs to the session it began for: the server, the account and the profile are
+  read once, and before every batch and every page of the read the run looks whether they are still the active ones,
+  and ends when not. A run can last minutes, and a sign-out followed by another account's sign-in fits into that; the
+  profile ids are the server's and need not differ between accounts. For a change between that look and the send, the
+  requests are bound to the account as well as the profile (`SiloRequestOptions.Account`): the authentication handler
+  refuses one whose server is signed in as another account (`ProfileChangedException`), as it refuses another profile. A flush claims up to 100 pending entries, sends them, and takes the answer as api-contract
+  14.7 lists it. An entry leaves the queue only when the server answered for it with success, will never take it (the
+  title is gone for the profile, or the server refuses the entry when it is sent alone), or is known to have it
+  (Reading back). A batch the server refuses as a whole (400, 422) is sent again in halves until the entries it refuses
+  stand alone, within `MaxSplitSends` requests a run: the server fails a whole request for one item it cannot read. Every other
+  one is pending again and goes with the retry `RetryInterval` (5 minutes) on: an item the server failed on, a server
+  that refuses or fails for now, a request that did not arrive, and one whose answer never came. That last kind may have
+  been taken, and is sent again all the same: each position carries the time it was recorded, and the server passes over
+  one that is not newer than what it has, so a second send changes nothing and counts no watch
+  (`silo-server/internal/userstore/pgstore/progress.go`, `SetProgressIfNewer`). Silo's Apple app holds such an entry and
+  lets it go after its next read of the server's progress; that loses the position whenever the request had not arrived.
+  A batch with items to send again ends the run, so they are not claimed twice in it. A position recorded while its
+  older one was on its way is another entry, which that answer does not touch. While a send hangs (a server that takes
+  the request and does not answer holds it for the HTTP timeout), every further wish to flush joins the one run that
+  waits; they do not pile up.
+- **Clocks.** Which of two positions is the later one is decided by the time each device recorded it. A PC whose clock
+  runs ahead can beat a position made a little later elsewhere, and one that runs behind can lose to an older one; the
+  server only caps a time more than 2 minutes ahead of its own. A position sent a second time after such a cap can get a
+  later time than the first send did. Granary does not correct for a wrong clock.
+- **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the stop, at the app's
+  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, and at the
+  retry. So while the server can be reached, a position arrives within seconds, as a session's sample would; without it,
+  it waits.
+- **Telling the pages.** Home's Continue Watching and Next Up and a title's page load again when a playback stops
+  (`ViewerStateChanges`, raised by `PlaybackStops`). A stream's stop has told the server by then. A download's stop
+  therefore waits for its last position to be sent (`LocalPlayback.StopAsync` flushes, for at most `StopSendBudget`, 3 s),
+  so the pages read the server after it has the position; the page itself is left at once, as always. Whenever a flush
+  reaches the server while no title plays, as once the connection is back, `OfflineProgressSync` reports the change
+  itself (`ViewerStateChanges.Report`), also for a position the server turned out to have taken without its answer
+  arriving. It reports nothing while a title plays: that title's stop does, so Home under a minimized player is not
+  loaded again with each position. The server's own `progress` event for a send is this app's echo
+  (`RealtimeEvents.EchoWindow`, or "while this app plays") and reloads nothing a second time.
+- **Reading back.** After a flush, the server's whole progress listing is read (every page) when the caller wanted it
+  (the stop, the start, a session or connection change, a retry), the profile has downloads, and either the flush sent
+  something, or a flush before it did and no read followed (the position a title is left at usually goes with the play's
+  last record, which asks for no read, so the stop's own flush sends nothing and still wants the server's word), or the
+  last read is another profile's or `ReadBackInterval` (10 minutes, the Apple app's) old. The listing counts as whole
+  only when a page says so (`has_more: false`): an answer without its `page`, or one that names more and gives no
+  cursor, is taken for one that broke off. A position on
+  the way asks for no read. For each download the listing names, the later of the server's `updated_at` and the record's
+  `ResumeAt` holds, the server's on a tie (the Apple app's `mergeProgress`): its position becomes `ResumeMs`, its time
+  `ResumeAt`, and `IsWatched` whether it is `completed` with no position on top. This PC's own position holds only
+  while it still waits in the queue: once the server answered for it, the server's row is what became of it, also when
+  that row is older (the server keeps no position under `playback.min_resume_threshold` and answers success all the
+  same, so a title opened for a minute is still where it was). That is how a position made on another device reaches a download, how an older
+  offline position never moves a newer one back (the entry went out with the time it was recorded, so the server kept its
+  own), and how the server's word on watched arrives. A row that says what the download already has writes nothing and
+  raises no change, so a read with nothing new leaves the pages alone. A listing that breaks off changes nothing. A
+  complete one also settles what still waits in the queue (`OfflineProgressQueue.DropKnown`): a pending position whose
+  title the server lists with a time at or after the position's own is there already, or beaten by a newer one, and
+  leaves unsent; that is how a position whose send was taken while its answer got lost stops being sent. A server on
+  SQLite keeps times in whole seconds, so there the entry's own row is up to a second older than the entry: a row on
+  the entry's whole second with the entry's very position counts as that entry too, and any other position of that
+  second does not, since it may be an older one. One the listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
+  live.
+- **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
+  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
+  not go by then is in the file, and the next start sends it.
+- **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
+  and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and
+  when, and would otherwise lie in the data folder for up to 90 days. The removal is noted in
+  `offline-progress.json.removed` before the file is written ("Signing out", "What was removed is noted"), so it holds
+  after the next start also when the file could not be read through the sign-out, or its write did not get through; and
+  the file is written whatever the run held, since it may hold more than the run does (an entry too old to be read in,
+  or one an earlier write did not take out). First what can still be sent is sent: the active
+  profile's entries, when it is a profile of that server and account, in one flush within a budget of its own
+  (`SendBudget`, 3 s), so a server that does not answer it leaves the deletes their whole `DeleteBudget`. Another
+  profile's entries cannot go out as this one, and another account's or server's not at all, so those are lost, as are
+  the active profile's when the server does not take them in time. The question says so, after a first try to send
+  (`SendBudget` again): "Progress in 2 titles is not on your Silo server yet and is lost with it." (`UnsentNote`), after
+  the downloads' sentence in the sign-out's question, in Settings → Devices' question, and in the question before
+  removing a server. A sign-out without downloads asks for this sentence alone, and asks nothing when the try sent
+  everything or there was nothing to send. A play still open then records
+  nothing more (`DownloadStore.IsClearedSince`). A sign-in that expired keeps them, as it keeps the downloads, and they
+  go once the account is signed in again.
 
 ## Windows App SDK
 

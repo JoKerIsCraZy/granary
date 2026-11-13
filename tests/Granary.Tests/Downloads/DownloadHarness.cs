@@ -70,6 +70,9 @@ internal sealed class DownloadHarness : IAsyncDisposable
 
     public DownloadStore Store { get; private set; }
 
+    /// <summary>The downloads a player has open, shared by the playbacks and the managers of this harness.</summary>
+    public PlayingDownloads Playing { get; } = new();
+
     public static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>A queue over this harness, not started yet; it is stopped when the harness goes.</summary>
@@ -99,7 +102,7 @@ internal sealed class DownloadHarness : IAsyncDisposable
     /// </summary>
     public DownloadManager NewManager(DownloadQueue? queue = null, DownloadsFeature? feature = null) =>
         new(Store, queue ?? NewQueue(), Api, feature ?? NewFeature(), Session, new FakeDeviceProbe(), new InMemoryPlaybackDevicePreferences(), Time,
-            Logs.For<DownloadManager>());
+            Logs.For<DownloadManager>(), Playing);
 
     /// <summary>As at Granary's next start: the queues stop, and a new store reads the index.</summary>
     public async Task RestartAsync()
@@ -137,6 +140,41 @@ internal sealed class DownloadHarness : IAsyncDisposable
         };
         ServeAssets(id, size);
         return await Store.AddAsync(change is null ? record : change(record), Token);
+    }
+
+    /// <summary>The file a finished download's subtitle <c>external:0</c> is kept in.</summary>
+    public static string SubtitleFile => DownloadPaths.SubtitleName("external:0", "srt");
+
+    /// <summary>
+    /// A finished download of episode <paramref name="episode"/> of "Example Series", season 1, as its folder holds it: the
+    /// media file, the guide's manifest for that episode (<see cref="DownloadPayloads.Manifest"/>), its subtitle and its still.
+    /// </summary>
+    public async Task<StoredDownload> AddPlayableAsync(string id = "dl_1", string mediaItemId = "ep_5", int episode = 5, int season = 1,
+        Func<DownloadRecord, DownloadRecord>? change = null)
+    {
+        var download = await AddAsync(id, DownloadState.Completed, mediaItemId: mediaItemId, change: record =>
+        {
+            var playable = record with
+            {
+                Title = "Chapter Five",
+                SeriesId = "sr_1",
+                SeriesTitle = "Example Series",
+                SeasonNumber = season,
+                EpisodeNumber = episode,
+                MediaFileId = "4567",
+                MediaFile = "media.mkv",
+                ArtworkFiles = new Dictionary<string, string> { ["poster"] = "poster.jpg" },
+                SubtitleRevisions = new Dictionary<string, string> { ["external:0"] = "r1" },
+            };
+            return change is null ? playable : change(playable);
+        });
+        File.WriteAllBytes(Path.Combine(download.Folder, "media.mkv"), [1, 2, 3]);
+        // The manifest says of the episode what the record says: the player takes its titles and numbers from the manifest.
+        File.WriteAllText(Path.Combine(download.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest(id, episodeId: download.Record.MediaItemId,
+            season: download.Record.SeasonNumber ?? season, episode: download.Record.EpisodeNumber ?? episode, title: download.Record.Title));
+        File.WriteAllBytes(Path.Combine(download.Folder, SubtitleFile), SubtitleBytes);
+        File.WriteAllBytes(Path.Combine(download.Folder, "poster.jpg"), PosterBytes);
+        return download;
     }
 
     /// <summary>The manifest of <paramref name="id"/> for <paramref name="size"/> bytes, its artwork and its subtitle.</summary>
@@ -291,6 +329,9 @@ internal sealed class DownloadHarness : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>Another store over the same index, not read yet, as at Granary's start.</summary>
+    public DownloadStore UnreadStore() => NewStore();
 
     private DownloadStore NewStore() => new(IndexPath, Preferences, Time, Logs.For<DownloadStore>());
 }

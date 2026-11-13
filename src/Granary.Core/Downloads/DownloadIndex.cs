@@ -126,6 +126,7 @@ internal static class DownloadRecords
             NextReport = pending is null ? null : next,
             SubtitleRevisions = record.SubtitleRevisions.Where(r => r.Key is not null && r.Value is not null).ToDictionary(),
             ArtworkFiles = record.ArtworkFiles.Where(a => DownloadPaths.IsArtworkName(a.Key, a.Value)).ToDictionary(),
+            SubtitlePreference = record.SubtitlePreference is { Mode.Length: > 0 } ? record.SubtitlePreference : null,
         };
     }
 }

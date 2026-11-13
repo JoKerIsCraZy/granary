@@ -116,6 +116,24 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnotherDownloadsFolder_ShowsItsOwnFreeSpace()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 12 * GB);
+        _h.Disk.Set(200 * GB);
+        var page = await AttachedAsync();
+        Assert.Equal("12.0 GB used · 200.0 GB free", page.SpaceText);
+
+        // Settings → Downloads names a folder on another drive while the page stays in memory.
+        string other = Path.Combine(_h.Directory, "elsewhere");
+        _h.Disk.Set(50 * GB);
+        await _h.Preferences.SetFolderAsync(other);
+        await page.SpaceRead;
+
+        Assert.Equal("12.0 GB used · 50.0 GB free", page.SpaceText);
+        Assert.Equal(other, _h.Disk.Asked[^1]);
+    }
+
+    [Fact]
     public async Task ADriveThatIsNotThere_ShowsOnlyTheSpaceUsed()
     {
         _h.Disk.Set(null);
@@ -332,6 +350,123 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task WatchedDownloads_AreSuggestedForDeletion()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+        // Not whole yet, or no longer on the server (it could not be downloaded again): neither counts.
+        await AddFilmAsync("dl_3", "Arriving Movie", DownloadState.Downloading, 7 * GB, r => r with { IsWatched = true });
+        await AddFilmAsync("dl_4", "Revoked Movie", size: 7 * GB, change: r => r with { IsWatched = true, IsNoLongerAvailable = true });
+
+        var page = await AttachedAsync();
+        _confirmation.Answer = false;
+
+        Assert.True(page.ShowsReclaim);
+        await page.ReclaimCommand.ExecuteAsync(null);
+        // Two of them, and the space their files take: not the one that still arrives, nor the one the server no longer has.
+        Assert.Equal("Delete 2 watched downloads and free 3.0 GB?", Assert.Single(_confirmation.Asked).Message);
+    }
+
+    [Fact]
+    public async Task WithoutWatchedDownloads_NothingIsSuggested()
+    {
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+
+        var page = await AttachedAsync();
+
+        Assert.False(page.ShowsReclaim);
+        Assert.False(page.ReclaimCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task KeepWatched_HidesTheSuggestion_AtOnce()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        Assert.True(page.ShowsReclaim);
+
+        await _h.Preferences.SetKeepWatchedAsync(true);
+        Assert.False(page.ShowsReclaim);
+
+        await _h.Preferences.SetKeepWatchedAsync(false);
+        Assert.True(page.ShowsReclaim);
+    }
+
+    [Fact]
+    public async Task ADownloadThatBecomesWatched_IsSuggested_WithoutThePageBeingMadeAgain()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB);
+        var page = await AttachedAsync();
+        var sections = page.Sections;
+
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+
+        Assert.True(page.ShowsReclaim);
+        Assert.Same(sections, page.Sections);
+    }
+
+    [Fact]
+    public async Task TheSuggestion_DeletesOnlyAfterTheQuestion()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
+        await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
+        var page = await AttachedAsync(_h.StartQueue());
+        _confirmation.Answer = false;
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // The Android app's words, whole: its dialog's title, its question and its yes.
+        Assert.Equal(("Reclaim Watched", "Delete 2 watched downloads and free 3.0 GB?", "Reclaim"), Assert.Single(_confirmation.Asked));
+        Assert.Equal(3, Rows(page).Count());
+
+        _confirmation.Answer = true;
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal(["dl_2"], Rows(page).Select(r => r.DownloadId));
+        Assert.Null(_h.Find("dl_1"));
+        Assert.Null(_h.Find("dl_15"));
+        Assert.False(page.ShowsReclaim);
+        // The server hears of each, once its files are gone.
+        await Until(() => _h.Silo.Sent.Count(r => r.Method == HttpMethod.Delete) == 2, "both deletes reached the server");
+    }
+
+    [Fact]
+    public async Task OneWatchedDownload_IsAskedAboutInTheSingular()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        _confirmation.Answer = false;
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal("Delete 1 watched download and free 2.0 GB?", _confirmation.Asked[0].Message);
+    }
+
+    [Fact]
+    public async Task ADownloadThatStoppedBeingWatchedWhileTheQuestionWasOpen_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_3", "Later Movie", size: GB);
+        var page = await AttachedAsync();
+        // While the question is open the server's word arrives: one is not watched after all, and another became watched.
+        _confirmation.WhileAsking = async () =>
+        {
+            await _h.Store.UpdateAsync(Scope7, "dl_2", r => r with { IsWatched = false }, Token);
+            await _h.Store.UpdateAsync(Scope7, "dl_3", r => r with { IsWatched = true }, Token);
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Only what the question named and is still watched goes.
+        Assert.Null(_h.Find("dl_1"));
+        Assert.NotNull(_h.Find("dl_2"));
+        Assert.NotNull(_h.Find("dl_3"));
+    }
+
+    [Fact]
     public async Task ARow_OpensItsTitlesPage()
     {
         await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
@@ -340,6 +475,24 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         Row(page, "dl_15").OpenCommand.Execute(null);
 
         Assert.Equal([(AppRoute.Item, (object?)"ep_dl_15")], _navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task ADownloadedRow_OffersPlay_WhichStartsThePlayerWhereTheProfileLeftIt()
+    {
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        await AddFilmAsync("dl_m1", "Example Movie", DownloadState.Downloading);
+        var page = await AttachedAsync();
+        var row = Row(page, "dl_15");
+
+        Assert.True(row.CanPlay);
+        Assert.False(Row(page, "dl_m1").CanPlay);
+        Assert.False(Row(page, "dl_m1").PlayCommand.CanExecute(null));
+        row.PlayCommand.Execute(null);
+
+        var (route, parameter) = Assert.Single(_navigation.Navigations);
+        Assert.Equal(AppRoute.Player, route);
+        Assert.Equal(Granary.Core.Playback.PlayRequest.Resume("ep_dl_15"), parameter);
     }
 
     [Fact]
@@ -471,5 +624,156 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         Assert.Equal(new SidebarEntry("Downloads", "Downloads", SidebarSection.YourStuff, "Downloads"), entries[history + 1]);
         Assert.Equal(nameof(AppRoute.Downloads), entries[history + 1].Tag);
+    }
+
+    [Fact]
+    public async Task ADownloadThatPlays_IsNotSuggestedForDeletion_UntilItsPlayEnded()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        Assert.True(page.ShowsReclaim);
+
+        // Past its credits' start under the minimized player: watched, and still open.
+        using (_h.Playing.Enter(Scope7, "dl_1"))
+        {
+            await page.ReclaimCommand.ExecuteAsync(null);
+
+            Assert.Equal("Delete 1 watched download and free 1.0 GB?", Assert.Single(_confirmation.Asked).Message);
+            Assert.NotNull(_h.Find("dl_1"));
+            Assert.Null(_h.Find("dl_2"));
+            Assert.False(page.ShowsReclaim);
+        }
+
+        // Its play ended: it is offered now.
+        Assert.True(page.ShowsReclaim);
+    }
+
+    [Fact]
+    public async Task ADownloadThatStartedPlayingWhileTheQuestionWasOpen_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        IDisposable? play = null;
+        _confirmation.WhileAsking = () =>
+        {
+            play = _h.Playing.Enter(Scope7, "dl_1");
+            return Task.CompletedTask;
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Its file is not taken from under the player.
+        Assert.NotNull(_h.Find("dl_1"));
+        play!.Dispose();
+    }
+
+    [Fact]
+    public async Task ADownloadThatStartedPlayingWhileAnotherWasDeleted_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        IDisposable? play = null;
+        // The question is answered; while the first of the two goes, the viewer starts the other in the minimized player.
+        _h.Store.Changed += (_, _) =>
+        {
+            var left = new[] { "dl_1", "dl_2" }.Where(id => _h.Find(id) is not null).ToList();
+            if (left.Count == 1 && play is null)
+            {
+                play = _h.Playing.Enter(Scope7, left[0]);
+            }
+        };
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        // Each is looked at right before its delete: the one that plays now stays.
+        Assert.NotNull(play);
+        Assert.Single(new[] { "dl_1", "dl_2" }, id => _h.Find(id) is not null);
+        play.Dispose();
+    }
+
+    [Fact]
+    public async Task ADownloadTheServerStoppedCountingAsWatchedWhileAnotherWasDeleted_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var downloads = _h.NewManager();
+        bool said = false;
+        // While the first of the two goes, the read of the server's progress says the other is not watched after all.
+        _h.Store.Changed += (_, _) =>
+        {
+            var left = new[] { "dl_1", "dl_2" }.Where(id => _h.Find(id) is not null).ToList();
+            if (left.Count == 1 && !said)
+            {
+                said = true;
+                _h.Store.UpdateAsync(Scope7, left[0], r => r with { IsWatched = false }, Token).GetAwaiter().GetResult();
+            }
+        };
+
+        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+
+        Assert.Equal(1, deleted);
+        Assert.Single(new[] { "dl_1", "dl_2" }, id => _h.Find(id) is not null);
+    }
+
+    [Fact]
+    public async Task AProfileSwitchedToWhileTheWatchedDownloadsGo_DoesNotStopThem_NorLoseCount()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_2", "Another Movie", size: GB, change: r => r with { IsWatched = true });
+        var downloads = _h.NewManager();
+        // The answer was about profile 7's downloads; profile 8 becomes the active one while the first goes.
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Session.ProfileId == "7" && (_h.Find("dl_1") is null || _h.Find("dl_2") is null))
+            {
+                _h.Session.ProfileId = "8";
+            }
+        };
+
+        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+
+        Assert.Equal(2, deleted);
+        Assert.Null(_h.Find("dl_1"));
+        Assert.Null(_h.Find("dl_2"));
+    }
+
+    [Fact]
+    public async Task ATitleTheServerHasNotConfirmedAsWatched_IsNotSuggestedForDeletion()
+    {
+        // Left past nine tenths without the server: it starts over next time, but nothing says the server counts it as watched.
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { ResumeMs = 0, ResumeAt = ManualTimeProvider.DefaultStart });
+        var page = await AttachedAsync();
+
+        Assert.False(page.ShowsReclaim);
+
+        // The server's progress was read: it is watched.
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+
+        Assert.True(page.ShowsReclaim);
+    }
+
+    [Fact]
+    public async Task ADownloadWhoseMediaFileWasDeletedByHand_SaysMissingFile_AndOffersNoPlay()
+    {
+        var download = await _h.AddPlayableAsync();
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true }, Token);
+        var queue = _h.StartQueue();
+        var page = await AttachedAsync(queue);
+        var row = Rows(page).Single();
+        Assert.Equal((DownloadText.Downloaded, true), (row.StatusText, row.CanPlay));
+
+        // Deleted in Explorer while Granary runs; the page is left and shown again.
+        File.Delete(download.MediaPath!);
+        page.Detach();
+        page.Attach();
+
+        await Until(() => row.StatusText == DownloadText.MissingFile, "the row says the file is missing");
+        Assert.Equal("Missing file", row.StatusText);
+        Assert.False(row.CanPlay);
+        Assert.False(row.PlayCommand.CanExecute(null));
+        // Nothing to free: it is not offered for deletion, and takes no space.
+        Assert.False(page.ShowsReclaim);
     }
 }

@@ -29,6 +29,19 @@ public static class SiloRequestOptions
     /// </summary>
     public static readonly HttpRequestOptionsKey<string> Profile = new("granary.profile");
 
+    /// <summary>
+    /// The one account a <see cref="Profile"/>-bound request may be sent as: what it carries belongs to that account's profile.
+    /// Profile ids are the server's and need not differ between accounts, so the authentication handler refuses to send it
+    /// under another account as it refuses another profile (<see cref="ProfileChangedException"/>).
+    /// </summary>
+    public static readonly HttpRequestOptionsKey<string> Account = new("granary.account");
+
+    /// <summary>The account the request is bound to (<see cref="Account"/>), or null when it is bound to a profile alone, or to none.</summary>
+    public static string? GetAccount(this HttpRequestMessage request) =>
+        request.Options.TryGetValue(Account, out var account) ? account : null;
+
+    public static void SetAccount(this HttpRequestMessage request, string accountId) => request.Options.Set(Account, accountId);
+
     /// <summary>The profile the request is bound to (<see cref="Profile"/>), or null when it goes as whichever acts.</summary>
     public static string? GetProfile(this HttpRequestMessage request) =>
         request.Options.TryGetValue(Profile, out var profile) ? profile : null;

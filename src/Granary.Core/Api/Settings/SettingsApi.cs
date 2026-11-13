@@ -79,6 +79,15 @@ public sealed class SettingsApi(SiloHttp http)
         http.SendAsProfileAsync(HttpMethod.Put, server, ValuePath(key, scope), profileId, new SettingValueRequest(value),
             SiloJsonContext.Default.SettingValueRequest, cancellationToken);
 
+    /// <summary>
+    /// As <see cref="SetValueAsProfileAsync"/>, bound to account <paramref name="accountId"/> as well, for a value a download's
+    /// play sets: it never goes out under another account signed in on the same server, whatever its profile's id.
+    /// </summary>
+    public Task SetValueAsAccountProfileAsync(Uri server, string key, JsonElement value, string scope, string accountId, string profileId,
+        CancellationToken cancellationToken = default) =>
+        http.SendAsAccountProfileAsync(HttpMethod.Put, server, ValuePath(key, scope), accountId, profileId, new SettingValueRequest(value),
+            SiloJsonContext.Default.SettingValueRequest, cancellationToken);
+
     /// <summary>Removes the explicit value of <paramref name="key"/> at <paramref name="scope"/>, so it inherits again; 404 when there is none.</summary>
     public Task ClearValueAsync(Uri server, string key, string scope, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Delete, server, ValuePath(key, scope), SiloAuth.Profile, cancellationToken);
@@ -89,6 +98,11 @@ public sealed class SettingsApi(SiloHttp http)
     /// </summary>
     public Task ClearValueAsProfileAsync(Uri server, string key, string scope, string profileId, CancellationToken cancellationToken = default) =>
         http.SendAsProfileAsync(HttpMethod.Delete, server, ValuePath(key, scope), profileId, cancellationToken);
+
+    /// <summary>As <see cref="ClearValueAsProfileAsync"/>, bound to account <paramref name="accountId"/> as well.</summary>
+    public Task ClearValueAsAccountProfileAsync(Uri server, string key, string scope, string accountId, string profileId,
+        CancellationToken cancellationToken = default) =>
+        http.SendAsAccountProfileAsync(HttpMethod.Delete, server, ValuePath(key, scope), accountId, profileId, cancellationToken);
 
     private static string ValuePath(string key, string scope) =>
         "api/v2/settings/values/" + SiloHttp.PathSegment(key, nameof(key)) + new QueryBuilder().Add("scope", scope);

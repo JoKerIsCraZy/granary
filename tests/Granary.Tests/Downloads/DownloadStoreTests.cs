@@ -981,4 +981,51 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.NotEqual(DownloadPaths.SubtitleName("External", "srt"), DownloadPaths.SubtitleName("external", "srt"));
         Assert.DoesNotContain(':', DownloadPaths.SubtitleName("external:0", "srt"));
     }
+
+    [Fact]
+    public async Task AFinishedDownloadWhoseMediaFileWasDeleted_IsMissingIt_UntilTheFileIsBack()
+    {
+        var h = new DownloadHarness();
+        await using var _ = h;
+        var download = await h.AddPlayableAsync();
+        Assert.True(download.CanPlay);
+        int changes = 0;
+        h.Store.Changed += (_, _) => changes++;
+
+        // Deleted in Explorer to make room: the folder, its record and its subtitles are still there.
+        File.Delete(download.MediaPath!);
+        h.Store.RecheckFolders();
+
+        var missing = h.Find("dl_1")!;
+        Assert.True(missing.MediaMissing);
+        Assert.False(missing.FilesMissing);
+        Assert.False(missing.CanPlay);
+        Assert.Equal(1, changes);
+
+        // The next start finds the same.
+        await h.RestartAsync();
+        Assert.True(h.Find("dl_1")!.MediaMissing);
+
+        await File.WriteAllBytesAsync(download.MediaPath!, [1, 2, 3], DownloadHarness.Token);
+        h.Store.RecheckFolders();
+
+        Assert.True(h.Find("dl_1")!.CanPlay);
+    }
+
+    [Fact]
+    public async Task ADownloadThatIsFetchedAgain_IsNoLongerMissingItsMediaFile()
+    {
+        var h = new DownloadHarness();
+        await using var _ = h;
+        var download = await h.AddPlayableAsync();
+        File.Delete(download.MediaPath!);
+        h.Store.RecheckFolders();
+
+        // A new revision on the server starts the transfer over; then it is whole again.
+        await h.Store.UpdateAsync(DownloadHarness.Scope7, "dl_1", r => r with { State = DownloadState.Downloading }, DownloadHarness.Token);
+        Assert.False(h.Find("dl_1")!.MediaMissing);
+        await h.Store.UpdateAsync(DownloadHarness.Scope7, "dl_1", r => r with { State = DownloadState.Completed }, DownloadHarness.Token);
+
+        Assert.False(h.Find("dl_1")!.MediaMissing);
+    }
 }

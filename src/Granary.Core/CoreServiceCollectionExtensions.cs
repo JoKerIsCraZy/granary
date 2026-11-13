@@ -239,6 +239,8 @@ public static class CoreServiceCollectionExtensions
     // exits, as transient disposables resolved from the root provider would be.
     private static void AddPlayback(IServiceCollection services)
     {
+        services.AddSingleton(sp => new KeptPlaybackSettings(KeptPlaybackSettings.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<KeptPlaybackSettings>>(), sp.GetRequiredService<DownloadStore>()));
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
@@ -268,7 +270,9 @@ public static class CoreServiceCollectionExtensions
         // This device's audio delay, one for the app: Settings changes it, and the title that plays follows.
         services.AddSingleton<AudioDelay>();
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
-        services.AddTransient<IUpNextSource, UpNextSource>();
+        // The next episode: the server's, and without it the next one downloaded to this PC.
+        services.AddTransient<UpNextSource>();
+        services.AddTransient<IUpNextSource, DownloadUpNext>();
         // The Discord status's TMDB page and poster of each title, kept as long as the app runs.
         services.AddSingleton<TmdbTitleLookup>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
@@ -320,6 +324,7 @@ public static class CoreServiceCollectionExtensions
         // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
         services.AddSingleton<DownloadQueue>();
         services.AddSingleton<DownloadsFeature>();
+        services.AddSingleton<PlayingDownloads>();
         services.AddSingleton<DownloadManager>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
         // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
@@ -331,6 +336,15 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
+        // What a download played from this PC recorded, kept in the data directory until the server took it, and the sync
+        // that sends it and reads the server's progress back; the app starts it.
+        services.AddTransient<ProgressSyncApi>();
+        services.AddSingleton(sp => new OfflineProgressQueue(OfflineProgressQueue.DefaultPath, sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<OfflineProgressQueue>>()));
+        services.AddSingleton<OfflineProgressSync>();
+        // A title whose download is on this PC plays from it: the player asks before it streams.
+        services.AddSingleton<Func<LocalMedia, LocalPlayback>>(sp => media => ActivatorUtilities.CreateInstance<LocalPlayback>(sp, media));
+        services.AddSingleton<DownloadPlaybacks>();
     }
 
     // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,

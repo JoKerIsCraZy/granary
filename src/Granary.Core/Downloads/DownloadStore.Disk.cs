@@ -336,7 +336,7 @@ public sealed partial class DownloadStore
         var (record, problem) = ReadRecord(entry.Folder, entry.Scope, entry.DownloadId);
         if (record is not null)
         {
-            return new StoredDownload(record, entry.Folder, FilesMissing: false);
+            return LookForMedia(new StoredDownload(record, entry.Folder, FilesMissing: false));
         }
         var damaged = new StoredDownload(entry.Placeholder(), entry.Folder, FilesMissing: true) { IsDamaged = true };
         SayDamaged(damaged, problem);
@@ -407,7 +407,7 @@ public sealed partial class DownloadStore
                 if (record is not null && DownloadRecords.IsOwnFolder(folder, record.Scope, record.DownloadId)
                     && !found.Any(d => d.Record.Scope == record.Scope && d.Record.DownloadId == record.DownloadId))
                 {
-                    found.Add(new StoredDownload(record, folder, FilesMissing: false));
+                    found.Add(LookForMedia(new StoredDownload(record, folder, FilesMissing: false)));
                 }
             }
         }

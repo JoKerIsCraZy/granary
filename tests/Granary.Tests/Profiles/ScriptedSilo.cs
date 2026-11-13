@@ -10,11 +10,12 @@ namespace Granary.Tests.Profiles;
 /// <summary>
 /// What the client sent; the body is read at send time because SiloHttp disposes the request.
 /// <paramref name="SavedAddressOnly"/>: it may not take a local route. <paramref name="AsProfile"/>: the one profile it may be sent as.
+/// <paramref name="AsAccount"/>: the one account it may be sent as.
 /// <paramref name="Range"/>, <paramref name="IfRange"/> and <paramref name="IfNoneMatch"/>: a ranged or conditional read's headers.
 /// </summary>
 internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null,
     string? RoomToken = null, string? DeviceId = null, string? AsProfile = null, string? Range = null, string? IfRange = null,
-    string? IfNoneMatch = null);
+    string? IfNoneMatch = null, string? AsAccount = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -48,6 +49,9 @@ internal sealed class ScriptedSilo
     /// authentication handler refuses it (<see cref="ProfileChangedException"/>), and is not in <see cref="Sent"/>.
     /// </summary>
     public Func<string?>? ActingProfile { get; set; }
+
+    /// <summary>The account signed in on the server now. When set, a request bound to another account is refused unsent, as a profile's is.</summary>
+    public Func<string?>? ActingAccount { get; set; }
 
     /// <summary>What was sent so far, as a copy.</summary>
     public IReadOnlyList<SentRequest> Sent
@@ -135,6 +139,10 @@ internal sealed class ScriptedSilo
         {
             throw new ProfileChangedException();
         }
+        if (ActingAccount is { } signedIn && request.GetAccount() is { } account && signedIn() != account)
+        {
+            throw new ProfileChangedException();
+        }
         string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         var uri = request.RequestUri!;
         bool savedOnly = request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool only) && only;
@@ -144,7 +152,7 @@ internal sealed class ScriptedSilo
         var headers = request.Headers;
         string? ifNoneMatch = headers.IfNoneMatch.Count == 0 ? null : headers.IfNoneMatch.ToString();
         var answer = Record(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile(),
-            headers.Range?.ToString(), headers.IfRange?.ToString(), ifNoneMatch));
+            headers.Range?.ToString(), headers.IfRange?.ToString(), ifNoneMatch, request.GetAccount()));
         return await answer(cancellationToken);
     }
 

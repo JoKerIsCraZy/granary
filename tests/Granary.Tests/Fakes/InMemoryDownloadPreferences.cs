@@ -12,6 +12,8 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
 
     public string DefaultQuality { get; private set; } = DownloadQualities.Original;
 
+    public bool KeepWatched { get; private set; }
+
     public event EventHandler? Changed;
 
     public Task LatestSave => Task.CompletedTask;
@@ -26,6 +28,13 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
     public Task SetDownloadsOnMeteredAsync(bool allowed)
     {
         DownloadsOnMetered = allowed;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    public Task SetKeepWatchedAsync(bool keep)
+    {
+        KeepWatched = keep;
         Changed?.Invoke(this, EventArgs.Empty);
         return Task.CompletedTask;
     }

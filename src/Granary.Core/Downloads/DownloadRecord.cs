@@ -99,6 +99,29 @@ public sealed record DownloadRecord
 
     public DateTimeOffset CreatedAt { get; init; }
 
+    /// <summary>
+    /// Where the viewer left it, in milliseconds: what a play from this PC recorded last, or the server's position when that is
+    /// newer (<see cref="ResumeAt"/>). Null until either is known.
+    /// </summary>
+    public long? ResumeMs { get; init; }
+
+    /// <summary>When <see cref="ResumeMs"/> was recorded, on this PC or as the server says; the newer of two positions wins.</summary>
+    public DateTimeOffset? ResumeAt { get; init; }
+
+    /// <summary>
+    /// The profile has watched it, for sure: it played to its end on this PC, or the server says so, as its progress was last
+    /// read (<c>completed</c>, and no position of a new watch on top). The Downloads page suggests deleting such downloads, so
+    /// a guess does not count: a play left past nine tenths starts over next time but is not watched here until the server,
+    /// whose threshold an admin sets, says it is; and a title that is being watched again is not, until that watch ends.
+    /// </summary>
+    public bool IsWatched { get; init; }
+
+    /// <summary>
+    /// The title's subtitle preference as the server last said it, when a play from this PC read the title's state: a play
+    /// without the server starts the subtitle it names. Null until a play read it.
+    /// </summary>
+    public DownloadSubtitlePreference? SubtitlePreference { get; init; }
+
     /// <summary>When the manifest was last read from the server.</summary>
     public DateTimeOffset? ManifestReadAt { get; init; }
 
@@ -118,6 +141,13 @@ public sealed record DownloadRecord
 }
 
 /// <summary>
+/// Which subtitle a title starts with, as the server resolves it for the profile (the watch detail's effective subtitle
+/// fields): the language (null for no preference, empty for none), the mode (<c>auto</c>, <c>always</c>, <c>off</c>), whether
+/// forced subtitles show, and the track the profile last chose on the title.
+/// </summary>
+public sealed record DownloadSubtitlePreference(string? Language, string Mode, bool ShowForced, Api.Playback.WatchSubtitleSignature? Signature);
+
+/// <summary>
 /// A download with its folder. <see cref="FilesMissing"/>: its files cannot be used, so the row stays with what the index says
 /// of it: the folder is not there (a drive that is not plugged in) until it is back, or it is <see cref="IsDamaged"/>.
 /// </summary>
@@ -125,6 +155,16 @@ public sealed record StoredDownload(DownloadRecord Record, string Folder, bool F
 {
     /// <summary>The folder is there, but its record cannot be read: it can only be deleted.</summary>
     public bool IsDamaged { get; init; }
+
+    /// <summary>
+    /// The download is finished and its folder is there, but its media file is not: deleted by hand, as to make room. As the
+    /// disk was last looked at (<see cref="DownloadStore.RecheckFolders"/>) or a play found it. It does not play from this PC,
+    /// and its row says so.
+    /// </summary>
+    public bool MediaMissing { get; init; }
+
+    /// <summary>The finished media file can be played, as far as the store knows without reading the disk.</summary>
+    public bool CanPlay => Record.State == DownloadState.Completed && !FilesMissing && !MediaMissing && MediaPath is not null;
 
     /// <summary>
     /// The store's <see cref="DownloadStore.ClearGeneration"/> when this run added the download; 0 for one read from the disk,

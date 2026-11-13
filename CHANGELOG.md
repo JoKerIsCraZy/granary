@@ -13,6 +13,14 @@ release's section is what its update says it changes (docs/release.md).
   they take. Downloads wait on a metered connection unless Settings → Downloads allows them, and carry on where they
   stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
   server has to allow downloads.
+- **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
+  tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
+  read them, and the next episode plays when it is downloaded too. What you watch offline
+  goes back to your Silo server once Granary reaches it again; signing out of a server or removing it sends what it
+  still can first, and its question says how much progress is lost. The Downloads page has Play on each download, says Missing file for
+  one whose file was deleted outside Granary, and Reclaim
+  Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
+  watched downloads is on.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.

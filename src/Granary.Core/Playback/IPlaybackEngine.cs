@@ -15,6 +15,22 @@ public sealed record MediaSource(
     public static MediaSource Local(string path, TimeSpan? start = null) => new(new Uri(Path.GetFullPath(path)), [], start);
 }
 
+/// <summary>
+/// A subtitle track of the loaded file as the player lists it: one the file carries itself, or a file read in beside it
+/// (<see cref="IsExternal"/>). A download played from this PC shows the file's own tracks from this list, since no plan names
+/// them.
+/// </summary>
+/// <param name="Stream">The subtitle stream <see cref="IPlaybackEngine.SetSubtitleStream"/> takes, counted from 1.</param>
+/// <param name="Codec">The player's name of the format, such as <c>subrip</c>, <c>ass</c> or <c>hdmv_pgs_subtitle</c>.</param>
+public sealed record EngineSubtitleTrack(int Stream, string? Language, string? Title, string? Codec, bool IsForced, bool IsExternal)
+{
+    /// <summary>The file marks it for the hearing impaired.</summary>
+    public bool IsHearingImpaired { get; init; }
+
+    /// <summary>The file marks it as its default.</summary>
+    public bool IsDefault { get; init; }
+}
+
 /// <summary>What the player measures of the picture it shows, for the playback info; 0 and -1 where it cannot say.</summary>
 /// <param name="HardwareDecoder">mpv's <c>hwdec-current</c>: <c>d3d11va</c>, or <c>no</c> while decoding in software.</param>
 public sealed record PlaybackStats(int VideoWidth, int VideoHeight, long DroppedFrames, long DecoderDroppedFrames, string? HardwareDecoder)
@@ -165,6 +181,9 @@ public interface IPlaybackEngine : IDisposable
 
     /// <summary>The subtitle stream that is the file's FFmpeg stream <paramref name="ffmpegIndex"/>; null when there is none.</summary>
     int? SubtitleStreamOf(int ffmpegIndex);
+
+    /// <summary>The subtitle tracks of what is loaded now, in the player's order; empty until a file is open.</summary>
+    IReadOnlyList<EngineSubtitleTrack> ReadSubtitleTracks();
 
     /// <summary>Shows subtitle stream <paramref name="stream"/>, counted from 1; 0 shows none. False when it did not take.</summary>
     bool SetSubtitleStream(int stream);

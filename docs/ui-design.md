@@ -223,15 +223,28 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   and under it, muted, the space they use and the space left on the drive of the downloads folder ("12.0 GB used · 200.0 GB
   free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
   download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
-  without your Silo server.". Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
+  without your Silo server.". While the profile has watched downloads that are whole on this PC, an outline
+  button "Reclaim Watched" (History's outline button, at the left) stands above the list. The words are the Android
+  app's throughout: the button and the title of its question ("Reclaim Watched"), the question ("Delete 2 watched
+  downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its yes ("Reclaim"). The size is
+  the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
+  Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
+  on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
+  being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
+  one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
+  hides the button. The space left is the downloads folder's: when Settings → Downloads names another folder
+  while the page is in memory, the line shows only the space used until the new folder's is read. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
   semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
   or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
   the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
   ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
-  not enough space", "No longer available", "Missing file"),
+  not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
+  hand, which then has no Play; the page has the folders looked at as it shows),
   and a 3 px bar in the accent while it downloads; the size on the right (13 px muted), then two 34 px round outline
   buttons (History's look): Pause, Resume or Retry, one button that stays while its action changes and goes only when
-  there is nothing left to do, and Delete, which asks first as the title page does. Each has a tooltip and its name for
+  there is nothing left to do, in whose place a download that is whole has Play (the apps' Play on a download's row; it
+  starts the title in the player from where the profile left it, from the file on this PC), and Delete, which asks first
+  as the title page does. Each has a tooltip and its name for
   screen readers. A click on the row opens the film's or the episode's page. After a Delete, and when the transfer button
   goes, the focus moves to the row (after a Delete, the one now in its place). The sidebar's page has no Back disc.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
@@ -1229,7 +1242,8 @@ says why above the sections.
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
   it signs Granary out of the server and back to sign-in, and the question ends with the downloads that go along when the
-  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."). "No other signed-in sessions." when there are none, "Load more
+  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."), and of progress watched from this
+  PC that could not be sent ("Progress in 2 titles is not on your Silo server yet and is lost with it."). "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
   management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
@@ -1246,11 +1260,14 @@ says why above the sections.
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
   Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
-  asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
+  asks first only when the account has downloads on this PC, which go with it, or progress watched here that could not
+  be sent: "Sign out of NAS?", "2 downloads
   (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
   server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
   line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
-  "Any downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
+  "Any downloads on this PC are deleted with it." when not even they can be read in time), then, when progress watched
+  from this PC could not be sent to the server, "Progress in 2 titles is not on your Silo server yet and is lost with
+  it." (the sign-out's question ends with the same sentence), Remove and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
   keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in
@@ -1262,7 +1279,9 @@ says why above the sections.
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
   phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
-  your Silo server offers it, else Original.". Each saves on this PC at once (`download-settings.json`).
+  your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
+  settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
+  finished."): on, the Downloads page suggests nothing. Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
@@ -1375,6 +1394,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   from. Full screen is the whole window's (see Full screen): leaving the player stops playback and ends the mini view,
   whichever way it is left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change), but keeps full screen;
   the page under it shows again, and the next title opens in full screen too (see Full screen, The next title).
+- **A download** plays in the same player, from the file on this PC (docs/architecture.md, "Playing a download"): the
+  title, the seek bar with its chapters and marked parts, the skip pills, the audio and subtitle menus (the subtitle files
+  kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
+  are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
+  rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
+  sync. The playback info says "Play method: Local file" and "Protocol:
+  file" under Player, has no Playback Stream Info, and shows the file under Current Source File as the download's
+  manifest describes it: Container, Size, Video codec, Video range type (HDR or SDR), and the codec and channels of the
+  audio track that plays. A file that will not play shows the failed screen with Granary's own "This download can't be played. Try
+  again, or delete it and download it again." and Retry: the words name what the button beside them does.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px

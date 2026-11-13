@@ -227,7 +227,12 @@ public sealed partial class DownloadStore
             {
                 throw new ArgumentException("A download keeps its id and scope.", nameof(change));
             }
-            updated = before with { Record = record };
+            // A media file that was missing is another matter once the download changed state or names another file.
+            updated = before with
+            {
+                Record = record,
+                MediaMissing = before.MediaMissing && record.State == before.Record.State && record.MediaFile == before.Record.MediaFile,
+            };
             return state with { Downloads = Replace(state.Downloads, before, updated) };
         });
         bool indexChanged = DownloadIndexEntry.Of(before!) != DownloadIndexEntry.Of(updated!);
@@ -337,8 +342,37 @@ public sealed partial class DownloadStore
     }
 
     /// <summary>
+    /// A play found the finished media file of a download gone from its folder: its row says so from now on
+    /// (<see cref="StoredDownload.MediaMissing"/>), until a look at the folders finds the file again. One that is not kept here,
+    /// or is marked already, is no change; nor is one whose bytes were fetched again since <paramref name="looked"/> was
+    /// taken (another revision, or another file name): the file that was looked for is not the one the row names now.
+    /// </summary>
+    public void MarkMediaMissing(StoredDownload looked)
+    {
+        ArgumentNullException.ThrowIfNull(looked);
+        var sought = looked.Record;
+        bool changed = false;
+        Change(state =>
+        {
+            var download = state.Downloads.FirstOrDefault(d => d.Record.Scope == sought.Scope && d.Record.DownloadId == sought.DownloadId);
+            if (download is not { MediaMissing: false, FilesMissing: false, Record.State: DownloadState.Completed }
+                || download.Record.Revision != sought.Revision || download.Record.MediaFile != sought.MediaFile)
+            {
+                return state;
+            }
+            changed = true;
+            return state with { Downloads = Replace(state.Downloads, download, download with { MediaMissing = true }) };
+        });
+        if (changed)
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>
     /// Looks at every folder again: one that came back is read from its own record, one that went turns into missing files,
-    /// and one whose record cannot be read is damaged. <see cref="Changed"/> follows when anything changed. Removed downloads'
+    /// one whose record cannot be read is damaged, and a finished download's media file is looked for
+    /// (<see cref="StoredDownload.MediaMissing"/>). <see cref="Changed"/> follows when anything changed. Removed downloads'
     /// folders still there whose next try is due, and an index not yet written, are tried again in the background
     /// (<see cref="FolderWork"/>).
     /// </summary>
@@ -483,15 +517,23 @@ public sealed partial class DownloadStore
         }
         if (!download.FilesMissing)
         {
-            return download;
+            return LookForMedia(download);
         }
         var (record, problem) = ReadRecord(download.Folder, download.Record.Scope, download.Record.DownloadId);
         if (record is not null)
         {
-            return download with { Record = record, FilesMissing = false, IsDamaged = false };
+            return LookForMedia(download with { Record = record, FilesMissing = false, IsDamaged = false });
         }
         SayDamaged(download, problem);
         return download with { IsDamaged = true };
+    }
+
+    // Whether a finished download's media file is in its folder. Someone who deletes the file by hand, as to make room, leaves
+    // the folder with its record behind: without this look the row would say Downloaded and offer Play.
+    private static StoredDownload LookForMedia(StoredDownload download)
+    {
+        bool missing = download is { FilesMissing: false, Record.State: DownloadState.Completed, MediaPath: { } path } && !File.Exists(path);
+        return missing == download.MediaMissing ? download : download with { MediaMissing = missing };
     }
 
     private Snapshot Change(Func<Snapshot, Snapshot> change)

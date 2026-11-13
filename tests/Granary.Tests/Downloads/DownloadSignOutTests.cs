@@ -33,11 +33,48 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     private readonly InMemoryServerRegistry _registry = new();
     private readonly CredentialStore _credentials;
 
-    public DownloadSignOutTests() => _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
+    private readonly OfflineProgressQueue _progress;
 
-    public ValueTask DisposeAsync() => _h.DisposeAsync();
+    public DownloadSignOutTests()
+    {
+        _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
+        _progress = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        _settings = new(() => new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
+            _h.Time, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>(), _h.Store));
+    }
 
-    private DownloadSignOut NewSignOut() => new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>());
+    public async ValueTask DisposeAsync()
+    {
+        if (_sync is not null)
+        {
+            _sync.Dispose();
+            await _sync.LatestRun;
+        }
+        await _progress.LatestSave;
+        if (_settings.IsValueCreated)
+        {
+            await _settings.Value.LatestSave;
+        }
+        await _h.DisposeAsync();
+    }
+
+    private readonly Lazy<Granary.Core.Playback.KeptPlaybackSettings> _settings;
+
+    private const string SyncPath = "api/v2/sync/progress";
+
+    private OfflineProgressSync? _sync;
+
+    private DownloadSignOut NewSignOut()
+    {
+        _sync ??= new OfflineProgressSync(_progress, new Granary.Core.Api.Downloads.ProgressSyncApi(_h.Silo.Http), _h.Store, _h.Session, _h.Network,
+            new Granary.Core.Playback.ViewerStateChanges(new Granary.Core.Playback.PlaybackStops()), _h.Time, _h.Logs.For<OfflineProgressSync>());
+        return new(_h.Store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>(), _progress, _settings.Value, _sync);
+    }
+
+    private IReadOnlyList<SentRequest> PositionsSent => _h.Silo.SentTo(HttpMethod.Post, SyncPath);
+
+    private void ServerTakesPositions(params string[] items) => _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK,
+        "{ \"items\": [" + string.Join(",", items.Select((id, index) => $$"""{ "index": {{index}}, "media_item_id": "{{id}}", "status": "success" }""")) + "] }"));
 
     // A completed download with its file on the disk.
     private async Task<StoredDownload> KeptAsync(string id, DownloadScope? scope = null)
@@ -171,6 +208,399 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.True(File.Exists(otherServer.PartPath));
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
         Assert.Equal("Signed out of NAS.", servers.Status);
+    }
+
+    [Fact]
+    public async Task SigningOut_TakesTheAccountsUnsentPositionsAlong_AndLeavesOtherAccountsAndServersAlone()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _progress.Record(Scope8, "ep_5", 60_000, 0);
+        _progress.Record(otherAccount, "ep_5", 60_000, 0);
+        _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        _settings.Value.Keep("srv1/1/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        _settings.Value.Keep("srv1/2/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        // The server cannot be reached: nothing of it can be sent before it goes.
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _progress.LatestSave;
+
+        // The question, asked for the download, also says what else is lost: the account's progress in two titles.
+        Assert.Equal("1 download (1.5 MB) on this PC is deleted with it. Progress in 2 titles is not on your Silo server yet and is lost with it.",
+            Assert.Single(_confirm.Asked).Message);
+
+        // The settings kept for its plays without the server go too.
+        Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(_settings.Value.Find("srv1/2/7", ["a"]));
+        // What the account watched here and had not sent yet is not kept behind its back, on any of its profiles.
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(Scope8));
+        Assert.Single(_progress.Entries(otherAccount));
+        Assert.Single(_progress.Entries(OtherServer));
+        Assert.DoesNotContain("mv_dl_1", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "offline-progress.json"), Token),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ASignOutWhileItsFilesCouldNotBeRead_LeavesNothingOfTheAccounts_AfterGranaryStartedAgain()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        string progressPath = Path.Combine(_h.Directory, "data", "offline-progress.json");
+        string settingsPath = Path.Combine(_h.Directory, "data", "playback-settings.json");
+        await KeptAsync("dl_1");
+        // An earlier run left positions to send and kept settings; this one has not read either file yet.
+        var earlier = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        earlier.Record(Scope7, "mv_dl_1", 60_000, 0);
+        earlier.Record(Scope8, "ep_5", 60_000, 0);
+        earlier.Record(otherAccount, "ep_6", 60_000, 0);
+        await earlier.LatestSave;
+        var earlierSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Time,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+        earlierSettings.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 1));
+        earlierSettings.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 1));
+        await earlierSettings.LatestSave;
+
+        // Something has both files open through the sign-out, and Granary closes before it lets go.
+        using (new FileStream(progressPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(settingsPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            using var servers = await ServersAsync();
+            // The sign-out has waited for its notes: nothing more is waited for here.
+            await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        }
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        var next = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Time,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+
+        // Nothing of the account's is there to send or to play with; the other account's is.
+        Assert.Empty(next.Claim(Scope7, 10));
+        Assert.Empty(next.Claim(Scope8, 10));
+        Assert.Single(next.Entries(otherAccount));
+        Assert.Null(nextSettings.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(nextSettings.Find("srv1/2/7", ["a"]));
+        await next.LatestSave;
+        await nextSettings.LatestSave;
+        string progress = await File.ReadAllTextAsync(progressPath, Token);
+        Assert.DoesNotContain("mv_dl_1", progress, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_5", progress, StringComparison.Ordinal);
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(settingsPath, Token), StringComparison.Ordinal);
+    }
+
+    // An account with nothing but positions to send and kept settings here, on a server that cannot be reached; another
+    // account's beside them. Both files are on the disk.
+    private async Task PositionsAndSettingsOnTheDiskAsync()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_6", 60_000, 0);
+        _settings.Value.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 1));
+        _settings.Value.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 1));
+        await _progress.LatestSave;
+        await _settings.Value.LatestSave;
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+    }
+
+    // The sign-out is parked on its store budget, or went on without waiting for anything.
+    private Task WaitsOrWentOnAsync(Task signingOut) =>
+        Until(() => signingOut.IsCompleted || _h.Time.NextDue == DownloadSignOut.StoreBudget, "the sign-out waited for its writes or went on");
+
+    // Granary may close the moment the sign-out is done: by then the note of what it took out, or the file without it, is
+    // on the disk, whichever of the two files' writes is the slow one.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ASignOut_ReturnsOnlyOnceWhatItTookOutIsOnTheDisk_SoAStartRightAfterItHoldsNothingOfTheAccounts(bool positionsAreSlow)
+    {
+        await PositionsAndSettingsOnTheDiskAsync();
+        using var disk = new StalledDisk();
+        if (positionsAreSlow)
+        {
+            _progress.Writing = disk.Hold;
+        }
+        else
+        {
+            _settings.Value.Writing = disk.Hold;
+        }
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(signingOut);
+        bool returnedWhileTheWriteWasHeld = signingOut.IsCompleted;
+        disk.Release();
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        // The next start, the moment the sign-out returned: nothing else is waited for.
+        var next = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
+            _h.Time, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+
+        Assert.False(returnedWhileTheWriteWasHeld);
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Single(next.Entries(new DownloadScope("srv1", "2", "7")));
+        Assert.Null(nextSettings.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(nextSettings.Find("srv1/2/7", ["a"]));
+    }
+
+    [Fact]
+    public async Task AClearWhoseDeletesFail_StillWaitsForWhatItTookOutToBeOnTheDisk()
+    {
+        await KeptAsync("dl_1");
+        await PositionsAndSettingsOnTheDiskAsync();
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () => throw new InvalidOperationException("The server's answer broke."));
+        using var disk = new StalledDisk();
+        _progress.Writing = disk.Hold;
+
+        var clearing = NewSignOut().ClearAsync("srv1", "1", Token);
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(clearing);
+        bool endedWhileTheWriteWasHeld = clearing.IsCompleted;
+        disk.Release();
+
+        // The failure still comes out, but only once the note of what was taken out is written: a Granary closed after it
+        // finds none of the account's positions at its next start.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => clearing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.False(endedWhileTheWriteWasHeld);
+        var next = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        Assert.Empty(next.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task WritesOfWhatASignOutTookOutThatDoNotComeInTime_DoNotHoldItUp_AndThatIsLoggedWithoutNamingWhatOrWhose()
+    {
+        await PositionsAndSettingsOnTheDiskAsync();
+        using var disk = new StalledDisk();
+        _progress.Writing = disk.Hold;
+        _settings.Value.Writing = disk.Hold;
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(signingOut);
+        _h.Time.Advance(DownloadSignOut.StoreBudget);
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var calls = _h.Session.Calls.ToList();
+        var leftForThisRun = _progress.Entries(Scope7);
+        disk.Release();
+        await _progress.LatestSave;
+        await _settings.Value.LatestSave;
+
+        // Signed out all the same, and out for this run at once.
+        Assert.Equal(["sign-out:srv1"], calls);
+        Assert.Empty(leftForThisRun);
+        string said = Assert.Single(_h.Logs.Lines, line => line.Contains("What the sign-out took out", StringComparison.Ordinal)
+            && line.Contains("within 5 s", StringComparison.Ordinal));
+        Assert.DoesNotContain("srv1", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_5", said, StringComparison.Ordinal);
+        Assert.DoesNotContain(_h.Directory, said, StringComparison.OrdinalIgnoreCase);
+        // Written once the disk answered.
+        Assert.DoesNotContain("ep_5", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "offline-progress.json"), Token),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "playback-settings.json"), Token),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ASettingsAnswerThatComesWhileTheAccountIsSignedOut_IsNotKeptForIt()
+    {
+        await KeptAsync("dl_1");
+        var answer = new Granary.Core.Api.Settings.EffectiveSettings([], 2);
+        _settings.Value.Keep("srv1/1/7", ["a"], new Granary.Core.Api.Settings.EffectiveSettings([], 1));
+        // A read of the settings answers while the server hears the delete: the kept ones went already, and the account is
+        // still signed in.
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () =>
+        {
+            _settings.Value.Keep("srv1/1/7", ["a"], answer);
+            _settings.Value.Keep("srv1/1/8", ["b"], answer);
+            _settings.Value.Keep("srv1/2/7", ["a"], answer);
+            return ScriptedSilo.NoContent()();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _settings.Value.LatestSave;
+
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        Assert.Null(_settings.Value.Find("srv1/1/8", ["b"]));
+        // Another account's answer is that account's to keep.
+        Assert.NotNull(_settings.Value.Find("srv1/2/7", ["a"]));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "playback-settings.json"), Token),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AfterASignOutThatEndedWithTheAccountStillSignedIn_ItsSettingsAreKeptAgain()
+    {
+        var answer = new Granary.Core.Api.Settings.EffectiveSettings([], 1);
+
+        using (await NewSignOut().ClearAsync("srv1", "1", Token))
+        {
+            _settings.Value.Keep("srv1/1/7", ["a"], answer);
+            Assert.Null(_settings.Value.Find("srv1/1/7", ["a"]));
+        }
+
+        // The sign-out failed, or another account's was not the one to sign out: the next play's read is kept as ever.
+        _settings.Value.Keep("srv1/1/7", ["a"], answer);
+        Assert.NotNull(_settings.Value.Find("srv1/1/7", ["a"]));
+    }
+
+    [Fact]
+    public async Task SigningOut_SendsWhatTheActiveProfileWatchedHere_BeforeItForgetsIt()
+    {
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _progress.Record(Scope8, "ep_5", 60_000, 0);
+        ServerTakesPositions("mv_dl_1");
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // Profile 7's position went, as account 1 and profile 7, before the question and before the sign-in ended.
+        var sent = Assert.Single(PositionsSent);
+        Assert.Equal(("1", "7"), (sent.AsAccount, sent.AsProfile));
+        Assert.Contains("\"position_ms\":60000", sent.Body, StringComparison.Ordinal);
+        // Profile 8's cannot go as profile 7: the question says that one title's progress is lost.
+        Assert.Equal("1 download (1.5 MB) on this PC is deleted with it. Progress in 1 title is not on your Silo server yet and is lost with it.",
+            Assert.Single(_confirm.Asked).Message);
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(Scope8));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
+    public async Task SigningOutWithoutDownloads_AsksNothing_AndStillSendsWhatItCanFirst()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        bool signedOutWhenSent = true;
+        _h.Silo.On(HttpMethod.Post, SyncPath, () =>
+        {
+            signedOutWhenSent = _h.Session.Calls.Count > 0;
+            return ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "index": 0, "media_item_id": "ep_5", "status": "success" } ] }""")();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // No question where there was none; the position is on the server, not lost without a word.
+        Assert.Empty(_confirm.Asked);
+        Assert.Single(PositionsSent);
+        Assert.False(signedOutWhenSent);
+        Assert.Empty(_progress.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task SigningOutWithoutDownloads_AsksAfterAll_WhenWhatWasWatchedHereCouldNotBeSent()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+        _confirm.Answer = false;
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        // Nothing but the progress would be lost, and the viewer hears it before it is: said no, it stays.
+        Assert.Equal(("Sign out of NAS?", "Progress in 1 title is not on your Silo server yet and is lost with it.", "Sign out"),
+            Assert.Single(_confirm.Asked));
+        Assert.Single(_progress.Entries(Scope7));
+        Assert.Empty(_h.Session.Calls);
+
+        _confirm.Answer = true;
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotAnswerThePositions_StillHearsTheDeletes()
+    {
+        await KeptAsync("dl_1");
+        _progress.Record(Scope7, "mv_dl_1", 60_000, 0);
+        _h.Silo.OnCancellable(HttpMethod.Post, SyncPath, async ct =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), ScriptedSilo.NoContent());
+        await _registry.AddOrUpdateAsync(ScriptedSilo.Base, "NAS", "server-srv1", Token);
+
+        var clearing = NewSignOut().ClearAsync("srv1", "1", Token);
+        await Until(() => PositionsSent.Count == 1, "the positions went out");
+        _h.Time.Advance(DownloadSignOut.SendBudget);
+        using var clear = await clearing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        // The send has a budget of its own: the time it took is not taken from the deletes.
+        Assert.Single(DeletesSent);
+        Assert.Empty(_progress.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task SigningOutOfAnotherServer_SendsNothingAsTheAccountInUse()
+    {
+        await _credentials.SetAsync("srv2", SignedIn("5"), Token);
+        var there = new DownloadScope("srv2", "5", "7");
+        await KeptAsync("dl_x", there);
+        _progress.Record(there, "ep_5", 60_000, 0);
+        _progress.Record(Scope7, "ep_9", 60_000, 0);
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv2"));
+
+        // Its positions could only go out as that account, which is not the one in use: they are lost, and the question
+        // said so. The active profile's own are neither sent for it nor touched.
+        Assert.Empty(PositionsSent);
+        Assert.EndsWith("Progress in 1 title is not on your Silo server yet and is lost with it.", Assert.Single(_confirm.Asked).Message, StringComparison.Ordinal);
+        Assert.Empty(_progress.Entries(there));
+        Assert.Single(_progress.Entries(Scope7));
+    }
+
+    [Fact]
+    public async Task TheRemoveQuestion_NamesTheProgressThatIsLost_AlsoWithoutDownloads()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_6", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+
+        string? note = await NewSignOut().RemoveNoteAsync("srv1", Token);
+
+        Assert.Equal("Progress in 3 titles is not on your Silo server yet and is lost with it.", note);
+        Assert.Null(await NewSignOut().RemoveNoteAsync("srv2", Token));
+    }
+
+    [Fact]
+    public async Task RemovingAServer_TakesEveryAccountsUnsentPositionsThere()
+    {
+        var otherAccount = new DownloadScope("srv1", "2", "7");
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(otherAccount, "ep_5", 60_000, 0);
+        _progress.Record(OtherServer, "ep_5", 60_000, 0);
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(503, "unavailable"));
+        using var servers = await ServersAsync();
+
+        await servers.RemoveCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Empty(_progress.Entries(Scope7));
+        Assert.Empty(_progress.Entries(otherAccount));
+        Assert.Single(_progress.Entries(OtherServer));
+    }
+
+    [Fact]
+    public async Task AnExpiredSignIn_KeepsTheUnsentPositions()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        await _credentials.SetAsync("srv1", SignedIn("1"), Token);
+        _ = NewSignOut();
+
+        await _credentials.RemoveAsync("srv1", "session-1", Token);
+        _h.SignOut();
+
+        // They go once the account is signed in again.
+        Assert.Single(_progress.Entries(Scope7));
     }
 
     [Fact]

@@ -59,6 +59,15 @@ public sealed record OfflineManifest
     /// <summary>The delivered file's container, which names the media file on disk.</summary>
     public string? Container { get; init; }
 
+    /// <summary>The delivered file's video codec, <c>h264</c> or <c>hevc</c>.</summary>
+    public string? CodecVideo { get; init; }
+
+    /// <summary>The delivered file's audio codec; each of <see cref="AudioTracks"/> names its own.</summary>
+    public string? CodecAudio { get; init; }
+
+    /// <summary>The delivered file is HDR.</summary>
+    public bool Hdr { get; init; }
+
     public double? DurationSeconds { get; init; }
 
     /// <summary>The audio track to start with, an index into <see cref="AudioTracks"/>.</summary>

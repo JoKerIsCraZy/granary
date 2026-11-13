@@ -61,6 +61,7 @@ public sealed partial class DownloadManager
     private readonly ISessionManager _session;
     private readonly IPlaybackDeviceProbe _probe;
     private readonly IPlaybackDevicePreferences _device;
+    private readonly PlayingDownloads? _playing;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadManager> _logger;
 
@@ -69,7 +70,8 @@ public sealed partial class DownloadManager
     private readonly HashSet<(DownloadScope Scope, string MediaItemId)> _starting = [];
 
     public DownloadManager(DownloadStore store, DownloadQueue queue, DownloadsApi api, DownloadsFeature feature, ISessionManager session,
-        IPlaybackDeviceProbe probe, IPlaybackDevicePreferences device, TimeProvider time, ILogger<DownloadManager> logger)
+        IPlaybackDeviceProbe probe, IPlaybackDevicePreferences device, TimeProvider time, ILogger<DownloadManager> logger,
+        PlayingDownloads? playing = null)
     {
         ArgumentNullException.ThrowIfNull(feature);
         _store = store;
@@ -78,10 +80,16 @@ public sealed partial class DownloadManager
         _session = session;
         _probe = probe;
         _device = device;
+        _playing = playing;
         _time = time;
         _logger = logger;
         // The manager lives as long as the app, as the store, the queue and the feature do.
         store.Changed += OnChanged;
+        // A download that plays is not suggested for deletion; the suggestion follows its start and its stop.
+        if (playing is not null)
+        {
+            playing.Changed += OnChanged;
+        }
         queue.Progressed += OnProgressed;
         // "Paused · metered connection" comes and goes with the link and Settings → Downloads.
         queue.ConditionsChanged += OnChanged;
@@ -89,8 +97,8 @@ public sealed partial class DownloadManager
     }
 
     /// <summary>
-    /// Raised on any thread when a download changed, went further, or what the server offers did, and when downloads start or
-    /// stop waiting for an unmetered connection. A transfer that only went further comes with
+    /// Raised on any thread when a download changed, went further, started or stopped playing, or what the server offers did,
+    /// and when downloads start or stop waiting for an unmetered connection. A transfer that only went further comes with
     /// <see cref="DownloadProgressedEventArgs"/>, at most every half second for each.
     /// </summary>
     public event EventHandler? Changed;
@@ -130,8 +138,14 @@ public sealed partial class DownloadManager
     /// <summary>The bytes the active profile's downloads take: the finished files and the parts so far, as the queue knows them.</summary>
     public long BytesUsed() =>
         DownloadScope.Of(_session) is { } scope
-            ? _store.In(scope).Where(d => !d.FilesMissing).Sum(d => BytesDone(scope, d.Record))
+            ? _store.In(scope).Where(d => !d.FilesMissing && !d.MediaMissing).Sum(d => BytesDone(scope, d.Record))
             : 0;
+
+    /// <summary>
+    /// Has the downloads' folders looked at again soon, off the caller's thread: a page that lists them shows a file that was
+    /// deleted by hand, or a drive that came back, without waiting for the queue's next look.
+    /// </summary>
+    public void LookAtFiles() => _queue.RecheckSoon();
 
     /// <summary>Pauses a download until the viewer resumes it, also across starts; its transfer stops, keeping its bytes.</summary>
     public async Task PauseAsync(string downloadId)
@@ -166,13 +180,46 @@ public sealed partial class DownloadManager
     /// </summary>
     public async Task DeleteAsync(string downloadId, CancellationToken cancellationToken)
     {
-        if (DownloadScope.Of(_session) is not { } scope)
+        if (DownloadScope.Of(_session) is { } scope)
         {
-            return;
+            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task DeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
+    {
         await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Download {DownloadId} was deleted from this PC", downloadId);
         _queue.Wake();
+    }
+
+    /// <summary>
+    /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
+    /// as <see cref="DeleteAsync"/> deletes one, and answers how many went. The ids are the ones the viewer was asked about:
+    /// a download that became watched after the question stays, and so does one that is no longer watched, or that plays now:
+    /// its file is never taken from under the player. They are the downloads of the profile that was active when the answer
+    /// came, also when another one becomes active while they go.
+    /// </summary>
+    public async Task<int> DeleteWatchedAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(downloadIds);
+        if (DownloadScope.Of(_session) is not { } scope)
+        {
+            return 0;
+        }
+        int deleted = 0;
+        foreach (string downloadId in downloadIds)
+        {
+            // Looked at right before each delete, not once for all: a delete takes a while (its folder, the index), and one
+            // of the others can start playing meanwhile, or stop being watched as the server's progress is read.
+            if (_store.Find(scope, downloadId) is not { } download || !ItemOf(download, waitsForUnmetered: false).IsReclaimable)
+            {
+                continue;
+            }
+            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
+            deleted++;
+        }
+        return deleted;
     }
 
     private async Task ChangeAsync(DownloadScope scope, string downloadId, Func<DownloadRecord, DownloadRecord> change)
@@ -190,10 +237,13 @@ public sealed partial class DownloadManager
     private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered)
     {
         var record = download.Record;
+        // A finished download whose media file was deleted by hand is missing its file too, for all a page shows of it.
         return new DownloadItem(record.DownloadId, record.MediaItemId, record.Title, record.SeriesId, record.SeriesTitle, record.SeasonNumber,
-            record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable, download.FilesMissing,
+            record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable,
+            download.FilesMissing || download.MediaMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
-            record.MediaFileId, ArtworkPath(download, "series_poster"));
+            record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
+            _playing?.Contains(record.Scope, record.DownloadId) == true);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

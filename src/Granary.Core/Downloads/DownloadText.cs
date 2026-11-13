@@ -21,7 +21,8 @@ public static class DownloadText
     public const string Original = "Original";
 
     /// <summary>
-    /// The status a row and the title page's menu show. Missing files come first, then a download the server no longer has,
+    /// The status a row and the title page's menu show. Missing files come first (a folder that is gone, or a finished
+    /// download whose media file was deleted: the Android app's "Missing file"), then a download the server no longer has,
     /// then the viewer's pause, then where it stands.
     /// </summary>
     public static string Status(DownloadItem item)

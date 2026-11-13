@@ -10,12 +10,14 @@ public sealed class MpvPlaybackEngineTests : IDisposable
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
     private readonly List<string> _files = [];
+    private readonly List<string> _folders = [];
 
-    private static MpvPlaybackEngine CreateEngine()
+    private static MpvPlaybackEngine CreateEngine(LogSink? log = null)
     {
         Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
             "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
-        return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = VideoOutputKind.None }, NullLogger<MpvPlaybackEngine>.Instance);
+        return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = VideoOutputKind.None },
+            log is null ? NullLogger<MpvPlaybackEngine>.Instance : log.For<MpvPlaybackEngine>());
     }
 
     private string TempWav(double seconds)
@@ -237,6 +239,118 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.False(engine.SetSubtitleStream(first.Value));
         Assert.True(engine.SetSubtitleStream(second.Value));
+    }
+
+    [Fact]
+    public async Task ReadSubtitleTracks_ListsAnAddedFileAsExternal()
+    {
+        using var engine = CreateEngine();
+        var playing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult();
+            }
+        };
+        long load = engine.Load(MediaSource.Local(TempWav(6.0)) with { SubtitleStream = 0 });
+        await playing.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.Empty(engine.ReadSubtitleTracks());
+        string srt = Path.Combine(Path.GetTempPath(), $"granary-{Guid.NewGuid():N}.srt");
+        _files.Add(srt);
+        await File.WriteAllTextAsync(srt, "1\n00:00:00,000 --> 00:00:05,000\nHello\n", TestContext.Current.CancellationToken);
+
+        int? stream = await engine.AddSubtitleAsync(new Uri(srt), load);
+
+        var track = Assert.Single(engine.ReadSubtitleTracks());
+        Assert.Equal(stream, track.Stream);
+        Assert.True(track.IsExternal);
+        Assert.Equal("subrip", track.Codec);
+        Assert.False(track.IsForced);
+    }
+
+    // A download's folder is as deep as the downloads folder the viewer chose makes it (docs/architecture.md, "Long paths").
+    // The test host is not long-path aware, as a PC without Windows' LongPathsEnabled is for the whole app.
+    [Fact]
+    public async Task AFileWhoseFullPathIsLongerThan260Characters_Plays_WithASubtitleFileBesideIt()
+    {
+        var sink = new LogSink();
+        using var engine = CreateEngine(sink);
+        string folder = LongFolder();
+        string media = Path.Combine(folder, "media.wav");
+        string srt = Path.Combine(folder, "sub-external_0-0123456789abcdef.srt");
+        await File.WriteAllBytesAsync(media, WavFile.Sine(6.0), TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(srt, "1\n00:00:00,000 --> 00:00:05,000\nHello\n", TestContext.Current.CancellationToken);
+        Assert.True(media.Length > 300, "The path must be well over Windows' 260.");
+        var playing = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ended = new TaskCompletionSource<PlaybackEnded>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult(s);
+            }
+        };
+        engine.Ended += (_, e) => ended.TrySetResult(e);
+
+        long load = engine.Load(MediaSource.Local(media) with { SubtitleStream = 0 });
+
+        var first = await Task.WhenAny(playing.Task, ended.Task).WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.True(first == playing.Task, "The file did not play: " + (first == ended.Task ? (await ended.Task).Detail : ""));
+        int? stream = await engine.AddSubtitleAsync(new Uri(srt), load);
+        Assert.NotNull(stream);
+        Assert.True(engine.SetSubtitleStream(stream.Value));
+        // The same file read again is found beside the first, as a short path's is.
+        int? again = await engine.AddSubtitleAsync(new Uri(srt), load);
+        Assert.NotNull(again);
+        Assert.NotEqual(stream, again);
+        // The folder holds the Windows user's name: whatever mpv says of the files, the log does not name it.
+        Assert.DoesNotContain(Path.GetFileName(_folders[^1]), sink.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Without the extended form, mpv cannot open a subtitle file whose path is over 260 characters; a file it cannot open at
+    // all is left out, and the log says so without its path.
+    [Fact]
+    public async Task ASubtitleFileThatIsNotThere_IsLeftOut_AndTheLogDoesNotNameItsFolder()
+    {
+        var sink = new LogSink();
+        using var engine = CreateEngine(sink);
+        var playing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult();
+            }
+        };
+        long load = engine.Load(MediaSource.Local(TempWav(6.0)) with { SubtitleStream = 0 });
+        await playing.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        string folder = LongFolder();
+
+        int? stream = await engine.AddSubtitleAsync(new Uri(Path.Combine(folder, "sub-gone.srt")), load);
+
+        Assert.Null(stream);
+        // mpv's own lines come from its event thread, a moment after the command.
+        for (int tries = 0; tries < 200 && !sink.All.Contains("Error", StringComparison.Ordinal); tries++)
+        {
+            await Task.Delay(25, TestContext.Current.CancellationToken);
+        }
+        Assert.Contains("Error", sink.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(_folders[^1]), sink.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // A folder whose path is over 300 characters, made of names as long as a download's folders can be.
+    private string LongFolder()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        _folders.Add(root);
+        string folder = root;
+        while (folder.Length < 300)
+        {
+            folder = Path.Combine(folder, new string('d', 40) + "-0123456789abcdef");
+        }
+        Directory.CreateDirectory(folder);
+        return folder;
     }
 
     [Fact]
@@ -699,6 +813,10 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         foreach (string file in _files)
         {
             File.Delete(file);
+        }
+        foreach (string folder in _folders)
+        {
+            Directory.Delete(folder, recursive: true);
         }
     }
 }

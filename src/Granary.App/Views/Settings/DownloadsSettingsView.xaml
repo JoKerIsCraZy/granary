@@ -49,6 +49,11 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.Qualities, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedQuality, Mode=TwoWay}" AutomationProperties.Name="Default quality" />
                 </controls:SettingsRow>
+                <!-- The server's settings contract names it downloads.keep_watched, kept on the client; its words are the contract's. -->
+                <controls:SettingsRow Label="Keep watched downloads" Description="Do not suggest reclaiming space from downloads you have finished.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.KeepWatched, Mode=TwoWay}"
+                                  AutomationProperties.Name="Keep watched downloads" />
+                </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
     </StackPanel>
