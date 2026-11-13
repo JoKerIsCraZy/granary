@@ -602,6 +602,39 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
     }
 
+    // After a newer Granary ran on this data folder. Read as this version's, the note would take another server's entries
+    // only; what the newer one meant by it is not known.
+    [Fact]
+    public async Task ANoteOfASignOutInANewerVersion_LetsGoOfEverythingTheFileHolds_SinceItCanNoLongerBeUnderstood()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, """{ "version": 2, "removals": [ { "id": "a1", "server_entry_id": "srv2" } ] }""", Token);
+        var next = Open();
+
+        Assert.Equal(0, next.Count(_ => true));
+        // What is recorded from now on is kept as ever, and the note has done its work.
+        next.Record(OtherServer, "ep_5", 5000, 0);
+        await next.LatestSave;
+
+        Assert.False(File.Exists(NotePath));
+        Assert.Equal(["ep_5"], Open().Entries(OtherServer).Select(e => e.MediaItemId));
+        Assert.Contains("newer version", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("damaged", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // No earlier form of the note exists: one that names no version is this one's.
+    [Fact]
+    public async Task ANoteOfASignOutThatNamesNoVersion_IsReadAsThisVersions()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, """{ "removals": [ { "id": "a1", "server_entry_id": "srv2" } ] }""", Token);
+        var next = Open();
+
+        Assert.Equal(3, next.Count(_ => true));
+        Assert.Empty(next.Entries(OtherServer));
+    }
+
     [Fact]
     public async Task ADamagedNoteThatCannotBeDeleted_TakesNothingThatWasRecordedSince()
     {

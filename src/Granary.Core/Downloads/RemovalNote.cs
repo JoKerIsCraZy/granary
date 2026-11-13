@@ -59,7 +59,8 @@ internal sealed class RemovalNote
     /// <summary>
     /// Reads the note an earlier run left, once. False while it cannot be read (something has it open): it may name anyone,
     /// so the owner uses nothing of its file until it can be. A note that no longer says whose entries were to go covers
-    /// everything the file holds: losing what was kept is the lesser harm than keeping what a sign-out was to take.
+    /// everything the file holds: losing what was kept is the lesser harm than keeping what a sign-out was to take. So does
+    /// one of a newer version than this build writes: it can no longer be understood.
     /// </summary>
     public bool TryRead()
     {
@@ -98,14 +99,23 @@ internal sealed class RemovalNote
         }
     }
 
-    // The note's removals. One that is damaged covers everything, under an id made of its content: a file written after it
-    // names that id, so the same damaged note, still there at the next start, takes nothing more.
+    // The note's removals. One that cannot be understood, damaged or of a newer version, covers everything.
     private IReadOnlyList<NotedRemoval> Parse(byte[] bytes)
     {
         try
         {
+            var file = JsonSerializer.Deserialize(bytes, RemovalNoteJsonContext.Default.RemovalNoteFile);
+            // A later Granary may mean more by its note than this one reads out of it, or something else: its removals
+            // are not taken for this version's, though they may read as such. A note that names no version, or an
+            // earlier one, is this version's: there is no earlier form.
+            if (file is { Version: > RemovalNoteFile.CurrentVersion })
+            {
+                _logger.LogWarning("The note of what a sign-out took out of {What} is of a newer version than this Granary reads; everything their file holds is let go",
+                    _what);
+                return Everything(bytes);
+            }
             // JSON can say null or anything for every member.
-            if (JsonSerializer.Deserialize(bytes, RemovalNoteJsonContext.Default.RemovalNoteFile)?.Removals is { } removals
+            if (file?.Removals is { } removals
                 && removals.All(r => r is { Id.Length: > 0, ServerEntryId.Length: > 0, AccountId: null or { Length: > 0 } }))
             {
                 return removals;
@@ -116,8 +126,12 @@ internal sealed class RemovalNote
             // As a note that says nothing usable.
         }
         _logger.LogWarning("The note of what a sign-out took out of {What} is damaged; everything their file holds is let go", _what);
-        return [new NotedRemoval("damaged-" + Convert.ToHexString(SHA256.HashData(bytes)), null, null)];
+        return Everything(bytes);
     }
+
+    // Everything the file holds, under an id made of the note's content: a file written after it names that id, so the
+    // same note, still there at the next start, takes nothing more.
+    private static NotedRemoval[] Everything(byte[] bytes) => [new NotedRemoval("damaged-" + Convert.ToHexString(SHA256.HashData(bytes)), null, null)];
 
     /// <summary>Notes that an account's entries on a server were removed, or every account's there (<paramref name="accountId"/> null).</summary>
     public void Add(string serverEntryId, string? accountId)
@@ -247,14 +261,18 @@ internal sealed class RemovalNote
 
 /// <summary>
 /// One removal a <see cref="RemovalNote"/> names: an account's entries on a server, or every account's there
-/// (<see cref="AccountId"/> null). No <see cref="ServerEntryId"/> stands for everything, which only a damaged note means.
+/// (<see cref="AccountId"/> null). No <see cref="ServerEntryId"/> stands for everything, which only a note that cannot be
+/// understood means.
 /// </summary>
 internal sealed record NotedRemoval(string Id, string? ServerEntryId, string? AccountId);
 
 /// <summary><c>&lt;file&gt;.removed</c> as Granary writes it.</summary>
 internal sealed record RemovalNoteFile
 {
-    public int Version { get; init; } = 1;
+    /// <summary>The version this build writes and reads; a note of a later one is not understood (<see cref="RemovalNote.TryRead"/>).</summary>
+    public const int CurrentVersion = 1;
+
+    public int Version { get; init; } = CurrentVersion;
 
     public IReadOnlyList<NotedRemoval>? Removals { get; init; }
 }
