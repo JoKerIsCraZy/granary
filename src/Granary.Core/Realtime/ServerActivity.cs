@@ -32,7 +32,8 @@ public sealed record ServerActivityState
 
     /// <summary>
     /// There may be more scans than <see cref="Scans"/> holds: the last snapshot was full
-    /// (<see cref="ServerActivity.ScanSnapshotLimit"/>), or the connection's snapshot could not be read or never came.
+    /// (<see cref="ServerActivity.ScanSnapshotLimit"/>), the connection's snapshot could not be read or never came, or a
+    /// scan's event could not be read.
     /// It stays so until a snapshot that is whole says otherwise, however many of the known scans end meanwhile.
     /// </summary>
     public bool ScansMayBeMore { get; init; }

@@ -12,8 +12,8 @@ namespace Granary.Core.Realtime;
 //
 // Where the web trusts what it has, Granary says when it cannot know. The scans kept from an earlier connection are only
 // a guess until the new connection's snapshot confirms or replaces them (an end that came while the stream was away, or
-// that the server dropped for a slow reader, is never sent again), and a snapshot that cannot be read, or that does not
-// come, leaves them unknown: neither the old list nor "none" is shown for it.
+// that the server dropped for a slow reader, is never sent again), and a snapshot or an event that cannot be read, or a
+// snapshot that does not come, leaves them unknown: neither the old list nor "none" is shown for it.
 public sealed partial class ServerActivity
 {
     /// <summary>
@@ -119,11 +119,20 @@ public sealed partial class ServerActivity
         return true;
     }
 
+    // True when the state changed.
     private bool ScanEventLocked(EventsFrame frame)
     {
+        // Every scans event brings a run. One too large to take, or that is no run, may have begun or ended a scan
+        // unheard: as for a snapshot that cannot be read, nobody knows the scans now.
         if (frame.IsCut || Payload(frame.Data, AdminJsonContext.Default.AdminScanRun) is not { Id.Length: > 0 } run)
         {
-            return false;
+            if (!ScansUnknownLocked())
+            {
+                return false;
+            }
+            _logger.LogInformation("A scan's event could not be read ({Reason}): the activity indicator does not know the scans",
+                frame.IsCut ? "too large" : "not a run");
+            return true;
         }
         var scans = _state.Scans ?? [];
         int index = -1;

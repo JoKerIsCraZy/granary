@@ -1438,7 +1438,8 @@ by `MainWindow.Activity.cs`.
     the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity: at least 500
     active", and the line "At least 475 more scans queued". That lasts until a snapshot that is not full, however
     many of the known scans end (the web goes by the number it knows at the moment). The same when a connection's
-    snapshot could not be read, or did not come while scans of the last connection may still run: the scans are then
+    snapshot could not be read, or did not come while scans of the last connection may still run, and when a scan's
+    event could not be read (it may have begun or ended a scan): the scans are then
     not known, and those the stream tells of since are the least there is. A snapshot that does not come with no
     scan known to run says nothing, so a server that sends none does not keep the button up. Without any: "No active scans" when the stream said so; while it is away, "Connecting…"
     or "Disconnected", since scans are known from the stream alone (the web says "No active scans" there too); and

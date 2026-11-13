@@ -118,19 +118,26 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
         Assert.Equal([("b", "running")], Scans);
     }
 
-    [Fact]
-    public async Task WhatIsNoRun_ChangesNothing()
+    [Theory]
+    [InlineData("""{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""")]
+    [InlineData("""{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "y", "timestamp": "t", "data": { "id": 7 } }""")]
+    // Too large to take: cut to its head, it says nothing of its run.
+    [InlineData("""{"type":"event","channel":"scans","event":"scan.completed","event_id":"z","timestamp":"t","data":{"id":"a","library_id":1,"mode":"lib""")]
+    public async Task AScanEventThatCannotBeRead_LeavesTheScansUnknown_AsASnapshotThatCannotBeReadDoes(string frame)
     {
         var socket = await _harness.StartedAsync(EventsChannels.Scans);
         await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
 
-        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""");
-        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "y", "timestamp": "t", "data": { "id": 7 } }""");
-        // An event too large to take is cut to its head and says nothing of its run.
-        await _harness.PushedAsync(socket, """{"type":"event","channel":"scans","event":"scan.progress","event_id":"z","timestamp":"t","data":{"id":"a","library_id":1,"mode":"lib""");
+        await _harness.PushedAsync(socket, frame);
 
+        // Every scans event brings a run: one that cannot be read may have begun or ended a scan unheard.
+        Assert.Null(_harness.State.Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+
+        // The runs the stream tells of from then on are the least there is, until a snapshot that can be read.
+        await _harness.PushedAsync(socket, Event("scan.progress", Run("a", "running")));
         Assert.Equal([("a", "running")], Scans);
-        Assert.False(_harness.State.ScansMayBeMore);
+        Assert.True(_harness.State.ScansMayBeMore);
     }
 
     [Theory]
