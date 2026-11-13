@@ -37,6 +37,22 @@ public sealed partial class PadInterpreter
         _actions.Add(PadAction.Of(PadActionKind.SeekPreview, _seekOffset));
     }
 
+    // In the player, once the buttons and the direction are taken: the triggers scrub, and a seek that is done is sent.
+    private void TakeSeek(double leftPressure, double rightPressure, TimeSpan step)
+    {
+        if (_context.Focus == PadFocus.Menu)
+        {
+            // A menu opened over a seek under way: the seek is sent now, where the bar showed it, rather than held
+            // back for as long as the menu stays.
+            SendSeek();
+        }
+        else
+        {
+            TakeScrub(leftPressure, rightPressure, step);
+        }
+        SendSeekWhenDue();
+    }
+
     private void TakeScrub(double leftPressure, double rightPressure, TimeSpan step)
     {
         bool back = _live.HasFlag(PadButtons.LeftTrigger);

@@ -114,47 +114,16 @@ public sealed partial class PadInterpreter
             Lose();
             return _actions;
         }
-        _now = _time.GetElapsedTime(_origin);
-        var step = _now - _last;
-        step = step > PadTuning.LongestStep ? PadTuning.LongestStep : step;
-        _last = _now;
-
+        var step = TakeTime();
         var (leftX, leftY) = PadSticks.PastDeadZone(reading.LeftX, reading.LeftY, PadTuning.LeftStickDeadZone);
         var (rightX, rightY) = PadSticks.PastDeadZone(reading.RightX, reading.RightY, PadTuning.RightStickDeadZone);
         double leftTrigger = Pressure(reading.LeftTrigger, reading.Buttons.HasFlag(PadButtons.LeftTrigger));
         double rightTrigger = Pressure(reading.RightTrigger, reading.Buttons.HasFlag(PadButtons.RightTrigger));
         IsActive = !IsAtRest(reading);
-
-        _isLeftTriggerDown = PadSticks.IsPressed(leftTrigger, _isLeftTriggerDown);
-        _isRightTriggerDown = PadSticks.IsPressed(rightTrigger, _isRightTriggerDown);
-        var down = (reading.Buttons & ~Triggers)
-            | (_isLeftTriggerDown ? PadButtons.LeftTrigger : PadButtons.None)
-            | (_isRightTriggerDown ? PadButtons.RightTrigger : PadButtons.None);
         _stick = PadSticks.Direction(leftX, leftY, _stick);
-        bool isRightStickAtRest = rightX == 0 && rightY == 0;
 
-        if (_spendsAll)
-        {
-            _spendsAll = false;
-            _spent = down;
-            _direction = PadDirection.None;
-            _volume = PadDirection.None;
-            _isLeftStickSpent = _stick != PadDirection.None;
-            _isRightStickSpent = !isRightStickAtRest;
-        }
-        else if (context.Mode != _context.Mode)
-        {
-            // The pages and the player changed places: what was held belongs to the one that went. A press that comes
-            // with the change is the new one's.
-            _spent |= down & _down;
-            _directionUse = DirectionUse.Spent;
-            _isRightStickSpent = !isRightStickAtRest;
-            DropSeek();
-        }
-        _spent &= down;
-        _live &= ~_spent;
-        _isLeftStickSpent &= _stick != PadDirection.None;
-        _isRightStickSpent &= !isRightStickAtRest;
+        var down = ButtonsDown(reading.Buttons, leftTrigger, rightTrigger);
+        Spend(down, isRightStickAtRest: rightX == 0 && rightY == 0, context.Mode);
         _down = down;
         _context = context;
 
@@ -169,24 +138,62 @@ public sealed partial class PadInterpreter
         {
             TakePaging(pressed);
             TakeScroll(reading.RightX, reading.RightY, step);
+            return _actions;
         }
-        else if (context.Focus != PadFocus.Menu)
+        if (context.Focus != PadFocus.Menu)
         {
             TakeChapters(pressed);
             TakeVolume(rightX, rightY);
-            TakeScrub(leftTrigger, rightTrigger, step);
         }
-        else
-        {
-            // A menu opened over a seek under way: the seek is sent now, where the bar showed it, rather than held
-            // back for as long as the menu stays.
-            SendSeek();
-        }
-        if (context.Mode == PadMode.Player)
-        {
-            SendSeekWhenDue();
-        }
+        TakeSeek(leftTrigger, rightTrigger, step);
         return _actions;
+    }
+
+    // The time this reading stands for, never more than LongestStep.
+    private TimeSpan TakeTime()
+    {
+        _now = _time.GetElapsedTime(_origin);
+        var step = _now - _last;
+        _last = _now;
+        return step > PadTuning.LongestStep ? PadTuning.LongestStep : step;
+    }
+
+    // The buttons down, a trigger pulled far enough among them.
+    private PadButtons ButtonsDown(PadButtons buttons, double leftTrigger, double rightTrigger)
+    {
+        _isLeftTriggerDown = PadSticks.IsPressed(leftTrigger, _isLeftTriggerDown);
+        _isRightTriggerDown = PadSticks.IsPressed(rightTrigger, _isRightTriggerDown);
+        return (buttons & ~Triggers)
+            | (_isLeftTriggerDown ? PadButtons.LeftTrigger : PadButtons.None)
+            | (_isRightTriggerDown ? PadButtons.RightTrigger : PadButtons.None);
+    }
+
+    // Marks what is held through a reset or a change of mode, and takes the mark off what is no longer held. Asked
+    // before this reading becomes the one before: _down and _context are still the last one's.
+    private void Spend(PadButtons down, bool isRightStickAtRest, PadMode mode)
+    {
+        if (_spendsAll)
+        {
+            _spendsAll = false;
+            _spent = down;
+            _direction = PadDirection.None;
+            _volume = PadDirection.None;
+            _isLeftStickSpent = _stick != PadDirection.None;
+            _isRightStickSpent = !isRightStickAtRest;
+        }
+        else if (mode != _context.Mode)
+        {
+            // The pages and the player changed places: what was held belongs to the one that went. A press that comes
+            // with the change is the new one's.
+            _spent |= down & _down;
+            _directionUse = DirectionUse.Spent;
+            _isRightStickSpent = !isRightStickAtRest;
+            DropSeek();
+        }
+        _spent &= down;
+        _live &= ~_spent;
+        _isLeftStickSpent &= _stick != PadDirection.None;
+        _isRightStickSpent &= !isRightStickAtRest;
     }
 
     // A reading that failed says nothing of the pad, so nothing was let go and nothing fires: a short A whose pad drops
