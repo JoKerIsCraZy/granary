@@ -49,6 +49,10 @@ engine reads the swap chain from the `display-swapchain` property; `MpvVideoHost
 inverse DPI scale. XAML controls draw over the video. The comparison with the render API and a child
 HWND is in [spike/README.md](../spike/README.md).
 
+While the player's cursor is hidden, `CursorWindowHook` answers `WM_SETCURSOR` on the main window and every window in
+it with the blank cursor, before WinUI's own answer (docs/ui-design.md, Player, "Mouse"): Windows documents that message as the one
+reliable place to set a cursor, and a cursor set at any other time holds only while the thread owns the mouse's input.
+
 The panel shows the last presented picture unscaled, from its top-left corner, and mpv resizes its
 buffers a little after the panel on its own thread. After a jump in size (the player minimized to its
 bar or brought back, full screen, the Playing Next corner), `MpvVideoHost` therefore hides the picture

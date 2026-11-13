@@ -34,11 +34,24 @@ public sealed partial class PlayerPage
     private const nint ArrowCursorId = 32512;
 
     [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool GetCursorInfo(ref CursorInfo info);
+    private static partial nint LoadCursorW(nint instance, nint name);
+
+    // For the log's account of a cursor that would not hide: which window, whose, and which one is in front.
+    [LibraryImport("user32.dll")]
+    private static unsafe partial int GetClassNameW(nint window, char* name, int capacity);
 
     [LibraryImport("user32.dll")]
-    private static partial nint LoadCursorW(nint instance, nint name);
+    private static partial uint GetWindowThreadProcessId(nint window, out uint process);
+
+    [LibraryImport("user32.dll")]
+    private static partial nint GetForegroundWindow();
+
+    [LibraryImport("kernel32.dll")]
+    private static partial uint GetCurrentThreadId();
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool GetCursorInfo(ref CursorInfo info);
 
     // Sets the cursor Windows draws for this thread's windows, until one of them is asked for its cursor again.
     [LibraryImport("user32.dll")]

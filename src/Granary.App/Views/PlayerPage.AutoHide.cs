@@ -1,5 +1,6 @@
 using System.Numerics;
 using Granary.App.Controls;
+using Granary.App.Interop;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -26,11 +27,11 @@ public sealed partial class PlayerPage
     private static readonly TimeSpan RemoteHideDelay = TimeSpan.FromSeconds(5);
 
     // How often a cursor the hidden controls left showing off the picture is looked at again, and a hidden one is checked
-    // for Windows drawing its arrow over it (CheckShownCursor): often enough that an arrow is gone before it is noticed.
+    // for Windows drawing a visible cursor over it (CheckShownCursor): often enough that an arrow is gone before it is noticed.
     private static readonly TimeSpan CursorLookInterval = TimeSpan.FromMilliseconds(250);
 
-    // How many times Windows drawing its arrow over a hidden cursor is logged for one hide.
-    private const int ArrowLogLimit = 5;
+    // How many times Windows drawing a visible cursor over a hidden one is logged for one hide.
+    private const int CursorLogLimit = 5;
 
     private const float ChromeSlide = 8;
 
@@ -44,7 +45,9 @@ public sealed partial class PlayerPage
     // Whether the cursor shows, and whether the page's cursor is the blank one now.
     private readonly PlayerCursor _cursor = new(TimeProvider.System);
     private bool _isCursorHidden;
-    private int _arrowsLoggedWhileHidden;
+    private CursorWindowHook? _cursorWindowHook;
+    private int _cursorsLoggedWhileHidden;
+    private int _answeredAsCursorHid;
 
     // What tells the page to look at the cursor again, from its load until it is left.
     private MainWindow? _cursorWindow;
@@ -115,6 +118,8 @@ public sealed partial class PlayerPage
         _modes.Changed -= OnWindowModeChangedForCursor;
         _cursor.Show();
         ApplyCursor();
+        _cursorWindowHook?.Dispose();
+        _cursorWindowHook = null;
     }
 
     /// <summary>Shows the controls and starts the idle countdown again; the cursor stays as it is.</summary>
@@ -377,44 +382,95 @@ public sealed partial class PlayerPage
         WatchCursor();
     }
 
-    // While the player's cursor is hidden, Windows should draw the blank one over the picture. A tester's log showed it
-    // drawing its arrow there all the same, at once or after a while, and asking the window again (WM_SETCURSOR) did not
-    // help: WinUI itself answered with the arrow, though the page's cursor was the blank one. So when asking again leaves
-    // the arrow, the blank cursor is set past WinUI. It holds until the window is asked for its cursor again, which is the
-    // mouse's next move; a move that is none for the player has this look set it again. The log says what helped, a few
-    // times for each time the cursor hid.
+    // While the player's cursor is hidden, Granary's windows answer Windows' question for it themselves
+    // (HookCursorRequests). This look is what is left for a cursor set past that question: it asks once more, and the log
+    // says what Windows drew, whether asking helped, and whose windows were under the pointer and in front, a few times
+    // for each time the cursor hid.
     private void CheckShownCursor()
     {
-        // Over the picture only: over the title bar's drag area Windows draws the arrow itself. Which window is under the
-        // pointer is asked last, right before it is asked for its cursor. Should the mouse leave in the instant between,
-        // the next window sets its own cursor with the move that took the mouse there.
-        if (!_isCursorHidden || !ShowsArrow() || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
+        // Not over a dialog, a menu or a tooltip: their cursor is theirs (HookCursorRequests).
+        if (!_isCursorHidden || HasOpenPopup() || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
         {
             return;
         }
-        AskForCursor(under);
-        string outcome = "asking the window again hid it";
-        if (ShowsArrow())
+        HookCursorRequests(hidden: true);
+        if (!ShowsOtherCursor())
         {
-            if (BlankCursor.Handle != 0)
-            {
-                _ = SetCursor(BlankCursor.Handle);
-            }
-            outcome = ShowsArrow()
-                ? "the window answered with its arrow, and it stays though Granary set the hidden cursor itself"
-                : "the window answered with its arrow, so Granary set the hidden cursor itself";
+            return;
         }
-        if (_arrowsLoggedWhileHidden < ArrowLogLimit)
+        string shape = ShowsArrow() ? "its arrow" : "a cursor of its own";
+        AskForCursor(under);
+        if (ShowsOtherCursor())
         {
-            _arrowsLoggedWhileHidden++;
-            _autoHideLog.LogDebug("Windows drew its arrow over the picture while the player's cursor is hidden: {Outcome}", outcome);
+            _ = SetCursor(BlankCursor.Handle);
+        }
+        if (_cursorsLoggedWhileHidden < CursorLogLimit)
+        {
+            _cursorsLoggedWhileHidden++;
+            // Whose window it was says why a cursor could not be taken back: Windows shows a thread's cursor only while
+            // that thread has the mouse's input. Window classes only, never a title.
+            _autoHideLog.LogDebug(
+                "Windows drew {Shape} over the picture while the player's cursor is hidden (restored: {Restored}; under the pointer: {Under}; in front: {Front}; requests answered since it hid: {Answered})",
+                shape, !ShowsOtherCursor(), DescribeWindow(under, withClass: true), DescribeWindow(GetForegroundWindow(), withClass: false),
+                (_cursorWindowHook?.Answered ?? 0) - _answeredAsCursorHid);
         }
     }
+
+    private static bool ShowsOtherCursor()
+    {
+        var info = new CursorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<CursorInfo>() };
+        return GetCursorInfo(ref info) && (info.Flags & CursorShowing) != 0
+            && info.Cursor != 0 && info.Cursor != BlankCursor.Handle;
+    }
+
+    private bool HasOpenPopup() =>
+        XamlRoot is { } root && Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Count > 0;
 
     private static bool ShowsArrow()
     {
         var info = new CursorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<CursorInfo>() };
-        return GetCursorInfo(ref info) && (info.Flags & CursorShowing) != 0 && info.Cursor != 0 && info.Cursor == LoadCursorW(0, ArrowCursorId);
+        return GetCursorInfo(ref info) && info.Cursor != 0 && info.Cursor == LoadCursorW(0, ArrowCursorId);
+    }
+
+    // A window as the log may name it: whose it is, and for one of Granary's own its class, which says which part of the
+    // window it is ("Microsoft.UI.Content.DesktopChildSiteBridge"). Another program's window is not named: which program
+    // the viewer has in front is theirs.
+    private static unsafe string DescribeWindow(nint window, bool withClass)
+    {
+        if (window == 0)
+        {
+            return "none";
+        }
+        uint thread = GetWindowThreadProcessId(window, out uint process);
+        if (process != (uint)Environment.ProcessId)
+        {
+            return "another program's";
+        }
+        string whose = thread == GetCurrentThreadId() ? "this thread's" : "another thread's of Granary";
+        if (!withClass)
+        {
+            return whose;
+        }
+        char* name = stackalloc char[128];
+        int length = GetClassNameW(window, name, 128);
+        return (length > 0 ? new string(name, 0, length) : "?") + ", " + whose;
+    }
+
+    // While the cursor is hidden, every window of Granary's answers Windows' question for its cursor with the hidden one
+    // while the pointer is over the picture (CursorWindowHook): all of them, so it does not matter which one Windows asks,
+    // and from the moment the cursor hides, wherever the pointer is then. The hook itself looks where the pointer is.
+    // Not while a dialog, a menu or a tooltip is open: those lie over the picture in the same window, the page hears no
+    // pointer move over a dialog, and so nothing would bring the cursor back on it. WinUI answers then, as before.
+    private void HookCursorRequests(bool hidden)
+    {
+        if (!hidden || BlankCursor.Handle == 0 || _appWindow is null)
+        {
+            _cursorWindowHook?.Watch(0);
+            return;
+        }
+        _cursorWindowHook ??= new CursorWindowHook(BlankCursor.Handle,
+            () => IsLoaded && _isCursorHidden && !HasOpenPopup() && PointerInPage() is not null);
+        _cursorWindowHook.Watch(Win32Interop.GetWindowFromWindowId(_appWindow.Id));
     }
 
     // Nothing needs to tell the page that a window over the pointer went, so while the hidden controls leave the cursor
@@ -422,6 +478,7 @@ public sealed partial class PlayerPage
     // hidden one (CheckShownCursor). The rest of the time events are enough.
     private void WatchCursor()
     {
+        HookCursorRequests(_isCursorHidden);
         if (!(_cursor.WaitsForPicture || _isCursorHidden) || BlankCursor.Instance is null)
         {
             _cursorTimer.Stop();
@@ -477,6 +534,7 @@ public sealed partial class PlayerPage
             if (_isCursorHidden)
             {
                 _isCursorHidden = false;
+                _cursorWindowHook?.Watch(0);
                 // The arrow, not null: null leaves the shown cursor as it is until the pointer reaches another element.
                 ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
                 ShowCursorNow(hidden: false);
@@ -499,10 +557,12 @@ public sealed partial class PlayerPage
         else
         {
             // A new hide: Windows drawing its arrow is logged for it afresh, not for the hidden cursor set anew.
-            _arrowsLoggedWhileHidden = 0;
+            _cursorsLoggedWhileHidden = 0;
+            _answeredAsCursorHid = _cursorWindowHook?.Answered ?? 0;
         }
         _isCursorHidden = true;
         ProtectedCursor = blank;
+        HookCursorRequests(hidden: true);
         ShowCursorNow(hidden: true);
     }
 
