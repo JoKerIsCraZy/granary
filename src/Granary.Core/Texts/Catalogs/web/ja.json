@@ -8477,6 +8477,12 @@
       "value": "さらにタイトルを読み込めませんでした。"
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "すべてのシーズン"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -8507,6 +8513,12 @@
     {
       "type": 0,
       "value": "ライブラリにあり"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "最新シーズン"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -8603,6 +8615,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "シーズンをリクエスト"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "今後のシーズン"
     }
   ],
   "web.requests.status.active": [

@@ -8927,6 +8927,12 @@
       "value": "Couldn’t load more titles."
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "All seasons"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -8957,6 +8963,12 @@
     {
       "type": 0,
       "value": "In library"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "Latest season"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -9053,6 +9065,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "Request seasons"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "Upcoming seasons"
     }
   ],
   "web.requests.status.active": [

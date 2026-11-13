@@ -9296,6 +9296,12 @@
       "value": "No se pudieron cargar más títulos."
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "Todas las temporadas"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -9326,6 +9332,12 @@
     {
       "type": 0,
       "value": "En la biblioteca"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "Última temporada"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -9422,6 +9434,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "Solicitar temporadas"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "Próximas temporadas"
     }
   ],
   "web.requests.status.active": [

@@ -8973,6 +8973,12 @@
       "value": "Weitere Titel konnten nicht geladen werden."
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "Alle Staffeln"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -9003,6 +9009,12 @@
     {
       "type": 0,
       "value": "In Mediathek"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "Neueste Staffel"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -9099,6 +9111,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "Staffeln anfragen"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "Kommende Staffeln"
     }
   ],
   "web.requests.status.active": [

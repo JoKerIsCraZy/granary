@@ -10278,6 +10278,12 @@
       "value": "تعذّر تحميل المزيد من العناوين."
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "كل المواسم"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -10308,6 +10314,12 @@
     {
       "type": 0,
       "value": "في المكتبة"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "أحدث موسم"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -10404,6 +10416,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "طلب مواسم"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "المواسم القادمة"
     }
   ],
   "web.requests.status.active": [

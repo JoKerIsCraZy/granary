@@ -1467,12 +1467,14 @@ web.requests.request
 web.requests.results.loadMoreFailed
 
 # More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.seasons.all
 web.requests.seasons.allAvailable
 web.requests.seasons.alreadyRequested
 
 # More of the Requests words, as above under requests.error.create.
 web.requests.seasons.choose
 web.requests.seasons.inLibrary
+web.requests.seasons.latest
 web.requests.seasons.noSeasons
 web.requests.seasons.noneAired
 web.requests.seasons.notAired
@@ -1485,6 +1487,8 @@ web.requests.seasons.requestSeries
 web.requests.seasons.requested
 web.requests.seasons.season
 web.requests.seasons.seasonNamed
+web.requests.seasons.title
+web.requests.seasons.upcoming
 web.requests.status.active
 
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.

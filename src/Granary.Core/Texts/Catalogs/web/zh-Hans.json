@@ -8537,6 +8537,12 @@
       "value": "无法加载更多作品。"
     }
   ],
+  "web.requests.seasons.all": [
+    {
+      "type": 0,
+      "value": "所有季"
+    }
+  ],
   "web.requests.seasons.allAvailable": [
     {
       "type": 0,
@@ -8567,6 +8573,12 @@
     {
       "type": 0,
       "value": "已在媒体库中"
+    }
+  ],
+  "web.requests.seasons.latest": [
+    {
+      "type": 0,
+      "value": "最新一季"
     }
   ],
   "web.requests.seasons.noSeasons": [
@@ -8667,6 +8679,18 @@
     {
       "type": 1,
       "value": "name"
+    }
+  ],
+  "web.requests.seasons.title": [
+    {
+      "type": 0,
+      "value": "请求季"
+    }
+  ],
+  "web.requests.seasons.upcoming": [
+    {
+      "type": 0,
+      "value": "即将播出的季"
     }
   ],
   "web.requests.status.active": [

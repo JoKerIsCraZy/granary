@@ -247,7 +247,7 @@
         </StackPanel>
 
         <!-- Request seasons: a switch per season; seasons in the library or already asked for are shown but cannot be picked. -->
-        <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="Request seasons"
+        <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="{x:Bind t:AppText.Get('web.requests.seasons.title')}"
                        PrimaryButtonText="{x:Bind Picker.SubmitLabel, Mode=OneWay}" IsPrimaryButtonEnabled="{x:Bind Picker.CanSubmit, Mode=OneWay}"
                        CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}" DefaultButton="Primary">
             <StackPanel Width="440" Spacing="12">
@@ -258,17 +258,17 @@
                 <TextBlock Text="{x:Bind Picker.Hint, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap"
                            Visibility="{x:Bind Show(Picker.HasHint), Mode=OneWay}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Latest season" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickLatestCommand, Mode=OneWay}"
+                    <Button Content="{x:Bind t:AppText.Get('web.requests.seasons.latest')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickLatestCommand, Mode=OneWay}"
                             Visibility="{x:Bind Show(Picker.CanPickLatest), Mode=OneWay}" />
-                    <Button Content="Upcoming seasons" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickUpcomingCommand, Mode=OneWay}"
+                    <Button Content="{x:Bind t:AppText.Get('web.requests.seasons.upcoming')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickUpcomingCommand, Mode=OneWay}"
                             Visibility="{x:Bind Show(Picker.CanPickUpcoming), Mode=OneWay}" />
                 </StackPanel>
                 <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="8" Visibility="{x:Bind Show(Picker.HasSeasons), Mode=OneWay}">
                     <ScrollViewer MaxHeight="420">
                         <StackPanel>
                             <Grid Padding="12,8" Background="#0AFFFFFF" Visibility="{x:Bind Show(Picker.ShowsAll), Mode=OneWay}">
-                                <ToggleSwitch MinWidth="0" OnContent="All seasons" OffContent="All seasons"
-                                              IsOn="{x:Bind Picker.AllPicked, Mode=TwoWay}" AutomationProperties.Name="All seasons" />
+                                <ToggleSwitch MinWidth="0" OnContent="{x:Bind t:AppText.Get('web.requests.seasons.all')}" OffContent="{x:Bind t:AppText.Get('web.requests.seasons.all')}"
+                                              IsOn="{x:Bind Picker.AllPicked, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.seasons.all')}" />
                             </Grid>
                             <ItemsRepeater ItemsSource="{x:Bind Picker.Seasons, Mode=OneWay}">
                                 <ItemsRepeater.ItemTemplate>
