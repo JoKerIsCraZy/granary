@@ -47,7 +47,9 @@ public sealed record OfflineProgressEntry(DownloadScope Scope, string MediaItemI
 /// Safe from any thread: every change is made under one lock and holds at once; the file follows, written whole off the
 /// caller's thread, one write at a time, each with the state as it is then. The file is never written before it was read: one
 /// that cannot be read now (something has it open) is read again before each write, and what was recorded meanwhile is kept
-/// for this run and joins what the file holds; one that is not a queue is moved aside (<c>.bad</c>) first.
+/// for this run and joins what the file holds; one that is not a queue is moved aside (<c>.bad</c>) first. What a sign-out
+/// takes out (<see cref="Remove"/>) is noted beside the file first (<see cref="RemovalNote"/>), so it also holds when the
+/// file cannot be read or written before Granary closes.
 /// </remarks>
 public sealed class OfflineProgressQueue
 {
@@ -62,10 +64,11 @@ public sealed class OfflineProgressQueue
     private readonly ILogger<OfflineProgressQueue> _logger;
     private readonly Lock _gate = new();
 
-    // Under the lock. What the file held joins the entries once it is read (_loaded); until then they are this run's only,
-    // and the scopes removed meanwhile are remembered for what the file still holds.
+    // Under the lock. What the file held joins the entries once it is read (_loaded); until then they are this run's only.
     private readonly List<OfflineProgressEntry> _entries = [];
-    private readonly List<Func<DownloadScope, bool>> _removedUnread = [];
+
+    // What was removed and the file may still hold, this run's and an earlier one's.
+    private readonly RemovalNote _note;
     private bool _loadTried;
     private bool _loaded;
     private bool _readFailureSaid;
@@ -77,6 +80,7 @@ public sealed class OfflineProgressQueue
         _path = Path.GetFullPath(path);
         _time = time;
         _logger = logger;
+        _note = new RemovalNote(_path, "the positions recorded on this PC", logger);
     }
 
     /// <summary><c>offline-progress.json</c> in the data folder.</summary>
@@ -267,23 +271,24 @@ public sealed class OfflineProgressQueue
             && there.UpdatedAt.UtcTicks == entry.UpdatedAt.UtcTicks - entry.UpdatedAt.UtcTicks % TimeSpan.TicksPerSecond);
 
     /// <summary>
-    /// Takes every entry of the scopes <paramref name="match"/> names out of the queue and its file, whatever its state: a
-    /// sign-out that deletes an account's downloads, or a server's removal, leaves none of what was watched there behind.
+    /// Takes every entry of an account on a server, or of every account there (<paramref name="accountId"/> null), out of
+    /// the queue and its file, whatever its state: a sign-out that deletes an account's downloads, or a server's removal,
+    /// leaves none of what was watched there behind.
     /// </summary>
-    public void Remove(Func<DownloadScope, bool> match)
+    /// <remarks>
+    /// The removal is noted beside the file before the file is written (<see cref="RemovalNote"/>), and the file is written
+    /// whatever this run held: the file may hold more than the run does, as when it could not be read yet, an earlier write
+    /// did not get through, or an entry was too old to be read in.
+    /// </remarks>
+    public void Remove(string serverEntryId, string? accountId)
     {
-        ArgumentNullException.ThrowIfNull(match);
+        ArgumentException.ThrowIfNullOrEmpty(serverEntryId);
         lock (_gate)
         {
             var entries = Loaded();
-            if (!_loaded)
-            {
-                _removedUnread.Add(match);
-            }
-            if (entries.RemoveAll(e => match(e.Scope)) > 0 || !_loaded)
-            {
-                Save();
-            }
+            _note.Add(serverEntryId, accountId);
+            entries.RemoveAll(e => e.Scope.ServerEntryId == serverEntryId && (accountId is null || e.Scope.AccountId == accountId));
+            Save();
         }
     }
 
@@ -295,6 +300,11 @@ public sealed class OfflineProgressQueue
         {
             _loadTried = true;
             TryLoad();
+            // A note an earlier run left goes once the file is written without what it names.
+            if (_note.Waits)
+            {
+                Save();
+            }
         }
         return _entries;
     }
@@ -302,10 +312,16 @@ public sealed class OfflineProgressQueue
     // Under the lock. Sets _loaded once what the file holds is in _entries: no file, a file read, or one moved aside.
     private void TryLoad()
     {
-        IReadOnlyList<OfflineProgressFileEntry> kept;
+        // The note first: what a sign-out removed is out of what the file holds before anything of it is shown or sent.
+        // While the note cannot be read, the file counts as unread too.
+        if (!_note.TryRead())
+        {
+            return;
+        }
+        OfflineProgressFile file;
         try
         {
-            kept = ReadFile();
+            file = ReadFile();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -322,22 +338,21 @@ public sealed class OfflineProgressQueue
         var oldest = _time.GetUtcNow() - MaxAge;
         // JSON can say null or anything for every member. Every entry read is pending: one that was on its way when
         // Granary closed is sent again, which changes nothing on a server that has it.
-        var read = kept
+        var read = file.Entries
             .Where(e => e is { MediaItemId.Length: > 0, PositionMs: >= 0, DurationMs: >= 0 } && DownloadRecords.IsUsable(e.Scope) && e.UpdatedAt >= oldest
-                && !_removedUnread.Any(removed => removed(e.Scope)))
+                && !_note.Covers(e.Scope.ServerEntryId, e.Scope.AccountId, file.AfterRemovals))
             .Select(e => new OfflineProgressEntry(e.Scope, e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt, OfflineProgressState.Pending));
         // What this run recorded before the file could be read is the newer of a title's two.
         var merged = read.Concat(_entries).GroupBy(e => (e.Scope, e.MediaItemId)).Select(group => group.MaxBy(e => e.UpdatedAt)!).ToList();
         _entries.Clear();
         _entries.AddRange(merged);
-        _removedUnread.Clear();
         _loaded = true;
         SweepLeftovers();
     }
 
-    // The file's entries; none when there is no file, or when it is not a queue and was moved aside. An I/O failure, also of
-    // the move, is the caller's: the file stays unread.
-    private IReadOnlyList<OfflineProgressFileEntry> ReadFile()
+    // The file; an empty one when there is none, or when it is not a queue and was moved aside. An I/O failure, also of the
+    // move, is the caller's: the file stays unread.
+    private OfflineProgressFile ReadFile()
     {
         byte[] bytes;
         try
@@ -346,18 +361,18 @@ public sealed class OfflineProgressQueue
         }
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
-            return [];
+            return new OfflineProgressFile();
         }
         try
         {
-            return JsonSerializer.Deserialize(bytes, OfflineProgressJsonContext.Default.OfflineProgressFile)?.Entries ?? [];
+            return JsonSerializer.Deserialize(bytes, OfflineProgressJsonContext.Default.OfflineProgressFile) ?? new OfflineProgressFile();
         }
         catch (JsonException)
         {
             // Not written over: whoever wants to know what happened to it finds it beside the new file.
             File.Move(_path, _path + ".bad", overwrite: true);
             _logger.LogWarning("The file of positions recorded on this PC is damaged; it was moved aside (.bad) and the queue starts empty");
-            return [];
+            return new OfflineProgressFile();
         }
     }
 
@@ -389,6 +404,9 @@ public sealed class OfflineProgressQueue
 
     private void Write()
     {
+        // What a sign-out removed is noted before the file is touched: the file may not be readable now, or its write may
+        // not get through, and Granary may close before either works.
+        _note.Save();
         OfflineProgressFile file;
         lock (_gate)
         {
@@ -404,6 +422,7 @@ public sealed class OfflineProgressQueue
             file = new OfflineProgressFile
             {
                 Entries = [.. _entries.Select(e => new OfflineProgressFileEntry(e.Scope, e.MediaItemId, e.PositionMs, e.DurationMs, e.UpdatedAt))],
+                AfterRemovals = _note.Ids(),
             };
         }
         try
@@ -417,7 +436,9 @@ public sealed class OfflineProgressQueue
             // Whatever the disk does, the chain of writes goes on and nobody who waits for one fails. Only the kind: the
             // message would name the data folder, with the Windows user's name.
             _logger.LogWarning("The positions recorded on this PC could not be written ({Failure}); they hold for this run", DownloadLog.Failure(ex));
+            return;
         }
+        _note.Done(file.AfterRemovals);
     }
 }
 
@@ -427,6 +448,12 @@ internal sealed record OfflineProgressFile
     public int Version { get; init; } = 1;
 
     public IReadOnlyList<OfflineProgressFileEntry> Entries { get; init => field = value ?? []; } = [];
+
+    /// <summary>
+    /// The removals of a sign-out's note (<see cref="RemovalNote"/>) this file was written without: a note still on the
+    /// disk takes nothing more out of it. Null for none.
+    /// </summary>
+    public IReadOnlyList<string>? AfterRemovals { get; init; }
 }
 
 /// <summary>

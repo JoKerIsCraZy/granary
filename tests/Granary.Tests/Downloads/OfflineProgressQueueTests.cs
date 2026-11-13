@@ -12,7 +12,13 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
 
+    private static readonly DownloadScope OtherAccount = new("srv1", "2", "7");
+    private static readonly DownloadScope OtherServer = new("srv2", "1", "7");
+
     private string FilePath => Path.Combine(_folder, "offline-progress.json");
+
+    // Where a sign-out notes what it took out, until the file is written without it.
+    private string NotePath => FilePath + ".removed";
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -328,7 +334,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         queue.Record(other, "ep_3", 3000, 0);
         queue.Claim(Scope8, 10);
 
-        queue.Remove(scope => scope.ServerEntryId == "srv1");
+        queue.Remove("srv1", null);
         await queue.LatestSave;
 
         Assert.Empty(queue.Entries(Scope7));
@@ -345,21 +351,291 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     {
         var before = Open();
         before.Record(Scope7, "ep_1", 1000, 0);
-        before.Record(Scope8, "ep_2", 2000, 0);
+        before.Record(OtherAccount, "ep_2", 2000, 0);
         await before.LatestSave;
         var queue = Open();
 
         using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            queue.Remove(scope => scope == Scope7);
+            queue.Remove("srv1", "1");
             await queue.LatestSave;
         }
-        queue.Record(Scope8, "ep_3", 3000, 0);
+        queue.Record(OtherAccount, "ep_3", 3000, 0);
         await queue.LatestSave;
 
         Assert.Empty(queue.Entries(Scope7));
-        Assert.Equal(2, queue.Entries(Scope8).Count);
+        Assert.Equal(2, queue.Entries(OtherAccount).Count);
         Assert.DoesNotContain("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+    }
+
+    // Four entries on the disk: the account's on two of its profiles, another account's there and one of another server.
+    private async Task FourOnTheDiskAsync()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_1", 1000, 0);
+        before.Record(Scope8, "ep_2", 2000, 0);
+        before.Record(OtherAccount, "ep_3", 3000, 0);
+        before.Record(OtherServer, "ep_4", 4000, 0);
+        await before.LatestSave;
+    }
+
+    [Fact]
+    public async Task ASignOutWhileTheFileCouldNotBeRead_StillHolds_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        var queue = Open();
+
+        // Something has the file open through the sign-out, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+        var next = Open();
+
+        // Gone before anything is shown or sent, on each of the account's profiles; nobody else's.
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Empty(next.Claim(Scope8, 10));
+        Assert.Single(next.Entries(OtherAccount));
+        Assert.Single(next.Entries(OtherServer));
+        await next.LatestSave;
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("ep_1", file, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_2", file, StringComparison.Ordinal);
+        Assert.Contains("ep_3", file, StringComparison.Ordinal);
+        Assert.Contains("ep_4", file, StringComparison.Ordinal);
+        // The file is written without them: the note has done its work.
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task AServersRemovalWhileTheFileCouldNotBeRead_TakesEveryAccountsThere_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        var queue = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            queue.Remove("srv1", null);
+            await queue.LatestSave;
+        }
+        var next = Open();
+
+        Assert.Equal(1, next.Count(_ => true));
+        Assert.Single(next.Entries(OtherServer));
+        await next.LatestSave;
+        Assert.DoesNotContain("srv1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task ASignOutWhoseWriteDidNotGetThrough_StillHolds_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        var queue = Open();
+        Assert.Single(queue.Entries(Scope7));
+
+        // The file was read; something reads it as the sign-out writes it, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+        var next = Open();
+
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Empty(next.Entries(Scope8));
+        Assert.Equal(2, next.Count(_ => true));
+    }
+
+    [Fact]
+    public async Task WhatTheSameAccountWatchesAfterSigningInAgain_IsKept_AlsoWhileTheNoteOfItsSignOutIsStillThere_WhateverTheClockSays()
+    {
+        _time.Advance(TimeSpan.FromHours(1));
+        await FourOnTheDiskAsync();
+        var queue = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+
+        // The next start writes the file without them, but something has the note open: it cannot be deleted. The account
+        // signs in again and watches on, on a clock that was set back to before the sign-out meanwhile.
+        var corrected = new ManualTimeProvider();
+        corrected.Advance(TimeSpan.FromMinutes(30));
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            var next = new OfflineProgressQueue(FilePath, corrected, _logs.For<OfflineProgressQueue>());
+            _opened.Add(next);
+            Assert.Empty(next.Entries(Scope7));
+            next.Record(Scope7, "ep_new", 5000, 0);
+            await next.LatestSave;
+        }
+        Assert.True(File.Exists(NotePath));
+        var third = Open();
+
+        // The file was written after the note: the note takes nothing that was recorded since, and goes with the next write.
+        Assert.Equal(["ep_new"], third.Entries(Scope7).Select(e => e.MediaItemId));
+        Assert.Empty(third.Entries(Scope8));
+        await third.LatestSave;
+        Assert.False(File.Exists(NotePath));
+        Assert.Equal(["ep_new"], Open().Entries(Scope7).Select(e => e.MediaItemId));
+    }
+
+    [Fact]
+    public async Task ASignOutThatCannotEvenBeNoted_SaysSo_WithoutNamingWhatOrWhere_AndStillHoldsForThisRun()
+    {
+        await FourOnTheDiskAsync();
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var queue = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+
+        Assert.Contains("could not be noted", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ep_", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("srv1", _logs.All, StringComparison.Ordinal);
+
+        // This run still knows: the next write reads the file and writes it without them.
+        queue.Record(OtherServer, "ep_9", 9000, 0);
+        await queue.LatestSave;
+        Assert.Empty(queue.Entries(Scope7));
+        Assert.Single(queue.Entries(OtherAccount));
+        Assert.DoesNotContain("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task WhileTheNoteOfASignOutCannotBeRead_NothingTheFileHoldsIsShownOrSent_AndTheFileIsNotWritten()
+    {
+        await FourOnTheDiskAsync();
+        var queue = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+        string kept = await File.ReadAllTextAsync(FilePath, Token);
+        var next = Open();
+
+        // The note may name anyone: until it says whom, nobody's entries of the file are used.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal(0, next.Count(_ => true));
+            Assert.Empty(next.Claim(OtherServer, 10));
+            next.Record(OtherServer, "ep_5", 5000, 0);
+            await next.LatestSave;
+        }
+        Assert.Equal(kept, await File.ReadAllTextAsync(FilePath, Token));
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+
+        // Once it can be read, the next write takes out what it names; the others' entries are back.
+        next.Record(OtherServer, "ep_6", 6000, 0);
+        await next.LatestSave;
+
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Empty(next.Entries(Scope8));
+        Assert.Single(next.Entries(OtherAccount));
+        Assert.Equal(["ep_4", "ep_5", "ep_6"], next.Entries(OtherServer).Select(e => e.MediaItemId).Order());
+        Assert.DoesNotContain("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("""{ "version": 1, "removals": [ { "id": "a1" } ] }""")]
+    [InlineData("""{ "version": 1, "removals": [ null ] }""")]
+    public async Task ANoteOfASignOutThatNoLongerSaysWhose_LetsGoOfEverythingTheFileHolds_RatherThanKeepWhatWasToGo(string note)
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, note, Token);
+        var next = Open();
+
+        Assert.Equal(0, next.Count(_ => true));
+        // What is recorded from now on is kept as ever.
+        next.Record(OtherServer, "ep_5", 5000, 0);
+        await next.LatestSave;
+
+        Assert.False(File.Exists(NotePath));
+        var third = Open();
+        Assert.Equal(["ep_5"], third.Entries(OtherServer).Select(e => e.MediaItemId));
+        Assert.Equal(1, third.Count(_ => true));
+        Assert.Contains("damaged", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ADamagedNoteThatCannotBeDeleted_TakesNothingThatWasRecordedSince()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, "{ not json", Token);
+
+        // Something has the note open as Granary starts: it is read, but stays where it is.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            var next = Open();
+            Assert.Equal(0, next.Count(_ => true));
+            next.Record(OtherServer, "ep_5", 5000, 0);
+            await next.LatestSave;
+        }
+        Assert.True(File.Exists(NotePath));
+        var third = Open();
+
+        // The file was written after that very note: it lets go of everything only once.
+        Assert.Equal(["ep_5"], third.Entries(OtherServer).Select(e => e.MediaItemId));
+        await third.LatestSave;
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task ASecondRemovalWhileTheNoteOfAnEarlierOneIsStillThere_IsNotedBesideIt()
+    {
+        await FourOnTheDiskAsync();
+
+        // The file is held open through a sign-out, a start of Granary and a server's removal after it.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            var first = Open();
+            first.Remove("srv1", "1");
+            await first.LatestSave;
+            var second = Open();
+            second.Remove("srv2", null);
+            await second.LatestSave;
+        }
+        var next = Open();
+
+        Assert.Equal(1, next.Count(_ => true));
+        Assert.Single(next.Entries(OtherAccount));
+        await next.LatestSave;
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("ep_1", file, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_4", file, StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
+    public async Task ASignOut_TakesOutOfTheFile_AlsoWhatThisRunNoLongerHolds()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_old", 1000, 0);
+        await before.LatestSave;
+        // Too old to be sent: the next start lets go of it, and the file still names it.
+        _time.Advance(TimeSpan.FromDays(91));
+        var queue = Open();
+        Assert.Empty(queue.Entries(Scope7));
+
+        queue.Remove("srv1", "1");
+        await queue.LatestSave;
+
+        Assert.DoesNotContain("ep_old", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
     }
 
     [Fact]

@@ -365,7 +365,7 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
 
         // The sign-out marks the account's downloads as going and takes what waited to be sent; then the player closes.
         long clear = _fixture.Harness.Store.MarkCleared("srv1", "1");
-        _fixture.Queue.Remove(scope => scope == Scope7);
+        _fixture.Queue.Remove("srv1", "1");
         Frame(300);
         await playback.StopAsync();
         _fixture.Harness.Store.EndClear(clear);

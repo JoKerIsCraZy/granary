@@ -265,7 +265,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         }
         // What could not go names titles and times. It could only go out as that account, which is signed out now, or to
         // that server, which is removed; a play still open records nothing more (LocalPlayback).
-        progress?.Remove(scope => Matches(scope, serverEntryId, accountId));
+        progress?.Remove(serverEntryId, accountId);
         // The settings kept for a play without the server have no download left to serve.
         settings?.Remove(serverEntryId, accountId);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.

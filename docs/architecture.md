@@ -1461,7 +1461,8 @@ The view models of the sign-out paths take it (optional, so they work without it
   no longer says whose entries were to go takes everything the file holds, since losing what was kept is the lesser harm
   than keeping what a sign-out was to take; a file written after it names it by its content, so the same damaged note
   does so once. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
-  run, and the entries are back at the next start unless the file could be written before Granary closed.
+  run, and the entries are back at the next start unless the file could be written before Granary closed. The queue of
+  positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress").
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.
@@ -1704,7 +1705,11 @@ device.
   not go by then is in the file, and the next start sends it.
 - **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
   and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and
-  when, and would otherwise lie in the data folder for up to 90 days. First what can still be sent is sent: the active
+  when, and would otherwise lie in the data folder for up to 90 days. The removal is noted in
+  `offline-progress.json.removed` before the file is written ("Signing out", "What was removed is noted"), so it holds
+  after the next start also when the file could not be read through the sign-out, or its write did not get through; and
+  the file is written whatever the run held, since it may hold more than the run does (an entry too old to be read in,
+  or one an earlier write did not take out). First what can still be sent is sent: the active
   profile's entries, when it is a profile of that server and account, in one flush within a budget of its own
   (`SendBudget`, 3 s), so a server that does not answer it leaves the deletes their whole `DeleteBudget`. Another
   profile's entries cannot go out as this one, and another account's or server's not at all, so those are lost, as are
