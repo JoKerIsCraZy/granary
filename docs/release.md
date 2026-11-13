@@ -284,6 +284,14 @@ one the web uses for the same purpose (search `web/src` for it). Add it to `web-
 `./scripts/sync-web-texts.ps1`, and commit the list with the catalogs. The script stops when English has no message for
 a listed key. A key another language lacks is only reported: that language shows the English text there.
 
+**A text of Granary's own.** A text the web lacks gets a `granary.<area>.<thing>` key in
+`src/Granary.Core/Texts/Catalogs/granary/en.json`, with an `@` note on where it sits, and its message in each of the
+seven other files of that folder in the same commit, in the English order (`GranaryCatalogFilesTests` fails otherwise).
+Where Silo's apps have a text for the same place (`.ref/silo-android/android-shared/src/androidMain/res/values*/strings_catalog.xml`,
+`.ref/silo-apple/iosApp/iosApp/Localizable.xcstrings`), take their English and translations and name the app's key in
+the note (`Silo apps: <key>`); otherwise translate it with the terms and voice of Silo's catalogs in each language
+(docs/architecture.md, "Texts").
+
 **A newer Silo.** From the repository's root:
 
 1. `./scripts/sync-web-texts.ps1 -Commit <full silo-server commit>` takes the files of that commit, writes the commit
@@ -314,8 +322,8 @@ web's pseudo-locales `en-XA` and `ar-XB`, made for testing the web, are not take
 5. Check its numbers in `MessageFormatter` against `Intl.NumberFormat`: .NET's culture gives the marks, but not a rule
    such as Spanish's, which groups only from five digits on.
 6. Name it in the "Translations of Silo's web client" table of `THIRD_PARTY_NOTICES.md`.
-7. Translate Granary's own texts in `src/Granary.Core/Texts/Catalogs/granary/<tag>.json`; what is missing there shows
-   in English.
+7. Translate Granary's own texts into `src/Granary.Core/Texts/Catalogs/granary/<tag>.json`, every key of the English
+   file in its order (`GranaryCatalogFilesTests` takes the languages from `AppLanguage.Shipped`).
 
 The language ships then, and a debug build shows it with `--language <tag>`. Users get it once it is in
 `AppLanguage.Enabled` (docs/architecture.md, "Texts").

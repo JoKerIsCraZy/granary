@@ -39,6 +39,9 @@ tests/Granary.Tests  net10.0-windows                 unit tests and libmpv integ
   what is saved where) follows the Android and Apple apps. How it looks and what it says follows the web app
   (`web/src`), including its exact texts.
 - Comments name the source they follow, for example "as the web's `pages/Catalog.tsx`".
+- A text the web lacks is Granary's own (`granary.*` in `src/Granary.Core/Texts/Catalogs/granary/en.json`) and needs its
+  seven translations in the same commit: the apps' wording where they have the text, else Silo's terms per language
+  (docs/release.md, "A text of Granary's own").
 - [docs/ui-design.md](docs/ui-design.md) describes every screen. Update it with the UI.
 
 ## Code style
