@@ -75,6 +75,9 @@ internal sealed class DownloadsFollower
             _ticked = false;
             _progressed.Clear();
         }
+        // Speeds read before the page was left are no speeds now (UI thread, as Track and Refresh).
+        _coming.Clear();
+        _rates.Clear();
         _downloads.Changed += OnChanged;
         return true;
     }

@@ -303,12 +303,16 @@ public sealed partial class DownloadQueue
         lock (_gate)
         {
             _bytes[key] = bytes;
-            if (!_rates.TryGetValue(key, out var rate))
+            // Only while its transfer runs: the measure goes with it (RunAsync), and nothing makes it again after.
+            if (_running.ContainsKey(key))
             {
-                rate = new TransferRate();
-                _rates[key] = rate;
+                if (!_rates.TryGetValue(key, out var rate))
+                {
+                    rate = new TransferRate();
+                    _rates[key] = rate;
+                }
+                rate.Add(now, bytes);
             }
-            rate.Add(now, bytes);
             say = !_progressSaid.TryGetValue(key, out var said) || now - said >= ProgressInterval;
             if (say)
             {

@@ -170,6 +170,21 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnotherSeries_OpenedBeforeThePageLetGo_ShowsAllTheSame()
+    {
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        await AddEpisodeAsync("dl_a1", 1, 1, "Pilot", seriesTitle: "A Series", seriesId: "sr_2");
+        var page = Shown();
+
+        // The cached page is shown again for another series before it unloaded: it still follows the downloads.
+        page.Open("sr_2");
+        page.Attach();
+
+        Assert.Equal(("A Series", "1 episode · 2.9 KB"), (page.Title, page.Summary));
+        Assert.Equal(["dl_a1"], Cards(page).Select(c => c.Card.Id));
+    }
+
+    [Fact]
     public async Task APageThatWasLeft_IsNotKeptByTheDownloads()
     {
         await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");

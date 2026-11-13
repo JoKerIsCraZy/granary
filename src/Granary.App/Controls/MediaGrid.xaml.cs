@@ -403,7 +403,11 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
     // Each card's own, as MediaRow's: a card's PointerEntered does not reach the grid.
     private void OnCardPointerEntered(object sender, PointerRoutedEventArgs e) => TellPointed(sender);
 
-    private void OnCardGotFocus(object sender, RoutedEventArgs e) => TellPointed(sender);
+    private void OnCardGotFocus(object sender, RoutedEventArgs e)
+    {
+        NoteFocusedCard(sender);
+        TellPointed(sender);
+    }
 
     private void TellPointed(object sender)
     {

@@ -97,7 +97,7 @@ public sealed partial class LocalPlayback
         // before: it is not offered for deletion in the middle of it. The server's word follows with the next read.
         // A write that comes late, behind a slow disk, never lowers a newer position the server's read stored meanwhile.
         // The length goes with it, for the Downloads page's time left, also for a download whose record has none yet.
-        long? durationMs = duration > 0 ? (long)Math.Round(duration * 1000) : null;
+        long? durationMs = double.IsFinite(duration) && duration > 0 && duration < long.MaxValue / 1000.0 ? (long)Math.Round(duration * 1000) : null;
         _records = KeepAsync(_records, r => r.ResumeAt is { } kept && kept > entry.UpdatedAt
             ? (r.DurationMs is null && durationMs is not null ? r with { DurationMs = durationMs } : r)
             : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd, DurationMs = durationMs ?? r.DurationMs });

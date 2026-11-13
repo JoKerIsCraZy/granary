@@ -308,7 +308,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
   from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
-  was deleted goes, and the grid hands the focus on to a card beside it. The sidebar's page has no Back disc.
+  was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
+  remote carries on through the grid. The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach

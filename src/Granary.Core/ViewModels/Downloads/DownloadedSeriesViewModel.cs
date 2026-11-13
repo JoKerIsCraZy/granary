@@ -104,11 +104,11 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     /// <summary>The page shows, on the UI thread: it lists the series' downloads and follows them until <see cref="Detach"/>.</summary>
     public void Attach()
     {
-        if (!_follow.Attach())
+        // Shown again before it unloaded, it still follows; another series opened meanwhile shows now all the same.
+        if (_follow.Attach())
         {
-            return;
+            _left = false;
         }
-        _left = false;
         Show();
     }
 

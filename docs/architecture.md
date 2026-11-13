@@ -454,6 +454,11 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   make the element anew and take the focus off it. A card given the same title again keeps what the pointer did on it
   (its play disc and buttons), and with the same picture its artwork (`MediaCardView.KeepsPicture`) rather than going back
   through its blur, unless that picture failed.
+- A card that had the focus and leaves its grid's list (a download deleted from its menu) hands the focus to the card now
+  in its place, or the last one (`MediaGrid.Focus.cs`): the grid notes the place of the card that took the focus, sees
+  the focused card cleared (`ElementClearing`; the repeater keeps a focused card it only scrolled away) and, once the
+  change is laid out, focuses that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere
+  stays there.
 - A download's artwork comes from its file on this PC (`MediaCard.LocalImagePath`), read on the thread pool by
   `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
