@@ -121,7 +121,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
   `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
   forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
-  the button, so Enter and a remote's Select always open the card itself.
+  the button or a game controller's A presses it, so Enter, a remote's Select and A always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in

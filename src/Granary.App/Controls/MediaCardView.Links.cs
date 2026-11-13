@@ -54,6 +54,12 @@ public sealed partial class MediaCardView
     /// </summary>
     public bool TryOpenHeading() => _headingPress is { } press && press.TryOpen(Card, _actions, Pick is not null);
 
+    /// <summary>
+    /// Something that is no pointer and sends no key is about to click the card's button, a game controller's A: a press
+    /// still noted is forgotten first, as before a key's click (<see cref="OnHostKey"/>), so it never opens the series.
+    /// </summary>
+    public void ForgetPress() => _headingPress?.Clear();
+
     // The pointer came to the card (entered) or moved over it. Over the artwork its look shows, and the buttons are brought
     // up to date first: whether the server keeps TMDB titles on the watchlist may have been read after the card showed.
     // Over the caption that look is off and the link under the pointer shows. The 11 px between the two are the button's,

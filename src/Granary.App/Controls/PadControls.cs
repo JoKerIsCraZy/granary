@@ -77,6 +77,12 @@ internal static class PadControls
     /// </summary>
     public static bool Press(DependencyObject focused)
     {
+        // A clicks a card's button with no key on the way: a pointer's press on its title line that is still noted must
+        // not turn this click into the series' (MediaCardView.TryOpenHeading), as no key's click does.
+        if (focused is ButtonBase { Content: MediaCardView card })
+        {
+            card.ForgetPress();
+        }
         switch (focused)
         {
             case Control { IsEnabled: false }:
