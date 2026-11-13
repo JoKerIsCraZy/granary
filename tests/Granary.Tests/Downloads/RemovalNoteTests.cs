@@ -87,6 +87,59 @@ public sealed class RemovalNoteTests : IDisposable
         Assert.Null(_time.NextDue);
     }
 
+    // Two writes can fail one after the other before the first try comes: a sign-out's, and the one of a change behind it.
+    [Fact]
+    public void AWriteThatFailsWhileATryWaits_SetsThatTryAnew_AndOnlyTheOneComes()
+    {
+        Directory.CreateDirectory(NotePath);
+        var note = Open();
+        note.Add("srv1", "1");
+        note.Save();
+        note.NotWritten();
+        _time.Advance(TimeSpan.FromSeconds(2));
+
+        // The next write fares no better and says so too: the try waits its whole time from now.
+        note.Save();
+        note.NotWritten();
+        Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+
+        // Nothing comes when the first one was due, and one write is asked for when the second is.
+        _time.Advance(TimeSpan.FromSeconds(3));
+        Assert.Equal(0, _writesAskedFor);
+        _time.Advance(TimeSpan.FromSeconds(2));
+        Assert.Equal(1, _writesAskedFor);
+        Assert.Null(_time.NextDue);
+    }
+
+    // The system's timer may have its callback on the way to the thread pool already when a write that failed meanwhile
+    // sets the try anew: the callback then comes late, for a try that no longer waits.
+    [Fact]
+    public void ACallbackOfATryThatWasSetAnewMeanwhile_AsksForNothing_AndLeavesTheNewTryAsItIs()
+    {
+        Directory.CreateDirectory(NotePath);
+        var timers = new CallbacksKept(_time);
+        var note = new RemovalNote(Path.Combine(_folder, "entries.json"), "the entries kept on this PC", _logs.For<RemovalNote>(), timers,
+            () => _writesAskedFor++);
+        note.Add("srv1", "1");
+        note.Save();
+        note.NotWritten();
+        var late = Assert.Single(timers.Callbacks);
+        note.Save();
+        note.NotWritten();
+
+        late();
+
+        // No write before its time, and the new try still waits as long as it did.
+        Assert.Equal(0, _writesAskedFor);
+        Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+        _time.Advance(RemovalNote.FirstRetry);
+        Assert.Equal(1, _writesAskedFor);
+        // Nor did the late one count as a try: the wait after the first is twice as long, not four times.
+        note.Save();
+        note.NotWritten();
+        Assert.Equal(RemovalNote.FirstRetry * 2, _time.NextDue);
+    }
+
     [Fact]
     public void TheWaitBetweenTwoTries_GrowsToFiveMinutesAtMost()
     {
@@ -142,5 +195,20 @@ public sealed class RemovalNoteTests : IDisposable
 
         Assert.True(File.Exists(NotePath));
         Assert.Null(_time.NextDue);
+    }
+
+    /// <summary>
+    /// The tests' clock, which also keeps each timer's callback, as the thread pool keeps one that is already on its way
+    /// when its timer is disposed.
+    /// </summary>
+    private sealed class CallbacksKept(TimeProvider inner) : TimeProvider
+    {
+        public List<Action> Callbacks { get; } = [];
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            Callbacks.Add(() => callback(state));
+            return inner.CreateTimer(callback, state, dueTime, period);
+        }
     }
 }

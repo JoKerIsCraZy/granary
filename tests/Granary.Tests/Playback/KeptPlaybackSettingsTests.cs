@@ -512,6 +512,77 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.Single(_logs.Lines, line => line.Contains(said, StringComparison.Ordinal));
     }
 
+    // A write that waits takes every change made until it starts: a try that comes due meanwhile is one of them.
+    [Fact]
+    public async Task ATryThatComesDueWhileAWriteWaits_JoinsThatWrite_AndStartsNoSecondOne()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var kept = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+        }
+        Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+        int writes = 0;
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var released = new ManualResetEventSlim();
+        kept.Writing = () =>
+        {
+            Interlocked.Increment(ref writes);
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30));
+        };
+        // The server's answer for another account is kept, and its write is held before it starts.
+        kept.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var held = kept.LatestSave;
+
+        _time.Advance(RemovalNote.FirstRetry);
+        var tried = kept.LatestSave;
+        released.Set();
+        await tried;
+        kept.Writing = null;
+
+        Assert.Same(held, tried);
+        Assert.Equal(1, writes);
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("srv1/1/", file, StringComparison.Ordinal);
+        Assert.Contains("\"b\"", file, StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+        Assert.Null(_time.NextDue);
+    }
+
+    [Fact]
+    public async Task TheTriesOfASignOutThatIsOnNoDisk_ComeLaterEachTime_FiveMinutesApartAtMost()
+    {
+        await FourOnTheDiskAsync();
+        // A folder where the note should be: it can be neither read nor written, so the file counts as unread too.
+        Directory.CreateDirectory(NotePath);
+        var kept = Open();
+        kept.Remove("srv1", "1");
+        await kept.LatestSave;
+
+        foreach (int seconds in (int[])[5, 10, 20, 40, 80, 160, 300, 300])
+        {
+            Assert.Equal(TimeSpan.FromSeconds(seconds), _time.NextDue);
+            _time.Advance(TimeSpan.FromSeconds(seconds));
+            await kept.LatestSave;
+        }
+        Assert.Contains("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+
+        // The disk takes the note at last, and the file after it: nothing more is tried.
+        Directory.Delete(NotePath);
+        _time.Advance(RemovalNote.MaxRetry);
+        await kept.LatestSave;
+
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+        Assert.Null(_time.NextDue);
+    }
+
     [Fact]
     public async Task WhileTheNoteOfASignOutCannotBeRead_NothingTheFileHoldsIsUsed_AndTheFileIsNotWritten()
     {

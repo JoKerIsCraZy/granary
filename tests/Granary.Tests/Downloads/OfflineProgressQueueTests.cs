@@ -588,6 +588,97 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TwoRemovalsThatAreOnNoDisk_AreTriedAgain_UntilBothAreNoted_AndNoLonger()
+    {
+        await FourOnTheDiskAsync();
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var queue = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                // A sign-out, then a server's removal: neither can be noted, and the file cannot be read.
+                queue.Remove("srv1", "1");
+                queue.Remove("srv2", null);
+                await queue.LatestSave;
+                _time.Advance(RemovalNote.FirstRetry);
+                await queue.LatestSave;
+                Assert.Equal(RemovalNote.FirstRetry * 2, _time.NextDue);
+            }
+
+            // The note can be written now, the file still cannot be read: the next try notes both, and that is enough.
+            _time.Advance(RemovalNote.FirstRetry * 2);
+            await queue.LatestSave;
+            Assert.Null(_time.NextDue);
+            string note = await File.ReadAllTextAsync(NotePath, Token);
+            Assert.Contains("\"srv1\"", note, StringComparison.Ordinal);
+            Assert.Contains("\"srv2\"", note, StringComparison.Ordinal);
+        }
+        var next = Open();
+
+        // The next start leaves out what both took.
+        Assert.Equal(1, next.Count(_ => true));
+        Assert.Single(next.Entries(OtherAccount));
+        await next.LatestSave;
+        Assert.False(File.Exists(NotePath));
+    }
+
+    // The queue's writes follow each other: a try that comes due while one is under way waits behind it.
+    [Fact]
+    public async Task ATryThatComesDueWhileAWriteIsUnderWay_WritesAfterIt_NotBesideIt()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var queue = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+        }
+        Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+        int writes = 0;
+        int underWay = 0;
+        bool besideEachOther = false;
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var released = new ManualResetEventSlim();
+        queue.Writing = () =>
+        {
+            Interlocked.Increment(ref writes);
+            if (Interlocked.Increment(ref underWay) > 1)
+            {
+                Volatile.Write(ref besideEachOther, true);
+            }
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30));
+            Interlocked.Decrement(ref underWay);
+        };
+        // A position of another server is recorded, and its write is held on its way to the disk.
+        queue.Record(OtherServer, "ep_9", 9000, 0);
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var held = queue.LatestSave;
+
+        _time.Advance(RemovalNote.FirstRetry);
+        var tried = queue.LatestSave;
+        int startedWhileHeld = Volatile.Read(ref writes);
+        released.Set();
+        await tried;
+        queue.Writing = null;
+
+        // The try's write is another one, behind the one that was held.
+        Assert.NotSame(held, tried);
+        Assert.Equal((1, 2), (startedWhileHeld, writes));
+        Assert.False(besideEachOther);
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("ep_1", file, StringComparison.Ordinal);
+        Assert.Contains("ep_9", file, StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+        Assert.Null(_time.NextDue);
+    }
+
+    [Fact]
     public async Task WhileTheNoteOfASignOutCannotBeRead_NothingTheFileHoldsIsShownOrSent_AndTheFileIsNotWritten()
     {
         await FourOnTheDiskAsync();

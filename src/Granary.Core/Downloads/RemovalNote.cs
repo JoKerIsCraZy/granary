@@ -47,9 +47,10 @@ internal sealed class RemovalNote
     private bool _readFailureSaid;
     private bool _writeFailureSaid;
 
-    // Under the lock: the write asked of the owner that waits for its time, and how many were asked for since a removal
-    // was first on no disk.
+    // Under the lock: the write asked of the owner that waits for its time, the number of that try (CallOff), and how many
+    // were asked for since a removal was first on no disk.
     private ITimer? _retry;
+    private int _tryNumber;
     private int _retries;
 
     /// <param name="what">What the file holds, as a log line names it: "the positions recorded on this PC".</param>
@@ -274,29 +275,39 @@ internal sealed class RemovalNote
     {
         lock (_gate)
         {
-            _retry?.Dispose();
-            _retry = null;
+            CallOff();
             if (!_behind)
             {
                 _retries = 0;
                 return;
             }
             var wait = TimeSpan.FromTicks(Math.Min(MaxRetry.Ticks, FirstRetry.Ticks << Math.Min(_retries, MostDoublings)));
-            _retry = _time.CreateTimer(static note => ((RemovalNote)note!).Retry(), this, wait, Timeout.InfiniteTimeSpan);
+            int number = _tryNumber;
+            _retry = _time.CreateTimer(_ => Retry(number), null, wait, Timeout.InfiniteTimeSpan);
         }
     }
 
-    // On the timer's thread. Nothing is asked for when a write that ended meanwhile called the try off.
-    private void Retry()
+    // Under the lock: the try that waits is none any more. Disposing a timer does not take back a callback that is
+    // already on its way to the thread pool, so each try has a number, and a callback that comes for another one than the
+    // one waiting does nothing (Retry).
+    private void CallOff()
+    {
+        _retry?.Dispose();
+        _retry = null;
+        _tryNumber++;
+    }
+
+    // On the timer's thread, for the try numbered so. One that was called off or set anew meanwhile asks for nothing: it
+    // would bring the write before its time and count as a try that never came.
+    private void Retry(int number)
     {
         lock (_gate)
         {
-            if (_retry is null)
+            if (number != _tryNumber)
             {
                 return;
             }
-            _retry.Dispose();
-            _retry = null;
+            CallOff();
             _retries++;
         }
         _writeAgain();
@@ -315,8 +326,7 @@ internal sealed class RemovalNote
             onDisk = _onDisk;
             // The file is on the disk without them, whatever becomes of the note: no write is asked for again
             // (NotWritten). One removed while the file was written has a write of its own behind this one.
-            _retry?.Dispose();
-            _retry = null;
+            CallOff();
             _retries = 0;
         }
         if (onDisk)
