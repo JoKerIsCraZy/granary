@@ -8,7 +8,8 @@
     x:Class="Granary.App.Views.AdminPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    AutomationProperties.Name="Admin">
+    xmlns:t="using:Granary.Core.Texts"
+    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.mobileHeader.eyebrow')}">
 
     <Page.Resources>
         <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
@@ -27,25 +28,27 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
-                    <Button Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="8,4" Click="OnBackClick" AutomationProperties.Name="Back to App">
+                    <Button Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="8,4" Click="OnBackClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.sidebar.backToApp')}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE72B;" FontSize="12" />
-                            <TextBlock Text="Back to App" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.sidebar.backToApp')}" FontSize="14" />
                         </StackPanel>
                     </Button>
-                    <TextBlock Text="Admin" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="22"
-                               Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
-                    <TextBlock Text="MONITOR" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.mobileHeader.eyebrow')}" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}"
+                               FontWeight="Bold" FontSize="22" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
+                    <!-- The web's section name, in capitals as its CSS shows it. -->
+                    <TextBlock Text="{x:Bind MonitorHeading}" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                     <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                              AutomationProperties.Name="Admin pages">
-                        <ListViewItem Tag="dashboard" AutomationProperties.Name="Dashboard">
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.sidebar.navigation')}">
+                        <ListViewItem Tag="dashboard" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <FontIcon Glyph="&#xF246;" FontSize="14" />
-                                <TextBlock Text="Dashboard" FontSize="14" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}" FontSize="14" />
                             </StackPanel>
                         </ListViewItem>
-                        <ListViewItem Tag="activity" AutomationProperties.Name="Activity">
+                        <ListViewItem Tag="activity" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}">
                             <Grid ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -53,7 +56,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <FontIcon Glyph="&#xE93E;" FontSize="14" />
-                                <TextBlock Grid.Column="1" Text="Activity" FontSize="14" />
+                                <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}" FontSize="14" />
                                 <!-- The web's live badge: how many streams run now. -->
                                 <Border Grid.Column="2" Visibility="{x:Bind Sidebar.HasLive, Mode=OneWay}" Padding="7,1" CornerRadius="8"
                                         Background="#26EF4444" VerticalAlignment="Center">
@@ -69,7 +72,7 @@
                 <Border Grid.Row="1" Margin="0,16,0,0" Padding="12,8" CornerRadius="12" Background="#66232328"
                         BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="1">
                     <StackPanel Spacing="2">
-                        <TextBlock Text="BUILD" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" CharacterSpacing="180"
+                        <TextBlock Text="{x:Bind BuildHeading}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" CharacterSpacing="180"
                                    Foreground="{StaticResource SiloMutedBrush}" />
                         <TextBlock Text="{x:Bind Sidebar.BuildText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
                                    Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />

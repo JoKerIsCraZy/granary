@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -53,7 +54,7 @@ public sealed partial class AdminActivityViewModel
         _ipCursor = null;
         HasMoreIpUsers = false;
         OnPropertyChanged(nameof(HasIpUsers));
-        IpMessage = "Searching...";
+        IpMessage = AppText.Get("web.admin.activity.ipLookup.searching");
         IpFailed = false;
         return ReadIpUsersAsync();
     }
@@ -80,12 +81,13 @@ public sealed partial class AdminActivityViewModel
             }
             foreach (var user in page.Items)
             {
-                IpUsers.Add(new AdminIpUserRow(user.Username.Length > 0 ? user.Username : $"User #{user.UserId}", Stamp(user.FirstSeen),
-                    Stamp(user.LastSeen), AdminText.Count(user.RequestCount)));
+                string name = user.Username.Length > 0 ? user.Username : AppText.Get("web.admin.activity.userFallback", ("id", user.UserId));
+                IpUsers.Add(new AdminIpUserRow(name, Stamp(user.FirstSeen), Stamp(user.LastSeen), AdminText.Count(user.RequestCount)));
             }
             _ipCursor = page.Page?.NextCursor;
             HasMoreIpUsers = page.Page is { HasMore: true, NextCursor.Length: > 0 };
-            IpMessage = IpUsers.Count == 0 ? $"No users found for {ip} in the last {IpDays} days." : "";
+            // The web's message names the 30 days in its words, as IpDays asks for them.
+            IpMessage = IpUsers.Count == 0 ? AppText.Get("web.admin.activity.ipLookup.empty", ("ip", ip)) : "";
             OnPropertyChanged(nameof(HasIpUsers));
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
@@ -96,7 +98,7 @@ public sealed partial class AdminActivityViewModel
             }
             _logger.LogWarning(ex, "Could not look up an address's accounts");
             IpFailed = true;
-            IpMessage = IpUsers.Count == 0 ? "Could not load IP history." : "Could not load more history.";
+            IpMessage = AppText.Get(IpUsers.Count == 0 ? "web.admin.activity.ipLookup.loadError" : "web.admin.activity.ipLookup.loadMoreError");
         }
     }
 

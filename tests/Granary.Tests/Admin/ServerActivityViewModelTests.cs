@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Granary.Core.Api.Admin;
 using Granary.Core.Realtime;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -73,6 +74,21 @@ public sealed class ServerActivityViewModelTests : IDisposable
         Assert.False(_indicator.HasActivity);
         Assert.True(_indicator.IsEmpty);
         Assert.Equal("Server activity", _indicator.Name);
+    }
+
+    [Fact]
+    public void TheButtonAndItsRows_AreWordedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        _indicator.Show(Live(Session("s1", AdminPlayMethod.Direct), Session("s2", AdminPlayMethod.Direct)) with
+        {
+            Connection = EventsConnection.Disconnected,
+        });
+
+        Assert.Equal("Serveraktivität: 2 aktiv", _indicator.Name);
+        Assert.Equal("2 Direktwiedergabe", Assert.Single(_indicator.Streams).Text);
+        Assert.Equal("Getrennt", _indicator.ConnectionText);
     }
 
     [Fact]

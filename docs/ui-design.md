@@ -1371,6 +1371,15 @@ the area, not in the app's history, so Back to App leaves it in one step. Pages 
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
 stream's commands on Activity.
 
+- **Words**: the web's admin pages', by their keys, so they come in the language on screen: the area's sidebar, the
+  Dashboard's widgets, Activity with its IP lookup and a stream's commands and answers, and the activity indicator
+  below. A heading the web writes in mixed case and shows in capitals is put in capitals by the language's rules
+  (MONITOR, BUILD, PLAYBACK METHOD, STREAMS). Granary's own, in English until they are translated: what only Granary
+  has (Auto refresh and its "Every 10 s", the question before Terminate, "Scans may be running", the refusals of an
+  account that is no administrator, Address and Look up in a stream's details) and the names a screen reader alone
+  hears where the web has none (the address box, the filter box, a user's row, a method that filters). Sizes, rates,
+  times and their units stay as they were until numbers are converted, as the web writes its units the same in every
+  language; dates stay English.
 - **Dashboard** (`AdminDashboardView` on `AdminDashboardViewModel`, the web's default arrangement without Customize or
   Scan): "Dashboard" and its line, "Updated less than 1 minute ago" and Refresh ("Refreshing..."); read again once a
   minute while shown. Six tiles (Active Streams, Egress now, Profiles · 24h, Total Movies, Total Shows, Storage: label and
@@ -1385,7 +1394,8 @@ stream's commands on Activity.
   session count (`PlaybackChart`). Egress · last 24 h: the rate over gridlines at human numbers, a fill at 12 %, the line
   broken where the sampler wrote nothing, "Total 4.1 GB" and "Peak 133 Mbps" (`RateChart`). Top titles and Most active
   profiles · last 7 d: eight rows each, the rank, the name (a title opens), the plays and watch time over a bar of the
-  busiest row's share. Libraries (an icon box, the name, "movies · 1 path", a green or grey dot) and Users (the eight
+  busiest row's share. Libraries (an icon box, the name, "Movies · 1 path" with the kind in the web's words, a green or
+  grey dot) and Users (the eight
   most recently active: initial, name, an "owner" or "admin" badge, the email, "Last active", Active or a red Disabled).
   Recent Activity: "alex (Kids) started watching Dark", "5m ago · Granary 0.3.0". Each card says its own failure in red.
 - **Activity** (`AdminActivityView` on `AdminActivityViewModel`, the web's Activity): "Activity", "2 active streams across
@@ -1396,8 +1406,8 @@ stream's commands on Activity.
   dim); BY ROUTING NODE with more than one node. The filter box ("Filter by user, media, client, or node..."), Movies,
   Series, Clear filters, "Showing 1 of 2 streams". A card a stream, newest first: poster, title, "S1E3 · Dark", the
   account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
-  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Started 5m ago ·
-  5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
+  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
+  5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
   route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
   when nothing shows.
 
@@ -1437,7 +1447,8 @@ by `MainWindow.Activity.cs`.
   - **Streams**: a row per play method in use, a dot in the method's colour and "2 Direct Play", in the order Direct
     Play, Remux, Direct Stream, Transcode, Unknown; "No active streams" without any. "View all ›" closes the panel and
     opens Admin → Activity (in place when the admin area shows, else the area opens on it and Back returns).
-  - **Tasks**: a row per running scheduled task with the server's name for it. Once the task says how far it is,
+  - **Tasks**: a row per running scheduled task with its name: the web's for Silo's own tasks (by the task's key, as
+    the web's `taskText`), else the server's. Once the task says how far it is,
     "42%" (or "12.5%", never "100.0%" while it runs) at the right and a 6 px bar under the name; until then a spinner
     and "Running" in the accent. "No running tasks" without any.
   - **Scans**: a row per library scan that is queued or running: a spinner (running) or the scan icon (queued), the

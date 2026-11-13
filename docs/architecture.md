@@ -361,7 +361,8 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   its catalog message, such as a row's `title` with `title_key` and `title_args`, shows the language's message when its
   own catalog has the key and the server's values fill every value the message uses; otherwise, and always in English,
   it shows as the server sent it. Home, library and Watch Party shelf rows take their titles this way (`SectionTitle`,
-  as the web's `lib/sectionTitle.ts`).
+  as the web's `lib/sectionTitle.ts`), and the activity indicator its running tasks' names, by a key made of the task's
+  own (`ServerActivityText.TaskName`, as the web's `lib/taskText.ts`).
 - **Keys** (`TextKeysTests`): every key `src` gives `AppText.Get` or `AppText.Runs` as a literal, in C# or in an x:Bind,
   must be in the English catalog, the web's or Granary's, as the web's typecheck holds its keys to `en.json`.
 - **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,

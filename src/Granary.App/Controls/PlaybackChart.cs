@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -26,7 +27,6 @@ internal sealed partial class PlaybackChart : Grid
     private const double MaxColumnWidth = 24;
     private const double MinSegment = 2;
     private const int TargetLabels = 4;
-    private static readonly string[] SeriesNames = ["Direct play", "Direct stream", "Transcode"];
 
     private readonly Canvas _plot = new();
     private readonly Canvas _labels = new() { Height = LabelHeight };
@@ -104,12 +104,20 @@ internal sealed partial class PlaybackChart : Grid
             _plot.Children.Add(bar);
             bottom -= segment + Gap;
         }
-        // The whole column answers the pointer and the reader, as the web's column does.
-        string summary = $"{BucketLabel(column.Start, daily)}: {AdminText.Sessions(column.Total)}";
+        // The whole column answers the pointer and the reader, as the web's column does: "3 PM: 5".
+        string bucket = BucketLabel(column.Start, daily);
+        string summary = AppText.Get("web.admin.dashboard.chart.columnReading", ("bucket", bucket), ("value", AppText.Number(column.Total)));
         var hit = new Border { Width = slot, Height = height, Background = new SolidColorBrush(Colors.Transparent) };
         AutomationProperties.SetName(hit, summary);
+        string[] names =
+        [
+            AppText.Get("web.admin.dashboard.widgets.playbackActivity.series.directPlay"),
+            AppText.Get("web.admin.dashboard.widgets.playbackActivity.series.directStream"),
+            AppText.Get("web.admin.dashboard.widgets.playbackActivity.series.transcode"),
+        ];
         ToolTipService.SetToolTip(hit, string.Join(Environment.NewLine,
-            [BucketLabel(column.Start, daily), .. SeriesNames.Select((name, s) => $"{name}  {values[s]}"), $"Sessions  {column.Total}"]));
+            [bucket, .. names.Select((name, s) => $"{name}  {values[s]}"),
+                $"{AppText.Get("web.admin.dashboard.widgets.playbackActivity.totalLabel")}  {column.Total}"]));
         Canvas.SetLeft(hit, left);
         _plot.Children.Add(hit);
     }

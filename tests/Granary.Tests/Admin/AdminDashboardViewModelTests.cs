@@ -2,6 +2,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Granary.Tests.Browse;
@@ -42,6 +43,20 @@ public sealed class AdminDashboardViewModelTests
     }
 
     [Fact]
+    public async Task TheTilesAndCards_AreWordedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var dashboard = Create();
+
+        await dashboard.ActivateAsync();
+
+        Assert.Equal(new AdminStatTile("Aktive Streams", "2", "2 Sitzungen"), dashboard.ActiveStreamsTile);
+        Assert.Equal("1.204 Warnungen", dashboard.Health[5].Detail);
+        Assert.Equal("Alle 2 Streams anzeigen ›", dashboard.StreamsLinkText);
+        Assert.Equal("Vor weniger als 1 Minute aktualisiert", dashboard.UpdatedText);
+    }
+
+    [Fact]
     public async Task Activate_AsksForTheWebsWindows()
     {
         var dashboard = Create();
@@ -64,13 +79,13 @@ public sealed class AdminDashboardViewModelTests
 
         Assert.Equal(
         [
-            new AdminHealthCell("Version", "1715 · 13ad7a74"),
-            new AdminHealthCell("Uptime", "3d 4h", "restart required", AdminTone.Warn),
-            new AdminHealthCell("Postgres", "OK", "0.06 ms"),
-            new AdminHealthCell("Redis", "Not configured", "optional"),
+            new AdminHealthCell(AdminHealthKind.Version, "Version", "1715 · 13ad7a74"),
+            new AdminHealthCell(AdminHealthKind.Uptime, "Uptime", "3d 4h", "restart required", AdminTone.Warn),
+            new AdminHealthCell(AdminHealthKind.Postgres, "Postgres", "OK", "0.06 ms"),
+            new AdminHealthCell(AdminHealthKind.Redis, "Redis", "Not configured", "optional"),
             // The switched-off node counts on neither side.
-            new AdminHealthCell("Nodes", "1/2", "healthy", AdminTone.Warn),
-            new AdminHealthCell("Errors · 24h", "3", "1,204 warnings", AdminTone.Error),
+            new AdminHealthCell(AdminHealthKind.Nodes, "Nodes", "1/2", "healthy", AdminTone.Warn),
+            new AdminHealthCell(AdminHealthKind.Errors, "Errors · 24h", "3", "1,204 warnings", AdminTone.Error),
         ], dashboard.Health);
     }
 
@@ -196,8 +211,9 @@ public sealed class AdminDashboardViewModelTests
 
         Assert.Equal(
         [
-            new AdminLibraryRow("Filme", "movies · 1 path", true),
-            new AdminLibraryRow("Serien", "series · 2 paths", false),
+            // The library's kind as the web names it.
+            new AdminLibraryRow("Filme", "Movies · 1 path", true),
+            new AdminLibraryRow("Serien", "Series · 2 paths", false),
         ], dashboard.Libraries);
         // Most recently active first; only administrators carry a role.
         Assert.Equal(
@@ -239,7 +255,7 @@ public sealed class AdminDashboardViewModelTests
 
         await dashboard.ActivateAsync();
 
-        Assert.Equal(new AdminHealthCell("Nodes", "—", "unavailable"), dashboard.Health[4]);
+        Assert.Equal(new AdminHealthCell(AdminHealthKind.Nodes, "Nodes", "—", "unavailable"), dashboard.Health[4]);
         Assert.Equal(new AdminStatTile("Egress now", "—", "waiting for a sample"), dashboard.EgressNowTile);
     }
 

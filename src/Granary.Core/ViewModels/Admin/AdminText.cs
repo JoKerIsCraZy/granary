@@ -1,11 +1,13 @@
 using System.Globalization;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
 /// <summary>
 /// How the admin pages word their numbers and sessions, as the web's dashboard does
-/// (<c>components/admin/dashboard/format.ts</c>, <c>pages/adminActivityPresentation.ts</c>).
+/// (<c>components/admin/dashboard/format.ts</c>, <c>pages/adminActivityPresentation.ts</c>): its words in the language on
+/// screen, its numbers and units in English until numbers are converted, as the web's own units are.
 /// </summary>
 public static class AdminText
 {
@@ -15,14 +17,71 @@ public static class AdminText
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
     private static readonly string[] DataUnits = ["B", "KB", "MB", "GB", "TB", "PB"];
 
+    // A stored library type in the spellings the server accepts, as the web's libraryTypes.ts reads them.
+    private static readonly Dictionary<string, string> LibraryTypeAliases = new(StringComparer.Ordinal)
+    {
+        ["movie"] = "movies", ["tv"] = "series", ["show"] = "series", ["tvshows"] = "series", ["audiobook"] = "audiobooks",
+        ["ebook"] = "ebooks", ["podcast"] = "podcasts",
+    };
+
     public static string Count(long value) => value.ToString("N0", English);
 
     /// <summary>"1 file", "12,480 files".</summary>
-    public static string Files(int count) => count == 1 ? "1 file" : $"{Count(count)} files";
+    public static string Files(int count) =>
+        AppText.Get("web.admin.dashboard.format.fileCount", ("count", count), ("count_text", AppText.Number(count)));
 
-    public static string Plays(int plays) => plays == 1 ? "1 play" : $"{Count(plays)} plays";
+    /// <summary>A top title's plays: "1 play", "3 plays".</summary>
+    public static string Plays(int plays) =>
+        AppText.Get("web.admin.dashboard.widgets.topTitles.playCount", ("count", plays), ("count_text", AppText.Number(plays)));
 
-    public static string Sessions(int sessions) => sessions == 1 ? "1 session" : $"{Count(sessions)} sessions";
+    /// <summary>A most active profile's plays, in that list's words.</summary>
+    public static string ProfilePlays(int plays) =>
+        AppText.Get("web.admin.dashboard.widgets.topProfiles.playCount", ("count", plays), ("count_text", AppText.Number(plays)));
+
+    /// <summary>The Active Streams tile's line: "1 session", "2 sessions".</summary>
+    public static string Sessions(int sessions) =>
+        AppText.Get("web.admin.dashboard.widgets.activeStreams.sessions", ("count", sessions), ("count_text", sessions));
+
+    /// <summary>The playback chart's sessions: "12 sessions", the number grouped.</summary>
+    public static string StartedSessions(int sessions) =>
+        AppText.Get("web.admin.dashboard.widgets.playbackActivity.sessionCount", ("count", sessions), ("count_text", AppText.Number(sessions)));
+
+    /// <summary>A card's title over the last 24 hours, as the web's range titles: "Egress · last 24 h".</summary>
+    public static string LastDay(string title) => AppText.Get("web.admin.dashboard.range.title.day", ("title", title));
+
+    /// <summary>A card's title over the last 7 days: "Top titles · last 7 d".</summary>
+    public static string LastWeek(string title) => AppText.Get("web.admin.dashboard.range.title.week", ("title", title));
+
+    /// <summary>"the last 24 hours", for a sentence about the day's window.</summary>
+    public static string LastDayPhrase => AppText.Get("web.admin.dashboard.range.phrase.day");
+
+    /// <summary>"the last 7 days", for a sentence about the week's window.</summary>
+    public static string LastWeekPhrase => AppText.Get("web.admin.dashboard.range.phrase.week");
+
+    /// <summary>A library's line, as the web's Libraries card: "Movies · 2 paths", a kind the web does not know as stored.</summary>
+    public static string LibraryDetail(string type, int paths) =>
+        AppText.Get("web.admin.dashboard.widgets.libraries.typeAndPaths", ("count", paths), ("count_text", paths), ("type", LibraryType(type)));
+
+    /// <summary>A library's kind in the web's words ("Movies"), as stored when the web does not know it.</summary>
+    public static string LibraryType(string type)
+    {
+        string kind = type?.Trim().ToLowerInvariant() ?? "";
+        return LibraryTypeAliases.GetValueOrDefault(kind, kind) switch
+        {
+            "movies" => AppText.Get("web.common.libraryType.movies"),
+            "series" => AppText.Get("web.common.libraryType.series"),
+            "mixed" => AppText.Get("web.common.libraryType.mixed"),
+            "audiobooks" => AppText.Get("web.common.libraryType.audiobooks"),
+            "ebooks" => AppText.Get("web.common.libraryType.ebooks"),
+            "manga" => AppText.Get("web.common.libraryType.manga"),
+            "podcasts" => AppText.Get("web.common.libraryType.podcasts"),
+            _ => type ?? "",
+        };
+    }
+
+    /// <summary>An administrator's role badge: "owner" for the server's Owner, else "admin", as the web's accountRoleLabel.</summary>
+    public static string Role(string role, bool isOwner) =>
+        AppText.Get("web.admin.common.accounts.role", ("role", isOwner ? "owner" : role));
 
     /// <summary>"0.7 Mbps", "133 Mbps": one place under 10 Mbps, so a trickle does not read as idle.</summary>
     public static string Mbps(double mbps) => double.IsFinite(mbps) ? $"{MbpsValue(mbps)} Mbps" : None;
@@ -108,29 +167,38 @@ public static class AdminText
         return ms < 10 ? $"{Round(ms, 2).ToString("#,0.##", English)} ms" : $"{Round(ms, 0).ToString("#,0", English)} ms";
     }
 
-    /// <summary>"Just now", "5m ago", "2h ago", "3d ago", each unit rounded down.</summary>
-    public static string Ago(DateTimeOffset at, DateTimeOffset now)
+    /// <summary>
+    /// "Just now", "5m ago", "2h ago", "3d ago", each unit rounded down, as the web's <c>formatRelativeTime</c>. Each card
+    /// has its own "Just now" (<paramref name="justNow"/>); Now Playing's without one.
+    /// </summary>
+    public static string Ago(DateTimeOffset at, DateTimeOffset now, string? justNow = null)
     {
         var span = now - at;
         if (span.TotalMinutes < 1)
         {
-            return "Just now";
+            return justNow ?? AppText.Get("web.admin.dashboard.widgets.nowPlaying.justNow");
         }
-        return span.TotalHours < 1 ? $"{(long)span.TotalMinutes}m ago"
-            : span.TotalDays < 1 ? $"{(long)span.TotalHours}h ago"
-            : $"{(long)span.TotalDays}d ago";
+        if (span.TotalHours < 1)
+        {
+            long minutes = (long)span.TotalMinutes;
+            return AppText.Get("web.common.date.minutesAgo", ("count", minutes), ("count_text", minutes));
+        }
+        if (span.TotalDays < 1)
+        {
+            long hours = (long)span.TotalHours;
+            return AppText.Get("web.common.date.hoursAgo", ("count", hours), ("count_text", hours));
+        }
+        long days = (long)span.TotalDays;
+        return AppText.Get("web.common.date.daysAgo", ("count", days), ("count_text", days));
     }
 
     /// <summary>The dashboard's "Updated …": "less than 1 minute ago", "1 minute ago", "5 minutes ago".</summary>
     public static string Updated(DateTimeOffset updatedAt, DateTimeOffset now)
     {
         long minutes = (long)Math.Floor(Math.Max(0, (now - updatedAt).TotalMinutes));
-        return minutes switch
-        {
-            < 1 => "Updated less than 1 minute ago",
-            1 => "Updated 1 minute ago",
-            _ => $"Updated {Count(minutes)} minutes ago",
-        };
+        return minutes < 1
+            ? AppText.Get("web.admin.dashboard.page.updatedJustNow")
+            : AppText.Get("web.admin.dashboard.page.updatedMinutesAgo", ("minutes", minutes), ("minutes_text", AppText.Number(minutes)));
     }
 
     /// <summary>
@@ -142,9 +210,14 @@ public static class AdminText
         ArgumentNullException.ThrowIfNull(session);
         if (IsEpisode(session))
         {
-            return session.EpisodeName is { Length: > 0 } name ? name : $"S{session.SeasonNumber}E{session.EpisodeNumber}";
+            return session.EpisodeName is { Length: > 0 } name
+                ? name
+                : AppText.Get("web.admin.dashboard.widgets.nowPlaying.episodeFallback",
+                    ("season", Plain(session.SeasonNumber)), ("episode", Plain(session.EpisodeNumber)));
         }
-        return session.MediaTitle.Length > 0 ? session.MediaTitle : $"File #{session.MediaFileId}";
+        return session.MediaTitle.Length > 0
+            ? session.MediaTitle
+            : AppText.Get("web.admin.dashboard.widgets.nowPlaying.fileFallback", ("id", session.MediaFileId));
     }
 
     /// <summary>The line under the title: "S1 · E3 — Dark" for an episode, "Movie" or "Series" otherwise.</summary>
@@ -153,13 +226,14 @@ public static class AdminText
         ArgumentNullException.ThrowIfNull(session);
         if (IsEpisode(session))
         {
-            return $"S{session.SeasonNumber} · E{session.EpisodeNumber} — {session.SeriesName}";
+            return AppText.Get("web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries",
+                ("season", Plain(session.SeasonNumber)), ("episode", Plain(session.EpisodeNumber)), ("series", session.SeriesName));
         }
         return session.MediaType switch
         {
             "" => "",
-            "movie" => "Movie",
-            _ => "Series",
+            "movie" => AppText.Get("web.admin.dashboard.widgets.nowPlaying.movie"),
+            _ => AppText.Get("web.admin.dashboard.widgets.nowPlaying.series"),
         };
     }
 
@@ -167,7 +241,9 @@ public static class AdminText
     public static string Username(AdminPlaybackSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
-        return session.Username.Length > 0 ? session.Username : $"User #{session.UserId}";
+        return session.Username.Length > 0
+            ? session.Username
+            : AppText.Get("web.admin.dashboard.widgets.nowPlaying.userFallback", ("id", session.UserId));
     }
 
     /// <summary>The profile that watches, by name or else id; empty without either.</summary>
@@ -196,6 +272,9 @@ public static class AdminText
 
     private static bool IsEpisode(AdminPlaybackSession session) =>
         !string.IsNullOrEmpty(session.SeriesName) && session.SeasonNumber is not null && session.EpisodeNumber is not null;
+
+    // A season's or episode's number as the web passes it into a message, a string as written: "3".
+    private static string Plain(int? number) => number?.ToString(CultureInfo.InvariantCulture) ?? "";
 
     private static string Duration(long seconds)
     {

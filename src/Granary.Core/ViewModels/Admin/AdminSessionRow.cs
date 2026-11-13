@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
@@ -25,11 +26,11 @@ public sealed partial class AdminSessionRow : ObservableObject
         nameof(ContentId), nameof(CanOpen), nameof(IsPlain), nameof(Method), nameof(MethodLabel), nameof(Container), nameof(Video),
         nameof(Audio), nameof(Bitrate), nameof(HasBitrate), nameof(TranscodeMode), nameof(HasTranscodeMode), nameof(Route), nameof(Position),
         nameof(Progress), nameof(IsPaused), nameof(PauseLabel), nameof(CanControl), nameof(CannotControl), nameof(Location), nameof(MediaType),
-        nameof(Started), nameof(Elapsed))]
+        nameof(Elapsed), nameof(ActiveText))]
     public partial AdminPlaybackSession Session { get; private set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Started), nameof(Elapsed))]
+    [NotifyPropertyChangedFor(nameof(Elapsed), nameof(ActiveText))]
     public partial DateTimeOffset Now { get; private set; }
 
     /// <summary>The details below the row are open.</summary>
@@ -55,13 +56,13 @@ public sealed partial class AdminSessionRow : ObservableObject
 
     public bool IsIdle => !IsBusy;
 
-    public string Title => AdminText.Title(Session);
+    public string Title => AdminSessionText.Title(Session);
 
     public string Subtitle => AdminSessionText.Subtitle(Session);
 
     public bool HasSubtitle => Subtitle.Length > 0;
 
-    public string Username => AdminText.Username(Session);
+    public string Username => AdminSessionText.Username(Session);
 
     public string Initial => AdminText.Initial(Username);
 
@@ -117,7 +118,7 @@ public sealed partial class AdminSessionRow : ObservableObject
     public bool IsPaused => PausedSoon ?? Session.IsPaused;
 
     /// <summary>Pause, or Resume for a paused stream.</summary>
-    public string PauseLabel => IsPaused ? "Resume" : "Pause";
+    public string PauseLabel => AppText.Get(IsPaused ? "web.admin.sessions.playback.action.resume" : "web.admin.sessions.playback.action.pause");
 
     /// <summary>The player takes live commands: pause, resume and messages. Stop and Terminate work for every session.</summary>
     public bool CanControl => Session.HasPlaybackControl;
@@ -125,20 +126,15 @@ public sealed partial class AdminSessionRow : ObservableObject
     public bool CannotControl => !CanControl;
 
     /// <summary>Local or Remote, as the server's bitrate policy sees the viewer.</summary>
-    public string Location => Session.StreamLocation switch
-    {
-        "local" => "Local",
-        "remote" => "Remote",
-        _ => "",
-    };
+    public string Location => AdminSessionText.Location(Session);
 
     public string MediaType => Session.MediaType;
 
-    /// <summary>"5m ago".</summary>
-    public string Started => AdminText.Ago(Session.StartedAt, Now);
-
     /// <summary>How long the session has run: "12:04", "1:02:09".</summary>
     public string Elapsed => AdminSessionText.Clock((Now - Session.StartedAt).TotalSeconds);
+
+    /// <summary>"Session active 5:00", as the web's row says it under the position.</summary>
+    public string ActiveText => AppText.Get("web.admin.activity.row.sessionActive", ("elapsed", Elapsed));
 
     /// <summary>A pause (or resume) the player was sent: the row shows it at once.</summary>
     public void ExpectPaused(bool paused, DateTimeOffset at)

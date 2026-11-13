@@ -2,6 +2,7 @@ using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Granary.Tests.Browse;
@@ -45,7 +46,7 @@ public sealed class AdminActivityViewModelTests
             (episode.Title, episode.Subtitle, episode.Username, episode.Profile, episode.MethodLabel));
         Assert.Equal(("10:00 / 50:00", 0.2, "8.0 Mbps", "Node Local server", "Local"),
             (episode.Position, episode.Progress, episode.Bitrate, episode.Route, episode.Location));
-        Assert.Equal(("5m ago", "5:00"), (episode.Started, episode.Elapsed));
+        Assert.Equal(("5:00", "Session active 5:00"), (episode.Elapsed, episode.ActiveText));
         Assert.Equal("2 live", Sidebar.LiveText);
     }
 
@@ -185,6 +186,22 @@ public sealed class AdminActivityViewModelTests
         Assert.True(episode.IsPaused);
         Assert.Equal("Pause command sent", activity.Notice);
         Assert.False(episode.IsBusy);
+    }
+
+    [Fact]
+    public async Task ACommandsAnswer_IsWordedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _silo.Map("api/v2/admin/sessions/s1/pause", request => Answer(request, []));
+        _silo.Map("api/v2/admin/sessions/s1/stop", _ => BrowseFakeSilo.Problem(409, "conflict"));
+        var activity = await ShownAsync();
+
+        await activity.TogglePauseCommand.ExecuteAsync(activity.Streams[0]);
+        Assert.Equal("Befehl zum Pausieren gesendet", activity.Notice);
+
+        await activity.StopCommand.ExecuteAsync(activity.Streams[0]);
+        Assert.Equal("Der Befehl „Stoppen“ wurde nicht angewendet: Silo internal detail", activity.Notice);
+        Assert.Equal("2 aktive Streams auf 1 Knoten", activity.SubtitleText);
     }
 
     [Fact]

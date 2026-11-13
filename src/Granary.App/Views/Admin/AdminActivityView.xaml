@@ -9,7 +9,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Granary.App.Views.Admin"
     xmlns:admin="using:Granary.Core.ViewModels.Admin"
-    AutomationProperties.Name="Activity">
+    xmlns:t="using:Granary.Core.Texts"
+    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.activity.page.title')}">
 
     <!-- Its own copy of the settings' styles: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -67,7 +68,8 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="6">
-                <TextBlock Text="Activity" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.page.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}"
+                           AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock Text="{x:Bind ViewModel.SubtitleText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
@@ -85,8 +87,8 @@
                     </StackPanel>
                 </Button>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="AUTO REFRESH" Style="{StaticResource ActivityOverlineStyle}" HorizontalAlignment="Right" />
-                    <TextBlock Text="Every 10 s" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{x:Bind AutoRefreshHeading}" Style="{StaticResource ActivityOverlineStyle}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{x:Bind AutoRefreshEvery}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" HorizontalAlignment="Right" />
                 </StackPanel>
             </StackPanel>
         </Grid>
@@ -101,19 +103,21 @@
 
         <!-- Which accounts used an address over the last 30 days. -->
         <Border Style="{StaticResource ActivityCardStyle}" Padding="0">
-            <Expander Header="IP Lookup" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0">
+            <Expander Header="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.heading')}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Background="Transparent" BorderThickness="0">
                 <StackPanel Spacing="12">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MaxWidth="360" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBox Text="{x:Bind ViewModel.IpQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="IP lookup (e.g. 203.0.113.50)"
-                                 AutomationProperties.Name="IP address" KeyDown="OnIpKeyDown" />
+                        <TextBox Text="{x:Bind ViewModel.IpQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.placeholder')}"
+                                 AutomationProperties.Name="{x:Bind t:AppText.Get('granary.admin.activity.ipAddress')}" KeyDown="OnIpKeyDown" />
                         <Button Grid.Column="1" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.LookupCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE721;" FontSize="12" />
-                                <TextBlock Text="Lookup" FontSize="13" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.submit')}" FontSize="13" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -127,12 +131,14 @@
                                 <ColumnDefinition Width="170" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="User" Style="{StaticResource ActivityOverlineStyle}" />
-                            <TextBlock Grid.Column="1" Text="First Seen" Style="{StaticResource ActivityOverlineStyle}" />
-                            <TextBlock Grid.Column="2" Text="Last Seen" Style="{StaticResource ActivityOverlineStyle}" />
-                            <TextBlock Grid.Column="3" Text="Requests" Style="{StaticResource ActivityOverlineStyle}" HorizontalAlignment="Right" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.column.user')}" Style="{StaticResource ActivityOverlineStyle}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.column.firstSeen')}" Style="{StaticResource ActivityOverlineStyle}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.column.lastSeen')}" Style="{StaticResource ActivityOverlineStyle}" />
+                            <TextBlock Grid.Column="3" Text="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.column.requests')}" Style="{StaticResource ActivityOverlineStyle}"
+                                       HorizontalAlignment="Right" />
                         </Grid>
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.IpUsers}" IsTabStop="False" AutomationProperties.Name="Accounts at this address">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.IpUsers}" IsTabStop="False"
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('granary.admin.activity.ipAccounts')}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="admin:AdminIpUserRow">
                                     <Grid ColumnSpacing="12" Padding="0,8" BorderBrush="#4D2A2A2F" BorderThickness="0,0,0,1">
@@ -151,7 +157,8 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                    <Button Content="Load more" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.LoadMoreIpUsersCommand}"
+                    <Button Content="{x:Bind t:AppText.Get('web.admin.activity.ipLookup.loadMore')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.LoadMoreIpUsersCommand}"
                             Visibility="{x:Bind ViewModel.HasMoreIpUsers, Mode=OneWay}" />
                 </StackPanel>
             </Expander>
@@ -160,8 +167,9 @@
         <!-- How the streams play, and the nodes they pass; a share filters the streams. -->
         <Border Style="{StaticResource ActivityCardStyle}" Visibility="{x:Bind ViewModel.HasStreams, Mode=OneWay}">
             <StackPanel Spacing="10">
-                <TextBlock Text="PLAYBACK METHOD" Style="{StaticResource ActivityOverlineStyle}" />
-                <Grid x:Name="MethodBar" Height="8" CornerRadius="4" Background="#14FFFFFF" AutomationProperties.Name="Playback method distribution" />
+                <TextBlock Text="{x:Bind MethodHeading}" Style="{StaticResource ActivityOverlineStyle}" />
+                <Grid x:Name="MethodBar" Height="8" CornerRadius="4" Background="#14FFFFFF"
+                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.activity.summary.methodDistribution')}" />
                 <ItemsControl ItemsSource="{x:Bind ViewModel.Methods, Mode=OneWay}" IsTabStop="False">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -184,7 +192,7 @@
                 </ItemsControl>
                 <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasNodeChoice, Mode=OneWay}" Padding="0,10,0,0"
                             BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,1,0,0">
-                    <TextBlock Text="BY ROUTING NODE" Style="{StaticResource ActivityOverlineStyle}" />
+                    <TextBlock Text="{x:Bind NodeHeading}" Style="{StaticResource ActivityOverlineStyle}" />
                     <ItemsControl ItemsSource="{x:Bind ViewModel.Nodes, Mode=OneWay}" IsTabStop="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -217,12 +225,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <AutoSuggestBox Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" QueryIcon="Find"
-                            PlaceholderText="Filter by user, media, client, or node..." AutomationProperties.Name="Filter streams" />
-            <ToggleButton Grid.Column="1" Content="Movies" Style="{StaticResource ActivityChipStyle}" IsChecked="{x:Bind ViewModel.IsMoviesOnly, Mode=OneWay}"
-                          Command="{x:Bind ViewModel.ToggleMoviesCommand}" />
-            <ToggleButton Grid.Column="2" Content="Series" Style="{StaticResource ActivityChipStyle}" IsChecked="{x:Bind ViewModel.IsSeriesOnly, Mode=OneWay}"
-                          Command="{x:Bind ViewModel.ToggleSeriesCommand}" />
-            <HyperlinkButton Grid.Column="3" Content="Clear filters" FontSize="11" Command="{x:Bind ViewModel.ClearFiltersCommand}"
+                            PlaceholderText="{x:Bind t:AppText.Get('web.admin.activity.filter.placeholder')}"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.admin.activity.filterStreams')}" />
+            <ToggleButton Grid.Column="1" Content="{x:Bind t:AppText.Get('web.admin.activity.filter.movies')}" Style="{StaticResource ActivityChipStyle}"
+                          IsChecked="{x:Bind ViewModel.IsMoviesOnly, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleMoviesCommand}" />
+            <ToggleButton Grid.Column="2" Content="{x:Bind t:AppText.Get('web.admin.activity.filter.series')}" Style="{StaticResource ActivityChipStyle}"
+                          IsChecked="{x:Bind ViewModel.IsSeriesOnly, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleSeriesCommand}" />
+            <HyperlinkButton Grid.Column="3" Content="{x:Bind t:AppText.Get('web.admin.activity.filter.clear')}" FontSize="11" Command="{x:Bind ViewModel.ClearFiltersCommand}"
                              Visibility="{x:Bind ViewModel.HasFilters, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}" />
         </Grid>
         <TextBlock Text="{x:Bind ViewModel.FilterStatusText, Mode=OneWay}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
@@ -234,7 +243,8 @@
         </StackPanel>
 
         <!-- A card a stream: who, what, how it plays, where it is; its details open below. -->
-        <ItemsControl ItemsSource="{x:Bind ViewModel.Streams}" IsTabStop="False" AutomationProperties.Name="Streams">
+        <ItemsControl ItemsSource="{x:Bind ViewModel.Streams}" IsTabStop="False"
+                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.streams')}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel Spacing="12" />
@@ -294,10 +304,11 @@
                                         <Button Style="{StaticResource ActivityTerminateStyle}" IsEnabled="{x:Bind IsIdle, Mode=OneWay}" Click="OnTerminateClick" Tag="{x:Bind}">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <FontIcon Glyph="&#xE7BA;" FontSize="12" />
-                                                <TextBlock Text="Terminate" />
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.sessions.playback.action.terminate')}" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Style="{StaticResource ActivityActionStyle}" IsEnabled="{x:Bind IsIdle, Mode=OneWay}" Padding="8,0" AutomationProperties.Name="Session actions">
+                                        <Button Style="{StaticResource ActivityActionStyle}" IsEnabled="{x:Bind IsIdle, Mode=OneWay}" Padding="8,0"
+                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.sessions.playback.menu.ariaLabel')}">
                                             <FontIcon Glyph="&#xE712;" FontSize="12" />
                                             <Button.Flyout>
                                                 <MenuFlyout Placement="BottomEdgeAlignedRight">
@@ -306,12 +317,13 @@
                                                             <FontIcon Glyph="{x:Bind local:AdminActivityView.PauseGlyph(IsPaused), Mode=OneWay}" />
                                                         </MenuFlyoutItem.Icon>
                                                     </MenuFlyoutItem>
-                                                    <MenuFlyoutItem Text="Stop" Click="OnStopClick" Tag="{x:Bind}">
+                                                    <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.admin.sessions.playback.action.stop')}" Click="OnStopClick" Tag="{x:Bind}">
                                                         <MenuFlyoutItem.Icon>
                                                             <FontIcon Glyph="&#xE71A;" />
                                                         </MenuFlyoutItem.Icon>
                                                     </MenuFlyoutItem>
-                                                    <MenuFlyoutItem Text="Message…" Click="OnMessageClick" Tag="{x:Bind}" Visibility="{x:Bind CanControl, Mode=OneWay}">
+                                                    <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.admin.sessions.playback.action.message')}" Click="OnMessageClick" Tag="{x:Bind}"
+                                                                    Visibility="{x:Bind CanControl, Mode=OneWay}">
                                                         <MenuFlyoutItem.Icon>
                                                             <FontIcon Glyph="&#xE8BD;" />
                                                         </MenuFlyoutItem.Icon>
@@ -321,45 +333,47 @@
                                         </Button>
                                     </StackPanel>
                                     <TextBlock HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
-                                               Text="{x:Bind local:AdminActivityView.TimeLine(Started, Elapsed), Mode=OneWay}" />
+                                               Text="{x:Bind ActiveText, Mode=OneWay}" />
                                     <TextBlock Text="{x:Bind Position, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
                                     <ProgressBar Value="{x:Bind local:AdminActivityView.Percent(Progress), Mode=OneWay}" Maximum="100" Width="200" HorizontalAlignment="Right"
-                                                 AutomationProperties.Name="Playback position" />
+                                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.bar.positionLabel')}" />
                                 </StackPanel>
                             </Grid>
-                            <Expander Header="Details" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Expander Header="{x:Bind t:AppText.Get('web.admin.activity.row.details')}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <StackPanel Spacing="6">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Container" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.row.container')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Container, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Video" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.row.video')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Video, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Audio" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.row.audio')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Audio, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Visibility="{x:Bind HasBitrate, Mode=OneWay}">
-                                        <TextBlock Text="Bitrate" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.player.info.bitrate')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Bitrate, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Route" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.column.route')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind Route, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Visibility="{x:Bind HasClient, Mode=OneWay}">
-                                        <TextBlock Text="Client" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.activity.client.heading')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind ClientFull, Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Visibility="{x:Bind HasClientIp, Mode=OneWay}">
-                                        <TextBlock Text="Address" Style="{StaticResource ActivityDetailLabelStyle}" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('granary.admin.activity.address')}" Style="{StaticResource ActivityDetailLabelStyle}" />
                                         <TextBlock Text="{x:Bind local:AdminActivityView.AddressLine(ClientIp, Location), Mode=OneWay}" Style="{StaticResource ActivityDetailValueStyle}" />
-                                        <HyperlinkButton Content="Look up" FontSize="11" Padding="8,0" Click="OnLookupAddressClick" Tag="{x:Bind ClientIp, Mode=OneWay}" />
+                                        <HyperlinkButton Content="{x:Bind t:AppText.Get('granary.admin.activity.lookUp')}" FontSize="11" Padding="8,0" Click="OnLookupAddressClick"
+                                                         Tag="{x:Bind ClientIp, Mode=OneWay}" />
                                     </StackPanel>
                                     <TextBlock Visibility="{x:Bind CannotControl, Mode=OneWay}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
-                                               Text="This session does not support live pause, resume, or messages. Stop and Terminate can still end playback." />
+                                               Text="{x:Bind t:AppText.Get('web.admin.sessions.playback.unsupportedControl')}" />
                                 </StackPanel>
                             </Expander>
                         </StackPanel>
