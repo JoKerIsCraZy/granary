@@ -216,7 +216,7 @@ public sealed partial class ServerCollectionsViewModel : ObservableObject
         }
         IsLoadingMore = inView.Any(l => _loading.Contains(l.LibraryId));
         var failed = inView.Where(l => _failed.Contains(l.LibraryId)).Select(l => l.LibraryName).ToList();
-        FailureText = failed.Count == 0 ? "" : AppText.Get("granary.collections.libraryFailed", ("count", failed.Count), ("libraries", TextList.And(failed)));
+        FailureText = failed.Count == 0 ? "" : AppText.Get("granary.collections.libraryFailed", "libraries", TextList.And(failed));
     }
 
     // The collections a library adds to its first few, once its whole list is read and asked for.
