@@ -86,6 +86,9 @@ public sealed class OfflineProgressQueue
     /// <summary><c>offline-progress.json</c> in the data folder.</summary>
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "offline-progress.json");
 
+    /// <summary>For tests: runs on the write's thread before a write touches the disk, as a drive that does not answer holds it.</summary>
+    internal Action? Writing { get; set; }
+
     /// <summary>The write started most recently: done once the file is on the disk, or could not be written and was logged.</summary>
     public Task LatestSave
     {
@@ -404,6 +407,7 @@ public sealed class OfflineProgressQueue
 
     private void Write()
     {
+        Writing?.Invoke();
         // What a sign-out removed is noted before the file is touched: the file may not be readable now, or its write may
         // not get through, and Granary may close before either works.
         _note.Save();

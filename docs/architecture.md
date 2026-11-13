@@ -1436,7 +1436,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses for itself
   (403, 404, …) does not stop the others; no answer, a sign-in the server no longer takes (401), a busy server (429), a
   profile switch or the end of the budget stops them all, since the next ones would fare no better. Then the sign-out, once the index
-  without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
+  without them is written, and with it what went out of the positions still to send and the kept playback settings (see
+  "What was removed is noted"), or after `StoreBudget` (5 s) at most: those writes were started before the server was
+  told, run beside each other and share the one budget. An index that is not
+  written in time (a disk or a write before it that does not answer) is
   logged and written once it can be, and the sign-out goes on. If Granary closes before that write gets through, the index
   on disk still names the downloads, and they are back at the next start: clears hold only for the run. This is accepted;
   the next sign-out of that account takes them along. The folders go after the index, beside the sign-out
@@ -1451,7 +1454,12 @@ The view models of the sign-out paths take it (optional, so they work without it
   entries in it again. So a removal is first noted beside the file (`RemovalNote`): `<file>.removed`, as
   `{ "version": 1, "removals": [ { "id": …, "server_entry_id": …, "account_id": … } ] }`, without `account_id` for a
   server's removal. It names the server's entry and the account, never a title, a position or a time. The note is
-  written in the file's own chain of writes, before the file is touched. Every start reads it before the file and leaves
+  written in the file's own chain of writes, before the file is touched. The sign-out waits for that write
+  (`WaitForNotesAsync`: each file's `LatestSave`, read right after its `Remove`, is the write with the removal or one
+  behind it in the same chain), beside the index and within the same `StoreBudget`, so a Granary that closes right after
+  the sign-out finds the note, or the file without the entries, at its next start. Writes that do not come in time are
+  logged, without whose or where, and the sign-out goes on. Downloads that could not be read leave no index to wait
+  for; the notes are waited for all the same, so that sign-out takes up to two `StoreBudget`s. Every start reads the note before the file and leaves
   out what it names, before anything of the file is shown, sent or used; the file is then written without them, and the
   note is deleted. Each removal has an id of its own, and a file written without a removal names its id
   (`after_removals`): a note that could not be deleted takes nothing out of a file that names it, so what the same
@@ -1464,6 +1472,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   run, and the entries are back at the next start unless the file could be written before Granary closed. The queue of
   positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress"), and so do the
   playback settings kept for a play without the server (`playback-settings.json.removed`; see "Playing a download").
+  Two cases stay unprotected. When the note cannot be written, or not within the sign-out's budget, and Granary closes
+  before the file can be written either, the account's entries are back at the next start. And a note that can never
+  be read keeps its file from being loaded or written for that run: nothing the file holds is shown, sent or used, and
+  what is recorded or kept meanwhile holds for the run only.
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.

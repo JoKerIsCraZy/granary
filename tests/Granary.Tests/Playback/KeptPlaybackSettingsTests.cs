@@ -377,6 +377,37 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.NotNull(next.Find("srv1/2/7", ["a"]));
     }
 
+    // A sign-out waits for the latest write (DownloadSignOut): that is the one with the removal, also when the removal
+    // joined a write that waited already.
+    [Fact]
+    public async Task WhatIsForgottenWhileAWriteStillWaits_IsOnTheDiskOnceTheLatestWriteIsDone()
+    {
+        await FourOnTheDiskAsync();
+        var kept = Open();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var released = new ManualResetEventSlim();
+        kept.Writing = () =>
+        {
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30));
+        };
+        kept.Keep("srv1/2/8", ["a"], new EffectiveSettings([], 3));
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        kept.Remove("srv1", "1");
+        var latest = kept.LatestSave;
+        released.Set();
+        await latest;
+        kept.Writing = null;
+        var next = Open();
+
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv1/1/8", ["a"]));
+        Assert.NotNull(next.Find("srv1/2/8", ["a"]));
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
     [Fact]
     public async Task WhatIsKeptForTheSameAccountAfterItSignedInAgain_Stays_AlsoWhileTheNoteOfItsSignOutIsStillThere()
     {

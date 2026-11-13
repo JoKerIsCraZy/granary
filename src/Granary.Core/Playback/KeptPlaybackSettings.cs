@@ -60,6 +60,9 @@ public sealed class KeptPlaybackSettings
     /// <summary><c>playback-settings.json</c> in the data folder.</summary>
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "playback-settings.json");
 
+    /// <summary>For tests: runs on the write's thread before a write touches the disk, as a drive that does not answer holds it.</summary>
+    internal Action? Writing { get; set; }
+
     /// <summary>The write started most recently: done once the file is on the disk, or could not be written and was logged.</summary>
     public Task LatestSave
     {
@@ -248,6 +251,7 @@ public sealed class KeptPlaybackSettings
 
     private void Write()
     {
+        Writing?.Invoke();
         // A change from here on starts a write of its own.
         lock (_gate)
         {

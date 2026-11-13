@@ -448,6 +448,37 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         Assert.Equal(2, next.Count(_ => true));
     }
 
+    // A sign-out waits for the latest write (DownloadSignOut): that is the one with the removal, behind a write that was
+    // under way before it.
+    [Fact]
+    public async Task WhatIsRemovedWhileAnEarlierWriteIsUnderWay_IsOnTheDiskOnceTheLatestWriteIsDone()
+    {
+        await FourOnTheDiskAsync();
+        var queue = Open();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var released = new ManualResetEventSlim();
+        queue.Writing = () =>
+        {
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30));
+        };
+        queue.Record(OtherAccount, "ep_5", 5000, 0);
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        queue.Remove("srv1", "1");
+        var latest = queue.LatestSave;
+        released.Set();
+        await latest;
+        queue.Writing = null;
+        var next = Open();
+
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Empty(next.Entries(Scope8));
+        Assert.Equal(2, next.Entries(OtherAccount).Count);
+        Assert.DoesNotContain("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
     [Fact]
     public async Task WhatTheSameAccountWatchesAfterSigningInAgain_IsKept_AlsoWhileTheNoteOfItsSignOutIsStillThere_WhateverTheClockSays()
     {

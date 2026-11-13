@@ -54,8 +54,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     public static readonly TimeSpan SummaryBudget = DiskSpaceReads.Timeout;
 
     /// <summary>
-    /// The longest a sign-out waits for the downloads to be read and for the index without them to be written. What is not done
-    /// in time is done afterwards, and the sign-out goes on.
+    /// The longest a sign-out waits for the downloads to be read, and then once more for what it writes: the index without
+    /// them, and what it took out of the positions still to send and the kept playback settings (<see cref="RemovalNote"/>).
+    /// What is not done in time is done afterwards, and the sign-out goes on.
     /// </summary>
     public static readonly TimeSpan StoreBudget = TimeSpan.FromSeconds(5);
 
@@ -226,8 +227,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// entry and delete still to send goes at once, and the queue stops their transfers, so nothing more is written for them.
     /// Then the server hears the deletes of the active profile's entries there, its downloads and the deletes still to send as
     /// they were before, for at most <see cref="DeleteBudget"/>; other profiles' entries cannot be deleted without their
-    /// profile, so they stay on the server. It returns once the index without them is written, or after
-    /// <see cref="StoreBudget"/>, and their folders go after that. When the downloads cannot even be read within
+    /// profile, so they stay on the server. It returns once the index without them is written, and the note of what went
+    /// out of the positions still to send and the kept playback settings, or after <see cref="StoreBudget"/>; the folders
+    /// go after that. When the downloads cannot even be read within
     /// <see cref="StoreBudget"/>, the server hears nothing and they go once they are read; one added after the clear, as by
     /// the same account signed in again meanwhile, stays.
     /// </summary>
@@ -268,22 +270,26 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         progress?.Remove(serverEntryId, accountId);
         // The settings kept for a play without the server have no download left to serve.
         settings?.Remove(serverEntryId, accountId);
+        // Both are out for this run at once. On the disk they are once the write each removal queued is through, the note
+        // beside the file first; the latest write is that one, or one behind it in the same chain.
+        var forgotten = Task.WhenAll(progress?.LatestSave ?? Task.CompletedTask, settings?.LatestSave ?? Task.CompletedTask);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
         var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), generation, CancellationToken.None);
         bool waited = false;
         try
         {
-            if (loaded)
+            if (loaded && deletes is not null)
             {
-                if (deletes is not null)
-                {
-                    using var deleteBudget = new CancellationTokenSource(DeleteBudget, time);
-                    await TellTheServerAsync(deletes, deleteBudget.Token, cancellationToken).ConfigureAwait(false);
-                }
-                await WaitForIndexAsync(removal, cancellationToken).ConfigureAwait(false);
-                waited = true;
+                using var deleteBudget = new CancellationTokenSource(DeleteBudget, time);
+                await TellTheServerAsync(deletes, deleteBudget.Token, cancellationToken).ConfigureAwait(false);
             }
+            // The writes ran while the server heard the deletes. What is left of them shares one StoreBudget: they do not
+            // wait for each other. Downloads that could not be read have no index to wait for; the notes are waited for
+            // all the same.
+            await Task.WhenAll(loaded ? WaitForIndexAsync(removal, cancellationToken) : Task.CompletedTask,
+                WaitForNotesAsync(forgotten, cancellationToken)).ConfigureAwait(false);
+            waited = loaded;
         }
         finally
         {
@@ -396,6 +402,28 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning("Taking the downloads off this PC failed in part ({Failure}); the sign-out goes on", DownloadLog.Failure(ex));
+        }
+    }
+
+    // What the sign-out took out of the positions still to send and of the kept playback settings, waited for within
+    // StoreBudget: the note of it beside each file, and the file where it could be written. A Granary that closes right after
+    // the sign-out then finds none of it at its next start. Writes that do not come in time do not hold the sign-out up: it
+    // is out for this run all the same, and back at the next start only if Granary closes before they get through.
+    private async Task WaitForNotesAsync(Task writes, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await writes.WaitAsync(StoreBudget, time, cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("What the sign-out took out of the positions and playback settings kept on this PC was not written within {Seconds} s; the sign-out goes on, and it is written once it can be",
+                StoreBudget.TotalSeconds);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("What the sign-out took out of the positions and playback settings kept on this PC could not be written ({Failure}); the sign-out goes on",
+                DownloadLog.Failure(ex));
         }
     }
 

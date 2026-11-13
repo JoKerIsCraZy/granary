@@ -267,9 +267,8 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         using (new FileStream(settingsPath, FileMode.Open, FileAccess.Read, FileShare.None))
         {
             using var servers = await ServersAsync();
+            // The sign-out has waited for its notes: nothing more is waited for here.
             await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
-            await _progress.LatestSave;
-            await _settings.Value.LatestSave;
         }
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
         var next = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
@@ -287,6 +286,96 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.DoesNotContain("mv_dl_1", progress, StringComparison.Ordinal);
         Assert.DoesNotContain("ep_5", progress, StringComparison.Ordinal);
         Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(settingsPath, Token), StringComparison.Ordinal);
+    }
+
+    // An account with nothing but positions to send and kept settings here, on a server that cannot be reached; another
+    // account's beside them. Both files are on the disk.
+    private async Task PositionsAndSettingsOnTheDiskAsync()
+    {
+        _progress.Record(Scope7, "ep_5", 60_000, 0);
+        _progress.Record(new DownloadScope("srv1", "2", "7"), "ep_6", 60_000, 0);
+        _settings.Value.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 1));
+        _settings.Value.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 1));
+        await _progress.LatestSave;
+        await _settings.Value.LatestSave;
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.NetworkError());
+    }
+
+    // The sign-out is parked on its store budget, or went on without waiting for anything.
+    private Task WaitsOrWentOnAsync(Task signingOut) =>
+        Until(() => signingOut.IsCompleted || _h.Time.NextDue == DownloadSignOut.StoreBudget, "the sign-out waited for its writes or went on");
+
+    // Granary may close the moment the sign-out is done: by then the note of what it took out, or the file without it, is
+    // on the disk, whichever of the two files' writes is the slow one.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ASignOut_ReturnsOnlyOnceWhatItTookOutIsOnTheDisk_SoAStartRightAfterItHoldsNothingOfTheAccounts(bool positionsAreSlow)
+    {
+        await PositionsAndSettingsOnTheDiskAsync();
+        using var disk = new StalledDisk();
+        if (positionsAreSlow)
+        {
+            _progress.Writing = disk.Hold;
+        }
+        else
+        {
+            _settings.Value.Writing = disk.Hold;
+        }
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(signingOut);
+        bool returnedWhileTheWriteWasHeld = signingOut.IsCompleted;
+        disk.Release();
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        // The next start, the moment the sign-out returned: nothing else is waited for.
+        var next = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+
+        Assert.False(returnedWhileTheWriteWasHeld);
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Single(next.Entries(new DownloadScope("srv1", "2", "7")));
+        Assert.Null(nextSettings.Find("srv1/1/7", ["a"]));
+        Assert.NotNull(nextSettings.Find("srv1/2/7", ["a"]));
+    }
+
+    [Fact]
+    public async Task WritesOfWhatASignOutTookOutThatDoNotComeInTime_DoNotHoldItUp_AndThatIsLoggedWithoutNamingWhatOrWhose()
+    {
+        await PositionsAndSettingsOnTheDiskAsync();
+        using var disk = new StalledDisk();
+        _progress.Writing = disk.Hold;
+        _settings.Value.Writing = disk.Hold;
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(signingOut);
+        _h.Time.Advance(DownloadSignOut.StoreBudget);
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var calls = _h.Session.Calls.ToList();
+        var leftForThisRun = _progress.Entries(Scope7);
+        disk.Release();
+        await _progress.LatestSave;
+        await _settings.Value.LatestSave;
+
+        // Signed out all the same, and out for this run at once.
+        Assert.Equal(["sign-out:srv1"], calls);
+        Assert.Empty(leftForThisRun);
+        string said = Assert.Single(_h.Logs.Lines, line => line.Contains("What the sign-out took out", StringComparison.Ordinal)
+            && line.Contains("within 5 s", StringComparison.Ordinal));
+        Assert.DoesNotContain("srv1", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_5", said, StringComparison.Ordinal);
+        Assert.DoesNotContain(_h.Directory, said, StringComparison.OrdinalIgnoreCase);
+        // Written once the disk answered.
+        Assert.DoesNotContain("ep_5", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "offline-progress.json"), Token),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(Path.Combine(_h.Directory, "data", "playback-settings.json"), Token),
+            StringComparison.Ordinal);
     }
 
     [Fact]
