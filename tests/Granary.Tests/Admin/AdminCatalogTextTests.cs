@@ -86,6 +86,7 @@ public sealed class AdminCatalogTextTests
         Assert.Equal("Transkodierung 1080p H.264", ServerActivityText.PreparationKind(job));
         Assert.Equal("noch etwa 1 Std. 30 Min.", ServerActivityText.PreparationRemaining(job.Progress));
         Assert.Equal("12,5 %", ServerActivityText.TaskProgress(12.5));
+        Assert.Equal("12,0 %", ServerActivityText.TaskProgress(12.04));
         Assert.Equal("Abgleich · 1.200 / 4.800 (25 %)",
             ServerActivityText.ScanProgress(new AdminScanResult { Message = "Abgleich", FilesProcessed = 1200, TotalFiles = 4800 }));
     }
