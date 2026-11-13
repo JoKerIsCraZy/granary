@@ -385,10 +385,11 @@ public sealed partial class SmartRulesViewModel : ObservableObject
                 Libraries.Add(new LibraryPick(id, library.Name, picked.Contains(id), LibraryPicked));
             }
         }
-        // A picked library this profile no longer sees stays picked, by its number.
+        // A picked library this profile no longer sees stays picked, by its number, as the web's catalog filters name one
+        // (components/catalog/CatalogFiltersPanel.tsx).
         foreach (long id in picked.Where(id => Libraries.All(l => l.Id != id)))
         {
-            Libraries.Add(new LibraryPick(id, AppText.Get("granary.collections.rules.libraryById", "id", id.ToString(CultureInfo.InvariantCulture)),
+            Libraries.Add(new LibraryPick(id, AppText.Get("web.catalog.filters.libraryFallback", "id", id.ToString(CultureInfo.InvariantCulture)),
                 true, LibraryPicked) { IsKnown = false });
         }
     }

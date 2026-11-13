@@ -1589,6 +1589,16 @@
       "value": "Filtres"
     }
   ],
+  "web.catalog.filters.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Bibliothèque "
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
   "web.catalog.filters.locked": [
     {
       "type": 0,

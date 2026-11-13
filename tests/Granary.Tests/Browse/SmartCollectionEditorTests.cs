@@ -116,6 +116,17 @@ public sealed class SmartCollectionEditorTests
     }
 
     [Fact]
+    public async Task ALibraryKnownOnlyByItsNumber_IsNamedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved.Replace("\"library_ids\": [1]", "\"library_ids\": [1, 99]", StringComparison.Ordinal), "\"rev-1\""));
+
+        var editor = await EditAsync();
+
+        Assert.Equal("Mediathek 99", Assert.Single(editor.Rules.Libraries, l => l.Id == 99).Name);
+    }
+
+    [Fact]
     public async Task AChangedRule_IsSaved_WithWhatTheAppDoesNotKnowKept()
     {
         var editor = await EditAsync();

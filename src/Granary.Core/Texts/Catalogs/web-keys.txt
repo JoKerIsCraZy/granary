@@ -327,9 +327,13 @@ web.catalog.filters.badgeYearRange
 web.catalog.filters.badgeYearTo
 web.catalog.filters.clearAll
 web.catalog.filters.heading
-web.catalog.filters.locked
+
+# More of the collection editor's words, as above under catalog.sort.author: a picked library known only by its number,
+# as the web's catalog filters name one (components/catalog/CatalogFiltersPanel.tsx).
+web.catalog.filters.libraryFallback
 
 # More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.locked
 web.catalog.filters.open
 web.catalog.filters.removeBadge
 web.catalog.grid.noItems
