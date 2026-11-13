@@ -34,6 +34,10 @@ public sealed partial class ServerActivity
     // This connection's snapshot of the scans has not come yet.
     private bool _awaitsScans;
 
+    // A scan's event of this connection could not be read: what is known of the scans is the least there is until a
+    // snapshot that can be read, also when none comes.
+    private bool _scansUnheard;
+
     private Reread LibrariesSource() => Source(EventsChannels.Scans, "libraries",
         async (server, cancellationToken) =>
         {
@@ -50,6 +54,7 @@ public sealed partial class ServerActivity
     private void ScansSubscribedLocked(bool given)
     {
         _awaitsScans = given;
+        _scansUnheard = false;
         _scansOverdue.Change(given ? ScansSnapshotWait : Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         if (!given || _state.Scans is null)
         {
@@ -61,6 +66,7 @@ public sealed partial class ServerActivity
     private bool ScansSnapshotLocked(EventsFrame frame)
     {
         _awaitsScans = false;
+        _scansUnheard = false;
         _scansOverdue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         // A snapshot too large to take, or that is no list of runs, says only that nobody knows the scans now.
         if (frame.IsCut || Payload(frame.Data, AdminJsonContext.Default.ListAdminScanRun) is not { } runs)
@@ -83,6 +89,12 @@ public sealed partial class ServerActivity
                 return;
             }
             _awaitsScans = false;
+            // A scan's event that could not be read already said there may be more: that stands, with the runs heard
+            // since as the least there is.
+            if (_scansUnheard)
+            {
+                return;
+            }
             // Scans that ran when the last connection ended may still run, and their end is never sent again: there may
             // be some. With none known to run, a snapshot that does not come is no sign of a scan, and must not keep
             // the indicator up on a server that sends none.
@@ -126,6 +138,7 @@ public sealed partial class ServerActivity
         // unheard: as for a snapshot that cannot be read, nobody knows the scans now.
         if (frame.IsCut || Payload(frame.Data, AdminJsonContext.Default.AdminScanRun) is not { Id.Length: > 0 } run)
         {
+            _scansUnheard = true;
             if (!ScansUnknownLocked())
             {
                 return false;

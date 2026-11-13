@@ -141,6 +141,25 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AScanEventThatCannotBeRead_BeforeTheSnapshot_StaysUnknown_WhenTheSnapshotDoesNotCome(bool aRunEndsAfterIt)
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""");
+        if (aRunEndsAfterIt)
+        {
+            await _harness.PushedAsync(socket, Event("scan.completed", Run("b", "completed")));
+        }
+
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
+
+        // A scan may have begun unheard: there may be some until a snapshot that can be read, also when none comes.
+        Assert.Empty(_harness.State.Scans ?? []);
+        Assert.True(_harness.State.ScansMayBeMore);
+    }
+
+    [Theory]
     // Too large to take: cut to its head.
     [InlineData("""{"type":"snapshot","channel":"scans","timestamp":"t","data":[{"id":"q","library_id":1,"mode":"lib""")]
     [InlineData("""{ "type": "snapshot", "channel": "scans", "timestamp": "t", "data": { "runs": [] } }""")]

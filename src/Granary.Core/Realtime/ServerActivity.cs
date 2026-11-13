@@ -311,6 +311,7 @@ public sealed partial class ServerActivity : IDisposable
         _readingsDuringRead.Clear();
         _preparationsDue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _awaitsScans = false;
+        _scansUnheard = false;
         _scansOverdue.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         return previous;
     }
