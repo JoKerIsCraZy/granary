@@ -91,6 +91,47 @@ public sealed class PlayerClicksTests
     }
 
     [Fact]
+    public void TwoDoubleClicksInQuickSuccession_AreBothTaken()
+    {
+        // Four quick clicks, all through WinUI: into full screen and out again. The second pair is no repeat of the first.
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        Assert.True(_clicks.TakesDouble(Within));
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+
+        Assert.True(_clicks.TakesDouble(Within));
+    }
+
+    [Fact]
+    public void APairToldHere_KeepsBackTheFrameworksReportOfIt_ButNotTheNextPair()
+    {
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        Assert.True(_clicks.IsSecond(100, 100, Within, Reach));
+        Assert.True(_clicks.TakesDouble(Within));
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        // No report of that pair came. The next two clicks go through WinUI, which tells them as a double click.
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+
+        Assert.True(_clicks.TakesDouble(Within));
+    }
+
+    [Fact]
+    public void TheFrameworksReportOfAPairToldHere_IsKeptBackOnce()
+    {
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        _clicks.IsSecond(100, 100, Within, Reach);
+        _clicks.TakesDouble(Within);
+
+        Assert.False(_clicks.TakesDouble(Within));
+        Assert.True(_clicks.TakesDouble(Within));
+    }
+
+    [Fact]
     public void TwoDoubleClicksApart_AreBothTaken()
     {
         Assert.True(_clicks.TakesDouble(Within));
