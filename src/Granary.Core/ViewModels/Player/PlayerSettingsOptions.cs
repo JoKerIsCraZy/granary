@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -26,7 +27,7 @@ public sealed record QualityOption(string Preference, string Label, string Bitra
         bool isAuto = string.Equals(preference, Auto, StringComparison.OrdinalIgnoreCase) || preference.Length == 0;
         return
         [
-            new QualityOption(Auto, isLimited ? "Auto · limited after buffering" : "Auto", "", isAuto),
+            new QualityOption(Auto, isLimited ? AppText.Get("bufferingQuality.autoLimited") : AppText.Get("web.player.quality.auto"), "", isAuto),
             .. qualities.Select(q => new QualityOption(q.Label, string.IsNullOrWhiteSpace(q.DisplayName) ? q.Label : q.DisplayName,
                 FormatBitrate(q.BitrateKbps), !isAuto && q.Label == active)),
         ];
@@ -36,9 +37,9 @@ public sealed record QualityOption(string Preference, string Label, string Bitra
     public static string FormatBitrate(int? kbps) => kbps switch
     {
         null or <= 0 => "",
-        >= 1000 when kbps % 1000 == 0 => string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000} Mbps"),
-        >= 1000 => string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{kbps} kbps"),
+        >= 1000 when kbps % 1000 == 0 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", (kbps.Value / 1000).ToString(CultureInfo.InvariantCulture))),
+        >= 1000 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", (kbps.Value / 1000.0).ToString("0.0", CultureInfo.InvariantCulture))),
+        _ => AppText.Get("web.player.quality.bitrateKbps", ("kbps", kbps.Value.ToString(CultureInfo.InvariantCulture))),
     };
 }
 
@@ -63,7 +64,9 @@ public sealed record VersionOption(string FileId, string Label, string Status, b
                 string label = $"{v.Resolution} {v.CodecVideo.ToUpperInvariant()}{(v.Hdr ? " HDR" : "")}".Trim();
                 bool isPlaying = v.FileId == playing;
                 bool isRequested = v.FileId == requested;
-                string status = isPlaying ? "Playing" : isRequested ? "Requested" : "";
+                string status = isPlaying ? AppText.Get("web.player.quality.versionPlaying")
+                    : isRequested ? AppText.Get("web.player.quality.versionRequested")
+                    : "";
                 return new VersionOption(v.FileId, label.Length > 0 ? label : v.FileId, status, isPlaying);
             }),
         ];

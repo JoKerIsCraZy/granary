@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Tests.ViewModels;
@@ -47,10 +48,20 @@ public sealed class TrackTextTests
     [Fact]
     public void AnUntitledTrack_IsNamedByWhatTheFileSays()
     {
-        Assert.Equal("Commentary", TrackText.AudioTitle(new WatchAudioTrack { Title = "Commentary", EmbeddedTitle = "Track 2" }));
-        Assert.Equal("Track 2", TrackText.AudioTitle(new WatchAudioTrack { Title = " ", EmbeddedTitle = "Track 2" }));
-        Assert.Equal("ger eac3 5.1", TrackText.AudioTitle(new WatchAudioTrack { Language = "ger", Codec = "eac3", Channels = 6 }));
-        Assert.Equal("Audio", TrackText.AudioTitle(new WatchAudioTrack()));
+        Assert.Equal("Commentary", TrackText.AudioTitle(new WatchAudioTrack { Title = "Commentary", EmbeddedTitle = "Embedded" }, 1));
+        Assert.Equal("Embedded", TrackText.AudioTitle(new WatchAudioTrack { Title = " ", EmbeddedTitle = "Embedded" }, 1));
+        Assert.Equal("ger eac3 5.1", TrackText.AudioTitle(new WatchAudioTrack { Language = "ger", Codec = "eac3", Channels = 6 }, 1));
+    }
+
+    [Fact]
+    public void ATrackTheFileSaysNothingOf_IsNamedByItsPlace_AsOnTheWeb()
+    {
+        Assert.Equal("Track 3", TrackText.AudioTitle(new WatchAudioTrack(), 3));
+        Assert.Equal(["ger eac3 5.1", "Track 2"],
+            AudioTrackOption.For([new() { Language = "ger", Codec = "eac3", Channels = 6 }, new()], selected: null).Select(row => row.Title));
+
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("Spur 3", TrackText.AudioTitle(new WatchAudioTrack(), 3));
     }
 
     [Fact]
@@ -79,7 +90,7 @@ public sealed class TrackTextTests
                 new AudioTrackOption(1, "Deutsch", "German", "TrueHD Atmos", "7.1", IsDefault: false, IsSelected: true),
             ],
             rows);
-        Assert.Equal("eng eac3 5.1, EAC3 5.1, default, English", rows[0].AccessibleName);
+        Assert.Equal("eng eac3 5.1, EAC3 5.1, Default, English", rows[0].AccessibleName);
     }
 
     [Fact]

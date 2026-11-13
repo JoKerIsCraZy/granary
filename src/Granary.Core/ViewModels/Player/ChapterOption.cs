@@ -1,5 +1,5 @@
-using System.Globalization;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -13,7 +13,7 @@ public sealed record ChapterOption(string Title, double StartSeconds, Uri? Thumb
         return
         [
             .. chapters.Select((chapter, index) => new ChapterOption(
-                chapter.Title.Trim() is { Length: > 0 } title ? title : string.Create(CultureInfo.InvariantCulture, $"Chapter {index + 1}"),
+                chapter.Title.Trim() is { Length: > 0 } title ? title : AppText.Get("granary.player.chapterNumber", ("number", index + 1)),
                 chapter.StartSeconds, chapter.ThumbnailUrl, index == current)),
         ];
     }

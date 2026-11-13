@@ -1,5 +1,6 @@
 using Granary.App.Interop;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.Logging;
 
@@ -27,10 +28,13 @@ internal sealed class WindowsTaskbarToolbar : ITaskbarToolbar, IDisposable
     private const uint NextId = 3;
 
     // The player's own words on its buttons (PlayerPage.xaml, PlayerPage.PlayPauseName).
-    private const string PreviousTip = "Previous episode";
-    private const string PlayTip = "Play";
-    private const string PauseTip = "Pause";
-    private const string NextTip = "Next episode";
+    private static string PreviousTip => AppText.Get("web.player.controls.previousEpisode");
+
+    private static string PlayTip => AppText.Get("web.player.controls.play");
+
+    private static string PauseTip => AppText.Get("web.player.controls.pause");
+
+    private static string NextTip => AppText.Get("web.player.controls.nextEpisode");
 
     private readonly MainWindow _window;
     private readonly ILogger<WindowsTaskbarToolbar> _logger;

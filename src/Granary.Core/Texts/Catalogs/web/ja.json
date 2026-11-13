@@ -1,4 +1,10 @@
 {
+  "bufferingQuality.autoLimited": [
+    {
+      "type": 0,
+      "value": "自動 · バッファリングにより制限中"
+    }
+  ],
   "catalog.sort.added": [
     {
       "type": 0,
@@ -623,6 +629,36 @@
       "value": "今週のトレンド"
     }
   ],
+  "introSkip.pill.skip": [
+    {
+      "type": 0,
+      "value": "イントロをスキップ"
+    }
+  ],
+  "introSkip.pill.undo": [
+    {
+      "type": 0,
+      "value": "イントロを見る"
+    }
+  ],
+  "introSkip.pill.undoCaption": [
+    {
+      "type": 0,
+      "value": "イントロをスキップしました"
+    }
+  ],
+  "marker.skipCredits": [
+    {
+      "type": 0,
+      "value": "クレジットをスキップ"
+    }
+  ],
+  "marker.skipRecap": [
+    {
+      "type": 0,
+      "value": "あらすじをスキップ"
+    }
+  ],
   "requests.error.create": [
     {
       "type": 0,
@@ -885,6 +921,36 @@
     {
       "type": 0,
       "value": "再生できる項目がありません。"
+    }
+  ],
+  "subtitleSearch.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "HI"
+    }
+  ],
+  "upNext.endOfPlayback": [
+    {
+      "type": 0,
+      "value": "再生終了"
+    }
+  ],
+  "upNext.headingFinished": [
+    {
+      "type": 0,
+      "value": "終了"
+    }
+  ],
+  "upNext.onDeck": [
+    {
+      "type": 0,
+      "value": "視聴中"
+    }
+  ],
+  "upNext.playNow": [
+    {
+      "type": 0,
+      "value": "今すぐ再生"
     }
   ],
   "watchParty.button.imReady": [
@@ -6459,6 +6525,26 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.languageName.unknown": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.languageName.unknownTag": [
+    {
+      "type": 0,
+      "value": "不明な言語（"
+    },
+    {
+      "type": 1,
+      "value": "tag"
+    },
+    {
+      "type": 0,
+      "value": "）"
+    }
+  ],
   "web.library.browse.clearFilters": [
     {
       "type": 0,
@@ -6707,10 +6793,134 @@
       "value": "これらの作品はまだライブラリにないため、再生できません。自動的にリクエストされています。追加されると「ライブラリ内」に移動し、通知が届きます。"
     }
   ],
+  "web.markers.editTitle": [
+    {
+      "type": 0,
+      "value": "マーカーを編集"
+    }
+  ],
+  "web.markers.kind.credits": [
+    {
+      "type": 0,
+      "value": "クレジット／エンディング"
+    }
+  ],
+  "web.markers.kind.intro": [
+    {
+      "type": 0,
+      "value": "イントロ"
+    }
+  ],
+  "web.markers.kind.preview": [
+    {
+      "type": 0,
+      "value": "予告"
+    }
+  ],
+  "web.markers.kind.recap": [
+    {
+      "type": 0,
+      "value": "前回のあらすじ"
+    }
+  ],
+  "web.markers.panel.clearLabel": [
+    {
+      "type": 1,
+      "value": "kind"
+    },
+    {
+      "type": 0,
+      "value": "マーカーをクリア"
+    }
+  ],
+  "web.markers.panel.clearTitle": [
+    {
+      "type": 0,
+      "value": "手動で再設定するまでマーカーを削除"
+    }
+  ],
+  "web.markers.panel.closeLabel": [
+    {
+      "type": 0,
+      "value": "マーカーエディターを閉じる"
+    }
+  ],
+  "web.markers.panel.hint": [
+    {
+      "type": 0,
+      "value": "タイムラインのハンドルをドラッグするか、再生位置にポイントを設定してください。"
+    }
+  ],
+  "web.markers.panel.notSet": [
+    {
+      "type": 0,
+      "value": "未設定"
+    }
+  ],
+  "web.markers.panel.range": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": "～"
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.markers.panel.resetAll": [
+    {
+      "type": 0,
+      "value": "すべてリセット"
+    }
+  ],
+  "web.markers.panel.resetAllTitle": [
+    {
+      "type": 0,
+      "value": "すべてのマーカーを保存済みの状態にリセット"
+    }
+  ],
+  "web.markers.panel.resetLabel": [
+    {
+      "type": 1,
+      "value": "kind"
+    },
+    {
+      "type": 0,
+      "value": "マーカーをリセット"
+    }
+  ],
+  "web.markers.panel.resetTitle": [
+    {
+      "type": 0,
+      "value": "保存済みの状態にリセット"
+    }
+  ],
+  "web.markers.panel.setEnd": [
+    {
+      "type": 0,
+      "value": "終了を設定"
+    }
+  ],
+  "web.markers.panel.setStart": [
+    {
+      "type": 0,
+      "value": "開始を設定"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
       "value": "保存"
+    }
+  ],
+  "web.markers.saveFailed": [
+    {
+      "type": 0,
+      "value": "マーカーを保存できませんでした"
     }
   ],
   "web.notifications.inbox.daysAgo": [
@@ -7502,10 +7712,110 @@
       "value": "この人物は利用できません"
     }
   ],
+  "web.player.audioMenu.defaultBadge": [
+    {
+      "type": 0,
+      "value": "デフォルト"
+    }
+  ],
+  "web.player.audioMenu.heading": [
+    {
+      "type": 0,
+      "value": "音声"
+    }
+  ],
+  "web.player.audioMenu.trackFallback": [
+    {
+      "type": 0,
+      "value": "トラック"
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
   "web.player.audioMenu.trigger": [
     {
       "type": 0,
       "value": "音声トラック"
+    }
+  ],
+  "web.player.bar.pause": [
+    {
+      "type": 0,
+      "value": "一時停止"
+    }
+  ],
+  "web.player.bar.play": [
+    {
+      "type": 0,
+      "value": "再生"
+    }
+  ],
+  "web.player.bar.returnTitle": [
+    {
+      "type": 0,
+      "value": "プレーヤーに戻る"
+    }
+  ],
+  "web.player.bar.skipBackTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒戻る"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.skipForwardTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒進む"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.stopTitle": [
+    {
+      "type": 0,
+      "value": "再生を停止"
+    }
+  ],
+  "web.player.bufferingStatus": [
+    {
+      "type": 0,
+      "value": "バッファリング中"
+    }
+  ],
+  "web.player.chaptersMenu.heading": [
+    {
+      "type": 0,
+      "value": "チャプター"
     }
   ],
   "web.player.chaptersMenu.trigger": [
@@ -7526,16 +7836,503 @@
       "value": "画面いっぱいに表示"
     }
   ],
+  "web.player.controls.nextEpisode": [
+    {
+      "type": 0,
+      "value": "次のエピソード"
+    }
+  ],
+  "web.player.controls.pause": [
+    {
+      "type": 0,
+      "value": "一時停止"
+    }
+  ],
+  "web.player.controls.play": [
+    {
+      "type": 0,
+      "value": "再生"
+    }
+  ],
   "web.player.controls.playbackInfo": [
     {
       "type": 0,
       "value": "再生情報"
     }
   ],
+  "web.player.controls.previousEpisode": [
+    {
+      "type": 0,
+      "value": "前のエピソード"
+    }
+  ],
+  "web.player.controls.skipBack": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒戻る"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.controls.skipForward": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒進む"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.player.controls.volume": [
     {
       "type": 0,
       "value": "音量"
+    }
+  ],
+  "web.player.episode.code": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.error.playbackError": [
+    {
+      "type": 0,
+      "value": "再生エラー："
+    },
+    {
+      "type": 1,
+      "value": "message"
+    }
+  ],
+  "web.player.exit": [
+    {
+      "type": 0,
+      "value": "終了"
+    }
+  ],
+  "web.player.hud.episode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.hud.episodeWithTitle": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.info.audioBitrate": [
+    {
+      "type": 0,
+      "value": "オーディオビットレート"
+    }
+  ],
+  "web.player.info.audioChannels": [
+    {
+      "type": 0,
+      "value": "オーディオチャンネル"
+    }
+  ],
+  "web.player.info.audioCodec": [
+    {
+      "type": 0,
+      "value": "オーディオコーデック"
+    }
+  ],
+  "web.player.info.audioSampleRate": [
+    {
+      "type": 0,
+      "value": "オーディオサンプルレート"
+    }
+  ],
+  "web.player.info.autoSwitchedFrom": [
+    {
+      "type": 0,
+      "value": "自動切り替え前"
+    }
+  ],
+  "web.player.info.bitrate": [
+    {
+      "type": 0,
+      "value": "ビットレート"
+    }
+  ],
+  "web.player.info.close": [
+    {
+      "type": 0,
+      "value": "再生情報を閉じる"
+    }
+  ],
+  "web.player.info.codec.copy": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": "（コピー）"
+    }
+  ],
+  "web.player.info.codec.direct": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": "（ダイレクト）"
+    }
+  ],
+  "web.player.info.codec.transcoded": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": "（トランスコード）"
+    }
+  ],
+  "web.player.info.colorRange": [
+    {
+      "type": 0,
+      "value": "色範囲"
+    }
+  ],
+  "web.player.info.colorRangeFull": [
+    {
+      "type": 0,
+      "value": "フル（pc）"
+    }
+  ],
+  "web.player.info.colorRangeLimited": [
+    {
+      "type": 0,
+      "value": "リミテッド（tv）"
+    }
+  ],
+  "web.player.info.colorRangeUnknown": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.player.info.container": [
+    {
+      "type": 0,
+      "value": "コンテナ"
+    }
+  ],
+  "web.player.info.delivery.directPlay": [
+    {
+      "type": 0,
+      "value": "ダイレクト再生"
+    }
+  ],
+  "web.player.info.delivery.directStream": [
+    {
+      "type": 0,
+      "value": "ダイレクトストリーミング"
+    }
+  ],
+  "web.player.info.delivery.transcode": [
+    {
+      "type": 0,
+      "value": "トランスコード"
+    }
+  ],
+  "web.player.info.droppedFrames": [
+    {
+      "type": 0,
+      "value": "ドロップフレーム"
+    }
+  ],
+  "web.player.info.playMethod": [
+    {
+      "type": 0,
+      "value": "再生方法"
+    }
+  ],
+  "web.player.info.player": [
+    {
+      "type": 0,
+      "value": "プレーヤー"
+    }
+  ],
+  "web.player.info.playerDimensions": [
+    {
+      "type": 0,
+      "value": "プレーヤーのサイズ"
+    }
+  ],
+  "web.player.info.protocol": [
+    {
+      "type": 0,
+      "value": "プロトコル"
+    }
+  ],
+  "web.player.info.section.player": [
+    {
+      "type": 0,
+      "value": "プレーヤー"
+    }
+  ],
+  "web.player.info.section.source": [
+    {
+      "type": 0,
+      "value": "現在のソースファイル"
+    }
+  ],
+  "web.player.info.section.stream": [
+    {
+      "type": 0,
+      "value": "再生ストリーム情報"
+    }
+  ],
+  "web.player.info.section.video": [
+    {
+      "type": 0,
+      "value": "ビデオ情報"
+    }
+  ],
+  "web.player.info.size": [
+    {
+      "type": 0,
+      "value": "サイズ"
+    }
+  ],
+  "web.player.info.streamType": [
+    {
+      "type": 0,
+      "value": "ストリームの種類"
+    }
+  ],
+  "web.player.info.streamTypeProgressive": [
+    {
+      "type": 0,
+      "value": "プログレッシブ"
+    }
+  ],
+  "web.player.info.title": [
+    {
+      "type": 0,
+      "value": "再生情報"
+    }
+  ],
+  "web.player.info.videoBitrate": [
+    {
+      "type": 0,
+      "value": "ビデオビットレート"
+    }
+  ],
+  "web.player.info.videoCodec": [
+    {
+      "type": 0,
+      "value": "ビデオコーデック"
+    }
+  ],
+  "web.player.info.videoRangeType": [
+    {
+      "type": 0,
+      "value": "ビデオレンジの種類"
+    }
+  ],
+  "web.player.info.videoResolution": [
+    {
+      "type": 0,
+      "value": "ビデオ解像度"
+    }
+  ],
+  "web.player.loadingVideo": [
+    {
+      "type": 0,
+      "value": "ビデオを読み込み中"
+    }
+  ],
+  "web.player.minimize": [
+    {
+      "type": 0,
+      "value": "プレーヤーを最小化"
+    }
+  ],
+  "web.player.nextEpisode.countdown": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒後に次のエピソード"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.nextEpisode.episodeLine": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.quality.auto": [
+    {
+      "type": 0,
+      "value": "自動"
+    }
+  ],
+  "web.player.quality.bitrateKbps": [
+    {
+      "type": 1,
+      "value": "kbps"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.player.quality.bitrateMbps": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.player.quality.playbackSettings": [
+    {
+      "type": 0,
+      "value": "再生設定"
+    }
+  ],
+  "web.player.quality.selected": [
+    {
+      "type": 0,
+      "value": "選択中"
+    }
+  ],
+  "web.player.quality.title": [
+    {
+      "type": 0,
+      "value": "画質"
+    }
+  ],
+  "web.player.quality.version": [
+    {
+      "type": 0,
+      "value": "バージョン"
+    }
+  ],
+  "web.player.quality.versionPlaying": [
+    {
+      "type": 0,
+      "value": "再生中"
+    }
+  ],
+  "web.player.quality.versionRequested": [
+    {
+      "type": 0,
+      "value": "リクエスト済み"
     }
   ],
   "web.player.room.inviteNotReady": [
@@ -7568,10 +8365,241 @@
       "value": "ルームに再接続しています。操作は一時的に使用できません。"
     }
   ],
+  "web.player.seekBar.dragMarkerEnd": [
+    {
+      "type": 0,
+      "value": "マーカーの終了位置をドラッグ"
+    }
+  ],
+  "web.player.seekBar.dragMarkerStart": [
+    {
+      "type": 0,
+      "value": "マーカーの開始位置をドラッグ"
+    }
+  ],
+  "web.player.seekBar.label": [
+    {
+      "type": 0,
+      "value": "シーク"
+    }
+  ],
+  "web.player.seekBar.markerEdge": [
+    {
+      "type": 5,
+      "value": "kind",
+      "options": {
+        "intro": {
+          "value": [
+            {
+              "type": 0,
+              "value": "イントロ"
+            }
+          ]
+        },
+        "recap": {
+          "value": [
+            {
+              "type": 0,
+              "value": "あらすじ"
+            }
+          ]
+        },
+        "credits": {
+          "value": [
+            {
+              "type": 0,
+              "value": "クレジット"
+            }
+          ]
+        },
+        "preview": {
+          "value": [
+            {
+              "type": 0,
+              "value": "プレビュー"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "kind"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "の"
+    },
+    {
+      "type": 5,
+      "value": "edge",
+      "options": {
+        "start": {
+          "value": [
+            {
+              "type": 0,
+              "value": "開始"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "終了"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.player.seekBar.positionMinutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": "分"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.seekBar.positionMinutesSeconds": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 1,
+      "value": "seconds"
+    }
+  ],
+  "web.player.seekBar.positionSeconds": [
+    {
+      "type": 6,
+      "value": "seconds",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.serverMessage.fallback": [
+    {
+      "type": 0,
+      "value": "サーバーからメッセージを受信しました。"
+    }
+  ],
+  "web.player.serverMessage.restarting": [
+    {
+      "type": 0,
+      "value": "サーバーの再起動中、まもなく再生が終了する場合があります。"
+    }
+  ],
+  "web.player.serverMessage.restartingTitle": [
+    {
+      "type": 0,
+      "value": "サーバーを再起動中"
+    }
+  ],
+  "web.player.serverMessage.shuttingDown": [
+    {
+      "type": 0,
+      "value": "サーバーのシャットダウン中、まもなく再生が終了する場合があります。"
+    }
+  ],
+  "web.player.serverMessage.shuttingDownTitle": [
+    {
+      "type": 0,
+      "value": "サーバーをシャットダウン中"
+    }
+  ],
+  "web.player.serverMessage.title": [
+    {
+      "type": 0,
+      "value": "再生に関するお知らせ"
+    }
+  ],
+  "web.player.session.endedByAdmin": [
+    {
+      "type": 0,
+      "value": "管理者がこの再生セッションを終了しました。"
+    }
+  ],
+  "web.player.skip.preview": [
+    {
+      "type": 0,
+      "value": "プレビューをスキップ"
+    }
+  ],
+  "web.player.sleepTimer.countdown": [
+    {
+      "type": 0,
+      "value": "スリープ"
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.player.sleepTimer.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": "分"
+    }
+  ],
+  "web.player.sleepTimer.short": [
+    {
+      "type": 0,
+      "value": "スリープ"
+    }
+  ],
   "web.player.sleepTimer.trigger": [
     {
       "type": 0,
       "value": "スリープタイマー"
+    }
+  ],
+  "web.player.sleepTimer.turnOff": [
+    {
+      "type": 0,
+      "value": "オフ"
+    }
+  ],
+  "web.player.speed.heading": [
+    {
+      "type": 0,
+      "value": "速度"
     }
   ],
   "web.player.tracks.resetAudioFailed": [
@@ -7584,6 +8612,91 @@
     {
       "type": 0,
       "value": "音声の設定を保存できませんでした"
+    }
+  ],
+  "web.player.upNext.autoplayOff": [
+    {
+      "type": 0,
+      "value": "自動再生：オフ"
+    }
+  ],
+  "web.player.upNext.autoplayOn": [
+    {
+      "type": 0,
+      "value": "自動再生：オン"
+    }
+  ],
+  "web.player.upNext.closeTitle": [
+    {
+      "type": 0,
+      "value": "閉じる（Esc）"
+    }
+  ],
+  "web.player.upNext.countdownSeconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "秒"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.upNext.finishedSeries": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": "を見終わりました"
+    }
+  ],
+  "web.player.upNext.noMoreEpisodes": [
+    {
+      "type": 0,
+      "value": "視聴できるエピソードはこれ以上ありません。下の視聴中から別の作品を選んでください。"
+    }
+  ],
+  "web.player.upNext.playingNext": [
+    {
+      "type": 0,
+      "value": "次に再生"
+    }
+  ],
+  "web.player.volume.mute": [
+    {
+      "type": 0,
+      "value": "ミュート"
+    }
+  ],
+  "web.player.volume.muteShortcut": [
+    {
+      "type": 0,
+      "value": "ミュート（M）"
+    }
+  ],
+  "web.player.volume.unmute": [
+    {
+      "type": 0,
+      "value": "ミュート解除"
+    }
+  ],
+  "web.player.volume.unmuteShortcut": [
+    {
+      "type": 0,
+      "value": "ミュート解除（M）"
     }
   ],
   "web.player.watchTogether.allowPause": [
@@ -7602,6 +8715,24 @@
     {
       "type": 0,
       "value": "このプロフィールは別のデバイスでWatch Partyに参加しました。"
+    }
+  ],
+  "web.player.watchTogether.copyInviteLabel": [
+    {
+      "type": 0,
+      "value": "招待リンクをコピー"
+    }
+  ],
+  "web.player.watchTogether.end": [
+    {
+      "type": 0,
+      "value": "終了"
+    }
+  ],
+  "web.player.watchTogether.invite": [
+    {
+      "type": 0,
+      "value": "招待"
     }
   ],
   "web.player.watchTogether.member.buffering": [
@@ -7668,10 +8799,28 @@
       "value": "ホストのみ"
     }
   ],
+  "web.player.watchTogether.stop": [
+    {
+      "type": 0,
+      "value": "停止"
+    }
+  ],
+  "web.player.watchTogether.stopTitle": [
+    {
+      "type": 0,
+      "value": "全員の再生を停止し、ルームに戻って別の作品を選びます"
+    }
+  ],
   "web.player.watchTogether.syncingRoom": [
     {
       "type": 0,
       "value": "ルームの状態を同期中"
+    }
+  ],
+  "web.player.watchTogether.title": [
+    {
+      "type": 0,
+      "value": "Watch Party"
     }
   ],
   "web.player.watchTogether.viewerCount": [
@@ -7693,6 +8842,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.player.watchTogether.viewersLabel": [
+    {
+      "type": 0,
+      "value": "視聴者"
     }
   ],
   "web.profiles.libraries.count": [
@@ -11203,6 +12358,126 @@
       "value": "上"
     }
   ],
+  "web.settings.subtitlePanel.background": [
+    {
+      "type": 0,
+      "value": "背景"
+    }
+  ],
+  "web.settings.subtitlePanel.backgroundOpacity": [
+    {
+      "type": 0,
+      "value": "背景の不透明度"
+    }
+  ],
+  "web.settings.subtitlePanel.close": [
+    {
+      "type": 0,
+      "value": "閉じる"
+    }
+  ],
+  "web.settings.subtitlePanel.color": [
+    {
+      "type": 0,
+      "value": "色"
+    }
+  ],
+  "web.settings.subtitlePanel.eyebrowDefault": [
+    {
+      "type": 0,
+      "value": "字幕"
+    }
+  ],
+  "web.settings.subtitlePanel.font": [
+    {
+      "type": 0,
+      "value": "フォント"
+    }
+  ],
+  "web.settings.subtitlePanel.opacity": [
+    {
+      "type": 0,
+      "value": "不透明度"
+    }
+  ],
+  "web.settings.subtitlePanel.outline": [
+    {
+      "type": 0,
+      "value": "縁取り"
+    }
+  ],
+  "web.settings.subtitlePanel.position": [
+    {
+      "type": 0,
+      "value": "位置"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine1": [
+    {
+      "type": 0,
+      "value": "すばやい茶色のキツネが"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine2": [
+    {
+      "type": 0,
+      "value": "のんびりした犬を跳び越えます。"
+    }
+  ],
+  "web.settings.subtitlePanel.resetDefault": [
+    {
+      "type": 0,
+      "value": "代替スタイルを使用"
+    }
+  ],
+  "web.settings.subtitlePanel.size": [
+    {
+      "type": 0,
+      "value": "サイズ"
+    }
+  ],
+  "web.settings.subtitlePanel.statusDefault": [
+    {
+      "type": 0,
+      "value": "変更は自動的に保存されます"
+    }
+  ],
+  "web.settings.subtitlePanel.style": [
+    {
+      "type": 0,
+      "value": "スタイル"
+    }
+  ],
+  "web.settings.subtitlePanel.text": [
+    {
+      "type": 0,
+      "value": "テキスト"
+    }
+  ],
+  "web.settings.subtitlePanel.textOpacity": [
+    {
+      "type": 0,
+      "value": "テキストの不透明度"
+    }
+  ],
+  "web.settings.subtitlePanel.textOutline": [
+    {
+      "type": 0,
+      "value": "テキストの縁取り"
+    }
+  ],
+  "web.settings.subtitlePanel.title": [
+    {
+      "type": 0,
+      "value": "字幕の表示"
+    }
+  ],
+  "web.settings.subtitlePanel.vertical": [
+    {
+      "type": 0,
+      "value": "縦位置"
+    }
+  ],
   "web.settings.titleArt.allDevices": [
     {
       "type": 0,
@@ -11533,6 +12808,648 @@
     {
       "type": 0,
       "value": "シャッフルを開始できませんでした。"
+    }
+  ],
+  "web.subtitles.closeDialog": [
+    {
+      "type": 0,
+      "value": "閉じる"
+    }
+  ],
+  "web.subtitles.menu.addSubtitles": [
+    {
+      "type": 0,
+      "value": "字幕を追加…"
+    }
+  ],
+  "web.subtitles.menu.alreadyMatches": [
+    {
+      "type": 0,
+      "value": "すでに音声と一致しています。"
+    }
+  ],
+  "web.subtitles.menu.appearance": [
+    {
+      "type": 0,
+      "value": "表示スタイル…"
+    }
+  ],
+  "web.subtitles.menu.delay": [
+    {
+      "type": 0,
+      "value": "遅延"
+    }
+  ],
+  "web.subtitles.menu.delayEarlier": [
+    {
+      "type": 0,
+      "value": "字幕を"
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒早める"
+    }
+  ],
+  "web.subtitles.menu.delayLater": [
+    {
+      "type": 0,
+      "value": "字幕を"
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒遅らせる"
+    }
+  ],
+  "web.subtitles.menu.delayValue": [
+    {
+      "type": 1,
+      "value": "delay"
+    },
+    {
+      "type": 0,
+      "value": "ミリ秒"
+    }
+  ],
+  "web.subtitles.menu.noMatch": [
+    {
+      "type": 0,
+      "value": "この動画の音声と一致しません。別のリリース用の字幕と思われます。"
+    }
+  ],
+  "web.subtitles.menu.off": [
+    {
+      "type": 0,
+      "value": "オフ"
+    }
+  ],
+  "web.subtitles.menu.resetDelay": [
+    {
+      "type": 0,
+      "value": "リセット"
+    }
+  ],
+  "web.subtitles.menu.resetDelayLabel": [
+    {
+      "type": 0,
+      "value": "字幕の遅延をリセット"
+    }
+  ],
+  "web.subtitles.menu.resetTiming": [
+    {
+      "type": 0,
+      "value": "タイミングをリセット"
+    }
+  ],
+  "web.subtitles.menu.source.downloaded": [
+    {
+      "type": 0,
+      "value": "ダウンロード済み"
+    }
+  ],
+  "web.subtitles.menu.source.embedded": [
+    {
+      "type": 0,
+      "value": "埋め込み"
+    }
+  ],
+  "web.subtitles.menu.source.external": [
+    {
+      "type": 0,
+      "value": "外部"
+    }
+  ],
+  "web.subtitles.menu.syncHint": [
+    {
+      "type": 0,
+      "value": "視聴するすべてのユーザーに対して、タイミングを音声に合わせます。"
+    }
+  ],
+  "web.subtitles.menu.syncHintExternal": [
+    {
+      "type": 0,
+      "value": "すべてのユーザーに対して、タイミングを音声に合わせます。ファイル自体は変更されません。"
+    }
+  ],
+  "web.subtitles.menu.syncToAudio": [
+    {
+      "type": 0,
+      "value": "音声に同期"
+    }
+  ],
+  "web.subtitles.menu.syncedResult": [
+    {
+      "type": 0,
+      "value": "音声に同期しました："
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.menu.syncing": [
+    {
+      "type": 0,
+      "value": "同期中…"
+    }
+  ],
+  "web.subtitles.menu.timing": [
+    {
+      "type": 0,
+      "value": "タイミング"
+    }
+  ],
+  "web.subtitles.menu.timingForbidden": [
+    {
+      "type": 0,
+      "value": "このサーバーでは字幕のタイミングを変更できません。"
+    }
+  ],
+  "web.subtitles.search.downloadFailed": [
+    {
+      "type": 0,
+      "value": "ダウンロードに失敗しました"
+    }
+  ],
+  "web.subtitles.search.downloading": [
+    {
+      "type": 0,
+      "value": "ダウンロード中"
+    }
+  ],
+  "web.subtitles.search.downloads": [
+    {
+      "type": 0,
+      "value": "↓"
+    },
+    {
+      "type": 1,
+      "value": "downloads"
+    }
+  ],
+  "web.subtitles.search.language": [
+    {
+      "type": 0,
+      "value": "言語"
+    }
+  ],
+  "web.subtitles.search.prompt": [
+    {
+      "type": 0,
+      "value": "言語を選択して「検索」を押してください。"
+    }
+  ],
+  "web.subtitles.search.search": [
+    {
+      "type": 0,
+      "value": "検索"
+    }
+  ],
+  "web.subtitles.search.searchFailed": [
+    {
+      "type": 0,
+      "value": "検索に失敗しました"
+    }
+  ],
+  "web.subtitles.search.searchOnline": [
+    {
+      "type": 0,
+      "value": "オンラインで検索"
+    }
+  ],
+  "web.subtitles.search.searching": [
+    {
+      "type": 0,
+      "value": "検索中…"
+    }
+  ],
+  "web.subtitles.search.title": [
+    {
+      "type": 0,
+      "value": "字幕を追加"
+    }
+  ],
+  "web.subtitles.sync.error.changed": [
+    {
+      "type": 0,
+      "value": "字幕が変更されました。もう一度お試しください。"
+    }
+  ],
+  "web.subtitles.sync.error.resetFailed": [
+    {
+      "type": 0,
+      "value": "タイミングをリセットできませんでした"
+    }
+  ],
+  "web.subtitles.sync.error.syncFailed": [
+    {
+      "type": 0,
+      "value": "同期に失敗しました"
+    }
+  ],
+  "web.subtitles.sync.error.unsupportedFormat": [
+    {
+      "type": 0,
+      "value": "この形式は同期できません。"
+    }
+  ],
+  "web.subtitles.sync.failure.generic": [
+    {
+      "type": 0,
+      "value": "同期に失敗しました。もう一度お試しください。"
+    }
+  ],
+  "web.subtitles.sync.failure.noAudio": [
+    {
+      "type": 0,
+      "value": "この動画にはSiloが読み取れる音声がありません。"
+    }
+  ],
+  "web.subtitles.sync.failure.subtitleChanged": [
+    {
+      "type": 0,
+      "value": "同期中に字幕が変更されました。もう一度お試しください。"
+    }
+  ],
+  "web.subtitles.sync.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "サーバーが混み合っています。数分後にもう一度お試しください。"
+    }
+  ],
+  "web.subtitles.sync.frameRate": [
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "→"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": " fps"
+    }
+  ],
+  "web.subtitles.sync.offsetSeconds": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": "秒"
+    }
+  ],
+  "web.subtitles.sync.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.subtitles.sync.phase.analyzing": [
+    {
+      "type": 0,
+      "value": "音声を解析中…"
+    }
+  ],
+  "web.subtitles.sync.phase.matching": [
+    {
+      "type": 0,
+      "value": "字幕を音声に合わせています…"
+    }
+  ],
+  "web.subtitles.sync.phase.waiting": [
+    {
+      "type": 0,
+      "value": "開始を待っています…"
+    }
+  ],
+  "web.subtitles.sync.progressLabel": [
+    {
+      "type": 0,
+      "value": "字幕の同期の進行状況"
+    }
+  ],
+  "web.subtitles.sync.speed": [
+    {
+      "type": 0,
+      "value": "速度×"
+    },
+    {
+      "type": 1,
+      "value": "factor"
+    }
+  ],
+  "web.subtitles.sync.status.adjusted": [
+    {
+      "type": 0,
+      "value": "タイミング調整済み "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.alreadyInSync": [
+    {
+      "type": 0,
+      "value": "同期済み"
+    }
+  ],
+  "web.subtitles.sync.status.failed": [
+    {
+      "type": 0,
+      "value": "同期失敗"
+    }
+  ],
+  "web.subtitles.sync.status.noMatch": [
+    {
+      "type": 0,
+      "value": "この動画と一致しません"
+    }
+  ],
+  "web.subtitles.sync.status.originalTiming": [
+    {
+      "type": 0,
+      "value": "元のタイミング"
+    }
+  ],
+  "web.subtitles.sync.status.synced": [
+    {
+      "type": 0,
+      "value": "同期完了 "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.syncing": [
+    {
+      "type": 0,
+      "value": "同期中…"
+    }
+  ],
+  "web.subtitles.sync.status.syncingPercent": [
+    {
+      "type": 0,
+      "value": "同期中… "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.subtitles.syncNotice.applying": [
+    {
+      "type": 0,
+      "value": "新しいタイミングを適用中…"
+    }
+  ],
+  "web.subtitles.syncNotice.dismiss": [
+    {
+      "type": 0,
+      "value": "閉じる"
+    }
+  ],
+  "web.subtitles.syncNotice.fallbackName": [
+    {
+      "type": 0,
+      "value": "字幕"
+    }
+  ],
+  "web.subtitles.syncNotice.noMatchDetail": [
+    {
+      "type": 0,
+      "value": "別のリリース用の字幕と思われます。タイミングは変更されていません。"
+    }
+  ],
+  "web.subtitles.syncNotice.synced": [
+    {
+      "type": 0,
+      "value": "字幕を同期しました"
+    }
+  ],
+  "web.subtitles.syncNotice.timingUpdated": [
+    {
+      "type": 0,
+      "value": "字幕のタイミングが更新されました"
+    }
+  ],
+  "web.subtitles.syncNotice.trackAlreadyMatches": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の字幕はすでに音声と一致しています"
+    }
+  ],
+  "web.subtitles.syncNotice.trackFailed": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の字幕を同期できませんでした"
+    }
+  ],
+  "web.subtitles.syncNotice.trackNoMatch": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の字幕が音声と一致しません"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSynced": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の字幕を同期しました"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSyncing": [
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "の字幕を同期中"
+    }
+  ],
+  "web.subtitles.upload.detectFailed": [
+    {
+      "type": 0,
+      "value": "字幕の言語を検出できませんでした"
+    }
+  ],
+  "web.subtitles.upload.detected": [
+    {
+      "type": 5,
+      "value": "source",
+      "options": {
+        "filename": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ファイル名から"
+            }
+          ]
+        },
+        "metadata": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ファイルのメタデータから"
+            }
+          ]
+        },
+        "content": {
+          "value": [
+            {
+              "type": 0,
+              "value": "字幕テキストから"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "自動判定で"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 1,
+      "value": "language"
+    },
+    {
+      "type": 0,
+      "value": "を検出しました"
+    }
+  ],
+  "web.subtitles.upload.detecting": [
+    {
+      "type": 0,
+      "value": "言語を検出中…"
+    }
+  ],
+  "web.subtitles.upload.dragFile": [
+    {
+      "type": 0,
+      "value": "字幕ファイルをドラッグ＆ドロップ"
+    }
+  ],
+  "web.subtitles.upload.dropFile": [
+    {
+      "type": 0,
+      "value": "字幕ファイルをドロップ"
+    }
+  ],
+  "web.subtitles.upload.dropZoneLabel": [
+    {
+      "type": 0,
+      "value": "字幕ファイルをここにドロップするか参照"
+    }
+  ],
+  "web.subtitles.upload.heading": [
+    {
+      "type": 0,
+      "value": "字幕をアップロード"
+    }
+  ],
+  "web.subtitles.upload.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "聴覚障害者向け（HI）"
+    }
+  ],
+  "web.subtitles.upload.help": [
+    {
+      "type": 1,
+      "value": "megabytes"
+    },
+    {
+      "type": 0,
+      "value": " MBまでのSRT、VTT、ASS、SSA、SUBファイルをドラッグ＆ドロップするか参照して選択してください。言語は可能な場合、自動的に検出されます。"
+    }
+  ],
+  "web.subtitles.upload.languageLabel": [
+    {
+      "type": 0,
+      "value": "アップロードの言語"
+    }
+  ],
+  "web.subtitles.upload.orBrowse": [
+    {
+      "type": 0,
+      "value": "またはクリックして参照"
+    }
+  ],
+  "web.subtitles.upload.selected": [
+    {
+      "type": 0,
+      "value": "選択済み："
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.upload.unsupportedType": [
+    {
+      "type": 0,
+      "value": "サポートされていないファイル形式です。SRT、VTT、ASS、SSA、SUBを使用してください。"
+    }
+  ],
+  "web.subtitles.upload.upload": [
+    {
+      "type": 0,
+      "value": "アップロード"
+    }
+  ],
+  "web.subtitles.upload.uploadFailed": [
+    {
+      "type": 0,
+      "value": "アップロードに失敗しました"
+    }
+  ],
+  "web.subtitles.upload.uploading": [
+    {
+      "type": 0,
+      "value": "アップロード中…"
     }
   ],
   "web.ui.close": [

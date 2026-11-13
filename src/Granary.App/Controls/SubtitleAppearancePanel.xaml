@@ -8,6 +8,7 @@
     x:Class="Granary.App.Controls.SubtitleAppearancePanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:t="using:Granary.Core.Texts"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:settings="using:Granary.Core.ViewModels.Settings"
     RequestedTheme="Dark">
@@ -91,7 +92,7 @@
     <Grid x:Name="Backdrop" Background="#B3000000" Tapped="OnBackdropTapped" KeyDown="OnPanelKeyDown">
         <Border x:Name="Card" MaxWidth="640" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Center" CornerRadius="16"
                 BorderBrush="#1AFFFFFF" BorderThickness="1" Background="#F2111114" Tapped="OnCardTapped" TabFocusNavigation="Cycle"
-                AutomationProperties.Name="Subtitle appearance">
+                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.title')}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -103,14 +104,14 @@
                 <!-- Header. -->
                 <Grid Padding="20,14,14,14" BorderBrush="#14FFFFFF" BorderThickness="0,0,0,1">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="CAPTIONS" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12" CharacterSpacing="220"
+                        <TextBlock Text="{x:Bind CaptionsHeading}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12" CharacterSpacing="220"
                                    Foreground="#A6FFFFFF" AutomationProperties.AccessibilityView="Raw" />
-                        <TextBlock Text="Subtitle appearance" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="17"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.title')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="17"
                                    AutomationProperties.HeadingLevel="Level1" />
                     </StackPanel>
                     <Button x:Name="CloseButton" Width="36" Height="36" HorizontalAlignment="Right" Style="{StaticResource SiloPlayerIconButtonStyle}"
                             Foreground="#B3FFFFFF" Command="{x:Bind ViewModel.CloseAppearanceCommand, Mode=OneWay}"
-                            AutomationProperties.Name="Close" ToolTipService.ToolTip="Close (Esc)">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.close')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.closeTooltip')}">
                         <FontIcon Glyph="&#xE711;" FontSize="14" />
                     </Button>
                 </Grid>
@@ -121,60 +122,60 @@
                               VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="12">
                         <StackPanel>
-                            <TextBlock Text="TEXT" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Text" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind TextHeading}" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.text')}" AutomationProperties.HeadingLevel="Level2" />
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Size" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.size')}" Style="{StaticResource RowLabelStyle}" />
                                 <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.FontSizeChoices, Mode=OneWay}"
-                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontSize, Mode=TwoWay}" AutomationProperties.Name="Size" />
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontSize, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.size')}" />
                             </StackPanel>
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Font" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.font')}" Style="{StaticResource RowLabelStyle}" />
                                 <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.FontFamilyChoices, Mode=OneWay}"
-                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontFamily, Mode=TwoWay}" AutomationProperties.Name="Font" />
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontFamily, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.font')}" />
                             </StackPanel>
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Color" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.color')}" Style="{StaticResource RowLabelStyle}" />
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.Look.FontColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
-                                              ItemsPanel="{StaticResource SwatchPanel}" Tag="font" IsTabStop="False" AutomationProperties.Name="Color" />
+                                              ItemsPanel="{StaticResource SwatchPanel}" Tag="font" IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.color')}" />
                             </StackPanel>
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.opacity')}" Style="{StaticResource RowLabelStyle}" />
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="1" Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}"
-                                               AutomationProperties.Name="Text opacity" />
+                                               AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.textOpacity')}" />
                                     <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Outline" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.outline')}" Style="{StaticResource RowLabelStyle}" />
                                 <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" OnContent="" OffContent="" MinWidth="0" Width="44"
-                                              IsOn="{x:Bind ViewModel.Look.TextOutline, Mode=TwoWay}" AutomationProperties.Name="Text outline" />
+                                              IsOn="{x:Bind ViewModel.Look.TextOutline, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.textOutline')}" />
                             </StackPanel>
                         </StackPanel>
 
                         <Border Height="1" Margin="0,0,0,12" Background="#0FFFFFFF" />
 
                         <StackPanel>
-                            <TextBlock Text="BACKGROUND" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Background"
+                            <TextBlock Text="{x:Bind BackgroundHeading}" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.background')}"
                                        AutomationProperties.HeadingLevel="Level2" />
                             <StackPanel Style="{StaticResource RowStyle}">
-                                <TextBlock Text="Style" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.style')}" Style="{StaticResource RowLabelStyle}" />
                                 <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.BackgroundStyleChoices, Mode=OneWay}"
-                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedBackgroundStyle, Mode=TwoWay}" AutomationProperties.Name="Background style" />
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedBackgroundStyle, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.background.style')}" />
                             </StackPanel>
                             <StackPanel Visibility="{x:Bind ViewModel.Look.IsBox, Mode=OneWay}">
                                 <StackPanel Style="{StaticResource RowStyle}">
-                                    <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.opacity')}" Style="{StaticResource RowLabelStyle}" />
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="0" Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}"
-                                                   AutomationProperties.Name="Background opacity" />
+                                                   AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.backgroundOpacity')}" />
                                         <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Style="{StaticResource RowStyle}">
-                                    <TextBlock Text="Color" Style="{StaticResource RowLabelStyle}" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.color')}" Style="{StaticResource RowLabelStyle}" />
                                     <ItemsControl ItemsSource="{x:Bind ViewModel.Look.BackgroundColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
-                                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="background" IsTabStop="False" AutomationProperties.Name="Background color" />
+                                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="background" IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.background.color')}" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -182,12 +183,12 @@
                         <Border Height="1" Margin="0,0,0,12" Background="#0FFFFFFF" />
 
                         <StackPanel>
-                            <TextBlock Text="POSITION" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Position"
+                            <TextBlock Text="{x:Bind PositionHeading}" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.position')}"
                                        AutomationProperties.HeadingLevel="Level2" />
                             <StackPanel Style="{StaticResource RowStyle}" Margin="0">
-                                <TextBlock Text="Vertical" Style="{StaticResource RowLabelStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.vertical')}" Style="{StaticResource RowLabelStyle}" />
                                 <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.PositionChoices, Mode=OneWay}"
-                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedPosition, Mode=TwoWay}" AutomationProperties.Name="Vertical position" />
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedPosition, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.appearance.verticalPosition')}" />
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
@@ -198,10 +199,10 @@
                       CornerRadius="0,0,16,16">
                     <Button x:Name="FallbackButton" HorizontalAlignment="Left" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Height="32"
                             Padding="12,0" Foreground="#B3FFFFFF" FontSize="13" Command="{x:Bind ViewModel.ResetAppearanceCommand, Mode=OneWay}"
-                            AutomationProperties.Name="Use fallback style">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.resetDefault')}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE7A7;" FontSize="13" />
-                            <TextBlock Text="Use fallback style" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitlePanel.resetDefault')}" />
                         </StackPanel>
                     </Button>
                     <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" CharacterSpacing="25" Foreground="#A6FFFFFF"

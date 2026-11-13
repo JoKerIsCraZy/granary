@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.ViewModels;
@@ -41,7 +42,7 @@ public sealed partial class PlayerViewModel
     /// <summary><see cref="SyncNoticePercent"/> for a progress bar.</summary>
     public double SyncNoticePercentValue => SyncNoticePercent;
 
-    public string SyncNoticePercentText => $"{SyncNoticePercent}%";
+    public string SyncNoticePercentText => AppText.Get("web.subtitles.sync.percent", ("percent", SyncNoticePercent));
 
     /// <summary>For screen readers: the card as one sentence, its detail and a running job's percentage included.</summary>
     public string SyncNoticeAccessibleName => string.Join(", ",
@@ -151,7 +152,7 @@ public sealed partial class PlayerViewModel
         var track = playback.SubtitleTracks.FirstOrDefault(t => t.SyncKey == entry.Key);
         string name = TrackText.LanguageName(track?.Language) is { Length: > 0 } language ? language
             : track?.Label is { Length: > 0 } label ? label
-            : "Subtitles";
+            : AppText.Get("web.subtitles.syncNotice.fallbackName");
         return new WatchedSubtitleSync(entry.Key, name, job, entry.State.Timing, entry.PollExpired);
     }
 }

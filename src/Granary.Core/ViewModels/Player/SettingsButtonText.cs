@@ -1,3 +1,5 @@
+using Granary.Core.Texts;
+
 namespace Granary.Core.ViewModels.Player;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Granary.Core.ViewModels.Player;
 /// </summary>
 public static class SettingsButtonText
 {
-    private const string Settings = "Playback settings";
+    private static string Settings => AppText.Get("web.player.quality.playbackSettings");
 
     /// <summary>"Playback settings, Transcode, 1.5×"; just "Playback settings" without a server stream at 1×.</summary>
     public static string Name(string speedBadge, StreamMethod method) => Join(Settings, StreamMethods.Label(method), speedBadge);

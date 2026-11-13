@@ -1,4 +1,5 @@
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.UI;
 using Microsoft.UI.Input;
@@ -171,7 +172,9 @@ public sealed partial class SeekBar
         TipChapter.Visibility = Visibility.Collapsed;
         TipRegion.Visibility = Visibility.Visible;
         TipRegionDot.Fill = new SolidColorBrush(Look(kind).Dot);
-        TipRegionName.Text = char.ToUpperInvariant(kind[0]) + kind[1..] + (edge == MarkerEdge.Start ? " start" : " end");
+        // "Intro Start": the web's "intro start", each word with a capital as its CSS shows it (capitalize).
+        TipRegionName.Text = AppText.Language.Culture.TextInfo.ToTitleCase(
+            AppText.Get("web.player.seekBar.markerEdge", ("kind", kind), ("edge", edge == MarkerEdge.Start ? "start" : "end")));
         TipRegionRange.Text = "";
         TipText.Text = MarkerEditorViewModel.Time(seconds);
         TipLines.HorizontalAlignment = HorizontalAlignment.Center;
@@ -213,7 +216,9 @@ public sealed partial class SeekBar
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             });
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this, edge == MarkerEdge.Start ? "Drag marker start" : "Drag marker end");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this, edge == MarkerEdge.Start
+                ? AppText.Get("web.player.seekBar.dragMarkerStart")
+                : AppText.Get("web.player.seekBar.dragMarkerEnd"));
         }
 
         public MarkerEdge Edge { get; }

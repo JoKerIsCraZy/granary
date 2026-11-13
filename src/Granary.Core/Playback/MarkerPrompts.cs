@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Playback;
 
@@ -333,14 +334,16 @@ public sealed class MarkerPrompts
         if (_intro is not null)
         {
             double progress = Math.Clamp(_shown / PromptTime, 0, 1);
-            Prompt = _undo ? new SkipPrompt("Watch Intro", "Intro skipped", progress) : new SkipPrompt("Skip Intro", null, progress);
+            Prompt = _undo
+                ? new SkipPrompt(AppText.Get("introSkip.pill.undo"), AppText.Get("introSkip.pill.undoCaption"), progress)
+                : new SkipPrompt(AppText.Get("introSkip.pill.skip"), null, progress);
             return;
         }
         Prompt = _part?.Kind switch
         {
-            WatchMarkerKinds.Recap => new SkipPrompt("Skip Recap", null, null),
-            WatchMarkerKinds.Credits => new SkipPrompt("Skip Credits", null, null),
-            WatchMarkerKinds.Preview => new SkipPrompt("Skip Preview", null, null),
+            WatchMarkerKinds.Recap => new SkipPrompt(AppText.Get("marker.skipRecap"), null, null),
+            WatchMarkerKinds.Credits => new SkipPrompt(AppText.Get("marker.skipCredits"), null, null),
+            WatchMarkerKinds.Preview => new SkipPrompt(AppText.Get("web.player.skip.preview"), null, null),
             _ => null,
         };
     }

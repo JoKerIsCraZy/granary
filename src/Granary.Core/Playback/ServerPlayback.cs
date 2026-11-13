@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
 using Granary.Core.Api.Subtitles;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -355,13 +356,13 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         if (!decision.IsCompatible)
         {
-            Fail("The server answered with a playback protocol this app does not support.", canRetry: false);
+            Fail(AppText.Get("granary.player.error.protocolUnsupported"), canRetry: false);
             return;
         }
         if (!decision.IsPlayable)
         {
             SendRouteEvent(RouteEvents.Terminal, withPlan: !newSession, failure: decision.Terminal?.Reason);
-            string message = decision.Terminal?.Message is { Length: > 0 } text ? text : "This title cannot be played right now.";
+            string message = decision.Terminal?.Message is { Length: > 0 } text ? text : AppText.Get("granary.player.error.notPlayableNow");
             Fail(message, decision.Terminal?.Retryable ?? false);
             return;
         }
@@ -407,14 +408,14 @@ public sealed partial class ServerPlayback : IServerPlayback
                 await RecoverFromFailureAsync(FailureClassifications.SourceRefused, "The stream's origin was not accepted.");
                 return;
             }
-            Fail("The server sent a stream address this app does not trust.", canRetry: true);
+            Fail(AppText.Get("granary.player.error.untrustedAddress"), canRetry: true);
             return;
         }
         if (plan.Stream.Protocol == StreamProtocols.Hls && !IsSessionPlaylist(url, _progress.SessionId))
         {
             // Its route reaches everything beside the playlist with the viewer's headers: that must be this session's
             // own folder (…/{session}/master.m3u8, 9.2), never a shallow one where other routes of the server lie.
-            Fail("The server sent a stream address this app does not trust.", canRetry: true);
+            Fail(AppText.Get("granary.player.error.untrustedAddress"), canRetry: true);
             return;
         }
         _streamUrl = url;
@@ -855,7 +856,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         catch (Exception ex)
         {
             _logger.LogError(ex, "Server playback failed unexpectedly");
-            Fail("Playback stopped because of an unexpected problem.", canRetry: true);
+            Fail(AppText.Get("granary.player.error.unexpected"), canRetry: true);
         }
     }
 }

@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 
 namespace Granary.Core.Playback;
@@ -311,24 +312,28 @@ public sealed class PlaybackStarter(
         {
             return (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "");
         }
+        // The web player's line under the title (VideoPlayer.tsx): the code, and the episode's title after it.
         string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode
-            ? string.Create(CultureInfo.InvariantCulture, $"S{season} · E{episode}")
+            ? AppText.Get("web.player.hud.episode", ("season", season), ("episode", episode))
             : "";
         if (string.IsNullOrWhiteSpace(detail.SeriesTitle))
         {
             return (detail.Title, code);
         }
-        return (detail.SeriesTitle, string.Join(" — ", new[] { code, detail.Title }.Where(p => p.Length > 0)));
+        string line = code.Length > 0 && detail.Title.Length > 0
+            ? AppText.Get("web.player.hud.episodeWithTitle", ("season", detail.SeasonNumber), ("episode", detail.EpisodeNumber), ("title", detail.Title))
+            : code.Length > 0 ? code : detail.Title;
+        return (detail.SeriesTitle, line);
     }
 
     /// <summary>A failed call worded for the viewer, and whether trying again can help.</summary>
     public static PlaybackUnavailableException Describe(Exception ex) => ex switch
     {
         PlaybackUnavailableException unavailable => unavailable,
-        SiloApiException { Status: 404 } => new("This title is no longer available.", canRetry: false),
-        SiloApiException { Status: 429 } api => new("The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter), canRetry: true),
+        SiloApiException { Status: 404 } => new(AppText.Get("granary.player.error.titleUnavailable"), canRetry: false),
+        SiloApiException { Status: 429 } api => new(ApiFailureText.TooManyRequests(api.RetryAfter), canRetry: true),
         SiloApiException { Status: 503 } => new(ApiFailureText.Busy, canRetry: true),
-        SiloApiException api => new($"The server could not start playback (error {api.Status}).", canRetry: true),
+        SiloApiException api => new(AppText.Get("granary.player.error.startFailed", ("status", api.Status)), canRetry: true),
         _ => new(ApiFailureText.ForTransport(ex), canRetry: true),
     };
 

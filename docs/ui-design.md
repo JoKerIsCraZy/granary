@@ -1314,6 +1314,18 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
 
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).
 
+- **Words**: the web player's, by its keys, so they come in the language on screen: the buttons and their menus, the
+  subtitle menu with its timing and sync notices, Add Subtitles, Subtitle appearance, the marker editor, the playback
+  info, the skip pills, the Up Next card and the Playing Next screen, the sleep timer, the Watch Party panel, the
+  server's notices and the minimized bar ("Return to player", "Stop playback", as the web's player bar). A heading the
+  web writes in mixed case and shows in capitals is put in capitals by the language's rules ("AUDIO", "UP NEXT IN 34S").
+  Granary's own, in English until they are translated: what only Granary has (Mini view, the audio delay, End of
+  episode and End of movie, the still watching prompt, "Ends 22:41", mpv's decoding in the playback info, a time spoken
+  with hours), every tooltip that names a key ("Exit (Esc)", "Subtitles (C)", "Back 10 seconds (Left arrow)"), Full
+  screen as the title bar and Settings say it (the web says "Fullscreen"), the Subtitles button (the web's says
+  "Enable captions" or "Disable captions"), and the lines of the failure screen. Times, sizes, bitrates and the names
+  of languages stay as they were until dates and numbers are converted.
+
 - **Window**: the player is not a page of the frame but lies over the whole window (`PlayerHost`, MainWindow.Player.cs,
   `IPlayerOverlay`), the title bar included: the caption buttons float over the video; the top 32 px stay the drag
   area, so the top bar starts below them. In full screen the top bar keeps that place, and the strip's corner shows Exit
@@ -1414,7 +1426,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `playback-device.json`) is taken over once: every profile on this PC starts with the Sleep timer hidden.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
-  track with its name (its title, else the embedded title, else language, codec and channels), chips for the
+  track with its name (its title, else the embedded title, else language, codec and channels, else "Track 2" by its
+  place, as the web), chips for the
   codec family ("DD+ ATMOS", "TRUEHD", "EAC3") and channels, an outlined DEFAULT, and the language and details
   under it. The playing row is blue with a check and has the focus when the menu opens; a pick closes it.
 - **Chapters menu** (`ChapterOption`, after the web's `ChaptersMenu`): shown when the playing file has chapters;

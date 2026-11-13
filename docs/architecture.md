@@ -311,8 +311,9 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
 
 Granary is moving its texts into Silo's translation catalogs, used by key as Silo's web uses them (silo-server
 `web/src/i18n/README.md` and `docs/architecture/i18n.md`). Only English is enabled so far: the areas move behind keys one
-by one with their English unchanged, and the other languages come on once every area has, so nobody sees a
-half-translated Granary. All of it is in `src/Granary.Core/Texts`.
+by one, and the other languages come on once every area has, so nobody sees a half-translated Granary. A text the web
+has for the same place takes the web's key, and with it the web's English where Granary had worded it differently; a
+text only Granary has keeps its English under a key of its own. All of it is in `src/Granary.Core/Texts`.
 
 - **Catalogs** (`Catalogs/`, embedded in Granary.Core, one file per language tag; `TextCatalog`):
   - `web/<tag>.json` holds the web's compiled catalogs (`web/src/locales/<tag>.json`), unchanged per key and trimmed

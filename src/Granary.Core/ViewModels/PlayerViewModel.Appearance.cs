@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Settings;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +14,8 @@ namespace Granary.Core.ViewModels;
 // profile's and this device's look, so the server's default applies again.
 public sealed partial class PlayerViewModel
 {
-    public const string AppearanceSavedText = "Changes saved automatically";
+    /// <summary>"Changes saved automatically", the panel's footer while nothing went wrong.</summary>
+    public static string AppearanceSavedText => AppText.Get("web.settings.subtitlePanel.statusDefault");
 
     private readonly IProfileSettings? _settings;
     private SettingSaves? _lookSaves;
@@ -81,7 +83,7 @@ public sealed partial class PlayerViewModel
             {
                 // A change it pushed aside is still on screen, unsaved.
                 _lookUnsaved = true;
-                AppearanceStatus = "Couldn't reset the look. Try again.";
+                AppearanceStatus = AppText.Get("granary.player.appearance.resetFailed");
                 return;
             }
             _lookUnsaved = false;
@@ -124,7 +126,7 @@ public sealed partial class PlayerViewModel
                 _lookToSave = null;
                 // Best effort, as on the web: the look stays on screen, and the next change saves it with the rest.
                 _lookUnsaved = !saved;
-                AppearanceStatus = saved ? AppearanceSavedText : "Couldn't save. The next change tries again.";
+                AppearanceStatus = saved ? AppearanceSavedText : AppText.Get("granary.player.appearance.saveFailed");
             }
         });
     }

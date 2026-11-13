@@ -1,4 +1,10 @@
 {
+  "bufferingQuality.autoLimited": [
+    {
+      "type": 0,
+      "value": "Auto · limitada por carga"
+    }
+  ],
   "catalog.sort.added": [
     {
       "type": 0,
@@ -623,6 +629,36 @@
       "value": "Tendencias de esta semana"
     }
   ],
+  "introSkip.pill.skip": [
+    {
+      "type": 0,
+      "value": "Omitir intro"
+    }
+  ],
+  "introSkip.pill.undo": [
+    {
+      "type": 0,
+      "value": "Ver intro"
+    }
+  ],
+  "introSkip.pill.undoCaption": [
+    {
+      "type": 0,
+      "value": "Intro omitida"
+    }
+  ],
+  "marker.skipCredits": [
+    {
+      "type": 0,
+      "value": "Omitir créditos"
+    }
+  ],
+  "marker.skipRecap": [
+    {
+      "type": 0,
+      "value": "Omitir resumen"
+    }
+  ],
   "requests.error.create": [
     {
       "type": 0,
@@ -885,6 +921,36 @@
     {
       "type": 0,
       "value": "Aquí no hay nada que se pueda reproducir."
+    }
+  ],
+  "subtitleSearch.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "SDH"
+    }
+  ],
+  "upNext.endOfPlayback": [
+    {
+      "type": 0,
+      "value": "Fin de la reproducción"
+    }
+  ],
+  "upNext.headingFinished": [
+    {
+      "type": 0,
+      "value": "Terminado"
+    }
+  ],
+  "upNext.onDeck": [
+    {
+      "type": 0,
+      "value": "En curso"
+    }
+  ],
+  "upNext.playNow": [
+    {
+      "type": 0,
+      "value": "Reproducir ahora"
     }
   ],
   "watchParty.button.imReady": [
@@ -7082,6 +7148,26 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.languageName.unknown": [
+    {
+      "type": 0,
+      "value": "Desconocido"
+    }
+  ],
+  "web.languageName.unknownTag": [
+    {
+      "type": 0,
+      "value": "Idioma desconocido ("
+    },
+    {
+      "type": 1,
+      "value": "tag"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
   "web.library.browse.clearFilters": [
     {
       "type": 0,
@@ -7334,10 +7420,134 @@
       "value": "Estos títulos aún no están en la biblioteca, así que no se pueden reproducir. Se solicitaron por ti. Cuando llegue uno, pasará a En tu biblioteca y recibirás una notificación."
     }
   ],
+  "web.markers.editTitle": [
+    {
+      "type": 0,
+      "value": "Editar marcadores"
+    }
+  ],
+  "web.markers.kind.credits": [
+    {
+      "type": 0,
+      "value": "Créditos / Cierre"
+    }
+  ],
+  "web.markers.kind.intro": [
+    {
+      "type": 0,
+      "value": "Intro"
+    }
+  ],
+  "web.markers.kind.preview": [
+    {
+      "type": 0,
+      "value": "Avance"
+    }
+  ],
+  "web.markers.kind.recap": [
+    {
+      "type": 0,
+      "value": "Resumen"
+    }
+  ],
+  "web.markers.panel.clearLabel": [
+    {
+      "type": 0,
+      "value": "Borrar el marcador "
+    },
+    {
+      "type": 1,
+      "value": "kind"
+    }
+  ],
+  "web.markers.panel.clearTitle": [
+    {
+      "type": 0,
+      "value": "Quitar el marcador hasta que se defina de nuevo manualmente"
+    }
+  ],
+  "web.markers.panel.closeLabel": [
+    {
+      "type": 0,
+      "value": "Cerrar el editor de marcadores"
+    }
+  ],
+  "web.markers.panel.hint": [
+    {
+      "type": 0,
+      "value": "Arrastra los controles de la línea de tiempo o fija los puntos en el cabezal de reproducción."
+    }
+  ],
+  "web.markers.panel.notSet": [
+    {
+      "type": 0,
+      "value": "Sin definir"
+    }
+  ],
+  "web.markers.panel.range": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.markers.panel.resetAll": [
+    {
+      "type": 0,
+      "value": "Restablecer todo"
+    }
+  ],
+  "web.markers.panel.resetAllTitle": [
+    {
+      "type": 0,
+      "value": "Restablecer todos los marcadores a lo guardado"
+    }
+  ],
+  "web.markers.panel.resetLabel": [
+    {
+      "type": 0,
+      "value": "Restablecer el marcador "
+    },
+    {
+      "type": 1,
+      "value": "kind"
+    }
+  ],
+  "web.markers.panel.resetTitle": [
+    {
+      "type": 0,
+      "value": "Restablecer a lo guardado"
+    }
+  ],
+  "web.markers.panel.setEnd": [
+    {
+      "type": 0,
+      "value": "Fijar final"
+    }
+  ],
+  "web.markers.panel.setStart": [
+    {
+      "type": 0,
+      "value": "Fijar inicio"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
       "value": "Guardar"
+    }
+  ],
+  "web.markers.saveFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron guardar los marcadores"
     }
   ],
   "web.notifications.inbox.daysAgo": [
@@ -8171,10 +8381,178 @@
       "value": "Esta persona no está disponible"
     }
   ],
+  "web.player.audioMenu.defaultBadge": [
+    {
+      "type": 0,
+      "value": "Predeterminada"
+    }
+  ],
+  "web.player.audioMenu.heading": [
+    {
+      "type": 0,
+      "value": "Audio"
+    }
+  ],
+  "web.player.audioMenu.trackFallback": [
+    {
+      "type": 0,
+      "value": "Pista "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
   "web.player.audioMenu.trigger": [
     {
       "type": 0,
       "value": "Pistas de audio"
+    }
+  ],
+  "web.player.bar.pause": [
+    {
+      "type": 0,
+      "value": "Pausar"
+    }
+  ],
+  "web.player.bar.play": [
+    {
+      "type": 0,
+      "value": "Reproducir"
+    }
+  ],
+  "web.player.bar.returnTitle": [
+    {
+      "type": 0,
+      "value": "Volver al reproductor"
+    }
+  ],
+  "web.player.bar.skipBackTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.skipForwardTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.stopTitle": [
+    {
+      "type": 0,
+      "value": "Detener la reproducción"
+    }
+  ],
+  "web.player.bufferingStatus": [
+    {
+      "type": 0,
+      "value": "Almacenando en búfer"
+    }
+  ],
+  "web.player.chaptersMenu.heading": [
+    {
+      "type": 0,
+      "value": "Capítulos"
     }
   ],
   "web.player.chaptersMenu.trigger": [
@@ -8195,16 +8573,605 @@
       "value": "Llenar la pantalla"
     }
   ],
+  "web.player.controls.nextEpisode": [
+    {
+      "type": 0,
+      "value": "Episodio siguiente"
+    }
+  ],
+  "web.player.controls.pause": [
+    {
+      "type": 0,
+      "value": "Pausar"
+    }
+  ],
+  "web.player.controls.play": [
+    {
+      "type": 0,
+      "value": "Reproducir"
+    }
+  ],
   "web.player.controls.playbackInfo": [
     {
       "type": 0,
       "value": "Información de reproducción"
     }
   ],
+  "web.player.controls.previousEpisode": [
+    {
+      "type": 0,
+      "value": "Episodio anterior"
+    }
+  ],
+  "web.player.controls.skipBack": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Retroceder "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.controls.skipForward": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Avanzar "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.player.controls.volume": [
     {
       "type": 0,
       "value": "Volumen"
+    }
+  ],
+  "web.player.episode.code": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.error.playbackError": [
+    {
+      "type": 0,
+      "value": "Error de reproducción: "
+    },
+    {
+      "type": 1,
+      "value": "message"
+    }
+  ],
+  "web.player.exit": [
+    {
+      "type": 0,
+      "value": "Salir"
+    }
+  ],
+  "web.player.hud.episode": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.hud.episodeWithTitle": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.info.audioBitrate": [
+    {
+      "type": 0,
+      "value": "Tasa de bits de audio"
+    }
+  ],
+  "web.player.info.audioChannels": [
+    {
+      "type": 0,
+      "value": "Canales de audio"
+    }
+  ],
+  "web.player.info.audioCodec": [
+    {
+      "type": 0,
+      "value": "Códec de audio"
+    }
+  ],
+  "web.player.info.audioSampleRate": [
+    {
+      "type": 0,
+      "value": "Frecuencia de muestreo de audio"
+    }
+  ],
+  "web.player.info.autoSwitchedFrom": [
+    {
+      "type": 0,
+      "value": "Cambiado automáticamente desde"
+    }
+  ],
+  "web.player.info.bitrate": [
+    {
+      "type": 0,
+      "value": "Tasa de bits"
+    }
+  ],
+  "web.player.info.close": [
+    {
+      "type": 0,
+      "value": "Cerrar información de reproducción"
+    }
+  ],
+  "web.player.info.codec.copy": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (copia)"
+    }
+  ],
+  "web.player.info.codec.direct": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (directo)"
+    }
+  ],
+  "web.player.info.codec.transcoded": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (transcodificado)"
+    }
+  ],
+  "web.player.info.colorRange": [
+    {
+      "type": 0,
+      "value": "Rango de color"
+    }
+  ],
+  "web.player.info.colorRangeFull": [
+    {
+      "type": 0,
+      "value": "Completo (pc)"
+    }
+  ],
+  "web.player.info.colorRangeLimited": [
+    {
+      "type": 0,
+      "value": "Limitado (tv)"
+    }
+  ],
+  "web.player.info.colorRangeUnknown": [
+    {
+      "type": 0,
+      "value": "Desconocido"
+    }
+  ],
+  "web.player.info.container": [
+    {
+      "type": 0,
+      "value": "Contenedor"
+    }
+  ],
+  "web.player.info.delivery.directPlay": [
+    {
+      "type": 0,
+      "value": "Reproducción directa"
+    }
+  ],
+  "web.player.info.delivery.directStream": [
+    {
+      "type": 0,
+      "value": "Transmisión directa"
+    }
+  ],
+  "web.player.info.delivery.transcode": [
+    {
+      "type": 0,
+      "value": "Transcodificación"
+    }
+  ],
+  "web.player.info.droppedFrames": [
+    {
+      "type": 0,
+      "value": "Fotogramas perdidos"
+    }
+  ],
+  "web.player.info.playMethod": [
+    {
+      "type": 0,
+      "value": "Método de reproducción"
+    }
+  ],
+  "web.player.info.player": [
+    {
+      "type": 0,
+      "value": "Reproductor"
+    }
+  ],
+  "web.player.info.playerDimensions": [
+    {
+      "type": 0,
+      "value": "Dimensiones del reproductor"
+    }
+  ],
+  "web.player.info.protocol": [
+    {
+      "type": 0,
+      "value": "Protocolo"
+    }
+  ],
+  "web.player.info.section.player": [
+    {
+      "type": 0,
+      "value": "Reproductor"
+    }
+  ],
+  "web.player.info.section.source": [
+    {
+      "type": 0,
+      "value": "Archivo de origen actual"
+    }
+  ],
+  "web.player.info.section.stream": [
+    {
+      "type": 0,
+      "value": "Información de la transmisión"
+    }
+  ],
+  "web.player.info.section.video": [
+    {
+      "type": 0,
+      "value": "Información de video"
+    }
+  ],
+  "web.player.info.size": [
+    {
+      "type": 0,
+      "value": "Tamaño"
+    }
+  ],
+  "web.player.info.streamType": [
+    {
+      "type": 0,
+      "value": "Tipo de transmisión"
+    }
+  ],
+  "web.player.info.streamTypeProgressive": [
+    {
+      "type": 0,
+      "value": "Progresiva"
+    }
+  ],
+  "web.player.info.title": [
+    {
+      "type": 0,
+      "value": "Información de reproducción"
+    }
+  ],
+  "web.player.info.videoBitrate": [
+    {
+      "type": 0,
+      "value": "Tasa de bits de video"
+    }
+  ],
+  "web.player.info.videoCodec": [
+    {
+      "type": 0,
+      "value": "Códec de video"
+    }
+  ],
+  "web.player.info.videoRangeType": [
+    {
+      "type": 0,
+      "value": "Tipo de rango de video"
+    }
+  ],
+  "web.player.info.videoResolution": [
+    {
+      "type": 0,
+      "value": "Resolución de video"
+    }
+  ],
+  "web.player.loadingVideo": [
+    {
+      "type": 0,
+      "value": "Cargando video"
+    }
+  ],
+  "web.player.minimize": [
+    {
+      "type": 0,
+      "value": "Minimizar reproductor"
+    }
+  ],
+  "web.player.nextEpisode.countdown": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A continuación en "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A continuación en "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "A continuación en "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.nextEpisode.episodeLine": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.quality.auto": [
+    {
+      "type": 0,
+      "value": "Automática"
+    }
+  ],
+  "web.player.quality.bitrateKbps": [
+    {
+      "type": 1,
+      "value": "kbps"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.player.quality.bitrateMbps": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.player.quality.playbackSettings": [
+    {
+      "type": 0,
+      "value": "Configuración de reproducción"
+    }
+  ],
+  "web.player.quality.selected": [
+    {
+      "type": 0,
+      "value": "Seleccionada"
+    }
+  ],
+  "web.player.quality.title": [
+    {
+      "type": 0,
+      "value": "Calidad"
+    }
+  ],
+  "web.player.quality.version": [
+    {
+      "type": 0,
+      "value": "Versión"
+    }
+  ],
+  "web.player.quality.versionPlaying": [
+    {
+      "type": 0,
+      "value": "En reproducción"
+    }
+  ],
+  "web.player.quality.versionRequested": [
+    {
+      "type": 0,
+      "value": "Solicitada"
     }
   ],
   "web.player.room.inviteNotReady": [
@@ -8237,10 +9204,291 @@
       "value": "Reconectando con la sala. Los controles no están disponibles temporalmente."
     }
   ],
+  "web.player.seekBar.dragMarkerEnd": [
+    {
+      "type": 0,
+      "value": "Arrastrar el final del marcador"
+    }
+  ],
+  "web.player.seekBar.dragMarkerStart": [
+    {
+      "type": 0,
+      "value": "Arrastrar el inicio del marcador"
+    }
+  ],
+  "web.player.seekBar.label": [
+    {
+      "type": 0,
+      "value": "Posición de reproducción"
+    }
+  ],
+  "web.player.seekBar.markerEdge": [
+    {
+      "type": 5,
+      "value": "edge",
+      "options": {
+        "start": {
+          "value": [
+            {
+              "type": 0,
+              "value": "inicio"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "fin"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": " de "
+    },
+    {
+      "type": 5,
+      "value": "kind",
+      "options": {
+        "intro": {
+          "value": [
+            {
+              "type": 0,
+              "value": "la intro"
+            }
+          ]
+        },
+        "recap": {
+          "value": [
+            {
+              "type": 0,
+              "value": "el resumen"
+            }
+          ]
+        },
+        "credits": {
+          "value": [
+            {
+              "type": 0,
+              "value": "los créditos"
+            }
+          ]
+        },
+        "preview": {
+          "value": [
+            {
+              "type": 0,
+              "value": "el avance"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "kind"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.player.seekBar.positionMinutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " minuto"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " minutos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.seekBar.positionMinutesSeconds": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "seconds"
+    }
+  ],
+  "web.player.seekBar.positionSeconds": [
+    {
+      "type": 6,
+      "value": "seconds",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " de segundos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " segundos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.serverMessage.fallback": [
+    {
+      "type": 0,
+      "value": "Se recibió un mensaje del servidor."
+    }
+  ],
+  "web.player.serverMessage.restarting": [
+    {
+      "type": 0,
+      "value": "Es posible que la reproducción termine pronto mientras el servidor se reinicia."
+    }
+  ],
+  "web.player.serverMessage.restartingTitle": [
+    {
+      "type": 0,
+      "value": "Reiniciando el servidor"
+    }
+  ],
+  "web.player.serverMessage.shuttingDown": [
+    {
+      "type": 0,
+      "value": "Es posible que la reproducción termine pronto mientras el servidor se apaga."
+    }
+  ],
+  "web.player.serverMessage.shuttingDownTitle": [
+    {
+      "type": 0,
+      "value": "Apagando el servidor"
+    }
+  ],
+  "web.player.serverMessage.title": [
+    {
+      "type": 0,
+      "value": "Aviso de reproducción"
+    }
+  ],
+  "web.player.session.endedByAdmin": [
+    {
+      "type": 0,
+      "value": "Un administrador finalizó esta sesión de reproducción."
+    }
+  ],
+  "web.player.skip.preview": [
+    {
+      "type": 0,
+      "value": "Omitir avance"
+    }
+  ],
+  "web.player.sleepTimer.countdown": [
+    {
+      "type": 0,
+      "value": "Temporizador "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.player.sleepTimer.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " min"
+    }
+  ],
+  "web.player.sleepTimer.short": [
+    {
+      "type": 0,
+      "value": "Temporizador"
+    }
+  ],
   "web.player.sleepTimer.trigger": [
     {
       "type": 0,
       "value": "Temporizador de apagado"
+    }
+  ],
+  "web.player.sleepTimer.turnOff": [
+    {
+      "type": 0,
+      "value": "Desactivar"
+    }
+  ],
+  "web.player.speed.heading": [
+    {
+      "type": 0,
+      "value": "Velocidad"
     }
   ],
   "web.player.tracks.resetAudioFailed": [
@@ -8253,6 +9501,113 @@
     {
       "type": 0,
       "value": "No se pudo guardar la preferencia de audio"
+    }
+  ],
+  "web.player.upNext.autoplayOff": [
+    {
+      "type": 0,
+      "value": "Reproducción automática desactivada"
+    }
+  ],
+  "web.player.upNext.autoplayOn": [
+    {
+      "type": 0,
+      "value": "Reproducción automática activada"
+    }
+  ],
+  "web.player.upNext.closeTitle": [
+    {
+      "type": 0,
+      "value": "Cerrar (Esc)"
+    }
+  ],
+  "web.player.upNext.countdownSeconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " s"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.upNext.finishedSeries": [
+    {
+      "type": 0,
+      "value": "Terminaste "
+    },
+    {
+      "type": 1,
+      "value": "series"
+    }
+  ],
+  "web.player.upNext.noMoreEpisodes": [
+    {
+      "type": 0,
+      "value": "No hay más episodios disponibles. Elige otra cosa de En curso, más abajo."
+    }
+  ],
+  "web.player.upNext.playingNext": [
+    {
+      "type": 0,
+      "value": "A continuación"
+    }
+  ],
+  "web.player.volume.mute": [
+    {
+      "type": 0,
+      "value": "Silenciar"
+    }
+  ],
+  "web.player.volume.muteShortcut": [
+    {
+      "type": 0,
+      "value": "Silenciar (M)"
+    }
+  ],
+  "web.player.volume.unmute": [
+    {
+      "type": 0,
+      "value": "Activar sonido"
+    }
+  ],
+  "web.player.volume.unmuteShortcut": [
+    {
+      "type": 0,
+      "value": "Activar sonido (M)"
     }
   ],
   "web.player.watchTogether.allowPause": [
@@ -8271,6 +9626,24 @@
     {
       "type": 0,
       "value": "Este perfil se unió a la Watch Party en otro dispositivo."
+    }
+  ],
+  "web.player.watchTogether.copyInviteLabel": [
+    {
+      "type": 0,
+      "value": "Copiar enlace de invitación"
+    }
+  ],
+  "web.player.watchTogether.end": [
+    {
+      "type": 0,
+      "value": "Finalizar"
+    }
+  ],
+  "web.player.watchTogether.invite": [
+    {
+      "type": 0,
+      "value": "Invitar"
     }
   ],
   "web.player.watchTogether.member.buffering": [
@@ -8337,10 +9710,28 @@
       "value": "Solo anfitrión"
     }
   ],
+  "web.player.watchTogether.stop": [
+    {
+      "type": 0,
+      "value": "Detener"
+    }
+  ],
+  "web.player.watchTogether.stopTitle": [
+    {
+      "type": 0,
+      "value": "Detener para todos y volver a la sala para elegir otra cosa"
+    }
+  ],
   "web.player.watchTogether.syncingRoom": [
     {
       "type": 0,
       "value": "Sincronizando el estado de la sala"
+    }
+  ],
+  "web.player.watchTogether.title": [
+    {
+      "type": 0,
+      "value": "Watch Party"
     }
   ],
   "web.player.watchTogether.viewerCount": [
@@ -8384,6 +9775,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.player.watchTogether.viewersLabel": [
+    {
+      "type": 0,
+      "value": "Espectadores"
     }
   ],
   "web.profiles.libraries.count": [
@@ -12630,6 +14027,126 @@
       "value": "Arriba"
     }
   ],
+  "web.settings.subtitlePanel.background": [
+    {
+      "type": 0,
+      "value": "Fondo"
+    }
+  ],
+  "web.settings.subtitlePanel.backgroundOpacity": [
+    {
+      "type": 0,
+      "value": "Opacidad del fondo"
+    }
+  ],
+  "web.settings.subtitlePanel.close": [
+    {
+      "type": 0,
+      "value": "Cerrar"
+    }
+  ],
+  "web.settings.subtitlePanel.color": [
+    {
+      "type": 0,
+      "value": "Color"
+    }
+  ],
+  "web.settings.subtitlePanel.eyebrowDefault": [
+    {
+      "type": 0,
+      "value": "Subtítulos"
+    }
+  ],
+  "web.settings.subtitlePanel.font": [
+    {
+      "type": 0,
+      "value": "Fuente"
+    }
+  ],
+  "web.settings.subtitlePanel.opacity": [
+    {
+      "type": 0,
+      "value": "Opacidad"
+    }
+  ],
+  "web.settings.subtitlePanel.outline": [
+    {
+      "type": 0,
+      "value": "Contorno"
+    }
+  ],
+  "web.settings.subtitlePanel.position": [
+    {
+      "type": 0,
+      "value": "Posición"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine1": [
+    {
+      "type": 0,
+      "value": "El veloz murciélago hindú"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine2": [
+    {
+      "type": 0,
+      "value": "comía feliz cardillo y kiwi."
+    }
+  ],
+  "web.settings.subtitlePanel.resetDefault": [
+    {
+      "type": 0,
+      "value": "Usar estilo alternativo"
+    }
+  ],
+  "web.settings.subtitlePanel.size": [
+    {
+      "type": 0,
+      "value": "Tamaño"
+    }
+  ],
+  "web.settings.subtitlePanel.statusDefault": [
+    {
+      "type": 0,
+      "value": "Los cambios se guardan automáticamente"
+    }
+  ],
+  "web.settings.subtitlePanel.style": [
+    {
+      "type": 0,
+      "value": "Estilo"
+    }
+  ],
+  "web.settings.subtitlePanel.text": [
+    {
+      "type": 0,
+      "value": "Texto"
+    }
+  ],
+  "web.settings.subtitlePanel.textOpacity": [
+    {
+      "type": 0,
+      "value": "Opacidad del texto"
+    }
+  ],
+  "web.settings.subtitlePanel.textOutline": [
+    {
+      "type": 0,
+      "value": "Contorno del texto"
+    }
+  ],
+  "web.settings.subtitlePanel.title": [
+    {
+      "type": 0,
+      "value": "Apariencia de los subtítulos"
+    }
+  ],
+  "web.settings.subtitlePanel.vertical": [
+    {
+      "type": 0,
+      "value": "Vertical"
+    }
+  ],
   "web.settings.titleArt.allDevices": [
     {
       "type": 0,
@@ -13008,6 +14525,680 @@
     {
       "type": 0,
       "value": "No se pudo iniciar la reproducción aleatoria."
+    }
+  ],
+  "web.subtitles.closeDialog": [
+    {
+      "type": 0,
+      "value": "Cerrar"
+    }
+  ],
+  "web.subtitles.menu.addSubtitles": [
+    {
+      "type": 0,
+      "value": "Añadir subtítulos…"
+    }
+  ],
+  "web.subtitles.menu.alreadyMatches": [
+    {
+      "type": 0,
+      "value": "Ya coincide con el audio."
+    }
+  ],
+  "web.subtitles.menu.appearance": [
+    {
+      "type": 0,
+      "value": "Apariencia…"
+    }
+  ],
+  "web.subtitles.menu.delay": [
+    {
+      "type": 0,
+      "value": "Retraso"
+    }
+  ],
+  "web.subtitles.menu.delayEarlier": [
+    {
+      "type": 0,
+      "value": "Adelantar subtítulos "
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.delayLater": [
+    {
+      "type": 0,
+      "value": "Retrasar subtítulos "
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.delayValue": [
+    {
+      "type": 1,
+      "value": "delay"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.noMatch": [
+    {
+      "type": 0,
+      "value": "No coincide con el audio de este video; probablemente sea de otra versión."
+    }
+  ],
+  "web.subtitles.menu.off": [
+    {
+      "type": 0,
+      "value": "Desactivados"
+    }
+  ],
+  "web.subtitles.menu.resetDelay": [
+    {
+      "type": 0,
+      "value": "Restablecer"
+    }
+  ],
+  "web.subtitles.menu.resetDelayLabel": [
+    {
+      "type": 0,
+      "value": "Restablecer el retraso de los subtítulos"
+    }
+  ],
+  "web.subtitles.menu.resetTiming": [
+    {
+      "type": 0,
+      "value": "Restablecer tiempos"
+    }
+  ],
+  "web.subtitles.menu.source.downloaded": [
+    {
+      "type": 0,
+      "value": "Descargado"
+    }
+  ],
+  "web.subtitles.menu.source.embedded": [
+    {
+      "type": 0,
+      "value": "Incrustado"
+    }
+  ],
+  "web.subtitles.menu.source.external": [
+    {
+      "type": 0,
+      "value": "Externo"
+    }
+  ],
+  "web.subtitles.menu.syncHint": [
+    {
+      "type": 0,
+      "value": "Ajusta los tiempos al audio para todas las personas que lo vean."
+    }
+  ],
+  "web.subtitles.menu.syncHintExternal": [
+    {
+      "type": 0,
+      "value": "Ajusta los tiempos al audio para todas las personas. El archivo en sí no se modifica."
+    }
+  ],
+  "web.subtitles.menu.syncToAudio": [
+    {
+      "type": 0,
+      "value": "Sincronizar con el audio"
+    }
+  ],
+  "web.subtitles.menu.syncedResult": [
+    {
+      "type": 0,
+      "value": "Sincronizado con el audio: "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.menu.syncing": [
+    {
+      "type": 0,
+      "value": "Sincronizando…"
+    }
+  ],
+  "web.subtitles.menu.timing": [
+    {
+      "type": 0,
+      "value": "Tiempos"
+    }
+  ],
+  "web.subtitles.menu.timingForbidden": [
+    {
+      "type": 0,
+      "value": "Este servidor no permite cambiar los tiempos de los subtítulos."
+    }
+  ],
+  "web.subtitles.search.downloadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo descargar"
+    }
+  ],
+  "web.subtitles.search.downloading": [
+    {
+      "type": 0,
+      "value": "Descargando"
+    }
+  ],
+  "web.subtitles.search.downloads": [
+    {
+      "type": 0,
+      "value": "↓"
+    },
+    {
+      "type": 1,
+      "value": "downloads"
+    }
+  ],
+  "web.subtitles.search.language": [
+    {
+      "type": 0,
+      "value": "Idioma"
+    }
+  ],
+  "web.subtitles.search.prompt": [
+    {
+      "type": 0,
+      "value": "Selecciona un idioma y haz clic en Buscar."
+    }
+  ],
+  "web.subtitles.search.search": [
+    {
+      "type": 0,
+      "value": "Buscar"
+    }
+  ],
+  "web.subtitles.search.searchFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo buscar"
+    }
+  ],
+  "web.subtitles.search.searchOnline": [
+    {
+      "type": 0,
+      "value": "Buscar en línea"
+    }
+  ],
+  "web.subtitles.search.searching": [
+    {
+      "type": 0,
+      "value": "Buscando…"
+    }
+  ],
+  "web.subtitles.search.title": [
+    {
+      "type": 0,
+      "value": "Añadir subtítulos"
+    }
+  ],
+  "web.subtitles.sync.error.changed": [
+    {
+      "type": 0,
+      "value": "Los subtítulos cambiaron. Vuelve a intentarlo."
+    }
+  ],
+  "web.subtitles.sync.error.resetFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron restablecer los tiempos"
+    }
+  ],
+  "web.subtitles.sync.error.syncFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo sincronizar"
+    }
+  ],
+  "web.subtitles.sync.error.unsupportedFormat": [
+    {
+      "type": 0,
+      "value": "Este formato no se puede sincronizar."
+    }
+  ],
+  "web.subtitles.sync.failure.generic": [
+    {
+      "type": 0,
+      "value": "No se pudo sincronizar. Vuelve a intentarlo."
+    }
+  ],
+  "web.subtitles.sync.failure.noAudio": [
+    {
+      "type": 0,
+      "value": "Este video no tiene audio que Silo pueda leer."
+    }
+  ],
+  "web.subtitles.sync.failure.subtitleChanged": [
+    {
+      "type": 0,
+      "value": "Los subtítulos cambiaron durante la sincronización. Vuelve a intentarlo."
+    }
+  ],
+  "web.subtitles.sync.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "El servidor está ocupado. Vuelve a intentarlo en unos minutos."
+    }
+  ],
+  "web.subtitles.sync.frameRate": [
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "→"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": " fps"
+    }
+  ],
+  "web.subtitles.sync.offsetSeconds": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": " s"
+    }
+  ],
+  "web.subtitles.sync.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.subtitles.sync.phase.analyzing": [
+    {
+      "type": 0,
+      "value": "Escuchando el audio…"
+    }
+  ],
+  "web.subtitles.sync.phase.matching": [
+    {
+      "type": 0,
+      "value": "Alineando las líneas con el diálogo…"
+    }
+  ],
+  "web.subtitles.sync.phase.waiting": [
+    {
+      "type": 0,
+      "value": "Esperando para empezar…"
+    }
+  ],
+  "web.subtitles.sync.progressLabel": [
+    {
+      "type": 0,
+      "value": "Progreso de la sincronización de subtítulos"
+    }
+  ],
+  "web.subtitles.sync.speed": [
+    {
+      "type": 0,
+      "value": "Velocidad ×"
+    },
+    {
+      "type": 1,
+      "value": "factor"
+    }
+  ],
+  "web.subtitles.sync.status.adjusted": [
+    {
+      "type": 0,
+      "value": "Tiempos ajustados "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.alreadyInSync": [
+    {
+      "type": 0,
+      "value": "Ya están sincronizados"
+    }
+  ],
+  "web.subtitles.sync.status.failed": [
+    {
+      "type": 0,
+      "value": "No se pudo sincronizar"
+    }
+  ],
+  "web.subtitles.sync.status.noMatch": [
+    {
+      "type": 0,
+      "value": "No coinciden con este video"
+    }
+  ],
+  "web.subtitles.sync.status.originalTiming": [
+    {
+      "type": 0,
+      "value": "Tiempos originales"
+    }
+  ],
+  "web.subtitles.sync.status.synced": [
+    {
+      "type": 0,
+      "value": "Sincronizados "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.syncing": [
+    {
+      "type": 0,
+      "value": "Sincronizando…"
+    }
+  ],
+  "web.subtitles.sync.status.syncingPercent": [
+    {
+      "type": 0,
+      "value": "Sincronizando… "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.subtitles.syncNotice.applying": [
+    {
+      "type": 0,
+      "value": "Aplicando los nuevos tiempos…"
+    }
+  ],
+  "web.subtitles.syncNotice.dismiss": [
+    {
+      "type": 0,
+      "value": "Descartar"
+    }
+  ],
+  "web.subtitles.syncNotice.fallbackName": [
+    {
+      "type": 0,
+      "value": "Subtítulos"
+    }
+  ],
+  "web.subtitles.syncNotice.noMatchDetail": [
+    {
+      "type": 0,
+      "value": "Probablemente sean de otra versión. No se cambiaron los tiempos."
+    }
+  ],
+  "web.subtitles.syncNotice.synced": [
+    {
+      "type": 0,
+      "value": "Subtítulos sincronizados"
+    }
+  ],
+  "web.subtitles.syncNotice.timingUpdated": [
+    {
+      "type": 0,
+      "value": "Se actualizaron los tiempos de los subtítulos"
+    }
+  ],
+  "web.subtitles.syncNotice.trackAlreadyMatches": [
+    {
+      "type": 0,
+      "value": "Los subtítulos ("
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ") ya coinciden con el audio"
+    }
+  ],
+  "web.subtitles.syncNotice.trackFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron sincronizar los subtítulos ("
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.subtitles.syncNotice.trackNoMatch": [
+    {
+      "type": 0,
+      "value": "Los subtítulos ("
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ") no coinciden con el audio"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSynced": [
+    {
+      "type": 0,
+      "value": "Subtítulos ("
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ") sincronizados"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSyncing": [
+    {
+      "type": 0,
+      "value": "Sincronizando subtítulos ("
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.subtitles.upload.detectFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo detectar el idioma de los subtítulos"
+    }
+  ],
+  "web.subtitles.upload.detected": [
+    {
+      "type": 0,
+      "value": "Idioma detectado: "
+    },
+    {
+      "type": 1,
+      "value": "language"
+    },
+    {
+      "type": 0,
+      "value": " (según "
+    },
+    {
+      "type": 5,
+      "value": "source",
+      "options": {
+        "filename": {
+          "value": [
+            {
+              "type": 0,
+              "value": "el nombre del archivo"
+            }
+          ]
+        },
+        "metadata": {
+          "value": [
+            {
+              "type": 0,
+              "value": "los metadatos del archivo"
+            }
+          ]
+        },
+        "content": {
+          "value": [
+            {
+              "type": 0,
+              "value": "el texto de los subtítulos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "la detección automática"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
+  "web.subtitles.upload.detecting": [
+    {
+      "type": 0,
+      "value": "Detectando el idioma…"
+    }
+  ],
+  "web.subtitles.upload.dragFile": [
+    {
+      "type": 0,
+      "value": "Arrastra y suelta un archivo de subtítulos"
+    }
+  ],
+  "web.subtitles.upload.dropFile": [
+    {
+      "type": 0,
+      "value": "Suelta el archivo de subtítulos"
+    }
+  ],
+  "web.subtitles.upload.dropZoneLabel": [
+    {
+      "type": 0,
+      "value": "Suelta aquí un archivo de subtítulos o explora"
+    }
+  ],
+  "web.subtitles.upload.heading": [
+    {
+      "type": 0,
+      "value": "Subir subtítulos"
+    }
+  ],
+  "web.subtitles.upload.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "Para personas con discapacidad auditiva (HI)"
+    }
+  ],
+  "web.subtitles.upload.help": [
+    {
+      "type": 0,
+      "value": "Arrastra y suelta o busca archivos SRT, VTT, ASS, SSA o SUB de hasta "
+    },
+    {
+      "type": 1,
+      "value": "megabytes"
+    },
+    {
+      "type": 0,
+      "value": " MB. El idioma se detecta automáticamente cuando es posible."
+    }
+  ],
+  "web.subtitles.upload.languageLabel": [
+    {
+      "type": 0,
+      "value": "Idioma del archivo"
+    }
+  ],
+  "web.subtitles.upload.orBrowse": [
+    {
+      "type": 0,
+      "value": "o haz clic para explorar"
+    }
+  ],
+  "web.subtitles.upload.selected": [
+    {
+      "type": 0,
+      "value": "Seleccionado: "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.upload.unsupportedType": [
+    {
+      "type": 0,
+      "value": "Tipo de archivo no compatible. Usa SRT, VTT, ASS, SSA o SUB."
+    }
+  ],
+  "web.subtitles.upload.upload": [
+    {
+      "type": 0,
+      "value": "Subir"
+    }
+  ],
+  "web.subtitles.upload.uploadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo subir"
+    }
+  ],
+  "web.subtitles.upload.uploading": [
+    {
+      "type": 0,
+      "value": "Subiendo…"
     }
   ],
   "web.ui.close": [

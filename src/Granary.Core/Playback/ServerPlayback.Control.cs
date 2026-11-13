@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Playback;
 
@@ -11,12 +12,12 @@ public sealed record PlaybackNotice(string Title, string Message, bool IsWarning
 public sealed partial class ServerPlayback
 {
     /// <summary>Shown when an administrator ends the session, by terminate or with 410; Silo's apps and web say the same.</summary>
-    public const string AdminEndedText = "An administrator ended this playback session.";
+    public static string AdminEndedText => AppText.Get("web.player.session.endedByAdmin");
 
     /// <summary>Shown when an administrator stops the session.</summary>
-    public const string AdminStoppedText = "An administrator stopped this playback session.";
+    public static string AdminStoppedText => AppText.Get("granary.player.error.adminStopped");
 
-    private const string ServerEndedText = "The server ended this playback session.";
+    private static string ServerEndedText => AppText.Get("granary.player.error.serverEnded");
 
     public event EventHandler<PlaybackNotice>? NoticeRaised;
 
@@ -95,15 +96,17 @@ public sealed partial class ServerPlayback
                 _engine.SetVolume(Math.Clamp(volume, 0, 1) * 100);
                 return PlaybackControlReply.Done;
             case PlaybackControlCommands.DisplayMessage:
-                Notify(new PlaybackNotice(command.Text("title") ?? "Playback notice", command.Text("message") ?? "A server message was received."));
+                // The server's own words when it sends some, as it wrote them.
+                Notify(new PlaybackNotice(command.Text("title") ?? AppText.Get("web.player.serverMessage.title"),
+                    command.Text("message") ?? AppText.Get("web.player.serverMessage.fallback")));
                 return PlaybackControlReply.Done;
             case PlaybackControlCommands.ServerRestarting:
-                Notify(new PlaybackNotice(command.Text("title") ?? "Server restarting",
-                    command.Text("message") ?? "Playback may end shortly while the server restarts.", IsWarning: true));
+                Notify(new PlaybackNotice(command.Text("title") ?? AppText.Get("web.player.serverMessage.restartingTitle"),
+                    command.Text("message") ?? AppText.Get("web.player.serverMessage.restarting"), IsWarning: true));
                 return PlaybackControlReply.Done;
             case PlaybackControlCommands.ServerShuttingDown:
-                Notify(new PlaybackNotice(command.Text("title") ?? "Server shutting down",
-                    command.Text("message") ?? "Playback may end shortly while the server shuts down.", IsWarning: true));
+                Notify(new PlaybackNotice(command.Text("title") ?? AppText.Get("web.player.serverMessage.shuttingDownTitle"),
+                    command.Text("message") ?? AppText.Get("web.player.serverMessage.shuttingDown"), IsWarning: true));
                 return PlaybackControlReply.Done;
             case PlaybackControlCommands.Stop:
             case PlaybackControlCommands.Terminate:
