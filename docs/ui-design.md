@@ -976,7 +976,7 @@ On the pages, and in the minimized player's bar:
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
 | LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again. |
-| Right stick | Scrolls the page, faster the further it is pushed. Focus stays. |
+| Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
 
 In the full player:

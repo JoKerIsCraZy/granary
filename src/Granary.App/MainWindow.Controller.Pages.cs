@@ -300,10 +300,17 @@ public sealed partial class MainWindow
     }
 
     // The scroll viewer around what has focus that can scroll up and down; with focus elsewhere (in the sidebar, nowhere)
-    // the first such one of the open menu or of the page.
+    // the first such one of the page. While a menu or dialog is open it is all there is to scroll: one that opened
+    // without taking focus leaves focus on the page behind it, and that page must not move under it.
     private ScrollViewer? ScrollerFor(DependencyObject? focused)
     {
-        object lookedFor = focused is null ? this : focused;
+        var popup = OpenPopup()?.Child;
+        if (popup is not null && (focused is null || !IsWithin(focused, popup)))
+        {
+            focused = null;
+        }
+        // What the look is kept for: the focused element, else the open menu, else the page.
+        object lookedFor = focused ?? popup ?? (object)this;
         long now = Environment.TickCount64;
         if (_padScrollerFor is not null && _padScrollerFor.TryGetTarget(out var keptFor) && ReferenceEquals(keptFor, lookedFor))
         {
@@ -317,8 +324,8 @@ public sealed partial class MainWindow
                 return null;
             }
         }
-        DependencyObject? within = OpenPopup()?.Child ?? ContentFrame.Content as DependencyObject;
-        var found = FindAncestorOrSelf<ScrollViewer>(focused, viewer => viewer.ScrollableHeight > 0)
+        DependencyObject? within = popup ?? ContentFrame.Content as DependencyObject;
+        var found = FindAncestorOrSelf<ScrollViewer>(focused, viewer => viewer.ScrollableHeight > 0 && (popup is null || IsWithin(viewer, popup)))
             ?? (within is null ? null : FirstScroller(within));
         _padScroller = found is null ? null : new(found);
         _padScrollerFor = new(lookedFor);
