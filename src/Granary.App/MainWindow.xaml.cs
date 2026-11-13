@@ -740,10 +740,19 @@ public sealed partial class MainWindow : Window
         if (e.GetCurrentPoint(Root).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed)
         {
             e.Handled = true;
-            if (!CloseTrailer())
-            {
-                _navigation.GoBack();
-            }
+            GoBackByMouse();
+        }
+    }
+
+    /// <summary>
+    /// The mouse's back button: out of a trailer, else back. Also from the player's cursor shield, which takes a press on
+    /// the picture before WinUI does.
+    /// </summary>
+    public void GoBackByMouse()
+    {
+        if (!CloseTrailer())
+        {
+            _navigation.GoBack();
         }
     }
 

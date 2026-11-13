@@ -46,12 +46,16 @@ public sealed partial class PlayerPage
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
         PointerPressed += OnPagePointerPressed;
-        AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) =>
-        {
-            _lastInputWasKey = _movesThroughControls = false;
-            // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
-            _fullScreen.ForgetEscape();
-        }), handledEventsToo: true);
+        AddHandler(PointerPressedEvent, new PointerEventHandler((_, e) => PressedOnPage(e.Pointer.PointerDeviceType)), handledEventsToo: true);
+    }
+
+    // Any press on the page, seen by WinUI or by the cursor's shield (PlayerPage.Shield.cs).
+    private void PressedOnPage(PointerDeviceType device)
+    {
+        _lastInputWasKey = _movesThroughControls = false;
+        // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
+        _fullScreen.ForgetEscape();
+        ShowCursorForPress(device);
     }
 
     // A press on the picture, or anything else that does not take focus, would bubble up to the window's root
@@ -463,9 +467,14 @@ public sealed partial class PlayerPage
     private bool HasOpenMenu() =>
         XamlRoot is { } root && VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Any(popup => popup.Child is not ToolTip);
 
-    private void OnSurfaceTapped(object sender, TappedRoutedEventArgs e)
+    private void OnSurfaceTapped(object sender, TappedRoutedEventArgs e) => SurfaceTapped(e.PointerDeviceType);
+
+    private void OnSurfaceDoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => SurfaceDoubleTapped(e.PointerDeviceType);
+
+    // A click or a tap on the picture, from WinUI or from the cursor's shield while that lies over it.
+    private void SurfaceTapped(PointerDeviceType device)
     {
-        if (e.PointerDeviceType == PointerDeviceType.Touch)
+        if (device == PointerDeviceType.Touch)
         {
             // On touch a tap shows or hides the controls, as in the web player; the buttons play and pause.
             ToggleControls();
@@ -476,9 +485,9 @@ public sealed partial class PlayerPage
         _clickTimer.Start();
     }
 
-    private void OnSurfaceDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private void SurfaceDoubleTapped(PointerDeviceType device)
     {
-        if (e.PointerDeviceType == PointerDeviceType.Touch)
+        if (device == PointerDeviceType.Touch)
         {
             return;
         }

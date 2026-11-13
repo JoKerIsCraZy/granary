@@ -1802,29 +1802,45 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
   follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
-  still pointer as the window goes full screen or changes scale), any move of a finger or a pen, and when the player
-  closes, never with a key or the player's own changes, so a remote does not put it back over the picture; paused,
-  it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
+  still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
+  brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never
+  with a key or the player's own changes, so a remote does not put it back over the picture; paused by a key, it too
+  stays away until the mouse moves or clicks. A cursor the controls left showing because another window was under the
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
   250 ms while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
-  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
-  cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
-  the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
+  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, Granary's windows answer Windows' question for the cursor themselves
-  (`CursorWindowHook`, a subclass on the main window and every window in it that takes `WM_SETCURSOR` for the client
-  area and sets `BlankCursor.Handle` while the pointer is over the picture), so neither WinUI nor the window's class can
-  put an arrow or a hand back, whatever the page's elements say, and whichever of the windows Windows asks; logs had
-  shown WinUI answering with the arrow though the page's cursor was the blank one, and a blank cursor set from a timer
-  not holding. The hook lets go when the cursor shows, the page unloads or a window is destroyed; the title bar, menus
-  and other windows keep their cursors. A look every 250 ms still checks what Windows draws: a visible cursor over the
-  picture is asked away once more, and the log says whether that helped, which of Granary's windows lay under the
-  pointer, whether Granary or another program was in front, and how many requests the hook had answered since the
-  cursor hid. The log also says what brought a hidden cursor back (how far the mouse moved and how long it had lain
-  still, or a finger or pen) and how far the mouse went while the cursor showed.
+  WinUI does not keep a hidden cursor, though. Whenever Windows works the cursor out again without the mouse having
+  moved, as it does when any window changes, WinUI shows the arrow, and nothing an app sets shows until the mouse really
+  moves: not an element's cursor, not the window's (`InputPointerSource.Cursor`), not `SetCursor`, whether from a timer
+  or in answer to `WM_SETCURSOR` (microsoft-ui-xaml issue 11942; each of these was tried and measured here). A hidden
+  cursor came back that way by itself, a moment after the controls went or minutes into a pause. So while the cursor is
+  hidden in the full player, an invisible window of Granary's own lies over the picture (`CursorShield`, laid by
+  `PlayerPage.KeepShield`): a child of the main window, layered and without a surface, as WinUI's own input window over
+  the title bar is. Over it Windows asks Granary for the cursor each time (`WM_SETCURSOR`) and draws the blank one, also
+  under a mouse that lies still. It covers the page without the title bar's strip in a window, so the title bar, the
+  caption buttons and other windows keep their cursors, and it is taken away while a dialog, a menu or a flyout is
+  open (seen at the next look, every 250 ms): one inside the window would lie under it. It is made at the place it covers, and made anew
+  when that changes (the window's size or mode): Windows finds such a window under the pointer only where it was made.
+  While it is up the pointer is not WinUI's, so the page does what WinUI did with it:
+  - a move of the mouse or a pen is measured as any other, and a real one shows the cursor and the controls and takes
+    the shield away;
+  - a press of a mouse button shows the cursor and the controls too, and the shield goes with its release;
+  - the click or tap goes to what WinUI had under the pointer as the press began, before the controls came up: the
+    picture, which plays, pauses or goes full screen as ever, or a button (the skip pill, the next episode's card),
+    which is pressed as a screen reader presses it; anything else gets no click, the viewer having aimed at what they
+    could not see;
+  - a finger or a pen always shows the cursor, so what it touches next is WinUI's again;
+  - the mouse's back button goes back.
+
+  Uncovered or laid elsewhere during a press, the shield stays for the release, or the click would be lost between the
+  two. The log says
+  when the shield is laid and gone, should Windows ever draw one of its own cursors over it (with the window under the
+  pointer), what brought a hidden cursor back (how far the mouse moved and how long it had lain still, or a finger or
+  pen) and how far the mouse went while the cursor showed.
 
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.

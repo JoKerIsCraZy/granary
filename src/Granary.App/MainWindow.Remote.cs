@@ -66,12 +66,7 @@ public sealed partial class MainWindow
     {
         Root.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnRootKeyDown), handledEventsToo: false);
         Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnRemotePreviewKeyDown), handledEventsToo: true);
-        Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) =>
-        {
-            _lastInputWasKey = false;
-            _pointersPressed++;
-            _startFocus.End();
-        }), handledEventsToo: true);
+        Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) => NotePointerPress()), handledEventsToo: true);
         FocusManager.GotFocus += OnFocusMoved;
         ContentFrame.Navigating += (_, e) =>
         {
@@ -91,6 +86,17 @@ public sealed partial class MainWindow
     // from one pressed long before. A mouse button resets the last input.
     private bool IsOpenedByKey(DependencyObject? focused) =>
         focused is UIElement { FocusState: FocusState.Keyboard } || (_navigation.IsStart && _lastInputWasKey && focused is UIElement);
+
+    /// <summary>
+    /// A pointer was pressed in the window: seen by WinUI, or said by the player's cursor shield, which takes a press on
+    /// the picture before WinUI does.
+    /// </summary>
+    public void NotePointerPress()
+    {
+        _lastInputWasKey = false;
+        _pointersPressed++;
+        _startFocus.End();
+    }
 
     // A remote's Play sent as a command, not as a key: on the focused card or title, as the Play key, while nothing plays;
     // while something plays Windows hands it to the media session.
