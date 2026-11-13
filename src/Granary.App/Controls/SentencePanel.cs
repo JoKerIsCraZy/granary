@@ -15,7 +15,8 @@ namespace Granary.App.Controls;
 /// controls ("<c>&lt;w&gt;Show&lt;/w&gt; &lt;scope&gt;&lt;/scope&gt; &lt;w&gt;from&lt;/w&gt; …</c>"): each child whose
 /// <see cref="FrameworkElement.Tag"/> names a tag stands where that tag is, and the words between become text blocks in
 /// <see cref="WordStyle"/>. So a language puts the boxes where its words need them. A box its message leaves out stands at
-/// the end (and the log says which, once); a child without a tag is left out.
+/// the end (and the log says which, once for each sentence); a child without a tag is left out. No sentence (a null
+/// <see cref="Runs"/>) empties the panel.
 /// <para>
 /// The words and boxes wrap onto further lines like text, <see cref="Spacing"/> apart where the message has space and
 /// touching where it has none (Japanese, or punctuation after a box). A new sentence changes only what differs
@@ -39,7 +40,7 @@ public partial class SentencePanel : Panel
     public static readonly DependencyProperty SpacingProperty = DependencyProperty.Register(nameof(Spacing), typeof(double), typeof(SentencePanel),
         new PropertyMetadata(8.0, (d, _) => ((SentencePanel)d).InvalidateMeasure()));
 
-    // The boxes left out of a sentence that the log has named, so each is named once.
+    // The boxes left out of a sentence that the log has named, by box and sentence, so each is named once.
     private static readonly ConcurrentDictionary<string, byte> Reported = new(StringComparer.Ordinal);
 
     // The boxes XAML put in the panel, in its order, by their tag.
@@ -74,26 +75,27 @@ public partial class SentencePanel : Panel
 
     private void Lay()
     {
-        if (Runs is not IReadOnlyList<TextRun> runs)
-        {
-            return;
-        }
         TakeBoxes();
-        var plan = SentenceLayout.Plan(runs, _slots);
-        if (plan.Equals(_plan))
+        // No sentence empties the panel; its boxes stay known by their tags and come back with the next one.
+        var plan = Runs is IReadOnlyList<TextRun> runs ? SentenceLayout.Plan(runs, _slots) : null;
+        if (plan == _plan)
         {
             return;
         }
         _plan = plan;
-        AutomationProperties.SetName(this, plan.Spoken);
-        Report(plan.Missing);
-        var wanted = plan.Pieces.Select(piece => piece.Key).ToList();
+        AutomationProperties.SetName(this, plan?.Spoken ?? "");
+        IReadOnlyList<SentencePiece> pieces = plan?.Pieces ?? [];
+        if (plan is not null)
+        {
+            Report(plan);
+        }
+        var wanted = pieces.Select(piece => piece.Key).ToList();
         foreach (var step in SentenceLayout.Steps(CurrentKeys(), wanted))
         {
-            Apply(step, plan);
+            Apply(step, pieces);
         }
         _spaced.Clear();
-        foreach (var piece in plan.Pieces)
+        foreach (var piece in pieces)
         {
             if (piece.SpaceBefore)
             {
@@ -128,7 +130,7 @@ public partial class SentencePanel : Panel
     private List<string> CurrentKeys() =>
         [.. Children.Select((child, i) => _keys.TryGetValue(child, out string? key) ? key : $"other:{i}")];
 
-    private void Apply(SentenceStep step, SentencePlan plan)
+    private void Apply(SentenceStep step, IReadOnlyList<SentencePiece> pieces)
     {
         switch (step)
         {
@@ -139,7 +141,7 @@ public partial class SentencePanel : Panel
                 Children.Move((uint)move.From, (uint)move.To);
                 break;
             case SentenceStep.Insert insert:
-                Children.Insert(insert.Index, Piece(plan.Pieces.First(piece => piece.Key == insert.Key)));
+                Children.Insert(insert.Index, Piece(pieces.First(piece => piece.Key == insert.Key)));
                 break;
         }
     }
@@ -167,15 +169,16 @@ public partial class SentencePanel : Panel
         }
     }
 
-    // A translation that leaves a box out shows it at the end; the log names the box, never the text.
-    private static void Report(IReadOnlyList<string> missing)
+    // A translation that leaves a box out shows it at the end. Each sentence's missing box is reported once, whichever
+    // panel shows it; the log names the box and the panel's boxes, never the text.
+    private void Report(SentencePlan plan)
     {
-        foreach (string slot in missing)
+        foreach (string slot in plan.Missing)
         {
-            if (Reported.TryAdd(slot, 0))
+            if (Reported.TryAdd(slot + "\n" + plan.Spoken, 0))
             {
                 App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SentencePanel))
-                    .LogWarning("A sentence's message leaves out its box {Slot}: it stands at the end", slot);
+                    .LogWarning("A sentence's message leaves out its box {Slot} of {Boxes}: it stands at the end", slot, string.Join(", ", _slots));
             }
         }
     }
