@@ -1173,11 +1173,15 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
   interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). No PlayStation pad
   was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
-- **Reading costs nothing without a pad.** Windows tells of pads that come and go; a timer runs only while there is one
-  and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while the pad is in use and every
-  33 ms while it rests, which still catches the shortest press. Windows documents that a UWP app gets no pad input out
-  of focus and says nothing for desktop apps, so Granary does not ask: deactivated, it stops reading. The timer's tick
-  goes through `WeakTick`.
+- **Reading costs nothing without a pad, and a tick with one at rest.** Windows tells of pads that come and go; a timer
+  runs only while there is one and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while
+  the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached
+  and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
+  that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
+  `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
+  wakes for it; it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
+  often as one at rest. Windows documents that a UWP app gets no pad input out of focus and says nothing for desktop
+  apps, so Granary does not ask: deactivated, it stops reading. The timer's tick goes through `WeakTick`.
 - **Carrying out.** Nothing is typed or clicked for the pad. Focus moves through `FocusManager.FindNextElement` and is
   set as the keyboard's (`PadControls.Move`), after the window's own handling of an arrow and before its handling of an
   arrow nobody took, the same two methods the arrow keys call (`TakesArrowFirst`, `TakesArrowLast` in
