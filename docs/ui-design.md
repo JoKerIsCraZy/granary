@@ -119,7 +119,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   A click on a link is the click of the card's button, with its pressed look, its focus and "release elsewhere cancels":
   the card only notes a press of the left button, a finger or a pen that begins on a title line that opens its series
   (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
-  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
+  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. A card that is given
+  an episode under a pointer that stays where it is (a recycled card, a row that changed) notes that press too, before
+  the pointer moves. The press is
   forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
   the button or a game controller's A presses it, so Enter, a remote's Select and A always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
