@@ -76,6 +76,48 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ATransfersSpeed_IsMeasuredOnTheClock_AndGoesWithTheTransfer()
+    {
+        await _h.AddAsync("dl_1");
+        var body = _h.ServeGated("dl_1", Source);
+        var queue = _h.StartQueue();
+        var downloads = _h.NewManager(queue);
+        long sent = 0;
+        async Task SendAsync(long count)
+        {
+            sent += count;
+            body.Release(count);
+            await Until(() => queue.BytesDone(Scope7, "dl_1") == sent, sent + " bytes arrived");
+        }
+
+        await SendAsync(500);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await SendAsync(500);
+        // A second of bytes is not enough to say a speed.
+        Assert.Null(downloads.BytesPerSecond("dl_1"));
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await SendAsync(500);
+        // 1000 bytes in the two seconds since the first.
+        Assert.Equal(500, downloads.BytesPerSecond("dl_1")!.Value, 0);
+
+        // Nothing comes for more than three seconds: no speed, though the transfer still waits for its bytes.
+        _h.Time.Advance(TimeSpan.FromSeconds(4));
+        Assert.Null(downloads.BytesPerSecond("dl_1"));
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await SendAsync(500);
+        _h.Time.Advance(TimeSpan.FromSeconds(2));
+        await SendAsync(500);
+        Assert.Equal(250, downloads.BytesPerSecond("dl_1")!.Value, 0);
+
+        // The transfer ends a moment after its record says Completed.
+        body.ReleaseAll();
+        await CompletedAsync("dl_1");
+        await Until(() => downloads.BytesPerSecond("dl_1") is null, "the speed went with the transfer");
+    }
+
+    [Fact]
     public async Task OnAMeteredConnection_NothingStarts_UnlessTheSettingAllowsIt()
     {
         _h.Network.Current = _h.Network.Current with { IsMetered = true };

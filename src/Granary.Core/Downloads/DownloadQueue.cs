@@ -67,6 +67,8 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly CancellationToken _stopToken;
     private readonly Dictionary<Key, Running> _running = [];
     private readonly Dictionary<Key, long> _bytes = [];
+    // Each running transfer's speed, measured from its bytes as they arrive; gone with the transfer.
+    private readonly Dictionary<Key, TransferRate> _rates = [];
     private readonly Dictionary<Key, DateTimeOffset> _progressSaid = [];
     private readonly Dictionary<Key, Retry> _retries = [];
     private readonly Dictionary<Key, Retry> _reportRetries = [];
@@ -251,6 +253,18 @@ public sealed partial class DownloadQueue : IDisposable
         lock (_gate)
         {
             return _bytes.GetValueOrDefault(new Key(scope, downloadId));
+        }
+    }
+
+    /// <summary>
+    /// How fast a download's transfer brings its bytes now, in bytes a second (<see cref="TransferRate"/>); null while none runs,
+    /// before there is enough to measure, and once its bytes stopped coming.
+    /// </summary>
+    public double? BytesPerSecond(DownloadScope scope, string downloadId)
+    {
+        lock (_gate)
+        {
+            return _rates.TryGetValue(new Key(scope, downloadId), out var rate) ? rate.BytesPerSecond(_time.GetUtcNow()) : null;
         }
     }
 

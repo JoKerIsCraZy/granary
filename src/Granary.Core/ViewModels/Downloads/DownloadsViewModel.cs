@@ -85,7 +85,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _time = time;
         _logger = logger;
         _offline = offline;
-        _follow = new DownloadsFollower(downloads, dispatcher, Refresh);
+        _follow = new DownloadsFollower(downloads, dispatcher, time, Refresh);
         Actions = new DownloadCardActions(downloads, navigation, confirmation);
         Films = new ReadOnlyObservableCollection<LiveCard>(_films);
         Series = new ReadOnlyObservableCollection<LiveCard>(_series);
@@ -319,12 +319,13 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     {
         var films = _items.Values.Where(i => i.SeriesId is null)
             .OrderBy(i => i.Title, TitleOrder).ThenBy(i => i.DownloadId, StringComparer.Ordinal)
-            .Select(DownloadCards.Download).ToList();
+            .Select(i => DownloadCards.Download(i, _follow.RateOf(i.DownloadId))).ToList();
         var series = _items.Values.Where(i => i.SeriesId is not null).GroupBy(i => i.SeriesId!, StringComparer.Ordinal)
             .Select(g => DownloadCards.Series(g.Key, [.. g.OrderBy(i => i.DownloadId, StringComparer.Ordinal)]))
             .OrderBy(c => c.Title, TitleOrder).ThenBy(c => c.Id, StringComparer.Ordinal).ToList();
         LiveCard.Sync(_films, films);
         LiveCard.Sync(_series, series);
+        _follow.Track(_items.Values);
         HasFilms = _films.Count > 0;
         HasSeries = _series.Count > 0;
         IsEmpty = !HasFilms && !HasSeries;

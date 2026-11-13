@@ -254,6 +254,54 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADownloadingCard_SaysItsSpeedAndTimeLeft_OnceThereIsEnoughToMeasure_AndNotOnceItStops()
+    {
+        using var ui = new SerialDispatcher();
+        await AddFilmAsync("dl_1", "Example Movie", DownloadState.Queued);
+        var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
+        var queue = _h.StartQueue();
+        var page = Page(queue, ui);
+        await ui.RunAsync(() =>
+        {
+            page.Attach();
+            return page.SpaceRead;
+        });
+        var card = ui.Read(() => Live(page, "dl_1"));
+        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 0%", "the card said it is downloading");
+        long sent = 0;
+        async Task SendAsync(long count)
+        {
+            sent += count;
+            body.Release(count);
+            await Until(() => queue.BytesDone(Scope7, "dl_1") == sent, sent + " bytes arrived");
+        }
+
+        // 300 bytes a second, each second's bytes as the clock moves on; the page reads the speed once a second.
+        await SendAsync(300);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await SendAsync(300);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await SendAsync(300);
+        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30%", "the card showed the progress");
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        // 2100 bytes to go at 300 a second.
+        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30% · 300 B/s · under 1 min left", "the card said its speed");
+        Assert.Same(card, ui.Read(() => Live(page, "dl_1")));
+        // Screen readers are not told a new speed every second.
+        Assert.Equal("Example Movie, 2.9 KB, Downloading · 30%", ui.Read(() => card.Card.AccessibleName));
+
+        // Nothing comes for more than three seconds: the speed goes, as no progress would tell.
+        _h.Time.Advance(TimeSpan.FromSeconds(4));
+
+        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30%", "the card dropped the speed");
+        body.ReleaseAll();
+        await Until(() => ui.Read(() => card.Card.Caption) == "Downloaded", "the download finished");
+        Assert.Empty(ui.Failures);
+    }
+
+    [Fact]
     public async Task Delete_AsksFirst_AndKeepsTheCardWhenDeclined()
     {
         await AddFilmAsync("dl_1", "Example Movie");
@@ -803,7 +851,22 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         GC.KeepAlive(downloads);
     }
 
-    // What the test above relies on: while the page shows, the downloads do hold it.
+    // A download that comes has the page read its speed once a second: the clock lets go of the page with the downloads.
+    [Fact]
+    public async Task APageThatWasLeft_WhileADownloadCame_IsNotKeptByTheClock()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", DownloadState.Downloading);
+        var downloads = _h.NewManager();
+        var (page, spaceRead) = ShowPage(downloads);
+        await spaceRead;
+
+        Leave(page);
+
+        Assert.True(await Collected.IsGoneAsync(page));
+        GC.KeepAlive(downloads);
+    }
+
+    // What the tests above rely on: while the page shows, the downloads do hold it.
     [Fact]
     public async Task APageThatShows_IsKeptByTheDownloads()
     {

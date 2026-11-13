@@ -133,6 +133,14 @@ public sealed partial class DownloadManager
         DownloadScope.Of(_session) is { } scope && _store.Find(scope, downloadId) is { } download ? BytesDone(scope, download.Record) : 0;
 
     /// <summary>
+    /// How fast one of the active profile's downloads comes now, in bytes a second, over its transfer's last seconds; null
+    /// while it does not come, before there is enough to measure, and once its bytes stopped coming. It reads neither the
+    /// disk nor the connection.
+    /// </summary>
+    public double? BytesPerSecond(string downloadId) =>
+        DownloadScope.Of(_session) is { } scope ? _queue.BytesPerSecond(scope, downloadId) : null;
+
+    /// <summary>
     /// The film or episode one of the active profile's downloads is, by the download's id; null when it is not there. It reads
     /// neither the disk nor the connection, so a page can tell whether a transfer's progress is one it shows.
     /// </summary>

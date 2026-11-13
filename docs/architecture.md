@@ -1357,6 +1357,13 @@ missing their folder.
   a new revision) does not wait out the delay of the one it replaces. One the server will not take (another revision, an entry
   preparing again, a time it refuses) is dropped. A completed transfer renames `media.part` to its media name before the
   record says Completed.
+- **Speed.** Each running transfer measures how fast its bytes come (`TransferRate`, kept under the queue's lock from the
+  bytes each read reports, on the `TimeProvider`'s clock): the bytes of the last 5 s over the time they took. There is no
+  speed before 2 s of bytes, so a first read says nothing it cannot know, and none once no bytes came for 3 s, as the
+  Apple app drops its rate; bytes after such a gap, or fewer than before (a part that started over), start a new measure.
+  Points under a quarter second after the one kept before are not kept, so a fast link's hundreds of reads a second
+  cost nothing. The measure goes with the transfer. `DownloadManager.BytesPerSecond` reads it for a page, without the disk
+  or the connection.
 - **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
   go of their files, logging when they did not or when one failed; it never throws, also when a request was cancelled
   under way or `Dispose` came first. `Dispose` stops everything without waiting and lets go of the queue's cancellation
@@ -1477,10 +1484,13 @@ client guide.
   keeps its `LiveCard`, its element in the grid and the focus, and only takes its new look (a `MediaCard` compares by
   value, so an unchanged card tells nothing). What a card's click and its ⋮ menu do is `DownloadCardActions`, an
   `ICardMenuSource` the pages hand to their cards (`ICardMenuHost`); each entry acts on the download as it is when it is
-  picked (`DownloadManager.Find`). The free space is read on the thread pool when the page shows and when a download
-  comes, goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes
-  longer than `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used. The App's
-  `DownloadsPage` and `DownloadedSeriesPage` are cached; they attach in `OnNavigatedTo` and detach in `OnNavigatedFrom`
+  picked (`DownloadManager.Find`). While a download the page shows comes, the follower reads its speed once a second on
+  the `TimeProvider`'s timer (`DownloadsFollower.RateInterval`), as the Apple app's row refreshes, and has the card say it
+  with the time left from the bytes still to come (`DownloadText.Status`); the timer runs only while one comes and the page
+  shows, and a speed that stopped is noticed then though no progress comes. The free space is read on the thread pool
+  when the page shows and when a download comes, goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog
+  reads it: a read that fails or takes longer than `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says
+  only the space used. The App's `DownloadsPage` and `DownloadedSeriesPage` are cached; they attach in `OnNavigatedTo` and detach in `OnNavigatedFrom`
   and as they unload, and make their view models with `ActivatorUtilities`, since the root provider would keep a
   disposable transient, and the page with it, until exit. So `DownloadManager`, a singleton, never holds a page that left
   (`DownloadsViewModelTests`, `DownloadedSeriesViewModelTests`). The sidebar's entry follows `DownloadsFeature.IsOffered`,

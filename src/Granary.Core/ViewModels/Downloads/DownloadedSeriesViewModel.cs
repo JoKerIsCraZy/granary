@@ -56,12 +56,13 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     // The page asked to go back once its series had nothing left.
     private bool _left;
 
-    public DownloadedSeriesViewModel(DownloadManager downloads, INavigationService navigation, IConfirmation confirmation, IUiDispatcher dispatcher)
+    public DownloadedSeriesViewModel(DownloadManager downloads, INavigationService navigation, IConfirmation confirmation, IUiDispatcher dispatcher,
+        TimeProvider time)
     {
         _downloads = downloads;
         _navigation = navigation;
         _dispatcher = dispatcher;
-        _follow = new DownloadsFollower(downloads, dispatcher, Refresh);
+        _follow = new DownloadsFollower(downloads, dispatcher, time, Refresh);
         Actions = new DownloadCardActions(downloads, navigation, confirmation);
         Seasons = new ReadOnlyObservableCollection<DownloadSeason>(_seasons);
     }
@@ -176,7 +177,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
         var wanted = episodes.GroupBy(i => i.SeasonNumber is int number and > 0 ? number : 0)
             .OrderBy(g => g.Key == 0 ? int.MaxValue : g.Key)
             .Select(g => (Number: g.Key, Cards: g.OrderBy(i => i.EpisodeNumber ?? int.MaxValue).ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase)
-                .Select(DownloadCards.Download).ToList()))
+                .Select(i => DownloadCards.Download(i, _follow.RateOf(i.DownloadId))).ToList()))
             .ToList();
         for (int i = _seasons.Count - 1; i >= 0; i--)
         {
@@ -201,6 +202,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
             }
             LiveCard.Sync(_seasons[i].Shown, cards);
         }
+        _follow.Track(episodes);
     }
 
     private int IndexOf(int number)

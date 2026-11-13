@@ -281,13 +281,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
   title stands in, as on any card. Every card has three lines: the title, the size (the poster's overline: "8.0 GB", a
   series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status in
-  the apps' words ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded",
+  the apps' words ("Preparing…", "Queued", "Downloading · 42%", and once it can be measured the speed and the time left,
+  as the Apple app's row says them: "Downloading · 42% · 12.3 MB/s · 4 min left", read once a second, gone again when no
+  bytes came for 3 s; "under 1 min left", "1 hr 5 min left"; "Paused", "Paused · metered connection", "Downloaded",
   "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file
   was deleted by hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed
   one, missing files and one the server no longer has. A series' card says how many episodes it has here ("3 episodes",
   "1 episode"; "2 of 3 episodes" while some are not whole yet, the Android app's words). The card's bar (3 px, the
   accent) shows how much of the file is here while it comes or waits with bytes on this PC, and on a series' card how
-  much of its episodes is. Screen readers hear the card's title, size and status.
+  much of its episodes is. Screen readers hear the card's title, size and status (without the speed, which changes every
+  second).
   A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
   as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
   did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a

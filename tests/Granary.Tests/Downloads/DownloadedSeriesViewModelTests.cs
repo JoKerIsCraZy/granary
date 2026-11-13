@@ -31,7 +31,7 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
     private DownloadedSeriesViewModel Page(DownloadManager? downloads = null) =>
-        new(downloads ?? _h.NewManager(), _navigation, _confirmation, new ImmediateDispatcher());
+        new(downloads ?? _h.NewManager(), _navigation, _confirmation, new ImmediateDispatcher(), _h.Time);
 
     private DownloadedSeriesViewModel Shown(string seriesId = "sr_1")
     {

@@ -24,20 +24,21 @@ public static class DownloadCards
 
     /// <summary>
     /// A film's download as a poster, or an episode's as a still ("S01E05 · Chapter Five", as a season's page names it). Play
-    /// on the card plays it from this PC once it is whole.
+    /// on the card plays it from this PC once it is whole. While it comes, its status has the speed and the time left once
+    /// <paramref name="bytesPerSecond"/> is known.
     /// </summary>
-    public static MediaCard Download(DownloadItem item)
+    public static MediaCard Download(DownloadItem item, double? bytesPerSecond = null)
     {
         ArgumentNullException.ThrowIfNull(item);
         bool episode = item.SeriesId is not null;
-        string status = Status(item);
         return new MediaCard(item.DownloadId, DownloadType, episode ? EpisodeTitle(item) : item.Title)
         {
             Shape = episode ? MediaCardShape.Landscape : MediaCardShape.Poster,
             Subtitle = SizeLine(item.ExpectedBytes),
-            Caption = status,
+            Caption = DownloadText.Status(item, bytesPerSecond),
             IsCaptionAttention = NeedsAttention(item),
-            AccessibleStatus = status,
+            // Without the speed, which changes every second.
+            AccessibleStatus = DownloadText.Status(item),
             LocalImagePath = item.PosterPath,
             Progress = Bar(item),
             PlayContentId = item.IsPlayable ? item.MediaItemId : null,
@@ -87,9 +88,6 @@ public static class DownloadCards
 
     /// <summary>"8.0 GB", as the page has always said a download's size.</summary>
     public static string SizeText(long bytes) => PrePlayText.FileSize(bytes);
-
-    // The status in the page's words (DownloadText.Status).
-    private static string Status(DownloadItem item) => DownloadText.Status(item);
 
     // A download the viewer has to look at: it failed, its files are gone, or the server no longer has it. Amber, as a
     // watchlist title TMDB lost.
