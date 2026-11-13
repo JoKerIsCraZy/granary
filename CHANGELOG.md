@@ -57,13 +57,8 @@ release's section is what its update says it changes (docs/release.md).
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
   also when the mouse lies still. It no longer comes back by itself when the mouse did not move, nor stays when Windows
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:b6f0fd7a2f616280c8bc5d81252a7072ccbfa6527739eacd9e4769b4c89280ec -->
-
-  restores a visible cursor over the picture. This also covers custom cursors and repeated Windows cursor requests.
-
-<!-- /coderabbit-ai-generated:v1 -->
+  or the page itself asks for an arrow or a hand over the picture: while the cursor is hidden, the player answers every
+  such request with the hidden one.
 - With a TV remote, the arrows in the player go past the volume slider again on a display scaled above 100 %, such as a
   TV at 150 %. There focus stopped on the slider, every arrow changed the volume, and the buttons beside it (audio,
   subtitles and the rest) were out of reach.

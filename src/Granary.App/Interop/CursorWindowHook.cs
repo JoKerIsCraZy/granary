@@ -18,6 +18,9 @@ internal sealed unsafe partial class CursorWindowHook(nint hiddenCursor, Func<bo
     private static readonly ConcurrentDictionary<nint, WeakReference<CursorWindowHook>> Hooks = new();
     private nint _window;
 
+    /// <summary>How many cursor requests the hook has answered with the hidden cursor; the log names it.</summary>
+    public int Answered { get; private set; }
+
     /// <summary>Follows the input window under the pointer, or detaches for 0; false if Windows refused the hook.</summary>
     public bool Watch(nint window)
     {
@@ -70,6 +73,7 @@ internal sealed unsafe partial class CursorWindowHook(nint hiddenCursor, Func<bo
                 && ((lParam >> 16) & 0xFFFF) != 0 && hook.HiddenCursor() is var cursor && cursor != 0)
             {
                 SetCursor(cursor);
+                hook.Answered++;
                 return 1;
             }
         }

@@ -47,6 +47,7 @@ public sealed partial class PlayerPage
     private bool _isCursorHidden;
     private CursorWindowHook? _cursorWindowHook;
     private int _cursorsLoggedWhileHidden;
+    private int _answeredAsCursorHid;
 
     // What tells the page to look at the cursor again, from its load until it is left.
     private MainWindow? _cursorWindow;
@@ -394,6 +395,7 @@ public sealed partial class PlayerPage
         {
             return;
         }
+        string shape = ShowsArrow() ? "its arrow" : "a cursor of its own";
         AskForCursor(under);
         if (ShowsOtherCursor())
         {
@@ -402,8 +404,12 @@ public sealed partial class PlayerPage
         if (_cursorsLoggedWhileHidden < CursorLogLimit)
         {
             _cursorsLoggedWhileHidden++;
-            _autoHideLog.LogDebug("Windows drew a visible cursor over the picture while the player's cursor is hidden (restored: {Restored})",
-                !ShowsOtherCursor());
+            // Whose window it was says why a cursor could not be taken back: Windows shows a thread's cursor only while
+            // that thread has the mouse's input. Window classes only, never a title.
+            _autoHideLog.LogDebug(
+                "Windows drew {Shape} over the picture while the player's cursor is hidden (restored: {Restored}; under the pointer: {Under}; in front: {Front}; requests answered since it hid: {Answered})",
+                shape, !ShowsOtherCursor(), DescribeWindow(under), DescribeWindow(GetForegroundWindow()),
+                (_cursorWindowHook?.Answered ?? 0) - _answeredAsCursorHid);
         }
     }
 
@@ -412,6 +418,28 @@ public sealed partial class PlayerPage
         var info = new CursorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<CursorInfo>() };
         return GetCursorInfo(ref info) && (info.Flags & CursorShowing) != 0
             && info.Cursor != 0 && info.Cursor != BlankCursor.Handle;
+    }
+
+    private static bool ShowsArrow()
+    {
+        var info = new CursorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<CursorInfo>() };
+        return GetCursorInfo(ref info) && info.Cursor != 0 && info.Cursor == LoadCursorW(0, ArrowCursorId);
+    }
+
+    // A window as the log may name it: its class and whose it is. A class says which part of which program it is
+    // ("Microsoft.UI.Content.DesktopChildSiteBridge", "Shell_TrayWnd"), and holds nothing of the viewer's.
+    private static unsafe string DescribeWindow(nint window)
+    {
+        if (window == 0)
+        {
+            return "none";
+        }
+        char* name = stackalloc char[128];
+        int length = GetClassNameW(window, name, 128);
+        uint thread = GetWindowThreadProcessId(window, out uint process);
+        string whose = process != (uint)Environment.ProcessId ? "another program's"
+            : thread == GetCurrentThreadId() ? "this thread's" : "another thread's of Granary";
+        return (length > 0 ? new string(name, 0, length) : "?") + ", " + whose;
     }
 
     private void WatchCursorWindow(nint window)
@@ -510,6 +538,7 @@ public sealed partial class PlayerPage
         {
             // A new hide: Windows drawing its arrow is logged for it afresh, not for the hidden cursor set anew.
             _cursorsLoggedWhileHidden = 0;
+            _answeredAsCursorHid = _cursorWindowHook?.Answered ?? 0;
         }
         _isCursorHidden = true;
         ProtectedCursor = blank;
