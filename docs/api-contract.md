@@ -2955,6 +2955,71 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   `SiloControlSealedTests.swift` repeat.
 - The channel has no forward secrecy: the session keys come from the pairing key and two nonces that cross in the clear.
 
+### 15.2 Server ids
+
+- **A server id is the server's address**, not an opaque value: base64url without padding of the address the client
+  uses, trailing slashes trimmed. Android also lower-cases scheme and host (`AndroidServerRegistry.idFor`,
+  `normalizeUrl`); Apple and Silo's Roku app change nothing else (`ServerRegistry.serverId(for:)`). Granary's is
+  `SiloCastServerId.From(ServerEntry.BaseUri)`: `Uri.AbsoluteUri` (scheme and host already in lower case, no default
+  port) without trailing slashes.
+- **Two ids match** when they are equal, or when both decode to http or https addresses that are equal once scheme and
+  host are in lower case and a default port (80, 443) is dropped. Credentials, path, query, fragment and any other port
+  are compared as they are. An id is read as an address only when the address encodes back to exactly that id, so an
+  id of another form never passes for one; a missing or empty id matches nothing (`serverIdsMatch`, `urlForServerId`).
+- **Two servers match** when their ids match or both sides know the same deployment identity, the `server_id` of
+  `GET /api/v2/system/identity` (`serversMatch`); a blank identity matches nothing.
+- **Where the phones use which rule:**
+
+  | Place | Compared with | Rule |
+  |---|---|---|
+  | TXT `server` of an advertised receiver | the phone's active server | id, or identity when TXT has `serverIdentity` |
+  | `server` in the pairing link | the phone's active server | id only: the link carries no identity |
+  | `serverId` in the phone's `hello` and `handoff_offer` | the receiver's server | id or identity; the receiver decides |
+  | `serverId` in `handoff_ready` | the phone's own id | id only |
+  | the last receiver the phone remembers | the phone's active server | id only |
+
+- So **phone and PC have to use the same address for the server** (up to case and a default port) for a scanned code
+  to lead anywhere; a phone at another address of the same server matches only by identity, through DNS-SD. Granary
+  sends back an offer's own `serverId` in `handoff_ready`, never its own spelling. An address `Uri` spells otherwise
+  than the phone (an internationalized host name, an escaped path) gives another id and matches only by identity.
+- While the remote is on, the server's address is readable on the local network: TXT `server` carries it in base64,
+  as every Silo TV's does.
+
+### 15.3 Advertisement and pairing link
+
+- **The advertisement** is one DNS-SD instance of service type `_silocast-roku._tcp`; the service type alone tells a
+  phone how to dial (plain TCP, sealed when `sec` says so, never TLS). Granary names the instance
+  `Granary-<first 8 letters and digits of the receiver id>` and gives it a host of its own,
+  `granary-<the same>.local`, with the one LAN address it listens on (Silo's Roku app says `Silo-…`; the phones show
+  TXT `name`, not the instance). TXT pairs, in the Roku app's order (`controlTxt` in `components/AppSceneControl.bs`):
+
+  | Key | Value | Who needs it |
+  |---|---|---|
+  | `v` | `2` | both; without it a receiver counts as version 1 |
+  | `name` | the PC's name (`ClientIdentity.DeviceName`) | both show it |
+  | `id` | the receiver id | both; the pairing key is kept under it |
+  | `server` | the server id (15.2) | Apple lists nothing without it |
+  | `serverName` | the server's name | shown under the PC's name |
+  | `playing` | `1` while a title is open, else `0` | "Playing now" and the silent reattach |
+  | `serverIdentity` | the deployment identity, only when known | a phone at another address matches by it |
+  | `sec` | `sealed` | Android drops a value it does not know |
+  | `kid` | the key id (15.1) | Apple lists no sealed receiver without it; both compare it with their key |
+
+  A pair has to fit one DNS character string of 255 bytes. When one does not (a very long server address), Granary
+  advertises nothing and phones pair through the code alone (`ReceiverAdvertisement.For` gives null).
+- **The pairing link**, which the code in Connect a Phone holds:
+
+  ```text
+  silo://cast?v=2&host=<IPv4>&port=<port>&id=<receiver id>&name=<name>&server=<server id>&security=sealed&key=<base32>
+  ```
+
+  `host` and `port` are the address and port the listener is bound to; `key` is the 16-byte pairing key in RFC 4648
+  base32 without padding (26 characters). Values are percent-escaped, `+` included, since Android's `URLDecoder` reads
+  `+` as a space. Android wants exactly `v=2`, an IPv4 literal, a port, an `id` and the key
+  (`SiloCastPairingLink.parse`); Apple a private or link-local IPv4 address, a port, an `id`, a `server` and the key
+  (`SiloControlPairingLink`). Both ignore parameters they do not know and read no identity from the link. A phone keeps
+  the link's address and port, and finds the receiver again by `id` over DNS-SD or dials them.
+
 ## Appendix: where docs and code disagree
 
 These were found while deriving this document. The code is authoritative; the entries explain why
