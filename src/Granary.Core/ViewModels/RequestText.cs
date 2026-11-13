@@ -112,12 +112,12 @@ internal static class RequestText
         return AppText.Get("web.requests.status.seasonList", ("count", sorted.Count), ("list", string.Join(", ", runs)));
     }
 
-    /// <summary>"14 of 20 episodes in the library", counting aired episodes; "" when none has aired.</summary>
+    /// <summary>"14 of 20 episodes in the library", counting aired episodes, its numbers as the language writes them; "" when none has aired.</summary>
     public static string SeasonProgress(IReadOnlyList<RequestSeasonProgress> progress)
     {
         int aired = progress.Sum(p => p.EpisodesAired);
         int have = progress.Sum(p => Math.Min(p.EpisodesAvailable, p.EpisodesAired));
-        return aired == 0 ? "" : AppText.Get("web.requests.status.seasonProgress", ("aired", aired), ("have", have), ("aired_text", aired));
+        return aired == 0 ? "" : AppText.Get("web.requests.status.seasonProgress", ("aired", aired), ("have", AppText.Number(have)), ("aired_text", AppText.Number(aired)));
     }
 
     /// <summary>How far the downloads are, for a bar; null while the size is unknown or the phase is not a download's.</summary>
