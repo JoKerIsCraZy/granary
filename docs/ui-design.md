@@ -1015,8 +1015,9 @@ Always:
   pad that comes (back) works at once. Several pads count as one.
 - Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
 - PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
-  or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. A tool that presents the pad to
-  Windows as an Xbox pad works too, and the pad still counts once.
+  or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. L2 and R2 count by how far they
+  are pulled, as an Xbox pad's triggers, though these pads also report them as buttons from the first bit of the way. A
+  tool that presents the pad to Windows as an Xbox pad works too, and the pad still counts once.
 
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
 pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'

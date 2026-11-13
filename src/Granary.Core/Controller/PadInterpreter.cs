@@ -83,10 +83,11 @@ public sealed partial class PadInterpreter
 
     /// <summary>No button is down and both sticks and triggers are inside their dead zones.</summary>
     public static bool IsAtRest(PadReading reading) =>
-        reading.Buttons == PadButtons.None
+        (reading.Buttons & ~Triggers) == PadButtons.None
         && PadSticks.PastDeadZone(reading.LeftX, reading.LeftY, PadTuning.LeftStickDeadZone) == (0, 0)
         && PadSticks.PastDeadZone(reading.RightX, reading.RightY, PadTuning.RightStickDeadZone) == (0, 0)
-        && Pressure(reading.LeftTrigger, false) == 0 && Pressure(reading.RightTrigger, false) == 0;
+        && Pressure(reading.LeftTrigger, reading.Buttons.HasFlag(PadButtons.LeftTrigger)) == 0
+        && Pressure(reading.RightTrigger, reading.Buttons.HasFlag(PadButtons.RightTrigger)) == 0;
 
     /// <summary>
     /// Forgets what is held and a seek under way, without sending it: the pad went away, or the window lost the
@@ -207,9 +208,12 @@ public sealed partial class PadInterpreter
         Reset();
     }
 
+    // How far a trigger is pulled. A pad that only says its trigger is down counts as pulled home. One that says both (a
+    // PlayStation pad's L2 and R2 are buttons too, down from the first bit of the way) is taken by its pull: else every
+    // touch would be a full pull.
     private static double Pressure(double pull, bool isButtonDown)
     {
-        double pressure = Math.Max(Math.Clamp(pull, 0, 1), isButtonDown ? 1 : 0);
+        double pressure = pull > 0 ? Math.Min(pull, 1) : isButtonDown ? 1 : 0;
         return pressure < PadTuning.TriggerDeadZone ? 0 : pressure;
     }
 

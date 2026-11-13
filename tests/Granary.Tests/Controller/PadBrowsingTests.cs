@@ -157,6 +157,22 @@ public sealed class PadBrowsingTests
     }
 
     [Fact]
+    public void ATriggerBarelyPulled_ThatItsPadAlsoReportsAsAButton_PagesNothing()
+    {
+        // A PlayStation pad says both: its L2 and R2 are buttons too, down from the first bit of the way.
+        var held = _bench.Hold(new PadReading(PadButtons.RightTrigger, RightTrigger: 0.2), Second);
+
+        Assert.Empty(held);
+    }
+
+    [Fact]
+    public void ATriggerInsideItsDeadZone_ThatItsPadAlsoReportsAsAButton_IsAPadAtRest()
+    {
+        Assert.True(PadInterpreter.IsAtRest(new PadReading(PadButtons.LeftTrigger, LeftTrigger: 0.05)));
+        Assert.False(PadInterpreter.IsAtRest(new PadReading(PadButtons.LeftTrigger)));
+    }
+
+    [Fact]
     public void TheRightStick_ScrollsThePage_AndMovesNoFocus()
     {
         var up = _bench.Hold(new PadReading(PadButtons.None, RightY: 1), Second);

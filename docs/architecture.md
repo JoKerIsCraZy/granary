@@ -1171,9 +1171,12 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
   axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
   with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
-  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. A pad
-  that shows up twice, itself and as the Xbox pad a tool makes of it, still presses each button once, since the readings
-  are merged before anything is decided. A pad on its way out can fail its last readings. Such a reading is no pad at
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. These
+  pads report L2 and R2 as buttons too, down from the first bit of the way; the interpreter takes a trigger by its pull
+  wherever a reading has one, and only a button without a pull as pulled home (`Pressure`), so a light pull scrubs
+  slowly and a touch pages nothing. A pad that shows up twice, itself and as the Xbox pad a tool makes of it, still
+  presses each button once, since the readings are merged before anything is decided.
+  A pad on its way out can fail its last readings. Such a reading is no pad at
   rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
   interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). No PlayStation pad
   was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.

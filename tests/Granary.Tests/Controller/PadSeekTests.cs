@@ -187,6 +187,15 @@ public sealed class PadSeekTests
     }
 
     [Fact]
+    public void ATriggerAPadReportsAsAButtonAndByItsPull_ScrubsByItsPull()
+    {
+        // A PlayStation pad says both: its L2 and R2 are buttons too.
+        var held = _bench.Hold(new PadReading(PadButtons.RightTrigger, RightTrigger: 0.55), Second);
+
+        Assert.Equal(PadTuning.ScrubRate(0.55), Previews(held)[^1], PadTuning.ScrubRate(0.55) * 0.05);
+    }
+
+    [Fact]
     public void AStepAndAScrub_EndAsOneSeek()
     {
         var actions = _bench.Tap(PadButtons.DPadRight);
