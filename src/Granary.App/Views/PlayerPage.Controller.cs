@@ -19,6 +19,15 @@ public sealed partial class PlayerPage
     // Where the seek being made began: its steps count from here, however long it takes.
     private double? _padSeekOrigin;
 
+    // The pad's own seek is on its way through the seek bar: it replaces nothing (OnViewerSought).
+    private bool _isSendingPadSeek;
+
+    /// <summary>
+    /// Another seek of the viewer's (a key, the mouse, a skip, a chapter, the seek bar's own step) replaced one a pad was
+    /// making: the window drops it in the interpreter too.
+    /// </summary>
+    internal event EventHandler? PadSeekReplaced;
+
     /// <summary>What a pad's reading means here right now.</summary>
     internal PadContext PadContext => new(
         PadMode.Player,
@@ -119,6 +128,19 @@ public sealed partial class PlayerPage
     {
         _padSeekOrigin = null;
         SeekBar.ShowTarget(null);
+    }
+
+    // Any seek of the viewer's but the pad's own: a seek the pad was making gives way to it. A key's target on the seek bar
+    // was taken from what the bar showed, the pad's preview among it, before this. As the bar the player makes no pad
+    // seek: the pad is on the pages then.
+    private void OnViewerSought(object? sender, EventArgs e)
+    {
+        if (_isSendingPadSeek || IsDocked)
+        {
+            return;
+        }
+        CancelPadSeek();
+        PadSeekReplaced?.Invoke(this, EventArgs.Empty);
     }
 
     // Y and Menu open their menu, and close whichever menu is open.
@@ -230,7 +252,15 @@ public sealed partial class PlayerPage
         if (SeekBar.CanSeek)
         {
             KeepControlsUp();
-            SeekBar.RequestSeek(origin + offset);
+            _isSendingPadSeek = true;
+            try
+            {
+                SeekBar.RequestSeek(origin + offset);
+            }
+            finally
+            {
+                _isSendingPadSeek = false;
+            }
         }
     }
 

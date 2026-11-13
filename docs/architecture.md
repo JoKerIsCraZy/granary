@@ -1080,7 +1080,9 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   and `access_changed` empties the state until the next one. The scans a new connection inherits are a guess until
   its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s while a scan of the
   last connection may still run, leaves them not known (`Scans` null and `ScansMayBeMore`), for that connection only;
-  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
+  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A `scan.*` event that cannot
+  be read (cut for its size, or no run) leaves them not known too: each of them brings a run, so a start or an end was
+  missed. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
   smaller one, so neither a stale list nor a count that scans ending made "exact" is shown. The lists are read over REST when the stream says they
   changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
   5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
@@ -1173,11 +1175,13 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
   axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
   with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
-  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. These
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself; a
+  reading short of those axes is read so too, also once the order is known. These
   pads report L2 and R2 as buttons too, down from the first bit of the way; the interpreter takes a trigger by its pull
   wherever a reading has one, and only a button without a pull as pulled home (`Pressure`), so a light pull scrubs
   slowly and a touch pages nothing. A pad that shows up twice, itself and as the Xbox pad a tool makes of it, still
-  presses each button once, since the readings are merged before anything is decided.
+  presses each button once, since the readings are merged before anything is decided. The merge takes each trigger as
+  its pad means it, so one a pad only reports as pressed stays pulled home beside another pad's slight pull.
   A pad on its way out can fail its last readings. Such a reading is no pad at
   rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
   interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). `IsAtRest` is false
@@ -1190,19 +1194,25 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
   that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
   `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
-  wakes for it; it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
+  wakes for it, and the interpreter's clock moves on (`Skip`): the first reading in use then stands for one poll, not for
+  the longest step a reading may stand for (`PadTuning.LongestStep`, a 220 px scroll or an 18 s scrub); it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
   often as one at rest. Windows documents that a UWP app gets no pad input out of focus and says nothing for desktop
   apps, so Granary does not ask: deactivated, it stops reading. The timer's tick goes through `WeakTick`.
 - **Carrying out.** Nothing is typed or clicked for the pad. Focus moves through `FocusManager.FindNextElement` and is
   set as the keyboard's (`PadControls.Move`), after the window's own handling of an arrow and before its handling of an
   arrow nobody took, the same two methods the arrow keys call (`TakesArrowFirst`, `TakesArrowLast` in
   MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
-  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer), B runs the remote's back ladder
+  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer; a link in a text has no peer and
+  its Click cannot be raised, so its page says what A does on it, `PadControls.PressesWith`), B runs the remote's back ladder
   (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
-  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request.
+  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request. Any other seek of the viewer's
+  (`PlayerViewModel.ViewerSought`: a key, the mouse, a skip, a chapter, the seek bar's own step for the D-pad) replaces
+  it: the page drops the preview and raises `PadSeekReplaced`, and the window calls `PadInterpreter.CancelSeek` and
+  leaves what that reading still says of the seek undone. A bumper's chapter jump ends a seek inside the interpreter,
+  which sends `SeekCancel` before the jump.
 - **Presence.** Windows counts keys and the mouse as the viewer being there, not a pad. While the pad is in use the
   window sets the display's and the system's idle timers back (`SetThreadExecutionState` without `ES_CONTINUOUS`, at
   most every 10 s); nothing is held, and a title that plays keeps the display on by itself (`PlayerKeepAwake`).

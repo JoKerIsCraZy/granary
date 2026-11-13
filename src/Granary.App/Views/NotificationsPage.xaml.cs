@@ -45,6 +45,8 @@ public sealed partial class NotificationsPage : Page
         Unloaded += (_, _) => _activity.PropertyChanged -= OnActivityChanged;
         BuildMenu(ReasonMenu, NotifiedSeriesViewModel.ReasonChoices, "SeriesReason", choice => ViewModel.Series.Reason = choice);
         BuildMenu(SeriesSortMenu, NotifiedSeriesViewModel.SortChoices, "SeriesSort", choice => ViewModel.Series.Sort = choice);
+        // A game controller's A on the link, as Enter on it.
+        PadControls.PressesWith(SeriesPreferencesLink, OpenPreferences);
     }
 
     public NotificationsViewModel ViewModel { get; }
@@ -156,7 +158,9 @@ public sealed partial class NotificationsPage : Page
 
     // "Preferences" in the Series view's words opens the popover beside the title.
     private void OnSeriesPreferencesClick(Microsoft.UI.Xaml.Documents.Hyperlink sender, Microsoft.UI.Xaml.Documents.HyperlinkClickEventArgs args) =>
-        PreferencesFlyout.ShowAt(PreferencesButton);
+        OpenPreferences();
+
+    private void OpenPreferences() => PreferencesFlyout.ShowAt(PreferencesButton);
 
     private void OnReasonMenuOpening(object? sender, object e) => CheckChosen(ReasonMenu, ViewModel.Series.Reason);
 

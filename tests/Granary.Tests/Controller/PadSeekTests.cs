@@ -333,6 +333,78 @@ public sealed class PadSeekTests
     }
 
     [Fact]
+    public void ASeekMadeElsewhereMidScrub_DropsThePadsSeek_AndTheTriggerStillPulledScrubsNoMoreUntilLetGo()
+    {
+        _bench.Hold(FullRightTrigger, Second);
+
+        // A key or a click on the seek bar seeks meanwhile (PlayerPage.OnSeekRequested).
+        _bench.Pad.CancelSeek();
+        var held = _bench.Hold(FullRightTrigger, Second);
+        var released = _bench.Read(default);
+        var pulledAgain = _bench.Hold(FullRightTrigger, TimeSpan.FromMilliseconds(100));
+
+        Assert.Empty(held);
+        Assert.Empty(released);
+        Assert.NotEmpty(Previews(pulledAgain));
+    }
+
+    [Fact]
+    public void ASeekMadeElsewhereWhileAStepWaits_SendsNoSeek()
+    {
+        _bench.Tap(PadButtons.DPadRight);
+
+        _bench.Pad.CancelSeek();
+
+        Assert.Empty(_bench.Rest(Second));
+        Assert.True(_bench.Pad.IsIdle);
+    }
+
+    [Fact]
+    public void ASeekMadeElsewhereWhileADirectionSeeks_TheHeldDirectionAddsNoStepUntilLetGo()
+    {
+        _bench.Hold(PadButtons.DPadLeft, Second);
+
+        _bench.Pad.CancelSeek();
+        var held = _bench.Hold(PadButtons.DPadLeft, Second);
+        held.AddRange(_bench.Rest(Second));
+        var pressedAgain = _bench.Read(PadButtons.DPadLeft);
+
+        Assert.Empty(held);
+        Assert.Equal([-10], Previews(pressedAgain));
+    }
+
+    [Fact]
+    public void AChapterJumpMidScrub_CallsTheSeekOffFirst_AndTheTriggerStillPulledScrubsNoMore()
+    {
+        _bench.Hold(FullRightTrigger, Second);
+
+        var jumped = _bench.Read(new PadReading(PadButtons.RightShoulder, RightTrigger: 1));
+        var after = _bench.Hold(FullRightTrigger, Second);
+        after.AddRange(_bench.Rest(Second));
+
+        Assert.Equal([new PadAction(PadActionKind.SeekCancel), new PadAction(PadActionKind.NextChapter)], jumped);
+        Assert.Empty(after);
+    }
+
+    [Fact]
+    public void AChapterJumpWhileAStepWaits_CallsTheStepsOff()
+    {
+        _bench.Tap(PadButtons.DPadRight);
+
+        var jumped = _bench.Tap(PadButtons.LeftShoulder);
+        var after = _bench.Rest(Second);
+
+        Assert.Equal([new PadAction(PadActionKind.SeekCancel), new PadAction(PadActionKind.PreviousChapter)], jumped);
+        Assert.Empty(after);
+    }
+
+    [Fact]
+    public void AChapterJumpWithoutASeek_IsTheJumpAlone()
+    {
+        Assert.Equal([new PadAction(PadActionKind.NextChapter)], _bench.Tap(PadButtons.RightShoulder));
+    }
+
+    [Fact]
     public void ASeekThatWaits_KeepsThePadFromIdling()
     {
         _bench.Tap(PadButtons.DPadRight);

@@ -2719,8 +2719,9 @@ What the indicator reads, each source by itself (a source the server does not of
   until the next connection's snapshot, which the server writes right after `subscribed`; when it has not come after
   10 s (the server could not build it and sent an `error` frame), or cannot be read, the scans count as not known
   rather than as they were, since an end that happened while the stream was away, or that the server dropped for a
-  slow reader (its hub keeps 64 events per connection), is never sent again. Not known means neither a list nor
-  "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
+  slow reader (its hub keeps 64 events per connection), is never sent again. A `scan.*` event that cannot be read (cut
+  for its size, or no run; every one of them carries a run) leaves them not known as well. Not known means neither a
+  list nor "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
   0.6 to 0.9 KB with its `result` (thirteen counters, `phase`, `message`, `current_scope`), plus its `path`, so 500 of
   them are 0.15 to 0.5 MB; a snapshot passes the 1 MiB a frame may have (12) only with paths of about 1.5 KB on
   average, and is then such a snapshot that cannot be read. The libraries' names for the rows come from

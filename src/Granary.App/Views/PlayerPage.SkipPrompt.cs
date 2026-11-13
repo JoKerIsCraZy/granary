@@ -2,6 +2,7 @@ using System.Numerics;
 using Granary.App.Controls;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
@@ -35,8 +36,10 @@ public sealed partial class PlayerPage
     private void FocusPromptSoon() => DispatcherQueue.TryEnqueue(() => FocusPrompt(fromControls: false));
 
     // Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus, so OK
-    // there never turns into a skip; the prompt gets it when the controls hide (RestFocus). Not while a seek is being
-    // made either, as the TV app's mayTakeFocus. Focus shows its ring after a key or a pad, not after the mouse.
+    // there never turns into a skip; the prompt gets it when the controls hide (RestFocus). A control of the hidden bar
+    // is none the viewer is on: one the mouse pressed keeps focus as the bar hides, and Enter would press it unseen. Not
+    // while a seek is being made either, as the TV app's mayTakeFocus. Focus shows its ring after a key or a pad, not
+    // after the mouse.
     private bool FocusPrompt(bool fromControls)
     {
         if (!IsLoaded || IsCompact || ShowsNextUpScreen || XamlRoot is not { } root || HasOpenMenu() || IsPanelOpen
@@ -45,13 +48,16 @@ public sealed partial class PlayerPage
             return false;
         }
         if (!fromControls && FocusManager.GetFocusedElement(root) is DependencyObject focused && !ReferenceEquals(focused, this)
-            && IsWithin(focused, this) && IsShown(focused))
+            && IsWithin(focused, this) && IsShown(focused) && !IsInHiddenControls(focused))
         {
             return false;
         }
         ButtonBase? prompt = ViewModel.HasSkipPrompt ? SkipButton : ViewModel.IsNextUpCardShown ? NextUpPlayButton : null;
         return prompt is not null && prompt.Focus(_lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic);
     }
+
+    // The bar hides by its look alone (SetControlsVisible), so what is in it still counts as shown.
+    private bool IsInHiddenControls(DependencyObject element) => !_areControlsVisible && element is Control control && IsInControls(control);
 
     // Focus leaves the controls for where it rests: a prompt that shows, else the picture.
     private void RestFocus()

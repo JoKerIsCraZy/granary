@@ -286,9 +286,16 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>The viewer's pick in the subtitle menu, null for Off: it shows at once and is saved for the series.</summary>
     public void SelectSubtitle(string? trackId) => _playback?.SelectSubtitle(trackId);
 
+    /// <summary>
+    /// The viewer sought (<see cref="SeekTo"/>): the seek bar, a skip, a chapter, the media keys. A game controller's seek
+    /// still being made gives way to it. Not raised for the player's own seeks, such as a marked part that skips itself.
+    /// </summary>
+    public event EventHandler? ViewerSought;
+
     /// <summary>The viewer moves to <paramref name="seconds"/> of the title (the seek bar, the skips), within its length.</summary>
     public void SeekTo(double seconds)
     {
+        ViewerSought?.Invoke(this, EventArgs.Empty);
         _streak.Reset();
         _nextUp.Sought(Now);
         ShowNextUp();

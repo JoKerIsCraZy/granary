@@ -113,7 +113,7 @@ public sealed class ServerActivityPreparationsTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, """{ "type": "event", "channel": "download_preparations", "event": "download_storage.changed", "event_id": "s1", "timestamp": "t", "data": {} }""");
         await _harness.PushedAsync(socket, """{ "type": "snapshot", "channel": "download_preparations", "timestamp": "t", "data": null }""");
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(1, Reads);
 
         _harness.Library.Answer(QueuePath, Idle);
@@ -138,7 +138,7 @@ public sealed class ServerActivityPreparationsTests : IAsyncDisposable
         // Nothing is on its way any more: no further read by the clock.
         await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the window after the read");
         _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh + ServerActivity.PreparationsRefresh);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(2, Reads);
     }
 
@@ -197,7 +197,7 @@ public sealed class ServerActivityPreparationsTests : IAsyncDisposable
         await _harness.PushedAsync(socket, Changed);
         await _harness.PushedAsync(socket, Progress("job-1", 10));
         _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh + ServerActivity.PreparationsRefresh);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(1, Reads);
         Assert.Null(_harness.State.Preparations);
@@ -213,7 +213,7 @@ public sealed class ServerActivityPreparationsTests : IAsyncDisposable
         _harness.Library.Session.RaiseChanged();
         await _harness.OpenedAsync(1);
         _harness.Library.Clock.Advance(ServerActivity.PreparationsRefresh + ServerActivity.PreparationsRefresh);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(1, Reads);
         Assert.Null(_harness.State.Preparations);
