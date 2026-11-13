@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Controller;
 using Granary.Core.Navigation;
@@ -160,8 +161,9 @@ public sealed partial class MainWindow
     }
 
     // A bumper goes to the tab or pill before or after the chosen one, and focus with it, so the viewer sees where they
-    // are: the row of tabs focus is on, else the page's first (a library's Recommended, Library and Collections). It
-    // stops at the ends. A page without tabs has its row of cards paged instead.
+    // are: the row of tabs focus is on, else the page's own sections (Settings' and Admin's pages, Search's Movies and
+    // Series; IPadSections), else the page's first row of tabs (a library's Recommended, Library and Collections). It
+    // stops at the ends. A page without any has its row of cards paged instead.
     private void StepPadTab(int by)
     {
         if (ContentFrame.Content is not Page page)
@@ -170,9 +172,13 @@ public sealed partial class MainWindow
         }
         var tabs = new List<RadioButton>();
         CollectTabs(page, tabs);
-        var chosen = FocusedElement() as RadioButton is { } focused && tabs.Contains(focused)
-            ? focused
-            : tabs.FirstOrDefault(tab => tab.IsChecked == true && tabs.Count(other => IsSameGroup(tab, other)) > 1);
+        var chosen = FocusedElement() as RadioButton is { } focused && tabs.Contains(focused) ? focused : null;
+        if (chosen is null && page is IPadSections sections)
+        {
+            sections.StepSection(by);
+            return;
+        }
+        chosen ??= tabs.FirstOrDefault(tab => tab.IsChecked == true && tabs.Count(other => IsSameGroup(tab, other)) > 1);
         if (chosen is null)
         {
             PagePadRow(by);

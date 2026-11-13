@@ -11,7 +11,8 @@ release's section is what its update says it changes (docs/release.md).
 - **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
   is A, Circle is B, Square is X and Triangle is Y. The D-pad or the left stick moves, A picks, B goes
   back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the
-  bumpers switch tabs, the triggers page and the right stick scrolls. In the player A or X plays and pauses, Left and
+  bumpers switch tabs (also the pages of Settings, and Search between movies and series), the triggers page and the
+  right stick scrolls. In the player A or X plays and pauses, Left and
   Right seek in steps that grow while you hold them, the triggers scrub, the bumpers jump chapters, the right stick sets
   the volume, Y opens audio and subtitles, Menu the settings and View the playback info; A takes Skip Intro and the next
   episode when they show. Granary listens to the pad only while its window is in front, and a pad that falls asleep

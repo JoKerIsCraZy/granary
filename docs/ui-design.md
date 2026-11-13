@@ -969,7 +969,7 @@ On the pages, and in the minimized player's bar:
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's first (a library's Recommended, Library and Collections). On a page without tabs the row of cards moves on by as many cards as show, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus the page scrolls. Held, they page again. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. |
 | Right stick's click | Full screen on and off. |
@@ -1011,7 +1011,9 @@ Always:
   Windows as an Xbox pad works too, and the pad still counts once.
 
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
-pictures that match the pad, and a way to swap A and B.
+pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
+seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
+order and Filters are menus, not a row to step through: A opens them.
 
 ## Signed-out screens
 

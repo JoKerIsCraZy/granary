@@ -136,6 +136,30 @@ internal static class PadControls
         return true;
     }
 
+    /// <summary>
+    /// Picks the row before or after the picked one and moves focus to it, through lists that share one pick (a page's own
+    /// sidebar, Settings' in four parts). It stops at the ends, and does nothing while no row is picked.
+    /// </summary>
+    public static void StepRow(IReadOnlyList<ListView> lists, int by)
+    {
+        var rows = new List<(ListView List, ListViewItem Row)>();
+        foreach (var list in lists)
+        {
+            if (list.Visibility == Visibility.Visible)
+            {
+                rows.AddRange(list.Items.OfType<ListViewItem>()
+                    .Where(row => row is { Visibility: Visibility.Visible, IsEnabled: true })
+                    .Select(row => (list, row)));
+            }
+        }
+        int index = rows.FindIndex(entry => ReferenceEquals(entry.List.SelectedItem, entry.Row)) is var picked and >= 0 ? picked + by : -1;
+        if (index >= 0 && index < rows.Count)
+        {
+            rows[index].List.SelectedItem = rows[index].Row;
+            rows[index].Row.Focus(FocusState.Keyboard);
+        }
+    }
+
     // A list's row is pressed and chosen through its list: the row's own peer offers neither.
     private static AutomationPeer? PeerOf(UIElement element) =>
         element is SelectorItem row && ItemsControl.ItemsControlFromItemContainer(row) is { } list

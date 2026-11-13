@@ -1182,7 +1182,9 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
   Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer), B runs the remote's back ladder
   (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
-  (`Views/PlayerPage.Controller.cs`). A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
+  (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
+  sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
+  (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
   `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request.
 - **Presence.** Windows counts keys and the mouse as the viewer being there, not a pad. While the pad is in use the
   window sets the display's and the system's idle timers back (`SetThreadExecutionState` without `ES_CONTINUOUS`, at
