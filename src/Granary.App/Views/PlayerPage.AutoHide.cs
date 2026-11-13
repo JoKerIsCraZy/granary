@@ -388,7 +388,8 @@ public sealed partial class PlayerPage
     // for each time the cursor hid.
     private void CheckShownCursor()
     {
-        if (!_isCursorHidden || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
+        // Not over a dialog, a menu or a tooltip: their cursor is theirs (HookCursorRequests).
+        if (!_isCursorHidden || HasOpenPopup() || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
         {
             return;
         }
@@ -421,6 +422,9 @@ public sealed partial class PlayerPage
         return GetCursorInfo(ref info) && (info.Flags & CursorShowing) != 0
             && info.Cursor != 0 && info.Cursor != BlankCursor.Handle;
     }
+
+    private bool HasOpenPopup() =>
+        XamlRoot is { } root && Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Count > 0;
 
     private static bool ShowsArrow()
     {
@@ -455,6 +459,8 @@ public sealed partial class PlayerPage
     // While the cursor is hidden, every window of Granary's answers Windows' question for its cursor with the hidden one
     // while the pointer is over the picture (CursorWindowHook): all of them, so it does not matter which one Windows asks,
     // and from the moment the cursor hides, wherever the pointer is then. The hook itself looks where the pointer is.
+    // Not while a dialog, a menu or a tooltip is open: those lie over the picture in the same window, the page hears no
+    // pointer move over a dialog, and so nothing would bring the cursor back on it. WinUI answers then, as before.
     private void HookCursorRequests(bool hidden)
     {
         if (!hidden || BlankCursor.Handle == 0 || _appWindow is null)
@@ -463,7 +469,7 @@ public sealed partial class PlayerPage
             return;
         }
         _cursorWindowHook ??= new CursorWindowHook(BlankCursor.Handle,
-            () => IsLoaded && _isCursorHidden && PointerInPage() is not null);
+            () => IsLoaded && _isCursorHidden && !HasOpenPopup() && PointerInPage() is not null);
         _cursorWindowHook.Watch(Win32Interop.GetWindowFromWindowId(_appWindow.Id));
     }
 

@@ -100,7 +100,8 @@ public sealed partial class CursorWindowHookTests
             SetCursor(LoadCursorW(0, 32512));
             Assert.Equal(1, SendMessageW(inner, 0x0020, inner, (0x0200 << 16) | 1));
             Assert.Equal(blankStandIn, GetCursor());
-            // A window that does not answer hands the question to its parent, still naming itself.
+            // A window that does not answer hands the question to its parent, still naming itself: the parent answers
+            // whichever window the question names.
             SetCursor(LoadCursorW(0, 32512));
             Assert.Equal(1, SendMessageW(root, 0x0020, inner, (0x0200 << 16) | 1));
             Assert.Equal(blankStandIn, GetCursor());
