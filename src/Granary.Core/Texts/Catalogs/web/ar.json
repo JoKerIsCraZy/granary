@@ -8987,12 +8987,6 @@
       "value": "الفصول"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "جارٍ إعادة الاتصال…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

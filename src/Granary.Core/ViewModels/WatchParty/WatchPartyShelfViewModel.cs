@@ -256,7 +256,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         {
             return;
         }
-        SearchState = AppText.Get("web.collections.manual.searching");
+        SearchState = AppText.Get("granary.watchParty.searching");
         SearchFailed = false;
         try
         {

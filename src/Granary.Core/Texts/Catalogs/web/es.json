@@ -8189,12 +8189,6 @@
       "value": "Capítulos"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "Reconectando…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

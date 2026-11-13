@@ -7568,12 +7568,6 @@
       "value": "章节"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "正在重新连接……"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

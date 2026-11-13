@@ -8185,12 +8185,6 @@
       "value": "Chapitres"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "Reconnexion…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

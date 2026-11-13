@@ -143,9 +143,9 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     {
         _ when _party.End is not null => AppText.Get("watchParty.connection.disconnected"),
         WatchPartyConnectionState.Connected => AppText.Get("web.watchTogether.connection.connected"),
-        WatchPartyConnectionState.Connecting when _wasConnected => AppText.Get("web.player.connection.reconnecting"),
+        WatchPartyConnectionState.Connecting when _wasConnected => AppText.Get("granary.watchParty.reconnecting"),
         WatchPartyConnectionState.Connecting => AppText.Get("web.watchTogether.connection.connecting"),
-        _ => _wasConnected ? AppText.Get("web.player.connection.reconnecting") : AppText.Get("watchParty.connection.disconnected"),
+        _ => _wasConnected ? AppText.Get("granary.watchParty.reconnecting") : AppText.Get("watchParty.connection.disconnected"),
     };
 
     public bool IsLive => _party.IsConnected;

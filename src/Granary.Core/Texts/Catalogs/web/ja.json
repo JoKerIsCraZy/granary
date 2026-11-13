@@ -7520,12 +7520,6 @@
       "value": "チャプター"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "再接続中…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

@@ -7937,12 +7937,6 @@
       "value": "Kapitel"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "Verbindung wird wiederhergestellt…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

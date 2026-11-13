@@ -7887,12 +7887,6 @@
       "value": "Chapters"
     }
   ],
-  "web.player.connection.reconnecting": [
-    {
-      "type": 0,
-      "value": "Reconnecting…"
-    }
-  ],
   "web.player.controls.editMarkers": [
     {
       "type": 0,

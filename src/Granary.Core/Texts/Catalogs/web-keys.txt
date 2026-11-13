@@ -1294,11 +1294,6 @@ web.person.unavailableTitle
 # src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
 web.player.audioMenu.trigger
 web.player.chaptersMenu.trigger
-
-# More of Watch Together's words, as above under watchParty.button.imReady.
-web.player.connection.reconnecting
-
-# More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.controls.editMarkers
 web.player.controls.fillScreen
 web.player.controls.playbackInfo
