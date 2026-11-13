@@ -382,15 +382,17 @@ public sealed partial class PlayerPage
         WatchCursor();
     }
 
-    // Keep ownership at the input HWND, so WM_SETCURSOR cannot restore a visible shape while the page says hidden.
-    // The timer also covers a framework setting a cursor without a window message, including custom cursor schemes.
+    // While the player's cursor is hidden, Granary's windows answer Windows' question for it themselves
+    // (HookCursorRequests). This look is what is left for a cursor set past that question: it asks once more, and the log
+    // says what Windows drew, whether asking helped, and whose windows were under the pointer and in front, a few times
+    // for each time the cursor hid.
     private void CheckShownCursor()
     {
         if (!_isCursorHidden || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
         {
             return;
         }
-        WatchCursorWindow(under);
+        HookCursorRequests(hidden: true);
         if (!ShowsOtherCursor())
         {
             return;
@@ -408,7 +410,7 @@ public sealed partial class PlayerPage
             // that thread has the mouse's input. Window classes only, never a title.
             _autoHideLog.LogDebug(
                 "Windows drew {Shape} over the picture while the player's cursor is hidden (restored: {Restored}; under the pointer: {Under}; in front: {Front}; requests answered since it hid: {Answered})",
-                shape, !ShowsOtherCursor(), DescribeWindow(under), DescribeWindow(GetForegroundWindow()),
+                shape, !ShowsOtherCursor(), DescribeWindow(under, withClass: true), DescribeWindow(GetForegroundWindow(), withClass: false),
                 (_cursorWindowHook?.Answered ?? 0) - _answeredAsCursorHid);
         }
     }
@@ -426,31 +428,43 @@ public sealed partial class PlayerPage
         return GetCursorInfo(ref info) && info.Cursor != 0 && info.Cursor == LoadCursorW(0, ArrowCursorId);
     }
 
-    // A window as the log may name it: its class and whose it is. A class says which part of which program it is
-    // ("Microsoft.UI.Content.DesktopChildSiteBridge", "Shell_TrayWnd"), and holds nothing of the viewer's.
-    private static unsafe string DescribeWindow(nint window)
+    // A window as the log may name it: whose it is, and for one of Granary's own its class, which says which part of the
+    // window it is ("Microsoft.UI.Content.DesktopChildSiteBridge"). Another program's window is not named: which program
+    // the viewer has in front is theirs.
+    private static unsafe string DescribeWindow(nint window, bool withClass)
     {
         if (window == 0)
         {
             return "none";
         }
+        uint thread = GetWindowThreadProcessId(window, out uint process);
+        if (process != (uint)Environment.ProcessId)
+        {
+            return "another program's";
+        }
+        string whose = thread == GetCurrentThreadId() ? "this thread's" : "another thread's of Granary";
+        if (!withClass)
+        {
+            return whose;
+        }
         char* name = stackalloc char[128];
         int length = GetClassNameW(window, name, 128);
-        uint thread = GetWindowThreadProcessId(window, out uint process);
-        string whose = process != (uint)Environment.ProcessId ? "another program's"
-            : thread == GetCurrentThreadId() ? "this thread's" : "another thread's of Granary";
         return (length > 0 ? new string(name, 0, length) : "?") + ", " + whose;
     }
 
-    private void WatchCursorWindow(nint window)
+    // While the cursor is hidden, every window of Granary's answers Windows' question for its cursor with the hidden one
+    // while the pointer is over the picture (CursorWindowHook): all of them, so it does not matter which one Windows asks,
+    // and from the moment the cursor hides, wherever the pointer is then. The hook itself looks where the pointer is.
+    private void HookCursorRequests(bool hidden)
     {
-        if (BlankCursor.Handle == 0)
+        if (!hidden || BlankCursor.Handle == 0 || _appWindow is null)
         {
+            _cursorWindowHook?.Watch(0);
             return;
         }
         _cursorWindowHook ??= new CursorWindowHook(BlankCursor.Handle,
             () => IsLoaded && _isCursorHidden && PointerInPage() is not null);
-        _cursorWindowHook.Watch(window);
+        _cursorWindowHook.Watch(Win32Interop.GetWindowFromWindowId(_appWindow.Id));
     }
 
     // Nothing needs to tell the page that a window over the pointer went, so while the hidden controls leave the cursor
@@ -458,7 +472,7 @@ public sealed partial class PlayerPage
     // hidden one (CheckShownCursor). The rest of the time events are enough.
     private void WatchCursor()
     {
-        WatchCursorWindow(_isCursorHidden ? OwnWindowUnderPointer() : 0);
+        HookCursorRequests(_isCursorHidden);
         if (!(_cursor.WaitsForPicture || _isCursorHidden) || BlankCursor.Instance is null)
         {
             _cursorTimer.Stop();
@@ -542,7 +556,7 @@ public sealed partial class PlayerPage
         }
         _isCursorHidden = true;
         ProtectedCursor = blank;
-        WatchCursorWindow(OwnWindowUnderPointer());
+        HookCursorRequests(hidden: true);
         ShowCursorNow(hidden: true);
     }
 

@@ -1809,16 +1809,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, the window under the pointer answers Windows' question for its cursor itself
-  (`CursorWindowHook`, a subclass that takes `WM_SETCURSOR` for the client area and sets `BlankCursor.Handle`), so
-  neither WinUI nor the window's class can put an arrow or a hand back, whatever the page's elements say; logs had shown
-  WinUI answering with the arrow though the page's cursor was the blank one, and a blank cursor set from a timer not
-  holding. The hook follows the window under the pointer and lets go when the cursor shows, the page unloads or the
-  window is destroyed; the title bar, menus and other windows keep their cursors. A look every 250 ms still checks what
-  Windows draws: a visible cursor over the picture is asked away once more, and the log says whether that helped, which
-  window lay under the pointer and whose it was, which window was in front, and how many requests the hook had answered
-  since the cursor hid. The log also says what brought a hidden cursor back (how far the mouse moved and how long it had
-  lain still, or a finger or pen) and how far the mouse went while the cursor showed.
+  While the cursor is hidden, Granary's windows answer Windows' question for the cursor themselves
+  (`CursorWindowHook`, a subclass on the main window and every window in it that takes `WM_SETCURSOR` for the client
+  area and sets `BlankCursor.Handle` while the pointer is over the picture), so neither WinUI nor the window's class can
+  put an arrow or a hand back, whatever the page's elements say, and whichever of the windows Windows asks; logs had
+  shown WinUI answering with the arrow though the page's cursor was the blank one, and a blank cursor set from a timer
+  not holding. The hook lets go when the cursor shows, the page unloads or a window is destroyed; the title bar, menus
+  and other windows keep their cursors. A look every 250 ms still checks what Windows draws: a visible cursor over the
+  picture is asked away once more, and the log says whether that helped, which of Granary's windows lay under the
+  pointer, whether Granary or another program was in front, and how many requests the hook had answered since the
+  cursor hid. The log also says what brought a hidden cursor back (how far the mouse moved and how long it had lain
+  still, or a finger or pen) and how far the mouse went while the cursor showed.
 
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
