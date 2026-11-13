@@ -66,6 +66,41 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
         Assert.True(feature.IsOffered);
     }
 
+    // The downloads were still being read when another profile became the active one: the entry is not shown for it
+    // because the profile before has downloads.
+    [Fact]
+    public async Task AProfileThatLeftWhileTheDownloadsWereRead_DoesNotShowTheEntryForTheNextOne()
+    {
+        Capability(enabled: false, allowed: false);
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        var store = _h.UnreadStore();
+        // Not disposed: the load's thread may still be waking from it.
+        var released = new ManualResetEventSlim();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        store.Loading = () =>
+        {
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30));
+        };
+        try
+        {
+            var feature = new DownloadsFeature(_h.Session, _h.Api, store, _h.Time, _h.Logs.For<DownloadsFeature>());
+            var refresh = feature.RefreshAsync(Token);
+            await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+            _h.Session.ProfileId = "8";
+            released.Set();
+            await refresh;
+
+            Assert.False(feature.IsOffered);
+        }
+        finally
+        {
+            released.Set();
+            await store.LoadAsync(Token);
+        }
+    }
+
     [Fact]
     public async Task AnotherProfilesDownloads_DoNotOfferTheEntry()
     {

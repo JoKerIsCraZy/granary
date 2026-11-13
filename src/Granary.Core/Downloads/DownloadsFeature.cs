@@ -60,7 +60,8 @@ public sealed partial class DownloadsFeature : ObservableObject
         await _store.LoadAsync(cancellationToken);
         // Downloads on this PC show the entry whatever the server says, so it does not wait for an answer: a server that
         // cannot be reached can take the connection's whole timeout to fail, while the Downloads page is already open.
-        if (_store.In(scope).Count > 0)
+        // Not for a profile that is no longer the active one: its downloads are not the next one's.
+        if (DownloadScope.Of(_session) == scope && _store.In(scope).Count > 0)
         {
             IsOffered = true;
         }
