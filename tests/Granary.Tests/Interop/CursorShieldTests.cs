@@ -182,6 +182,51 @@ public sealed partial class CursorShieldTests
     }
 
     [Fact]
+    public void AFingerThatDrags_IsHandedToTheOwner_OnceItGoesFurtherThanATap()
+    {
+        // Windows makes mouse messages of a finger's drag, as of its tap: the drag shows the cursor and the controls, as a
+        // finger's move over WinUI does.
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 600, 400);
+
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 0, At(50, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftDown, 1, At(50, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 1, At(55, 62));
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 1, At(250, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftUp, 0, At(250, 60));
+
+        Assert.Equal(["pressed Touch", "touch moved"], stage.Owner.Seen);
+    }
+
+    [Fact]
+    public void AFingerThatDragsAndComesBack_IsNoTap()
+    {
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 600, 400);
+
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftDown, 1, At(50, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 1, At(250, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 1, At(52, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftUp, 0, At(52, 60));
+
+        Assert.Equal(["pressed Touch", "touch moved", "touch moved"], stage.Owner.Seen);
+    }
+
+    [Fact]
+    public void AFingersTapThatMovesALittle_IsATapAlone()
+    {
+        // A finger moves a little as it taps: a move then would show the controls, and the tap would hide them again.
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftDown, 1, At(50, 60));
+        SendFrom(FromTouch, stage.Shield.Window, WmMouseMove, 1, At(53, 62));
+        SendFrom(FromTouch, stage.Shield.Window, WmLeftUp, 0, At(53, 62));
+
+        Assert.Equal(["pressed Touch", "clicked Touch"], stage.Owner.Seen);
+    }
+
+    [Fact]
     public void APensMove_IsHandedToTheOwner_AsTheMouses()
     {
         // A pen that hovers moves the pointer, as a mouse does.
@@ -575,6 +620,8 @@ public sealed partial class CursorShieldTests
         public Action? OnClicked { get; set; }
 
         public void MouseSeen() => Seen.Add("mouse seen");
+
+        public void TouchMoved() => Seen.Add("touch moved");
 
         public void Pressed(ShieldPointer pointer) => Seen.Add($"pressed {pointer}");
 

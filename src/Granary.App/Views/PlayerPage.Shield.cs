@@ -149,6 +149,9 @@ public sealed partial class PlayerPage : ICursorShieldOwner
     // A pen's move is measured as the mouse's: Windows moves its pointer with the pen.
     void ICursorShieldOwner.MouseSeen() => OnShield("a mouse move", static page => page.PointerSeen(PointerDeviceType.Mouse));
 
+    // A finger's drag: the cursor and the controls show, as for its move over WinUI.
+    void ICursorShieldOwner.TouchMoved() => OnShield("a finger's move", static page => page.PointerSeen(PointerDeviceType.Touch));
+
     // What is under the pointer is noted first: the press shows the controls, which then lie under it.
     void ICursorShieldOwner.Pressed(ShieldPointer pointer) => OnShield("a press", page =>
     {

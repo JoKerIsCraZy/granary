@@ -1908,6 +1908,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   While it is up the pointer is not WinUI's, so the page does what WinUI did with it:
   - a move of the mouse or a pen is measured as any other, and a real one shows the cursor and the controls and takes
     the shield away;
+  - a finger's drag shows them too, as a finger's move over WinUI does, once it went further than a tap may (the
+    click's 16 px), and is then no tap wherever it ends; the move Windows makes to where a finger goes down, and a tap's
+    small one, are none;
   - a press of a mouse button shows the cursor and the controls too, whichever button, and the shield goes with its
     release; only the left one clicks;
   - a double click is told from its two clicks (`PlayerClicks`, within Windows' double-click time): the first shows the
