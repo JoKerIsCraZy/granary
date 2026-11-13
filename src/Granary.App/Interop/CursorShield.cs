@@ -73,8 +73,11 @@ internal sealed unsafe partial class CursorShield : IDisposable
     private const uint WmLeftUp = 0x0202;
     private const uint WmLeftDouble = 0x0203;
     private const uint WmRightDown = 0x0204;
+    private const uint WmRightUp = 0x0205;
     private const uint WmMiddleDown = 0x0207;
+    private const uint WmMiddleUp = 0x0208;
     private const uint WmXDown = 0x020B;
+    private const uint WmXUp = 0x020C;
     private const uint WmCaptureChanged = 0x0215;
 
     private const int HitClient = 1;
@@ -299,8 +302,16 @@ internal sealed unsafe partial class CursorShield : IDisposable
             case WmRightDown:
             case WmMiddleDown:
             case WmXDown:
-                // Told, and left to Windows: no click comes of these.
-                _owner.Woken(PointerOf(GetMessageExtraInfo()));
+                Woken(lParam);
+                return null;
+            case WmRightUp:
+            case WmMiddleUp:
+            case WmXUp:
+                if (_press is { Clicks: false })
+                {
+                    LetGoOfPress();
+                    LeaveIfAsked();
+                }
                 return null;
             case WmNcDestroy:
                 Forget(window);
@@ -314,21 +325,27 @@ internal sealed unsafe partial class CursorShield : IDisposable
     private void Pressed(bool isSecond, nint lParam)
     {
         var pointer = PointerOf(GetMessageExtraInfo());
-        _press = new Press(pointer, isSecond, XOf(lParam), YOf(lParam));
+        _press = new Press(pointer, isSecond, XOf(lParam), YOf(lParam), Clicks: true);
         _ = SetCapture(Window);
         _owner.Pressed(pointer);
     }
 
-    private void Released(nint lParam)
+    // Another button: told, and left to Windows, and no click comes of it. The shield stays for its release as for the
+    // left button's: gone at once, it would leave WinUI a release without its press, and WinUI then set the cursor it
+    // last knew, the hidden one, where the arrow was due.
+    private void Woken(nint lParam)
     {
-        if (_press is not { } press)
+        var pointer = PointerOf(GetMessageExtraInfo());
+        if (_press is null)
         {
-            return;
+            _press = new Press(pointer, IsSecond: false, XOf(lParam), YOf(lParam), Clicks: false);
+            _ = SetCapture(Window);
         }
-        int dpi = GetDpiForWindow(Window);
-        int reach = ClickReach * (dpi > 0 ? dpi : DefaultDpi) / DefaultDpi;
-        bool isClick = Math.Abs(XOf(lParam) - press.X) <= reach && Math.Abs(YOf(lParam) - press.Y) <= reach;
-        // Over from here on: an owner that uncovers the picture in its click takes the shield away at once.
+        _owner.Woken(pointer);
+    }
+
+    private void LetGoOfPress()
+    {
         _press = null;
         _isLettingGo = true;
         if (GetCapture() == Window)
@@ -336,6 +353,19 @@ internal sealed unsafe partial class CursorShield : IDisposable
             _ = ReleaseCapture();
         }
         _isLettingGo = false;
+    }
+
+    private void Released(nint lParam)
+    {
+        if (_press is not { Clicks: true } press)
+        {
+            return;
+        }
+        int dpi = GetDpiForWindow(Window);
+        int reach = ClickReach * (dpi > 0 ? dpi : DefaultDpi) / DefaultDpi;
+        bool isClick = Math.Abs(XOf(lParam) - press.X) <= reach && Math.Abs(YOf(lParam) - press.Y) <= reach;
+        // Over from here on: an owner that uncovers the picture in its click takes the shield away at once.
+        LetGoOfPress();
         if (isClick)
         {
             _owner.Clicked(press.Pointer, press.IsSecond);
@@ -407,7 +437,8 @@ internal sealed unsafe partial class CursorShield : IDisposable
         return DefWindowProcW(window, message, wParam, lParam);
     }
 
-    private readonly record struct Press(ShieldPointer Pointer, bool IsSecond, int X, int Y);
+    // A button held on the shield: the left one, whose release is a click, or another one, whose release is none.
+    private readonly record struct Press(ShieldPointer Pointer, bool IsSecond, int X, int Y, bool Clicks);
 
     [LibraryImport("user32.dll")]
     private static partial ushort RegisterClassExW(ref WindowClassEx windowClass);

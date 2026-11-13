@@ -405,6 +405,41 @@ public sealed partial class CursorShieldTests
         Assert.NotEqual(stage.Shield.Window, GetCapture());
     }
 
+    [Theory]
+    [InlineData(0x0204u, 0)]
+    [InlineData(0x0207u, 0)]
+    [InlineData(0x020Bu, 2)]
+    public void UncoveredByAnotherButtonsPress_TheShieldStaysForItsRelease(uint message, int extraButton)
+    {
+        // The press shows the cursor, which uncovers the picture. Gone at once, the shield would leave WinUI the release
+        // without its press: WinUI then set the cursor it last knew, the hidden one, and the cursor did not come back.
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+        stage.Owner.OnWoken = stage.Shield.Uncover;
+
+        SendMessageW(stage.Shield.Window, message, extraButton << 16, At(50, 60));
+
+        Assert.True(IsShown(stage.Shield.Window));
+        Assert.Equal(stage.Shield.Window, GetCapture());
+        SendMessageW(stage.Shield.Window, message + 1, extraButton << 16, At(50, 60));
+        Assert.False(stage.Shield.IsUp);
+        Assert.False(IsShown(stage.Shield.Window));
+        Assert.NotEqual(stage.Shield.Window, GetCapture());
+        Assert.Equal(["woken Mouse"], stage.Owner.Seen);
+    }
+
+    [Fact]
+    public void TheLeftButtonsReleaseDuringAnotherButtonsPress_IsNoClick()
+    {
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+        SendMessageW(stage.Shield.Window, 0x0204, 0, At(50, 60));
+
+        SendMessageW(stage.Shield.Window, WmLeftUp, 0, At(50, 60));
+
+        Assert.Equal(["woken Mouse"], stage.Owner.Seen);
+    }
+
     [Fact]
     public void Disposed_TheShieldIsGone_AndCoversNothingMore()
     {
@@ -514,7 +549,13 @@ public sealed partial class CursorShieldTests
 
         public void BackPressed() => Seen.Add("back pressed");
 
-        public void Woken(ShieldPointer pointer) => Seen.Add($"woken {pointer}");
+        public Action? OnWoken { get; set; }
+
+        public void Woken(ShieldPointer pointer)
+        {
+            Seen.Add($"woken {pointer}");
+            OnWoken?.Invoke();
+        }
     }
 
     [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
