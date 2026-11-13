@@ -252,6 +252,14 @@
         </Button>
 
         <!--
+            What the server does, for an acting administrator, as the web's ServerActivity: a glass disc at the top right of
+            the page, where the web has it (20 px from the edge), level with the way back. Shown and hidden by
+            MainWindow.Activity.cs; after the page in the tab order, so it is never a page's first focus.
+        -->
+        <controls:ServerActivityButton x:Name="ActivityButton" Grid.Row="1" Margin="0,12,20,0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Top" Visibility="Collapsed" />
+
+        <!--
             A downloaded update of Granary itself: restart into it, or it installs when Granary closes (AppUpdatesViewModel,
             docs/release.md). Over the page at the bottom right, under the start screen.
         -->

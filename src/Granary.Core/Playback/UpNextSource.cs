@@ -143,7 +143,8 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, IL
             [
                 .. row.Items
                     .Where(item => HomeRowRules.Shows(row.SectionType, item) && (exceptSeriesId is null || (item.SeriesId != exceptSeriesId && item.ContentId != exceptSeriesId)))
-                    .Select(item => MediaCardFactory.ForSection(row, item, server)),
+                    // A click on an On Deck card plays it, so its lines are no links to its page or its series.
+                    .Select(item => MediaCardFactory.ForSection(row, item, server) with { Links = CardLines.None, HeadingId = null }),
             ];
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))

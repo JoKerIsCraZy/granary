@@ -57,6 +57,11 @@ engine reads the swap chain from the `display-swapchain` property; `MpvVideoHost
 inverse DPI scale. XAML controls draw over the video. The comparison with the render API and a child
 HWND is in [spike/README.md](../spike/README.md).
 
+While the player's cursor is hidden, an invisible child window of the main window lies over the picture (`CursorShield`;
+docs/ui-design.md, Player): over WinUI content a hidden cursor does not hold (microsoft-ui-xaml issue 11942), while over
+a plain window Windows asks its owner for the cursor each time. The class has no WinUI in it and is tested with real
+windows and messages (`CursorShieldTests`); the page hands on what happens on the shield (`PlayerPage.Shield.cs`).
+
 The panel shows the last presented picture unscaled, from its top-left corner, and mpv resizes its
 buffers a little after the panel on its own thread. After a jump in size (the player minimized to its
 bar or brought back, full screen, the Playing Next corner), `MpvVideoHost` therefore hides the picture
@@ -289,6 +294,8 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   would read and starting a new mpv if it changed ("Your own mpv.conf", "The next title"). A failure that ends a title
   before mpv has it, and the window's new swap chain, come from that chain's thread.
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
+- The events stream's frames arrive on its lane's thread; `ServerActivity` takes them, its reads' answers (thread pool)
+  and its timers under one lock and raises `Changed` outside it ("Server activity").
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
 - What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
@@ -412,6 +419,19 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 - A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
   text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
   caption while it shows; a recycled card without one shows the plain caption again.
+- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element to a card, and no
+  handler to a card no pointer has come to: the caption has a fill without colour (one brush for all cards), so the
+  pointer handlers every card already has hear the pointer there. Each move reads the pointer's place once: above the
+  caption it is on the artwork and nothing more is looked up; on the caption the line under it is found among the text
+  blocks. Core decides what shows where (`CardHover`: the artwork's look or a link, never both), which lines go
+  underlined together and what a title line opens; the card sets `TextDecorations` on the lines that change and, only
+  while the pointer is on it, one of two shared cursors.
+- A click on a card's title line stays the button's click. A card whose title opens a series gets, the first time a
+  pointer comes to its caption, one handler for its own presses and two on the button around it (a key on its way
+  there, the pointer's capture lost), and a `HeadingPress` that notes a press beginning on that line. When the button
+  clicks, the row or grid asks the card first (`TryOpenHeading`, then `CardClick`, both rules in Core). Nothing is
+  marked handled and no gesture event is waited for, so the click cannot be lost: the first version handled the press
+  and opened the series on `Tapped`, which rested on WinUI still raising `Tapped` after a handled press.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the
@@ -420,8 +440,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
   the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
   shown again only makes its bitmap. Home's hero and banner take the same path for a hidden backdrop
-  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,100 px backdrop
-  is blurred by 2.8 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
+  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,660 px backdrop
+  is blurred by 1.9 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
   the thumbhash as a sharp backdrop would; a wider window does not make it again (`BrowseHeroLayout.StepFor`). The hero
   takes a title whose blur changed as a new picture, so a switch fades the backdrop over while the logo stays; a picture
   that becomes hidden is let go at once rather than faded over. Until the profile's switches are read
@@ -1049,6 +1069,64 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   in the sheet, a failed step after it only logged once the room stands. The read of the server's rooms an attach
   starts is waited for by nobody, so it catches everything too, and `WatchPartyFeature` drops an answer read for the
   server and profile before.
+
+## Server activity
+
+The administrator's activity indicator (docs/ui-design.md, "Activity indicator") is made of three parts.
+
+- **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it wants the
+  administrator's channels too (the lane asks for those the server's `hello` offers) and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
+  disconnected), on to `ServerActivity`. Not for a profile that switched its indicator off (`ActivityIndicatorSetting`,
+  below): that is a following without the activity, as an account that is no administrator is. The lane takes frames
+  up to 1 MiB whole and cuts a larger one to its head
+  (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
+  notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every
+  `sessions` and `tasks` frame, the preparation queue's but its progress readings) never has its payload kept: past
+  its first 4 KiB the socket drops the rest as it arrives (`FrameHeadFilter`, `EventsFrames.TakesWhole`), and a
+  shorter one is parsed without its `data`.
+- **`ServerActivity`** (Core, a singleton) keeps a `ServerActivityState`, a record that is replaced and never changed:
+  the administrator's channels the server accepted, the connection's state, and each source's list or null (the
+  streams, the tasks and the preparation queue are read; the scans come with the stream alone, with the libraries'
+  names read for their rows). The server
+  is the only judge of who is an acting administrator: nothing is read before a `subscribed` frame accepted a channel,
+  and `access_changed` empties the state until the next one. The scans a new connection inherits are a guess until
+  its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s while a scan of the
+  last connection may still run, leaves them not known (`Scans` null and `ScansMayBeMore`), for that connection only;
+  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
+  smaller one, so neither a stale list nor a count that scans ending made "exact" is shown. The lists are read over REST when the stream says they
+  changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
+  5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
+  403, 404, 501 or 503 on the read) is left out and not asked for again on that connection; another failure keeps what
+  was shown, and the window after it grows with each failure in a row (5 s, 10, 20, 40, then 60, or the server's
+  `Retry-After` up to five minutes), with one warning in the log per outage and a line when the list reads again.
+  While preparation jobs are on their way, their list is also read again 60 s after its last read, whether that read
+  answered or failed. A progress reading that comes while that list is being read is put into the answer too, which
+  was made before it.
+  `RealtimeEvents` tells it of every change of server, profile, role or sign-in under the lock it replaces
+  its lane in (`Follow`), and gets a number its frames come under: frames under an older number are dropped, and each
+  following has an object of its own that its reads are cancelled by and compared against, so a late answer is dropped
+  too. Everything in it is guarded by one lock; `Changed` is raised outside it, on the lane's, a read's or a timer's
+  thread, and what a listener throws there is logged and goes no further.
+- **`ServerActivityViewModel`** (Core, a singleton) shows the state on the UI thread (`IUiDispatcher`), at most four
+  times a second: a scan sends its progress as fast as it counts files, and each look groups the streams and syncs
+  every section's rows. The first news after a quiet 250 ms is looked at at once, more news within it once it is up;
+  a change of who may see the indicator at all never waits. Its rows are kept by key and updated in place (`ServerActivityRows.Sync`), so a
+  row the keyboard is on keeps its focus while its numbers change. The shell says where it is (`ShowsWhenIdle` on the
+  admin area's pages) and whether the panel is open; `IsVisible` is the web's rule, and also holds while there may
+  be scans nobody knows of. What the shell's keys do around the button that needs no WinUI is in Core too
+  (`ActivityIndicatorFocus`: Up at a page's top, and whether a button that goes gives focus back), as is where the
+  button lies for a page that must keep clear of it (`ActivityIndicatorPlace`).
+- **`ActivityIndicatorSetting`** (Core, a singleton) is the switch of Settings → Navigation & Cards → Server activity:
+  the profiles that turned their indicator off, by "server id/profile id", in `activity-indicator.json` in the data
+  directory, read and written as `BrowseHeroSetting` does its file. Both parts above follow it. The view model's
+  `IsVisible` is false while it is off, whatever the state says, so the button goes with the switch and waits for
+  nothing. `RealtimeEvents` cannot give the connection up, which Home's reloads and the notification count live on
+  for everyone; it replaces it by one that asks for everyone's channels only and has `ServerActivity` follow nothing
+  (`Follow(null)`), so no administrator's frame is sent and none of the lists is read while the switch is off, and the
+  other way round when it goes on again. A connection replaced for the same profile on the same server (this switch,
+  or an account made or unmade an administrator) costs the profile none of its own news: a reload that waited still
+  comes, and when the new connection takes longer than `CatchUpAfter` to subscribe, the app reloads once for what was
+  sent to nobody meanwhile, as after any gap that long (a new lane knows of no gap by itself).
 
 ## Discord status
 
@@ -1800,6 +1878,70 @@ offline mode: no app-wide offline state, no banner on other pages, and nothing s
   load again. With the server there, the capability is read twice at a start, once here and once by `DownloadsFeature`. Losing the server while Granary runs moves nobody and shows no note; the pages' own errors say it.
 - **The sidebar's entry.** `DownloadsFeature.IsOffered` is set from the downloads on this PC before the capability is
   read ("Starting and deleting"), so Downloads is in the sidebar as its page opens.
+
+## Game controller
+
+What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
+
+- **What WinUI does by itself: nothing to rely on.** Microsoft's guidance says a pad's D-pad, A and B reach XAML as
+  `VirtualKey.Gamepad*` keys and move focus. That is how UWP works; in a Windows App SDK desktop app no such keys are
+  reported to arrive, and nothing moves (microsoft-ui-xaml issue 6891). The controls still know those keys, so should
+  an SDK deliver them, the window marks them handled on the way down (`OnPadKeyDown`, in menus and dialogs too) and
+  nothing happens twice. `Windows.Gaming.Input` works in a desktop app as it is, and is what Granary reads.
+- **`PadInterpreter`** (Core, `Controller/`) is the whole decision: it takes a reading (`PadReading`: buttons by
+  position, both sticks, both triggers), the time from a `TimeProvider` and what the window knows (`PadContext`: pages
+  or player, where focus is in the player, whether a prompt shows, whether the title can be sought and the profile's
+  skip steps), and returns actions (`PadAction`). In it: the dead zones, the stick as a D-pad and the trigger as a
+  button with their two thresholds, the long press, the repeats, the seek made of growing steps and sent once, and the
+  triggers' scrub (`PadInterpreter.Seek.cs`); the numbers are `PadTuning`'s. It keeps no window and no pad, and its
+  tests drive it with `ManualTimeProvider`. A button held while the pad is first read, after `Reset`, or while the pages
+  and the player change places, does nothing until it is pressed again: A on a card opens the player and pauses nothing
+  there. What was let go while they changed places is no release for the new one either: on the pages A acts when it is
+  let go, and A on the player's Close, let go before the pages are first read, presses nothing behind the player.
+- **`GamepadReader`** (App) lists the pads and reads them as one (`PadReading.Merge`), so any pad in the room works.
+  Windows knows an Xbox pad, and any pad its maker registered with it as one (docs: "Registry data for game
+  controllers"), as a `Gamepad`. A DualShock 4 or DualSense is only a `RawGameController` to it, a list of unnamed
+  buttons and axes, unless a tool presents it as an Xbox pad. Core's `SonyPad` reads that list by position: the
+  buttons' places are the ones Microsoft's own controller data labels for these pads (Square 0, Cross 1, Circle 2,
+  Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
+  axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
+  with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. These
+  pads report L2 and R2 as buttons too, down from the first bit of the way; the interpreter takes a trigger by its pull
+  wherever a reading has one, and only a button without a pull as pulled home (`Pressure`), so a light pull scrubs
+  slowly and a touch pages nothing. A pad that shows up twice, itself and as the Xbox pad a tool makes of it, still
+  presses each button once, since the readings are merged before anything is decided.
+  A pad on its way out can fail its last readings. Such a reading is no pad at
+  rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
+  interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). `IsAtRest` is false
+  for it, so the window hands it over also when the pad lay idle before, and a button found down when readings come
+  back is no press.
+  No PlayStation pad was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
+- **Reading costs nothing without a pad, and a tick with one at rest.** Windows tells of pads that come and go; a timer
+  runs only while there is one and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while
+  the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached
+  and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
+  that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
+  `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
+  wakes for it; it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
+  often as one at rest. Windows documents that a UWP app gets no pad input out of focus and says nothing for desktop
+  apps, so Granary does not ask: deactivated, it stops reading. The timer's tick goes through `WeakTick`.
+- **Carrying out.** Nothing is typed or clicked for the pad. Focus moves through `FocusManager.FindNextElement` and is
+  set as the keyboard's (`PadControls.Move`), after the window's own handling of an arrow and before its handling of an
+  arrow nobody took, the same two methods the arrow keys call (`TakesArrowFirst`, `TakesArrowLast` in
+  MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
+  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer), B runs the remote's back ladder
+  (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
+  (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
+  sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
+  (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
+  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request.
+- **Presence.** Windows counts keys and the mouse as the viewer being there, not a pad. While the pad is in use the
+  window sets the display's and the system's idle timers back (`SetThreadExecutionState` without `ES_CONTINUOUS`, at
+  most every 10 s); nothing is held, and a title that plays keeps the display on by itself (`PlayerKeepAwake`).
+- **Seams for what is not built yet.** Text fields: `PadControls.Press` returns false for them, where an on-screen
+  keyboard would open. Button pictures: `GamepadReader` is where each pad's kind is known. A swap of confirm and back:
+  one mapping, in `PadInterpreter.TakeButtons`.
 
 ## Windows App SDK
 

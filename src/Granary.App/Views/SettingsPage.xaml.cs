@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.App.Views.Settings;
 using Granary.Core.Abstractions;
 using Granary.Core.ViewModels;
@@ -15,7 +16,7 @@ namespace Granary.App.Views;
 /// <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's place; leaving with
 /// unsaved edits in it asks first.
 /// </summary>
-public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard
+public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSections
 {
     private const string PlaybackPage = "playback";
 
@@ -185,6 +186,9 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard
     void ILeaveGuard.Rearm() => _released = false;
 
     private ListView[] Lists() => [Pages, AppearancePages, AccountPages, AppPages];
+
+    // A game controller's bumpers go through the settings' pages, from one list on into the next.
+    void IPadSections.StepSection(int by) => PadControls.StepRow(Lists(), by);
 
     // The settings' sidebar runs on beside the minimized player's bar; only the page ends above it.
     void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
