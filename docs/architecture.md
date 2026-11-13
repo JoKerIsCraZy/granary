@@ -1162,7 +1162,8 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   triggers' scrub (`PadInterpreter.Seek.cs`); the numbers are `PadTuning`'s. It keeps no window and no pad, and its
   tests drive it with `ManualTimeProvider`. A button held while the pad is first read, after `Reset`, or while the pages
   and the player change places, does nothing until it is pressed again: A on a card opens the player and pauses nothing
-  there.
+  there. What was let go while they changed places is no release for the new one either: on the pages A acts when it is
+  let go, and A on the player's Close, let go before the pages are first read, presses nothing behind the player.
 - **`GamepadReader`** (App) lists the pads and reads them as one (`PadReading.Merge`), so any pad in the room works.
   Windows knows an Xbox pad, and any pad its maker registered with it as one (docs: "Registry data for game
   controllers"), as a `Gamepad`. A DualShock 4 or DualSense is only a `RawGameController` to it, a list of unnamed

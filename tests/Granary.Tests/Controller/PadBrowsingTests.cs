@@ -297,6 +297,33 @@ public sealed class PadBrowsingTests
     }
 
     [Fact]
+    public void ALetGoWhileThePlayerCloses_PressesNothingOnThePage()
+    {
+        _bench.Context = new PadContext(PadMode.Player, PadFocus.Controls);
+        var pressed = _bench.Read(PadButtons.A);
+        _bench.Context = PadContext.Browsing;
+
+        var up = _bench.Read(default);
+        var again = _bench.Tap(PadButtons.A);
+
+        Assert.Equal([new PadAction(PadActionKind.Activate)], pressed);
+        Assert.Empty(up);
+        Assert.Equal([new PadAction(PadActionKind.Activate)], again);
+    }
+
+    [Fact]
+    public void AButtonPressedAsThePlayerCloses_IsThePages_AndWhatWasLetGoMeanwhilePressesNothing()
+    {
+        _bench.Context = new PadContext(PadMode.Player, PadFocus.Controls);
+        _bench.Read(PadButtons.A);
+        _bench.Context = PadContext.Browsing;
+
+        var pressed = _bench.Read(PadButtons.B);
+
+        Assert.Equal([new PadAction(PadActionKind.Back)], pressed);
+    }
+
+    [Fact]
     public void APadAtRest_IsIdle()
     {
         _bench.Tap(PadButtons.B);

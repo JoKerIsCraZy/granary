@@ -189,9 +189,11 @@ public sealed partial class PadInterpreter
         }
         else if (mode != _context.Mode)
         {
-            // The pages and the player changed places: what was held belongs to the one that went. A press that comes
-            // with the change is the new one's.
+            // The pages and the player changed places: what was held belongs to the one that went, and so does what
+            // was let go meanwhile. A on the player's Close, let go before the pages are first read, is no A let go on
+            // the page behind it. A press that comes with the change is the new one's.
             _spent |= down & _down;
+            _live = PadButtons.None;
             _directionUse = DirectionUse.Spent;
             _isRightStickSpent = !isRightStickAtRest;
             DropSeek();
