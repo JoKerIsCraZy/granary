@@ -1,5 +1,6 @@
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels.Player;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -23,10 +24,10 @@ public sealed partial class SeekBar
 
     private static (Color Tint, Color Dot, string Name) Look(string kind) => kind switch
     {
-        WatchMarkerKinds.Intro => (Color.FromArgb(0x66, 0x7D, 0xD3, 0xFC), Color.FromArgb(0xFF, 0x7D, 0xD3, 0xFC), "Intro"),
-        WatchMarkerKinds.Recap => (Color.FromArgb(0x66, 0xC4, 0xB5, 0xFD), Color.FromArgb(0xFF, 0xC4, 0xB5, 0xFD), "Recap"),
-        WatchMarkerKinds.Credits => (Color.FromArgb(0x73, 0xFC, 0xD3, 0x4D), Color.FromArgb(0xFF, 0xFC, 0xD3, 0x4D), "Credits / Outro"),
-        _ => (Color.FromArgb(0x66, 0x6E, 0xE7, 0xB7), Color.FromArgb(0xFF, 0x6E, 0xE7, 0xB7), "Preview"),
+        WatchMarkerKinds.Intro => (Color.FromArgb(0x66, 0x7D, 0xD3, 0xFC), Color.FromArgb(0xFF, 0x7D, 0xD3, 0xFC), MarkerEditorViewModel.Label(kind)),
+        WatchMarkerKinds.Recap => (Color.FromArgb(0x66, 0xC4, 0xB5, 0xFD), Color.FromArgb(0xFF, 0xC4, 0xB5, 0xFD), MarkerEditorViewModel.Label(kind)),
+        WatchMarkerKinds.Credits => (Color.FromArgb(0x73, 0xFC, 0xD3, 0x4D), Color.FromArgb(0xFF, 0xFC, 0xD3, 0x4D), MarkerEditorViewModel.Label(kind)),
+        _ => (Color.FromArgb(0x66, 0x6E, 0xE7, 0xB7), Color.FromArgb(0xFF, 0x6E, 0xE7, 0xB7), MarkerEditorViewModel.Label(kind)),
     };
 
     private void OnMarkersChanged()

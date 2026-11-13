@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.ViewModels;
@@ -110,6 +111,6 @@ public sealed partial class PlayerViewModel
         SpeedBadge = Math.Abs(Speed - 1) < 0.001 ? "" : SpeedText;
         SettingsLabel = !HasQualityOptions ? ""
             : IsChangingPlan ? "…"
-            : QualityOptions.FirstOrDefault(o => o.IsSelected)?.Label ?? "Quality";
+            : QualityOptions.FirstOrDefault(o => o.IsSelected)?.Label ?? AppText.Get("web.player.quality.title");
     }
 }

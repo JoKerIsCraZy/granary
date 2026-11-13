@@ -25,7 +25,7 @@ public sealed partial class SubtitlePreview : UserControl
     private static string[] Lines =>
         [AppText.Get("web.settings.subtitleAppearance.preview.sampleLine1"), AppText.Get("web.settings.subtitleAppearance.preview.sampleLine2")];
 
-    private static readonly string[] CompactLines = ["The quick brown fox", "jumps over the lazy dog."];
+    private static string[] CompactLines => [AppText.Get("web.settings.subtitlePanel.previewLine1"), AppText.Get("web.settings.subtitlePanel.previewLine2")];
 
     // The web player's cue sizes in pixels (lib/subtitleAppearance.ts, FONT_SIZE_MAP), which its panel shows as they are.
     private static readonly Dictionary<string, double> CompactSizes = new()

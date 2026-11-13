@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -192,7 +193,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public partial int SubtitleDelayMs { get; private set; }
 
     /// <summary>"0 ms", "+300 ms", "−1200 ms" (web: formatDelay).</summary>
-    public string SubtitleDelayText => DelayText(SubtitleDelayMs);
+    public string SubtitleDelayText => AppText.Get("web.subtitles.menu.delayValue", ("delay", DelayNumber(SubtitleDelayMs)));
 
     // As on the web, the delay is for a subtitle that shows.
     public bool CanDelayEarlier => IsSubtitleOn && SubtitleDelayMs > -PlaybackPreferencesReader.MaxSubtitleDelayMs;
@@ -473,7 +474,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         // Opening a network path would make Windows sign in to that host with the user's account.
         if (text.StartsWith(@"\\", StringComparison.Ordinal) || text.StartsWith("//", StringComparison.Ordinal))
         {
-            Fail("Network paths cannot be played; copy the file to this computer.", canRetry: false);
+            Fail(AppText.Get("granary.player.error.networkPath"), canRetry: false);
             return;
         }
         var source = Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"
@@ -602,10 +603,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
                 EndSleepAtEnd();
                 break;
             case PlaybackEndReason.AuthenticationFailed:
-                Fail("The server rejected the credentials.", canRetry: true);
+                Fail(AppText.Get("granary.player.error.credentialsRejected"), canRetry: true);
                 break;
             case PlaybackEndReason.Error:
-                Fail($"Playback failed: {ended.Detail}", canRetry: true);
+                // The player's own reason, in English as it gives it.
+                Fail(AppText.Get("web.player.error.playbackError", ("message", ended.Detail)), canRetry: true);
                 break;
         }
     });

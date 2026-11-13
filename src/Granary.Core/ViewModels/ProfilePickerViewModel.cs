@@ -412,21 +412,6 @@ internal static class ApiFailureText
     }
 
     /// <summary>
-    /// "Try again in N minutes." from a <c>Retry-After</c> delay, rounded up to whole minutes, for the callers that still
-    /// put it after a sentence of their own (detail, playback, the password change); in English until they have whole
-    /// messages.
-    /// </summary>
-    public static string TryAgainIn(TimeSpan? retryAfter)
-    {
-        if (retryAfter is not { } delay)
-        {
-            return "Try again in a few minutes.";
-        }
-        int minutes = WholeMinutes(delay);
-        return minutes == 1 ? "Try again in 1 minute." : $"Try again in {minutes} minutes.";
-    }
-
-    /// <summary>
     /// A wait in whole minutes, rounded up and at least one. A server can name any wait: one past what a whole number
     /// holds stops there, where the cast alone gave a number of its own.
     /// </summary>

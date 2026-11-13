@@ -14,8 +14,7 @@
     xmlns:player="using:Granary.Core.ViewModels.Player"
     xmlns:wp="using:Granary.Core.ViewModels.WatchParty"
     xmlns:t="using:Granary.Core.Texts"
-    IsTabStop="True"
-    AutomationProperties.Name="Player">
+    IsTabStop="True">
 
     <Grid x:Name="Root" Background="Black">
         <!-- The picture; on the Playing Next screen it plays on small in the top left corner (PlayerPage.NextUp.cs). -->
@@ -72,15 +71,15 @@
             <Border Background="{StaticResource SiloPlayerTopScrimBrush}" IsHitTestVisible="False" />
             <Grid x:Name="TopBar" Padding="24,40,24,40">
                 <Button x:Name="MinimizeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" HorizontalAlignment="Left"
-                        Click="OnMinimizeClick" AutomationProperties.Name="Minimize player" ToolTipService.ToolTip="Minimize player">
+                        Click="OnMinimizeClick" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.minimize')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.minimize')}">
                     <FontIcon Glyph="&#xE70D;" FontSize="16" />
                 </Button>
                 <Button x:Name="ExitButton" Style="{StaticResource SiloPlayerPillButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Exit"
-                        AutomationProperties.AcceleratorKey="Escape" ToolTipService.ToolTip="Exit (Esc)">
+                        Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.exit')}"
+                        AutomationProperties.AcceleratorKey="Escape" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.exitTooltip')}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE711;" FontSize="12" />
-                        <TextBlock Text="Exit" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.player.exit')}" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -109,7 +108,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Down from the bar lands on Play/Pause, not on whatever sits nearest its left end. -->
-                <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek" XYFocusDown="{x:Bind PlayPauseButton}"
+                <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.seekBar.label')}" XYFocusDown="{x:Bind PlayPauseButton}"
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
                                   Buffered="{x:Bind ViewModel.Buffered, Mode=OneWay}"
@@ -174,7 +173,7 @@
                         <Grid Width="44" Visibility="{x:Bind ViewModel.ShowsEpisodeSlots, Mode=OneWay}">
                             <Button x:Name="PreviousEpisodeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}"
                                     Command="{x:Bind ViewModel.PlayPreviousEpisodeCommand}" Visibility="{x:Bind ViewModel.HasPreviousEpisode, Mode=OneWay}"
-                                    AutomationProperties.Name="Previous episode" ToolTipService.ToolTip="Previous episode">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.previousEpisode')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.previousEpisode')}">
                                 <FontIcon Glyph="&#xE892;" FontSize="16" />
                             </Button>
                         </Grid>
@@ -208,7 +207,7 @@
                         <Grid Width="44" Visibility="{x:Bind ViewModel.ShowsEpisodeSlots, Mode=OneWay}">
                             <Button x:Name="NextEpisodeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}"
                                     Command="{x:Bind ViewModel.PlayNextEpisodeCommand}" Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}"
-                                    AutomationProperties.Name="Next episode" ToolTipService.ToolTip="Next episode">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.nextEpisode')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.nextEpisode')}">
                                 <FontIcon Glyph="&#xE893;" FontSize="16" />
                             </Button>
                         </Grid>
@@ -232,7 +231,7 @@
                                 Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 StepFrequency="1" SmallChange="5" LargeChange="10" IsThumbToolTipEnabled="False"
                                 Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" Opacity="{x:Bind VolumeOpacity(ViewModel.IsMuted), Mode=OneWay}"
-                                AutomationProperties.Name="Volume">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.volume')}">
                             <Slider.Resources>
                                 <x:Double x:Key="SliderTrackThemeHeight">3</x:Double>
                                 <SolidColorBrush x:Key="SliderTrackFill" Color="#38FFFFFF" />
@@ -257,8 +256,8 @@
                         <Grid x:Name="SleepTimerSlot" Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
                             <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
-                                    AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Sleep timer">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.sleepTimer.trigger')}" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.sleepTimer.trigger')}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE708;" FontSize="14" />
                                     <TextBlock Text="{x:Bind ViewModel.SleepTimerText, Mode=OneWay}" VerticalAlignment="Center" FontSize="12"
@@ -290,7 +289,7 @@
                         <Button x:Name="AudioButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                 Visibility="{x:Bind ShowsButton(ViewModel.HasAudioTracks, ViewModel.Bar.Audio), Mode=OneWay}"
                                 IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
-                                AutomationProperties.Name="Audio tracks" ToolTipService.ToolTip="Audio tracks">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.audioMenu.trigger')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.audioMenu.trigger')}">
                             <!-- The web's icon, lucide's AudioLines: its six strokes, drawn at 18 px as filled rounded bars. -->
                             <PathIcon Width="18" Height="18"
                                       Data="M0.75,7.5 A0.75,0.75 0 0 1 2.25,7.5 L2.25,9.75 A0.75,0.75 0 0 1 0.75,9.75 Z M3.75,4.5 A0.75,0.75 0 0 1 5.25,4.5 L5.25,12.75 A0.75,0.75 0 0 1 3.75,12.75 Z M6.75,2.25 A0.75,0.75 0 0 1 8.25,2.25 L8.25,15.75 A0.75,0.75 0 0 1 6.75,15.75 Z M9.75,6 A0.75,0.75 0 0 1 11.25,6 L11.25,11.25 A0.75,0.75 0 0 1 9.75,11.25 Z M12.75,3.75 A0.75,0.75 0 0 1 14.25,3.75 L14.25,13.5 A0.75,0.75 0 0 1 12.75,13.5 Z M15.75,7.5 A0.75,0.75 0 0 1 17.25,7.5 L17.25,9.75 A0.75,0.75 0 0 1 15.75,9.75 Z" />
@@ -298,7 +297,7 @@
                                 <Flyout x:Name="AudioMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerMenuStyle}"
                                         Opened="OnAudioMenuOpened">
                                     <StackPanel XYFocusKeyboardNavigation="Enabled">
-                                        <TextBlock Text="AUDIO" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Audio" />
+                                        <TextBlock Text="{x:Bind AudioHeading}" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.audioMenu.heading')}" />
                                         <ItemsControl x:Name="AudioRows" ItemsSource="{x:Bind ViewModel.AudioTracks, Mode=OneWay}" IsTabStop="False">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="player:AudioTrackOption">
@@ -324,7 +323,7 @@
                                                                         <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Channels)}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
                                                                     </Border>
                                                                     <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsDefault}">
-                                                                        <TextBlock Text="DEFAULT" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                                        <TextBlock Text="{x:Bind controls:PlayerMenus.DefaultBadge}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
                                                                     </Border>
                                                                 </StackPanel>
                                                                 <TextBlock Text="{x:Bind Meta}" FontSize="11" Foreground="#8CFFFFFF" TextTrimming="CharacterEllipsis"
@@ -346,8 +345,8 @@
                         <Grid x:Name="SubtitleSlot" Visibility="{x:Bind ShowsButton(ViewModel.HasSubtitleMenu, ViewModel.Bar.Subtitles), Mode=OneWay}">
                             <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSubtitleOn), Mode=OneWay}"
-                                    AutomationProperties.Name="Subtitles" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
-                                    AutomationProperties.AcceleratorKey="C" ToolTipService.ToolTip="Subtitles (C)">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.subtitles')}" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
+                                    AutomationProperties.AcceleratorKey="C" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.subtitlesTooltip')}">
                                 <Grid Width="20" Height="20">
                                     <FontIcon x:Name="SubtitleGlyph" Glyph="&#xE7F0;" FontSize="18" />
                                     <Line X1="3" Y1="3" X2="17" Y2="17" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
@@ -407,12 +406,12 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                <TextBlock Text="{x:Bind DelayHeading}" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
                                                            AutomationProperties.AccessibilityView="Raw" />
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleEarlierClick"
                                                             IsEnabled="{x:Bind ViewModel.CanDelayEarlier, Mode=OneWay}"
-                                                            AutomationProperties.Name="Subtitles 100 ms earlier">
+                                                            AutomationProperties.Name="{x:Bind SubtitleEarlierName}">
                                                         <FontIcon Glyph="&#xE738;" FontSize="12" />
                                                     </Button>
                                                     <TextBlock MinWidth="72" Text="{x:Bind ViewModel.SubtitleDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
@@ -420,14 +419,14 @@
                                                                AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.DelayName(ViewModel.SubtitleDelayText), Mode=OneWay}" />
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleLaterClick"
                                                             IsEnabled="{x:Bind ViewModel.CanDelayLater, Mode=OneWay}"
-                                                            AutomationProperties.Name="Subtitles 100 ms later">
+                                                            AutomationProperties.Name="{x:Bind SubtitleLaterName}">
                                                         <FontIcon Glyph="&#xE710;" FontSize="12" />
                                                     </Button>
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
                                                             Foreground="#99FFFFFF" Click="OnSubtitleDelayResetClick"
                                                             IsEnabled="{x:Bind ViewModel.CanResetSubtitleDelay, Mode=OneWay}"
-                                                            AutomationProperties.Name="Reset subtitle delay">
-                                                        <TextBlock Text="Reset" FontSize="12" />
+                                                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.menu.resetDelayLabel')}">
+                                                        <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.menu.resetDelay')}" FontSize="12" />
                                                     </Button>
                                                 </StackPanel>
                                             </Grid>
@@ -442,7 +441,7 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="TIMING" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                    <TextBlock Text="{x:Bind TimingHeading}" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
                                                                AutomationProperties.AccessibilityView="Raw" />
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
                                                                 Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsActions, Mode=OneWay}">
@@ -457,15 +456,15 @@
                                                                 Command="{x:Bind ViewModel.ResetSubtitleTimingCommand}"
                                                                 IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
                                                                 Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsReset, Mode=OneWay}"
-                                                                AutomationProperties.Name="Reset timing">
-                                                            <TextBlock Text="Reset timing" FontSize="12" />
+                                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.menu.resetTiming')}">
+                                                            <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.menu.resetTiming')}" FontSize="12" />
                                                         </Button>
                                                     </StackPanel>
                                                 </Grid>
                                                 <StackPanel Margin="0,4,0,0" Spacing="4" Visibility="{x:Bind ViewModel.SubtitleTiming.IsRunning, Mode=OneWay}">
                                                     <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" Foreground="#CCFFFFFF" Background="#26FFFFFF"
                                                                  Value="{x:Bind ViewModel.SubtitleTiming.PercentValue, Mode=OneWay}"
-                                                                 AutomationProperties.Name="Subtitle sync progress" />
+                                                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.sync.progressLabel')}" />
                                                     <Grid>
                                                         <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PhaseText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" />
                                                         <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PercentText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF"
@@ -478,7 +477,7 @@
                                                            Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsWarning, Mode=OneWay}" />
                                                 <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.HintText, Mode=OneWay}" FontSize="12" Foreground="#66FFFFFF" TextWrapping="Wrap"
                                                            Visibility="{x:Bind ViewModel.SubtitleTiming.HasHint, Mode=OneWay}" />
-                                                <TextBlock Text="This server doesn't allow changing subtitle timing." FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
+                                                <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.menu.timingForbidden')}" FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
                                                            Visibility="{x:Bind ViewModel.SubtitleTiming.IsForbidden, Mode=OneWay}" />
                                                 <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ErrorText, Mode=OneWay}" FontSize="12" Foreground="#FFFCA5A5" TextWrapping="Wrap"
                                                            Visibility="{x:Bind ViewModel.SubtitleTiming.HasError, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
@@ -486,14 +485,14 @@
                                             <!-- The web's footer: add a file or search for one, and the look. -->
                                             <StackPanel Padding="0,4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
                                                 <Button x:Name="AddSubtitlesButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
-                                                        Click="OnAddSubtitlesClick" AutomationProperties.Name="Add Subtitles…">
-                                                    <TextBlock Text="Add Subtitles…" FontSize="14" />
+                                                        Click="OnAddSubtitlesClick" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.menu.addSubtitles')}">
+                                                    <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.menu.addSubtitles')}" FontSize="14" />
                                                 </Button>
                                                 <Button x:Name="AppearanceButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
-                                                        Click="OnAppearanceClick" AutomationProperties.Name="Appearance…">
+                                                        Click="OnAppearanceClick" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.menu.appearance')}">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <FontIcon Glyph="&#xE790;" FontSize="13" Foreground="#80FFFFFF" />
-                                                        <TextBlock Text="Appearance…" FontSize="14" />
+                                                        <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.menu.appearance')}" FontSize="14" />
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -506,13 +505,13 @@
                         <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
                         <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                 Visibility="{x:Bind ShowsButton(ViewModel.HasChapters, ViewModel.Bar.Chapters), Mode=OneWay}"
-                                AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.chaptersMenu.trigger')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.chaptersMenu.trigger')}">
                             <FontIcon Glyph="&#xE8FD;" FontSize="18" />
                             <Button.Flyout>
                                 <Flyout x:Name="ChaptersMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
                                         Opened="OnChaptersMenuOpened">
                                     <StackPanel MinWidth="280" XYFocusKeyboardNavigation="Enabled">
-                                        <TextBlock Text="CHAPTERS" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Chapters" />
+                                        <TextBlock Text="{x:Bind ChaptersHeading}" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.chaptersMenu.heading')}" />
                                         <ItemsControl x:Name="ChapterRows" ItemsSource="{x:Bind ViewModel.Chapters, Mode=OneWay}" IsTabStop="False">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="player:ChapterOption">
@@ -582,7 +581,7 @@
                                     <StackPanel MinWidth="240" XYFocusKeyboardNavigation="Enabled">
                                         <!-- A Watch Party plays at the room's speed. -->
                                         <controls:SpeedTrack x:Name="SpeedTrack" Speed="{x:Bind ViewModel.Speed, Mode=OneWay}" SpeedPicked="OnSpeedPicked"
-                                                             AutomationProperties.Name="Playback speed" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
+                                                             AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.speedName')}" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
 
                                         <!--
                                             Silo's Android player (Sync): the sound earlier or later, 50 ms a step up to 5 s, and Reset, drawn as
@@ -597,12 +596,12 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="AUDIO DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                <TextBlock Text="{x:Bind AudioDelayHeading}" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
                                                            AutomationProperties.AccessibilityView="Raw" />
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioEarlierClick"
                                                             IsEnabled="{x:Bind ViewModel.CanDelayAudioEarlier, Mode=OneWay}"
-                                                            AutomationProperties.Name="Audio 50 ms earlier">
+                                                            AutomationProperties.Name="{x:Bind AudioEarlierName}">
                                                         <FontIcon Glyph="&#xE738;" FontSize="12" />
                                                     </Button>
                                                     <TextBlock MinWidth="72" Text="{x:Bind ViewModel.AudioDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
@@ -610,14 +609,14 @@
                                                                AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.AudioDelayName(ViewModel.AudioDelayText), Mode=OneWay}" />
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioLaterClick"
                                                             IsEnabled="{x:Bind ViewModel.CanDelayAudioLater, Mode=OneWay}"
-                                                            AutomationProperties.Name="Audio 50 ms later">
+                                                            AutomationProperties.Name="{x:Bind AudioLaterName}">
                                                         <FontIcon Glyph="&#xE710;" FontSize="12" />
                                                     </Button>
                                                     <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
                                                             Foreground="#99FFFFFF" Click="OnAudioDelayResetClick"
                                                             IsEnabled="{x:Bind ViewModel.CanResetAudioDelay, Mode=OneWay}"
-                                                            AutomationProperties.Name="Reset audio delay">
-                                                        <TextBlock Text="Reset" FontSize="12" />
+                                                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.audioDelayReset')}">
+                                                        <TextBlock Text="{x:Bind t:AppText.Get('granary.player.audioDelayResetShort')}" FontSize="12" />
                                                     </Button>
                                                 </StackPanel>
                                             </Grid>
@@ -625,7 +624,7 @@
 
                                         <StackPanel Visibility="{x:Bind ViewModel.HasVersionOptions, Mode=OneWay}">
                                             <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />
-                                            <TextBlock Text="VERSION" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Version" />
+                                            <TextBlock Text="{x:Bind VersionHeading}" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.quality.version')}" />
                                             <ItemsControl ItemsSource="{x:Bind ViewModel.VersionOptions, Mode=OneWay}" IsTabStop="False">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="player:VersionOption">
@@ -648,7 +647,7 @@
 
                                         <StackPanel Visibility="{x:Bind ViewModel.HasQualityOptions, Mode=OneWay}">
                                             <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />
-                                            <TextBlock Text="QUALITY" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Quality" />
+                                            <TextBlock Text="{x:Bind QualityHeading}" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.quality.title')}" />
                                             <ItemsControl x:Name="QualityRows" ItemsSource="{x:Bind ViewModel.QualityOptions, Mode=OneWay}" IsTabStop="False">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="player:QualityOption">
@@ -682,8 +681,8 @@
                         <Grid x:Name="EditMarkersSlot" Visibility="{x:Bind ShowsButton(ViewModel.CanEditMarkers, ViewModel.Bar.EditMarkers), Mode=OneWay}">
                             <Button x:Name="EditMarkersButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMarkerEditCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
-                                    AutomationProperties.Name="Edit markers" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
-                                    ToolTipService.ToolTip="Edit markers">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.editMarkers')}" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.editMarkers')}">
                                 <FontIcon Glyph="&#xE8EC;" FontSize="18" />
                             </Button>
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.MarkerEditor.IsEditing, Mode=OneWay}" />
@@ -692,22 +691,22 @@
                         <Grid x:Name="PlaybackInfoSlot" Visibility="{x:Bind ViewModel.Bar.PlaybackInfo, Mode=OneWay}">
                             <Button x:Name="PlaybackInfoButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
-                                    AutomationProperties.Name="Playback info" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
-                                    ToolTipService.ToolTip="Playback info">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.playbackInfo')}" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.playbackInfo')}">
                                 <FontIcon Glyph="&#xE946;" FontSize="18" />
                             </Button>
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsPlaybackInfoShown, Mode=OneWay}" />
                         </Grid>
                         <Button x:Name="MiniViewButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnMiniViewClick"
                                 Visibility="{x:Bind ViewModel.Bar.MiniView, Mode=OneWay}"
-                                AutomationProperties.Name="Mini view" AutomationProperties.AcceleratorKey="P" ToolTipService.ToolTip="Mini view (P)">
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.miniView')}" AutomationProperties.AcceleratorKey="P" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.miniViewTooltip')}">
                             <FontIcon Glyph="&#xE93A;" FontSize="18" />
                         </Button>
                         <Grid x:Name="FillSlot" Visibility="{x:Bind ViewModel.Bar.Fill, Mode=OneWay}">
                             <Button x:Name="FillButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFillCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsFillingScreen), Mode=OneWay}"
-                                    AutomationProperties.Name="Fill screen" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsFillingScreen), Mode=OneWay}"
-                                    ToolTipService.ToolTip="Fill screen">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.fillScreen')}" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsFillingScreen), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.fillScreen')}">
                                 <FontIcon Glyph="&#xE9A6;" FontSize="18" />
                             </Button>
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsFillingScreen, Mode=OneWay}" />
@@ -740,10 +739,10 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid Padding="16,12,10,4">
-                    <TextBlock Text="Playback Info" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" Foreground="#E6FFFFFF"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.player.info.title')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" Foreground="#E6FFFFFF"
                                VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
                     <Button Width="24" Height="24" HorizontalAlignment="Right" Style="{StaticResource SiloPlayerIconButtonStyle}" CornerRadius="4"
-                            Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}" AutomationProperties.Name="Close playback info">
+                            Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.info.close')}">
                         <FontIcon Glyph="&#xE711;" FontSize="12" />
                     </Button>
                 </Grid>
@@ -818,14 +817,14 @@
                             <ColumnDefinition Width="36" />
                         </Grid.ColumnDefinitions>
                         <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" VerticalAlignment="Center" Foreground="#CCFFFFFF" Background="#26FFFFFF"
-                                     Value="{x:Bind ViewModel.SyncNoticePercentValue, Mode=OneWay}" AutomationProperties.Name="Subtitle sync progress" />
+                                     Value="{x:Bind ViewModel.SyncNoticePercentValue, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.sync.progressLabel')}" />
                         <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.SyncNoticePercentText, Mode=OneWay}" FontSize="11" Foreground="#99FFFFFF"
                                    TextAlignment="Right" Typography.NumeralAlignment="Tabular" />
                     </Grid>
                 </StackPanel>
                 <Button x:Name="SyncDismissButton" Grid.Column="2" Width="24" Height="24" Margin="0,-4,-8,0" Padding="0" VerticalAlignment="Top" CornerRadius="4"
                         Style="{StaticResource SiloPlayerIconButtonStyle}" Foreground="#80FFFFFF" Command="{x:Bind ViewModel.DismissSyncNoticeCommand}"
-                        Visibility="{x:Bind Not(ViewModel.IsSyncNoticeRunning), Mode=OneWay}" AutomationProperties.Name="Dismiss">
+                        Visibility="{x:Bind Not(ViewModel.IsSyncNoticeRunning), Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.syncNotice.dismiss')}">
                     <FontIcon Glyph="&#xE711;" FontSize="10" />
                 </Button>
             </Grid>
@@ -855,7 +854,7 @@
             </Border.OpacityTransition>
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="WATCH PARTY" Style="{StaticResource PartyLabelStyle}" AutomationProperties.Name="Watch Party" />
+                    <TextBlock Text="{x:Bind PartyHeading}" Style="{StaticResource PartyLabelStyle}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.watchTogether.title')}" />
                     <Ellipse Width="6" Height="6" VerticalAlignment="Center" Fill="{x:Bind PartyDot(ViewModel.Party.ConnectionState), Mode=OneWay}" />
                     <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(ViewModel.Party.ConnectionText), Mode=OneWay}" Style="{StaticResource PartyLabelStyle}"
                                AutomationProperties.Name="{x:Bind ViewModel.Party.ConnectionText, Mode=OneWay}" />
@@ -867,7 +866,7 @@
                 </StackPanel>
                 <TextBlock Text="{x:Bind ViewModel.Party.PolicyText, Mode=OneWay}" Margin="0,6,0,0" FontSize="11" Foreground="#80FFFFFF" TextWrapping="Wrap" />
                 <ScrollViewer MaxHeight="160" Margin="0,12,0,0" Visibility="{x:Bind ViewModel.Party.HasViewers, Mode=OneWay}"
-                              HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Viewers">
+                              HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.watchTogether.viewersLabel')}">
                     <ItemsControl ItemsSource="{x:Bind ViewModel.Party.Viewers, Mode=OneWay}" IsTabStop="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -899,8 +898,8 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Button x:Name="PartyInviteButton" Style="{StaticResource SiloPlayerPanelButtonStyle}" Click="OnPartyInviteClick"
-                                AutomationProperties.Name="Copy invite link" VerticalAlignment="Center">
-                            <TextBlock Text="Invite" />
+                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.watchTogether.copyInviteLabel')}" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.player.watchTogether.invite')}" />
                         </Button>
                         <Button x:Name="PartyPolicyButton" Grid.Column="1" Style="{StaticResource SiloPlayerPanelButtonStyle}" HorizontalAlignment="Left"
                                 VerticalAlignment="Center" Command="{x:Bind ViewModel.Party.TogglePolicyCommand}">
@@ -908,12 +907,12 @@
                         </Button>
                         <Button x:Name="PartyStopButton" Grid.Column="2" Style="{StaticResource SiloPlayerPanelButtonStyle}" VerticalAlignment="Center"
                                 Command="{x:Bind ViewModel.Party.StopCommand}"
-                                ToolTipService.ToolTip="Stop for everyone and go back to the room to pick something else">
-                            <TextBlock Text="Stop" />
+                                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.watchTogether.stopTitle')}">
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.player.watchTogether.stop')}" />
                         </Button>
                         <Button x:Name="PartyEndButton" Grid.Column="3" Style="{StaticResource SiloPlayerPanelDangerButtonStyle}" VerticalAlignment="Center"
                                 Command="{x:Bind ViewModel.Party.EndCommand}">
-                            <TextBlock Text="End" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.player.watchTogether.end')}" />
                         </Button>
                     </Grid>
                 </Border>
@@ -938,7 +937,7 @@
             </Button>
             <Button x:Name="LeaveMiniViewButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="36" Height="36" Margin="12,44,0,0"
                     HorizontalAlignment="Left" VerticalAlignment="Top" Click="OnMiniViewClick"
-                    AutomationProperties.Name="Back to the full window" ToolTipService.ToolTip="Back to the full window (P or Esc)">
+                    AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.miniViewBack')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.miniViewBackTooltip')}">
                 <FontIcon Glyph="&#xE944;" FontSize="14" />
             </Button>
         </Grid>
@@ -985,7 +984,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Button Content="Play Now" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
+                    <Button Content="{x:Bind t:AppText.Get('upNext.playNow')}" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
                             Command="{x:Bind ViewModel.PlayNextNowCommand}" />
                     <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}"
                             Command="{x:Bind ViewModel.CancelNextUpCommand}" />
@@ -1051,10 +1050,10 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,16,0,0" HorizontalAlignment="Center">
                             <Button x:Name="PlayNowButton" Style="{StaticResource SiloNextUpPlayButtonStyle}" Command="{x:Bind ViewModel.PlayNextNowCommand}"
-                                    AutomationProperties.Name="Play Now" AutomationProperties.AcceleratorKey="Enter">
+                                    AutomationProperties.Name="{x:Bind t:AppText.Get('upNext.playNow')}" AutomationProperties.AcceleratorKey="Enter">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xF5B0;" FontSize="14" />
-                                    <TextBlock Text="Play Now" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('upNext.playNow')}" />
                                 </StackPanel>
                             </Button>
                             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
@@ -1083,7 +1082,7 @@
                         <TextBlock Text="{x:Bind ViewModel.NextUpFinishedHeading, Mode=OneWay}" HorizontalAlignment="Center" TextAlignment="Center"
                                    TextWrapping="Wrap" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="24"
                                    Foreground="{StaticResource SiloPlayerForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
-                        <TextBlock Text="There are no more episodes available. Pick something else from On Deck below." MaxWidth="448"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.player.upNext.noMoreEpisodes')}" MaxWidth="448"
                                    HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="14" Foreground="#80FFFFFF" />
                         <Button x:Name="FinishedBackButton" Content="{x:Bind t:AppText.Get('common.back')}" Style="{StaticResource SiloPlayerPillButtonStyle}" Height="44" Padding="28,0"
                                 Background="#1AFFFFFF" Margin="0,12,0,0" HorizontalAlignment="Center" Command="{x:Bind ViewModel.CloseCommand}" />
@@ -1091,15 +1090,15 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <controls:MediaRow Grid.Row="1" Margin="32,0,32,16" Bleed="32" Title="ON DECK" TitleStyle="{StaticResource SiloSectionLabelTextStyle}"
+            <controls:MediaRow Grid.Row="1" Margin="32,0,32,16" Bleed="32" Title="{x:Bind OnDeckHeading}" TitleStyle="{StaticResource SiloSectionLabelTextStyle}"
                                ItemsSource="{x:Bind ViewModel.OnDeck, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.PlayOnDeckCommand}"
                                Visibility="{x:Bind HasCards(ViewModel.OnDeck), Mode=OneWay}" />
 
             <!-- Below the title bar's strip, in full screen too, where the window's Exit full screen sits above it. -->
             <Button x:Name="NextUpCloseButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="40" Height="40" Background="#1AFFFFFF"
                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="{x:Bind CornerInset(20)}"
-                    Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Close" AutomationProperties.AcceleratorKey="Escape"
-                    ToolTipService.ToolTip="Close (Esc)">
+                    Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.ui.close')}" AutomationProperties.AcceleratorKey="Escape"
+                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.upNext.closeTitle')}">
                 <FontIcon Glyph="&#xE711;" FontSize="14" />
             </Button>
         </Grid>
@@ -1112,8 +1111,8 @@
         -->
         <Button x:Name="CornerFullScreenButton" Canvas.ZIndex="4" Style="{StaticResource SiloTitleBarButtonStyle}" HorizontalAlignment="Right"
                 VerticalAlignment="Top" Click="OnFullScreenClick" Visibility="{x:Bind ShowsInWindow(IsFullScreen, IsCompact), Mode=OneWay}"
-                AutomationProperties.Name="Exit full screen" AutomationProperties.AcceleratorKey="F11"
-                ToolTipService.ToolTip="Exit full screen (F11)">
+                AutomationProperties.Name="{x:Bind t:AppText.Get('granary.shell.exitFullScreen')}" AutomationProperties.AcceleratorKey="F11"
+                ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.shell.exitFullScreenTooltip')}">
             <Button.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Button.OpacityTransition>
@@ -1143,7 +1142,7 @@
                 CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
                 Margin="{x:Bind CornerInset(24)}"
                 Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsCompact), Mode=OneWay}"
-                Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
+                Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.keepWatching')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.keepWatching')}" />
 
         <!--
             Minimized: the bar at the bottom of the window while the viewer browses. The picture plays on at its left
@@ -1172,7 +1171,7 @@
                 <controls:FittingRow>
                     <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" FontSize="12"
                                Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular"
-                               AutomationProperties.Name="{x:Bind DockTimesName(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft, ViewModel.EndsAtSpoken), Mode=OneWay}" />
+                               AutomationProperties.Name="{x:Bind DockTimesName(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft, ViewModel.EndsAtClock), Mode=OneWay}" />
                     <TextBlock Text="·" Margin="5,0,4,0" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                                Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
                     <TextBlock Text="{x:Bind ViewModel.EndsAtText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
@@ -1183,8 +1182,8 @@
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <Button Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.PlayPreviousEpisodeCommand}"
-                        Visibility="{x:Bind ViewModel.HasPreviousEpisode, Mode=OneWay}" AutomationProperties.Name="Previous episode"
-                        ToolTipService.ToolTip="Previous episode">
+                        Visibility="{x:Bind ViewModel.HasPreviousEpisode, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.previousEpisode')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.previousEpisode')}">
                     <FontIcon Glyph="&#xE892;" FontSize="14" />
                 </Button>
                 <Button x:Name="DockSkipBackButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.SkipBackCommand}"
@@ -1200,8 +1199,8 @@
                     </Grid>
                 </Button>
                 <Button Style="{StaticResource SiloPlayerPlayButtonStyle}" Width="44" Height="44" Command="{x:Bind ViewModel.TogglePauseCommand}"
-                        AutomationProperties.Name="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}">
+                        AutomationProperties.Name="{x:Bind DockPlayPauseName(ViewModel.IsPaused), Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind DockPlayPauseName(ViewModel.IsPaused), Mode=OneWay}">
                     <FontIcon Glyph="{x:Bind PlayPauseGlyph(ViewModel.IsPaused), Mode=OneWay}" FontSize="18"
                               Margin="{x:Bind PlayPauseGlyphMargin(ViewModel.IsPaused), Mode=OneWay}" />
                 </Button>
@@ -1214,8 +1213,8 @@
                     </Grid>
                 </Button>
                 <Button Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.PlayNextEpisodeCommand}"
-                        Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}" AutomationProperties.Name="Next episode"
-                        ToolTipService.ToolTip="Next episode">
+                        Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.controls.nextEpisode')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.controls.nextEpisode')}">
                     <FontIcon Glyph="&#xE893;" FontSize="14" />
                 </Button>
             </StackPanel>
@@ -1228,7 +1227,7 @@
                 </Button>
                 <!-- The web bar's ✕: playback ends, the page stays. -->
                 <Button x:Name="DockStopButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnDockStopClick"
-                        AutomationProperties.Name="Stop playback" ToolTipService.ToolTip="Stop playback">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.bar.stopTitle')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.bar.stopTitle')}">
                     <FontIcon Glyph="&#xE711;" FontSize="14" />
                 </Button>
             </StackPanel>
@@ -1240,7 +1239,7 @@
             bubble above it.
         -->
         <controls:SeekBar x:Name="DockSeekBar" Canvas.ZIndex="4" VerticalAlignment="Top" Margin="184,-10,16,0"
-                          Visibility="{x:Bind IsDocked, Mode=OneWay}" AutomationProperties.Name="Seek"
+                          Visibility="{x:Bind IsDocked, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.seekBar.label')}"
                           Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                           Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
                           Buffered="{x:Bind ViewModel.Buffered, Mode=OneWay}"
@@ -1268,6 +1267,6 @@
                 Background="Transparent" Visibility="{x:Bind IsDocked, Mode=OneWay}" Click="OnExpandClick"
                 PointerEntered="OnDockVideoPointerEntered" PointerExited="OnDockVideoPointerExited"
                 GotFocus="OnDockVideoFocusChanged" LostFocus="OnDockVideoFocusChanged"
-                AutomationProperties.Name="Back to the player" ToolTipService.ToolTip="Back to the player" />
+                AutomationProperties.Name="{x:Bind t:AppText.Get('web.player.bar.returnTitle')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.player.bar.returnTitle')}" />
     </Grid>
 </Page>

@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 
@@ -52,7 +53,7 @@ public sealed partial class PlayerViewModel
 
     /// <summary>The screen's small heading: what comes, nothing more to come, or that it waits for the viewer.</summary>
     [ObservableProperty]
-    public partial string NextUpScreenLabel { get; private set; } = "PLAYING NEXT";
+    public partial string NextUpScreenLabel { get; private set; } = AppText.Upper(AppText.Get("web.player.upNext.playingNext"));
 
     /// <summary>"11 January 2024 • 37m".</summary>
     [ObservableProperty]
@@ -267,10 +268,11 @@ public sealed partial class PlayerViewModel
         HasNextEpisode = next is not null;
         if (next is not null)
         {
-            string code = string.Create(CultureInfo.InvariantCulture, $"S{next.SeasonNumber}:E{next.EpisodeNumber}");
+            string code = AppText.Get("web.player.episode.code", ("season", next.SeasonNumber), ("episode", next.EpisodeNumber));
             NextUpCode = code;
             NextUpTitle = next.Title;
-            NextUpEpisodeText = string.IsNullOrWhiteSpace(next.Title) ? code : $"{code} — {next.Title}";
+            NextUpEpisodeText = string.IsNullOrWhiteSpace(next.Title) ? code
+                : AppText.Get("web.player.nextEpisode.episodeLine", ("season", next.SeasonNumber), ("episode", next.EpisodeNumber), ("title", next.Title));
             NextUpMeta = string.Join(" • ", new[] { LongDate(next.AirDate), DetailText.Runtime(next.RuntimeMinutes) }.OfType<string>());
             // The profile's switches as they are now: the screen is shown again with every step of the playback.
             var spoilers = _spoilers?.Shown ?? EpisodeSpoilers.Off;
@@ -279,15 +281,20 @@ public sealed partial class PlayerViewModel
             NextUpStill = next.StillUrl;
         }
         NextUpSeriesTitle = _playback?.Episode?.SeriesTitle ?? "";
-        NextUpFinishedHeading = NextUpSeriesTitle.Length > 0 ? $"You've finished {NextUpSeriesTitle}" : "End of playback";
+        NextUpFinishedHeading = NextUpSeriesTitle.Length > 0
+            ? AppText.Get("web.player.upNext.finishedSeries", ("series", NextUpSeriesTitle))
+            : AppText.Get("upNext.endOfPlayback");
         NextUpCardHeading = _nextUp.Seconds is { } seconds && view == NextUpView.Card
-            ? string.Create(CultureInfo.InvariantCulture, $"UP NEXT IN {seconds}S")
-            : "UP NEXT";
-        NextUpScreenLabel = next is null ? "FINISHED" : _nextUp.IsAskingStillWatching ? "STILL WATCHING?" : "PLAYING NEXT";
+            ? AppText.Upper(AppText.Get("web.player.nextEpisode.countdown", ("count", seconds)))
+            : AppText.Upper(AppText.Get("granary.player.nextUp.heading"));
+        // The web writes these in mixed case and shows them in capitals.
+        NextUpScreenLabel = AppText.Upper(next is null ? AppText.Get("upNext.headingFinished")
+            : _nextUp.IsAskingStillWatching ? AppText.Get("granary.player.nextUp.stillWatching")
+            : AppText.Get("web.player.upNext.playingNext"));
         IsNextUpCountingDown = view == NextUpView.Screen && _nextUp.IsCountingDown;
-        NextUpSecondsText = _nextUp.Seconds is { } left ? string.Create(CultureInfo.InvariantCulture, $"{left}s") : "";
+        NextUpSecondsText = _nextUp.Seconds is { } left ? AppText.Get("web.player.upNext.countdownSeconds", ("count", left)) : "";
         NextUpCountdownLeft = _nextUp.CountdownLeft;
-        AutoPlayText = _nextUp.AutoPlayNext ? "Auto-play is on" : "Auto-play is off";
+        AutoPlayText = _nextUp.AutoPlayNext ? AppText.Get("web.player.upNext.autoplayOn") : AppText.Get("web.player.upNext.autoplayOff");
         IsNextUpCardShown = view == NextUpView.Card;
         IsNextUpScreenShown = view == NextUpView.Screen;
         if (view == NextUpView.Screen)

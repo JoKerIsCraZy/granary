@@ -1,4 +1,10 @@
 {
+  "bufferingQuality.autoLimited": [
+    {
+      "type": 0,
+      "value": "تلقائي · محدود بعد التخزين المؤقت"
+    }
+  ],
   "catalog.sort.added": [
     {
       "type": 0,
@@ -623,6 +629,36 @@
       "value": "الرائج هذا الأسبوع"
     }
   ],
+  "introSkip.pill.skip": [
+    {
+      "type": 0,
+      "value": "تخطي المقدمة"
+    }
+  ],
+  "introSkip.pill.undo": [
+    {
+      "type": 0,
+      "value": "مشاهدة المقدمة"
+    }
+  ],
+  "introSkip.pill.undoCaption": [
+    {
+      "type": 0,
+      "value": "تم تخطي المقدمة"
+    }
+  ],
+  "marker.skipCredits": [
+    {
+      "type": 0,
+      "value": "تخطي شارة النهاية"
+    }
+  ],
+  "marker.skipRecap": [
+    {
+      "type": 0,
+      "value": "تخطي الملخص"
+    }
+  ],
   "requests.error.create": [
     {
       "type": 0,
@@ -885,6 +921,36 @@
     {
       "type": 0,
       "value": "لا يوجد هنا ما يمكن تشغيله."
+    }
+  ],
+  "subtitleSearch.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "ضعاف السمع"
+    }
+  ],
+  "upNext.endOfPlayback": [
+    {
+      "type": 0,
+      "value": "انتهى التشغيل"
+    }
+  ],
+  "upNext.headingFinished": [
+    {
+      "type": 0,
+      "value": "انتهى"
+    }
+  ],
+  "upNext.onDeck": [
+    {
+      "type": 0,
+      "value": "قيد المشاهدة"
+    }
+  ],
+  "upNext.playNow": [
+    {
+      "type": 0,
+      "value": "التشغيل الآن"
     }
   ],
   "watchParty.button.imReady": [
@@ -7853,6 +7919,26 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.languageName.unknown": [
+    {
+      "type": 0,
+      "value": "غير معروفة"
+    }
+  ],
+  "web.languageName.unknownTag": [
+    {
+      "type": 0,
+      "value": "لغة غير معروفة ("
+    },
+    {
+      "type": 1,
+      "value": "tag"
+    },
+    {
+      "type": 0,
+      "value": ")"
+    }
+  ],
   "web.library.browse.clearFilters": [
     {
       "type": 0,
@@ -8105,10 +8191,134 @@
       "value": "هذه العناوين ليست في المكتبة بعد، لذا لا يمكن تشغيلها. وقد طُلبت لك. عندما يصل أحدها، ينتقل إلى «في مكتبتك» ويصلك إشعار."
     }
   ],
+  "web.markers.editTitle": [
+    {
+      "type": 0,
+      "value": "تعديل العلامات"
+    }
+  ],
+  "web.markers.kind.credits": [
+    {
+      "type": 0,
+      "value": "شارة النهاية / الخاتمة"
+    }
+  ],
+  "web.markers.kind.intro": [
+    {
+      "type": 0,
+      "value": "المقدمة"
+    }
+  ],
+  "web.markers.kind.preview": [
+    {
+      "type": 0,
+      "value": "المعاينة"
+    }
+  ],
+  "web.markers.kind.recap": [
+    {
+      "type": 0,
+      "value": "الملخص"
+    }
+  ],
+  "web.markers.panel.clearLabel": [
+    {
+      "type": 0,
+      "value": "مسح علامة "
+    },
+    {
+      "type": 1,
+      "value": "kind"
+    }
+  ],
+  "web.markers.panel.clearTitle": [
+    {
+      "type": 0,
+      "value": "إزالة العلامة حتى تُحدَّد يدويًا مجددًا"
+    }
+  ],
+  "web.markers.panel.closeLabel": [
+    {
+      "type": 0,
+      "value": "إغلاق محرر العلامات"
+    }
+  ],
+  "web.markers.panel.hint": [
+    {
+      "type": 0,
+      "value": "اسحب مقابض الشريط الزمني، أو حدّد النقاط عند موضع التشغيل."
+    }
+  ],
+  "web.markers.panel.notSet": [
+    {
+      "type": 0,
+      "value": "غير محدّد"
+    }
+  ],
+  "web.markers.panel.range": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.markers.panel.resetAll": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين الكل"
+    }
+  ],
+  "web.markers.panel.resetAllTitle": [
+    {
+      "type": 0,
+      "value": "إعادة كل العلامات إلى القيم المحفوظة"
+    }
+  ],
+  "web.markers.panel.resetLabel": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين علامة "
+    },
+    {
+      "type": 1,
+      "value": "kind"
+    }
+  ],
+  "web.markers.panel.resetTitle": [
+    {
+      "type": 0,
+      "value": "الإعادة إلى القيمة المحفوظة"
+    }
+  ],
+  "web.markers.panel.setEnd": [
+    {
+      "type": 0,
+      "value": "تحديد النهاية"
+    }
+  ],
+  "web.markers.panel.setStart": [
+    {
+      "type": 0,
+      "value": "تحديد البداية"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
       "value": "حفظ"
+    }
+  ],
+  "web.markers.saveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ العلامات"
     }
   ],
   "web.notifications.inbox.daysAgo": [
@@ -8969,10 +9179,240 @@
       "value": "هذا الشخص غير متاح"
     }
   ],
+  "web.player.audioMenu.defaultBadge": [
+    {
+      "type": 0,
+      "value": "افتراضي"
+    }
+  ],
+  "web.player.audioMenu.heading": [
+    {
+      "type": 0,
+      "value": "الصوت"
+    }
+  ],
+  "web.player.audioMenu.trackFallback": [
+    {
+      "type": 0,
+      "value": "المسار "
+    },
+    {
+      "type": 1,
+      "value": "number"
+    }
+  ],
   "web.player.audioMenu.trigger": [
     {
       "type": 0,
       "value": "المسارات الصوتية"
+    }
+  ],
+  "web.player.bar.pause": [
+    {
+      "type": 0,
+      "value": "إيقاف مؤقت"
+    }
+  ],
+  "web.player.bar.play": [
+    {
+      "type": 0,
+      "value": "تشغيل"
+    }
+  ],
+  "web.player.bar.returnTitle": [
+    {
+      "type": 0,
+      "value": "العودة إلى المشغّل"
+    }
+  ],
+  "web.player.bar.skipBackTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع ثانية واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع ثانيتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.skipForwardTitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم ثانية واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم ثانيتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.bar.stopTitle": [
+    {
+      "type": 0,
+      "value": "إيقاف التشغيل"
+    }
+  ],
+  "web.player.bufferingStatus": [
+    {
+      "type": 0,
+      "value": "جارٍ التخزين المؤقت"
+    }
+  ],
+  "web.player.chaptersMenu.heading": [
+    {
+      "type": 0,
+      "value": "الفصول"
     }
   ],
   "web.player.chaptersMenu.trigger": [
@@ -8993,16 +9433,712 @@
       "value": "ملء الشاشة بالصورة"
     }
   ],
+  "web.player.controls.nextEpisode": [
+    {
+      "type": 0,
+      "value": "الحلقة التالية"
+    }
+  ],
+  "web.player.controls.pause": [
+    {
+      "type": 0,
+      "value": "إيقاف مؤقت"
+    }
+  ],
+  "web.player.controls.play": [
+    {
+      "type": 0,
+      "value": "تشغيل"
+    }
+  ],
   "web.player.controls.playbackInfo": [
     {
       "type": 0,
       "value": "معلومات التشغيل"
     }
   ],
+  "web.player.controls.previousEpisode": [
+    {
+      "type": 0,
+      "value": "الحلقة السابقة"
+    }
+  ],
+  "web.player.controls.skipBack": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع ثانية واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع ثانيتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "رجوع "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.controls.skipForward": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم ثانية واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم ثانيتين"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "تقديم "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.player.controls.volume": [
     {
       "type": 0,
       "value": "مستوى الصوت"
+    }
+  ],
+  "web.player.episode.code": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.error.playbackError": [
+    {
+      "type": 0,
+      "value": "خطأ في التشغيل: "
+    },
+    {
+      "type": 1,
+      "value": "message"
+    }
+  ],
+  "web.player.exit": [
+    {
+      "type": 0,
+      "value": "خروج"
+    }
+  ],
+  "web.player.hud.episode": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.player.hud.episodeWithTitle": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.info.audioBitrate": [
+    {
+      "type": 0,
+      "value": "معدل بت الصوت"
+    }
+  ],
+  "web.player.info.audioChannels": [
+    {
+      "type": 0,
+      "value": "قنوات الصوت"
+    }
+  ],
+  "web.player.info.audioCodec": [
+    {
+      "type": 0,
+      "value": "ترميز الصوت"
+    }
+  ],
+  "web.player.info.audioSampleRate": [
+    {
+      "type": 0,
+      "value": "معدل عينات الصوت"
+    }
+  ],
+  "web.player.info.autoSwitchedFrom": [
+    {
+      "type": 0,
+      "value": "تم التبديل تلقائيًا من"
+    }
+  ],
+  "web.player.info.bitrate": [
+    {
+      "type": 0,
+      "value": "معدل البت"
+    }
+  ],
+  "web.player.info.close": [
+    {
+      "type": 0,
+      "value": "إغلاق معلومات التشغيل"
+    }
+  ],
+  "web.player.info.codec.copy": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (نسخ)"
+    }
+  ],
+  "web.player.info.codec.direct": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (مباشر)"
+    }
+  ],
+  "web.player.info.codec.transcoded": [
+    {
+      "type": 1,
+      "value": "codec"
+    },
+    {
+      "type": 0,
+      "value": " (محوّل الترميز)"
+    }
+  ],
+  "web.player.info.colorRange": [
+    {
+      "type": 0,
+      "value": "نطاق الألوان"
+    }
+  ],
+  "web.player.info.colorRangeFull": [
+    {
+      "type": 0,
+      "value": "كامل (pc)"
+    }
+  ],
+  "web.player.info.colorRangeLimited": [
+    {
+      "type": 0,
+      "value": "محدود (tv)"
+    }
+  ],
+  "web.player.info.colorRangeUnknown": [
+    {
+      "type": 0,
+      "value": "غير معروف"
+    }
+  ],
+  "web.player.info.container": [
+    {
+      "type": 0,
+      "value": "الحاوية"
+    }
+  ],
+  "web.player.info.delivery.directPlay": [
+    {
+      "type": 0,
+      "value": "التشغيل المباشر"
+    }
+  ],
+  "web.player.info.delivery.directStream": [
+    {
+      "type": 0,
+      "value": "البث المباشر"
+    }
+  ],
+  "web.player.info.delivery.transcode": [
+    {
+      "type": 0,
+      "value": "تحويل الترميز"
+    }
+  ],
+  "web.player.info.droppedFrames": [
+    {
+      "type": 0,
+      "value": "الإطارات المُسقطة"
+    }
+  ],
+  "web.player.info.playMethod": [
+    {
+      "type": 0,
+      "value": "طريقة التشغيل"
+    }
+  ],
+  "web.player.info.player": [
+    {
+      "type": 0,
+      "value": "المشغّل"
+    }
+  ],
+  "web.player.info.playerDimensions": [
+    {
+      "type": 0,
+      "value": "أبعاد المشغّل"
+    }
+  ],
+  "web.player.info.protocol": [
+    {
+      "type": 0,
+      "value": "البروتوكول"
+    }
+  ],
+  "web.player.info.section.player": [
+    {
+      "type": 0,
+      "value": "المشغّل"
+    }
+  ],
+  "web.player.info.section.source": [
+    {
+      "type": 0,
+      "value": "ملف المصدر الحالي"
+    }
+  ],
+  "web.player.info.section.stream": [
+    {
+      "type": 0,
+      "value": "معلومات بث التشغيل"
+    }
+  ],
+  "web.player.info.section.video": [
+    {
+      "type": 0,
+      "value": "معلومات الفيديو"
+    }
+  ],
+  "web.player.info.size": [
+    {
+      "type": 0,
+      "value": "الحجم"
+    }
+  ],
+  "web.player.info.streamType": [
+    {
+      "type": 0,
+      "value": "نوع البث"
+    }
+  ],
+  "web.player.info.streamTypeProgressive": [
+    {
+      "type": 0,
+      "value": "تدريجي"
+    }
+  ],
+  "web.player.info.title": [
+    {
+      "type": 0,
+      "value": "معلومات التشغيل"
+    }
+  ],
+  "web.player.info.videoBitrate": [
+    {
+      "type": 0,
+      "value": "معدل بت الفيديو"
+    }
+  ],
+  "web.player.info.videoCodec": [
+    {
+      "type": 0,
+      "value": "ترميز الفيديو"
+    }
+  ],
+  "web.player.info.videoRangeType": [
+    {
+      "type": 0,
+      "value": "نوع نطاق الفيديو"
+    }
+  ],
+  "web.player.info.videoResolution": [
+    {
+      "type": 0,
+      "value": "دقة الفيديو"
+    }
+  ],
+  "web.player.loadingVideo": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل الفيديو"
+    }
+  ],
+  "web.player.minimize": [
+    {
+      "type": 0,
+      "value": "تصغير المشغّل"
+    }
+  ],
+  "web.player.nextEpisode.countdown": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "التالي خلال "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.nextEpisode.episodeLine": [
+    {
+      "type": 0,
+      "value": "م"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": ":ح"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.player.quality.auto": [
+    {
+      "type": 0,
+      "value": "تلقائي"
+    }
+  ],
+  "web.player.quality.bitrateKbps": [
+    {
+      "type": 1,
+      "value": "kbps"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.player.quality.bitrateMbps": [
+    {
+      "type": 1,
+      "value": "mbps"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.player.quality.playbackSettings": [
+    {
+      "type": 0,
+      "value": "إعدادات التشغيل"
+    }
+  ],
+  "web.player.quality.selected": [
+    {
+      "type": 0,
+      "value": "محدد"
+    }
+  ],
+  "web.player.quality.title": [
+    {
+      "type": 0,
+      "value": "الجودة"
+    }
+  ],
+  "web.player.quality.version": [
+    {
+      "type": 0,
+      "value": "الإصدار"
+    }
+  ],
+  "web.player.quality.versionPlaying": [
+    {
+      "type": 0,
+      "value": "قيد التشغيل"
+    }
+  ],
+  "web.player.quality.versionRequested": [
+    {
+      "type": 0,
+      "value": "مطلوب"
     }
   ],
   "web.player.room.inviteNotReady": [
@@ -9035,10 +10171,350 @@
       "value": "جارٍ إعادة الاتصال بالغرفة. عناصر التحكم غير متاحة مؤقتًا."
     }
   ],
+  "web.player.seekBar.dragMarkerEnd": [
+    {
+      "type": 0,
+      "value": "سحب نهاية العلامة"
+    }
+  ],
+  "web.player.seekBar.dragMarkerStart": [
+    {
+      "type": 0,
+      "value": "سحب بداية العلامة"
+    }
+  ],
+  "web.player.seekBar.label": [
+    {
+      "type": 0,
+      "value": "التنقل"
+    }
+  ],
+  "web.player.seekBar.markerEdge": [
+    {
+      "type": 5,
+      "value": "edge",
+      "options": {
+        "start": {
+          "value": [
+            {
+              "type": 0,
+              "value": "بداية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نهاية"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "kind",
+      "options": {
+        "intro": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المقدمة"
+            }
+          ]
+        },
+        "recap": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الملخص"
+            }
+          ]
+        },
+        "credits": {
+          "value": [
+            {
+              "type": 0,
+              "value": "شارة النهاية"
+            }
+          ]
+        },
+        "preview": {
+          "value": [
+            {
+              "type": 0,
+              "value": "المعاينة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "kind"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.player.seekBar.positionMinutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "دقيقتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " دقائق"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " دقيقة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.seekBar.positionMinutesSeconds": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " و"
+    },
+    {
+      "type": 1,
+      "value": "seconds"
+    }
+  ],
+  "web.player.seekBar.positionSeconds": [
+    {
+      "type": 6,
+      "value": "seconds",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ثانية واحدة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ثانيتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثوانٍ"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ثانية"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.serverMessage.fallback": [
+    {
+      "type": 0,
+      "value": "وصلت رسالة من الخادم."
+    }
+  ],
+  "web.player.serverMessage.restarting": [
+    {
+      "type": 0,
+      "value": "قد ينتهي التشغيل قريبًا أثناء إعادة تشغيل الخادم."
+    }
+  ],
+  "web.player.serverMessage.restartingTitle": [
+    {
+      "type": 0,
+      "value": "جارٍ إعادة تشغيل الخادم"
+    }
+  ],
+  "web.player.serverMessage.shuttingDown": [
+    {
+      "type": 0,
+      "value": "قد ينتهي التشغيل قريبًا أثناء إيقاف تشغيل الخادم."
+    }
+  ],
+  "web.player.serverMessage.shuttingDownTitle": [
+    {
+      "type": 0,
+      "value": "جارٍ إيقاف تشغيل الخادم"
+    }
+  ],
+  "web.player.serverMessage.title": [
+    {
+      "type": 0,
+      "value": "إشعار التشغيل"
+    }
+  ],
+  "web.player.session.endedByAdmin": [
+    {
+      "type": 0,
+      "value": "أنهى أحد المسؤولين جلسة التشغيل هذه."
+    }
+  ],
+  "web.player.skip.preview": [
+    {
+      "type": 0,
+      "value": "تخطي المعاينة"
+    }
+  ],
+  "web.player.sleepTimer.countdown": [
+    {
+      "type": 0,
+      "value": "مؤقت النوم "
+    },
+    {
+      "type": 1,
+      "value": "time"
+    }
+  ],
+  "web.player.sleepTimer.minutes": [
+    {
+      "type": 1,
+      "value": "minutes"
+    },
+    {
+      "type": 0,
+      "value": " د"
+    }
+  ],
+  "web.player.sleepTimer.short": [
+    {
+      "type": 0,
+      "value": "مؤقت النوم"
+    }
+  ],
   "web.player.sleepTimer.trigger": [
     {
       "type": 0,
       "value": "مؤقت النوم"
+    }
+  ],
+  "web.player.sleepTimer.turnOff": [
+    {
+      "type": 0,
+      "value": "إيقاف"
+    }
+  ],
+  "web.player.speed.heading": [
+    {
+      "type": 0,
+      "value": "السرعة"
     }
   ],
   "web.player.tracks.resetAudioFailed": [
@@ -9051,6 +10527,146 @@
     {
       "type": 0,
       "value": "تعذّر حفظ تفضيل الصوت"
+    }
+  ],
+  "web.player.upNext.autoplayOff": [
+    {
+      "type": 0,
+      "value": "التشغيل التلقائي معطّل"
+    }
+  ],
+  "web.player.upNext.autoplayOn": [
+    {
+      "type": 0,
+      "value": "التشغيل التلقائي مفعّل"
+    }
+  ],
+  "web.player.upNext.closeTitle": [
+    {
+      "type": 0,
+      "value": "إغلاق (Esc)"
+    }
+  ],
+  "web.player.upNext.countdownSeconds": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " ث"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.player.upNext.finishedSeries": [
+    {
+      "type": 0,
+      "value": "أنهيت "
+    },
+    {
+      "type": 1,
+      "value": "series"
+    }
+  ],
+  "web.player.upNext.noMoreEpisodes": [
+    {
+      "type": 0,
+      "value": "لا توجد حلقات أخرى متاحة. اختر شيئًا آخر من «قيد المشاهدة» أدناه."
+    }
+  ],
+  "web.player.upNext.playingNext": [
+    {
+      "type": 0,
+      "value": "التالي"
+    }
+  ],
+  "web.player.volume.mute": [
+    {
+      "type": 0,
+      "value": "كتم الصوت"
+    }
+  ],
+  "web.player.volume.muteShortcut": [
+    {
+      "type": 0,
+      "value": "كتم الصوت (M)"
+    }
+  ],
+  "web.player.volume.unmute": [
+    {
+      "type": 0,
+      "value": "إلغاء كتم الصوت"
+    }
+  ],
+  "web.player.volume.unmuteShortcut": [
+    {
+      "type": 0,
+      "value": "إلغاء كتم الصوت (M)"
     }
   ],
   "web.player.watchTogether.allowPause": [
@@ -9069,6 +10685,24 @@
     {
       "type": 0,
       "value": "انضم هذا الملف الشخصي إلى Watch Party من جهاز آخر."
+    }
+  ],
+  "web.player.watchTogether.copyInviteLabel": [
+    {
+      "type": 0,
+      "value": "نسخ رابط الدعوة"
+    }
+  ],
+  "web.player.watchTogether.end": [
+    {
+      "type": 0,
+      "value": "إنهاء"
+    }
+  ],
+  "web.player.watchTogether.invite": [
+    {
+      "type": 0,
+      "value": "دعوة"
     }
   ],
   "web.player.watchTogether.member.buffering": [
@@ -9135,10 +10769,28 @@
       "value": "المضيف فقط"
     }
   ],
+  "web.player.watchTogether.stop": [
+    {
+      "type": 0,
+      "value": "إيقاف"
+    }
+  ],
+  "web.player.watchTogether.stopTitle": [
+    {
+      "type": 0,
+      "value": "الإيقاف للجميع والعودة إلى الغرفة لاختيار شيء آخر"
+    }
+  ],
   "web.player.watchTogether.syncingRoom": [
     {
       "type": 0,
       "value": "جارٍ مزامنة حالة الغرفة"
+    }
+  ],
+  "web.player.watchTogether.title": [
+    {
+      "type": 0,
+      "value": "Watch Party"
     }
   ],
   "web.player.watchTogether.viewerCount": [
@@ -9206,6 +10858,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.player.watchTogether.viewersLabel": [
+    {
+      "type": 0,
+      "value": "المشاهدون"
     }
   ],
   "web.profiles.libraries.count": [
@@ -14328,6 +15986,126 @@
       "value": "أعلى"
     }
   ],
+  "web.settings.subtitlePanel.background": [
+    {
+      "type": 0,
+      "value": "الخلفية"
+    }
+  ],
+  "web.settings.subtitlePanel.backgroundOpacity": [
+    {
+      "type": 0,
+      "value": "عتامة الخلفية"
+    }
+  ],
+  "web.settings.subtitlePanel.close": [
+    {
+      "type": 0,
+      "value": "إغلاق"
+    }
+  ],
+  "web.settings.subtitlePanel.color": [
+    {
+      "type": 0,
+      "value": "اللون"
+    }
+  ],
+  "web.settings.subtitlePanel.eyebrowDefault": [
+    {
+      "type": 0,
+      "value": "الترجمة النصية"
+    }
+  ],
+  "web.settings.subtitlePanel.font": [
+    {
+      "type": 0,
+      "value": "الخط"
+    }
+  ],
+  "web.settings.subtitlePanel.opacity": [
+    {
+      "type": 0,
+      "value": "العتامة"
+    }
+  ],
+  "web.settings.subtitlePanel.outline": [
+    {
+      "type": 0,
+      "value": "الحدّ الخارجي"
+    }
+  ],
+  "web.settings.subtitlePanel.position": [
+    {
+      "type": 0,
+      "value": "الموضع"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine1": [
+    {
+      "type": 0,
+      "value": "قفز الثعلب البني السريع"
+    }
+  ],
+  "web.settings.subtitlePanel.previewLine2": [
+    {
+      "type": 0,
+      "value": "فوق الكلب الكسول."
+    }
+  ],
+  "web.settings.subtitlePanel.resetDefault": [
+    {
+      "type": 0,
+      "value": "استخدام النمط الاحتياطي"
+    }
+  ],
+  "web.settings.subtitlePanel.size": [
+    {
+      "type": 0,
+      "value": "الحجم"
+    }
+  ],
+  "web.settings.subtitlePanel.statusDefault": [
+    {
+      "type": 0,
+      "value": "تُحفظ التغييرات تلقائيًا"
+    }
+  ],
+  "web.settings.subtitlePanel.style": [
+    {
+      "type": 0,
+      "value": "النمط"
+    }
+  ],
+  "web.settings.subtitlePanel.text": [
+    {
+      "type": 0,
+      "value": "النص"
+    }
+  ],
+  "web.settings.subtitlePanel.textOpacity": [
+    {
+      "type": 0,
+      "value": "عتامة النص"
+    }
+  ],
+  "web.settings.subtitlePanel.textOutline": [
+    {
+      "type": 0,
+      "value": "الحدّ الخارجي للنص"
+    }
+  ],
+  "web.settings.subtitlePanel.title": [
+    {
+      "type": 0,
+      "value": "مظهر الترجمة"
+    }
+  ],
+  "web.settings.subtitlePanel.vertical": [
+    {
+      "type": 0,
+      "value": "الموضع العمودي"
+    }
+  ],
   "web.settings.titleArt.allDevices": [
     {
       "type": 0,
@@ -14778,6 +16556,664 @@
     {
       "type": 0,
       "value": "تعذّر بدء التشغيل العشوائي."
+    }
+  ],
+  "web.subtitles.closeDialog": [
+    {
+      "type": 0,
+      "value": "إغلاق"
+    }
+  ],
+  "web.subtitles.menu.addSubtitles": [
+    {
+      "type": 0,
+      "value": "إضافة ترجمة…"
+    }
+  ],
+  "web.subtitles.menu.alreadyMatches": [
+    {
+      "type": 0,
+      "value": "متطابقة مع الصوت بالفعل."
+    }
+  ],
+  "web.subtitles.menu.appearance": [
+    {
+      "type": 0,
+      "value": "المظهر…"
+    }
+  ],
+  "web.subtitles.menu.delay": [
+    {
+      "type": 0,
+      "value": "التأخير"
+    }
+  ],
+  "web.subtitles.menu.delayEarlier": [
+    {
+      "type": 0,
+      "value": "تقديم الترجمة بمقدار "
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.delayLater": [
+    {
+      "type": 0,
+      "value": "تأخير الترجمة بمقدار "
+    },
+    {
+      "type": 1,
+      "value": "step"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.delayValue": [
+    {
+      "type": 1,
+      "value": "delay"
+    },
+    {
+      "type": 0,
+      "value": " ms"
+    }
+  ],
+  "web.subtitles.menu.noMatch": [
+    {
+      "type": 0,
+      "value": "لا تتطابق مع صوت هذا الفيديو؛ ربما تخص إصدارًا آخر."
+    }
+  ],
+  "web.subtitles.menu.off": [
+    {
+      "type": 0,
+      "value": "إيقاف"
+    }
+  ],
+  "web.subtitles.menu.resetDelay": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين"
+    }
+  ],
+  "web.subtitles.menu.resetDelayLabel": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين تأخير الترجمة"
+    }
+  ],
+  "web.subtitles.menu.resetTiming": [
+    {
+      "type": 0,
+      "value": "إعادة تعيين التوقيت"
+    }
+  ],
+  "web.subtitles.menu.source.downloaded": [
+    {
+      "type": 0,
+      "value": "تم تنزيلها"
+    }
+  ],
+  "web.subtitles.menu.source.embedded": [
+    {
+      "type": 0,
+      "value": "مضمّنة"
+    }
+  ],
+  "web.subtitles.menu.source.external": [
+    {
+      "type": 0,
+      "value": "خارجية"
+    }
+  ],
+  "web.subtitles.menu.syncHint": [
+    {
+      "type": 0,
+      "value": "يطابق التوقيت مع الصوت لجميع المشاهدين."
+    }
+  ],
+  "web.subtitles.menu.syncHintExternal": [
+    {
+      "type": 0,
+      "value": "يطابق التوقيت مع الصوت للجميع. لا يتغير الملف نفسه."
+    }
+  ],
+  "web.subtitles.menu.syncToAudio": [
+    {
+      "type": 0,
+      "value": "مزامنة مع الصوت"
+    }
+  ],
+  "web.subtitles.menu.syncedResult": [
+    {
+      "type": 0,
+      "value": "تمت المزامنة مع الصوت: "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.menu.syncing": [
+    {
+      "type": 0,
+      "value": "جارٍ المزامنة…"
+    }
+  ],
+  "web.subtitles.menu.timing": [
+    {
+      "type": 0,
+      "value": "التوقيت"
+    }
+  ],
+  "web.subtitles.menu.timingForbidden": [
+    {
+      "type": 0,
+      "value": "لا يسمح هذا الخادم بتغيير توقيت الترجمة."
+    }
+  ],
+  "web.subtitles.search.downloadFailed": [
+    {
+      "type": 0,
+      "value": "فشل التنزيل"
+    }
+  ],
+  "web.subtitles.search.downloading": [
+    {
+      "type": 0,
+      "value": "جارٍ التنزيل"
+    }
+  ],
+  "web.subtitles.search.downloads": [
+    {
+      "type": 0,
+      "value": "↓"
+    },
+    {
+      "type": 1,
+      "value": "downloads"
+    }
+  ],
+  "web.subtitles.search.language": [
+    {
+      "type": 0,
+      "value": "اللغة"
+    }
+  ],
+  "web.subtitles.search.prompt": [
+    {
+      "type": 0,
+      "value": "اختر لغة واضغط على «بحث»."
+    }
+  ],
+  "web.subtitles.search.search": [
+    {
+      "type": 0,
+      "value": "بحث"
+    }
+  ],
+  "web.subtitles.search.searchFailed": [
+    {
+      "type": 0,
+      "value": "فشل البحث"
+    }
+  ],
+  "web.subtitles.search.searchOnline": [
+    {
+      "type": 0,
+      "value": "البحث عبر الإنترنت"
+    }
+  ],
+  "web.subtitles.search.searching": [
+    {
+      "type": 0,
+      "value": "جارٍ البحث…"
+    }
+  ],
+  "web.subtitles.search.title": [
+    {
+      "type": 0,
+      "value": "إضافة ترجمة"
+    }
+  ],
+  "web.subtitles.sync.error.changed": [
+    {
+      "type": 0,
+      "value": "تغيّرت الترجمة. حاول مرة أخرى."
+    }
+  ],
+  "web.subtitles.sync.error.resetFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت إعادة تعيين التوقيت"
+    }
+  ],
+  "web.subtitles.sync.error.syncFailed": [
+    {
+      "type": 0,
+      "value": "فشلت المزامنة"
+    }
+  ],
+  "web.subtitles.sync.error.unsupportedFormat": [
+    {
+      "type": 0,
+      "value": "لا يمكن مزامنة هذا التنسيق."
+    }
+  ],
+  "web.subtitles.sync.failure.generic": [
+    {
+      "type": 0,
+      "value": "فشلت المزامنة. حاول مرة أخرى."
+    }
+  ],
+  "web.subtitles.sync.failure.noAudio": [
+    {
+      "type": 0,
+      "value": "لا يحتوي هذا الفيديو على صوت يمكن لـ Silo قراءته."
+    }
+  ],
+  "web.subtitles.sync.failure.subtitleChanged": [
+    {
+      "type": 0,
+      "value": "تغيّرت الترجمة أثناء مزامنتها. حاول مرة أخرى."
+    }
+  ],
+  "web.subtitles.sync.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "الخادم مشغول. حاول مرة أخرى بعد بضع دقائق."
+    }
+  ],
+  "web.subtitles.sync.frameRate": [
+    {
+      "type": 1,
+      "value": "from"
+    },
+    {
+      "type": 0,
+      "value": "→"
+    },
+    {
+      "type": 1,
+      "value": "to"
+    },
+    {
+      "type": 0,
+      "value": " fps"
+    }
+  ],
+  "web.subtitles.sync.offsetSeconds": [
+    {
+      "type": 1,
+      "value": "offset"
+    },
+    {
+      "type": 0,
+      "value": " ث"
+    }
+  ],
+  "web.subtitles.sync.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.subtitles.sync.phase.analyzing": [
+    {
+      "type": 0,
+      "value": "جارٍ الاستماع إلى الصوت…"
+    }
+  ],
+  "web.subtitles.sync.phase.matching": [
+    {
+      "type": 0,
+      "value": "جارٍ مطابقة الأسطر مع الكلام…"
+    }
+  ],
+  "web.subtitles.sync.phase.waiting": [
+    {
+      "type": 0,
+      "value": "في انتظار البدء…"
+    }
+  ],
+  "web.subtitles.sync.progressLabel": [
+    {
+      "type": 0,
+      "value": "تقدّم مزامنة الترجمة"
+    }
+  ],
+  "web.subtitles.sync.speed": [
+    {
+      "type": 0,
+      "value": "سرعة ×"
+    },
+    {
+      "type": 1,
+      "value": "factor"
+    }
+  ],
+  "web.subtitles.sync.status.adjusted": [
+    {
+      "type": 0,
+      "value": "تم ضبط التوقيت "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.alreadyInSync": [
+    {
+      "type": 0,
+      "value": "متزامنة بالفعل"
+    }
+  ],
+  "web.subtitles.sync.status.failed": [
+    {
+      "type": 0,
+      "value": "فشلت المزامنة"
+    }
+  ],
+  "web.subtitles.sync.status.noMatch": [
+    {
+      "type": 0,
+      "value": "لا تطابق هذا الفيديو"
+    }
+  ],
+  "web.subtitles.sync.status.originalTiming": [
+    {
+      "type": 0,
+      "value": "التوقيت الأصلي"
+    }
+  ],
+  "web.subtitles.sync.status.synced": [
+    {
+      "type": 0,
+      "value": "تمت المزامنة "
+    },
+    {
+      "type": 1,
+      "value": "timing"
+    }
+  ],
+  "web.subtitles.sync.status.syncing": [
+    {
+      "type": 0,
+      "value": "جارٍ المزامنة…"
+    }
+  ],
+  "web.subtitles.sync.status.syncingPercent": [
+    {
+      "type": 0,
+      "value": "جارٍ المزامنة… "
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.subtitles.syncNotice.applying": [
+    {
+      "type": 0,
+      "value": "جارٍ تطبيق التوقيت الجديد…"
+    }
+  ],
+  "web.subtitles.syncNotice.dismiss": [
+    {
+      "type": 0,
+      "value": "تجاهل"
+    }
+  ],
+  "web.subtitles.syncNotice.fallbackName": [
+    {
+      "type": 0,
+      "value": "الترجمة"
+    }
+  ],
+  "web.subtitles.syncNotice.noMatchDetail": [
+    {
+      "type": 0,
+      "value": "ربما تخص إصدارًا آخر. لم يتم تغيير التوقيت."
+    }
+  ],
+  "web.subtitles.syncNotice.synced": [
+    {
+      "type": 0,
+      "value": "تمت مزامنة الترجمة"
+    }
+  ],
+  "web.subtitles.syncNotice.timingUpdated": [
+    {
+      "type": 0,
+      "value": "تم تحديث توقيت الترجمة"
+    }
+  ],
+  "web.subtitles.syncNotice.trackAlreadyMatches": [
+    {
+      "type": 0,
+      "value": "ترجمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " مطابقة للصوت بالفعل"
+    }
+  ],
+  "web.subtitles.syncNotice.trackFailed": [
+    {
+      "type": 0,
+      "value": "تعذّرت مزامنة ترجمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.syncNotice.trackNoMatch": [
+    {
+      "type": 0,
+      "value": "ترجمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " لا تطابق الصوت"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSynced": [
+    {
+      "type": 0,
+      "value": "تمت مزامنة ترجمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.syncNotice.trackSyncing": [
+    {
+      "type": 0,
+      "value": "جارٍ مزامنة ترجمة "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.upload.detectFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر اكتشاف لغة الترجمة"
+    }
+  ],
+  "web.subtitles.upload.detected": [
+    {
+      "type": 0,
+      "value": "تم اكتشاف "
+    },
+    {
+      "type": 1,
+      "value": "language"
+    },
+    {
+      "type": 0,
+      "value": " من "
+    },
+    {
+      "type": 5,
+      "value": "source",
+      "options": {
+        "filename": {
+          "value": [
+            {
+              "type": 0,
+              "value": "اسم الملف"
+            }
+          ]
+        },
+        "metadata": {
+          "value": [
+            {
+              "type": 0,
+              "value": "البيانات الوصفية للملف"
+            }
+          ]
+        },
+        "content": {
+          "value": [
+            {
+              "type": 0,
+              "value": "نص الترجمة"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "الاكتشاف التلقائي"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.subtitles.upload.detecting": [
+    {
+      "type": 0,
+      "value": "جارٍ اكتشاف اللغة…"
+    }
+  ],
+  "web.subtitles.upload.dragFile": [
+    {
+      "type": 0,
+      "value": "اسحب ملف ترجمة وأفلته"
+    }
+  ],
+  "web.subtitles.upload.dropFile": [
+    {
+      "type": 0,
+      "value": "أفلت ملف الترجمة"
+    }
+  ],
+  "web.subtitles.upload.dropZoneLabel": [
+    {
+      "type": 0,
+      "value": "أفلت ملف الترجمة هنا أو استعرض الملفات"
+    }
+  ],
+  "web.subtitles.upload.heading": [
+    {
+      "type": 0,
+      "value": "رفع ترجمة"
+    }
+  ],
+  "web.subtitles.upload.hearingImpaired": [
+    {
+      "type": 0,
+      "value": "لضعاف السمع (HI)"
+    }
+  ],
+  "web.subtitles.upload.help": [
+    {
+      "type": 0,
+      "value": "اسحب وأفلت أو استعرض ملفات SRT أو VTT أو ASS أو SSA أو SUB بحجم أقصاه "
+    },
+    {
+      "type": 1,
+      "value": "megabytes"
+    },
+    {
+      "type": 0,
+      "value": " MB. تُكتشف اللغة تلقائيًا عند الإمكان."
+    }
+  ],
+  "web.subtitles.upload.languageLabel": [
+    {
+      "type": 0,
+      "value": "لغة الملف المرفوع"
+    }
+  ],
+  "web.subtitles.upload.orBrowse": [
+    {
+      "type": 0,
+      "value": "أو انقر للاستعراض"
+    }
+  ],
+  "web.subtitles.upload.selected": [
+    {
+      "type": 0,
+      "value": "المحدد: "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    }
+  ],
+  "web.subtitles.upload.unsupportedType": [
+    {
+      "type": 0,
+      "value": "نوع ملف غير مدعوم. استخدم SRT أو VTT أو ASS أو SSA أو SUB."
+    }
+  ],
+  "web.subtitles.upload.upload": [
+    {
+      "type": 0,
+      "value": "رفع"
+    }
+  ],
+  "web.subtitles.upload.uploadFailed": [
+    {
+      "type": 0,
+      "value": "فشل الرفع"
+    }
+  ],
+  "web.subtitles.upload.uploading": [
+    {
+      "type": 0,
+      "value": "جارٍ الرفع…"
     }
   ],
   "web.ui.close": [

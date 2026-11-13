@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -178,8 +179,8 @@ public sealed partial class MarkerEditorViewModel : ObservableObject
             Error = ex switch
             {
                 SiloApiException { Problem.Detail: { Length: > 0 } detail } => detail,
-                SiloApiException { Status: 403 } => "This account may not edit markers.",
-                SiloApiException or InvalidOperationException => "Failed to save markers",
+                SiloApiException { Status: 403 } => AppText.Get("granary.player.markers.forbidden"),
+                SiloApiException or InvalidOperationException => AppText.Get("web.markers.saveFailed"),
                 _ => ApiFailureText.ForTransport(ex),
             };
             return;
@@ -211,10 +212,10 @@ public sealed partial class MarkerEditorViewModel : ObservableObject
     /// <summary>"Credits / Outro": the credits marker is also the outro.</summary>
     public static string Label(string kind) => kind switch
     {
-        WatchMarkerKinds.Intro => "Intro",
-        WatchMarkerKinds.Recap => "Recap",
-        WatchMarkerKinds.Credits => "Credits / Outro",
-        _ => "Preview",
+        WatchMarkerKinds.Intro => AppText.Get("web.markers.kind.intro"),
+        WatchMarkerKinds.Recap => AppText.Get("web.markers.kind.recap"),
+        WatchMarkerKinds.Credits => AppText.Get("web.markers.kind.credits"),
+        _ => AppText.Get("web.markers.kind.preview"),
     };
 
     /// <summary>"3:07", "1:02:05", as the web's formatTime.</summary>
@@ -247,7 +248,7 @@ public sealed partial class MarkerEditRow(string kind, string label, MarkerEdito
 
     /// <summary>"0:03 – 0:12", or "Not set".</summary>
     [ObservableProperty]
-    public partial string RangeText { get; private set; } = "Not set";
+    public partial string RangeText { get; private set; } = AppText.Get("web.markers.panel.notSet");
 
     [ObservableProperty]
     public partial bool HasRange { get; private set; }
@@ -260,11 +261,13 @@ public sealed partial class MarkerEditRow(string kind, string label, MarkerEdito
     public partial bool IsDirty { get; private set; }
 
     /// <summary>"Intro, 0:03 – 0:12" for screen readers.</summary>
-    public string AccessibleName => $"{Label}, {RangeText}";
+    public string AccessibleName => AppText.Get("granary.player.markers.rowName", ("kind", Label), ("range", RangeText));
 
     internal void Show(WatchMarker? range, bool isActive, bool isDirty)
     {
-        RangeText = range is null ? "Not set" : $"{MarkerEditorViewModel.Time(range.StartSeconds)} – {MarkerEditorViewModel.Time(range.EndSeconds)}";
+        RangeText = range is null
+            ? AppText.Get("web.markers.panel.notSet")
+            : AppText.Get("web.markers.panel.range", ("start", MarkerEditorViewModel.Time(range.StartSeconds)), ("end", MarkerEditorViewModel.Time(range.EndSeconds)));
         HasRange = range is not null;
         IsActive = isActive;
         IsDirty = isDirty;

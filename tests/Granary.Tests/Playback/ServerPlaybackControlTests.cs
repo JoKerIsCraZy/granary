@@ -104,8 +104,8 @@ public sealed class ServerPlaybackControlTests
     }
 
     [Theory]
-    [InlineData("terminate", "{}", "admin", ServerPlayback.AdminEndedText)]
-    [InlineData("stop", "{}", "admin", ServerPlayback.AdminStoppedText)]
+    [InlineData("terminate", "{}", "admin", "An administrator ended this playback session.")]
+    [InlineData("stop", "{}", "admin", "An administrator stopped this playback session.")]
     [InlineData("terminate", """{ "message": "Maintenance tonight." }""", "admin", "Maintenance tonight.")]
     [InlineData("stop", "{}", "server", "The server ended this playback session.")]
     public async Task StopAndTerminate_EndPlayback_AfterTheAnswer(string name, string payload, string issuedBy, string expected)

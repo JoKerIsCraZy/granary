@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.Logging;
 
@@ -44,7 +45,7 @@ public sealed partial class PlayerViewModel
 
     /// <summary>"Sleep", or "Sleep 29:59" while a duration counts down, as the web's button says it.</summary>
     [ObservableProperty]
-    public partial string SleepTimerText { get; private set; } = "Sleep";
+    public partial string SleepTimerText { get; private set; } = AppText.Get("web.player.sleepTimer.short");
 
     /// <summary>
     /// The choice that runs, for screen readers: "30 min" or "End of episode"; empty while the timer is off. Not the
@@ -143,7 +144,7 @@ public sealed partial class PlayerViewModel
         if (Now < ends)
         {
             // Only the button's text moves: the menu, open or not, stays as it is.
-            SleepTimerText = "Sleep " + Countdown(ends - Now);
+            SleepTimerText = AppText.Get("web.player.sleepTimer.countdown", ("time", Countdown(ends - Now)));
             return;
         }
         StopSleepTicks();
@@ -208,11 +209,15 @@ public sealed partial class PlayerViewModel
 
     private void ShowSleepTimer()
     {
-        string end = _playback?.Episode is not null ? "End of episode" : "End of movie";
+        string end = _playback?.Episode is not null
+            ? AppText.Get("granary.player.sleepTimer.endOfEpisode")
+            : AppText.Get("granary.player.sleepTimer.endOfMovie");
         string? countdown = _sleepEnds is { } ends ? Countdown(ends - Now) : null;
         bool isOn = countdown is not null || _sleepAtEnd;
         IsSleepTimerOn = isOn;
-        SleepTimerText = countdown is null ? "Sleep" : "Sleep " + countdown;
+        SleepTimerText = countdown is null
+            ? AppText.Get("web.player.sleepTimer.short")
+            : AppText.Get("web.player.sleepTimer.countdown", ("time", countdown));
         SleepTimerStatus = countdown is not null && _sleepPicked is { } minutes ? MinutesLabel(minutes) : _sleepAtEnd ? end : "";
         var options = SleepOptions(isOn, end);
         if (!options.SequenceEqual(SleepTimerOptions))
@@ -228,7 +233,7 @@ public sealed partial class PlayerViewModel
         var options = new List<SleepTimerOption>();
         if (isOn)
         {
-            options.Add(new SleepTimerOption(SleepTimerAction.TurnOff, 0, "Turn off"));
+            options.Add(new SleepTimerOption(SleepTimerAction.TurnOff, 0, AppText.Get("web.player.sleepTimer.turnOff")));
         }
         var durations = preferred > 0 && !SleepTimerPresets.Contains(preferred) ? SleepTimerPresets.Append(preferred).Order() : SleepTimerPresets.AsEnumerable();
         options.AddRange(durations.Select(minutes =>
@@ -262,7 +267,7 @@ public sealed partial class PlayerViewModel
     }
 
     // "30 min", as the web's rows say it.
-    private static string MinutesLabel(int minutes) => string.Create(CultureInfo.InvariantCulture, $"{minutes} min");
+    private static string MinutesLabel(int minutes) => AppText.Get("web.player.sleepTimer.minutes", ("minutes", minutes));
 
     // "29:59", as the web's formatCountdown: whole seconds, rounded up.
     private static string Countdown(TimeSpan left)

@@ -45,7 +45,7 @@
     </UserControl.Resources>
 
     <Border x:Name="Card" Width="352" CornerRadius="16" BorderThickness="1" BorderBrush="#1AFFFFFF" Background="#F2171717"
-            AutomationProperties.Name="Edit markers">
+            AutomationProperties.Name="{x:Bind t:AppText.Get('web.markers.editTitle')}">
         <Border.RenderTransform>
             <TranslateTransform x:Name="Offset" />
         </Border.RenderTransform>
@@ -67,13 +67,13 @@
                 </Grid.ColumnDefinitions>
                 <FontIcon Glyph="&#xE76F;" FontSize="14" Margin="0,2,0,0" VerticalAlignment="Top" Foreground="#4DFFFFFF" />
                 <StackPanel Grid.Column="1" Spacing="2">
-                    <TextBlock Text="Edit markers" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.markers.editTitle')}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
                                AutomationProperties.HeadingLevel="Level1" />
-                    <TextBlock Text="Drag the timeline handles, or set points to the playhead." FontSize="11" Foreground="#66FFFFFF" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.markers.panel.hint')}" FontSize="11" Foreground="#66FFFFFF" TextWrapping="Wrap" />
                 </StackPanel>
                 <Button Grid.Column="2" Width="26" Height="26" VerticalAlignment="Top" Style="{StaticResource RowIconButtonStyle}" Foreground="#80FFFFFF"
-                        Command="{x:Bind ViewModel.MarkerEditor.CancelCommand, Mode=OneWay}" AutomationProperties.Name="Close marker editor"
-                        ToolTipService.ToolTip="Close">
+                        Command="{x:Bind ViewModel.MarkerEditor.CancelCommand, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.markers.panel.closeLabel')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.ui.close')}">
                     <FontIcon Glyph="&#xE711;" FontSize="12" />
                 </Button>
             </controls:MoveHandle>
@@ -115,16 +115,16 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Button Content="Set start" Style="{StaticResource EdgeButtonStyle}" Click="OnSetStartClick" BorderThickness="1" BorderBrush="#1AFFFFFF" />
-                                    <Button Grid.Column="1" Content="Set end" Style="{StaticResource EdgeButtonStyle}" Click="OnSetEndClick" BorderThickness="1"
+                                    <Button Content="{x:Bind t:AppText.Get('web.markers.panel.setStart')}" Style="{StaticResource EdgeButtonStyle}" Click="OnSetStartClick" BorderThickness="1" BorderBrush="#1AFFFFFF" />
+                                    <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('web.markers.panel.setEnd')}" Style="{StaticResource EdgeButtonStyle}" Click="OnSetEndClick" BorderThickness="1"
                                             BorderBrush="#1AFFFFFF" />
                                     <Button Grid.Column="3" Style="{StaticResource RowIconButtonStyle}" Click="OnResetClick" IsEnabled="{x:Bind IsDirty, Mode=OneWay}"
-                                            AutomationProperties.Name="{x:Bind controls:MarkerEditPanel.ResetName(Label)}" ToolTipService.ToolTip="Reset to saved">
+                                            AutomationProperties.Name="{x:Bind controls:MarkerEditPanel.ResetName(Label)}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.markers.panel.resetTitle')}">
                                         <FontIcon Glyph="&#xE7A7;" FontSize="13" />
                                     </Button>
                                     <Button Grid.Column="4" Style="{StaticResource RowIconButtonStyle}" Click="OnClearClick" IsEnabled="{x:Bind HasRange, Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind controls:MarkerEditPanel.ClearName(Label)}"
-                                            ToolTipService.ToolTip="Remove marker until manually set again">
+                                            ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.markers.panel.clearTitle')}">
                                         <FontIcon Glyph="&#xE74D;" FontSize="13" />
                                     </Button>
                                 </Grid>
@@ -150,19 +150,19 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{x:Bind Time(ViewModel.PositionSeconds), Mode=OneWay}" FontFamily="Consolas" FontSize="11" Foreground="#66FFFFFF"
-                           VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" AutomationProperties.Name="Playhead" />
+                           VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.markers.playhead')}" />
                 <Button Grid.Column="1" Style="{StaticResource FooterButtonStyle}" Foreground="#99FFFFFF" Command="{x:Bind ViewModel.MarkerEditor.ResetAllCommand, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.MarkerEditor.IsDirty, Mode=OneWay}" AutomationProperties.Name="Reset all"
-                        ToolTipService.ToolTip="Reset all markers to saved">
+                        Visibility="{x:Bind ViewModel.MarkerEditor.IsDirty, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.markers.panel.resetAll')}"
+                        ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.markers.panel.resetAllTitle')}">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <FontIcon Glyph="&#xE7A7;" FontSize="12" />
-                        <TextBlock Text="Reset all" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.markers.panel.resetAll')}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="2" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource FooterButtonStyle}" Command="{x:Bind ViewModel.MarkerEditor.CancelCommand, Mode=OneWay}" />
                 <Button x:Name="SaveButton" Grid.Column="3" Style="{StaticResource FooterButtonStyle}" Background="White" Foreground="#FF171717" Padding="14,6"
                         FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" Command="{x:Bind ViewModel.MarkerEditor.SaveCommand, Mode=OneWay}"
-                        AutomationProperties.Name="Save markers">
+                        AutomationProperties.Name="{x:Bind t:AppText.Get('granary.player.markers.saveName')}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Grid Width="12" Height="12">
                             <FontIcon Glyph="&#xE73E;" FontSize="12" Visibility="{x:Bind Hides(ViewModel.MarkerEditor.IsSaving), Mode=OneWay}" />

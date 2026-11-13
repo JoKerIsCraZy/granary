@@ -14,7 +14,7 @@
 
     <StackPanel Padding="12,4,12,8">
         <Grid Padding="0,4">
-            <TextBlock Text="SPEED" FontSize="12" CharacterSpacing="100" Foreground="#66FFFFFF" VerticalAlignment="Bottom" />
+            <TextBlock Text="{x:Bind SpeedHeading}" FontSize="12" CharacterSpacing="100" Foreground="#66FFFFFF" VerticalAlignment="Bottom" />
             <TextBlock x:Name="ValueText" HorizontalAlignment="Right" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
                        Typography.NumeralAlignment="Tabular" Foreground="{StaticResource SiloPlayerForegroundBrush}" />
         </Grid>

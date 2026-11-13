@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -51,6 +52,10 @@ public sealed partial class PlayerViewModel
     /// <summary>"Ends at 22:41", for screen readers; empty with <see cref="EndsAtText"/>.</summary>
     [ObservableProperty]
     public partial string EndsAtSpoken { get; private set; } = "";
+
+    /// <summary>"22:41" alone, for a sentence that names the end among other things; empty with <see cref="EndsAtText"/>.</summary>
+    [ObservableProperty]
+    public partial string EndsAtClock { get; private set; } = "";
 
     /// <summary>A click on the times: their end switches between the duration and the time left, kept for this PC.</summary>
     [RelayCommand]
@@ -149,8 +154,9 @@ public sealed partial class PlayerViewModel
         _endsAtZone = zone;
         _endsAtCulture = culture;
         string time = minute is { } at ? TimeZoneInfo.ConvertTime(at, zone).ToString("t", culture) : "";
-        EndsAtText = minute is null ? "" : "Ends " + time;
-        EndsAtSpoken = minute is null ? "" : "Ends at " + time;
+        EndsAtText = minute is null ? "" : AppText.Get("granary.player.endsAt", ("time", time));
+        EndsAtSpoken = minute is null ? "" : AppText.Get("granary.player.endsAtSpoken", ("time", time));
+        EndsAtClock = time;
     }
 
     // For good, as the player is disposed: a tick already posted finds it disposed and starts none.

@@ -1,6 +1,7 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Player;
@@ -124,6 +125,23 @@ public sealed class PlayerViewModelSleepTimerTests
         Assert.Equal(["5 min", "15 min", "30 min", "45 min", "60 min", "End of episode"], viewModel.SleepTimerOptions.Select(o => o.Label));
         Assert.False(viewModel.IsSleepTimerOn);
         Assert.Equal("Sleep", viewModel.SleepTimerText);
+    }
+
+    [Fact]
+    public async Task TheTimersWords_FollowTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var viewModel = await PlayingAsync(Ted);
+
+        // The end of the episode is Granary's own choice, in English until it is translated.
+        Assert.Equal(["5 Min.", "15 Min.", "30 Min.", "45 Min.", "60 Min.", "End of episode"], viewModel.SleepTimerOptions.Select(o => o.Label));
+        Assert.Equal("Timer", viewModel.SleepTimerText);
+
+        Choose(viewModel, "30 Min.");
+
+        Assert.Equal(("Timer 30:00", "30 Min.", "Ausschalten"), (viewModel.SleepTimerText, viewModel.SleepTimerStatus, viewModel.SleepTimerOptions[0].Label));
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal("Timer 29:59", viewModel.SleepTimerText);
     }
 
     [Fact]

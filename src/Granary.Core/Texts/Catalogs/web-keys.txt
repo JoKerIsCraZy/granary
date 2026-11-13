@@ -2,6 +2,16 @@
 # with # are left out. scripts/sync-web-texts.ps1 keeps these keys of the catalogs texts.lock.json pins, in web/
 # (docs/release.md, "Translations").
 
+# The player, in the words of the web's player (web/src/player/components: PlayerControls, VideoPlayer, SeekBar,
+# VolumeControl, the audio, subtitle, chapters, quality and sleep timer menus, the playback info, NextEpisodeOverlay,
+# PlayingNextScreen, the skip pills, WatchTogetherPanel, MarkerEditPanel, the Add Subtitles dialog and
+# SubtitleAppearancePanel; player/utils/subtitleSync.ts; lib/languageNames.ts): src/Granary.App/Views/PlayerPage*,
+# AddSubtitlesPanel, MarkerEditPanel, SubtitleAppearancePanel, SeekBar*, SpeedTrack, PlayerMenus, PlayerTime and
+# SubtitlePreview in src/Granary.App/Controls, the taskbar buttons (src/Granary.App/Services/WindowsTaskbarToolbar.cs),
+# src/Granary.Core/ViewModels/PlayerViewModel*.cs and ViewModels/Player, and the playback texts of
+# src/Granary.Core/Playback (MarkerPrompts, PlaybackStarter, ServerPlayback.Control, SubtitleSyncTracker).
+bufferingQuality.autoLimited
+
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
 # src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
 # src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
@@ -142,6 +152,13 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+introSkip.pill.skip
+introSkip.pill.undo
+introSkip.pill.undoCaption
+marker.skipCredits
+marker.skipRecap
+
 # Requests, in the words of the web's hub (pages/Requests.tsx), its browse and Discover row pages
 # (pages/RequestBrowse.tsx, RequestDiscoverSection.tsx), the brand rows (components/BrandCarousel.tsx), the request
 # poster card and its toasts (components/RequestPosterCard.tsx, hooks/queries/useRequests.ts), the seasons dialog
@@ -204,6 +221,13 @@ settingsManifest.ui.title_art.label
 
 # More of a library page's words, as above under catalog.sort.added.
 shuffle.nothingToPlay
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+subtitleSearch.hearingImpaired
+upNext.endOfPlayback
+upNext.headingFinished
+upNext.onDeck
+upNext.playNow
 
 # Watch Together, in the words of the web's hub, room and start sheet (pages/watchtogether, components/watchtogether)
 # and its player's Watch Party panel and notices (player/components/WatchTogetherPanel.tsx, VideoPlayer.tsx):
@@ -1135,6 +1159,10 @@ web.item.menu.showInRecommendations
 web.item.rating.label
 web.item.rating.stars
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.languageName.unknown
+web.languageName.unknownTag
+
 # More of a library page's words, as above under catalog.sort.added.
 web.library.browse.clearFilters
 web.library.browse.noMatches
@@ -1175,8 +1203,30 @@ web.library.watchlist.statusOutAwaitingApproval
 web.library.watchlist.titlesHint
 web.library.watchlist.titlesHintRequested
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.markers.editTitle
+web.markers.kind.credits
+web.markers.kind.intro
+web.markers.kind.preview
+web.markers.kind.recap
+web.markers.panel.clearLabel
+web.markers.panel.clearTitle
+web.markers.panel.closeLabel
+web.markers.panel.hint
+web.markers.panel.notSet
+web.markers.panel.range
+web.markers.panel.resetAll
+web.markers.panel.resetAllTitle
+web.markers.panel.resetLabel
+web.markers.panel.resetTitle
+web.markers.panel.setEnd
+web.markers.panel.setStart
+
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.markers.saveFailed
 
 # Notifications, in the words of the web's inbox (pages/Notifications.tsx), its preferences and series list
 # (components/notifications, hooks/queries/notifications.ts): src/Granary.App/Views/NotificationsPage.xaml(.cs) and the
@@ -1288,14 +1338,100 @@ web.person.toast.refreshed
 web.person.unavailableBody
 web.person.unavailableTitle
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.audioMenu.defaultBadge
+web.player.audioMenu.heading
+web.player.audioMenu.trackFallback
+
 # The player's buttons, as the web's player names them (components/player): Label in
 # src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
 web.player.audioMenu.trigger
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.bar.pause
+web.player.bar.play
+web.player.bar.returnTitle
+web.player.bar.skipBackTitle
+web.player.bar.skipForwardTitle
+web.player.bar.stopTitle
+web.player.bufferingStatus
+web.player.chaptersMenu.heading
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.chaptersMenu.trigger
 web.player.controls.editMarkers
 web.player.controls.fillScreen
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.controls.nextEpisode
+web.player.controls.pause
+web.player.controls.play
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.controls.playbackInfo
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.controls.previousEpisode
+web.player.controls.skipBack
+web.player.controls.skipForward
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.controls.volume
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.episode.code
+web.player.error.playbackError
+web.player.exit
+web.player.hud.episode
+web.player.hud.episodeWithTitle
+web.player.info.audioBitrate
+web.player.info.audioChannels
+web.player.info.audioCodec
+web.player.info.audioSampleRate
+web.player.info.autoSwitchedFrom
+web.player.info.bitrate
+web.player.info.close
+web.player.info.codec.copy
+web.player.info.codec.direct
+web.player.info.codec.transcoded
+web.player.info.colorRange
+web.player.info.colorRangeFull
+web.player.info.colorRangeLimited
+web.player.info.colorRangeUnknown
+web.player.info.container
+web.player.info.delivery.directPlay
+web.player.info.delivery.directStream
+web.player.info.delivery.transcode
+web.player.info.droppedFrames
+web.player.info.playMethod
+web.player.info.player
+web.player.info.playerDimensions
+web.player.info.protocol
+web.player.info.section.player
+web.player.info.section.source
+web.player.info.section.stream
+web.player.info.section.video
+web.player.info.size
+web.player.info.streamType
+web.player.info.streamTypeProgressive
+web.player.info.title
+web.player.info.videoBitrate
+web.player.info.videoCodec
+web.player.info.videoRangeType
+web.player.info.videoResolution
+web.player.loadingVideo
+web.player.minimize
+web.player.nextEpisode.countdown
+web.player.nextEpisode.episodeLine
+web.player.quality.auto
+web.player.quality.bitrateKbps
+web.player.quality.bitrateMbps
+web.player.quality.playbackSettings
+web.player.quality.selected
+web.player.quality.title
+web.player.quality.version
+web.player.quality.versionPlaying
+web.player.quality.versionRequested
 
 # More of Watch Together's words, as above under watchParty.button.imReady.
 web.player.room.inviteNotReady
@@ -1304,17 +1440,61 @@ web.player.room.onlyHostCanControl
 web.player.room.onlyHostCanSeek
 web.player.room.reconnecting
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.seekBar.dragMarkerEnd
+web.player.seekBar.dragMarkerStart
+web.player.seekBar.label
+web.player.seekBar.markerEdge
+web.player.seekBar.positionMinutes
+web.player.seekBar.positionMinutesSeconds
+web.player.seekBar.positionSeconds
+web.player.serverMessage.fallback
+web.player.serverMessage.restarting
+web.player.serverMessage.restartingTitle
+web.player.serverMessage.shuttingDown
+web.player.serverMessage.shuttingDownTitle
+web.player.serverMessage.title
+web.player.session.endedByAdmin
+web.player.skip.preview
+web.player.sleepTimer.countdown
+web.player.sleepTimer.minutes
+web.player.sleepTimer.short
+
 # More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.sleepTimer.trigger
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.sleepTimer.turnOff
+web.player.speed.heading
 
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.player.tracks.resetAudioFailed
 web.player.tracks.saveAudioFailed
 
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.upNext.autoplayOff
+web.player.upNext.autoplayOn
+web.player.upNext.closeTitle
+web.player.upNext.countdownSeconds
+web.player.upNext.finishedSeries
+web.player.upNext.noMoreEpisodes
+web.player.upNext.playingNext
+web.player.volume.mute
+web.player.volume.muteShortcut
+web.player.volume.unmute
+web.player.volume.unmuteShortcut
+
 # More of Watch Together's words, as above under watchParty.button.imReady.
 web.player.watchTogether.allowPause
 web.player.watchTogether.codePending
 web.player.watchTogether.connectionReplaced
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.copyInviteLabel
+web.player.watchTogether.end
+web.player.watchTogether.invite
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
 web.player.watchTogether.member.buffering
 web.player.watchTogether.member.connected
 web.player.watchTogether.member.ready
@@ -1325,8 +1505,22 @@ web.player.watchTogether.policy.hostOnly
 web.player.watchTogether.policy.youCanPause
 web.player.watchTogether.selfName
 web.player.watchTogether.setHostOnly
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.stop
+web.player.watchTogether.stopTitle
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
 web.player.watchTogether.syncingRoom
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.title
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
 web.player.watchTogether.viewerCount
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.viewersLabel
 
 # More of the collection editor's words, as above under catalog.sort.author.
 web.profiles.libraries.count
@@ -1874,6 +2068,30 @@ web.settings.subtitleOptions.fontSize.xxLarge
 web.settings.subtitleOptions.position.bottom
 web.settings.subtitleOptions.position.lowerThird
 web.settings.subtitleOptions.position.top
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.settings.subtitlePanel.background
+web.settings.subtitlePanel.backgroundOpacity
+web.settings.subtitlePanel.close
+web.settings.subtitlePanel.color
+web.settings.subtitlePanel.eyebrowDefault
+web.settings.subtitlePanel.font
+web.settings.subtitlePanel.opacity
+web.settings.subtitlePanel.outline
+web.settings.subtitlePanel.position
+web.settings.subtitlePanel.previewLine1
+web.settings.subtitlePanel.previewLine2
+web.settings.subtitlePanel.resetDefault
+web.settings.subtitlePanel.size
+web.settings.subtitlePanel.statusDefault
+web.settings.subtitlePanel.style
+web.settings.subtitlePanel.text
+web.settings.subtitlePanel.textOpacity
+web.settings.subtitlePanel.textOutline
+web.settings.subtitlePanel.title
+web.settings.subtitlePanel.vertical
+
+# More of Settings' words, as above under web.settings.cardOverlay.adjust.
 web.settings.titleArt.allDevices
 web.settings.titleArt.allDevicesDescription
 web.settings.titleArt.allDevicesOffNote
@@ -1934,6 +2152,92 @@ web.shell.unsavedChanges.title
 
 # More of a library page's words, as above under catalog.sort.added.
 web.shuffle.startFailed
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.subtitles.closeDialog
+web.subtitles.menu.addSubtitles
+web.subtitles.menu.alreadyMatches
+web.subtitles.menu.appearance
+web.subtitles.menu.delay
+web.subtitles.menu.delayEarlier
+web.subtitles.menu.delayLater
+web.subtitles.menu.delayValue
+web.subtitles.menu.noMatch
+web.subtitles.menu.off
+web.subtitles.menu.resetDelay
+web.subtitles.menu.resetDelayLabel
+web.subtitles.menu.resetTiming
+web.subtitles.menu.source.downloaded
+web.subtitles.menu.source.embedded
+web.subtitles.menu.source.external
+web.subtitles.menu.syncHint
+web.subtitles.menu.syncHintExternal
+web.subtitles.menu.syncToAudio
+web.subtitles.menu.syncedResult
+web.subtitles.menu.syncing
+web.subtitles.menu.timing
+web.subtitles.menu.timingForbidden
+web.subtitles.search.downloadFailed
+web.subtitles.search.downloading
+web.subtitles.search.downloads
+web.subtitles.search.language
+web.subtitles.search.prompt
+web.subtitles.search.search
+web.subtitles.search.searchFailed
+web.subtitles.search.searchOnline
+web.subtitles.search.searching
+web.subtitles.search.title
+web.subtitles.sync.error.changed
+web.subtitles.sync.error.resetFailed
+web.subtitles.sync.error.syncFailed
+web.subtitles.sync.error.unsupportedFormat
+web.subtitles.sync.failure.generic
+web.subtitles.sync.failure.noAudio
+web.subtitles.sync.failure.subtitleChanged
+web.subtitles.sync.failure.unavailable
+web.subtitles.sync.frameRate
+web.subtitles.sync.offsetSeconds
+web.subtitles.sync.percent
+web.subtitles.sync.phase.analyzing
+web.subtitles.sync.phase.matching
+web.subtitles.sync.phase.waiting
+web.subtitles.sync.progressLabel
+web.subtitles.sync.speed
+web.subtitles.sync.status.adjusted
+web.subtitles.sync.status.alreadyInSync
+web.subtitles.sync.status.failed
+web.subtitles.sync.status.noMatch
+web.subtitles.sync.status.originalTiming
+web.subtitles.sync.status.synced
+web.subtitles.sync.status.syncing
+web.subtitles.sync.status.syncingPercent
+web.subtitles.syncNotice.applying
+web.subtitles.syncNotice.dismiss
+web.subtitles.syncNotice.fallbackName
+web.subtitles.syncNotice.noMatchDetail
+web.subtitles.syncNotice.synced
+web.subtitles.syncNotice.timingUpdated
+web.subtitles.syncNotice.trackAlreadyMatches
+web.subtitles.syncNotice.trackFailed
+web.subtitles.syncNotice.trackNoMatch
+web.subtitles.syncNotice.trackSynced
+web.subtitles.syncNotice.trackSyncing
+web.subtitles.upload.detectFailed
+web.subtitles.upload.detected
+web.subtitles.upload.detecting
+web.subtitles.upload.dragFile
+web.subtitles.upload.dropFile
+web.subtitles.upload.dropZoneLabel
+web.subtitles.upload.heading
+web.subtitles.upload.hearingImpaired
+web.subtitles.upload.help
+web.subtitles.upload.languageLabel
+web.subtitles.upload.orBrowse
+web.subtitles.upload.selected
+web.subtitles.upload.unsupportedType
+web.subtitles.upload.upload
+web.subtitles.upload.uploadFailed
+web.subtitles.upload.uploading
 
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.ui.close

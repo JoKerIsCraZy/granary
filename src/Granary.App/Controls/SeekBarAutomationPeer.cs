@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
@@ -24,7 +25,7 @@ internal sealed partial class SeekBarAutomationPeer(SeekBar owner)
     double IRangeValueProvider.Value => Bar.DisplayedSeconds;
 
     string IValueProvider.Value => Bar.Duration > 0
-        ? $"{PlayerTime.Spoken(Bar.DisplayedSeconds)} of {PlayerTime.Spoken(Bar.Duration)}"
+        ? AppText.Get("granary.player.seekValue", ("position", PlayerTime.Spoken(Bar.DisplayedSeconds)), ("duration", PlayerTime.Spoken(Bar.Duration)))
         : "";
 
     bool IRangeValueProvider.IsReadOnly => !Bar.CanSeek;
@@ -49,7 +50,7 @@ internal sealed partial class SeekBarAutomationPeer(SeekBar owner)
 
     protected override string GetClassNameCore() => nameof(SeekBar);
 
-    protected override string GetNameCore() => base.GetNameCore() is { Length: > 0 } name ? name : "Seek";
+    protected override string GetNameCore() => base.GetNameCore() is { Length: > 0 } name ? name : AppText.Get("web.player.seekBar.label");
 
     protected override object GetPatternCore(PatternInterface patternInterface) =>
         patternInterface is PatternInterface.RangeValue or PatternInterface.Value ? this : base.GetPatternCore(patternInterface);

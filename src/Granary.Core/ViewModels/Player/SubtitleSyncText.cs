@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Api.Subtitles;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -14,7 +15,7 @@ public static class SubtitleSyncText
     public static string Offset(long offsetMs)
     {
         double seconds = Math.Abs(offsetMs) / 1000.0;
-        return (offsetMs < 0 ? "−" : "+") + seconds.ToString("0.0", CultureInfo.InvariantCulture) + " s";
+        return AppText.Get("web.subtitles.sync.offsetSeconds", ("offset", (offsetMs < 0 ? "−" : "+") + seconds.ToString("0.0", CultureInfo.InvariantCulture)));
     }
 
     /// <summary>
@@ -34,11 +35,11 @@ public static class SubtitleSyncText
             {
                 if (from != to && Math.Abs(from / to - scale) <= FrameRateTolerance)
                 {
-                    return $"{Number(from)}→{Number(to)} fps";
+                    return AppText.Get("web.subtitles.sync.frameRate", ("from", Number(from)), ("to", Number(to)));
                 }
             }
         }
-        return $"×{Number(Math.Round(scale, 4))} speed";
+        return AppText.Get("web.subtitles.sync.speed", ("factor", Number(Math.Round(scale, 4))));
     }
 
     /// <summary>"+2.3 s · 25→23.976 fps": a correction in a few characters.</summary>
@@ -58,19 +59,19 @@ public static class SubtitleSyncText
     public static string? Phase(SubtitleSyncJob? job) => job is { IsInProgress: true }
         ? job.Phase switch
         {
-            "matching" => "Matching lines to speech…",
-            "analyzing" => "Listening to the audio…",
-            _ => "Waiting to start…",
+            "matching" => AppText.Get("web.subtitles.sync.phase.matching"),
+            "analyzing" => AppText.Get("web.subtitles.sync.phase.analyzing"),
+            _ => AppText.Get("web.subtitles.sync.phase.waiting"),
         }
         : null;
 
     /// <summary>Why a failed job failed, in plain words.</summary>
     public static string Failure(string? failure) => failure switch
     {
-        "subtitle_changed" => "The subtitle changed while it was syncing. Try again.",
-        "no_audio" => "This video has no audio Silo can read.",
-        "unavailable" => "The server is busy. Try again in a few minutes.",
-        _ => "Sync failed. Try again.",
+        "subtitle_changed" => AppText.Get("web.subtitles.sync.failure.subtitleChanged"),
+        "no_audio" => AppText.Get("web.subtitles.sync.failure.noAudio"),
+        "unavailable" => AppText.Get("web.subtitles.sync.failure.unavailable"),
+        _ => AppText.Get("web.subtitles.sync.failure.generic"),
     };
 
     /// <summary>
@@ -85,19 +86,21 @@ public static class SubtitleSyncText
         {
             case SubtitleSyncStatuses.Pending:
             case SubtitleSyncStatuses.Running:
-                return Percent(state.Sync) is > 0 and var percent ? $"Syncing… {percent}%" : "Syncing…";
+                return Percent(state.Sync) is > 0 and var percent
+                    ? AppText.Get("web.subtitles.sync.status.syncingPercent", ("percent", percent))
+                    : AppText.Get("web.subtitles.sync.status.syncing");
             case SubtitleSyncStatuses.NoMatch:
-                return "Doesn't match this video";
+                return AppText.Get("web.subtitles.sync.status.noMatch");
             case SubtitleSyncStatuses.Failed:
-                return "Sync failed";
+                return AppText.Get("web.subtitles.sync.status.failed");
             case SubtitleSyncStatuses.AlreadySynced when timing.IsIdentity:
-                return "Already in sync";
+                return AppText.Get("web.subtitles.sync.status.alreadyInSync");
             case SubtitleSyncStatuses.Synced when timing.IsIdentity:
-                return "Original timing";
+                return AppText.Get("web.subtitles.sync.status.originalTiming");
             case SubtitleSyncStatuses.Synced when timing.SameAs(state.Sync!.Result):
-                return "Synced " + Timing(timing);
+                return AppText.Get("web.subtitles.sync.status.synced", ("timing", Timing(timing)));
         }
-        return timing.IsIdentity ? null : "Timing adjusted " + Timing(timing);
+        return timing.IsIdentity ? null : AppText.Get("web.subtitles.sync.status.adjusted", ("timing", Timing(timing)));
     }
 
     // As JavaScript writes a number: no trailing zeros, invariant digits.

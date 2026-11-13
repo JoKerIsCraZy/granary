@@ -5,6 +5,7 @@ using Granary.App.Controls;
 using Granary.App.Services;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Granary.Player;
@@ -59,6 +60,7 @@ public sealed partial class PlayerPage : Page
         _fullScreen = App.Services.GetRequiredService<PlayerFullScreen>();
         _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
         InitializeComponent();
+        AutomationProperties.SetName(this, AppText.Get("granary.player.pageName"));
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
         InitializeAutoHide();
@@ -275,16 +277,21 @@ public sealed partial class PlayerPage : Page
         string forward = ViewModel.SkipForwardSeconds.ToString("0", CultureInfo.InvariantCulture);
         SkipBackText.Text = back;
         SkipForwardText.Text = forward;
-        AutomationProperties.SetName(SkipBackButton, $"Back {back} seconds");
-        AutomationProperties.SetName(SkipForwardButton, $"Forward {forward} seconds");
-        ToolTipService.SetToolTip(SkipBackButton, $"Back {back} seconds (Left arrow)");
-        ToolTipService.SetToolTip(SkipForwardButton, $"Forward {forward} seconds (Right arrow)");
+        int backCount = (int)Math.Round(ViewModel.SkipBackSeconds);
+        int forwardCount = (int)Math.Round(ViewModel.SkipForwardSeconds);
+        AutomationProperties.SetName(SkipBackButton, AppText.Get("web.player.controls.skipBack", ("count", backCount)));
+        AutomationProperties.SetName(SkipForwardButton, AppText.Get("web.player.controls.skipForward", ("count", forwardCount)));
+        ToolTipService.SetToolTip(SkipBackButton, AppText.Get("granary.player.skipBackTooltip", ("count", backCount)));
+        ToolTipService.SetToolTip(SkipForwardButton, AppText.Get("granary.player.skipForwardTooltip", ("count", forwardCount)));
         DockSkipBackText.Text = back;
         DockSkipForwardText.Text = forward;
-        AutomationProperties.SetName(DockSkipBackButton, $"Back {back} seconds");
-        AutomationProperties.SetName(DockSkipForwardButton, $"Forward {forward} seconds");
-        ToolTipService.SetToolTip(DockSkipBackButton, $"Back {back} seconds");
-        ToolTipService.SetToolTip(DockSkipForwardButton, $"Forward {forward} seconds");
+        // The bar's own words, as the web's player bar has them.
+        string dockBack = AppText.Get("web.player.bar.skipBackTitle", ("count", backCount));
+        string dockForward = AppText.Get("web.player.bar.skipForwardTitle", ("count", forwardCount));
+        AutomationProperties.SetName(DockSkipBackButton, dockBack);
+        AutomationProperties.SetName(DockSkipForwardButton, dockForward);
+        ToolTipService.SetToolTip(DockSkipBackButton, dockBack);
+        ToolTipService.SetToolTip(DockSkipForwardButton, dockForward);
         SeekBar.BackStepSeconds = DockSeekBar.BackStepSeconds = ViewModel.SkipBackSeconds;
         SeekBar.ForwardStepSeconds = DockSeekBar.ForwardStepSeconds = ViewModel.SkipForwardSeconds;
     }
@@ -529,9 +536,9 @@ public sealed partial class PlayerPage : Page
     // The play triangle's weight sits left of its box; nudged so it looks centred in the disc.
     public Thickness PlayPauseGlyphMargin(bool isPaused) => isPaused ? new Thickness(3, 0, 0, 0) : new Thickness(0);
 
-    public string PlayPauseName(bool isPaused) => isPaused ? "Play" : "Pause";
+    public string PlayPauseName(bool isPaused) => isPaused ? AppText.Get("web.player.controls.play") : AppText.Get("web.player.controls.pause");
 
-    public string PlayPauseToolTip(bool isPaused) => $"{PlayPauseName(isPaused)} (Space)";
+    public string PlayPauseToolTip(bool isPaused) => isPaused ? AppText.Get("granary.player.playTooltip") : AppText.Get("granary.player.pauseTooltip");
 
     public string VolumeGlyph(bool isMuted, double volume) => isMuted || volume <= 0 ? "" : volume switch
     {
@@ -540,22 +547,23 @@ public sealed partial class PlayerPage : Page
         _ => "",
     };
 
-    public string MuteName(bool isMuted) => isMuted ? "Unmute" : "Mute";
+    public string MuteName(bool isMuted) => isMuted ? AppText.Get("web.player.volume.unmute") : AppText.Get("web.player.volume.mute");
 
-    public string MuteToolTip(bool isMuted) => $"{MuteName(isMuted)} (M)";
+    public string MuteToolTip(bool isMuted) => isMuted ? AppText.Get("web.player.volume.unmuteShortcut") : AppText.Get("web.player.volume.muteShortcut");
 
     public double VolumeOpacity(bool isMuted) => isMuted ? 0.45 : 1;
 
     public string FullScreenGlyph(bool isFullScreen) => isFullScreen ? "" : "";
 
-    public string FullScreenName(bool isFullScreen) => isFullScreen ? "Exit full screen" : "Full screen";
+    public string FullScreenName(bool isFullScreen) => isFullScreen ? AppText.Get("granary.player.exitFullScreen") : AppText.Get("granary.player.fullScreen");
 
-    public string FullScreenToolTip(bool isFullScreen) => isFullScreen ? "Exit full screen (F or Esc)" : "Full screen (F)";
+    public string FullScreenToolTip(bool isFullScreen) =>
+        isFullScreen ? AppText.Get("granary.player.exitFullScreenTooltip") : AppText.Get("granary.player.fullScreenTooltip");
 
     // A utility button that is on is white; off, the rail's 78 %.
     public Brush UtilityForeground(bool isOn) => new SolidColorBrush(isOn ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xC7, 0xFF, 0xFF, 0xFF));
 
-    public string OnStatus(bool isOn) => isOn ? "On" : "";
+    public string OnStatus(bool isOn) => isOn ? AppText.Get("granary.player.on") : "";
 
     // What the mini view and the bar leave out: the full controls, the pills, the playback info and the Playing Next screen.
     public Visibility ShowsInWindow(bool shows, bool isCompact) => shows && !isCompact ? Visibility.Visible : Visibility.Collapsed;
@@ -568,16 +576,17 @@ public sealed partial class PlayerPage : Page
         + (showsRemaining ? PlayerTime.Remaining(position, duration) : PlayerTime.Format(duration));
 
     // The bar's times for screen readers, with its end clock, which a narrow bar leaves out: "4:05 / 48:41, ends at 22:41".
-    public string DockTimesName(double position, double duration, bool showsTimeLeft, string endsAtSpoken) =>
-        endsAtSpoken.Length == 0
+    public string DockTimesName(double position, double duration, bool showsTimeLeft, string endsAtClock) =>
+        endsAtClock.Length == 0
             ? TimesText(position, duration, showsTimeLeft)
-            : $"{TimesText(position, duration, showsTimeLeft)}, {char.ToLowerInvariant(endsAtSpoken[0])}{endsAtSpoken[1..]}";
+            : AppText.Get("granary.player.dockTimesName", ("times", TimesText(position, duration, showsTimeLeft)), ("time", endsAtClock));
 
     // Upper case on screen only: screen readers get the line as written, so "S1 · E1" is not spelled out.
-    public string MetaText(string subtitle) => subtitle.ToUpper(CultureInfo.CurrentCulture);
+    public string MetaText(string subtitle) => AppText.Upper(subtitle);
 
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
-    public string EndTimeName(bool showsRemaining) => showsRemaining ? "Show the duration" : "Show the time left";
+    public string EndTimeName(bool showsRemaining) =>
+        showsRemaining ? AppText.Get("granary.player.showDuration") : AppText.Get("granary.player.showTimeLeft");
 
     public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown, bool isCompact) =>
         ShowsInWindow(phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown, isCompact);
@@ -592,7 +601,7 @@ public sealed partial class PlayerPage : Page
 
     // A new stream loads during a plan change; the corner mark names the change itself.
     public string SpinnerName(PlayerPhase phase, bool isChangingPlan) =>
-        phase == PlayerPhase.Preparing || isChangingPlan ? "Loading" : "Buffering";
+        phase == PlayerPhase.Preparing || isChangingPlan ? AppText.Get("web.player.loadingVideo") : AppText.Get("web.player.bufferingStatus");
 
     public Visibility Shows(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 

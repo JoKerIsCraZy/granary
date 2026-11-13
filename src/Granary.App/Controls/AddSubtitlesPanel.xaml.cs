@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,10 @@ public sealed partial class AddSubtitlesPanel : UserControl
     // Its own function: one x:Bind function feeding both a bool and a Visibility generates broken code.
     public Visibility Hides(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public string SelectedText(string fileName) => "Selected: " + fileName;
+    public string SelectedText(string fileName) => AppText.Get("web.subtitles.upload.selected", ("name", fileName));
+
+    /// <summary>The line under "Upload subtitle", with the largest file the server takes.</summary>
+    public string UploadHelp => AppText.Get("web.subtitles.upload.help", ("megabytes", AddSubtitlesViewModel.MaxFileBytes / (1024 * 1024)));
 
     // A colour badge: the colour at 13 % behind its text, at 33 % round it (the web's ${color}22 and ${color}55).
     public static Brush Fill(string hex) => Tint(hex, 0x22);
@@ -200,6 +204,6 @@ public sealed partial class AddSubtitlesPanel : UserControl
         byte edge = _dragging ? (byte)0x80 : _pointerOver ? (byte)0x59 : (byte)0x33;
         DropZoneEdge.Stroke = new SolidColorBrush(Color.FromArgb(edge, 0xFF, 0xFF, 0xFF));
         DropZone.Background = new SolidColorBrush(Color.FromArgb(_dragging || _pointerOver ? (byte)0x1A : (byte)0x0D, 0xFF, 0xFF, 0xFF));
-        DropZoneTitle.Text = _dragging ? "Drop subtitle file" : "Drag and drop a subtitle file";
+        DropZoneTitle.Text = _dragging ? AppText.Get("web.subtitles.upload.dropFile") : AppText.Get("web.subtitles.upload.dragFile");
     }
 }
