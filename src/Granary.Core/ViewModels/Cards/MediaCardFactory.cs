@@ -249,7 +249,8 @@ public static class MediaCardFactory
 
     private static string? YearText(int? year) => year is > 0 ? year.Value.ToString(CultureInfo.InvariantCulture) : null;
 
-    private static string? TimeLeft(double? position, double? duration)
+    /// <summary>"18 min left", as Continue Watching says it; null without a position before the end of a known length.</summary>
+    internal static string? TimeLeft(double? position, double? duration)
     {
         if (position is not > 0 || duration is not > 0 || position >= duration)
         {

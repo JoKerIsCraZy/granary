@@ -1484,7 +1484,12 @@ client guide.
   keeps its `LiveCard`, its element in the grid and the focus, and only takes its new look (a `MediaCard` compares by
   value, so an unchanged card tells nothing). What a card's click and its ⋮ menu do is `DownloadCardActions`, an
   `ICardMenuSource` the pages hand to their cards (`ICardMenuHost`); each entry acts on the download as it is when it is
-  picked (`DownloadManager.Find`). While a download the page shows comes, the follower reads its speed once a second on
+  picked (`DownloadManager.Find`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
+  a play from this PC left it, or the server's position read back when that is newer; see "Offline progress") over
+  `DurationMs`, the title's length, which the manifest gives when it is read (before the first transfer, and again a day
+  on) and a play from this PC keeps with each position, for a download kept before the record had it. So it needs no
+  server and moves as the store's `Changed` comes with each position a play keeps. `IsWatched` gives the watched mark.
+  While a download the page shows comes, the follower reads its speed once a second on
   the `TimeProvider`'s timer (`DownloadsFollower.RateInterval`), as the Apple app's row refreshes, and has the card say it
   with the time left from the bytes still to come (`DownloadText.Status`); the timer runs only while one comes and the page
   shows, and a speed that stopped is noticed then though no progress comes. The free space is read on the thread pool

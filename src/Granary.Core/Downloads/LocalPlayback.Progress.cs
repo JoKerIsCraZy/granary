@@ -96,9 +96,11 @@ public sealed partial class LocalPlayback
         // Watched for sure only at the title's end. Any other position is a watch under way, also of a title watched
         // before: it is not offered for deletion in the middle of it. The server's word follows with the next read.
         // A write that comes late, behind a slow disk, never lowers a newer position the server's read stored meanwhile.
+        // The length goes with it, for the Downloads page's time left, also for a download whose record has none yet.
+        long? durationMs = duration > 0 ? (long)Math.Round(duration * 1000) : null;
         _records = KeepAsync(_records, r => r.ResumeAt is { } kept && kept > entry.UpdatedAt
-            ? r
-            : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd });
+            ? (r.DurationMs is null && durationMs is not null ? r with { DurationMs = durationMs } : r)
+            : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd, DurationMs = durationMs ?? r.DurationMs });
         _sync?.FlushSoon(readBack: isFinal);
     }
 

@@ -255,7 +255,7 @@ public sealed partial class DownloadManager
             download.FilesMissing || download.MediaMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
             record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
-            _playing?.Contains(record.Scope, record.DownloadId) == true);
+            _playing?.Contains(record.Scope, record.DownloadId) == true, record.ResumeMs, record.DurationMs);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

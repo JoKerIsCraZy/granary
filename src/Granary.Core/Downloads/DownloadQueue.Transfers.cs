@@ -150,6 +150,7 @@ public sealed partial class DownloadQueue
             {
                 ExpectedBytes = expected,
                 ManifestReadAt = now,
+                DurationMs = DownloadRecords.DurationOf(fetched.Manifest) ?? r.DurationMs,
                 ArtworkFiles = fetched.ArtworkFiles,
                 SubtitleRevisions = fetched.SubtitleRevisions,
             }, run.Cancel.Token).ConfigureAwait(false);

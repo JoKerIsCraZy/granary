@@ -109,6 +109,12 @@ public sealed record DownloadRecord
     public DateTimeOffset? ResumeAt { get; init; }
 
     /// <summary>
+    /// The title's length in milliseconds, as its manifest says it, or a play from this PC found it: with <see cref="ResumeMs"/>
+    /// the Downloads page says how much is left to watch. Null until either said it.
+    /// </summary>
+    public long? DurationMs { get; init; }
+
+    /// <summary>
     /// The profile has watched it, for sure: it played to its end on this PC, or the server says so, as its progress was last
     /// read (<c>completed</c>, and no position of a new watch on top). The Downloads page suggests deleting such downloads, so
     /// a guess does not count: a play left past nine tenths starts over next time but is not watched here until the server,

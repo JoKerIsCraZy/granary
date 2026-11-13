@@ -12,13 +12,15 @@ namespace Granary.Core.ViewModels.Downloads;
 /// on right-click and with a remote's or a controller's Menu. A film's or an episode's download plays from this PC at a click
 /// once it is whole, as a download's row plays in Silo's apps; until then the click opens its page, as the list's row did.
 /// Its menu holds what the list's buttons did: Play, Pause, Resume or Retry, and Delete download, which asks first, and More
-/// Info, its page, as the web's hero names it; Play from Beginning once it was started. A series' card opens its downloads
+/// Info, its page, as the web's hero names it; and Play from Beginning once it was started or watched, as the web's card
+/// menu offers it. A series' card opens its downloads
 /// (<see cref="AppRoute.DownloadedSeries"/>); its menu has the Apple app's Delete All Episodes, which asks first, and More
 /// Info. Each acts on the download as it is when it is picked.
 /// </summary>
 public sealed partial class DownloadCardActions : ICardMenuSource
 {
     public const string PlayLabel = "Play";
+    public const string PlayFromBeginningLabel = "Play from Beginning";
     public const string PauseLabel = "Pause";
     public const string ResumeLabel = "Resume";
     public const string RetryLabel = "Retry";
@@ -78,6 +80,11 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         if (download.IsPlayable)
         {
             entries.Add(new(PlayLabel, PlayCommand));
+            // As the web's card menu offers it: a title with a resume point, or watched.
+            if (download.IsWatched || download.ResumeMs is > 0)
+            {
+                entries.Add(new(PlayFromBeginningLabel, PlayFromBeginningCommand));
+            }
         }
         if (TransferLabel(download) is { } transfer)
         {
@@ -112,6 +119,16 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         if (card is not null && DownloadOf(card) is { IsPlayable: true } download)
         {
             _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(download.MediaItemId));
+        }
+    }
+
+    /// <summary>Plays the download from this PC from its beginning, not where the profile left it.</summary>
+    [RelayCommand]
+    private void PlayFromBeginning(MediaCard? card)
+    {
+        if (card is not null && DownloadOf(card) is { IsPlayable: true } download)
+        {
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.FromStart(download.MediaItemId));
         }
     }
 

@@ -286,7 +286,14 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   bytes came for 3 s; "under 1 min left", "1 hr 5 min left"; "Paused", "Paused · metered connection", "Downloaded",
   "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file
   was deleted by hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed
-  one, missing files and one the server no longer has. A series' card says how many episodes it has here ("3 episodes",
+  one, missing files and one the server no longer has. A whole download says instead how much of it was watched, as a
+  Continue Watching card does: the bar at how far in and "18 min left" (to the nearest minute, as Continue Watching
+  rounds it), or the watched mark (the green check of season and episode cards) and "Watched", or "Downloaded" before it
+  was started; one whose files are gone or that the server no longer has says that first, and keeps its bar. The
+  position is the newest this PC knows: where a play from this PC left it, or the server's progress once read back when
+  that is newer, so it shows without the server and moves as a download plays; the length is the manifest's, or the
+  play's for a download kept before Granary kept it. A series' card has the watched mark once every episode here is
+  watched. A series' card says how many episodes it has here ("3 episodes",
   "1 episode"; "2 of 3 episodes" while some are not whole yet, the Android app's words). The card's bar (3 px, the
   accent) shows how much of the file is here while it comes or waits with bytes on this PC, and on a series' card how
   much of its episodes is. Screen readers hear the card's title, size and status (without the speed, which changes every
@@ -294,7 +301,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
   as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
   did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
-  remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads), Pause, Resume or Retry
+  remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
+  too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
   download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete All
   Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted

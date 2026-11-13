@@ -137,7 +137,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
 
         // A grid sizes its cards by its first: every card keeps its three lines.
-        Assert.Equal(" ", Card(page, "dl_1").Subtitle);
+        Assert.Equal("\u00A0", Card(page, "dl_1").Subtitle);
         Assert.Equal("Example Movie, Preparing…", Card(page, "dl_1").AccessibleName);
     }
 
@@ -350,6 +350,82 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AWholeDownloadsCard_ShowsHowMuchWasWatched_AsContinueWatchingDoes()
+    {
+        // Two hours long: half an hour in, watched, never started, and one the server no longer has, a quarter in.
+        await AddFilmAsync("dl_1", "Started Movie", change: r => r with { ResumeMs = 1_800_000, DurationMs = 7_200_000 });
+        await AddFilmAsync("dl_2", "Watched Movie", change: r => r with { IsWatched = true, ResumeMs = 0, DurationMs = 7_200_000 });
+        await AddFilmAsync("dl_3", "New Movie", change: r => r with { DurationMs = 7_200_000 });
+        await AddFilmAsync("dl_4", "Revoked Movie", change: r => r with { IsNoLongerAvailable = true, ResumeMs = 1_800_000, DurationMs = 7_200_000 });
+
+        var page = await AttachedAsync();
+
+        var started = Card(page, "dl_1");
+        Assert.Equal(("90 min left", 0.25, false, false), (started.Caption, started.Progress, started.IsWatched, started.ShowsWatchedMark));
+        Assert.Equal("Started Movie, 2.9 KB, 90 min left", started.AccessibleName);
+        var watched = Card(page, "dl_2");
+        Assert.Equal(("Watched", (double?)null, true, true), (watched.Caption, watched.Progress, watched.IsWatched, watched.ShowsWatchedMark));
+        var unstarted = Card(page, "dl_3");
+        Assert.Equal(("Downloaded", (double?)null, false), (unstarted.Caption, unstarted.Progress, unstarted.IsWatched));
+        // Its status comes first; the bar still says how far it was watched.
+        var revoked = Card(page, "dl_4");
+        Assert.Equal(("No longer available", 0.25), (revoked.Caption, revoked.Progress));
+    }
+
+    [Fact]
+    public async Task APositionKept_MovesTheCardsWatchProgress_InPlace_AlsoWithoutTheServer()
+    {
+        await AddFilmAsync("dl_1", "Example Movie");
+        var page = await AttachedAsync();
+        var card = Live(page, "dl_1");
+        Assert.Equal("Downloaded", card.Card.Caption);
+
+        // A play from this PC keeps where the viewer is in the download's record, as it goes.
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with
+        {
+            ResumeMs = 3_600_000, ResumeAt = ManualTimeProvider.DefaultStart, DurationMs = 7_200_000,
+        }, Token);
+
+        Assert.Same(card, Live(page, "dl_1"));
+        Assert.Equal(("60 min left", 0.5), (card.Card.Caption, card.Card.Progress));
+
+        // The server's progress, read back once it was reached: watched.
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { ResumeMs = 0, IsWatched = true }, Token);
+
+        Assert.Equal(("Watched", (double?)null, true), (card.Card.Caption, card.Card.Progress, card.Card.ShowsWatchedMark));
+    }
+
+    [Fact]
+    public async Task AStartedOrWatchedDownload_OffersPlayFromBeginning()
+    {
+        await AddFilmAsync("dl_1", "Started Movie", change: r => r with { ResumeMs = 1_800_000, DurationMs = 7_200_000 });
+        await AddFilmAsync("dl_2", "Watched Movie", change: r => r with { IsWatched = true });
+        await AddFilmAsync("dl_3", "New Movie");
+        var page = await AttachedAsync();
+
+        Assert.Equal(["Play", "Play from Beginning", "More Info", "Delete download"], Menu(page, "dl_1"));
+        Assert.Equal(["Play", "Play from Beginning", "More Info", "Delete download"], Menu(page, "dl_2"));
+        Assert.Equal(["Play", "More Info", "Delete download"], Menu(page, "dl_3"));
+
+        await PickAsync(page, "dl_1", "Play from Beginning");
+
+        Assert.Equal([(AppRoute.Player, (object?)PlayRequest.FromStart("mv_dl_1"))], _navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task ASeriesWhoseEpisodesAreAllWatched_IsMarkedWatched()
+    {
+        await AddEpisodeAsync("dl_11", 1, 1, "Pilot", change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two", change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        Assert.Equal((true, true), (Card(page, "sr_1").IsWatched, Card(page, "sr_1").ShowsWatchedMark));
+
+        await _h.Store.UpdateAsync(Scope7, "dl_12", r => r with { IsWatched = false, ResumeMs = 60_000 }, Token);
+
+        Assert.False(Card(page, "sr_1").IsWatched);
+    }
+
+    [Fact]
     public async Task ASeriesCard_CountsItsEpisodes_AndOpensThem()
     {
         await AddEpisodeAsync("dl_11", 1, 1, "Pilot");
@@ -475,7 +551,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var queue = _h.StartQueue();
         var page = await AttachedAsync(queue);
         var card = Live(page, "dl_1");
-        Assert.Equal((DownloadText.Downloaded, "ep_5"), (card.Card.Caption, card.Card.PlayContentId));
+        Assert.Equal(("Watched", "ep_5"), (card.Card.Caption, card.Card.PlayContentId));
 
         // Deleted in Explorer while Granary runs; the page is left and shown again.
         File.Delete(download.MediaPath!);

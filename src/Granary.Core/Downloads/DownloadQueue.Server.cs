@@ -396,6 +396,7 @@ public sealed partial class DownloadQueue
                 await UpdateAsync(download, download.Record.Revision, r => r with
                 {
                     ManifestReadAt = now,
+                    DurationMs = DownloadRecords.DurationOf(fetched.Manifest) ?? r.DurationMs,
                     ArtworkFiles = fetched.ArtworkFiles,
                     SubtitleRevisions = fetched.SubtitleRevisions,
                 }).ConfigureAwait(false);

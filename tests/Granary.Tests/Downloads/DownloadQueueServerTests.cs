@@ -264,6 +264,25 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheTitlesLength_ComesWithTheManifest_AndADayOldOneGivesItToADownloadMadeBefore()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        _h.StartQueue();
+        await CompletedAsync("dl_1");
+        // The manifest's duration_seconds: the Downloads page tells from it how much is left to watch.
+        Assert.Equal(7_200_000L, _h.Find("dl_1")!.Record.DurationMs);
+
+        // A download made before Granary kept the length.
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { DurationMs = null }, Token);
+        _h.Time.Advance(TimeSpan.FromHours(24));
+        await _h.RestartAsync();
+        _h.StartQueue();
+
+        await Until(() => _h.Find("dl_1")!.Record.DurationMs == 7_200_000, "the manifest read again gave the length");
+    }
+
+    [Fact]
     public async Task ChangedSubtitles_AreFetchedAgain_AfterADay()
     {
         var stored = await _h.AddAsync("dl_1");
