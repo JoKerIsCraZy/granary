@@ -344,6 +344,29 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AClearWhoseDeletesFail_StillWaitsForWhatItTookOutToBeOnTheDisk()
+    {
+        await KeptAsync("dl_1");
+        await PositionsAndSettingsOnTheDiskAsync();
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () => throw new InvalidOperationException("The server's answer broke."));
+        using var disk = new StalledDisk();
+        _progress.Writing = disk.Hold;
+
+        var clearing = NewSignOut().ClearAsync("srv1", "1", Token);
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await WaitsOrWentOnAsync(clearing);
+        bool endedWhileTheWriteWasHeld = clearing.IsCompleted;
+        disk.Release();
+
+        // The failure still comes out, but only once the note of what was taken out is written: a Granary closed after it
+        // finds none of the account's positions at its next start.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => clearing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.False(endedWhileTheWriteWasHeld);
+        var next = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        Assert.Empty(next.Entries(Scope7));
+    }
+
+    [Fact]
     public async Task WritesOfWhatASignOutTookOutThatDoNotComeInTime_DoNotHoldItUp_AndThatIsLoggedWithoutNamingWhatOrWhose()
     {
         await PositionsAndSettingsOnTheDiskAsync();

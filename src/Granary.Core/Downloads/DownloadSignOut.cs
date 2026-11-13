@@ -277,6 +277,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
         var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), generation, CancellationToken.None);
         bool waited = false;
+        bool notesWaited = false;
         try
         {
             if (loaded && deletes is not null)
@@ -287,6 +288,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             // The writes ran while the server heard the deletes. What is left of them shares one StoreBudget: they do not
             // wait for each other. Downloads that could not be read have no index to wait for; the notes are waited for
             // all the same.
+            notesWaited = true;
             await Task.WhenAll(loaded ? WaitForIndexAsync(removal, cancellationToken) : Task.CompletedTask,
                 WaitForNotesAsync(forgotten, cancellationToken)).ConfigureAwait(false);
             waited = loaded;
@@ -298,6 +300,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             if (!waited)
             {
                 Observe(removal);
+            }
+            // The server's deletes ended in a failure: what was taken out is out all the same, and is waited for before
+            // that failure goes on, so it is on the disk whatever the caller does next. Not for a caller that gave up.
+            if (!notesWaited && !cancellationToken.IsCancellationRequested)
+            {
+                await WaitForNotesAsync(forgotten, CancellationToken.None).ConfigureAwait(false);
             }
         }
     }
@@ -419,6 +427,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         {
             logger.LogWarning("What the sign-out took out of the positions and playback settings kept on this PC was not written within {Seconds} s; the sign-out goes on, and it is written once it can be",
                 StoreBudget.TotalSeconds);
+            // Not waited for any longer: a failure of theirs is looked at here, so it is never one nobody observed.
+            _ = writes.ContinueWith(static task => _ = task.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
