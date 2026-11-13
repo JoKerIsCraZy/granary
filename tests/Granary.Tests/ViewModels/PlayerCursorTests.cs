@@ -263,6 +263,20 @@ public sealed class PlayerCursorTests
     }
 
     [Fact]
+    public void APressOfAMouseButton_ShowsTheCursor_AndItHidesWithTheControlsAgain()
+    {
+        // A click that pauses brings the controls up: without the cursor there would be nothing to reach them with.
+        _cursor.ControlsHidden(isOverPicture: true, restsAt: (100, 100));
+
+        _cursor.Presses();
+
+        Assert.False(_cursor.IsHidden);
+        Assert.False(_cursor.WaitsForPicture);
+        _cursor.ControlsHidden(isOverPicture: true, restsAt: (100, 100));
+        Assert.True(_cursor.IsHidden);
+    }
+
+    [Fact]
     public void HidingTheControlsAgain_OffThePicture_KeepsItHidden()
     {
         _cursor.ControlsHidden(isOverPicture: true);

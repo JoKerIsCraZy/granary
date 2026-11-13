@@ -289,5 +289,6 @@ public sealed partial class MainWindow : IPlayerOverlay
         Navigation.Visibility = shown ? Visibility.Visible : Visibility.Collapsed;
         PageBackButton.Opacity = shown ? 1 : 0;
         PageBackButton.IsHitTestVisible = shown;
+        ShowActivity();
     }
 }

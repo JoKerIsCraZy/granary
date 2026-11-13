@@ -77,6 +77,25 @@ public sealed class AdminApi(SiloHttp http)
     public Task<AdminLibraryCollection> ListLibrariesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/libraries", SiloAuth.Profile, AdminJsonContext.Default.AdminLibraryCollection, cancellationToken);
 
+    /// <summary>
+    /// Every scheduled task with its state on the server that answers, hidden workers included, as the web's activity
+    /// indicator reads them (<c>useTasksIncludingHidden</c>): a running one is not on the plain list when it is hidden.
+    /// </summary>
+    public Task<AdminTaskCollection> ListTasksAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, "api/v2/admin/tasks?include_hidden=true", SiloAuth.Profile, AdminJsonContext.Default.AdminTaskCollection,
+            cancellationToken);
+
+    /// <summary>The most preparation jobs one read lists, as the web asks; the counts cover the whole queue either way.</summary>
+    public const int PreparationsLimit = 200;
+
+    /// <summary>
+    /// The queue that prepares offline downloads: running, waiting, retrying and paused jobs and the failures of the last
+    /// 24 hours. A server without such a queue answers 503 (<c>dependency_unavailable</c>).
+    /// </summary>
+    public Task<AdminDownloadPreparationList> ListDownloadPreparationsAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, $"api/v2/admin/downloads/preparations?limit={PreparationsLimit}", SiloAuth.Profile,
+            AdminJsonContext.Default.AdminDownloadPreparationList, cancellationToken);
+
     /// <summary>The accounts seen at <paramref name="ip"/> over the last <paramref name="days"/>, a page at a time.</summary>
     public Task<AdminIpUserCollection> ListIpUsersAsync(Uri server, string ip, int days, int limit, string? cursor = null,
         CancellationToken cancellationToken = default)

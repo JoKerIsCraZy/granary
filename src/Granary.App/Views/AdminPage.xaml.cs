@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.App.Views.Admin;
 using Granary.Core.Abstractions;
 using Granary.Core.ViewModels.Admin;
@@ -14,7 +15,7 @@ namespace Granary.App.Views;
 /// open first (<see cref="AdminPages"/>); Back into the area returns to the page last shown. Its pages switch here, not in
 /// the app's history, so Back to App leaves the area in one step.
 /// </summary>
-public sealed partial class AdminPage : Page, IDockSpace
+public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 {
     private AdminDashboardView? _dashboard;
     private AdminActivityView? _activity;
@@ -46,7 +47,8 @@ public sealed partial class AdminPage : Page, IDockSpace
         Bindings.StopTracking();
     }
 
-    private void Open(string page)
+    /// <summary>Shows one of the area's pages (<see cref="AdminPages"/>), as picking it in the sidebar does.</summary>
+    public void Open(string page)
     {
         var item = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? (ListViewItem)Pages.Items[0];
         if (ReferenceEquals(Pages.SelectedItem, item))
@@ -92,6 +94,9 @@ public sealed partial class AdminPage : Page, IDockSpace
 
     // The area's sidebar runs on beside the minimized player's bar, its build at the window's foot; only the page ends above it.
     void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
+
+    // A game controller's bumpers go through the area's pages.
+    void IPadSections.StepSection(int by) => PadControls.StepRow([Pages], by);
 
     private void Show(UIElement view)
     {

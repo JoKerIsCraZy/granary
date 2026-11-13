@@ -227,9 +227,10 @@ public sealed partial class MediaRow : UserControl
     private void OnCardClick(object sender, RoutedEventArgs e)
     {
         // The card comes from the button's content: x:Bind templates in an ItemsRepeater set no DataContext.
-        if (sender is Button { Content: MediaCardView { Card: { } card } } && CardInvokedCommand is { } command && command.CanExecute(card))
+        // A click that ends a press on an episode card's title line opens the series instead (MediaCardView.TryOpenHeading).
+        if (sender is Button { Content: MediaCardView { Card: { } card } view })
         {
-            command.Execute(card);
+            CardClick.Run(card, view.TryOpenHeading(), CardInvokedCommand);
         }
     }
 

@@ -226,6 +226,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
         services.AddSingleton<AdminSidebarViewModel>();
+        services.AddSingleton<ServerActivityViewModel>();
         services.AddTransient<AdminDashboardViewModel>();
         services.AddTransient<AdminActivityViewModel>();
         return services;
@@ -282,7 +283,13 @@ public static class CoreServiceCollectionExtensions
     {
         services.AddTransient<EventsApi>();
         services.AddSingleton<Func<EventsLane>>(sp => () => new EventsLane(sp.GetRequiredService<EventsApi>(),
-            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes, EventsLane.OversizeHeadBytes, EventsFrames.TakesWhole),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+        services.AddSingleton<ServerActivity>();
+        // Granary's own switch for the administrator's activity indicator, kept on this PC by server and profile as the
+        // title preview's is. The stream and the indicator both follow it.
+        services.AddSingleton(sp => new ActivityIndicatorSetting(ActivityIndicatorSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<ActivityIndicatorSetting>>()));
         services.AddSingleton<RealtimeEvents>();
     }
 

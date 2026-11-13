@@ -144,6 +144,8 @@
     <SolidColorBrush x:Key="SiloMutedTint75Brush" Color="{StaticResource SiloMutedColor}" Opacity="0.75" />
     <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
     <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
+    <!-- No colour, but the pointer is on it: the lines under a card, whose links are found from where the pointer is. -->
+    <SolidColorBrush x:Key="SiloHitAreaBrush" Color="Transparent" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
     <SolidColorBrush x:Key="SiloDestructiveBrush" Color="{StaticResource SiloDestructiveColor}" />
     <SolidColorBrush x:Key="SiloFavoriteBrush" Color="{StaticResource SiloFavoriteColor}" />

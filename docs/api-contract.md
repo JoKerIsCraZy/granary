@@ -1240,8 +1240,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 
 ### 7.16 Administration
 
-Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403. Granary reads the
-web's Dashboard and Activity and sends Activity's commands; nothing else of the admin API is used.
+Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403, and so does an
+administrator account on a profile that is not its primary one (the server's "acting administrator"). Granary reads the
+web's Dashboard and Activity, sends Activity's commands and reads what the activity indicator shows (12.3); nothing
+else of the admin API is used.
 
 - `GET /api/v2/admin/stats` → `{ "active_streams", "total_movies", "total_movie_files", "total_shows", "total_show_files",
   "total_files", "total_storage_bytes", "total_users", "advisory_titles", "watch_providers" }`.
@@ -1279,6 +1281,26 @@ web's Dashboard and Activity and sends Activity's commands; nothing else of the 
   session's playback authority is revoked for good, the player told as best it can be.
 - `GET /api/v2/admin/ips?ip=&days=30&limit=50[&cursor=]` → `{ "items": [{ "user_id", "username", "first_seen",
   "last_seen", "request_count" }], "page" }`: the accounts seen at an address.
+- `GET /api/v2/admin/tasks?include_hidden=true` → `{ "items": [{ "key", "name", "description", "category", "state"
+  (`idle`, `running`, `cancelling`), "progress" (0 to 100, 0 while unknown), "manual_only", "last_execution"?,
+  "triggers", "next_run_at"?, "execution_scope" }] }`: the scheduled tasks as the answering server process runs them.
+  Without `include_hidden` the hidden workers are missing, also while they run. Granary reads `key`, `name`, `state` and
+  `progress` for the activity indicator; `name` is the server's English, which the web shows too for a task it has no
+  translation for. Source: `silo-server/internal/apiv2/admin_tasks.go`.
+- `GET /api/v2/admin/downloads/preparations?limit=200` (1 to 500) → `{ "counts": { "running", "queued", "retrying",
+  "paused", "failed_recent" }, "items": [...] }`: the jobs that turn library files into offline downloads, running
+  first, then those waiting to retry, the queue, the paused ones and the failures of the last 24 hours; the counts
+  cover every job whatever the limit. An item: `id`, `state` (`running`, `queued`, `retrying`, `paused`, `failed`),
+  `format` (`remux`, `transcode`), `queue_position`?, `media_file_id`, `media_title`, `media_type`, `series_name`?,
+  `episode_name`?, `season_number`?, `episode_number`?, `source`, `output` (`container`, `video_codec` and
+  `audio_codec`, each a codec or `copy`, `resolution`?, `bitrate_kbps`?, `tone_map_mode`?), `worker`? (`kind`
+  `server` or `node`, `node_id`?, `name`), `attempts`, `max_attempts`, `error`?, the instants `created_at`,
+  `started_at`?, `failed_at`?, `next_retry_at`?, `paused_at`?, `progress`? (`encoded_seconds`, `duration_seconds`
+  with 0 for unknown, `speed` with 0 for not reported, `updated_at`), `progress_unavailable` and `requesters`. A server
+  without the queue answers `503 dependency_unavailable` with `Retry-After: 30`. Granary reads the counts and, of the
+  items, the id, state, format, titles and numbers, `output.video_codec` and `output.resolution`, the worker and the
+  progress; its pause, resume and cancel are not used. Source:
+  `silo-server/internal/apiv2/admin_download_preparations.go`.
 
 ### 7.17 A profile's own collections, made and changed
 
@@ -2501,11 +2523,31 @@ after `access_changed`). Sources: `silo-server/docs/realtime-api.md:23-106`,
 Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per signed-in profile, opened
 with the window and replaced on a profile or server switch, none while signed out. A profile-bound
 ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
-to `catalog`, `user_state`, `notifications` after `hello`; frames up to 1 MiB. The connection ends with
+to `catalog`, `user_state`, `notifications` after `hello`, and for an administrator account also to `sessions`,
+`tasks`, `scans` and `download_preparations` (12.3), unless the profile switched its activity indicator off. The
+server writes `hello` first, before it reads anything, with
+`available_channels`: what this connection may subscribe to (`events_ws.go`, `allowedChannelsForClaims`). Granary asks
+only for the wanted channels that list names; a `hello` without the list, or with none of the wanted channels in it,
+is asked for all of them and the `subscribed` answer decides. The connection ends with
 `max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes and holds
 longer than 1 s, and at once after `access_changed` or close code 4001 on a connection that held that long
 (one closed sooner waits like any loss, so a server that closes every connection is not asked in a loop).
 A server answering the ticket with 404 or 501 gets no lane until the next sign-in, profile switch or start.
+
+Frames are taken whole up to 1 MiB. A larger one does not end the connection: the socket keeps its first 4 KiB and
+drops the rest, and the frame is handed on with its `type`, `channel` and `event`, which the server writes before
+`data`, and without a payload (`EventsFrame.IsCut`). Only an administrator's `sessions` frames get that large: the
+snapshot and every `sessions.replaced` carry up to 200 rows of the older row shape, about 2 KB each with ordinary
+titles (0.4 MB), about 4 KB with long ones (0.8 MB), and titles have no upper bound. Granary reads those frames only
+as a cue to re-read `GET /admin/sessions`, so nothing is lost with the payload.
+
+For the same reason a frame that is only such a cue is never kept whole, whatever its size: every `event` and
+`snapshot` of `sessions` and `tasks`, and of `download_preparations` all but `download_preparation.progress`
+(`EventsFrames.IsCue`). Once such a frame is longer than its first 4 KiB, the socket asks what its head names and
+drops the rest as it arrives (`EventsFrames.TakesWhole`), so a `sessions.replaced` costs a 4 KiB buffer instead of the
+whole snapshot each time a stream changes; a shorter one is parsed without its `data`. Frames of every other channel
+are taken as before.
+
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
   later connection back after more than 5 s without one (the lane's first has no gap): one
@@ -2521,9 +2563,9 @@ What it does:
   (`GET /notifications/unread-count`), rather than counted locally.
 - Left out: `user_settings` (card badges and other profile settings are read on sign-in and profile
   switch), the web's toasts for new notifications, the open inbox's own list (only the count follows),
-  the request lists, the administrator channels (`jobs`, `sessions`, `tasks`, `scans`, `settings`,
-  `download_preparations`, `history_import`; Admin → Activity polls), and the web's reconnect with a
-  growing wait when `notifications` is rejected with `profile_required` (logged; the other channels go on).
+  the request lists, the channels `jobs`, `settings` and `history_import`, the playback sessions' lifecycle
+  events (Admin → Activity still polls), and the web's reconnect with a growing wait when `notifications` is
+  rejected with `profile_required` (logged; the other channels go on).
 
 ### 12.1 Playback control lane
 
@@ -2666,6 +2708,75 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   device leaves the entry, and the hub asks each once with `GET …/{id}` whether it is still on (403 forgets it,
   404/409/410 mark it ended) and rejoins with the kept proof. The code and the invite link are copied with the
   clipboard's history and roaming off.
+
+### 12.3 The administrator's channels
+
+The server gives `jobs`, `sessions`, `tasks`, `scans`, `settings` and `download_preparations` to the acting
+administrator only: an administrator account as its primary profile, or without a profile while the household needs
+none. The `hello` frame's `available_channels` lists them for that connection only (the role the socket validated,
+`events_socket_v2.go`). Anyone else who asks gets each back in `subscribed.rejected` with `forbidden` (an older
+server: `unknown_channel`) and keeps the connection. When that changes, the server sends `access_changed` and closes
+with 4001. Sources: `silo-server/internal/api/handlers/events_ws.go` (`allowedChannelsForRole`,
+`resolveChannelSelection`), `silo-server/docs/realtime-api.md` ("Access changes").
+
+Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) wants `sessions`, `tasks`, `scans` and
+`download_preparations` on every connection of an account whose role is `admin` (not for a profile that switched the
+indicator off in Settings, `Realtime/ActivityIndicatorSetting`: its connection asks for none of them and nothing below
+is read, and switching replaces the connection), asks for those of them the `hello`
+offers (all of them when it offers nothing to go by, 12), and takes the `channels` of the `subscribed` answer as the
+only say on who is an acting administrator: the activity indicator and its reads exist for the accepted channels, and
+a profile the server does not take as one causes no request and, on a server that says so in its `hello`, no channel
+turned down. `access_changed` closes the gate
+until the next connection's answer. The state starts over with the lane, on a server or profile switch and on
+sign-out, and frames or answers of the replaced one are dropped by a number handed out per following.
+
+What the indicator reads, each source by itself (a source the server does not offer is left out):
+- **Streams** (`sessions`): every page of `GET /api/v2/admin/sessions` (7.16) once the channel is accepted and again on
+  `sessions.replaced`, as the web's `useAdminSessions`. The frame's own rows (an older shape, 200 at most, possibly
+  cut for their size) and the channel's snapshot are never read; the lifecycle events
+  (`session.started|paused|resumed|stopped`) are not followed, as on the web.
+- **Tasks** (`tasks`): `GET /api/v2/admin/tasks?include_hidden=true` (7.16) once the channel is accepted and again on
+  `task.updated`, as the web's `useTasksIncludingHidden`; the running ones (`state` `running`) show and count. The
+  server sends `task.updated` at most every 250 ms per running task, and at once when one ends. The channel's snapshot
+  and the frame's own task are not used: both lack the hidden workers or are one server's view.
+- **Scans** (`scans`): the stream alone, as the web's `useActiveScans`; the server has no list of active scans to read.
+  The channel's snapshot is an array of runs (the queued and running ones, 500 at most) and replaces what is known;
+  each event (`scan.accepted`, `scan.started`, `scan.progress`, `scan.completed`, `scan.failed`, `scan.cancelled`)
+  carries one run, which takes its place by `id`, joins the list while its `status` is `accepted` or `running`, or
+  leaves it. A run is `{ "id", "library_id" (a number), "mode" (`library`, `subtree`, `file`), "path"?, "trigger",
+  "status", "started_at"?, "completed_at"?, "error_message"?, "result"?: { "message"?, "total_files"?,
+  "files_processed"?, … } }`. A snapshot of 500 runs may leave some out: the counts are then "at least", and stay so
+  until a snapshot of fewer, however many of the known runs end meanwhile (the web judges by the number it knows at
+  the moment, so a run that ends makes its count exact again). What was known stays while the stream is away and
+  until the next connection's snapshot, which the server writes right after `subscribed`; when it has not come after
+  10 s (the server could not build it and sent an `error` frame), or cannot be read, the scans count as not known
+  rather than as they were, since an end that happened while the stream was away, or that the server dropped for a
+  slow reader (its hub keeps 64 events per connection), is never sent again. Not known means neither a list nor
+  "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
+  0.6 to 0.9 KB with its `result` (thirteen counters, `phase`, `message`, `current_scope`), plus its `path`, so 500 of
+  them are 0.15 to 0.5 MB; a snapshot passes the 1 MiB a frame may have (12) only with paths of about 1.5 KB on
+  average, and is then such a snapshot that cannot be read. The libraries' names for the rows come from
+  `GET /api/v2/libraries` (7.16), read with each connection that was given the channel and once more for a scan of a
+  library the names do not hold. Sources: `silo-server/internal/events/scan_registry.go`,
+  `internal/api/handlers/events_ws.go` (`maxRealtimeScanSnapshotRuns`).
+- **Download preparations** (`download_preparations`): `GET /api/v2/admin/downloads/preparations?limit=200` (7.16)
+  once the channel is accepted, as the web's `useAdminDownloadPreparations`. The channel's snapshot is `null` and only
+  says "read"; Granary reads on `subscribed` instead. `download_preparation.progress` carries `{ "id", "progress":
+  { "encoded_seconds", "duration_seconds", "speed", "updated_at" } }`, at most every 5 s per job, and is put into
+  that job when it runs in the list as known; for any other job, and on `download_preparation.changed`, the list is
+  read again. A reading that arrives while the list is being read is put into that read's answer as well: the answer
+  was made before it and would step the job back for five seconds. `download_storage.changed` on the same channel is
+  news of the storage views and is ignored. While jobs run, wait or retry the list is read again 60 s after its last
+  read, as not every change announces itself (the web reads every 60 s then); a read that fails counts as one, so the
+  list is tried again a minute later while jobs were on their way. The web also reads once when the oldest failure turns 24 hours old; Granary leaves that to
+  the read every connection starts with, at most five minutes later. 503 (`dependency_unavailable`): the server has
+  no such queue, and the indicator no such section.
+
+Reads are paced as the web's `realtimeQueryRefresh.ts`: the first news reads at once, and more news while a read runs
+or within 5 s of it makes one more read when that window closes. 403, 404, 501 or 503 on a read drops the source until
+the next connection (at most five minutes away); any other failure (a network error, 401, 429, 500) keeps what was
+shown and waits for the next news, and the window after it is twice as long with each failure in a row: 5 s, 10, 20,
+40, then 60. A `Retry-After` longer than that is kept, up to five minutes.
 
 ## 13. Consequences for the Windows client
 

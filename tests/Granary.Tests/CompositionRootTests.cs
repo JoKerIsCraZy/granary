@@ -55,6 +55,9 @@ public sealed class CompositionRootTests
         Assert.NotNull(ActivatorUtilities.CreateInstance<MpvConfigEditorViewModel>(provider));
         using var presets = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(provider);
         using var buttons = ActivatorUtilities.CreateInstance<PlayerButtonsSettingsViewModel>(provider);
+        // The activity indicator's switch: one for its settings group, the events stream and the indicator.
+        using var indicatorSwitch = ActivatorUtilities.CreateInstance<ActivityIndicatorSettingsViewModel>(provider);
+        Assert.Same(provider.GetRequiredService<ActivityIndicatorSetting>(), provider.GetRequiredService<ActivityIndicatorSetting>());
         Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
     }
 

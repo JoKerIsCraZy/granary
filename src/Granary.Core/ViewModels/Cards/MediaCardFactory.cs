@@ -29,9 +29,14 @@ public static class MediaCardFactory
             ? Landscape(item, serverBase, spoilers)
             : Poster(item, serverBase);
 
-    /// <summary>"Dune" / "2021"; an episode as the web's grid card: "Tracker" / "Safe Harbor" / "S04E01".</summary>
+    /// <summary>
+    /// "Dune" / "2021"; an episode as the web's grid card: "Tracker" / "Safe Harbor" / "S04E01". Its lines are links as the
+    /// web's <c>ItemCard</c> and <c>SectionItemCard</c>: an episode's title line opens its series, the lines under it the
+    /// episode.
+    /// </summary>
     public static MediaCard Poster(CatalogItemBase item, Uri serverBase)
     {
+        ArgumentNullException.ThrowIfNull(item);
         var episode = EpisodeLabels(item);
         string title = episode?.Title ?? (item.Type == CatalogItemTypes.Episode ? item.SeriesTitle ?? item.Title : item.Title);
         return Decorate(new MediaCard(item.ContentId, item.Type, title)
@@ -39,6 +44,9 @@ public static class MediaCardFactory
             Shape = MediaCardShape.Poster,
             EpisodeTitle = episode?.EpisodeTitle,
             Subtitle = episode?.Code ?? PosterSubtitle(item),
+            Links = CardLinks.Poster,
+            // The web's headingHref: the series for an episode that names it.
+            HeadingId = item.Type == CatalogItemTypes.Episode ? SeriesOf(item) : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.PosterUrl) ?? ArtworkUrl.Resolve(serverBase, item.BackdropUrl),
             ImageThumbhash = ArtworkUrl.Resolve(serverBase, item.PosterUrl) is not null ? item.PosterThumbhash : item.BackdropThumbhash,
         }, item);
@@ -47,7 +55,8 @@ public static class MediaCardFactory
     /// <summary>
     /// "ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row. The first episode of
     /// a season that has just begun says "NEW SEASON" after its time left, and in place of "Next Episode" on a Next Up card,
-    /// as the web's <c>ContinueWatchingCard</c>.
+    /// as the web's <c>ContinueWatchingCard</c>. Its lines are links as that card's: the title line opens an episode's series,
+    /// the lines under it the episode to go on with.
     /// </summary>
     public static MediaCard Landscape(CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
@@ -65,6 +74,9 @@ public static class MediaCardFactory
             // The web's badge of a season premiere (lib/upcomingEventPresentation.ts), in capitals as its CSS shows it.
             CaptionBadge = premiere ? AppText.Upper(AppText.Get("web.calendar.event.badge.seasonPremiere")) : null,
             CaptionBadgeName = premiere ? AppText.Get("web.calendar.event.badge.seasonPremiere") : null,
+            Links = CardLinks.Landscape,
+            // The web's headingHref: the series while the heading is the series' title.
+            HeadingId = isEpisode && !string.IsNullOrEmpty(item.SeriesTitle) ? SeriesOf(item) : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
             ImageThumbhash = showsBackdrop ? item.BackdropThumbhash : item.PosterThumbhash,
             BlursImage = spoilers.HidesImage(item, showsBackdrop),
@@ -140,6 +152,7 @@ public static class MediaCardFactory
         {
             Shape = MediaCardShape.Poster,
             Subtitle = AppText.Upper(caption),
+            Links = CardLinks.TitleAndSubtitle,
             ImageUrl = poster ?? ArtworkUrl.Resolve(serverBase, boxSet.BackdropUrl),
             ImageThumbhash = poster is not null ? boxSet.PosterThumbhash : boxSet.BackdropThumbhash,
             Progress = boxSet.PlayedCount > 0 && boxSet.MovieCount > 0 ? Math.Min(1, (double)boxSet.PlayedCount / boxSet.MovieCount) : null,
@@ -241,6 +254,8 @@ public static class MediaCardFactory
     // "S04E01", in the web's words (lib/episodeCardLabels.ts): its numbers two digits, Latin in every language.
     private static string EpisodeCode(int season, int episode) => AppText.Get("web.detail.episodeCode",
         ("season", season.ToString("00", CultureInfo.InvariantCulture)), ("episode", episode.ToString("00", CultureInfo.InvariantCulture)));
+
+    private static string? SeriesOf(CatalogItemBase item) => string.IsNullOrWhiteSpace(item.SeriesId) ? null : item.SeriesId;
 
     private static string? EpisodeLine(int? season, int? episode, string title) =>
         season is { } s && episode is { } e

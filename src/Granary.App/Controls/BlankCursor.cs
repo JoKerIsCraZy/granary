@@ -27,8 +27,8 @@ internal static partial class BlankCursor
     public static InputCursor? Instance => Made.Value;
 
     /// <summary>
-    /// The blank cursor as Windows knows it (its HCURSOR), for setting it past WinUI; 0 until <see cref="Instance"/> made it,
-    /// or where it could not be made.
+    /// The blank cursor as Windows knows it (its HCURSOR), which the player's cursor shield answers Windows with; 0 until
+    /// <see cref="Instance"/> made it, or where it could not be made.
     /// </summary>
     public static nint Handle { get; private set; }
 
