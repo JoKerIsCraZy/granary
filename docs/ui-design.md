@@ -750,8 +750,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
     readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is as near its middle as it
-    can stand with a whole card at the row's start (`RowCentring`), or as far as the row scrolls: a whole number of cards
-    in, which is where the row's arrows leave it too. Between two such places the card stands before the middle, so more
+    can stand with a whole card at the row's start (`RowCentring`): a whole number of cards in, which is where the
+    row's arrows leave it too. Near the row's end, where that place lies past what the row scrolls, the view starts on
+    the last whole card it can while the page's card is whole in it; only for the row's very last cards does it go to
+    the row's end, where the card before the view is cut, as at the end of any row. Between two such places the card stands before the middle, so more
     of the episodes after it show. The web's carousel scrolls the card to the very middle; that cut the card at the
     row's start in two, and its buttons with it under the pointer. A new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.

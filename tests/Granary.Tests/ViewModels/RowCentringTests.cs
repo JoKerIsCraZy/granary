@@ -67,8 +67,20 @@ public sealed class RowCentringTests
     }
 
     [Fact]
+    public void NearTheRowsEnd_TheViewStillStartsOnAWholeCard_WhileTheCardIsWholeInIt()
+    {
+        // The second to last card: nine cards in is past the row's end (2880 of 2680), and the end itself would cut the
+        // ninth card in two. Eight cards in, the view shows cards nine to eleven whole and a part of the last one.
+        var centring = Centre(Cards - 2, WholeRange);
+
+        Assert.Equal(new RowCentring(8 * Pitch, IsSettled: true), centring);
+        Assert.InRange(Start + (Cards - 2) * Pitch - centring.Offset, 0, Viewport - Width);
+    }
+
+    [Fact]
     public void TheLastCard_ScrollsAsFarAsTheRowGoes()
     {
+        // Eight cards in, the last card would be cut at the view's end: the card itself comes first.
         Assert.Equal(new RowCentring(WholeRange, IsSettled: true), Centre(Cards - 1, WholeRange));
     }
 
@@ -78,7 +90,8 @@ public sealed class RowCentringTests
         var centring = Centre(5, scrollRange: 400);
 
         Assert.False(centring.IsSettled);
-        Assert.Equal(400, centring.Offset);
+        // Taken all the same (the row's last try), it stops on a whole card: one in, of the 400 px it has.
+        Assert.Equal(Pitch, centring.Offset);
         Assert.False(Centre(5, scrollRange: 0).IsSettled);
         // Long enough for the card's middle, but not for the whole card the view is to start on.
         Assert.False(Centre(5, scrollRange: 1200).IsSettled);
