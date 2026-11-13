@@ -428,6 +428,43 @@ public sealed partial class CursorShieldTests
         Assert.Equal(["woken Mouse"], stage.Owner.Seen);
     }
 
+    [Theory]
+    [InlineData(0x0204u, 0x0002, 0x0207u, 0x0010)] // The right button held, the middle one pressed and let go.
+    [InlineData(0x0207u, 0x0010, 0x0204u, 0x0002)] // The middle button held, the right one pressed and let go.
+    public void WithTwoButtonsDown_TheShieldStaysUntilTheLastOneIsLetGo(uint firstDown, int firstFlag, uint secondDown, int secondFlag)
+    {
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+        stage.Owner.OnWoken = stage.Shield.Uncover;
+        SendMessageW(stage.Shield.Window, firstDown, firstFlag, At(50, 60));
+        SendMessageW(stage.Shield.Window, secondDown, firstFlag | secondFlag, At(50, 60));
+
+        SendMessageW(stage.Shield.Window, secondDown + 1, firstFlag, At(50, 60));
+
+        Assert.True(IsShown(stage.Shield.Window));
+        Assert.Equal(stage.Shield.Window, GetCapture());
+        SendMessageW(stage.Shield.Window, firstDown + 1, 0, At(50, 60));
+        Assert.False(IsShown(stage.Shield.Window));
+        Assert.NotEqual(stage.Shield.Window, GetCapture());
+    }
+
+    [Fact]
+    public void ALeftClickWhileAnotherButtonIsDown_Clicks_AndTheShieldStaysForThatButton()
+    {
+        using var stage = new Stage();
+        stage.Shield.Cover(0, 0, 300, 200);
+        SendMessageW(stage.Shield.Window, WmLeftDown, 0x0001, At(50, 60));
+        SendMessageW(stage.Shield.Window, 0x0204, 0x0003, At(50, 60));
+        stage.Shield.Uncover();
+
+        SendMessageW(stage.Shield.Window, WmLeftUp, 0x0002, At(50, 60));
+
+        Assert.Equal(["pressed Mouse", "woken Mouse", "clicked Mouse"], stage.Owner.Seen);
+        Assert.True(IsShown(stage.Shield.Window));
+        SendMessageW(stage.Shield.Window, 0x0205, 0, At(50, 60));
+        Assert.False(IsShown(stage.Shield.Window));
+    }
+
     [Fact]
     public void TheLeftButtonsReleaseDuringAnotherButtonsPress_IsNoClick()
     {

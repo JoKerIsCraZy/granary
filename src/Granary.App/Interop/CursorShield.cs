@@ -287,7 +287,7 @@ internal sealed unsafe partial class CursorShield : IDisposable
                 Pressed(isSecond: message == WmLeftDouble, lParam);
                 return 0;
             case WmLeftUp:
-                Released(lParam);
+                Released(wParam, lParam);
                 return 0;
             case WmCaptureChanged:
                 if (!_isLettingGo)
@@ -307,7 +307,8 @@ internal sealed unsafe partial class CursorShield : IDisposable
             case WmRightUp:
             case WmMiddleUp:
             case WmXUp:
-                if (_press is { Clicks: false })
+                // Not while another button is still down: its release is the shield's too.
+                if (_press is { Clicks: false } && !IsAnyButtonDown(wParam))
                 {
                     LetGoOfPress();
                     LeaveIfAsked();
@@ -344,6 +345,9 @@ internal sealed unsafe partial class CursorShield : IDisposable
         _owner.Woken(pointer);
     }
 
+    // Whether a mouse message says a button is down still: MK_LBUTTON, MK_RBUTTON, MK_MBUTTON, MK_XBUTTON1, MK_XBUTTON2.
+    private static bool IsAnyButtonDown(nint wParam) => (wParam & 0x0073) != 0;
+
     private void LetGoOfPress()
     {
         _press = null;
@@ -355,7 +359,7 @@ internal sealed unsafe partial class CursorShield : IDisposable
         _isLettingGo = false;
     }
 
-    private void Released(nint lParam)
+    private void Released(nint wParam, nint lParam)
     {
         if (_press is not { Clicks: true } press)
         {
@@ -364,6 +368,16 @@ internal sealed unsafe partial class CursorShield : IDisposable
         int dpi = GetDpiForWindow(Window);
         int reach = ClickReach * (dpi > 0 ? dpi : DefaultDpi) / DefaultDpi;
         bool isClick = Math.Abs(XOf(lParam) - press.X) <= reach && Math.Abs(YOf(lParam) - press.Y) <= reach;
+        if (IsAnyButtonDown(wParam))
+        {
+            // Another button is still down: the shield stays for its release, and this one's click is told meanwhile.
+            _press = press with { Clicks = false };
+            if (isClick)
+            {
+                _owner.Clicked(press.Pointer, press.IsSecond);
+            }
+            return;
+        }
         // Over from here on: an owner that uncovers the picture in its click takes the shield away at once.
         LetGoOfPress();
         if (isClick)
