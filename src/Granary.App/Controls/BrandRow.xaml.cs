@@ -77,7 +77,7 @@ public sealed partial class BrandRow : UserControl
 
     public static Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public string LoadingName(string? title) => AppText.Get("granary.requests.brandRowLoading", ("title_lower", (title ?? "").ToLower(AppText.Language.Culture)));
+    public string LoadingName(string? title) => AppText.Get("granary.requests.brandRowLoading", "title", title ?? "");
 
     // "#RRGGBB", which the view model has checked.
     private static Color Parse(string hex)
