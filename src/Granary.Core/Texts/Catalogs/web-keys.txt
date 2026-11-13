@@ -451,7 +451,8 @@ web.collections.actions.moreActions
 
 # Add to a collection, as the web's dialog (components/AddToCollectionDialog.tsx):
 # src/Granary.App/Controls/AddToCollectionPanel.xaml and
-# src/Granary.Core/ViewModels/Collections/AddToCollectionViewModel.cs.
+# src/Granary.Core/ViewModels/Collections/AddToCollectionViewModel.cs, and its title where a title's page opens it
+# (src/Granary.App/Controls/DetailHero.xaml.cs).
 web.collections.addToCollection.added
 web.collections.addToCollection.createAndAdd
 web.collections.addToCollection.createFailed
@@ -464,16 +465,6 @@ web.collections.addToCollection.namePlaceholder
 web.collections.addToCollection.newManual
 web.collections.addToCollection.noMatches
 web.collections.addToCollection.removed
-
-# A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
-# MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
-# pickers and prePlaySelection.ts), its cast row (components/CastCarousel.tsx, castCrewGroups.ts), its stars
-# (components/StarRating.tsx), More Like This (components/RecommendationGrid.tsx), the start sheet's line for a series
-# (StartPartySheet.tsx), the track preference toasts, and for the Info dialog the field names of the web's metadata
-# editor and Media Info: src/Granary.App/Views/ItemDetailPage.xaml(.cs), src/Granary.App/Controls/DetailHero.xaml(.cs),
-# DetailInfoPanel, DetailShelf, DetailExtrasSection, StarRating and TrailerOverlay, and ItemDetailViewModel*.cs and
-# Detail/ (DetailFacts, DetailText, DetailCredits, ExtraKinds, PrePlayText, PrePlayPickers, PrePlayOptions) in
-# src/Granary.Core/ViewModels.
 web.collections.addToCollection.title
 
 # The Collections page, as the web shows it (pages/Collections.tsx and Collections.cards.tsx, the collections ⋯ menu
@@ -821,7 +812,15 @@ web.common.toast.collections.deleteFailed
 # More of the Collections page's words, as above under web.collections.admin.editCollection.
 web.common.toast.collections.deleted
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
+# MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
+# pickers and prePlaySelection.ts), its cast row (components/CastCarousel.tsx, castCrewGroups.ts), its stars
+# (components/StarRating.tsx), More Like This (components/RecommendationGrid.tsx), the start sheet's line for a series
+# (StartPartySheet.tsx), the track preference toasts, and for the Info dialog the field names of the web's metadata
+# editor and Media Info: src/Granary.App/Views/ItemDetailPage.xaml(.cs), src/Granary.App/Controls/DetailHero.xaml(.cs),
+# DetailInfoPanel, DetailShelf, DetailExtrasSection, StarRating and TrailerOverlay, and ItemDetailViewModel*.cs and
+# Detail/ (DetailFacts, DetailText, DetailCredits, ExtraKinds, PrePlayText, PrePlayPickers, PrePlayOptions) in
+# src/Granary.Core/ViewModels.
 web.common.toast.subtitles.resetPreferenceFailed
 web.common.toast.subtitles.savePreferenceFailed
 
@@ -850,7 +849,7 @@ web.common.ui.loadError.timeout
 web.common.ui.loadMore.button
 web.common.ui.loadMore.loading
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.actions.addToCollection
 web.detail.actions.addToFavorites
 web.detail.actions.addToWatchlist
@@ -864,7 +863,7 @@ web.detail.actions.markSeriesWatched
 web.detail.actions.markUnwatched
 web.detail.actions.markWatched
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.actions.moreActions
 web.detail.actions.play
 web.detail.actions.playEpisode
@@ -905,7 +904,7 @@ web.detail.boxSet.unavailableTitle
 web.detail.boxSet.watchedFraction
 web.detail.boxSet.watchedOf
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.breadcrumb.label
 web.detail.carousel.scrollLeft
 web.detail.carousel.scrollRight
@@ -919,14 +918,14 @@ web.detail.castCrew.writers
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.episodeCode
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.episodes.heading
 web.detail.episodes.moreEpisodes
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.episodes.nowViewing
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.episodes.numbered
 web.detail.extras.heading
 web.detail.extras.kind.behindTheScenes
@@ -949,7 +948,7 @@ web.detail.extras.kindGroup.trailer
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.hero.typeMovie
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.hero.typeSeries
 web.detail.mediaInfo.audio
 web.detail.mediaInfo.defaultBadge
@@ -970,25 +969,25 @@ web.detail.mediaInfo.video
 web.detail.overview.createdBy
 web.detail.overview.directedBy
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.overview.revealHidden
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.overview.tmdbVotes
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.itemLoadFailed
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.page.loadFailedBody
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.loadingDetails
 
 # More of a TMDB title's page's words, as above under requests.error.create.
 web.detail.page.titleLoadFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.page.unavailableBody
 web.detail.page.unavailableTitle
 
@@ -1006,21 +1005,21 @@ web.detail.request.stopNotifying
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.episodeCount
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.seasons.heading
 web.detail.seasons.noEpisodes
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.numbered
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.seasons.specials
 web.detail.seasons.totalCount
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.detail.seasons.watchedProgress
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.sections.cast
 web.detail.sections.castAndCrew
 web.detail.subtitles.button
@@ -1103,7 +1102,7 @@ web.home.sectionRow.seriesType
 web.item.card.play
 web.item.card.watched
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.item.dialog.fieldTitle
 web.item.editMetadata.contentRating
 web.item.editMetadata.countries
@@ -1132,7 +1131,7 @@ web.item.menu.removeFromNextUp
 web.item.menu.removeFromWatchlist
 web.item.menu.showInRecommendations
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.item.rating.label
 web.item.rating.stars
 
@@ -1308,7 +1307,7 @@ web.player.room.reconnecting
 # More of the player's buttons, as above under web.player.audioMenu.trigger.
 web.player.sleepTimer.trigger
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.player.tracks.resetAudioFailed
 web.player.tracks.saveAudioFailed
 
@@ -1366,7 +1365,7 @@ web.recommendations.fallbackTopRated
 web.recommendations.favoriteDirectors
 web.recommendations.loadFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.recommendations.moreLikeThis
 
 # More of For You's words, as above under web.recommendations.emptyBody.
@@ -1936,7 +1935,7 @@ web.shell.unsavedChanges.title
 # More of a library page's words, as above under catalog.sort.added.
 web.shuffle.startFailed
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.ui.close
 
 # More of the collection editor's words, as above under catalog.sort.author.
@@ -2027,7 +2026,7 @@ web.watchTogether.common.roomInactive
 web.watchTogether.common.roomNotFound
 web.watchTogether.common.season
 
-# More of a title's page's words, as above under web.collections.addToCollection.title.
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.watchTogether.common.series
 web.watchTogether.common.someone
 web.watchTogether.common.specials
