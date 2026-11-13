@@ -8,6 +8,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
+  is A, Circle is B, Square is X and Triangle is Y. The D-pad or the left stick moves, A picks, B goes
+  back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the
+  bumpers switch tabs (also the pages of Settings, and Search between movies and series), the triggers page and the
+  right stick scrolls. In the player A or X plays and pauses, Left and
+  Right seek in steps that grow while you hold them, the triggers scrub, the bumpers jump chapters, the right stick sets
+  the volume, Y opens audio and subtitles, Menu the settings and View the playback info; A takes Skip Intro and the next
+  episode when they show. Granary listens to the pad only while its window is in front, and a pad that falls asleep
+  never stops what plays. Typing with the pad (the search box) is not there yet.
 - **Server activity:** an administrator sees a button at the top right of every page while something is going on on
   the server, as on Silo's web, with the number of things on it. It opens a panel that counts the streams playing now
   by play method and leads to Admin → Activity, and lists the scheduled tasks that run with their progress, the
@@ -38,6 +47,9 @@ release's section is what its update says it changes (docs/release.md).
   first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
   Player buttons, as F11 does.
+- Skip Intro (and Skip Recap, Credits and Preview) and the next episode's Play Now take focus when they appear, as on
+  Silo's TV app: Enter or a remote's OK presses them, also while the controls show, where OK went to Play/Pause before.
+  A button you are on, an open menu and a seek you are making keep focus.
 - With Hero size set to Compact, the picture at the top of Home, For You and Discover runs over the whole width too,
   behind the title and its text, where it filled only the right part. It is darkened behind the text, which stays
   readable on a bright picture. The hero is as low as before, so it shows less of the picture's height than Full.

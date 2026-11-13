@@ -211,13 +211,24 @@ public sealed partial class PlayerPage : Page
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
+                FocusPromptSoon();
+                break;
+            case nameof(PlayerViewModel.IsNextUpCardShown) when ViewModel.IsNextUpCardShown:
+                FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.Bar):
                 ShowBar();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt):
+            case nameof(PlayerViewModel.IsNextUpCardShown):
             case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
-                // A pill or the sync card that had the keyboard is gone.
+                // A pill, the next episode's card or the sync card that had the keyboard is gone. A prompt that goes with
+                // focus still on it gives it to the picture at once, before XAML could hand it on to a button of the
+                // hidden bar.
+                if (FocusedPrompt() is { } gone && !(IsWithin(gone, SkipPrompt) ? ViewModel.HasSkipPrompt : ViewModel.IsNextUpCardShown))
+                {
+                    Focus(FocusState.Programmatic);
+                }
                 KeepFocusInPage();
                 break;
         }

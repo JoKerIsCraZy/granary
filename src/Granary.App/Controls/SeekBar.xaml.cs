@@ -41,6 +41,7 @@ public sealed partial class SeekBar : UserControl
     private readonly DispatcherQueueTimer _pendingTimer;
     private bool _isPointerOver;
     private double? _dragSeconds;
+    private double? _targetSeconds;
     private double? _pendingSeconds;
     private long _pendingSince;
 
@@ -61,6 +62,7 @@ public sealed partial class SeekBar : UserControl
             if (!IsEnabled)
             {
                 CancelDrag();
+                ShowTarget(null);
             }
             Render();
         };
@@ -100,8 +102,8 @@ public sealed partial class SeekBar : UserControl
     /// <summary>A drag is in progress; the page keeps its controls up meanwhile.</summary>
     public bool IsDragging => _dragSeconds is not null;
 
-    /// <summary>The time the bar shows: the drag, a seek still on its way, or the position.</summary>
-    public double DisplayedSeconds => _dragSeconds ?? PendingSeconds() ?? Position;
+    /// <summary>The time the bar shows: the drag, a seek still being made or on its way, or the position.</summary>
+    public double DisplayedSeconds => _dragSeconds ?? _targetSeconds ?? PendingSeconds() ?? Position;
 
     internal bool CanSeek => IsEnabled && Duration > 0;
 
@@ -121,6 +123,24 @@ public sealed partial class SeekBar : UserControl
         Render();
         SeekRequested?.Invoke(this, target);
         (FrameworkElementAutomationPeer.FromElement(this) as SeekBarAutomationPeer)?.RaiseValueChanged(previous, target);
+    }
+
+    /// <summary>
+    /// A seek still being made elsewhere, by a game controller's steps or its triggers: the bar and its bubble show where
+    /// it would land, as during a drag, and nothing seeks. Null once it was sent or dropped.
+    /// </summary>
+    internal void ShowTarget(double? seconds)
+    {
+        _targetSeconds = seconds is { } target && CanSeek ? Math.Clamp(target, 0, Duration) : null;
+        if (_targetSeconds is { } shown)
+        {
+            ShowTip(shown, shown / Duration * Track.ActualWidth);
+        }
+        else if (!_isPointerOver && _dragSeconds is null)
+        {
+            HideTip();
+        }
+        Render();
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new SeekBarAutomationPeer(this);
@@ -352,7 +372,7 @@ public sealed partial class SeekBar : UserControl
         double fraction = Duration > 0 ? Math.Clamp(DisplayedSeconds / Duration, 0, 1) : 0;
         Progress.Width = fraction * width;
         Thumb.Translation = new Vector3((float)(fraction * width - ThumbRadius), 0, 0);
-        bool isActive = CanSeek && (_isPointerOver || IsDragging || FocusState == FocusState.Keyboard);
+        bool isActive = CanSeek && (_isPointerOver || IsDragging || _targetSeconds is not null || FocusState == FocusState.Keyboard);
         Thumb.Opacity = isActive ? 1 : 0;
         Track.Scale = isActive ? ActiveTrackScale : Vector3.One;
         Track.Opacity = IsEnabled ? 1 : 0.5;

@@ -111,7 +111,9 @@ public sealed partial class PlayerPage
             e.Handled = true;
             return;
         }
-        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible && !HasShownButtonFocus();
+        // The skip pill has focus from the moment it shows (FocusPrompt): OK on it is OK on the picture.
+        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible
+            && (!HasShownButtonFocus() || SkipButton.FocusState != FocusState.Unfocused);
         if (okOnHidden && SkipsFromKey())
         {
             e.Handled = true;
@@ -213,38 +215,7 @@ public sealed partial class PlayerPage
                 ViewModel.ToggleSubtitles();
                 break;
             case VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back when !isRepeat:
-                // As on the web player, Esc first turns an intro pill away; the marker panel closes before the player. A
-                // remote's Back (Browser Back) and Backspace do as Esc does.
-                if (ViewModel.DismissSkipPrompt())
-                {
-                    // An Esc the pill took is not on the way out of the player.
-                    _fullScreen.ForgetEscape();
-                    break;
-                }
-                if (ViewModel.MarkerEditor.IsEditing)
-                {
-                    ViewModel.MarkerEditor.Cancel();
-                    _fullScreen.ForgetEscape();
-                    break;
-                }
-                // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
-                // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
-                // still opens in full screen when the next Esc leaves the player soon after (PlayerFullScreen). Marked
-                // after the change: WindowModeService raises Changed within SetFullScreen, and OnWindowModeChanged
-                // forgets an Esc, so marking first would be undone at once.
-                if (_modes.IsFullScreen && e.Key == VirtualKey.Escape)
-                {
-                    _modes.SetFullScreen(false);
-                    _fullScreen.EscapedFullScreen();
-                }
-                else if (_modes.IsMiniView)
-                {
-                    SetMiniView(false);
-                }
-                else
-                {
-                    CloseByKey(e.Key);
-                }
+                StepBack(e.Key);
                 break;
             case VirtualKey.Left when ViewModel.CanSeek:
                 ViewModel.SkipBackCommand.Execute(null);
@@ -275,6 +246,43 @@ public sealed partial class PlayerPage
                 return;
         }
         e.Handled = true;
+    }
+
+    // A back key the controls did not take (HidesControls), and a game controller's B. As on the web player, Esc first
+    // turns an intro pill away; the marker panel closes before the player. A remote's Back (Browser Back) and Backspace
+    // do as Esc does.
+    private void StepBack(VirtualKey key)
+    {
+        if (ViewModel.DismissSkipPrompt())
+        {
+            // An Esc the pill took is not on the way out of the player.
+            _fullScreen.ForgetEscape();
+            return;
+        }
+        if (ViewModel.MarkerEditor.IsEditing)
+        {
+            ViewModel.MarkerEditor.Cancel();
+            _fullScreen.ForgetEscape();
+            return;
+        }
+        // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
+        // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
+        // still opens in full screen when the next Esc leaves the player soon after (PlayerFullScreen). Marked
+        // after the change: WindowModeService raises Changed within SetFullScreen, and OnWindowModeChanged
+        // forgets an Esc, so marking first would be undone at once.
+        if (_modes.IsFullScreen && key == VirtualKey.Escape)
+        {
+            _modes.SetFullScreen(false);
+            _fullScreen.EscapedFullScreen();
+        }
+        else if (_modes.IsMiniView)
+        {
+            SetMiniView(false);
+        }
+        else
+        {
+            CloseByKey(key);
+        }
     }
 
     // OK while a skip pill shows and the controls are hidden does what the pill says (Skip Intro, Recap, Credits or
@@ -427,7 +435,7 @@ public sealed partial class PlayerPage
             return false;
         }
         _hideTimer.Stop();
-        Focus(FocusState.Programmatic);
+        RestFocus();
         SetControlsVisible(false);
         return true;
     }

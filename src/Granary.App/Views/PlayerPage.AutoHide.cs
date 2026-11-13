@@ -164,7 +164,7 @@ public sealed partial class PlayerPage
         // and OK brings the controls back with focus on Play/Pause.
         if (_movesThroughControls && HasFocusInControls())
         {
-            Focus(FocusState.Programmatic);
+            RestFocus();
         }
         SetControlsVisible(false);
     }
