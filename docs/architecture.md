@@ -47,7 +47,17 @@ mpv renders with its own d3d11 backend in composition mode (`d3d11-output-mode=c
 engine reads the swap chain from the `display-swapchain` property; `MpvVideoHost` sets it on a XAML
 `SwapChainPanel`, reports the panel size in physical pixels (`d3d11-composition-size`) and applies the
 inverse DPI scale. XAML controls draw over the video. The comparison with the render API and a child
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:36a2ba0cae7f9a72f08bb1a177ec3be6f9825e61f2a91fcae8098e2ce6945db9 -->
+
 HWND is in [spike/README.md](../spike/README.md).
+
+The player owns the cursor through XAML and `CursorWindowHook` on the input HWND under the pointer. The hook answers
+`WM_SETCURSOR` while the cursor should be hidden, without taking over the title bar or other windows; a periodic check
+also corrects visible cursors set outside the message path. The hook is detached when the player leaves.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 The panel shows the last presented picture unscaled, from its top-left corner, and mpv resizes its
 buffers a little after the panel on its own thread. After a jump in size (the player minimized to its

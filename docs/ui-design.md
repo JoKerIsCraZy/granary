@@ -1809,13 +1809,21 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, a look every 250 ms checks that Windows still draws the hidden one over the picture. A
-  tester's log showed Windows drawing its arrow there all the same, at once or after a while, with WinUI answering
-  `WM_SETCURSOR` with the arrow though the page's cursor was the blank one. So the look asks the window again, and when
-  the arrow stays, sets the blank cursor past WinUI (`SetCursor` with `BlankCursor.Handle`), which holds until the
-  mouse's next move. The log says what brought a hidden cursor back (how far the mouse moved and how
-  long it had lain still, or a finger or pen), how far the mouse went while the cursor showed (a hand goes hundreds of
-  pixels, a knock on the desk a few), and when Windows drew its arrow by itself.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:622556cd65083bc0f6a0976d1520e08c26fc7087e1076982f8f57ccb164f5675 -->
+
+  While the cursor is hidden, `CursorWindowHook` answers `WM_SETCURSOR` on the input HWND under the pointer with
+  `BlankCursor.Handle`, before WinUI can restore a visible shape. It follows that HWND as the pointer changes windows
+  and detaches when the cursor shows, the page unloads or the HWND is destroyed. Non-client areas, menus and other
+  windows keep their cursor. A look every 250 ms also recovers from cursor changes made without a window message:
+  every shown cursor other than the blank one is corrected, including a hand or a cursor from a custom scheme.
+  The log says what brought a hidden cursor back, how far the mouse went while it showed, and whether a cursor Windows
+  drew over the picture was restored.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
