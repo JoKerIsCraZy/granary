@@ -388,13 +388,18 @@
                                                                             <ColumnDefinition Width="*" />
                                                                             <ColumnDefinition Width="Auto" />
                                                                         </Grid.ColumnDefinitions>
-                                                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                        <!-- A grid, not a horizontal stack: the saved rule wraps only where its width has an end. -->
+                                                                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
                                                                             <TextBlock Text="{x:Bind t:AppText.Get('web.catalog.rules.notEditable')}" FontSize="12"
                                                                                        FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
                                                                                        Foreground="{StaticResource SiloForegroundBrush}" />
-                                                                            <TextBlock Text="{x:Bind LockedText}" FontSize="12" FontFamily="Consolas" TextWrapping="Wrap"
+                                                                            <TextBlock Grid.Column="1" Text="{x:Bind LockedText}" FontSize="12" FontFamily="Consolas" TextWrapping="Wrap"
                                                                                        Foreground="{StaticResource SiloMutedBrush}" />
-                                                                        </StackPanel>
+                                                                        </Grid>
                                                                         <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('web.catalog.rules.remove')}" Style="{StaticResource EditorGhostButtonStyle}"
                                                                                 Command="{x:Bind RemoveCommand}" CommandParameter="{x:Bind}" />
                                                                     </Grid>
