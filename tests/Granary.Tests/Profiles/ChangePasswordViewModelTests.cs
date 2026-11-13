@@ -160,9 +160,9 @@ public sealed class ChangePasswordViewModelTests
     }
 
     [Theory]
-    [InlineData("body.new_password", "Choose a different password.")]
+    [InlineData("body.new_password", "Choose a different password, then try again.")]
     [InlineData("body.current_password", "The current password is not right.")]
-    [InlineData("body.other", "The server did not accept the new password.")]
+    [InlineData("body.other", "Choose a different password, then try again.")]
     public async Task Submit_RejectedMember_NamesTheProblem(string location, string expected)
     {
         var harness = new Harness();
@@ -196,7 +196,7 @@ public sealed class ChangePasswordViewModelTests
     [Theory]
     [InlineData(120, "Too many attempts. Try again in 2 minutes.")]
     [InlineData(30, "Too many attempts. Try again in 1 minute.")]
-    [InlineData(null, "Too many attempts. Try again later.")]
+    [InlineData(null, "Too many attempts. Wait a moment, then try again.")]
     public async Task Submit_RateLimited_SaysHowLongToWait_InOneSentence(int? seconds, string expected)
     {
         var harness = new Harness();
@@ -232,7 +232,7 @@ public sealed class ChangePasswordViewModelTests
 
         await harness.ViewModel.SubmitCommand.ExecuteAsync(null);
 
-        Assert.Equal("Could not reach the server. Check the connection and try again.", harness.ViewModel.Status);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", harness.ViewModel.Status);
         Assert.True(harness.ViewModel.HasError);
         AssertNoPasswordLogged(harness);
     }
@@ -266,7 +266,7 @@ public sealed class ChangePasswordViewModelTests
 
     [Theory]
     [InlineData(403, "permission_denied", "Password changes are unavailable for this account.")]
-    [InlineData(409, "conflict", "This account does not sign in with a password on this server.")]
+    [InlineData(409, "conflict", "This account doesn't sign in with a Silo password. Ask your server admin for help.")]
     [InlineData(503, "dependency_unavailable", "The server is busy, try again.")]
     [InlineData(500, "internal_error", "The password could not be changed (error 500).")]
     public async Task Submit_Refused_ExplainsWhy(int status, string code, string expected)

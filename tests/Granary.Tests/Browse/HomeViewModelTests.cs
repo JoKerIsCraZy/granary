@@ -387,7 +387,7 @@ public sealed class HomeViewModelTests
         await home.ActivateAsync();
 
         Assert.True(home.HasError);
-        Assert.Equal("Could not reach the server. Check the connection and try again.", home.ErrorText);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", home.ErrorText);
     }
 
     [Fact]
@@ -400,7 +400,7 @@ public sealed class HomeViewModelTests
 
         Assert.True(home.IsEmpty);
         Assert.False(home.HasError);
-        Assert.Equal("Nothing here yet", home.StatusText);
+        Assert.Equal("Nothing to watch yet", home.StatusText);
     }
 
     [Fact]

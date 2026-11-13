@@ -96,7 +96,7 @@ public sealed class PlayerTextTests
     {
         Assert.Equal(("This title is no longer available.", false), Said(Refusal(404)));
         Assert.Equal(("The server could not start playback (error 500).", true), Said(Refusal(500)));
-        Assert.Equal(("The server is receiving too many requests. Try again in a few minutes.", true), Said(Refusal(429)));
+        Assert.Equal(("Too many requests. Please wait a moment and try again.", true), Said(Refusal(429)));
 
         static SiloApiException Refusal(int status) => new(status, new ApiProblem(ApiProblem.TypeOrigin + "refused", "refused", status, null, null, null));
 

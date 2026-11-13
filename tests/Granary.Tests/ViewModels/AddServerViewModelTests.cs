@@ -360,7 +360,7 @@ public sealed class AddServerViewModelTests
         await harness.ConnectAsync("ftp://nope");
 
         Assert.Empty(harness.Probe.Probed);
-        Assert.Contains("not a server address", harness.ViewModel.Status, StringComparison.Ordinal);
+        Assert.Contains("valid server host", harness.ViewModel.Status, StringComparison.Ordinal);
     }
 
     [Fact]

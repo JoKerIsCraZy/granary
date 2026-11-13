@@ -632,7 +632,7 @@ shared with the other desktop clients), so a browser and Granary each keep their
   either field missing or unknown, reads as the default, as `parseCardPresentation` does.
 - The effective item's `source` says where it comes from: `profile_client` is the desktop apps' own choice (Reset deletes it,
   `DELETE …?scope=profile_client`), `profile_device` this PC's value, which outranks it: editing is off until it is deleted
-  ("Match my other computers", `DELETE …?scope=profile_device`). `profile` or `default` apply when neither exists.
+  ("Use synced desktop settings", `DELETE …?scope=profile_device`). `profile` or `default` apply when neither exists.
 - A server whose effective read refuses the key (`422`) predates it: cards keep the default and nothing is editable.
 - The sizes are the web's at its Tailwind breakpoints (`sm` 640, `md` 768, `lg` 1024, `xl` 1280 px), measured against
   Granary's window width as the web's against its viewport, sidebar included:
