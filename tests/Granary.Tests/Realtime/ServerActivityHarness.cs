@@ -105,6 +105,12 @@ internal sealed class ServerActivityHarness : IAsyncDisposable
         return socket;
     }
 
+    /// <summary>
+    /// Waits until no read of a list is under way, answer and all. A frame or a timer starts its read before the push or
+    /// the clock's move returns, so after this nothing more is read without news: what a test says was not read, was not.
+    /// </summary>
+    public Task ReadsDoneAsync() => ServerPlaybackFixture.Until(() => Activity.ReadsUnderWay == 0, "the reads under way");
+
     /// <summary>Pushes <paramref name="frame"/> and waits until it was handled: frames are read off the test's thread.</summary>
     public async Task PushedAsync(FakeRealtimeSocket socket, string frame)
     {

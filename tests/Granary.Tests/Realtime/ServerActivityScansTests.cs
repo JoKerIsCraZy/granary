@@ -303,7 +303,7 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
         await _harness.PushedAsync(socket, Event("scan.started", Run("n", "running", library: 99)));
         await _harness.PushedAsync(socket, Event("scan.progress", Run("n", "running", library: 99)));
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(2, _harness.Library.Count(LibrariesPath));
     }
@@ -316,7 +316,7 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
         await ServerPlaybackFixture.Until(() => _harness.Library.Count(LibrariesPath) == 1, "the read");
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal([("a", "running")], Scans);
         Assert.Null(_harness.State.LibraryNames);

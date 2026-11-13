@@ -45,7 +45,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
     public async Task WithoutTheirChannel_TheyAreNeitherReadNorShown()
     {
         await _harness.StartedAsync(EventsChannels.Scans);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Null(_harness.State.Sessions);
         Assert.Equal(0, Reads);
@@ -80,7 +80,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         // And nothing more without news.
         await ServerPlaybackFixture.Until(() => _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow, "the window after the read");
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow + ServerActivity.RefreshWindow);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(3, Reads);
     }
 
@@ -107,7 +107,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         // The web follows only sessions.replaced; the snapshot's own rows are an older shape of at most 200.
         await _harness.PushedAsync(socket, """{ "type": "snapshot", "channel": "sessions", "timestamp": "t", "data": [] }""");
         await _harness.PushedAsync(socket, """{ "type": "event", "channel": "sessions", "event": "session.paused", "event_id": "e3", "timestamp": "t", "data": { "session_id": "s1" } }""");
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(1, Reads);
         Assert.Equal(2, _harness.State.Sessions?.Count);
@@ -126,7 +126,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
         await _harness.PushedAsync(socket, Replaced);
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(1, Reads);
         Assert.Null(_harness.State.Sessions);
@@ -187,7 +187,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         await ServerPlaybackFixture.Until(() => Reads == 3 && _harness.Library.Clock.NextDue == ServerActivity.RefreshWindow * 2, "the second failed read");
         await _harness.PushedAsync(socket, Replaced);
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(3, Reads);
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
         // …and twice as long again.
@@ -233,7 +233,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         await ServerPlaybackFixture.Until(() => Reads == 2 && _harness.Library.Clock.NextDue == TimeSpan.FromSeconds(30), "the read turned away");
         await _harness.PushedAsync(socket, Replaced);
         _harness.Library.Clock.Advance(TimeSpan.FromSeconds(29));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(2, Reads);
 
         _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
@@ -288,7 +288,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         _harness.Library.Clock.Advance(TimeSpan.FromSeconds(1));
         await _harness.OpenedAsync(1, EventsChannels.Scans);
         release.SetResult();
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Null(_harness.State.Sessions);
         Assert.True(_harness.State.IsAvailable);
@@ -307,7 +307,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
         // The new profile's connection is turned down: nothing of its own is read.
         await _harness.OpenedAsync(1);
         release.SetResult();
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Null(_harness.State.Sessions);
         Assert.False(_harness.State.IsAvailable);
@@ -323,7 +323,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, """{ "type": "access_changed" }""");
         release.SetResult();
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Null(_harness.State.Sessions);
         Assert.False(_harness.State.IsAvailable);
@@ -338,7 +338,7 @@ public sealed class ServerActivityStreamsTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, """{ "type": "access_changed" }""");
         await _harness.PushedAsync(socket, Replaced);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
         Assert.Equal(1, Reads);
         Assert.Null(_harness.State.Sessions);
 
