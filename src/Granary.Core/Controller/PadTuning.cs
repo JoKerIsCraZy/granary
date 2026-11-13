@@ -39,7 +39,10 @@ public static class PadTuning
     /// <summary>A seek made of steps is sent once nothing was added for this long.</summary>
     public static readonly TimeSpan SeekCommitDelay = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>The longest time one reading stands for: a poll that came late neither scrolls nor scrubs for the gap.</summary>
+    /// <summary>
+    /// The longest time one reading stands for: a poll that came late neither scrolls nor scrubs for the gap, nor does
+    /// it count as that long a hold for a seek's steps.
+    /// </summary>
     public static readonly TimeSpan LongestStep = TimeSpan.FromMilliseconds(100);
 
     /// <summary>

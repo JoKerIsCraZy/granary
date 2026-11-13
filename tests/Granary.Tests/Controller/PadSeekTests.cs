@@ -210,6 +210,27 @@ public sealed class PadSeekTests
     }
 
     [Fact]
+    public void AReadingThatComesLate_AddsNoLargerStepThanTheHoldEarned()
+    {
+        _bench.Read(PadButtons.DPadRight);
+
+        // Ten seconds without a reading are no ten seconds of holding: the step is still the profile's, not five minutes.
+        var late = _bench.Read(new PadReading(PadButtons.DPadRight), after: 10 * Second);
+
+        Assert.Equal([60], Previews(late));
+    }
+
+    [Fact]
+    public void AReadingThatComesLateInAHeldSeek_LeavesTheStepsAsLargeAsTheyWere()
+    {
+        var held = _bench.Hold(PadButtons.DPadLeft, Second);
+
+        var late = _bench.Read(new PadReading(PadButtons.DPadLeft), after: 10 * Second);
+
+        Assert.Equal([Previews(held)[^1] - 10], Previews(late));
+    }
+
+    [Fact]
     public void APadThatGoesAwayMidScrub_SeeksNothing()
     {
         _bench.Hold(FullRightTrigger, Second);

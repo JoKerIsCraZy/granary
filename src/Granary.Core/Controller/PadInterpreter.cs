@@ -43,11 +43,12 @@ public sealed partial class PadInterpreter
     private TimeSpan _aSince;
     private bool _aOpenedMenu;
 
-    // The direction of the D-pad or the left stick, what it is used for and when it steps next.
+    // The direction of the D-pad or the left stick, what it is used for, for how long it was read as held and when it
+    // steps next.
     private PadDirection _stick;
     private PadDirection _direction;
     private DirectionUse _directionUse;
-    private TimeSpan _directionSince;
+    private TimeSpan _directionHeld;
     private TimeSpan _directionNext;
 
     private TimeSpan _pageNext;
@@ -163,7 +164,7 @@ public sealed partial class PadInterpreter
         _live = live;
 
         TakeButtons(pressed, released);
-        TakeDirection(DirectionOf(live));
+        TakeDirection(DirectionOf(live), step);
         if (context.Mode == PadMode.Browsing)
         {
             TakePaging(pressed);
@@ -279,7 +280,7 @@ public sealed partial class PadInterpreter
         _ => PadButtons.None,
     };
 
-    private void TakeDirection(PadDirection direction)
+    private void TakeDirection(PadDirection direction, TimeSpan step)
     {
         if (direction != _direction)
         {
@@ -290,6 +291,9 @@ public sealed partial class PadInterpreter
             }
             return;
         }
+        // Counted in readings, none longer than LongestStep: after a stall a held seek steps as large as before it,
+        // not as large as the stall was long.
+        _directionHeld += step;
         if (direction == PadDirection.None || _directionUse == DirectionUse.Spent)
         {
             return;
@@ -307,7 +311,7 @@ public sealed partial class PadInterpreter
         if (_directionUse == DirectionUse.Seek)
         {
             _directionNext = _now + PadTuning.SeekRepeat;
-            StepSeek(direction, _now - _directionSince);
+            StepSeek(direction, _directionHeld);
         }
         else
         {
@@ -318,7 +322,7 @@ public sealed partial class PadInterpreter
 
     private void StartDirection(PadDirection direction)
     {
-        _directionSince = _now;
+        _directionHeld = TimeSpan.Zero;
         _directionNext = _now + PadTuning.RepeatDelay;
         _directionUse = UseOf(direction);
         switch (_directionUse)
