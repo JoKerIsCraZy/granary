@@ -23,7 +23,8 @@ public sealed partial class PlayerPage
     internal PadContext PadContext => new(
         PadMode.Player,
         HasOpenMenu() || IsPanelOpen ? PadFocus.Menu
-            : ShowsNextUpScreen || HasShownButtonFocus() || (_areControlsVisible && HasFocusInControls()) ? PadFocus.Controls
+            : ShowsNextUpScreen || (HasShownButtonFocus() && FocusedPrompt() is null) || (_areControlsVisible && HasFocusInControls())
+                ? PadFocus.Controls
             : PadFocus.Picture,
         HasPrompt: HasPadPrompt,
         CanSeek: HasTransport && ViewModel.CanSeek,
@@ -32,7 +33,8 @@ public sealed partial class PlayerPage
         PositionSeconds: _padSeekOrigin ?? SeekBar.DisplayedSeconds,
         ViewModel.DurationSeconds);
 
-    // Skip Intro (or Recap, Credits, Preview) and the next episode's card: A takes them rather than pausing.
+    // Skip Intro (or Recap, Credits, Preview) and the next episode's card: A takes them rather than pausing. They take focus
+    // as they appear (FocusPrompt), and focus on one of them counts as on the picture, as for the arrow keys.
     private bool HasPadPrompt =>
         !IsCompact && !ShowsNextUpScreen
         && ((ViewModel.HasSkipPrompt && ViewModel.SkipCommand.CanExecute(null)) || ViewModel.IsNextUpCardShown);
@@ -49,7 +51,12 @@ public sealed partial class PlayerPage
                 ShowControls();
                 break;
             case PadActionKind.TriggerPrompt:
-                if (!SkipsFromKey() && ViewModel.IsNextUpCardShown)
+                // The prompt's button that has focus, as Enter presses it; one that did not get focus, all the same.
+                if (FocusedPrompt() is { } prompt)
+                {
+                    PadControls.Press(prompt);
+                }
+                else if (!SkipsFromKey() && ViewModel.IsNextUpCardShown)
                 {
                     ViewModel.PlayNextNowCommand.Execute(null);
                 }

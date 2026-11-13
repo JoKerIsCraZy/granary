@@ -978,7 +978,7 @@ In the full player:
 
 | Pad | Does |
 |---|---|
-| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing. On a control: presses it. |
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
 | X | Plays or pauses, wherever focus is. |
 | B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
 | D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. On a control: move focus; on the seek bar, seek. |
@@ -1825,6 +1825,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+  A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
+  of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
+  or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
+  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. The other keys
+  go on as on the picture: Space plays and pauses, Left and Right skip, Up brings the controls. When the prompt goes,
+  focus is the picture's again (`PlayerPage.SkipPrompt.cs`).
 - **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
   its loading loop in the skip pill's corner: 32 px on a 44 px disc (black 45 %), 28 px off the corner, above the bar
   while the controls show and above the skip pill or the next episode's card, 12 px apart, when one shows; hidden in the
@@ -1900,7 +1906,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
   OK on the minimized bar's picture); while a skip pill shows, OK on hidden
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
-  away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
+  away, and with the controls shown OK presses the pill too, which has focus since it appeared (see "Skip pill"; before,
+  OK then went to Play/Pause); OK on the next episode's card plays it, Play Now having focus; in the mini view OK lands
+  on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
   Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the

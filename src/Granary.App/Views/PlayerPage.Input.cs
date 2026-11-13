@@ -97,7 +97,9 @@ public sealed partial class PlayerPage
             e.Handled = true;
             return;
         }
-        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible && !HasShownButtonFocus();
+        // The skip pill has focus from the moment it shows (FocusPrompt): OK on it is OK on the picture.
+        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible
+            && (!HasShownButtonFocus() || SkipButton.FocusState != FocusState.Unfocused);
         if (okOnHidden && SkipsFromKey())
         {
             e.Handled = true;
@@ -419,7 +421,7 @@ public sealed partial class PlayerPage
             return false;
         }
         _hideTimer.Stop();
-        Focus(FocusState.Programmatic);
+        RestFocus();
         SetControlsVisible(false);
         return true;
     }

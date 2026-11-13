@@ -211,13 +211,18 @@ public sealed partial class PlayerPage : Page
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
+                FocusPromptSoon();
+                break;
+            case nameof(PlayerViewModel.IsNextUpCardShown) when ViewModel.IsNextUpCardShown:
+                FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.Bar):
                 ShowBar();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt):
+            case nameof(PlayerViewModel.IsNextUpCardShown):
             case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
-                // A pill or the sync card that had the keyboard is gone.
+                // A pill, the next episode's card or the sync card that had the keyboard is gone.
                 KeepFocusInPage();
                 break;
         }
