@@ -6096,12 +6096,6 @@
       }
     }
   ],
-  "web.home.addRow.rules.whatCollectionShows": [
-    {
-      "type": 0,
-      "value": "コレクションに表示する内容"
-    }
-  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,

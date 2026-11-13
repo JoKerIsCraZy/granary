@@ -6701,12 +6701,6 @@
       }
     }
   ],
-  "web.home.addRow.rules.whatCollectionShows": [
-    {
-      "type": 0,
-      "value": "Contenu de la collection"
-    }
-  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,

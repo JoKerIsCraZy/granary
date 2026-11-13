@@ -6693,12 +6693,6 @@
       }
     }
   ],
-  "web.home.addRow.rules.whatCollectionShows": [
-    {
-      "type": 0,
-      "value": "O que a coleção mostra"
-    }
-  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,

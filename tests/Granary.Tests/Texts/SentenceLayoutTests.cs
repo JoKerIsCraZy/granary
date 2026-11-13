@@ -84,6 +84,46 @@ public sealed class SentenceLayoutTests
     }
 
     [Fact]
+    public void ASentencesSpokenName_IsItsWords_WithAMarkWhereABoxStands()
+    {
+        Assert.Equal("Show … from the …", SentenceLayout.Plan(English("from the"), Boxes).Spoken);
+    }
+
+    [Fact]
+    public void ASentencesSpokenName_KeepsPunctuationWithTheBoxBeforeIt()
+    {
+        IReadOnlyList<TextRun> runs = [new("", ["scope"]), new(", then ", ["w"]), new("", ["libraries"]), new(".", [])];
+
+        Assert.Equal("…, then ….", SentenceLayout.Plan(runs, Boxes).Spoken);
+    }
+
+    [Fact]
+    public void ASentencesSpokenName_HasABoxTheMessageLeavesOut_AtTheEnd()
+    {
+        IReadOnlyList<TextRun> runs = [new(" Show", ["w"]), new(" ", []), new("", ["libraries"])];
+
+        Assert.Equal("Show … …", SentenceLayout.Plan(runs, Boxes).Spoken);
+    }
+
+    [Fact]
+    public void ASentencesSpokenName_InALanguageWithoutSpaces_HasNone()
+    {
+        using var japanese = AppText.Use(TextLanguage.Load("ja"));
+
+        string spoken = SentenceLayout.Plan(AppText.Runs("web.home.addRow.rules.groupSentence"), ["join", "match"]).Spoken;
+
+        Assert.DoesNotContain(' ', spoken);
+        Assert.StartsWith("…", spoken, StringComparison.Ordinal);
+        Assert.Equal(2, spoken.Count(c => c == '…'));
+    }
+
+    [Fact]
+    public void NoSentence_SaysNothing()
+    {
+        Assert.Equal("", SentenceLayout.Plan([], []).Spoken);
+    }
+
+    [Fact]
     public void NothingChanges_WhenTheSentenceIsTheSame()
     {
         var keys = SentenceLayout.Plan(English(), Boxes).Pieces.Select(p => p.Key).ToList();

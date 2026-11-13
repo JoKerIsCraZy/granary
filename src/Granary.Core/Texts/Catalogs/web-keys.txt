@@ -1070,7 +1070,6 @@ web.home.addRow.rules.scopeVideo
 web.home.addRow.rules.sentenceAll
 web.home.addRow.rules.sentenceNamed
 web.home.addRow.rules.sentencePicked
-web.home.addRow.rules.whatCollectionShows
 
 # More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
 web.home.continueWatching.episodeLabelWithTitle

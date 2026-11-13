@@ -6467,12 +6467,6 @@
       }
     }
   ],
-  "web.home.addRow.rules.whatCollectionShows": [
-    {
-      "type": 0,
-      "value": "Was die Sammlung anzeigt"
-    }
-  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,

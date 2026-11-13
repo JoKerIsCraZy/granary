@@ -262,7 +262,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the version it was read at, merged when it changed elsewhere, with Use theirs / Keep mine for a field changed in both
   places. Leaving with something not saved asks "Discard unsaved changes?". A Smart collection has Rules instead of
   Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:" (its boxes
-  where the language's sentence puts them; the libraries box names one library, two as "Movies, Kids", or more as
+  where the language's sentence puts them, and a screen reader hears each line as a group named "Show … from …", then
+  its boxes; the libraries box names one library, two as "Movies, Kids", or more as
   "Movies +2 more", as the web's library picker), one line
   per rule (field, condition, and a value control that fits: text, number with its unit, a range, Yes/No, a list, a
   facet or person with suggestions, a date or "in the last 30 days"), later groups joined by "and" or "or", Add rule and

@@ -7448,12 +7448,6 @@
       }
     }
   ],
-  "web.home.addRow.rules.whatCollectionShows": [
-    {
-      "type": 0,
-      "value": "ما تعرضه المجموعة"
-    }
-  ],
   "web.home.continueWatching.episodeLabelWithTitle": [
     {
       "type": 0,

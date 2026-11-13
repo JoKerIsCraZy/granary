@@ -319,9 +319,11 @@
                                            AutomationProperties.HeadingLevel="Level2" />
                                 <TextBlock Text="{x:Bind t:AppText.Get('web.collections.copy.rulesCaption')}" Style="{StaticResource EditorHelpStyle}" FontSize="13.5" />
                             </StackPanel>
-                            <!-- "Show [kind] from [libraries]": the web's sentence, its boxes where the language puts them. -->
-                            <controls:SentencePanel Spacing="8" Runs="{x:Bind ViewModel.Rules.SentenceRuns, Mode=OneWay}" WordStyle="{StaticResource RuleWordStyle}"
-                                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.home.addRow.rules.whatCollectionShows')}">
+                            <!--
+                                "Show [kind] from [libraries]": the web's sentence, its boxes where the language puts them. A screen reader hears
+                                the sentence as the panel's name ("Show … from …"), where the web names the group "What the collection shows".
+                            -->
+                            <controls:SentencePanel Spacing="8" Runs="{x:Bind ViewModel.Rules.SentenceRuns, Mode=OneWay}" WordStyle="{StaticResource RuleWordStyle}">
                                 <ComboBox Tag="scope" ItemsSource="{x:Bind ViewModel.Rules.Scopes}" DisplayMemberPath="Label" SelectedItem="{x:Bind ViewModel.Rules.Scope, Mode=TwoWay}"
                                           MinHeight="36" CornerRadius="8" AutomationProperties.Name="{x:Bind t:AppText.Get('web.home.addRow.rules.kindOfTitles')}" />
                                 <DropDownButton Tag="libraries" Content="{x:Bind ViewModel.Rules.LibrariesText, Mode=OneWay}" MinHeight="36" CornerRadius="8"

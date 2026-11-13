@@ -13,6 +13,16 @@ public sealed record SentencePiece(string? Slot, string Text, bool SpaceBefore, 
 /// <summary>A sentence's pieces in order, and the boxes its message left out, which stand at its end.</summary>
 public sealed record SentencePlan(IReadOnlyList<SentencePiece> Pieces, IReadOnlyList<string> Missing)
 {
+    /// <summary>Where a box stands in <see cref="Spoken"/>.</summary>
+    public const string BoxMark = "…";
+
+    /// <summary>
+    /// The sentence as a screen reader hears it, as one name for all of it ("Show … from …"): its words, spaced as the
+    /// message spaces them, and <see cref="BoxMark"/> where a box stands, since each box says its own name and value.
+    /// </summary>
+    public string Spoken => string.Concat(Pieces.Select((piece, i) =>
+        (i > 0 && piece.SpaceBefore ? " " : "") + (piece.Slot is null ? piece.Text : BoxMark)));
+
     public bool Equals(SentencePlan? other) =>
         other is not null && Pieces.SequenceEqual(other.Pieces) && Missing.SequenceEqual(other.Missing, StringComparer.Ordinal);
 

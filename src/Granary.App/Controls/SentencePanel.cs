@@ -3,6 +3,8 @@ using Granary.Core.Texts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;
 
@@ -19,6 +21,11 @@ namespace Granary.App.Controls;
 /// touching where it has none (Japanese, or punctuation after a box). A new sentence changes only what differs
 /// (<see cref="SentenceLayout"/>): the boxes stay in the tree, so one with focus or an open menu keeps it, and the same
 /// sentence again changes nothing.
+/// </para>
+/// <para>
+/// A screen reader hears the panel as one group named by its sentence (<see cref="SentencePlan.Spoken"/>, "Show … from …";
+/// the panel sets its own name), then each box in the sentence's order, with its own name and value. The words are not
+/// in its tree, so it no longer stops at each one.
 /// </para>
 /// </summary>
 public partial class SentencePanel : Panel
@@ -78,6 +85,7 @@ public partial class SentencePanel : Panel
             return;
         }
         _plan = plan;
+        AutomationProperties.SetName(this, plan.Spoken);
         Report(plan.Missing);
         var wanted = plan.Pieces.Select(piece => piece.Key).ToList();
         foreach (var step in SentenceLayout.Steps(CurrentKeys(), wanted))
@@ -144,6 +152,8 @@ public partial class SentencePanel : Panel
             return known;
         }
         var word = new TextBlock { Text = piece.Text, Style = WordStyle, VerticalAlignment = VerticalAlignment.Center };
+        // The panel's name says the words, all at once.
+        AutomationProperties.SetAccessibilityView(word, AccessibilityView.Raw);
         _pieces[piece.Key] = word;
         _keys[word] = piece.Key;
         return word;
@@ -236,5 +246,17 @@ public partial class SentencePanel : Panel
             var size = Children[i].DesiredSize;
             Children[i].Arrange(new Rect(lefts[i], top + (lineHeight - size.Height) / 2, size.Width, size.Height));
         }
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new SentencePanelAutomationPeer(this);
+
+    // A group named by the sentence, whose children are its boxes in the sentence's order.
+    private sealed partial class SentencePanelAutomationPeer(SentencePanel owner) : FrameworkElementAutomationPeer(owner)
+    {
+        protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Group;
+
+        protected override string GetClassNameCore() => nameof(SentencePanel);
+
+        protected override bool IsControlElementCore() => true;
     }
 }

@@ -340,7 +340,9 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
   Japanese and Chinese, none before punctuation after a box), and works out the fewest changes from one sentence to the
   next: the panel moves a box only when a language puts it elsewhere, so a box keeps focus and an open menu its anchor,
   and it wraps the pieces like text. A line breaks only between pieces, never inside a word or a run without spaces,
-  such as the Japanese between two boxes; a box the message leaves out stands at the end. `TextList.And` lists names
+  such as the Japanese between two boxes; a box the message leaves out stands at the end. A screen reader hears the
+  panel as one group named by its sentence, with "…" where a box stands ("Show … from …", `SentencePlan.Spoken`), then
+  the boxes in that order, each with its own name and value; the words are left out of its tree. `TextList.And` lists names
   ("Maya, Leo and Sam") by Granary's list patterns, as the web's `joinNames` does with `Intl.ListFormat`; `AppText.Upper`
   writes a text in capitals by the language's rules where the web upper-cases it in CSS, as the sidebar's section names. The class is not called
   `Texts`: inside `Granary.Core` that name is the namespace. The process has one language, which the app applies (`AppText.Apply`); until then, and
