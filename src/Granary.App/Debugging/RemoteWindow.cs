@@ -32,6 +32,12 @@ internal sealed partial class RemoteWindow : Window
     private const int GwlExStyle = -20;
     private const long ExNoActivate = 0x08000000;
 
+    // What the keys take, in effective pixels: the widest row (a pad's four keys) and all the rows with three lines of
+    // the focus text, each with the padding around them. And how far the window keeps from the display's corner.
+    private const double KeysWidth = 304;
+    private const double KeysHeight = 824;
+    private const double EdgeGap = 20;
+
     private static readonly TimeSpan ActivationSettle = TimeSpan.FromMilliseconds(80);
 
     private static readonly TimeSpan PadPress = TimeSpan.FromMilliseconds(90);
@@ -56,9 +62,7 @@ internal sealed partial class RemoteWindow : Window
             presenter.IsMaximizable = false;
             presenter.IsResizable = false;
         }
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(300, 820));
-        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        AppWindow.Move(new Windows.Graphics.PointInt32(area.X + area.Width - 320, area.Y + area.Height - 840));
+        PlaceInCorner(hwnd);
         FocusManager.GotFocus += OnFocusMoved;
         Closed += (_, _) => FocusManager.GotFocus -= OnFocusMoved;
         main.Closed += (_, _) => Close();
@@ -66,6 +70,27 @@ internal sealed partial class RemoteWindow : Window
 
     /// <summary>Shows the remote without taking activation from the main window.</summary>
     public void Show() => AppWindow.Show(activateWindow: false);
+
+    // In the lower right corner of its display, as large as the keys are. AppWindow counts the display's own pixels and
+    // the keys are laid out in effective ones, so the size goes by the display's scale: at 150 % a window of a fixed
+    // 300 by 820 cut the controller's lower rows off. Never larger than the display's work area; there the keys scroll.
+    private void PlaceInCorner(nint hwnd)
+    {
+        double scale = GetDpiForWindow(hwnd) is var dpi and > 0 ? dpi / 96.0 : 1;
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+        AppWindow.ResizeClient(new Windows.Graphics.SizeInt32((int)Math.Ceiling(KeysWidth * scale), (int)Math.Ceiling(KeysHeight * scale)));
+        var size = AppWindow.Size;
+        int width = Math.Min(size.Width, area.Width);
+        int height = Math.Min(size.Height, area.Height);
+        if (width != size.Width || height != size.Height)
+        {
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+        }
+        int gap = (int)(EdgeGap * scale);
+        AppWindow.Move(new Windows.Graphics.PointInt32(
+            Math.Max(area.X, area.X + area.Width - width - gap),
+            Math.Max(area.Y, area.Y + area.Height - height - gap)));
+    }
 
     private Grid Build()
     {
@@ -100,7 +125,15 @@ internal sealed partial class RemoteWindow : Window
         root.Children.Add(Row(Pad("Hold A", "Pad hold A", new(PadButtons.A), PadLongHold), Pad("Hold ▶", "Pad hold Right", new(PadButtons.DPadRight), PadLongHold + PadLongHold)));
         AutomationProperties.SetAutomationId(_focus, "RemoteFocus");
         root.Children.Add(_focus);
-        return new Grid { Children = { root }, Background = (Brush)Application.Current.Resources["SiloBackgroundBrush"] };
+        // On a display too low for all the keys they scroll (PlaceInCorner).
+        var keys = new ScrollViewer
+        {
+            Content = root,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            IsTabStop = false,
+        };
+        return new Grid { Children = { keys }, Background = (Brush)Application.Current.Resources["SiloBackgroundBrush"] };
     }
 
     private static void Place(Grid grid, FrameworkElement element, int row, int column)
@@ -273,6 +306,9 @@ internal sealed partial class RemoteWindow : Window
 
     [LibraryImport("user32.dll", EntryPoint = "keybd_event")]
     private static partial void KeybdEvent(byte key, byte scan, uint flags, nuint extraInfo);
+
+    [LibraryImport("user32.dll")]
+    private static partial uint GetDpiForWindow(nint hwnd);
 
     [LibraryImport("user32.dll")]
     private static partial nint GetForegroundWindow();
