@@ -257,7 +257,12 @@
             <Border BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0" CornerRadius="{StaticResource SiloCardCornerRadius}" IsHitTestVisible="False" />
         </Grid>
 
-        <StackPanel x:Name="CaptionPanel" Grid.Row="1" Spacing="4" Padding="2,0">
+        <!--
+            The lines are links of their own for the pointer, as the web's (MediaCardView.Links.cs). The fill takes no colour:
+            with it the pointer is on the card between and beside the lines too, so the line under it is found from its place.
+            One brush for all cards.
+        -->
+        <StackPanel x:Name="CaptionPanel" Grid.Row="1" Spacing="4" Padding="2,0" Background="{StaticResource SiloHitAreaBrush}">
             <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" />
             <TextBlock x:Name="EpisodeTitleText" Style="{StaticResource SiloCaptionTextStyle}" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="SubtitleText" />

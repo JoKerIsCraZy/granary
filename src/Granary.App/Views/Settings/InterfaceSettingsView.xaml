@@ -400,6 +400,19 @@
             </StackPanel>
         </controls:SettingsGroup>
 
+        <!--
+            Granary's own: on Silo's web the administrator's activity indicator (ServerActivityButton) is always there.
+            Only for an administrator's account; kept for this profile on this PC (ActivityIndicatorSetting).
+        -->
+        <controls:SettingsGroup Title="Server activity" Visibility="{x:Bind ActivityIndicator.IsOffered, Mode=OneWay}"
+                                Description="What your Silo server is doing, for its administrators. Kept for this profile on this PC.">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Activity indicator"
+                                  Description="A button at the top right shows the streams, tasks, scans and downloads being prepared. Off, it never shows.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ActivityIndicator.IsShown, Mode=TwoWay}"
+                              AutomationProperties.Name="Activity indicator" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
             <Grid ColumnSpacing="48">

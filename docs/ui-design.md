@@ -83,6 +83,45 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered. A card
   drops its hover look as it leaves the screen, so a card that opened a title is not still hovered when you come back
   to the page; the pointer's next move over it shows the look again.
+  What a card shows under the pointer follows where the pointer is (`CardHover`), as on the web, whose overlay belongs to
+  the artwork's box (`group/media`) and whose links to the caption: over the artwork the hover look (the zoom, the play
+  disc, the card's buttons) and no underline; over the lines under it, or between them, only a link's underline and no
+  hover look. The 11 px between the artwork and the caption belong to neither (they are the button's, not the card's):
+  there the look is off and nothing is underlined, so the way from one to the other switches once and nothing blinks.
+  Focus by keyboard or remote, an open ⋮ menu and a request being sent show what they did before, and the hero that
+  follows the pointed card follows a card whose caption is pointed at too.
+  The lines under a card are links for the pointer, as on the web's cards (`hover:underline`): under the mouse a line is
+  underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click or tap on the
+  title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where the server
+  names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
+  **Lines that open the same page are underlined together** (`CardLinks.Underlined`), also while the pointer is between
+  two of them. This departs from the web, where each link is underlined alone; the owner asked for it, so a card shows
+  what one click reaches. On a movie's, a series', a box set's, a TMDB title's and a watchlist title's card that is every
+  link line at once; on an episode's card the title line alone (the series) and the lines under it together (the
+  episode), on a poster and on a wide card alike. Which lines are links is the card's (`MediaCard.Links`), by its web twin:
+  - A library title's poster (`ItemCard` in grids, search, a person's titles and a box set's films; `SectionItemCard` in
+    the rows of Home, a library and For You): the title, an episode's own title and the line under them (year,
+    "S04E01"). More Like This shows the same poster; the web's card there (`RecommendationGrid`) has the title only,
+    also a link.
+  - A Continue Watching or Next Up card (`ContinueWatchingCard`): the title, the episode's line and the time left or
+    "Next Episode". The pointer is on the last only as far as its text reaches (the web's `w-fit`), though it is
+    underlined with its group from the line above; the "NEW SEASON" pill is never part of it. A movie's year, a line
+    the web's card does not have, opens the movie as its other lines do.
+  - A box set's card (`BoxSetCard`), a title from TMDB on Requests and Discover (`RequestPosterCard`) and a watchlist
+    title (`WatchlistTitleCard`): the title and the line under it; a watchlist title's status is plain text.
+  - No links, as on the web, whose cards of these kinds underline nothing: a title page's seasons and episodes, More
+    Episodes, collections and the calendar. Nor on a card that opens nothing (a film's own card in its box set's row, a
+    TMDB title without a page), on the player's On Deck, where a click plays, and while a grid selects (History's
+    Select), where a click picks.
+  A line is a link over the whole width of the caption, as the web's block links. Underlining changes no size, so no
+  text moves. A card that is recycled, left by a click or shown again never keeps an underline or the hand: they go
+  when the pointer does, and the card then has no cursor of its own.
+  A click on a link is the click of the card's button, with its pressed look, its focus and "release elsewhere cancels":
+  the card only notes a press of the left button, a finger or a pen that begins on a title line that opens its series
+  (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
+  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
+  forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
+  the button or a game controller's A presses it, so Enter, a remote's Select and A always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
@@ -132,7 +171,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   archive by type, era, rating, or genre.", its panel "Filters are locked to this source.", and the cards as posters,
   Continue Watching too. No count: a section's total is only a lower bound.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
-  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. A card's ⋮ menu is the web's
+  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. The links under a card are for the mouse,
+  a pen and a finger only: for the keyboard, a remote and a screen reader the card stays one stop with one name, and
+  Enter opens the card itself. A card's ⋮ menu is the web's
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
   Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
@@ -450,10 +491,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (`BrowseHeroLayout.PlaceBackdrop`, `BackdropFocus`). Cut around its middle, the box took the heads of most
     backdrops. An `Image` can only be cut around its top, middle or bottom, so the picture's layers have the picture's
     own size and lie in a clipped `Canvas` (`BrowseHero.PlacePicture`).
-  - The compact hero's backdrop takes the right 65 % of the page, at most two and a half times the hero's height, and
-    fades into the page toward the text. The full hero's runs over its whole width, as the web's banner's, under the
-    web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`) and dimmed a tenth, as the web's
-    `brightness(0.9)`. The web's ambient glow and its faint vignette are left out.
+  - It runs over the hero's whole width at either size, as the web's banner's, from the sidebar's edge
+    (`BrowseHeroLayout.BackdropBoxWidth`), dimmed a tenth, as the web's `brightness(0.9)`. Compact is the lower hero, so
+    it shows less of the picture's height: on a 1920 × 1080 window (a page 1660 px wide) the picture is 1660 × 934 px,
+    of which Compact shows 440 px, from 99 px down, and Full 686 px. On a window much wider than 16:9 either hero shows
+    a strip of it (3580 × 643 px of 3580 × 2014 in Compact on a 3840 × 1600 screen, 3580 × 760 in Full), and a page
+    wider than 2560 px stretches the widest picture asked for (below). A page narrower than the hero's height needs at
+    16:9 cuts the picture's sides evenly (Compact's 440 px on a page under 783 px wide).
+  - Full lies under the web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`); Compact under its own
+    (the backdrop's point below). The web's ambient glow and its faint vignette are left out.
   - Home and For You ask the server for backdrops as wide as the hero draws them in the window
     (`BrowseHeroViewModel.Window`, `BrowseHeroLayout.BackdropDrawnWidth`, `ImageSizes.WithDrawnBackdrop`), as the web's
     `lib/artworkWidths.ts` does for its banner: 1280 px, as every page asks, looked soft over a wide hero. Every row
@@ -461,7 +507,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
     its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
     as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
-    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    that needs its backdrops over 15 % wider than they were asked for (a much wider window). The
     hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
     its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
@@ -475,9 +521,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
       Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,
       the rail and the pause button level beside them, and the text ends 28 px over the buttons (the web's `mb-7`).
-    - Everything else is Compact's on the same page: the logo, the type, the backdrop's share and fades, and the compact
-      header. The backdrop still covers the right 65 % of the page, so a window narrower than about 2.7 times the hero's
-      height cuts a 16:9 picture's sides (a 1440 × 900 window shows three quarters of its width).
+    - Everything else is Compact's on the same page: the logo, the type, the picture and how wide it is, and the compact
+      header.
     - Full folds into the same compact header over its longer way, the hero's height less the header's (536 px of
       scrolling on a 1080 px window's page). The text goes up with the rows themselves until it is where the header has
       it, and stays (`BrowseHeroLayout.TextLift`, from the text's height now); meanwhile the logo shrinks, the overview
@@ -506,13 +551,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       the web's line leaves out), its length and certificate, and neither rating nor genres, as on the web.
     - A title of Discover keeps its own line ("2026 · Movie · Pending").
     - A screen reader reads the line whole, "2006 · IMDb 8.4 · Drama · Crime · TV-PG".
-  - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
-    middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
-    wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
-    2560 × 1080 window, 1608 × 643 px on 3840 × 1600; a 1920 × 1080 window's box is just under the limit). A new
-    title's backdrop shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath
-    until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
-    where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
+  - The backdrop runs over the page's whole width, from the top to behind the first row (440 px), behind the text, and
+    fades into the page toward the rows over the lower 55 % of its height. The text hangs from the top, clear of the
+    bottom fade that Full's text stands in, so a side shade alone keeps it readable on a bright picture, and it is
+    measured on the text rather than on the hero's width (`BrowseHeroLayout.TextShadeWidth`, `TextShadeReach`): the
+    values of the web's `.hero-gradient-left`, 88 % of the page's colour at the left edge and 58 % where the text block
+    ends (688 px in), then 22 % and clear three eighths and three quarters of that further (clear from 1204 px), which
+    falls as gently as Full's on a 1080 px window. It is as wide on any page: the right quarter of a 1920 × 1080
+    window's picture is clear of it, and a page narrower than it is shaded to its right edge. A new title's backdrop
+    shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath until then; a
+    title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs where the box's
+    shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
     Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
   - Spoilers, as the web's `HeroBanner` ([episode spoilers](api-contract.md#663-episode-spoilers)): a banner slide of an
     episode neither played nor started shows its backdrop blurred while the profile hides unwatched episode images, when
@@ -772,8 +821,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
     standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
-    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
-    as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
+    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is as near its middle as it
+    can stand with a whole card at the row's start (`RowCentring`): a whole number of cards in, which is where the
+    row's arrows leave it too. Near the row's end, where that place lies past what the row scrolls, the view starts on
+    the last whole card it can while the page's card is whole in it; only for the row's very last cards does it go to
+    the row's end, where the card before the view is cut, as at the end of any row. Between two such places the card stands before the middle, so more
+    of the episodes after it show. The web's carousel scrolls the card to the very middle; that cut the card at the
+    row's start in two, and its buttons with it under the pointer. A new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
     the page it is on does.
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
     episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then
@@ -971,6 +1025,78 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     Windows' media session's and pauses that.
   - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
     is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
+
+## Game controller
+
+An Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is
+decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face
+button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
+Share or Create, **Menu** is Options, the bumpers are L1 and R1 and the triggers L2 and R2. The pad goes the way the
+remote's keys go, through the same code, so what the TV remote does at a page's edges, in the sidebar and on the way
+back holds for the pad too. Focus the pad moves shows its ring, as the keyboard's.
+
+On the pages, and in the minimized player's bar:
+
+| Pad | Does |
+|---|---|
+| D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
+| A | Presses what has focus, as OK. Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
+| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
+| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| Y | Search. |
+| Menu | The focused card's menu. |
+| View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
+| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again. |
+| Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
+| Right stick's click | Full screen on and off. |
+
+In the full player:
+
+| Pad | Does |
+|---|---|
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
+| X | Plays or pauses, wherever focus is. |
+| B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
+| D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
+| D-pad up and down | On the picture: the bar shows with focus on Play/Pause. On a control: move focus. The volume slider is passed by, as for a remote. |
+| LT, RT | Scrub back and forward while held, from 5 to 180 seconds a second by how far the trigger is pulled; the seek bar shows the target, and one seek is sent when the trigger is let go. The scrub stops at the title's start and at its end likewise. |
+| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. |
+| Right stick up and down | Volume by 5, again while held. |
+| Y | The audio menu when there is a track to choose, else the subtitles', else the playback settings (what Down opens for a remote). Pressed while a menu is open it closes that. |
+| Menu | The playback settings menu; likewise. |
+| View | The playback info, on and off. |
+| Left stick's click | Subtitles off and on. |
+| Right stick's click | Full screen on and off. |
+
+With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
+In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
+A seek being made when a menu opens (a trigger still pulled, or a step still waiting) is sent at once, to where the seek
+bar showed it. A that closes the player presses nothing on the page behind it, whether it is still held when the page
+shows or was let go just before.
+
+Always:
+
+- Only while Granary's window is in front. Behind another window the pad is not even read, so a game played with the same
+  pad never moves Granary. Coming back, a button still held is not a press.
+- A stick inside its dead zone is at rest (24 % of the left stick's way, 26.5 % of the right one's, 12 % of a trigger's)
+  and no activity: a stick that drifts moves nothing and does not keep the bar up. A stick is a direction from 70 % of
+  its way and until it falls under 50 %, on its stronger axis only; a trigger is pressed from half way and until it is
+  nearly let go.
+- A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
+  dropped rather than sent, a button it held presses nothing (a short A that ends with the pad is no press), a button
+  found down when a pad that could not be read is read again is no press either, and any pad that comes (back) works at
+  once. Several pads count as one.
+- Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
+- PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
+  or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. L2 and R2 count by how far they
+  are pulled, as an Xbox pad's triggers, though these pads also report them as buttons from the first bit of the way. A
+  tool that presents the pad to Windows as an Xbox pad works too, and the pad still counts once.
+
+Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
+pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
+seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
+order and Filters are menus, not a row to step through: A opens them.
 
 ## Signed-out screens
 
@@ -1190,7 +1316,7 @@ says why above the sections.
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
 - **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
-  `TitlePreviewSettingsViewModel` and `SidebarSettingsViewModel`, the web's
+  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel` and `SidebarSettingsViewModel`, the web's
   page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
@@ -1211,7 +1337,12 @@ says why above the sections.
   Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, and
   Hero size ("Compact shows the first row without scrolling. Full is as tall as on Silo's web."), Compact or Full as
   choice buttons, Compact by default; both saved on this PC at once and taken by each page the next time it shows
-  (Home's hero, above). Then Sidebar, with
+  (Home's hero, above). Then Server activity, only for an administrator's account (`Account.IsAdmin`, on a profile),
+  and Granary's own, as the web's indicator cannot be turned off (`ActivityIndicatorSettingsViewModel` on
+  `ActivityIndicatorSetting`): "What your Silo server is doing, for its administrators. Kept for this profile on this
+  PC.", with Activity indicator ("A button at the top right shows the streams, tasks, scans and downloads being
+  prepared. Off, it never shows."), on by default; the indicator follows it at once (Activity indicator, under Admin).
+  The group comes and goes with the account's role while the page is open. Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
@@ -1352,6 +1483,90 @@ stream's commands on Activity.
   5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
   route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
   when nothing shows.
+
+### Activity indicator
+
+For the acting administrator (whoever the server gives its administrator's channels, docs/api-contract.md 12.3), the
+web's `ServerActivity` (`components/ServerActivity.tsx`): `ServerActivityButton` on `ServerActivityViewModel`, placed
+by `MainWindow.Activity.cs`.
+
+- **The button.** A 36 px glass disc as the way back's, over the page at its top right (20 px from the edge, 12 px
+  down), with the web's pulse icon (lucide's Activity) in the accent while something is going on, muted otherwise. A
+  red count on its corner ("3", "99+" past 99) fades to half and back every two seconds, standing still while
+  Windows' animations are off (the setting is followed as it changes). The count is the web's: white, bold, 10 px on
+  its `bg-red-500`, which the web's Tailwind 4 draws as #FB2C36, about 3.8:1 as on the web. A red dot of the same red
+  at its foot once the events stream has had no connection for 4 s. Its name for a screen reader: "Server activity:
+  3 active", or "Server activity" when idle.
+- **Where it lies.** It floats: what scrolls up passes under it. A page whose own controls reach into its corner at
+  rest keeps them clear of it (`ActivityIndicatorPlace`: 20 px from the edge, 36 wide, 8 px of room): the
+  Notifications page's "Mark all read" and "Preferences" end where its room begins while it shows, in a window
+  whose column reaches that far (under 864 px of page). Nothing else does, by its markup: the admin area's pages
+  begin 40 px down with their first row's actions centred beside a two-line heading, the settings' pages 48 px down,
+  both below the button, and Home's banner has its arrows half way down and its counter at its foot.
+- **When it shows.** As the web: on the admin area's pages always; on every other page only while something is going
+  on, or while its panel is open. Also, without a count, while there may be scans nobody knows of (see Scans): with
+  none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over
+  the full player, which has the window to itself; over the pages while the
+  player is its bar. Not on the signed-out screens.
+- **Switched off** (Settings → Navigation & Cards → Server activity → Activity indicator; Granary's own, on by
+  default, kept on this PC for each server and profile in `activity-indicator.json`, `hidden_for`, as the title
+  preview's switch): the button shows nowhere, the admin area's pages included, so its panel cannot be opened; a
+  panel that is open closes with it. Nothing is followed for it meanwhile (docs/architecture.md, "Server
+  activity"). Switched on again it is back without a restart: in the admin area as soon as the server answered the
+  new connection, elsewhere while something is going on.
+- **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
+  "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
+  on it says "No active server activity". Otherwise a section each, a small uppercase title with its count beside it:
+  - **Streams**: a row per play method in use, a dot in the method's colour and "2 Direct Play", in the order Direct
+    Play, Remux, Direct Stream, Transcode, Unknown; "No active streams" without any. "View all ›" closes the panel and
+    opens Admin → Activity (in place when the admin area shows, else the area opens on it and Back returns).
+  - **Tasks**: a row per running scheduled task with the server's name for it. Once the task says how far it is,
+    "42%" (or "12.5%", never "100.0%" while it runs) at the right and a 6 px bar under the name; until then a spinner
+    and "Running" in the accent. "No running tasks" without any.
+  - **Scans**: a row per library scan that is queued or running: a spinner (running) or the scan icon (queued), the
+    library's name ("Library #3" while it is not known) with "Scanning…" or "Queued" at the right, under it "Full
+    library", "Subtree" or "Single file" and " · " with the path where there is one, and once the scan counts files
+    "Matching files · 1,200 / 4,800 (25%)" ("Processing files" when it does not say what it does). 25 rows at most,
+    in the stream's order, then "3 more scans queued" for every scan past them, whether it waits or runs, as on the
+    web. When the server's snapshot was full (500) there may be more scans than are known: the section's count and
+    the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity: at least 500
+    active", and the line "At least 475 more scans queued". That lasts until a snapshot that is not full, however
+    many of the known scans end (the web goes by the number it knows at the moment). The same when a connection's
+    snapshot could not be read, or did not come while scans of the last connection may still run: the scans are then
+    not known, and those the stream tells of since are the least there is. A snapshot that does not come with no
+    scan known to run says nothing, so a server that sends none does not keep the button up. Without any: "No active scans" when the stream said so; while it is away, "Connecting…"
+    or "Disconnected", since scans are known from the stream alone (the web says "No active scans" there too); and
+    while there may be more than are known, "Scans may be running" (Granary's own words, for a state the web does
+    not have). The big "No active server activity" waits for the scans to be known, all of them.
+  - **Preparing downloads** (only on a server that prepares offline downloads): its count is the jobs still to
+    finish, running, queued and waiting to retry; paused and failed ones do not count. A row for each of the first
+    three running jobs: the title ("Dark S01E03" for an episode, else the movie's title, else "File #48211"), "42%"
+    (rounded down) and a bar once its progress is known, a spinner with "Encoding" or "Remuxing" until then, and under
+    it "Transcode 1080p H.264 · gpu-1 · about 12 min left": what is made ("Remux", "Transcode", or "Transcode" with
+    the target when the video is encoded anew), the worker's name ("Node 3", "Node" or "Local server" without one)
+    and the time left at the current speed ("under 1 min left", "about 12 min left", "about 2 h left", "about 2 h 5
+    min left"), each part only when it is known. Under the rows, each line only when it has something to say: a
+    clock and "2 more running · 4 queued · 1 waiting to retry", a pause sign and "2 paused", a warning sign and, in
+    red, "1 failed in the last 24 hours". With none of it: "No downloads being prepared". A recent failure keeps the
+    sections showing where the panel would otherwise say "No active server activity", though it does not count.
+  A section whose list the server does not offer is left out; a hairline parts the sections that show.
+- **Keyboard and remote.** The button comes after the page in the tab order and is never a page's first focus. Up at
+  the page's top edge moves to it (a held key stops at the edge; from a row of tabs there too), Down or Left from it
+  back to where focus was on the page. Where the way back lies above, Up goes to that, as on a page without the
+  indicator, and Up from the way back goes on to the indicator (`ActivityIndicatorFocus` in Core). A button that goes
+  while it has focus (its last activity ended, or its panel closed on a page where it shows only while open) gives
+  focus back to the page first. Enter or Space opens the panel and moves into it, onto its first stop: "View all"
+  beside Streams, or the first row on a server without the streams' list. Up
+  and Down walk the link and the rows one by one in the order they are read and stop at the panel's ends, the scroller
+  following the focused row (the panel takes the two keys itself: left to the scroller they scrolled by lines, past
+  rows that never got focus). The rows are only read (`ReadingRow`: focus and one text for a screen reader, nothing
+  happens on OK): a row is one text for a screen reader, and its spinner and icons are not read by themselves (the
+  spinner is a `SilentProgressRing`: WinUI's own ring calls itself "Busy" and does not keep an accessibility view
+  it is given). A section's heading is read with its count ("Streams, 3"). Esc or the remote's Back closes the
+  panel, also while focus is still on the button, and focus is back on the button.
+- **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
+  scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
+  web shows too for a task it has no translation for).
 
 ## Full screen
 
@@ -1727,6 +1942,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+  A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
+  of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
+  or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
+  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. The other keys
+  go on as on the picture: Space plays and pauses, Left and Right skip, Up brings the controls. When the prompt goes,
+  focus is the picture's again (`PlayerPage.SkipPrompt.cs`).
 - **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
   its loading loop in the skip pill's corner: 32 px on a 44 px disc (black 45 %), 28 px off the corner, above the bar
   while the controls show and above the skip pill or the next episode's card, 12 px apart, when one shows; hidden in the
@@ -1765,25 +1986,49 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
   follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
-  still pointer as the window goes full screen or changes scale), any move of a finger or a pen, and when the player
-  closes, never with a key or the player's own changes, so a remote does not put it back over the picture; paused,
-  it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
+  still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
+  brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never
+  with a key or the player's own changes, so a remote does not put it back over the picture; paused by a key, it too
+  stays away until the mouse moves or clicks. A cursor the controls left showing because another window was under the
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
   250 ms while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
-  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
-  cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
-  the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
+  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, a look every 250 ms checks that Windows still draws the hidden one over the picture. A
-  tester's log showed Windows drawing its arrow there all the same, at once or after a while, with WinUI answering
-  `WM_SETCURSOR` with the arrow though the page's cursor was the blank one. So the look asks the window again, and when
-  the arrow stays, sets the blank cursor past WinUI (`SetCursor` with `BlankCursor.Handle`), which holds until the
-  mouse's next move. The log says what brought a hidden cursor back (how far the mouse moved and how
-  long it had lain still, or a finger or pen), how far the mouse went while the cursor showed (a hand goes hundreds of
-  pixels, a knock on the desk a few), and when Windows drew its arrow by itself.
+  WinUI does not keep a hidden cursor, though. Whenever Windows works the cursor out again without the mouse having
+  moved, as it does when any window changes, WinUI shows the arrow, and nothing an app sets shows until the mouse really
+  moves: not an element's cursor, not the window's (`InputPointerSource.Cursor`), not `SetCursor`, whether from a timer
+  or in answer to `WM_SETCURSOR` (microsoft-ui-xaml issue 11942; each of these was tried and measured here). A hidden
+  cursor came back that way by itself, a moment after the controls went or minutes into a pause. So while the cursor is
+  hidden in the full player, an invisible window of Granary's own lies over the picture (`CursorShield`, laid by
+  `PlayerPage.KeepShield`): a child of the main window, layered and without a surface, as WinUI's own input window over
+  the title bar is. Over it Windows asks Granary for the cursor each time (`WM_SETCURSOR`) and draws the blank one, also
+  under a mouse that lies still. It covers the page without the title bar's strip in a window, so the title bar, the
+  caption buttons and other windows keep their cursors, and it is taken away while a dialog, a menu or a flyout is
+  open (seen at the next look, every 250 ms): one inside the window would lie under it. It is made at the place it covers, and made anew
+  when that changes (the window's size or mode): Windows finds such a window under the pointer only where it was made.
+  While it is up the pointer is not WinUI's, so the page does what WinUI did with it:
+  - a move of the mouse or a pen is measured as any other, and a real one shows the cursor and the controls and takes
+    the shield away;
+  - a press of a mouse button shows the cursor and the controls too, whichever button, and the shield goes with its
+    release; only the left one clicks;
+  - a double click is told from its two clicks (`PlayerClicks`, within Windows' double-click time): the first shows the
+    cursor and takes the shield away, so WinUI sees only the second and reports a click;
+  - the click or tap goes to what WinUI had under the pointer as the press began, before the controls came up: the
+    picture, which plays, pauses or goes full screen as ever, or a button (the skip pill, the next episode's card),
+    which is pressed as a screen reader presses it; anything else gets no click, the viewer having aimed at what they
+    could not see;
+  - a finger or a pen always shows the cursor, so what it touches next is WinUI's again;
+  - the mouse's back button goes back.
+
+  Uncovered or laid elsewhere during a press, the shield stays for the release, or the click would be lost between the
+  two. The log says
+  when the shield is laid and gone, should Windows ever draw one of its own cursors over it (with the window under the
+  pointer), what brought a hidden cursor back (how far the mouse moved and how long it had lain still, or a finger or
+  pen) and how far the mouse went while the cursor showed.
+
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
@@ -1802,7 +2047,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
   OK on the minimized bar's picture); while a skip pill shows, OK on hidden
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
-  away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
+  away, and with the controls shown OK presses the pill too, which has focus since it appeared (see "Skip pill"; before,
+  OK then went to Play/Pause); OK on the next episode's card plays it, Play Now having focus; in the mini view OK lands
+  on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
   Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the

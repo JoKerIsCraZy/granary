@@ -1,6 +1,7 @@
 using Granary.App.Controls;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Player;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,6 +28,12 @@ public sealed partial class PlayerPage
     private DispatcherQueueTimer _clickTimer = null!;
     private bool _clickToggled;
 
+    // How far, in view pixels, the second click of a double click may be from the first.
+    private const double DoubleClickReach = 16;
+
+    // Tells a double click also when its first click went to the cursor's shield and only the second to WinUI.
+    private readonly PlayerClicks _clicks = new(TimeProvider.System);
+
     // Whether the viewer last pressed a key rather than a mouse button: focus given back to a button shows then.
     private bool _lastInputWasKey;
 
@@ -46,12 +53,16 @@ public sealed partial class PlayerPage
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
         PointerPressed += OnPagePointerPressed;
-        AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) =>
-        {
-            _lastInputWasKey = _movesThroughControls = false;
-            // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
-            _fullScreen.ForgetEscape();
-        }), handledEventsToo: true);
+        AddHandler(PointerPressedEvent, new PointerEventHandler((_, e) => PressedOnPage(e.Pointer.PointerDeviceType)), handledEventsToo: true);
+    }
+
+    // Any press on the page, seen by WinUI or by the cursor's shield (PlayerPage.Shield.cs).
+    private void PressedOnPage(PointerDeviceType device)
+    {
+        _lastInputWasKey = _movesThroughControls = false;
+        // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
+        _fullScreen.ForgetEscape();
+        ShowCursorForPress(device);
     }
 
     // A press on the picture, or anything else that does not take focus, would bubble up to the window's root
@@ -67,6 +78,9 @@ public sealed partial class PlayerPage
     }
 
     private void StopInput() => _clickTimer.Stop();
+
+    // The time Windows allows between the two clicks of a double click, as the viewer set it.
+    private static TimeSpan SystemDoubleClickTime() => TimeSpan.FromMilliseconds(GetDoubleClickTime());
 
     private void TogglePause()
     {
@@ -97,7 +111,9 @@ public sealed partial class PlayerPage
             e.Handled = true;
             return;
         }
-        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible && !HasShownButtonFocus();
+        // The skip pill has focus from the moment it shows (FocusPrompt): OK on it is OK on the picture.
+        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible
+            && (!HasShownButtonFocus() || SkipButton.FocusState != FocusState.Unfocused);
         if (okOnHidden && SkipsFromKey())
         {
             e.Handled = true;
@@ -199,38 +215,7 @@ public sealed partial class PlayerPage
                 ViewModel.ToggleSubtitles();
                 break;
             case VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back when !isRepeat:
-                // As on the web player, Esc first turns an intro pill away; the marker panel closes before the player. A
-                // remote's Back (Browser Back) and Backspace do as Esc does.
-                if (ViewModel.DismissSkipPrompt())
-                {
-                    // An Esc the pill took is not on the way out of the player.
-                    _fullScreen.ForgetEscape();
-                    break;
-                }
-                if (ViewModel.MarkerEditor.IsEditing)
-                {
-                    ViewModel.MarkerEditor.Cancel();
-                    _fullScreen.ForgetEscape();
-                    break;
-                }
-                // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
-                // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
-                // still opens in full screen when the next Esc leaves the player soon after (PlayerFullScreen). Marked
-                // after the change: WindowModeService raises Changed within SetFullScreen, and OnWindowModeChanged
-                // forgets an Esc, so marking first would be undone at once.
-                if (_modes.IsFullScreen && e.Key == VirtualKey.Escape)
-                {
-                    _modes.SetFullScreen(false);
-                    _fullScreen.EscapedFullScreen();
-                }
-                else if (_modes.IsMiniView)
-                {
-                    SetMiniView(false);
-                }
-                else
-                {
-                    CloseByKey(e.Key);
-                }
+                StepBack(e.Key);
                 break;
             case VirtualKey.Left when ViewModel.CanSeek:
                 ViewModel.SkipBackCommand.Execute(null);
@@ -261,6 +246,43 @@ public sealed partial class PlayerPage
                 return;
         }
         e.Handled = true;
+    }
+
+    // A back key the controls did not take (HidesControls), and a game controller's B. As on the web player, Esc first
+    // turns an intro pill away; the marker panel closes before the player. A remote's Back (Browser Back) and Backspace
+    // do as Esc does.
+    private void StepBack(VirtualKey key)
+    {
+        if (ViewModel.DismissSkipPrompt())
+        {
+            // An Esc the pill took is not on the way out of the player.
+            _fullScreen.ForgetEscape();
+            return;
+        }
+        if (ViewModel.MarkerEditor.IsEditing)
+        {
+            ViewModel.MarkerEditor.Cancel();
+            _fullScreen.ForgetEscape();
+            return;
+        }
+        // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
+        // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
+        // still opens in full screen when the next Esc leaves the player soon after (PlayerFullScreen). Marked
+        // after the change: WindowModeService raises Changed within SetFullScreen, and OnWindowModeChanged
+        // forgets an Esc, so marking first would be undone at once.
+        if (_modes.IsFullScreen && key == VirtualKey.Escape)
+        {
+            _modes.SetFullScreen(false);
+            _fullScreen.EscapedFullScreen();
+        }
+        else if (_modes.IsMiniView)
+        {
+            SetMiniView(false);
+        }
+        else
+        {
+            CloseByKey(key);
+        }
     }
 
     // OK while a skip pill shows and the controls are hidden does what the pill says (Skip Intro, Recap, Credits or
@@ -413,7 +435,7 @@ public sealed partial class PlayerPage
             return false;
         }
         _hideTimer.Stop();
-        Focus(FocusState.Programmatic);
+        RestFocus();
         SetControlsVisible(false);
         return true;
     }
@@ -463,12 +485,25 @@ public sealed partial class PlayerPage
     private bool HasOpenMenu() =>
         XamlRoot is { } root && VisualTreeHelper.GetOpenPopupsForXamlRoot(root).Any(popup => popup.Child is not ToolTip);
 
-    private void OnSurfaceTapped(object sender, TappedRoutedEventArgs e)
+    private void OnSurfaceTapped(object sender, TappedRoutedEventArgs e) => SurfaceTapped(e.PointerDeviceType);
+
+    private void OnSurfaceDoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => SurfaceDoubleTapped(e.PointerDeviceType);
+
+    // A click or a tap on the picture, from WinUI or from the cursor's shield while that lies over it.
+    private void SurfaceTapped(PointerDeviceType device)
     {
-        if (e.PointerDeviceType == PointerDeviceType.Touch)
+        if (device == PointerDeviceType.Touch)
         {
             // On touch a tap shows or hides the controls, as in the web player; the buttons play and pause.
             ToggleControls();
+            return;
+        }
+        // The second click of a double click that WinUI reports as a click of its own: it never saw the first, which went
+        // to the cursor's shield and took the shield away.
+        if (ScreenPointer() is { } at
+            && _clicks.IsSecond(at.X, at.Y, SystemDoubleClickTime(), DoubleClickReach * (XamlRoot?.RasterizationScale ?? 1)))
+        {
+            SurfaceDoubleTapped(device);
             return;
         }
         _clickToggled = false;
@@ -476,9 +511,10 @@ public sealed partial class PlayerPage
         _clickTimer.Start();
     }
 
-    private void OnSurfaceDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private void SurfaceDoubleTapped(PointerDeviceType device)
     {
-        if (e.PointerDeviceType == PointerDeviceType.Touch)
+        // Not a second time for one pair: WinUI may tell a double click the page already told from its two clicks.
+        if (device == PointerDeviceType.Touch || !_clicks.TakesDouble(SystemDoubleClickTime()))
         {
             return;
         }

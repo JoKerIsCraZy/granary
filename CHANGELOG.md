@@ -23,6 +23,24 @@ release's section is what its update says it changes (docs/release.md).
   watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
   with Retry.
+- **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
+  is A, Circle is B, Square is X and Triangle is Y. The D-pad or the left stick moves, A picks, B goes
+  back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the
+  bumpers switch tabs (also the pages of Settings, and Search between movies and series), the triggers page and the
+  right stick scrolls. In the player A or X plays and pauses, Left and
+  Right seek in steps that grow while you hold them, the triggers scrub, the bumpers jump chapters, the right stick sets
+  the volume, Y opens audio and subtitles, Menu the settings and View the playback info; A takes Skip Intro and the next
+  episode when they show. Granary listens to the pad only while its window is in front, and a pad that falls asleep
+  never stops what plays. Typing with the pad (the search box) is not there yet.
+- **Server activity:** an administrator sees a button at the top right of every page while something is going on on
+  the server, as on Silo's web, with the number of things on it. It opens a panel that counts the streams playing now
+  by play method and leads to Admin → Activity, and lists the scheduled tasks that run with their progress, the
+  library scans that run or wait, and the downloads being prepared with their progress and time left. In the admin
+  area the button is always there. It follows the server live and says so when the connection is away, and when it
+  cannot know every scan it says "at least" rather than a number that may be too small. With a keyboard or a TV
+  remote, Up at the top of a page reaches it, on a title's page by way of the Go back button. Settings → Navigation &
+  Cards → Server activity turns it off for a profile on this PC: it then shows nowhere, and Granary no longer follows
+  the server's activity for it.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.
@@ -35,13 +53,27 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- The lines under a card are links, as on Silo's web: the mouse underlines the line it is on, together with the other
+  lines that open the same page. On an episode's card the series' name opens the series, and the lines under it open the
+  episode, as the picture does.
+- A card's Play button and its other buttons show only while the pointer is on the picture, as on Silo's web, no longer
+  over the lines under it.
 - The details under the logo at the top of Home and For You name the title's IMDb rating (TMDB's without one) and its
   first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
   Player buttons, as F11 does.
+- Skip Intro (and Skip Recap, Credits and Preview) and the next episode's Play Now take focus when they appear, as on
+  Silo's TV app: Enter or a remote's OK presses them, also while the controls show, where OK went to Play/Pause before.
+  A button you are on, an open menu and a seek you are making keep focus.
+- With Hero size set to Compact, the picture at the top of Home, For You and Discover runs over the whole width too,
+  behind the title and its text, where it filled only the right part. It is darkened behind the text, which stays
+  readable on a bright picture. The hero is as low as before, so it shows less of the picture's height than Full.
 
 ### Fixed
 
+- An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
+  arrows, also for an episode near the season's end. They opened with the page's own card in the very middle, which cut
+  the card at the row's start in two.
 - The picture at the top of Home, For You and Discover shows its upper part, as on Silo's web, where it was cut around
   its middle and took the heads off many pictures. With Hero size set to Full it runs over the whole width, as on the
   web.
@@ -54,8 +86,9 @@ release's section is what its update says it changes (docs/release.md).
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
-  also when the mouse lies still. It no longer comes back by itself when the mouse did not move, nor stays when Windows
-  draws its arrow over the picture all the same.
+  also when the mouse lies still. It no longer comes back by itself, as it did a moment after the controls went or
+  minutes into a pause: it stays hidden over the picture until you move the mouse or click. A click shows it with the
+  controls, as a move does.
 - With a TV remote, the arrows in the player go past the volume slider again on a display scaled above 100 %, such as a
   TV at 150 %. There focus stopped on the slider, every arrow changed the volume, and the buttons beside it (audio,
   subtitles and the rest) were out of reach.

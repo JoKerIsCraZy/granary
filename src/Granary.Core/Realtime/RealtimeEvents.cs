@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -16,7 +17,10 @@ namespace Granary.Core.Realtime;
 /// (<see cref="ViewerStateChanges.ReportCatalog"/>), so a title's page leaves it be. Another device's progress counts at
 /// most once per <see cref="ProgressWindow"/>. A notification created or
 /// read, or the unread ones sent on subscribing, read the sidebar's count again. Another profile gets a connection of its
-/// own; signed out there is none.
+/// own; signed out there is none. An administrator account's connection also asks for the administrator's channels
+/// (<see cref="EventsChannels.Admin"/>), and all its frames go on to <see cref="ServerActivity"/>, which makes the
+/// activity indicator of them; not while the profile has the indicator switched off (<see cref="ActivityIndicatorSetting"/>):
+/// its connection then asks for what everyone's asks for, and the activity follows nothing.
 /// </summary>
 /// <remarks>
 /// The stream does not say which device made a change, so this app's own come back too. A change of the profile's state
@@ -48,6 +52,10 @@ public sealed class RealtimeEvents : IDisposable
 
     private static readonly string[] Channels = [EventsChannels.Catalog, EventsChannels.UserState, EventsChannels.Notifications];
 
+    // An account that is an administrator asks for these too. Whether this profile acts as one is the server's to say:
+    // it turns them down otherwise and keeps the connection.
+    private static readonly string[] AdminChannels = [.. Channels, .. EventsChannels.Admin];
+
     // Set while this class reports, so its own reports are not taken for the app's.
     [ThreadStatic]
     private static bool t_reporting;
@@ -58,9 +66,11 @@ public sealed class RealtimeEvents : IDisposable
     private readonly ViewerStateChanges _changes;
     private readonly PlaybackStops _stops;
     private readonly NotificationBadge _badge;
+    private readonly ServerActivity _activity;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<RealtimeEvents> _logger;
+    private readonly ActivityIndicatorSetting? _indicator;
     private readonly ITimer _settle;
     private readonly ITimer _progress;
     private readonly ITimer _count;
@@ -74,19 +84,24 @@ public sealed class RealtimeEvents : IDisposable
     private bool _settlingForViewer;
     private bool _progressPending;
     private DateTimeOffset? _appChangedAt;
+    // Since when the profile's connection is being replaced by one that asks for other channels; null once the new one
+    // subscribed.
+    private DateTimeOffset? _replacingSince;
     private int _handled;
 
     public RealtimeEvents(ISessionManager session, Func<EventsLane> lanes, ViewerStateChanges changes, PlaybackStops stops, NotificationBadge badge,
-        IUiDispatcher dispatcher, TimeProvider time, ILogger<RealtimeEvents> logger)
+        ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time, ILogger<RealtimeEvents> logger, ActivityIndicatorSetting? indicator = null)
     {
         _session = session;
         _lanes = lanes;
         _changes = changes;
         _stops = stops;
         _badge = badge;
+        _activity = activity;
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _indicator = indicator;
         _settle = time.CreateTimer(_ => OnSettled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _progress = time.CreateTimer(_ => OnProgressWindowClosed(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _count = time.CreateTimer(_ => OnNotificationsSettled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -107,6 +122,10 @@ public sealed class RealtimeEvents : IDisposable
             _started = true;
             _session.Changed += OnSessionChanged;
             _changes.Changed += OnAppChanged;
+            if (_indicator is not null)
+            {
+                _indicator.PropertyChanged += OnIndicatorChanged;
+            }
         }
         Follow();
     }
@@ -122,11 +141,16 @@ public sealed class RealtimeEvents : IDisposable
                 _started = false;
                 _session.Changed -= OnSessionChanged;
                 _changes.Changed -= OnAppChanged;
+                if (_indicator is not null)
+                {
+                    _indicator.PropertyChanged -= OnIndicatorChanged;
+                }
             }
             lane = _lane;
             _lane = null;
             _following = null;
             ClearPendingLocked();
+            _activity.Follow(null);
         }
         if (lane is not null)
         {
@@ -142,14 +166,18 @@ public sealed class RealtimeEvents : IDisposable
         _count.Dispose();
     }
 
-    /// <summary>What <paramref name="frame"/>, sent for <paramref name="profileId"/>, means for the app.</summary>
-    internal void Handle(EventsFrame frame, string profileId)
+    /// <summary>
+    /// What <paramref name="frame"/>, sent for <paramref name="profileId"/>, means for the app. A frame of a lane
+    /// (<paramref name="from"/>) counts only while that lane is the one followed: a replaced one may still hand on a last
+    /// frame, and its "subscribed" would be taken for the new connection's start.
+    /// </summary>
+    internal void Handle(EventsFrame frame, string profileId, EventsLane? from = null)
     {
         try
         {
             lock (_gate)
             {
-                if (_following?.ProfileId == profileId)
+                if (_following?.ProfileId == profileId && (from is null || ReferenceEquals(_lane, from)))
                 {
                     HandleLocked(frame, profileId);
                 }
@@ -165,8 +193,8 @@ public sealed class RealtimeEvents : IDisposable
     {
         switch (frame.Type)
         {
-            case EventsFrameTypes.Subscribed when frame.Gap > CatchUpAfter:
-                SettleLocked(forOthers: true, forViewer: true);
+            case EventsFrameTypes.Subscribed:
+                SubscribedLocked(frame);
                 break;
             case EventsFrameTypes.AccessChanged:
                 SettleLocked(forOthers: true, forViewer: false);
@@ -183,6 +211,18 @@ public sealed class RealtimeEvents : IDisposable
             case EventsFrameTypes.Event when frame.Channel == EventsChannels.UserState && frame.Event == UserStateChanged:
                 HandleUserStateLocked(frame, profileId);
                 break;
+        }
+    }
+
+    // A lane's first connection knows of no gap before it. One that replaced the same profile's connection has the time
+    // since: what the server sent meanwhile was sent to nobody.
+    private void SubscribedLocked(EventsFrame frame)
+    {
+        var gap = frame.Gap ?? _time.GetUtcNow() - _replacingSince;
+        _replacingSince = null;
+        if (gap > CatchUpAfter)
+        {
+            SettleLocked(forOthers: true, forViewer: true);
         }
     }
 
@@ -209,6 +249,15 @@ public sealed class RealtimeEvents : IDisposable
 
     private void OnSessionChanged(object? sender, EventArgs e) => Follow();
 
+    // The indicator switched on or off in Settings: the connection asks for other channels.
+    private void OnIndicatorChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ActivityIndicatorSetting.IsShown))
+        {
+            Follow();
+        }
+    }
+
     // The app reported a change of its own: what the stream says of the profile's state for a moment is its echo, and a
     // reload waiting only for such news has just happened.
     private void OnAppChanged(object? sender, EventArgs e)
@@ -231,8 +280,9 @@ public sealed class RealtimeEvents : IDisposable
         }
     }
 
-    // Account updates raise the session's change too: only another server or profile (or none) changes the connection.
-    // The lane is replaced and started under the lock, so racing changes leave exactly one; it starts off this thread.
+    // Account updates raise the session's change too: only another server or profile (or none), or other channels to ask
+    // for, changes the connection. The lane is replaced and started under the lock, so racing changes leave exactly one;
+    // it starts off this thread.
     private void Follow()
     {
         EventsLane? previous;
@@ -243,7 +293,8 @@ public sealed class RealtimeEvents : IDisposable
                 return;
             }
             var following = _session is { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { Length: > 0 } profileId }
-                ? new Following(server.Id, profileId, server.BaseUri)
+                ? new Following(server.Id, profileId, server.BaseUri,
+                    _session.Account?.IsAdmin == true && _indicator?.IsShownFor(server.Id, profileId) != false)
                 : null;
             if (following == _following)
             {
@@ -251,21 +302,31 @@ public sealed class RealtimeEvents : IDisposable
             }
             previous = _lane;
             _lane = null;
+            // The same profile on the same server, only with other channels to ask for (the indicator switched, the
+            // account made or unmade an administrator): what waits to be reported still counts.
+            bool isSameViewer = following is not null && _following is not null
+                && following with { FollowsActivity = _following.FollowsActivity } == _following;
             _following = following;
-            ClearPendingLocked();
+            if (isSameViewer)
+            {
+                _replacingSince ??= _time.GetUtcNow();
+            }
+            else
+            {
+                ClearPendingLocked();
+            }
+            // The activity starts over on the same change the lane is replaced on, and drops what the old one still sends.
+            long feed = _activity.Follow(following is { FollowsActivity: true } ? following.BaseUri : null);
             if (following is not null)
             {
                 var next = _lanes();
                 _lane = next;
                 _logger.LogInformation("Following the server's events for the profile");
-                next.Follow(following.BaseUri, Channels, frame =>
+                next.Follow(following.BaseUri, following.FollowsActivity ? AdminChannels : Channels, frame =>
                 {
-                    // A lane that was replaced may still hand on a last frame.
-                    if (ReferenceEquals(Volatile.Read(ref _lane), next))
-                    {
-                        Handle(frame, following.ProfileId);
-                    }
-                });
+                    _activity.Handle(feed, frame);
+                    Handle(frame, following.ProfileId, next);
+                }, connection => _activity.Connection(feed, connection));
             }
         }
         if (previous is not null)
@@ -303,6 +364,7 @@ public sealed class RealtimeEvents : IDisposable
         _settlingForViewer = false;
         _progressPending = false;
         _appChangedAt = null;
+        _replacingSince = null;
         _settle.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _progress.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _count.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -388,5 +450,7 @@ public sealed class RealtimeEvents : IDisposable
         }
     }
 
-    private sealed record Following(string ServerId, string ProfileId, Uri BaseUri);
+    // An account made or unmade an administrator, or a profile that switched its indicator, is another following: its
+    // connection asks for other channels.
+    private sealed record Following(string ServerId, string ProfileId, Uri BaseUri, bool FollowsActivity);
 }

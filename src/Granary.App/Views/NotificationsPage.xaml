@@ -111,7 +111,8 @@
                     <TextBlock Text="Notifications" FontSize="24" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <!-- Kept clear of the administrator's activity indicator, which floats over the page's top right corner (KeepActionsClear). -->
+                <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.MarkAllReadCommand}"
                             Visibility="{x:Bind ViewModel.ShowsMarkAllRead, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
