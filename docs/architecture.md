@@ -336,9 +336,13 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
   `AppText.Get('key', 'name', ViewModel.Value)` (x:Bind tells overloads apart only by their number of arguments); in C#
   `AppText.Get(key, ("count", n), …)` and `AppText.Runs(…)`, which keeps an empty tag (`<match></match>`) as an empty
   run where the web puts a control, so `SentencePanel` (Granary.App) can place boxes where a language's sentence has
-  them; `TextList.And` lists names ("Maya, Leo and Sam") by Granary's list patterns, as the web's `joinNames` does with
-  `Intl.ListFormat`; `AppText.Upper` writes a text in capitals by the
-  language's rules where the web upper-cases it in CSS, as the sidebar's section names. The class is not called
+  them. `SentenceLayout` cuts such a sentence into words and boxes, with a gap only where the message has space (none in
+  Japanese and Chinese, none before punctuation after a box), and works out the fewest changes from one sentence to the
+  next: the panel moves a box only when a language puts it elsewhere, so a box keeps focus and an open menu its anchor,
+  and it wraps the pieces like text. A line breaks only between pieces, never inside a word or a run without spaces,
+  such as the Japanese between two boxes; a box the message leaves out stands at the end. `TextList.And` lists names
+  ("Maya, Leo and Sam") by Granary's list patterns, as the web's `joinNames` does with `Intl.ListFormat`; `AppText.Upper`
+  writes a text in capitals by the language's rules where the web upper-cases it in CSS, as the sidebar's section names. The class is not called
   `Texts`: inside `Granary.Core` that name is the namespace. The process has one language, which the app applies (`AppText.Apply`); until then, and
   in tests, it is English. A test that needs another language calls `AppText.Use(language)`, which holds for its own
   async flow only, so the tests xUnit runs beside it keep English; `AppTextTests` keeps `AppText.Apply` out of
