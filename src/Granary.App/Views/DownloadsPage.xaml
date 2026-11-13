@@ -4,7 +4,8 @@
     (PersonalListPage), in the apps' words. The space they use and the space left; then the films, and each series with its
     poster by season, a row per download: its artwork, title, status and size, a bar while it comes, one Pause, Resume or
     Retry button, or Play once it is whole, and Delete. Above them, while the profile has watched downloads and does not keep
-    them, the Android app's Reclaim Watched. The page is cached and follows the downloads only while it shows.
+    them, the Android app's Reclaim Watched; and, after a start that could not reach the server, a note that says so, with
+    Retry. The page is cached and follows the downloads only while it shows.
 -->
 <Page
     x:Class="Granary.App.Views.DownloadsPage"
@@ -39,6 +40,24 @@
                 <TextBlock Text="{x:Bind ViewModel.SpaceText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" />
             </StackPanel>
+
+            <!--
+                Granary started without its server and opened this page instead of Home (Core's OfflineStart). Retry asks the
+                server again and opens Home once it answers; the button stays enabled while it asks, so the focus stays on it,
+                and a ring in it says that it asks. Collapsed with the note: a closed bar would still take the list's spacing.
+            -->
+            <InfoBar IsOpen="{x:Bind ViewModel.ShowsOfflineNote, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowsOfflineNote, Mode=OneWay}"
+                     Severity="Informational" IsClosable="False" Message="{x:Bind OfflineNote}">
+                <InfoBar.ActionButton>
+                    <Button Command="{x:Bind ViewModel.RetryConnectionCommand}" AutomationProperties.Name="Retry">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsRetrying, Mode=OneWay}"
+                                          Visibility="{x:Bind ViewModel.IsRetrying, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="Retry" />
+                        </StackPanel>
+                    </Button>
+                </InfoBar.ActionButton>
+            </InfoBar>
 
             <!--
                 Watched downloads can go: the Android app's button, by its name (DownloadsViewModel.ReclaimTitle). It asks

@@ -22,7 +22,17 @@ internal sealed class FakeSessionManager : ISessionManager
 
     public event EventHandler? Changed;
 
-    public Task InitializeAsync(CancellationToken cancellationToken = default) => Record("initialize");
+    /// <summary>
+    /// When set, runs while the session is restored: the real one says where it stands (<see cref="Changed"/>) before
+    /// <see cref="InitializeAsync"/> returns.
+    /// </summary>
+    public Action? Restoring { get; set; }
+
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        Restoring?.Invoke();
+        return Record("initialize");
+    }
 
     public Task ActivateServerAsync(string serverEntryId, CancellationToken cancellationToken = default) =>
         Record($"activate:{serverEntryId}");

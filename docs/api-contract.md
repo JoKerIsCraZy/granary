@@ -2810,6 +2810,10 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`. The download
   queue reads it again whenever a profile's downloads become the active ones: `revoked_removes_local` lets a revoked
   download's files go (14.6); a read that fails leaves it off. `proxy_delivery` is not used: see `/file-proxy` in 14.4.
+  A start of a profile that has downloads on this PC also asks it first, within 5 s, to find out whether the server is
+  there at all (`OfflineStart`, docs/architecture.md "Offline start"): no connection, no answer in time, an answer that
+  is not a Silo server's, and 502, 503 or 504 open the Downloads page instead of Home; any other answer, also a
+  refusal, is a server that is there. The answer itself is not used.
 
 ### 14.2 Create
 

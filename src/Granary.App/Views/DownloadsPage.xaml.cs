@@ -38,6 +38,8 @@ public sealed partial class DownloadsPage : Page
 
     public string EmptyText => DownloadsViewModel.EmptyText;
 
+    public string OfflineNote => DownloadsViewModel.OfflineNote;
+
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);

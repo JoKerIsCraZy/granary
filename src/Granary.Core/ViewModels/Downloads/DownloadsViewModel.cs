@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,7 +29,9 @@ public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewMo
 /// goes or finishes; a read that fails or takes longer than <see cref="DiskSpaceReads.Timeout"/> leaves it unknown, and the
 /// top then says only the space used. Above the list it offers to delete the watched downloads to free up space, as both
 /// apps do, in the Android app's words throughout (its Reclaim Watched button, the dialog of that name, its question and
-/// its Reclaim), unless Settings → Downloads keeps watched downloads; nothing is deleted without the question.
+/// its Reclaim), unless Settings → Downloads keeps watched downloads; nothing is deleted without the question. After a
+/// start that could not reach the server it says so above the list, with a Retry that opens Home once the server answers
+/// (<see cref="OfflineStart"/>).
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -42,6 +45,9 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     /// <summary>The question's yes (Android's <c>downloads_reclaim_confirm</c>).</summary>
     public const string ReclaimAction = "Reclaim";
 
+    /// <summary>What the page says after a start without the server, beside its Retry.</summary>
+    public const string OfflineNote = "Can't reach your Silo server. Downloads on this PC still play.";
+
     private static readonly StringComparer TitleOrder = StringComparer.CurrentCultureIgnoreCase;
 
     private readonly DownloadManager _downloads;
@@ -52,6 +58,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadsViewModel> _logger;
+    private readonly OfflineStart? _offline;
 
     // What arrived since the last refresh: a change of any kind, or only transfers that went further, by download.
     private readonly Lock _gate = new();
@@ -73,7 +80,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private string? _spaceFolder;
 
     public DownloadsViewModel(DownloadManager downloads, IDiskSpace disk, IDownloadPreferences preferences, INavigationService navigation,
-        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger)
+        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger, OfflineStart? offline = null)
     {
         _downloads = downloads;
         _disk = disk;
@@ -83,6 +90,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _offline = offline;
     }
 
     /// <summary>"12.0 GB used · 200.0 GB free"; only the space used while the free space is not known.</summary>
@@ -103,6 +111,17 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ReclaimCommand))]
     public partial bool ShowsReclaim { get; private set; }
+
+    /// <summary>
+    /// Granary started without its server and has not reached it since: the page says so (<see cref="OfflineNote"/>) and
+    /// offers <see cref="RetryConnectionCommand"/>.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool ShowsOfflineNote { get; private set; }
+
+    /// <summary>A Retry is asking the server.</summary>
+    [ObservableProperty]
+    public partial bool IsRetrying { get; private set; }
 
     /// <summary>The last read of the free space; done once <see cref="SpaceText"/> shows it.</summary>
     public Task SpaceRead { get; private set; } = Task.CompletedTask;
@@ -125,6 +144,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _downloads.Changed += OnChanged;
         // Keep watched downloads, switched in Settings while the page stays in memory, shows at once.
         _preferences.Changed += OnChanged;
+        if (_offline is not null)
+        {
+            _offline.PropertyChanged += OnOfflineChanged;
+        }
+        ShowOffline();
         Show(readSpace: true);
         // A media file deleted by hand since the last look: its row says "Missing file" once the disk was read.
         _downloads.LookAtFiles();
@@ -152,6 +176,43 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Asks the server again after a start without it, and opens Home once it answers, as the sidebar's Home does: a
+    /// download that plays in the minimized player plays on, which a new start (<see cref="INavigationService.ResetTo"/>)
+    /// would close. It stays executable while it asks, so the button keeps the focus; a second press asks nothing more.
+    /// An answer that comes after the page was left moves the viewer nowhere.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task RetryConnectionAsync()
+    {
+        if (_offline is null || IsRetrying)
+        {
+            return;
+        }
+        IsRetrying = true;
+        bool reachable = false;
+        try
+        {
+            reachable = await _offline.RetryAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // A command's failure would end the app: the note stays, and Retry can be pressed again.
+            _logger.LogWarning("The server could not be asked again ({Failure})", ex.GetType().Name);
+        }
+        await _dispatcher.ResumeOnUi();
+        IsRetrying = false;
+        bool shows;
+        lock (_gate)
+        {
+            shows = _attached;
+        }
+        if (reachable && shows)
+        {
+            _navigation.ShowSection(AppRoute.Home);
+        }
+    }
+
     /// <summary>The page was left: it stops following the downloads, which hold it no longer.</summary>
     public void Detach()
     {
@@ -161,7 +222,16 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
         _downloads.Changed -= OnChanged;
         _preferences.Changed -= OnChanged;
+        if (_offline is not null)
+        {
+            _offline.PropertyChanged -= OnOfflineChanged;
+        }
     }
+
+    // Any thread: a Retry's answer, or the session leaving the server or profile the start was for.
+    private void OnOfflineChanged(object? sender, PropertyChangedEventArgs e) => _dispatcher.Post(ShowOffline);
+
+    private void ShowOffline() => ShowsOfflineNote = _offline?.IsOffline == true;
 
     public void Dispose() => Detach();
 

@@ -21,6 +21,8 @@ release's section is what its update says it changes (docs/release.md).
   one whose file was deleted outside Granary, and Reclaim
   Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
   watched downloads is on.
+- **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
+  with Retry.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.

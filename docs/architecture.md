@@ -795,7 +795,8 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
   through their `Changed` events. A sign-out caused by the handler therefore reaches the UI on the same
   path as one the user started.
 - `ShellViewModel` navigates on state changes. Pages change the session; they do not navigate after
-  sign-in themselves.
+  sign-in themselves. A start that cannot reach the server opens the remembered profile's downloads instead of Home
+  (Downloads, "Offline start").
 
 ## Trailers
 
@@ -1748,6 +1749,47 @@ device.
   everything or there was nothing to send. A play still open then records
   nothing more (`DownloadStore.IsClearedSince`). A sign-in that expired keeps them, as it keeps the downloads, and they
   go once the account is signed in again.
+
+### Offline start
+
+The session is restored from this PC alone, so a start is `Ready` with the remembered profile whether the server is
+there or not, and Home then shows its "Couldn't reach the server". When that profile has downloads on this PC, the start
+asks first and opens the Downloads page instead, as Silo's Android app opens its downloads. That is all of Granary's
+offline mode: no app-wide offline state, no banner on other pages, and nothing switches back by itself.
+
+- **When.** `ShellViewModel.StartAsync` asks `OfflineStart.CheckAtStartAsync` once, after the session is restored and
+  only without a start route of its own (`--play`, `--play-item`). It answers no at once unless the session is `Ready`
+  with an account and a profile (`DownloadScope.Of`): without a remembered profile Granary cannot know whose downloads
+  to show, and the picker comes as ever. Then the store is read (`DownloadStore.LoadAsync`), and without a download of
+  that server, account and profile the answer is no, with nothing asked of the server: a start without downloads costs
+  no request and waits for none. Another profile's downloads do not count.
+- **The question.** `GET /api/v2/capabilities/downloads` as that profile, the call the downloads make anyway, within
+  `OfflineStart.Budget` (5 s; the request is cancelled when it runs out). Not reachable: a transport error
+  (`HttpRequestException`, which is also an answer that is no Silo server's, as a network's sign-in page gives), no
+  answer within the budget, and 502, 503 or 504, which a reverse proxy or a tunnel says in the server's place. Any
+  other answer is a server that is there, also 401, 403, 429 and 500: Home opens and says what the server said.
+- **Reading the downloads.** The store's load also looks into the downloads folder, which can be a drive that sleeps
+  or a share that does not answer, so it gets the same budget; when it runs out, or the load fails, Granary starts as
+  without downloads. The check never throws: whatever goes wrong in it is logged by its kind and Home opens.
+- **Routing.** While the check runs, the shell holds its routing (`_holdsRoute`): the session says where it stands
+  while it is restored, and that would open Home under the start screen ahead of the downloads. Offline, the shell
+  shows the navigation (`IsSignedIn`), remembers the state as routed and resets to `AppRoute.Downloads`, so an account
+  update that follows moves nobody; any other state change routes as ever. The start screen stays up while the check
+  runs (docs/ui-design.md, the mark); only a store and a server that both use their whole budget outlast its 6 s.
+- **The note.** `OfflineStart.IsOffline` holds from then until a `RetryAsync` reaches the server, or the session leaves
+  the server, account or profile the start was for (a sign-out, another profile, another server): it follows
+  `ISessionManager.Changed` only while it is set. `DownloadsViewModel` shows it as `ShowsOfflineNote` between `Attach`
+  and `Detach`, passing changes on through `IUiDispatcher`, since they come on any thread; it lets go of the
+  `OfflineStart`, which lives as long as the app, when the page is left (`OfflineStartTests`).
+- **Retry.** `RetryConnectionCommand` asks the same question again. Reachable, and the page still shown: Home opens
+  with `INavigationService.ShowSection`, as the sidebar's Home does, not with a reset, which is a new start and would
+  close a download playing in the minimized player. An answer that comes after the page was left moves nobody; the note
+  is gone all the same. The command stays executable while it asks (`IsRetrying` guards a second press), so the button
+  is not disabled under the focus.
+- **Not done.** The server coming back is noticed only by Retry: the note stays while the viewer browses pages that
+  load again. Losing the server while Granary runs moves nobody and shows no note; the pages' own errors say it.
+- **The sidebar's entry.** `DownloadsFeature.IsOffered` is set from the downloads on this PC before the capability is
+  read ("Starting and deleting"), so Downloads is in the sidebar as its page opens.
 
 ## Windows App SDK
 
