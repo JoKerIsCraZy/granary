@@ -403,12 +403,19 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 - A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
   text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
   caption while it shows; a recycled card without one shows the plain caption again.
-- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element and no handler to a
-  card: the caption has a fill without colour (one brush for all cards), so the card's own pointer handlers hear the
-  pointer there, and the line under it is found from its place among the text blocks. Core decides which lines to
-  underline and what a title line opens; the card sets `TextDecorations` on the lines that change and takes one of two
-  shared cursors. Only a card a pointer has come to while its title opens a series listens for presses and taps: it
-  handles the press on that line, so the button around it does not click, and opens the series on the tap.
+- The links under a card (`MediaCard.Links`, `CardLinks`, `MediaCardView.Links.cs`) add no element to a card, and no
+  handler to a card no pointer has come to: the caption has a fill without colour (one brush for all cards), so the
+  pointer handlers every card already has hear the pointer there. Each move reads the pointer's place once: above the
+  caption it is on the artwork and nothing more is looked up; on the caption the line under it is found among the text
+  blocks. Core decides what shows where (`CardHover`: the artwork's look or a link, never both), which lines go
+  underlined together and what a title line opens; the card sets `TextDecorations` on the lines that change and, only
+  while the pointer is on it, one of two shared cursors.
+- A click on a card's title line stays the button's click. A card whose title opens a series gets, the first time a
+  pointer comes to its caption, one handler for its own presses and two on the button around it (a key on its way
+  there, the pointer's capture lost), and a `HeadingPress` that notes a press beginning on that line. When the button
+  clicks, the row or grid asks the card first (`TryOpenHeading`, then `CardClick`, both rules in Core). Nothing is
+  marked handled and no gesture event is waited for, so the click cannot be lost: the first version handled the press
+  and opened the series on `Tapped`, which rested on WinUI still raising `Tapped` after a handled press.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the
@@ -417,8 +424,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
   the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
   shown again only makes its bitmap. Home's hero and banner take the same path for a hidden backdrop
-  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,100 px backdrop
-  is blurred by 2.8 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
+  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,660 px backdrop
+  is blurred by 1.9 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
   the thumbhash as a sharp backdrop would; a wider window does not make it again (`BrowseHeroLayout.StepFor`). The hero
   takes a title whose blur changed as a new picture, so a switch fades the backdrop over while the logo stays; a picture
   that becomes hidden is let go at once rather than faded over. Until the profile's switches are read
@@ -1052,7 +1059,9 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
 
 - **`RealtimeEvents`** (Core) holds the one events connection. For an account whose role is `admin` it wants the
   administrator's channels too (the lane asks for those the server's `hello` offers) and hands every frame, and the connection's state (`EventsConnection`: connecting, live,
-  disconnected), on to `ServerActivity`. The lane takes frames up to 1 MiB whole and cuts a larger one to its head
+  disconnected), on to `ServerActivity`. Not for a profile that switched its indicator off (`ActivityIndicatorSetting`,
+  below): that is a following without the activity, as an account that is no administrator is. The lane takes frames
+  up to 1 MiB whole and cuts a larger one to its head
   (`EventsFrame.IsCut`), so a `sessions` frame with every running stream never costs the connection Home and the
   notification count live on (docs/api-contract.md, 12). A frame that is only a cue to read a list again (every
   `sessions` and `tasks` frame, the preparation queue's but its progress readings) never has its payload kept: past
@@ -1090,6 +1099,17 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   be scans nobody knows of. What the shell's keys do around the button that needs no WinUI is in Core too
   (`ActivityIndicatorFocus`: Up at a page's top, and whether a button that goes gives focus back), as is where the
   button lies for a page that must keep clear of it (`ActivityIndicatorPlace`).
+- **`ActivityIndicatorSetting`** (Core, a singleton) is the switch of Settings → Navigation & Cards → Server activity:
+  the profiles that turned their indicator off, by "server id/profile id", in `activity-indicator.json` in the data
+  directory, read and written as `BrowseHeroSetting` does its file. Both parts above follow it. The view model's
+  `IsVisible` is false while it is off, whatever the state says, so the button goes with the switch and waits for
+  nothing. `RealtimeEvents` cannot give the connection up, which Home's reloads and the notification count live on
+  for everyone; it replaces it by one that asks for everyone's channels only and has `ServerActivity` follow nothing
+  (`Follow(null)`), so no administrator's frame is sent and none of the lists is read while the switch is off, and the
+  other way round when it goes on again. A connection replaced for the same profile on the same server (this switch,
+  or an account made or unmade an administrator) costs the profile none of its own news: a reload that waited still
+  comes, and when the new connection takes longer than `CatchUpAfter` to subscribe, the app reloads once for what was
+  sent to nobody meanwhile, as after any gap that long (a new lane knows of no gap by itself).
 
 ## Discord status
 

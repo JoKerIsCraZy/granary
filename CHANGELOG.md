@@ -22,7 +22,9 @@ release's section is what its update says it changes (docs/release.md).
   library scans that run or wait, and the downloads being prepared with their progress and time left. In the admin
   area the button is always there. It follows the server live and says so when the connection is away, and when it
   cannot know every scan it says "at least" rather than a number that may be too small. With a keyboard or a TV
-  remote, Up at the top of a page reaches it, on a title's page by way of the Go back button.
+  remote, Up at the top of a page reaches it, on a title's page by way of the Go back button. Settings → Navigation &
+  Cards → Server activity turns it off for a profile on this PC: it then shows nowhere, and Granary no longer follows
+  the server's activity for it.
 - **Quality badges:** a movie's or episode's page shows the quality of its file after the facts under the title, as on
   Silo's web: the resolution, the HDR format and the best audio, such as 1080P, DV HDR10 and DD+ ATMOS. They follow the
   Version picker.
@@ -35,12 +37,18 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
-- The lines under a card are links, as on Silo's web: the mouse underlines the line it is on. On an episode's card the
-  series' name opens the series, and the lines under it open the episode, as the picture does.
+- The lines under a card are links, as on Silo's web: the mouse underlines the line it is on, together with the other
+  lines that open the same page. On an episode's card the series' name opens the series, and the lines under it open the
+  episode, as the picture does.
+- A card's Play button and its other buttons show only while the pointer is on the picture, as on Silo's web, no longer
+  over the lines under it.
 - The details under the logo at the top of Home and For You name the title's IMDb rating (TMDB's without one) and its
   first two genres, as on Silo's web: 2006 · IMDb 8.4 · Drama · Crime · TV-PG.
 - A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
   Player buttons, as F11 does.
+- With Hero size set to Compact, the picture at the top of Home, For You and Discover runs over the whole width too,
+  behind the title and its text, where it filled only the right part. It is darkened behind the text, which stays
+  readable on a bright picture. The hero is as low as before, so it shows less of the picture's height than Full.
 
 ### Fixed
 

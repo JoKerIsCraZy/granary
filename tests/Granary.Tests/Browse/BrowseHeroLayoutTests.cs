@@ -216,17 +216,95 @@ public sealed partial class BrowseHeroLayoutTests
         Assert.Equal((643d, 185d, 509d), (banner.RestHeight, banner.CompactHeight, banner.RowsTop));
     }
 
+    // Where the hero's picture lies on a page: in its box, which the hero cuts it to.
+    private static BackdropPlace PictureOn(double pageWidth, BrowseHeroSizes sizes) =>
+        BrowseHeroLayout.PlaceBackdrop(BrowseHeroLayout.BackdropBoxWidth(pageWidth), sizes.RestHeight);
+
     [Theory]
-    [InlineData(1660, 1000, 1079)]
-    [InlineData(1652, 1008, 1074)]
-    [InlineData(2300, 1360, 1438)]
-    [InlineData(3580, 1520, 1608)]
-    [InlineData(800, 1000, 520)]
-    [InlineData(2500, 1000, 1100)]
-    // Also on a page under a 1080 window: a 2560 x 1080 one's box was a strip of 1625 x 440 before.
-    public void TheBackdropBox_TakesItsShareOfTheWidth_ButNeverMoreThanTwoAndAHalfTimesItsHeight(double pageWidth, double pageHeight, double boxWidth)
+    [InlineData(1020)]
+    [InlineData(1660)]
+    [InlineData(2300)]
+    [InlineData(3580)]
+    [InlineData(700)]
+    [InlineData(1660.4)]
+    public void TheBackdropBox_RunsOverTheHerosWholeWidth(double pageWidth)
     {
-        Assert.Equal(boxWidth, BrowseHeroLayout.BackdropBoxWidth(pageWidth, BrowseHeroLayout.For(pageHeight)));
+        Assert.Equal(Math.Round(pageWidth), BrowseHeroLayout.BackdropBoxWidth(pageWidth));
+    }
+
+    [Theory]
+    // The page of a maximized window (the sidebar's 260 px and the title bar and taskbar off), the hero's height there, then
+    // the picture: its size, and where its top left lies from the hero's.
+    // 1280 x 720
+    [InlineData(1020, 680, 440, 1020, 574, 0, -27)]
+    // 1920 x 1080
+    [InlineData(1660, 1040, 440, 1660, 934, 0, -99)]
+    // 2560 x 1440
+    [InlineData(2300, 1400, 592, 2300, 1294, 0, -140)]
+    // 3840 x 1600
+    [InlineData(3580, 1520, 643, 3580, 2014, 0, -274)]
+    // 2560 x 1080: a strip over five times as wide as high, as the full hero's is there.
+    [InlineData(2300, 1040, 440, 2300, 1294, 0, -171)]
+    public void TheCompactHerosPicture_RunsFromThePagesLeftEdgeToItsRight_ShowingItsUpperPart(double pageWidth, double pageHeight,
+        double heroHeight, double width, double height, double left, double top)
+    {
+        var sizes = BrowseHeroLayout.For(pageHeight);
+
+        Assert.Equal(heroHeight, sizes.RestHeight);
+        Assert.Equal(new BackdropPlace(width, height, left, top), PictureOn(pageWidth, sizes));
+    }
+
+    [Theory]
+    [InlineData(1020, 680)]
+    [InlineData(1660, 1040)]
+    [InlineData(2300, 1400)]
+    [InlineData(3580, 1520)]
+    public void TheCompactHerosPicture_IsTheFullHeros_CutLower(double pageWidth, double pageHeight)
+    {
+        var compact = BrowseHeroLayout.For(pageHeight);
+        var full = BrowseHeroLayout.For(pageHeight, size: BrowseHeroSize.Full);
+        var picture = PictureOn(pageWidth, compact);
+        var fullPicture = PictureOn(pageWidth, full);
+
+        Assert.Equal((fullPicture.Width, fullPicture.Height, fullPicture.Left), (picture.Width, picture.Height, picture.Left));
+        // A fifth of what either hero cuts off the picture's height goes at the top, so the lower hero begins a little
+        // further down in it.
+        Assert.True(compact.RestHeight < full.RestHeight, $"{compact.RestHeight} {full.RestHeight}");
+        Assert.Equal(BrowseHeroLayout.PlaceBackdrop(pageWidth, compact.RestHeight).Top, picture.Top);
+        Assert.True(picture.Top < fullPicture.Top || picture.Height <= compact.RestHeight, $"{picture} {fullPicture}");
+    }
+
+    [Theory]
+    // A page narrower than the hero's height needs at the picture's shape: the picture is as high as the hero, its sides
+    // cut evenly.
+    [InlineData(700, 1040, 783, 441, -42)]
+    [InlineData(600, 1400, 1053, 593, -227)]
+    public void OnANarrowPage_TheCompactHerosPicture_FillsItsHeight_ItsSidesCutEvenly(double pageWidth, double pageHeight, double width,
+        double height, double left)
+    {
+        var picture = PictureOn(pageWidth, BrowseHeroLayout.For(pageHeight));
+
+        Assert.Equal((width, height, left), (picture.Width, picture.Height, picture.Left));
+    }
+
+    [Theory]
+    // Where the text ends from the hero's left edge: 48 px in and 640 px wide on a 1080 px window's page, 788 px wide on a
+    // 3840 x 1600 screen's.
+    [InlineData(688, 1204)]
+    [InlineData(836, 1463)]
+    public void TheCompactHerosShade_ReachesThreeQuartersOfTheTextsWayPastTheText(double textRight, double shadeWidth)
+    {
+        Assert.Equal(shadeWidth, BrowseHeroLayout.TextShadeWidth(textRight));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void TextOfNoKnownWidth_HasNoShade(double textRight)
+    {
+        Assert.Equal(0, BrowseHeroLayout.TextShadeWidth(textRight));
     }
 
     [Theory]
@@ -274,6 +352,10 @@ public sealed partial class BrowseHeroLayoutTests
     [Theory]
     [InlineData(2000, 700, 2000)]
     [InlineData(1000, 700, 1245)]
+    // No wider than the widest picture there is to ask for: decoded wider, it would only take memory (a 3,580 px page's
+    // would be 29 MB for each of the hero's two layers, for nothing more to see).
+    [InlineData(3580, 643, 2560)]
+    [InlineData(1000, 2000, 2560)]
     [InlineData(1000, double.NaN, 1000)]
     [InlineData(1000, double.PositiveInfinity, 1000)]
     [InlineData(0, 700, 0)]

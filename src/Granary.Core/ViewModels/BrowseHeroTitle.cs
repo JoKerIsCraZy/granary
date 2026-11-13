@@ -101,7 +101,7 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
             null);
     }
 
-    // TMDB's backdrop at the width the hero decodes it (BrowseHeroLayout.BackdropDecodeWidth, 1280 at most on a 1920 window).
+    // TMDB's widest backdrop short of its original; the hero stretches it on a page wider than that.
     private const string BackdropSize = "w1280";
 
     // How many genres the line names, as the web's.

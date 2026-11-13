@@ -2492,7 +2492,8 @@ Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per s
 with the window and replaced on a profile or server switch, none while signed out. A profile-bound
 ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
 to `catalog`, `user_state`, `notifications` after `hello`, and for an administrator account also to `sessions`,
-`tasks`, `scans` and `download_preparations` (12.3). The server writes `hello` first, before it reads anything, with
+`tasks`, `scans` and `download_preparations` (12.3), unless the profile switched its activity indicator off. The
+server writes `hello` first, before it reads anything, with
 `available_channels`: what this connection may subscribe to (`events_ws.go`, `allowedChannelsForClaims`). Granary asks
 only for the wanted channels that list names; a `hello` without the list, or with none of the wanted channels in it,
 is asked for all of them and the `subscribed` answer decides. The connection ends with
@@ -2687,7 +2688,9 @@ with 4001. Sources: `silo-server/internal/api/handlers/events_ws.go` (`allowedCh
 `resolveChannelSelection`), `silo-server/docs/realtime-api.md` ("Access changes").
 
 Granary (`Realtime/RealtimeEvents`, `Realtime/ServerActivity`) wants `sessions`, `tasks`, `scans` and
-`download_preparations` on every connection of an account whose role is `admin`, asks for those of them the `hello`
+`download_preparations` on every connection of an account whose role is `admin` (not for a profile that switched the
+indicator off in Settings, `Realtime/ActivityIndicatorSetting`: its connection asks for none of them and nothing below
+is read, and switching replaces the connection), asks for those of them the `hello`
 offers (all of them when it offers nothing to go by, 12), and takes the `channels` of the `subscribed` answer as the
 only say on who is an acting administrator: the activity indicator and its reads exist for the accepted channels, and
 a profile the server does not take as one causes no request and, on a server that says so in its `hello`, no channel

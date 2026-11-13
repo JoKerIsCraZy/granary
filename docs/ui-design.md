@@ -83,18 +83,29 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered. A card
   drops its hover look as it leaves the screen, so a card that opened a title is not still hovered when you come back
   to the page; the pointer's next move over it shows the look again.
-  The lines under a card are links of their own for the pointer, as on the web's cards (`hover:underline`): the line
-  under the mouse is underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click
-  or tap on the title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where
-  the server names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
-  Which lines are links is the card's (`MediaCard.Links`, `CardLinks`), by its web twin:
-  - A library title's poster (`ItemCard`: grids, search, a person's titles, a box set's films): the title, an
-    episode's own title and the line under them (year, "S04E01"), each by itself. More Like This shows the same poster;
-    the web's card there (`RecommendationGrid`) has the title only, also a link.
-  - The same poster in a row (`SectionItemCard`: Home, a library's rows, For You): an episode's title and its code are
-    one link, so the pointer over either underlines both, also between them (`MediaCard.JoinsEpisodeLines`).
+  What a card shows under the pointer follows where the pointer is (`CardHover`), as on the web, whose overlay belongs to
+  the artwork's box (`group/media`) and whose links to the caption: over the artwork the hover look (the zoom, the play
+  disc, the card's buttons) and no underline; over the lines under it, or between them, only a link's underline and no
+  hover look. The 11 px between the artwork and the caption belong to neither (they are the button's, not the card's):
+  there the look is off and nothing is underlined, so the way from one to the other switches once and nothing blinks.
+  Focus by keyboard or remote, an open ⋮ menu and a request being sent show what they did before, and the hero that
+  follows the pointed card follows a card whose caption is pointed at too.
+  The lines under a card are links for the pointer, as on the web's cards (`hover:underline`): under the mouse a line is
+  underlined and the pointer becomes the hand, as over the web's links; a finger has no hover. A click or tap on the
+  title line of an episode's card opens its series (`MediaCard.HeadingId`, the web's `headingHref`), where the server
+  names it; every other line, like the artwork, opens the card itself, for an episode the episode's page.
+  **Lines that open the same page are underlined together** (`CardLinks.Underlined`), also while the pointer is between
+  two of them. This departs from the web, where each link is underlined alone; the owner asked for it, so a card shows
+  what one click reaches. On a movie's, a series', a box set's, a TMDB title's and a watchlist title's card that is every
+  link line at once; on an episode's card the title line alone (the series) and the lines under it together (the
+  episode), on a poster and on a wide card alike. Which lines are links is the card's (`MediaCard.Links`), by its web twin:
+  - A library title's poster (`ItemCard` in grids, search, a person's titles and a box set's films; `SectionItemCard` in
+    the rows of Home, a library and For You): the title, an episode's own title and the line under them (year,
+    "S04E01"). More Like This shows the same poster; the web's card there (`RecommendationGrid`) has the title only,
+    also a link.
   - A Continue Watching or Next Up card (`ContinueWatchingCard`): the title, the episode's line and the time left or
-    "Next Episode"; the last only as far as its text reaches, and never the "NEW SEASON" pill. A movie's year, a line
+    "Next Episode". The pointer is on the last only as far as its text reaches (the web's `w-fit`), though it is
+    underlined with its group from the line above; the "NEW SEASON" pill is never part of it. A movie's year, a line
     the web's card does not have, opens the movie as its other lines do.
   - A box set's card (`BoxSetCard`), a title from TMDB on Requests and Discover (`RequestPosterCard`) and a watchlist
     title (`WatchlistTitleCard`): the title and the line under it; a watchlist title's status is plain text.
@@ -103,8 +114,14 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
     TMDB title without a page), on the player's On Deck, where a click plays, and while a grid selects (History's
     Select), where a click picks.
   A line is a link over the whole width of the caption, as the web's block links. Underlining changes no size, so no
-  text moves. A card that is recycled, left by a click or shown again never keeps an underline: it goes with the
-  hover look.
+  text moves. A card that is recycled, left by a click or shown again never keeps an underline or the hand: they go
+  when the pointer does, and the card then has no cursor of its own.
+  A click on a link is the click of the card's button, with its pressed look, its focus and "release elsewhere cancels":
+  the card only notes a press of the left button, a finger or a pen that begins on a title line that opens its series
+  (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
+  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
+  forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
+  the button, so Enter and a remote's Select always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
@@ -429,10 +446,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (`BrowseHeroLayout.PlaceBackdrop`, `BackdropFocus`). Cut around its middle, the box took the heads of most
     backdrops. An `Image` can only be cut around its top, middle or bottom, so the picture's layers have the picture's
     own size and lie in a clipped `Canvas` (`BrowseHero.PlacePicture`).
-  - The compact hero's backdrop takes the right 65 % of the page, at most two and a half times the hero's height, and
-    fades into the page toward the text. The full hero's runs over its whole width, as the web's banner's, under the
-    web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`) and dimmed a tenth, as the web's
-    `brightness(0.9)`. The web's ambient glow and its faint vignette are left out.
+  - It runs over the hero's whole width at either size, as the web's banner's, from the sidebar's edge
+    (`BrowseHeroLayout.BackdropBoxWidth`), dimmed a tenth, as the web's `brightness(0.9)`. Compact is the lower hero, so
+    it shows less of the picture's height: on a 1920 × 1080 window (a page 1660 px wide) the picture is 1660 × 934 px,
+    of which Compact shows 440 px, from 99 px down, and Full 686 px. On a window much wider than 16:9 either hero shows
+    a strip of it (3580 × 643 px of 3580 × 2014 in Compact on a 3840 × 1600 screen, 3580 × 760 in Full), and a page
+    wider than 2560 px stretches the widest picture asked for (below). A page narrower than the hero's height needs at
+    16:9 cuts the picture's sides evenly (Compact's 440 px on a page under 783 px wide).
+  - Full lies under the web's fades (`.hero-gradient-left` and `.hero-gradient` in its `app.css`); Compact under its own
+    (the backdrop's point below). The web's ambient glow and its faint vignette are left out.
   - Home and For You ask the server for backdrops as wide as the hero draws them in the window
     (`BrowseHeroViewModel.Window`, `BrowseHeroLayout.BackdropDrawnWidth`, `ImageSizes.WithDrawnBackdrop`), as the web's
     `lib/artworkWidths.ts` does for its banner: 1280 px, as every page asks, looked soft over a wide hero. Every row
@@ -440,7 +462,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     that size (the web's `RUNG_SLACK`), and the hero's width asks for 2560 px at most, the widest size: the web takes the 4K original for
     its banner on a very wide window, which here would come for every row's wide cards too. The window's size is read
     as the page shows. Home and For You load their rows again, behind the ones shown, when they show with a hero
-    that needs its backdrops over 15 % wider than they were asked for (Hero size set to Full, a much wider window). The
+    that needs its backdrops over 15 % wider than they were asked for (a much wider window). The
     hero fades the title shown over to its wider backdrop: it tells a title's pictures by the backdrop's address without
     its signature (`BrowseHeroTitle.Pictures`), so one only signed anew keeps its pictures. Discover's titles keep TMDB's 1280 px backdrop.
     - Compact is the hero as the points below describe it: the first row shows without scrolling.
@@ -454,9 +476,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       of a title without one, ends 64 px above the hero's bottom, so the logo stands higher for a title with more text.
       Under Home's banner the hero is no taller: Play and More Info end those 64 px above its bottom, with the counter,
       the rail and the pause button level beside them, and the text ends 28 px over the buttons (the web's `mb-7`).
-    - Everything else is Compact's on the same page: the logo, the type, the backdrop's share and fades, and the compact
-      header. The backdrop still covers the right 65 % of the page, so a window narrower than about 2.7 times the hero's
-      height cuts a 16:9 picture's sides (a 1440 × 900 window shows three quarters of its width).
+    - Everything else is Compact's on the same page: the logo, the type, the picture and how wide it is, and the compact
+      header.
     - Full folds into the same compact header over its longer way, the hero's height less the header's (536 px of
       scrolling on a 1080 px window's page). The text goes up with the rows themselves until it is where the header has
       it, and stays (`BrowseHeroLayout.TextLift`, from the text's height now); meanwhile the logo shrinks, the overview
@@ -485,13 +506,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
       the web's line leaves out), its length and certificate, and neither rating nor genres, as on the web.
     - A title of Discover keeps its own line ("2026 · Movie · Pending").
     - A screen reader reads the line whole, "2006 · IMDb 8.4 · Drama · Crime · TV-PG".
-  - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
-    middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
-    wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
-    2560 × 1080 window, 1608 × 643 px on 3840 × 1600; a 1920 × 1080 window's box is just under the limit). A new
-    title's backdrop shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath
-    until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
-    where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
+  - The backdrop runs over the page's whole width, from the top to behind the first row (440 px), behind the text, and
+    fades into the page toward the rows over the lower 55 % of its height. The text hangs from the top, clear of the
+    bottom fade that Full's text stands in, so a side shade alone keeps it readable on a bright picture, and it is
+    measured on the text rather than on the hero's width (`BrowseHeroLayout.TextShadeWidth`, `TextShadeReach`): the
+    values of the web's `.hero-gradient-left`, 88 % of the page's colour at the left edge and 58 % where the text block
+    ends (688 px in), then 22 % and clear three eighths and three quarters of that further (clear from 1204 px), which
+    falls as gently as Full's on a 1080 px window. It is as wide on any page: the right quarter of a 1920 × 1080
+    window's picture is clear of it, and a page narrower than it is shaded to its right edge. A new title's backdrop
+    shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath until then; a
+    title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs where the box's
+    shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
     Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
   - Spoilers, as the web's `HeroBanner` ([episode spoilers](api-contract.md#663-episode-spoilers)): a banner slide of an
     episode neither played nor started shows its backdrop blurred while the profile hides unwatched episode images, when
@@ -1205,7 +1230,7 @@ says why above the sections.
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
 - **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
-  `TitlePreviewSettingsViewModel` and `SidebarSettingsViewModel`, the web's
+  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel` and `SidebarSettingsViewModel`, the web's
   page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
@@ -1226,7 +1251,12 @@ says why above the sections.
   Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, and
   Hero size ("Compact shows the first row without scrolling. Full is as tall as on Silo's web."), Compact or Full as
   choice buttons, Compact by default; both saved on this PC at once and taken by each page the next time it shows
-  (Home's hero, above). Then Sidebar, with
+  (Home's hero, above). Then Server activity, only for an administrator's account (`Account.IsAdmin`, on a profile),
+  and Granary's own, as the web's indicator cannot be turned off (`ActivityIndicatorSettingsViewModel` on
+  `ActivityIndicatorSetting`): "What your Silo server is doing, for its administrators. Kept for this profile on this
+  PC.", with Activity indicator ("A button at the top right shows the streams, tasks, scans and downloads being
+  prepared. Off, it never shows."), on by default; the indicator follows it at once (Activity indicator, under Admin).
+  The group comes and goes with the account's role while the page is open. Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
@@ -1369,6 +1399,12 @@ by `MainWindow.Activity.cs`.
   none of them known there is nothing to count, but hiding the button would say that nothing is going on. Never over
   the full player, which has the window to itself; over the pages while the
   player is its bar. Not on the signed-out screens.
+- **Switched off** (Settings → Navigation & Cards → Server activity → Activity indicator; Granary's own, on by
+  default, kept on this PC for each server and profile in `activity-indicator.json`, `hidden_for`, as the title
+  preview's switch): the button shows nowhere, the admin area's pages included, so its panel cannot be opened; a
+  panel that is open closes with it. Nothing is followed for it meanwhile (docs/architecture.md, "Server
+  activity"). Switched on again it is back without a restart: in the admin area as soon as the server answered the
+  new connection, elsewhere while something is going on.
 - **The panel** opens under the button, right-aligned: 320 px wide, a header "Server Activity" with "Connecting…" or
   "Disconnected" at its right while the stream is not live, and at most 400 px of rows that scroll. With nothing going
   on it says "No active server activity". Otherwise a section each, a small uppercase title with its count beside it:
