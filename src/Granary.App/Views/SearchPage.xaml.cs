@@ -10,7 +10,7 @@ using Windows.System;
 namespace Granary.App.Views;
 
 /// <summary>Search; the parameter is an optional query text that is searched at once.</summary>
-public sealed partial class SearchPage : Page
+public sealed partial class SearchPage : Page, IPadSections
 {
     private bool _focusBoxWhenLoaded;
 
@@ -111,6 +111,17 @@ public sealed partial class SearchPage : Page
         if (index >= 0)
         {
             ViewModel.Scope = (SearchScope)index;
+        }
+    }
+
+    // A game controller's bumpers: Movies & Series, Movies, Series.
+    void IPadSections.StepSection(int by)
+    {
+        int index = ScopeBar.Items.IndexOf(ScopeBar.SelectedItem) + by;
+        if (index >= 0 && index < ScopeBar.Items.Count)
+        {
+            ScopeBar.SelectedItem = ScopeBar.Items[index];
+            ScopeBar.Items[index].Focus(FocusState.Keyboard);
         }
     }
 

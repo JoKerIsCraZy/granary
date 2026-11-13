@@ -121,7 +121,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
   `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
   forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
-  the button, so Enter and a remote's Select always open the card itself.
+  the button or a game controller's A presses it, so Enter, a remote's Select and A always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
@@ -954,6 +954,78 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
     is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
 
+## Game controller
+
+An Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is
+decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face
+button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
+Share or Create, **Menu** is Options, the bumpers are L1 and R1 and the triggers L2 and R2. The pad goes the way the
+remote's keys go, through the same code, so what the TV remote does at a page's edges, in the sidebar and on the way
+back holds for the pad too. Focus the pad moves shows its ring, as the keyboard's.
+
+On the pages, and in the minimized player's bar:
+
+| Pad | Does |
+|---|---|
+| D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
+| A | Presses what has focus, as OK. Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
+| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
+| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| Y | Search. |
+| Menu | The focused card's menu. |
+| View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
+| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again. |
+| Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
+| Right stick's click | Full screen on and off. |
+
+In the full player:
+
+| Pad | Does |
+|---|---|
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
+| X | Plays or pauses, wherever focus is. |
+| B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
+| D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
+| D-pad up and down | On the picture: the bar shows with focus on Play/Pause. On a control: move focus. The volume slider is passed by, as for a remote. |
+| LT, RT | Scrub back and forward while held, from 5 to 180 seconds a second by how far the trigger is pulled; the seek bar shows the target, and one seek is sent when the trigger is let go. The scrub stops at the title's start and at its end likewise. |
+| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. |
+| Right stick up and down | Volume by 5, again while held. |
+| Y | The audio menu when there is a track to choose, else the subtitles', else the playback settings (what Down opens for a remote). Pressed while a menu is open it closes that. |
+| Menu | The playback settings menu; likewise. |
+| View | The playback info, on and off. |
+| Left stick's click | Subtitles off and on. |
+| Right stick's click | Full screen on and off. |
+
+With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
+In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
+A seek being made when a menu opens (a trigger still pulled, or a step still waiting) is sent at once, to where the seek
+bar showed it. A that closes the player presses nothing on the page behind it, whether it is still held when the page
+shows or was let go just before.
+
+Always:
+
+- Only while Granary's window is in front. Behind another window the pad is not even read, so a game played with the same
+  pad never moves Granary. Coming back, a button still held is not a press.
+- A stick inside its dead zone is at rest (24 % of the left stick's way, 26.5 % of the right one's, 12 % of a trigger's)
+  and no activity: a stick that drifts moves nothing and does not keep the bar up. A stick is a direction from 70 % of
+  its way and until it falls under 50 %, on its stronger axis only; a trigger is pressed from half way and until it is
+  nearly let go.
+- A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
+  dropped rather than sent, a button it held presses nothing (a short A that ends with the pad is no press), a button
+  found down when a pad that could not be read is read again is no press either, and any pad that comes (back) works at
+  once. Several pads count as one.
+- Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
+- PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
+  or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. L2 and R2 count by how far they
+  are pulled, as an Xbox pad's triggers, though these pads also report them as buttons from the first bit of the way. A
+  tool that presents the pad to Windows as an Xbox pad works too, and the pad still counts once.
+
+Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
+pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
+seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
+order and Filters are menus, not a row to step through: A opens them.
+
 ## Signed-out screens
 
 Adding a server and signing in look like Silo's web login (measured 2026-10-25). `SiloAuthShellStyle` centres a
@@ -1764,6 +1836,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+  A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
+  of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
+  or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
+  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. The other keys
+  go on as on the picture: Space plays and pauses, Left and Right skip, Up brings the controls. When the prompt goes,
+  focus is the picture's again (`PlayerPage.SkipPrompt.cs`).
 - **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
   its loading loop in the skip pill's corner: 32 px on a 44 px disc (black 45 %), 28 px off the corner, above the bar
   while the controls show and above the skip pill or the next episode's card, 12 px apart, when one shows; hidden in the
@@ -1844,7 +1922,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
   OK on the minimized bar's picture); while a skip pill shows, OK on hidden
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
-  away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
+  away, and with the controls shown OK presses the pill too, which has focus since it appeared (see "Skip pill"; before,
+  OK then went to Play/Pause); OK on the next episode's card plays it, Play Now having focus; in the mini view OK lands
+  on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
   Silo's TV app has no volume control in its player (the TV's remote sets the volume), so the slider is no stop for the

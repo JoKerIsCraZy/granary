@@ -1145,6 +1145,70 @@ An opt-in status in Discord while a title plays (Settings → Playback → This 
   clear while Discord is not there stops it. It is disposed when the window closes. The library raises its events on its
   own thread, under the same lock as the UI thread's calls; a client is let go under the lock and disposed outside it.
 
+## Game controller
+
+What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
+
+- **What WinUI does by itself: nothing to rely on.** Microsoft's guidance says a pad's D-pad, A and B reach XAML as
+  `VirtualKey.Gamepad*` keys and move focus. That is how UWP works; in a Windows App SDK desktop app no such keys are
+  reported to arrive, and nothing moves (microsoft-ui-xaml issue 6891). The controls still know those keys, so should
+  an SDK deliver them, the window marks them handled on the way down (`OnPadKeyDown`, in menus and dialogs too) and
+  nothing happens twice. `Windows.Gaming.Input` works in a desktop app as it is, and is what Granary reads.
+- **`PadInterpreter`** (Core, `Controller/`) is the whole decision: it takes a reading (`PadReading`: buttons by
+  position, both sticks, both triggers), the time from a `TimeProvider` and what the window knows (`PadContext`: pages
+  or player, where focus is in the player, whether a prompt shows, whether the title can be sought and the profile's
+  skip steps), and returns actions (`PadAction`). In it: the dead zones, the stick as a D-pad and the trigger as a
+  button with their two thresholds, the long press, the repeats, the seek made of growing steps and sent once, and the
+  triggers' scrub (`PadInterpreter.Seek.cs`); the numbers are `PadTuning`'s. It keeps no window and no pad, and its
+  tests drive it with `ManualTimeProvider`. A button held while the pad is first read, after `Reset`, or while the pages
+  and the player change places, does nothing until it is pressed again: A on a card opens the player and pauses nothing
+  there. What was let go while they changed places is no release for the new one either: on the pages A acts when it is
+  let go, and A on the player's Close, let go before the pages are first read, presses nothing behind the player.
+- **`GamepadReader`** (App) lists the pads and reads them as one (`PadReading.Merge`), so any pad in the room works.
+  Windows knows an Xbox pad, and any pad its maker registered with it as one (docs: "Registry data for game
+  controllers"), as a `Gamepad`. A DualShock 4 or DualSense is only a `RawGameController` to it, a list of unnamed
+  buttons and axes, unless a tool presents it as an Xbox pad. Core's `SonyPad` reads that list by position: the
+  buttons' places are the ones Microsoft's own controller data labels for these pads (Square 0, Cross 1, Circle 2,
+  Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
+  axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
+  with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. These
+  pads report L2 and R2 as buttons too, down from the first bit of the way; the interpreter takes a trigger by its pull
+  wherever a reading has one, and only a button without a pull as pulled home (`Pressure`), so a light pull scrubs
+  slowly and a touch pages nothing. A pad that shows up twice, itself and as the Xbox pad a tool makes of it, still
+  presses each button once, since the readings are merged before anything is decided.
+  A pad on its way out can fail its last readings. Such a reading is no pad at
+  rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
+  interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). `IsAtRest` is false
+  for it, so the window hands it over also when the pad lay idle before, and a button found down when readings come
+  back is no press.
+  No PlayStation pad was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
+- **Reading costs nothing without a pad, and a tick with one at rest.** Windows tells of pads that come and go; a timer
+  runs only while there is one and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while
+  the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached
+  and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
+  that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
+  `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
+  wakes for it; it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
+  often as one at rest. Windows documents that a UWP app gets no pad input out of focus and says nothing for desktop
+  apps, so Granary does not ask: deactivated, it stops reading. The timer's tick goes through `WeakTick`.
+- **Carrying out.** Nothing is typed or clicked for the pad. Focus moves through `FocusManager.FindNextElement` and is
+  set as the keyboard's (`PadControls.Move`), after the window's own handling of an arrow and before its handling of an
+  arrow nobody took, the same two methods the arrow keys call (`TakesArrowFirst`, `TakesArrowLast` in
+  MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
+  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer), B runs the remote's back ladder
+  (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
+  (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
+  sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
+  (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
+  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request.
+- **Presence.** Windows counts keys and the mouse as the viewer being there, not a pad. While the pad is in use the
+  window sets the display's and the system's idle timers back (`SetThreadExecutionState` without `ES_CONTINUOUS`, at
+  most every 10 s); nothing is held, and a title that plays keeps the display on by itself (`PlayerKeepAwake`).
+- **Seams for what is not built yet.** Text fields: `PadControls.Press` returns false for them, where an on-screen
+  keyboard would open. Button pictures: `GamepadReader` is where each pad's kind is known. A swap of confirm and back:
+  one mapping, in `PadInterpreter.TakeButtons`.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

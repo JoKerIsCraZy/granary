@@ -1,7 +1,10 @@
 using System.Numerics;
 using Granary.App.Controls;
 using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Input;
 
 namespace Granary.App.Views;
 
@@ -25,4 +28,44 @@ public sealed partial class PlayerPage
     }
 
     private void AnnounceSkipCaption() => Announcer.Announce(this, ViewModel.SkipCaption, "SkipPrompt");
+
+    // A prompt that appears takes focus, as the intro pill of Silo's TV app does (TvIntroAutoSkipBanner's autoFocus): the
+    // skip pill, or the next episode's Play Now. Enter, a remote's OK and a game controller's A then press what the viewer
+    // sees focus on. Asked a turn later, once the prompt shows.
+    private void FocusPromptSoon() => DispatcherQueue.TryEnqueue(() => FocusPrompt(fromControls: false));
+
+    // Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus, so OK
+    // there never turns into a skip; the prompt gets it when the controls hide (RestFocus). Not while a seek is being
+    // made either, as the TV app's mayTakeFocus. Focus shows its ring after a key or a pad, not after the mouse.
+    private bool FocusPrompt(bool fromControls)
+    {
+        if (!IsLoaded || IsCompact || ShowsNextUpScreen || XamlRoot is not { } root || HasOpenMenu() || IsPanelOpen
+            || SeekBar.IsDragging || _padSeekOrigin is not null)
+        {
+            return false;
+        }
+        if (!fromControls && FocusManager.GetFocusedElement(root) is DependencyObject focused && !ReferenceEquals(focused, this)
+            && IsWithin(focused, this) && IsShown(focused))
+        {
+            return false;
+        }
+        ButtonBase? prompt = ViewModel.HasSkipPrompt ? SkipButton : ViewModel.IsNextUpCardShown ? NextUpPlayButton : null;
+        return prompt is not null && prompt.Focus(_lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic);
+    }
+
+    // Focus leaves the controls for where it rests: a prompt that shows, else the picture.
+    private void RestFocus()
+    {
+        if (!FocusPrompt(fromControls: true))
+        {
+            Focus(FocusState.Programmatic);
+        }
+    }
+
+    // The focused button of the skip pill or of the next episode's card. The arrows and a pad's D-pad go on as on the
+    // picture while it has focus: Left and Right seek, Up brings the bar.
+    private ButtonBase? FocusedPrompt() =>
+        FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && (IsWithin(button, SkipPrompt) || IsWithin(button, NextUpCard))
+            ? button
+            : null;
 }

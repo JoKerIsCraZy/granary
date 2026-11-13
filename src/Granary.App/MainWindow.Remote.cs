@@ -117,29 +117,51 @@ public sealed partial class MainWindow
         {
             return;
         }
-        if (ShowsStartFocus(e.Key))
+        // A keyboard's OK is Space as often as Enter.
+        if (ShowsStartFocus(isArrowOrOk: e.Key is VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down
+            or VirtualKey.Enter or VirtualKey.Space))
         {
             e.Handled = true;
             return;
         }
-        bool repeat = e.KeyStatus.WasKeyDown;
-        e.Handled = e.Key switch
-        {
-            VirtualKey.Right => MovesAlongDock(FocusNavigationDirection.Right) || StopsAtRowEnd() || LeavesRadioGroup(FocusNavigationDirection.Right, repeat),
-            VirtualKey.Left => MovesAlongDock(FocusNavigationDirection.Left) || LeavesRadioGroup(FocusNavigationDirection.Left, repeat),
-            VirtualKey.Down => MovesAlongDock(FocusNavigationDirection.Down) || EntersDock(repeat) || LeavesRadioGroup(FocusNavigationDirection.Down, repeat),
-            VirtualKey.Up => MovesAlongDock(FocusNavigationDirection.Up) || LeavesRadioGroup(FocusNavigationDirection.Up, repeat),
-            _ => false,
-        };
+        e.Handled = ArrowOf(e.Key) is var arrow and not FocusNavigationDirection.None && TakesArrowFirst(arrow, e.KeyStatus.WasKeyDown);
     }
 
+    private static FocusNavigationDirection ArrowOf(VirtualKey key) => key switch
+    {
+        VirtualKey.Left => FocusNavigationDirection.Left,
+        VirtualKey.Right => FocusNavigationDirection.Right,
+        VirtualKey.Up => FocusNavigationDirection.Up,
+        VirtualKey.Down => FocusNavigationDirection.Down,
+        _ => FocusNavigationDirection.None,
+    };
+
+    // What an arrow does before XAML moves focus with it. A game controller's D-pad goes the same way
+    // (MainWindow.Controller.Pages.cs).
+    private bool TakesArrowFirst(FocusNavigationDirection arrow, bool repeat) => arrow switch
+    {
+        FocusNavigationDirection.Right => MovesAlongDock(arrow) || StopsAtRowEnd() || LeavesRadioGroup(arrow, repeat),
+        FocusNavigationDirection.Left => MovesAlongDock(arrow) || LeavesRadioGroup(arrow, repeat),
+        FocusNavigationDirection.Down => MovesAlongDock(arrow) || EntersDock(repeat) || LeavesRadioGroup(arrow, repeat),
+        FocusNavigationDirection.Up => MovesAlongDock(arrow) || LeavesRadioGroup(arrow, repeat),
+        _ => false,
+    };
+
+    // What an arrow does that no page or control took: at the page's edges, into and out of the sidebar and the activity
+    // indicator.
+    private bool TakesArrowLast(FocusNavigationDirection arrow, bool repeat) => arrow switch
+    {
+        FocusNavigationDirection.Left => EnterSidebar(repeat) || LeaveActivity(repeat),
+        FocusNavigationDirection.Right => LeaveSidebar(repeat),
+        FocusNavigationDirection.Up => EnterActivity(repeat),
+        FocusNavigationDirection.Down => LeaveActivity(repeat),
+        _ => false,
+    };
+
     // The first arrow or OK on the start's quiet focus shows it where it is, and moves or opens nothing (QuietStartFocus).
-    // A keyboard's OK is Space as often as Enter.
-    private bool ShowsStartFocus(VirtualKey key)
+    private bool ShowsStartFocus(bool isArrowOrOk)
     {
         var focused = FocusedElement();
-        bool isArrowOrOk = key is VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down or VirtualKey.Enter
-            or VirtualKey.Space;
         return _startFocus.ShowsInPlace(isArrowOrOk, focused, focused is UIElement { FocusState: FocusState.Keyboard },
             () => focused is UIElement element && element.Focus(FocusState.Keyboard));
     }
@@ -200,16 +222,16 @@ public sealed partial class MainWindow
             VirtualKey.Escape when !repeat => Back(BackKey.Escape),
             VirtualKey.Back when !repeat => Back(BackKey.Backspace),
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
-            VirtualKey.Left => EnterSidebar(repeat) || LeaveActivity(repeat),
-            VirtualKey.Right => LeaveSidebar(repeat),
-            VirtualKey.Up => EnterActivity(repeat),
-            VirtualKey.Down => LeaveActivity(repeat),
+            VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down => TakesArrowLast(ArrowOf(e.Key), repeat),
             VirtualKey.Enter => ChecksRadio(repeat),
             MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
-            VirtualKey.Application when !repeat => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey(),
+            VirtualKey.Application when !repeat => ShowsCardMenu(),
             _ => false,
         };
     }
+
+    // The Menu key on a card opens the card's menu, as its ⋮ does.
+    private bool ShowsCardMenu() => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey();
 
     private bool Back(BackKey key)
     {
@@ -744,6 +766,7 @@ public sealed partial class MainWindow
             {
                 _followedPopups.Add(child, popup);
                 child.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnPopupKeyDown), handledEventsToo: false);
+                child.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnPadKeyDown), handledEventsToo: false);
             }
         }
     }
