@@ -240,7 +240,7 @@ public static class CoreServiceCollectionExtensions
     private static void AddPlayback(IServiceCollection services)
     {
         services.AddSingleton(sp => new KeptPlaybackSettings(KeptPlaybackSettings.DefaultPath, sp.GetRequiredService<ISessionManager>(),
-            sp.GetRequiredService<ILogger<KeptPlaybackSettings>>(), sp.GetRequiredService<DownloadStore>()));
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<KeptPlaybackSettings>>(), sp.GetRequiredService<DownloadStore>()));
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();

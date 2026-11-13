@@ -17,14 +17,26 @@ namespace Granary.Core.Downloads;
 /// (<see cref="Covers"/>); it writes the note before the file (<see cref="Save"/>), names in the file the removals it is
 /// written without (<see cref="Ids"/>), and lets the note go once the file is on the disk (<see cref="Done"/>). Each removal
 /// has an id of its own, so a note that could not be deleted takes nothing out of a file that names it: what the same
-/// account recorded after it signed in again stays, whatever the clock says. Safe from any thread; the owner's writes, one
-/// at a time, call Save and Done.
+/// account recorded after it signed in again stays, whatever the clock says. A write that ends without the file on the
+/// disk says so (<see cref="NotWritten"/>): while a removal is in no note either, the note has the owner write again by
+/// itself. Safe from any thread; the owner's writes, one at a time, call Save and then Done or NotWritten.
 /// </remarks>
 internal sealed class RemovalNote
 {
+    /// <summary>
+    /// How long a removal that could be put neither in the note nor out of the file waits for the owner's next write
+    /// (<see cref="NotWritten"/>).
+    /// </summary>
+    public static readonly TimeSpan FirstRetry = TimeSpan.FromSeconds(5);
+
+    /// <summary>The longest such wait: each is twice the one before, up to this.</summary>
+    public static readonly TimeSpan MaxRetry = TimeSpan.FromMinutes(5);
+
     private readonly string _path;
     private readonly string _what;
     private readonly ILogger _logger;
+    private readonly TimeProvider _time;
+    private readonly Action _writeAgain;
     private readonly Lock _gate = new();
 
     // Under the lock: the removals no write of the file is known to have followed, the note's and this run's.
@@ -35,13 +47,24 @@ internal sealed class RemovalNote
     private bool _readFailureSaid;
     private bool _writeFailureSaid;
 
+    // Under the lock: the write asked of the owner that waits for its time, and how many were asked for since a removal
+    // was first on no disk.
+    private ITimer? _retry;
+    private int _retries;
+
     /// <param name="what">What the file holds, as a log line names it: "the positions recorded on this PC".</param>
-    public RemovalNote(string filePath, string what, ILogger logger)
+    /// <param name="writeAgain">
+    /// Has the owner write its file once more, as after a change (<see cref="NotWritten"/>). Called on a timer's thread,
+    /// with no lock of the note's held.
+    /// </param>
+    public RemovalNote(string filePath, string what, ILogger logger, TimeProvider time, Action writeAgain)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         _path = filePath + ".removed";
         _what = what;
         _logger = logger;
+        _time = time;
+        _writeAgain = writeAgain;
     }
 
     /// <summary>A removal waits for the file to be written without it, or the note is still on the disk: the file is to be written.</summary>
@@ -181,7 +204,8 @@ internal sealed class RemovalNote
 
     /// <summary>
     /// Writes the note when a removal is not in it yet, before the owner touches its file. One that cannot be written is
-    /// logged, without whose or where: the removal then holds for this run only, until the file itself is written.
+    /// logged, without whose or where: the removal then holds for this run only, until the file itself is written or a
+    /// later write gets the note through (<see cref="NotWritten"/>).
     /// </summary>
     public void Save()
     {
@@ -223,7 +247,8 @@ internal sealed class RemovalNote
         }
     }
 
-    // Under the lock. Said once until a note is written again: every write of the file tries anew.
+    // Under the lock. Said once until a note is written again: every write of the file tries anew, and the file is
+    // written again by itself until the removal is on the disk (NotWritten).
     private void NotNoted(string failure)
     {
         if (_writeFailureSaid)
@@ -231,8 +256,50 @@ internal sealed class RemovalNote
             return;
         }
         _writeFailureSaid = true;
-        _logger.LogWarning("What a sign-out took out of {What} could not be noted on the disk ({Failure}); it is out for this run, and back at the next start unless their file can be written before",
+        _logger.LogWarning("What a sign-out took out of {What} could not be noted on the disk ({Failure}); it is out for this run and tried again, and back at the next start unless the note or their file can be written before",
             _what, failure);
+    }
+
+    // Past this many doublings the wait is MaxRetry anyway.
+    private const int MostDoublings = 10;
+
+    /// <summary>
+    /// The owner's write ended without its file on the disk. A removal that is in no note either is known to this run
+    /// only, and nothing else may change the file before Granary closes, least of all after a sign-out. So the owner's
+    /// write is asked for again: after <see cref="FirstRetry"/>, then twice as long each time up to
+    /// <see cref="MaxRetry"/>, until the note or the file is on the disk. A removal that is noted asks for nothing: the
+    /// next start leaves it out.
+    /// </summary>
+    public void NotWritten()
+    {
+        lock (_gate)
+        {
+            _retry?.Dispose();
+            _retry = null;
+            if (!_behind)
+            {
+                _retries = 0;
+                return;
+            }
+            var wait = TimeSpan.FromTicks(Math.Min(MaxRetry.Ticks, FirstRetry.Ticks << Math.Min(_retries, MostDoublings)));
+            _retry = _time.CreateTimer(static note => ((RemovalNote)note!).Retry(), this, wait, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    // On the timer's thread. Nothing is asked for when a write that ended meanwhile called the try off.
+    private void Retry()
+    {
+        lock (_gate)
+        {
+            if (_retry is null)
+            {
+                return;
+            }
+            _retry.Dispose();
+            _retry = null;
+            _retries++;
+        }
+        _writeAgain();
     }
 
     /// <summary>
@@ -246,6 +313,11 @@ internal sealed class RemovalNote
         lock (_gate)
         {
             onDisk = _onDisk;
+            // The file is on the disk without them, whatever becomes of the note: no write is asked for again
+            // (NotWritten). One removed while the file was written has a write of its own behind this one.
+            _retry?.Dispose();
+            _retry = null;
+            _retries = 0;
         }
         if (onDisk)
         {

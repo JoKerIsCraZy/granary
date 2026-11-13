@@ -21,7 +21,8 @@ namespace Granary.Core.Playback;
 /// goes on without it. It is never written before it was read: a file that cannot be read now (something has it open) holds
 /// the other profiles' settings, so each write tries the read again first, and what was kept meanwhile joins what it holds.
 /// What a sign-out forgets (<see cref="Remove"/>) is noted beside the file first (<see cref="RemovalNote"/>), so it also
-/// holds when the file cannot be read or written before Granary closes.
+/// holds when the file cannot be read or written before Granary closes; when the note could not be written either, the
+/// write is tried again by itself until one of the two is on the disk.
 /// </remarks>
 public sealed class KeptPlaybackSettings
 {
@@ -43,18 +44,23 @@ public sealed class KeptPlaybackSettings
     private Task _latestSave = Task.CompletedTask;
     private bool _saveWaits;
 
+    // Only a write touches it, one at a time.
+    private bool _writeFailureSaid;
+
+    /// <param name="time">Times the next try of a write that left a sign-out's removal on no disk (<see cref="RemovalNote.NotWritten"/>).</param>
     /// <param name="downloads">
     /// Says which accounts are being signed out with their downloads (<see cref="DownloadStore.IsClearPending"/>): nothing is
     /// kept for those meanwhile.
     /// </param>
-    public KeptPlaybackSettings(string path, ISessionManager session, ILogger<KeptPlaybackSettings> logger, DownloadStore? downloads = null)
+    public KeptPlaybackSettings(string path, ISessionManager session, TimeProvider time, ILogger<KeptPlaybackSettings> logger,
+        DownloadStore? downloads = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         _path = Path.GetFullPath(path);
         _session = session;
         _logger = logger;
         _downloads = downloads;
-        _note = new RemovalNote(_path, "the playback settings kept on this PC", logger);
+        _note = new RemovalNote(_path, "the playback settings kept on this PC", logger, time, WriteAgain);
     }
 
     /// <summary><c>playback-settings.json</c> in the data folder.</summary>
@@ -249,6 +255,16 @@ public sealed class KeptPlaybackSettings
         _latestSave = _latestSave.ContinueWith(_ => Write(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
     }
 
+    // The note asks for the write once more: a removal is on no disk yet, and nothing else may change what is kept
+    // (RemovalNote.NotWritten).
+    private void WriteAgain()
+    {
+        lock (_gate)
+        {
+            Save();
+        }
+    }
+
     private void Write()
     {
         Writing?.Invoke();
@@ -269,7 +285,9 @@ public sealed class KeptPlaybackSettings
             }
             if (!_loaded)
             {
-                // Never over a file that was not read: it holds settings this run does not know.
+                // Never over a file that was not read: it holds settings this run does not know. A removal that could
+                // not be noted either has the write tried again.
+                _note.NotWritten();
                 return;
             }
             file = new KeptSettingsFile
@@ -287,10 +305,17 @@ public sealed class KeptPlaybackSettings
         }
         catch (Exception ex)
         {
-            // Whatever the disk does, the chain of writes goes on. Only the kind, as above.
-            _logger.LogWarning("The playback settings could not be kept on this PC ({Failure})", ex.GetType().Name);
+            // Whatever the disk does, the chain of writes goes on. Only the kind, as above. Said once until a write gets
+            // through: a removal that could not be noted either has the write tried again.
+            if (!_writeFailureSaid)
+            {
+                _writeFailureSaid = true;
+                _logger.LogWarning("The playback settings could not be kept on this PC ({Failure})", ex.GetType().Name);
+            }
+            _note.NotWritten();
             return;
         }
+        _writeFailureSaid = false;
         _note.Done(file.AfterRemovals);
     }
 

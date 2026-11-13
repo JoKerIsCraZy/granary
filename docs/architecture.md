@@ -1474,11 +1474,16 @@ The view models of the sign-out paths take it (optional, so they work without it
   A note of a newer `version` than this build writes is taken the same way, on purpose: a later Granary may
   mean more by it than this one reads out of it, so its removals are not taken for this version's. One that names no
   version is read as version 1; there is no earlier form. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
-  run, and the entries are back at the next start unless the file could be written before Granary closed. The queue of
+  run, and the entries are back at the next start unless the note or the file could be written before Granary closed.
+  Nothing else may change such a file before that, least of all after a sign-out, so a write that ended with the removal
+  in no note and the file not written (it could not be read, or its write failed) is tried again by itself
+  (`RemovalNote.NotWritten`): after 5 s, then twice as long each time up to 5 minutes, for as long as Granary runs,
+  until the note or the file is on the disk. The failure is logged once, not at every try. The queue of
   positions still to send keeps such a note (`offline-progress.json.removed`; see "Offline progress"), and so do the
   playback settings kept for a play without the server (`playback-settings.json.removed`; see "Playing a download").
   Two cases stay unprotected. When the note cannot be written, or not within the sign-out's budget, and Granary closes
-  before the file can be written either, the account's entries are back at the next start. And a note that can never
+  before a later try gets the note or the file through, the account's entries are back at the next start; the sign-out
+  does not tell the viewer so, only the log does. And a note that can never
   be read keeps its file from being loaded or written for that run: nothing the file holds is shown, sent or used, and
   what is recorded or kept meanwhile holds for the run only.
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the

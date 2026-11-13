@@ -10,7 +10,11 @@ namespace Granary.Tests.Downloads;
 public sealed class RemovalNoteTests : IDisposable
 {
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+    private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
+
+    // How often the note asked its file's owner to write once more.
+    private int _writesAskedFor;
 
     public RemovalNoteTests() => Directory.CreateDirectory(_folder);
 
@@ -19,7 +23,8 @@ public sealed class RemovalNoteTests : IDisposable
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     // A start of Granary: the note as the disk has it.
-    private RemovalNote Open() => new(Path.Combine(_folder, "entries.json"), "the entries kept on this PC", _logs.For<RemovalNote>());
+    private RemovalNote Open() => new(Path.Combine(_folder, "entries.json"), "the entries kept on this PC", _logs.For<RemovalNote>(), _time,
+        () => _writesAskedFor++);
 
     public void Dispose() => Directory.Delete(_folder, recursive: true);
 
@@ -49,5 +54,93 @@ public sealed class RemovalNoteTests : IDisposable
         Assert.Equal(note.Ids(), next.Ids());
         // Said once, by the start that could not understand it.
         Assert.Single(_logs.Lines);
+    }
+
+    // The owner's write put neither the note nor its file on the disk: only this run knows of the removal, and nothing
+    // else may change the file before Granary closes. So the note asks for the write again by itself.
+    [Fact]
+    public void ARemovalThatIsOnNoDisk_AsksForItsFilesWriteAgain_LaterEachTime_UntilItIsNoted()
+    {
+        // A folder where the note should be: neither read nor written.
+        Directory.CreateDirectory(NotePath);
+        var note = Open();
+        note.Add("srv1", "1");
+
+        note.Save();
+        note.NotWritten();
+        Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+        _time.Advance(RemovalNote.FirstRetry);
+        Assert.Equal(1, _writesAskedFor);
+
+        // The write it asked for fared no better: the next one waits twice as long.
+        note.Save();
+        note.NotWritten();
+        Assert.Equal(RemovalNote.FirstRetry * 2, _time.NextDue);
+        Directory.Delete(NotePath);
+        _time.Advance(RemovalNote.FirstRetry * 2);
+        Assert.Equal(2, _writesAskedFor);
+
+        // The note is on the disk now, though the file still is not: the next start finds it, and nothing is asked again.
+        note.Save();
+        note.NotWritten();
+        Assert.True(File.Exists(NotePath));
+        Assert.Null(_time.NextDue);
+    }
+
+    [Fact]
+    public void TheWaitBetweenTwoTries_GrowsToFiveMinutesAtMost()
+    {
+        Directory.CreateDirectory(NotePath);
+        var note = Open();
+        note.Add("srv1", "1");
+
+        for (int tries = 0; tries < 12; tries++)
+        {
+            note.Save();
+            note.NotWritten();
+            _time.Advance(_time.NextDue ?? TimeSpan.Zero);
+        }
+        note.Save();
+        note.NotWritten();
+
+        Assert.Equal(12, _writesAskedFor);
+        Assert.Equal(TimeSpan.FromMinutes(5), _time.NextDue);
+    }
+
+    [Fact]
+    public async Task OnceTheFileIsOnTheDiskWithoutTheRemoval_NothingIsTriedAgain()
+    {
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var note = Open();
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.True(note.TryRead());
+            note.Add("srv1", "1");
+            note.Save();
+            note.NotWritten();
+            Assert.Equal(RemovalNote.FirstRetry, _time.NextDue);
+
+            // A change gets the owner's file written before the try: the removal is out of it, though the note is still held.
+            note.Done(note.Ids());
+        }
+
+        Assert.Null(_time.NextDue);
+        _time.Advance(RemovalNote.MaxRetry);
+        Assert.Equal(0, _writesAskedFor);
+    }
+
+    [Fact]
+    public void ARemovalThatIsNoted_AsksForNothing_WhenItsFileCouldNotBeWritten()
+    {
+        var note = Open();
+        note.Add("srv1", "1");
+        note.Save();
+
+        // The file stays as it was, with the note beside it: the next start leaves out what the note names.
+        note.NotWritten();
+
+        Assert.True(File.Exists(NotePath));
+        Assert.Null(_time.NextDue);
     }
 }

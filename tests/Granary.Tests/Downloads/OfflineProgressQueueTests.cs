@@ -543,6 +543,50 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         Assert.False(File.Exists(NotePath));
     }
 
+    // Nothing else may change the queue before Granary closes, least of all after a sign-out: what could be put neither in
+    // the note nor out of the file is tried again by itself. The file is held so that it cannot be read, or so that it can
+    // be read and not written.
+    [Theory]
+    [InlineData(FileShare.None, "could not be read")]
+    [InlineData(FileShare.Read, "could not be written")]
+    public async Task ASignOutThatCouldBeNeitherNotedNorWritten_IsTriedAgainByItself_UntilItIsOnTheDisk(FileShare held, string said)
+    {
+        await FourOnTheDiskAsync();
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var queue = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, held))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            queue.Remove("srv1", "1");
+            await queue.LatestSave;
+            // The first try comes while both are still held, and fares no better.
+            _time.Advance(RemovalNote.FirstRetry);
+            await queue.LatestSave;
+        }
+        Assert.Contains("ep_1", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+
+        // Nothing is recorded, sent or removed meanwhile: the next try comes all the same, twice as long after.
+        _time.Advance(RemovalNote.FirstRetry * 2);
+        await queue.LatestSave;
+
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("ep_1", file, StringComparison.Ordinal);
+        Assert.DoesNotContain("ep_2", file, StringComparison.Ordinal);
+        Assert.Contains("ep_3", file, StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+        // Through: nothing more is tried, and the next start holds nothing of the account's.
+        Assert.Null(_time.NextDue);
+        var next = Open();
+        Assert.Empty(next.Entries(Scope7));
+        Assert.Empty(next.Entries(Scope8));
+        Assert.Equal(2, next.Count(_ => true));
+        // What failed is said once, not at every try.
+        Assert.Single(_logs.Lines, line => line.Contains("could not be noted", StringComparison.Ordinal));
+        Assert.Single(_logs.Lines, line => line.Contains(said, StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task WhileTheNoteOfASignOutCannotBeRead_NothingTheFileHoldsIsShownOrSent_AndTheFileIsNotWritten()
     {

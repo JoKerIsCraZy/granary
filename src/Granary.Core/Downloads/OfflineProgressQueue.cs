@@ -49,7 +49,8 @@ public sealed record OfflineProgressEntry(DownloadScope Scope, string MediaItemI
 /// that cannot be read now (something has it open) is read again before each write, and what was recorded meanwhile is kept
 /// for this run and joins what the file holds; one that is not a queue is moved aside (<c>.bad</c>) first. What a sign-out
 /// takes out (<see cref="Remove"/>) is noted beside the file first (<see cref="RemovalNote"/>), so it also holds when the
-/// file cannot be read or written before Granary closes.
+/// file cannot be read or written before Granary closes; when the note could not be written either, the write is tried
+/// again by itself until one of the two is on the disk.
 /// </remarks>
 public sealed class OfflineProgressQueue
 {
@@ -74,13 +75,16 @@ public sealed class OfflineProgressQueue
     private bool _readFailureSaid;
     private Task _latestSave = Task.CompletedTask;
 
+    // Only a write touches it, one at a time.
+    private bool _writeFailureSaid;
+
     public OfflineProgressQueue(string path, TimeProvider time, ILogger<OfflineProgressQueue> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         _path = Path.GetFullPath(path);
         _time = time;
         _logger = logger;
-        _note = new RemovalNote(_path, "the positions recorded on this PC", logger);
+        _note = new RemovalNote(_path, "the positions recorded on this PC", logger, time, WriteAgain);
     }
 
     /// <summary><c>offline-progress.json</c> in the data folder.</summary>
@@ -405,6 +409,16 @@ public sealed class OfflineProgressQueue
     private void Save() =>
         _latestSave = _latestSave.ContinueWith(_ => Write(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
+    // The note asks for the write once more: a removal is on no disk yet, and nothing else may change the queue
+    // (RemovalNote.NotWritten).
+    private void WriteAgain()
+    {
+        lock (_gate)
+        {
+            Save();
+        }
+    }
+
     private void Write()
     {
         Writing?.Invoke();
@@ -420,7 +434,9 @@ public sealed class OfflineProgressQueue
             }
             if (!_loaded)
             {
-                // Never over a file that was not read: it may hold positions this run does not know.
+                // Never over a file that was not read: it may hold positions this run does not know. A removal that
+                // could not be noted either has the write tried again.
+                _note.NotWritten();
                 return;
             }
             file = new OfflineProgressFile
@@ -438,10 +454,17 @@ public sealed class OfflineProgressQueue
         catch (Exception ex)
         {
             // Whatever the disk does, the chain of writes goes on and nobody who waits for one fails. Only the kind: the
-            // message would name the data folder, with the Windows user's name.
-            _logger.LogWarning("The positions recorded on this PC could not be written ({Failure}); they hold for this run", DownloadLog.Failure(ex));
+            // message would name the data folder, with the Windows user's name. Said once until a write gets through: a
+            // removal that could not be noted either has the write tried again.
+            if (!_writeFailureSaid)
+            {
+                _writeFailureSaid = true;
+                _logger.LogWarning("The positions recorded on this PC could not be written ({Failure}); they hold for this run", DownloadLog.Failure(ex));
+            }
+            _note.NotWritten();
             return;
         }
+        _writeFailureSaid = false;
         _note.Done(file.AfterRemovals);
     }
 }

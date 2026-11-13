@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -29,6 +30,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
 
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly ScriptedSilo _silo = new();
+    private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
     private readonly List<KeptPlaybackSettings> _opened = [];
     private readonly FakeSessionManager _session = new()
@@ -57,7 +59,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
 
     private KeptPlaybackSettings Open()
     {
-        var kept = new KeptPlaybackSettings(FilePath, _session, _logs.For<KeptPlaybackSettings>());
+        var kept = new KeptPlaybackSettings(FilePath, _session, _time, _logs.For<KeptPlaybackSettings>());
         _opened.Add(kept);
         return kept;
     }
@@ -465,6 +467,49 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.NotNull(kept.Find("srv1/2/7", ["a"]));
         Assert.DoesNotContain("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
         Assert.False(File.Exists(NotePath));
+    }
+
+    // No answer of the server may be kept before Granary closes, least of all after a sign-out: what could be put neither
+    // in the note nor out of the file is tried again by itself. The file is held so that it cannot be read, or so that it
+    // can be read and not written.
+    [Theory]
+    [InlineData(FileShare.None, "could not be read")]
+    [InlineData(FileShare.Read, "could not be kept")]
+    public async Task ASignOutThatCouldBeNeitherNotedNorWritten_IsTriedAgainByItself_UntilItIsOnTheDisk(FileShare held, string said)
+    {
+        await FourOnTheDiskAsync();
+        // A note of an earlier sign-out, done with, that something still has open: a new one cannot take its place.
+        await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
+        var kept = Open();
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, held))
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            kept.Remove("srv1", "1");
+            await kept.LatestSave;
+            // The first try comes while both are still held, and fares no better.
+            _time.Advance(RemovalNote.FirstRetry);
+            await kept.LatestSave;
+        }
+        Assert.Contains("srv1/1/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+
+        // Nothing is kept or forgotten meanwhile: the next try comes all the same, twice as long after.
+        _time.Advance(RemovalNote.FirstRetry * 2);
+        await kept.LatestSave;
+
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.DoesNotContain("srv1/1/", file, StringComparison.Ordinal);
+        Assert.Contains("srv1/2/", file, StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+        // Through: nothing more is tried, and the next start holds nothing of the account's.
+        Assert.Null(_time.NextDue);
+        var next = Open();
+        Assert.Null(next.Find("srv1/1/7", ["a"]));
+        Assert.Null(next.Find("srv1/1/8", ["a"]));
+        Assert.NotNull(next.Find("srv1/2/7", ["a"]));
+        // What failed is said once, not at every try.
+        Assert.Single(_logs.Lines, line => line.Contains("could not be noted", StringComparison.Ordinal));
+        Assert.Single(_logs.Lines, line => line.Contains(said, StringComparison.Ordinal));
     }
 
     [Fact]

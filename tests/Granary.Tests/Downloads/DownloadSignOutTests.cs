@@ -40,7 +40,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         _credentials = new CredentialStore(new InMemorySecretStore(), _h.Logs.For<CredentialStore>());
         _progress = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
         _settings = new(() => new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
-            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>(), _h.Store));
+            _h.Time, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>(), _h.Store));
     }
 
     public async ValueTask DisposeAsync()
@@ -257,7 +257,8 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         earlier.Record(Scope8, "ep_5", 60_000, 0);
         earlier.Record(otherAccount, "ep_6", 60_000, 0);
         await earlier.LatestSave;
-        var earlierSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+        var earlierSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Time,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
         earlierSettings.Keep("srv1/1/7", ["a"], new EffectiveSettings([], 1));
         earlierSettings.Keep("srv1/2/7", ["a"], new EffectiveSettings([], 1));
         await earlierSettings.LatestSave;
@@ -272,7 +273,8 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         }
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
         var next = new OfflineProgressQueue(progressPath, _h.Time, _h.Logs.For<OfflineProgressQueue>());
-        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+        var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(settingsPath, _h.Session, _h.Time,
+            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
 
         // Nothing of the account's is there to send or to play with; the other account's is.
         Assert.Empty(next.Claim(Scope7, 10));
@@ -333,7 +335,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         // The next start, the moment the sign-out returned: nothing else is waited for.
         var next = new OfflineProgressQueue(Path.Combine(_h.Directory, "data", "offline-progress.json"), _h.Time, _h.Logs.For<OfflineProgressQueue>());
         var nextSettings = new Granary.Core.Playback.KeptPlaybackSettings(Path.Combine(_h.Directory, "data", "playback-settings.json"), _h.Session,
-            _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
+            _h.Time, _h.Logs.For<Granary.Core.Playback.KeptPlaybackSettings>());
 
         Assert.False(returnedWhileTheWriteWasHeld);
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
