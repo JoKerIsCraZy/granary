@@ -2,8 +2,8 @@ namespace Granary.Core.ViewModels.Player;
 
 /// <summary>
 /// The mouse cursor over the player's picture (PlayerPage.AutoHide.cs): it follows the pointer only. A real move of the
-/// mouse, or any move of a finger or a pen, shows it, and it hides with the controls while it is over the picture,
-/// whatever hid them: the idle wait, a remote's Back, a tap.
+/// mouse, a press of one of its buttons, or any move of a finger or a pen, shows it, and it hides with the controls
+/// while it is over the picture, whatever hid them: the idle wait, a remote's Back, a tap.
 /// Keys and the player's own changes show the controls and leave the cursor as it is, so a remote never brings it back
 /// over the picture. While the controls are hidden, a cursor that was off the picture as they hid (another window over
 /// it) hides once it is seen over the picture again.
@@ -110,6 +110,13 @@ public sealed class PlayerCursor(TimeProvider time)
     /// screen. It shows the cursor (and the page the controls).
     /// </summary>
     public void TouchOrPenMoves() => Shows();
+
+    /// <summary>
+    /// A button of the mouse, or a pen, went down on the page: the pointer is in use, so the cursor shows (and the page the
+    /// controls), as with a real move. A click on the picture would else pause with the controls up and no cursor to
+    /// reach them with.
+    /// </summary>
+    public void Presses() => Shows();
 
     /// <summary>
     /// The controls hid; a cursor over the picture goes with them. <paramref name="restsAt"/> is where the pointer is on

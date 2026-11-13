@@ -310,7 +310,7 @@ public sealed partial class AdminActivityViewModel : ObservableObject
     {
         int total = Math.Max(1, _rows.Count);
         Methods = [.. _rows.Values.GroupBy(row => row.Method)
-            .OrderBy(group => MethodRank(group.Key)).ThenBy(group => group.Key, StringComparer.Ordinal)
+            .OrderBy(group => AdminPlayMethod.Rank(group.Key)).ThenBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new AdminMethodShare(group.Key, group.Count(), group.Count() / (double)total, MethodFilter == group.Key,
                 MethodFilter is not null && MethodFilter != group.Key))];
         Nodes = [.. _rows.Values.SelectMany(row => AdminSessionText.Route(row.Session)).GroupBy(node => node.Key)
@@ -374,16 +374,6 @@ public sealed partial class AdminActivityViewModel : ObservableObject
         Notice = text;
         NoticeIsError = isError;
     }
-
-    private static int MethodRank(string method) => method switch
-    {
-        AdminPlayMethod.Direct => 0,
-        AdminPlayMethod.Remux => 1,
-        AdminPlayMethod.DirectStream => 2,
-        AdminPlayMethod.Transcode => 3,
-        AdminPlayMethod.Unknown => 4,
-        _ => 5,
-    };
 
     private bool IsDue() => _attemptedAt is not { } at || _time.GetUtcNow() - at >= RefreshEvery;
 

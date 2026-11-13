@@ -227,6 +227,22 @@ public sealed class MediaCardActions
         }
     }
 
+    /// <summary>
+    /// Opens what the card's title line stands for when that is not the card itself: an episode's series
+    /// (<see cref="MediaCard.HeadingId"/>), as the web's <c>headingHref</c>. False for a card whose title is its own; its
+    /// title line opens the card as its artwork does.
+    /// </summary>
+    public bool OpenHeading(MediaCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (card.HeadingId is not { Length: > 0 } id)
+        {
+            return false;
+        }
+        _navigation.NavigateTo(AppRoute.Item, id);
+        return true;
+    }
+
     /// <summary>Starts the movie or episode at its beginning, not where the viewer left off.</summary>
     public void PlayFromBeginning(MediaCard card)
     {

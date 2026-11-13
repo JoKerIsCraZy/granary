@@ -829,14 +829,23 @@ public sealed partial class MediaCardView : UserControl
         PickCheck.Visibility = Visible(picked);
     }
 
-    // The buttons take the foot, where the rating was.
+    // The pointer is on the artwork, or off the card (it left, or the card left the screen or took another title): then
+    // nothing of the pointer stays on the card.
     private void SetHovered(bool hovered)
     {
-        _hovered = hovered;
         if (!hovered)
         {
             _pointerMayRequest = false;
+            DropLinks();
         }
+        ShowHoverLook(hovered);
+    }
+
+    // The artwork's look alone, off too while the pointer is on the lines under it (ShowPointer). The buttons take the foot,
+    // where the rating was.
+    private void ShowHoverLook(bool hovered)
+    {
+        _hovered = hovered;
         ArtImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
         BottomBadges.Opacity = hovered ? 0 : 1;
         if (HoverLayer is not null)
@@ -847,8 +856,8 @@ public sealed partial class MediaCardView : UserControl
         ShowRequestPresence();
     }
 
-    // The buttons are brought up to date first: whether the server keeps TMDB titles on the watchlist may have been read
-    // after the card showed. The keyboard reaches them through focus.
+    // What shows follows where on the card the pointer is: the artwork's look over the artwork, a link over the lines under
+    // it (ShowPointer). The keyboard reaches the card's buttons through focus.
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
         if (Card is null || Pick is not null)
@@ -858,23 +867,13 @@ public sealed partial class MediaCardView : UserControl
         }
         // A touch or pen comes in just before its tap: Request shows for it only on a card that already had focus.
         _pointerMayRequest = e.Pointer.PointerDeviceType == PointerDeviceType.Mouse || _host?.FocusState is not (null or FocusState.Unfocused);
-        EnsureActions();
-        ShowState();
-        SetHovered(true);
+        ShowPointer(e, entered: true);
     }
 
     // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen), or one recycled
     // for another title under it, hears no PointerEntered; the pointer's first move over it shows the look again. Only the
     // look: Request stays disarmed until the pointer really enters, so a click meant for the title never requests it.
-    private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_hovered && Card is not null && Pick is null)
-        {
-            EnsureActions();
-            ShowState();
-            SetHovered(true);
-        }
-    }
+    private void OnPointerMoved(object sender, PointerRoutedEventArgs e) => ShowPointer(e, entered: false);
 
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
 
@@ -1038,6 +1037,7 @@ public sealed partial class MediaCardView : UserControl
                 FollowHostFocus();
             }
         }
+        FollowHostPresses();
         ShowState();
         _loaded = true;
         UpdatePing();
@@ -1060,6 +1060,7 @@ public sealed partial class MediaCardView : UserControl
         if (_host is not null)
         {
             _host.GotFocus -= OnHostGotFocus;
+            ForgetHostPresses();
             if (_followsHostFocus)
             {
                 _followsHostFocus = false;

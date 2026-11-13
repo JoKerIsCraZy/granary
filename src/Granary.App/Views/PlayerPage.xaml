@@ -984,7 +984,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Button Content="{x:Bind t:AppText.Get('upNext.playNow')}" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
+                    <Button x:Name="NextUpPlayButton" Content="{x:Bind t:AppText.Get('upNext.playNow')}" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
                             Command="{x:Bind ViewModel.PlayNextNowCommand}" />
                     <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}"
                             Command="{x:Bind ViewModel.CancelNextUpCommand}" />

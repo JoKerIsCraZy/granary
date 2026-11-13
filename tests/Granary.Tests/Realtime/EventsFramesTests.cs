@@ -46,6 +46,83 @@ public sealed class EventsFramesTests
         Assert.NotNull(frame);
         Assert.Equal(EventsFrameTypes.Subscribed, frame.Type);
         Assert.Equal(["notifications"], frame.Rejected);
+        Assert.Equal(["catalog", "user_state"], frame.Accepted);
+    }
+
+    [Fact]
+    public void AFrameCutShort_IsReadByWhatItsHeadNames()
+    {
+        // What the socket keeps of a frame larger than the lane takes: its first bytes.
+        var snapshot = EventsFrames.Parse("""{"type":"snapshot","channel":"sessions","timestamp":"2026-10-01T12:00:00Z","data":[{"session_id":"s1","username":"ele""");
+        var replaced = EventsFrames.Parse("""{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e1","timestamp":"t","data":[{"sess""");
+
+        Assert.NotNull(snapshot);
+        Assert.True(snapshot.IsCut);
+        Assert.Equal((EventsFrameTypes.Snapshot, "sessions"), (snapshot.Type, snapshot.Channel));
+        Assert.Equal(JsonValueKind.Undefined, snapshot.Data.ValueKind);
+        Assert.NotNull(replaced);
+        Assert.Equal((EventsFrameTypes.Event, "sessions", "sessions.replaced", true), (replaced.Type, replaced.Channel, replaced.Event, replaced.IsCut));
+    }
+
+    [Fact]
+    public void AWholeFrame_IsNotCut() =>
+        Assert.False(EventsFrames.Parse("""{ "type": "snapshot", "channel": "sessions", "timestamp": "t", "data": [] }""")!.IsCut);
+
+    // The lists these frames tell of are read from the server: their own rows are never looked at.
+    [Theory]
+    [InlineData("""{"type":"event","channel":"sessions","event":"sessions.replaced","event_id":"e1","timestamp":"t","data":[{"session_id":"s1"}]}""")]
+    [InlineData("""{"type":"snapshot","channel":"sessions","timestamp":"t","data":[{"session_id":"s1"}]}""")]
+    [InlineData("""{"type":"event","channel":"tasks","event":"task.updated","event_id":"e1","timestamp":"t","data":{"key":"backup"}}""")]
+    [InlineData("""{"type":"snapshot","channel":"tasks","timestamp":"t","data":[{"key":"backup"}]}""")]
+    [InlineData("""{"type":"event","channel":"download_preparations","event":"download_preparation.changed","event_id":"e1","timestamp":"t","data":{"id":"job-1"}}""")]
+    [InlineData("""{"type":"event","channel":"download_preparations","event":"download_storage.changed","event_id":"e1","timestamp":"t","data":{"a":1}}""")]
+    public void AFrameThatIsOnlyACue_KeepsNoPayload_AndNeedNotBeTakenWhole(string text)
+    {
+        var frame = EventsFrames.Parse(text);
+
+        Assert.NotNull(frame);
+        Assert.Equal(JsonValueKind.Undefined, frame.Data.ValueKind);
+        Assert.False(frame.IsCut);
+        Assert.True(EventsFrames.IsCue(frame.Type, frame.Channel, frame.Event));
+        Assert.False(EventsFrames.TakesWhole(System.Text.Encoding.UTF8.GetBytes(text[..^8])));
+    }
+
+    [Theory]
+    [InlineData("""{"type":"event","channel":"user_state","event":"user_state.changed","event_id":"e1","timestamp":"t","data":{"profile_id":"7","change":"watched"}}""", JsonValueKind.Object)]
+    [InlineData("""{"type":"event","channel":"catalog","event":"catalog.item.changed","event_id":"e1","timestamp":"t","data":{"content_id":"movie:heat"}}""", JsonValueKind.Object)]
+    [InlineData("""{"type":"snapshot","channel":"notifications","timestamp":"t","data":[{"id":"n1"}]}""", JsonValueKind.Array)]
+    [InlineData("""{"type":"event","channel":"notifications","event":"notification.created","event_id":"e1","timestamp":"t","data":{"id":"n1"}}""", JsonValueKind.Object)]
+    [InlineData("""{"type":"snapshot","channel":"scans","timestamp":"t","data":[{"id":"a"}]}""", JsonValueKind.Array)]
+    [InlineData("""{"type":"event","channel":"scans","event":"scan.progress","event_id":"e1","timestamp":"t","data":{"id":"a"}}""", JsonValueKind.Object)]
+    [InlineData("""{"type":"event","channel":"download_preparations","event":"download_preparation.progress","event_id":"e1","timestamp":"t","data":{"id":"job-1"}}""", JsonValueKind.Object)]
+    [InlineData("""{"type":"event","channel":"something_new","event":"new.thing","event_id":"e1","timestamp":"t","data":{"id":"x"}}""", JsonValueKind.Object)]
+    public void AFrameWhosePayloadIsUsed_KeepsIt_AndIsTakenWhole(string text, JsonValueKind payload)
+    {
+        var frame = EventsFrames.Parse(text);
+
+        Assert.NotNull(frame);
+        Assert.Equal(payload, frame.Data.ValueKind);
+        Assert.True(EventsFrames.TakesWhole(System.Text.Encoding.UTF8.GetBytes(text[..^8])));
+    }
+
+    [Theory]
+    [InlineData("""{"data":[{"type":"event","channel":"sessions","eve""")]
+    [InlineData("""{"type":"error","code":"internal_error","message":"Failed to lo""")]
+    [InlineData("not json at all")]
+    [InlineData("")]
+    public void AHeadThatDoesNotNameACue_IsTakenWhole(string head) =>
+        Assert.True(EventsFrames.TakesWhole(System.Text.Encoding.UTF8.GetBytes(head)));
+
+    [Fact]
+    public void Hello_SaysWhichChannelsTheServerGives()
+    {
+        var hello = EventsFrames.Parse("""{ "type": "hello", "schema_version": 1, "connection_id": "c", "available_channels": ["catalog", "sessions"], "required_action": "subscribe" }""");
+        var older = EventsFrames.Parse("""{ "type": "hello", "schema_version": 1, "connection_id": "c" }""");
+        var none = EventsFrames.Parse("""{ "type": "hello", "schema_version": 1, "connection_id": "c", "available_channels": null }""");
+
+        Assert.Equal(["catalog", "sessions"], hello!.Available);
+        Assert.Null(older!.Available);
+        Assert.Null(none!.Available);
     }
 
     [Theory]
@@ -62,6 +139,8 @@ public sealed class EventsFramesTests
     [InlineData("[1, 2]")]
     [InlineData("""{ "channel": "catalog" }""")]
     [InlineData("""{ "type": 3 }""")]
+    [InlineData("""{ "channel": "sessions", "data": [{ "type": "eve""")]
+    [InlineData("""{ "type": "event" "channel" """)]
     public void WhatIsNoFrame_IsNothing(string text) => Assert.Null(EventsFrames.Parse(text));
 
     [Fact]

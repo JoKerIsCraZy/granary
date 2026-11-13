@@ -3,6 +3,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 
@@ -139,5 +140,25 @@ public sealed class UpNextSourceTests
         var cards = await Create().OnDeckAsync("ted", Token);
 
         Assert.Equal(["m-1", "mob-2-6"], cards.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task OnDeckCards_HaveNoLinks_AClickOnThemPlays()
+    {
+        _silo.On(HttpMethod.Get, "api/v2/home/sections", ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "sections": [
+              { "id": "cw", "section_type": "continue_watching", "title": "Continue Watching", "total_count": 1, "items": [
+                { "content_id": "mob-2-6", "type": "episode", "title": "A Different Corner", "series_id": "mobland", "series_title": "MobLand",
+                  "season_number": 2, "episode_number": 6 }
+              ] }
+            ] }
+            """));
+
+        var card = Assert.Single(await Create().OnDeckAsync("ted", Token));
+
+        // The player's row starts the title; its title line must not lead away to the series.
+        Assert.Null(card.HeadingId);
+        Assert.Equal(CardLines.None, CardLinks.Underlined(card, CardLines.Title));
+        Assert.Equal(CardLines.None, CardLinks.Underlined(card, CardLines.Subtitle));
     }
 }

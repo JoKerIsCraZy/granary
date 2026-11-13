@@ -202,7 +202,8 @@ public static class AdminSessionText
         return target;
     }
 
-    private static string? Codec(string? codec) =>
+    /// <summary>"H.264", "HEVC", "TrueHD"; a codec without a name of its own in capitals; null without one.</summary>
+    internal static string? Codec(string? codec) =>
         codec?.Trim() is { Length: > 0 } trimmed ? CodecLabels.GetValueOrDefault(trimmed, trimmed.ToUpperInvariant()) : null;
 
     private static string? Layout(int? channels) => channels switch

@@ -79,11 +79,11 @@ public sealed class ForYouViewModelTests
     public async Task Backdrops_AreAskedForAsWideAsTheHeroDrawsThem()
     {
         var page = Create();
-        page.Hero.Window = (3840, 1560);
+        page.Hero.Window = (1920, 1040);
 
         await page.ActivateAsync(isReturn: false);
 
-        Assert.Contains("backdrop_width=1568", _harness.Queries(DiscoverPath)[0], StringComparison.Ordinal);
+        Assert.Contains("backdrop_width=1824", _harness.Queries(DiscoverPath)[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -96,12 +96,12 @@ public sealed class ForYouViewModelTests
         await page.ActivateAsync(isReturn: true);
         Assert.Single(_harness.Queries(DiscoverPath));
 
-        // The window is much wider now, as it is after Hero size was set to Full.
+        // The window is much wider now: its hero takes the widest size the server keeps.
         page.Hero.Window = (3840, 1560);
         await page.ActivateAsync(isReturn: true);
 
         Assert.Equal(2, _harness.Queries(DiscoverPath).Count);
-        Assert.Contains("backdrop_width=1568", _harness.Queries(DiscoverPath)[1], StringComparison.Ordinal);
+        Assert.Contains("backdrop_width=2432", _harness.Queries(DiscoverPath)[1], StringComparison.Ordinal);
         Assert.Equal(LibraryLoadState.Ready, page.State);
     }
 

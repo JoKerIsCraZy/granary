@@ -58,6 +58,8 @@ public sealed partial class PlayerPage
     private void OnDockedChanged()
     {
         IsCompact = IsMiniView || IsDocked;
+        // The bar's picture is a button: no shield over it.
+        KeepShield();
         Root.Background = IsDocked ? NoBackground : PlayerBackground;
         if (IsDocked)
         {

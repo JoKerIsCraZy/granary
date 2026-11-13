@@ -1,5 +1,6 @@
 #if DEBUG
 using System.Runtime.InteropServices;
+using Granary.Core.Controller;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -18,6 +19,8 @@ namespace Granary.App.Debugging;
 /// main window's input window, so the main window keeps its focus; Play/Pause and the track keys as real media keys,
 /// which Windows gives the main window or, while something plays, its media session.
 /// The window does not take activation (and gives it back if it gets it), and a held arrow repeats as a held key does.
+/// Below the keys, a game controller: each button is a reading the main window takes as a pad's
+/// (<see cref="MainWindow.HoldDebugPad"/>), held as long as a press, or longer where holding is the point.
 /// </summary>
 internal sealed partial class RemoteWindow : Window
 {
@@ -29,14 +32,24 @@ internal sealed partial class RemoteWindow : Window
     private const int GwlExStyle = -20;
     private const long ExNoActivate = 0x08000000;
 
+    // What the keys take, in effective pixels: the widest row (a pad's four keys) and all the rows with three lines of
+    // the focus text, each with the padding around them. And how far the window keeps from the display's corner.
+    private const double KeysWidth = 304;
+    private const double KeysHeight = 824;
+    private const double EdgeGap = 20;
+
     private static readonly TimeSpan ActivationSettle = TimeSpan.FromMilliseconds(80);
 
-    private readonly Window _main;
+    private static readonly TimeSpan PadPress = TimeSpan.FromMilliseconds(90);
+    private static readonly TimeSpan PadHold = TimeSpan.FromMilliseconds(300);
+    private static readonly TimeSpan PadLongHold = TimeSpan.FromMilliseconds(700);
+
+    private readonly MainWindow _main;
     private readonly Queue<(uint Message, uint Key, bool Repeat)> _pending = new();
     private bool _sending;
     private readonly TextBlock _focus = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Opacity = 0.75 };
 
-    public RemoteWindow(Window main)
+    public RemoteWindow(MainWindow main)
     {
         _main = main;
         Title = "TV remote";
@@ -49,9 +62,7 @@ internal sealed partial class RemoteWindow : Window
             presenter.IsMaximizable = false;
             presenter.IsResizable = false;
         }
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(300, 520));
-        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        AppWindow.Move(new Windows.Graphics.PointInt32(area.X + area.Width - 320, area.Y + area.Height - 540));
+        PlaceInCorner(hwnd);
         FocusManager.GotFocus += OnFocusMoved;
         Closed += (_, _) => FocusManager.GotFocus -= OnFocusMoved;
         main.Closed += (_, _) => Close();
@@ -59,6 +70,27 @@ internal sealed partial class RemoteWindow : Window
 
     /// <summary>Shows the remote without taking activation from the main window.</summary>
     public void Show() => AppWindow.Show(activateWindow: false);
+
+    // In the lower right corner of its display, as large as the keys are. AppWindow counts the display's own pixels and
+    // the keys are laid out in effective ones, so the size goes by the display's scale: at 150 % a window of a fixed
+    // 300 by 820 cut the controller's lower rows off. Never larger than the display's work area; there the keys scroll.
+    private void PlaceInCorner(nint hwnd)
+    {
+        double scale = GetDpiForWindow(hwnd) is var dpi and > 0 ? dpi / 96.0 : 1;
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+        AppWindow.ResizeClient(new Windows.Graphics.SizeInt32((int)Math.Ceiling(KeysWidth * scale), (int)Math.Ceiling(KeysHeight * scale)));
+        var size = AppWindow.Size;
+        int width = Math.Min(size.Width, area.Width);
+        int height = Math.Min(size.Height, area.Height);
+        if (width != size.Width || height != size.Height)
+        {
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+        }
+        int gap = (int)(EdgeGap * scale);
+        AppWindow.Move(new Windows.Graphics.PointInt32(
+            Math.Max(area.X, area.X + area.Width - width - gap),
+            Math.Max(area.Y, area.Y + area.Height - height - gap)));
+    }
 
     private Grid Build()
     {
@@ -81,9 +113,27 @@ internal sealed partial class RemoteWindow : Window
         root.Children.Add(Row(Key("Back", "Back (Browser Back)", 0xA6), Key("Esc", "Esc", 0x1B), Key("⌫", "Backspace", 0x08)));
         root.Children.Add(Row(Key("☰", "Menu (context key)", 0x5D), Key("Home", "Home", 0x24), Key("End", "End", 0x23)));
         root.Children.Add(Row(Media("⏮", "Previous track", 0xB1), Media("⏯", "Play/Pause", 0xB3), Media("⏭", "Next track", 0xB0)));
+        root.Children.Add(new TextBlock { Text = "Game controller", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        root.Children.Add(Row(Pad("◀", "Pad Left", new(PadButtons.DPadLeft)), Pad("▲", "Pad Up", new(PadButtons.DPadUp)),
+            Pad("▼", "Pad Down", new(PadButtons.DPadDown)), Pad("▶", "Pad Right", new(PadButtons.DPadRight))));
+        root.Children.Add(Row(Pad("A", "Pad A", new(PadButtons.A)), Pad("B", "Pad B", new(PadButtons.B)),
+            Pad("X", "Pad X", new(PadButtons.X)), Pad("Y", "Pad Y", new(PadButtons.Y))));
+        root.Children.Add(Row(Pad("View", "Pad View", new(PadButtons.View)), Pad("Menu", "Pad Menu", new(PadButtons.Menu)),
+            Pad("LB", "Pad LB", new(PadButtons.LeftShoulder)), Pad("RB", "Pad RB", new(PadButtons.RightShoulder))));
+        root.Children.Add(Row(Pad("LT", "Pad LT", new(PadButtons.None, LeftTrigger: 1), PadHold), Pad("RT", "Pad RT", new(PadButtons.None, RightTrigger: 1), PadHold),
+            Pad("R▲", "Pad right stick up", new(PadButtons.None, RightY: 1), PadHold), Pad("R▼", "Pad right stick down", new(PadButtons.None, RightY: -1), PadHold)));
+        root.Children.Add(Row(Pad("Hold A", "Pad hold A", new(PadButtons.A), PadLongHold), Pad("Hold ▶", "Pad hold Right", new(PadButtons.DPadRight), PadLongHold + PadLongHold)));
         AutomationProperties.SetAutomationId(_focus, "RemoteFocus");
         root.Children.Add(_focus);
-        return new Grid { Children = { root }, Background = (Brush)Application.Current.Resources["SiloBackgroundBrush"] };
+        // On a display too low for all the keys they scroll (PlaceInCorner).
+        var keys = new ScrollViewer
+        {
+            Content = root,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            IsTabStop = false,
+        };
+        return new Grid { Children = { keys }, Background = (Brush)Application.Current.Resources["SiloBackgroundBrush"] };
     }
 
     private static void Place(Grid grid, FrameworkElement element, int row, int column)
@@ -98,11 +148,22 @@ internal sealed partial class RemoteWindow : Window
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
         foreach (var key in keys)
         {
-            key.Width = 72;
+            // Three keys to a row, or a pad's four.
+            key.Width = keys.Length > 3 ? 60 : 72;
             key.Height = 44;
             row.Children.Add(key);
         }
         return row;
+    }
+
+    // A pad's button, stick or trigger as the main window reads it: held for a press, or for as long as is given.
+    private Button Pad(string label, string name, PadReading reading, TimeSpan? held = null)
+    {
+        var button = new Button { Content = label, IsTabStop = false, Padding = new Thickness(0) };
+        AutomationProperties.SetName(button, name);
+        ToolTipService.SetToolTip(button, name);
+        button.Click += (_, _) => _main.HoldDebugPad(reading, held ?? PadPress);
+        return button;
     }
 
     // A key the main window gets as a key: once per click, and while an arrow is held, again as a held key repeats.
@@ -245,6 +306,9 @@ internal sealed partial class RemoteWindow : Window
 
     [LibraryImport("user32.dll", EntryPoint = "keybd_event")]
     private static partial void KeybdEvent(byte key, byte scan, uint flags, nuint extraInfo);
+
+    [LibraryImport("user32.dll")]
+    private static partial uint GetDpiForWindow(nint hwnd);
 
     [LibraryImport("user32.dll")]
     private static partial nint GetForegroundWindow();
