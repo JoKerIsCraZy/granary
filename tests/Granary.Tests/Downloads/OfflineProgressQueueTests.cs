@@ -659,6 +659,44 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADamagedNoteThatALaterSignOutWroteAgain_StillTakesNothingThatWasRecordedSince_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, "{ not json", Token);
+        var queue = Open();
+
+        // Something has the note open as Granary starts: everything the file held goes, the file names the note, and the
+        // note stays where it is.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.Equal(0, queue.Count(_ => true));
+            queue.Record(Scope7, "ep_5", 5000, 0);
+            queue.Record(OtherAccount, "ep_6", 6000, 0);
+            queue.Record(OtherServer, "ep_7", 7000, 0);
+            await queue.LatestSave;
+        }
+        Assert.True(File.Exists(NotePath));
+
+        // Another account signs out: its removal is written into the note. Something reads the file as it is to be written
+        // without that account's, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            queue.Remove("srv1", "2");
+            await queue.LatestSave;
+        }
+        Assert.Contains("ep_6", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        var next = Open();
+
+        // Only what that sign-out took is gone: the file still names the damaged note it was written after.
+        Assert.Equal(["ep_5"], next.Entries(Scope7).Select(e => e.MediaItemId));
+        Assert.Equal(["ep_7"], next.Entries(OtherServer).Select(e => e.MediaItemId));
+        Assert.Empty(next.Entries(OtherAccount));
+        await next.LatestSave;
+        Assert.DoesNotContain("ep_6", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
+
+    [Fact]
     public async Task ASecondRemovalWhileTheNoteOfAnEarlierOneIsStillThere_IsNotedBesideIt()
     {
         await FourOnTheDiskAsync();

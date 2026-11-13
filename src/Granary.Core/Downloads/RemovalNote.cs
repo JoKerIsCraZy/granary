@@ -114,9 +114,7 @@ internal sealed class RemovalNote
                     _what);
                 return Everything(bytes);
             }
-            // JSON can say null or anything for every member.
-            if (file?.Removals is { } removals
-                && removals.All(r => r is { Id.Length: > 0, ServerEntryId.Length: > 0, AccountId: null or { Length: > 0 } }))
+            if (file?.Removals is { } removals && removals.All(IsOneOfGranarys))
             {
                 return removals;
             }
@@ -129,9 +127,24 @@ internal sealed class RemovalNote
         return Everything(bytes);
     }
 
+    // How the id of the removal that stands for everything begins.
+    private const string EverythingPrefix = "damaged-";
+
     // Everything the file holds, under an id made of the note's content: a file written after it names that id, so the
     // same note, still there at the next start, takes nothing more.
-    private static NotedRemoval[] Everything(byte[] bytes) => [new NotedRemoval("damaged-" + Convert.ToHexString(SHA256.HashData(bytes)), null, null)];
+    private static NotedRemoval[] Everything(byte[] bytes) =>
+        [new NotedRemoval(EverythingPrefix + Convert.ToHexString(SHA256.HashData(bytes)), null, null)];
+
+    // A removal as Save writes one; JSON can say null or anything for every member. One without a server is what a note
+    // that could not be understood became (Everything), written into the note again by a later removal while that note
+    // could not be deleted. It keeps its id: the file names that id, and under another one the note would take what was
+    // recorded since. Any other removal without a server is not Granary's, and its note counts as damaged.
+    private static bool IsOneOfGranarys(NotedRemoval? removal) => removal switch
+    {
+        { Id.Length: > 0, ServerEntryId.Length: > 0, AccountId: null or { Length: > 0 } } => true,
+        { Id: { } id, ServerEntryId: null, AccountId: null } => id.StartsWith(EverythingPrefix, StringComparison.Ordinal),
+        _ => false,
+    };
 
     /// <summary>Notes that an account's entries on a server were removed, or every account's there (<paramref name="accountId"/> null).</summary>
     public void Add(string serverEntryId, string? accountId)
@@ -262,7 +275,7 @@ internal sealed class RemovalNote
 /// <summary>
 /// One removal a <see cref="RemovalNote"/> names: an account's entries on a server, or every account's there
 /// (<see cref="AccountId"/> null). No <see cref="ServerEntryId"/> stands for everything, which only a note that cannot be
-/// understood means.
+/// understood means; a later removal writes it into the note under the id it has.
 /// </summary>
 internal sealed record NotedRemoval(string Id, string? ServerEntryId, string? AccountId);
 

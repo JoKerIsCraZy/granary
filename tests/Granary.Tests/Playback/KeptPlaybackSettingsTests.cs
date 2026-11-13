@@ -524,4 +524,42 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         Assert.Contains("damaged", _logs.All, StringComparison.Ordinal);
         Assert.DoesNotContain(_folder, _logs.All, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task ADamagedNoteThatALaterSignOutWroteAgain_StillForgetsNothingThatWasKeptSince_AfterGranaryStartedAgain()
+    {
+        await FourOnTheDiskAsync();
+        await File.WriteAllTextAsync(NotePath, "{ not json", Token);
+        var kept = Open();
+
+        // Something has the note open as Granary starts: everything the file held is forgotten, the file names the note,
+        // and the note stays where it is.
+        using (new FileStream(NotePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.Null(kept.Find("srv10/1/7", ["a"]));
+            kept.Keep("srv1/1/7", ["b"], new EffectiveSettings([], 4));
+            kept.Keep("srv1/2/7", ["b"], new EffectiveSettings([], 4));
+            kept.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));
+            await kept.LatestSave;
+        }
+        Assert.True(File.Exists(NotePath));
+
+        // Another account signs out: its removal is written into the note. Something reads the file as it is to be written
+        // without that account's, and Granary closes before it lets go.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            kept.Remove("srv1", "2");
+            await kept.LatestSave;
+        }
+        Assert.Contains("srv1/2/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        var next = Open();
+
+        // Only what that sign-out forgot is gone: the file still names the damaged note it was written after.
+        Assert.Equal(4, next.Find("srv1/1/7", ["b"])?.Revision);
+        Assert.Equal(4, next.Find("srv10/1/7", ["b"])?.Revision);
+        Assert.Null(next.Find("srv1/2/7", ["b"]));
+        await next.LatestSave;
+        Assert.DoesNotContain("srv1/2/", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(File.Exists(NotePath));
+    }
 }

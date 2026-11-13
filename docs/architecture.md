@@ -1468,7 +1468,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   may name anyone: the file counts as unread until it can be, so nothing of it is used and it is not written. A note that
   no longer says whose entries were to go takes everything the file holds, since losing what was kept is the lesser harm
   than keeping what a sign-out was to take; a file written after it names it by its content, so the same damaged note
-  does so once. A note of a newer `version` than this build writes is taken the same way, on purpose: a later Granary may
+  does so once. A removal while such a note is still there writes it into the note too, as a removal without
+  `server_entry_id` under the id the file names (`damaged-…`), and it is read back under that id: it still takes nothing
+  that was recorded since. Any other removal without `server_entry_id` is not Granary's, and its note counts as damaged.
+  A note of a newer `version` than this build writes is taken the same way, on purpose: a later Granary may
   mean more by it than this one reads out of it, so its removals are not taken for this version's. One that names no
   version is read as version 1; there is no earlier form. A note that cannot be written is logged, with the kind of failure only: the removal then holds for this
   run, and the entries are back at the next start unless the file could be written before Granary closed. The queue of
