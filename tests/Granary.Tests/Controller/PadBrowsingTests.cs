@@ -186,6 +186,51 @@ public sealed class PadBrowsingTests
     }
 
     [Fact]
+    public void AShortPressWhosePadDropsOut_PressesNothing()
+    {
+        var down = _bench.Read(PadButtons.A);
+        var lost = _bench.Read(PadReading.Failed);
+        var back = _bench.Rest(Second);
+        var again = _bench.Tap(PadButtons.A);
+
+        Assert.Empty(down);
+        Assert.Empty(lost);
+        Assert.Empty(back);
+        Assert.Equal([new PadAction(PadActionKind.Activate)], again);
+    }
+
+    [Fact]
+    public void WhatIsStillHeldAfterAReadingFailed_DoesNothingUntilItIsPressedAgain()
+    {
+        _bench.Hold(PadButtons.A | PadButtons.DPadDown, TimeSpan.FromMilliseconds(100));
+        _bench.Read(PadReading.Failed);
+
+        // Neither the long press nor the held direction goes on from before.
+        var held = _bench.Hold(PadButtons.A | PadButtons.DPadDown, Second);
+        var up = _bench.Read(default);
+        var pressed = _bench.Read(PadButtons.DPadDown);
+
+        Assert.Empty(held);
+        Assert.Empty(up);
+        Assert.Equal([PadAction.Move(PadDirection.Down)], pressed);
+    }
+
+    [Fact]
+    public void AReadingThatFailed_IsNoActivity_AndKeepsThePadFromIdlingUntilItIsReadAgain()
+    {
+        _bench.Read(PadButtons.B);
+
+        _bench.Read(PadReading.Failed);
+        bool isActive = _bench.Pad.IsActive;
+        bool isIdle = _bench.Pad.IsIdle;
+        _bench.Read(default);
+
+        Assert.False(isActive);
+        Assert.False(isIdle);
+        Assert.True(_bench.Pad.IsIdle);
+    }
+
+    [Fact]
     public void AHeldIntoThePlayer_PausesNothing()
     {
         _bench.Read(PadButtons.A);
@@ -252,5 +297,15 @@ public sealed class PadBrowsingTests
             new PadReading(PadButtons.DPadLeft, LeftX: -0.8, RightY: 0.1, RightTrigger: 1));
 
         Assert.Equal(new PadReading(PadButtons.A | PadButtons.DPadLeft, LeftX: -0.8, RightY: -0.9, LeftTrigger: 0.3, RightTrigger: 1), merged);
+    }
+
+    [Fact]
+    public void TwoPads_OneOfWhichCouldNotBeRead_AreNoReading()
+    {
+        var pressed = new PadReading(PadButtons.A);
+
+        Assert.True(PadReading.Merge(PadReading.Failed, pressed).HasFailed);
+        Assert.True(PadReading.Merge(pressed, PadReading.Failed).HasFailed);
+        Assert.False(PadReading.Merge(pressed, default).HasFailed);
     }
 }

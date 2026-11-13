@@ -103,10 +103,16 @@ public sealed partial class PadInterpreter
 
     /// <summary>
     /// Takes one reading and returns what it asks for, in order. The list is reused: it holds until the next call.
+    /// A reading that failed (<see cref="PadReading.HasFailed"/>) asks for nothing but the end of a seek under way.
     /// </summary>
     public IReadOnlyList<PadAction> Update(PadReading reading, PadContext context)
     {
         _actions.Clear();
+        if (reading.HasFailed)
+        {
+            Lose();
+            return _actions;
+        }
         _now = _time.GetElapsedTime(_origin);
         var step = _now - _last;
         step = step > PadTuning.LongestStep ? PadTuning.LongestStep : step;
@@ -180,6 +186,17 @@ public sealed partial class PadInterpreter
             SendSeekWhenDue();
         }
         return _actions;
+    }
+
+    // A reading that failed says nothing of the pad, so nothing was let go and nothing fires: a short A whose pad drops
+    // out is no press. What was held is forgotten as by Reset, and a seek under way is called off for the seek bar.
+    private void Lose()
+    {
+        if (_hasSeek)
+        {
+            Add(PadActionKind.SeekCancel);
+        }
+        Reset();
     }
 
     private static double Pressure(double pull, bool isButtonDown)

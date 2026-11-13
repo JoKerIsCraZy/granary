@@ -114,7 +114,8 @@ public sealed partial class MainWindow
             {
                 NotePresence();
             }
-            var interval = _pad.IsIdle ? PadRestPoll : PadPoll;
+            // A pad that cannot be read is asked no more often than one at rest.
+            var interval = _pad.IsIdle || reading.HasFailed ? PadRestPoll : PadPoll;
             if (_padTimer.Interval != interval)
             {
                 _padTimer.Interval = interval;

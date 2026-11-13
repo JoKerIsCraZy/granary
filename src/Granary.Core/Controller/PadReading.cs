@@ -42,6 +42,7 @@ public enum PadDirection
 /// What a pad reports at one moment. Sticks run from -1 to 1, right and up positive; triggers from 0 to 1. The default
 /// is a pad at rest.
 /// </summary>
+/// <param name="HasFailed">The pad could not be read: nothing is known of it, least of all that anything was let go.</param>
 public readonly record struct PadReading(
     PadButtons Buttons,
     double LeftX = 0,
@@ -49,11 +50,18 @@ public readonly record struct PadReading(
     double RightX = 0,
     double RightY = 0,
     double LeftTrigger = 0,
-    double RightTrigger = 0)
+    double RightTrigger = 0,
+    bool HasFailed = false)
 {
     /// <summary>
+    /// No reading: the pad could not be asked. <see cref="PadInterpreter"/> forgets what was held rather than taking it
+    /// as let go.
+    /// </summary>
+    public static PadReading Failed => new(PadButtons.None, HasFailed: true);
+
+    /// <summary>
     /// Two pads as one: any pad in the room works, and a pad that shows up twice (itself and as the Xbox pad a tool makes
-    /// of it) still presses each button once.
+    /// of it) still presses each button once. With one of them not read there is no reading: what that one holds is not known.
     /// </summary>
     public static PadReading Merge(PadReading first, PadReading second) => new(
         first.Buttons | second.Buttons,
@@ -62,7 +70,8 @@ public readonly record struct PadReading(
         Further(first.RightX, second.RightX),
         Further(first.RightY, second.RightY),
         Math.Max(first.LeftTrigger, second.LeftTrigger),
-        Math.Max(first.RightTrigger, second.RightTrigger));
+        Math.Max(first.RightTrigger, second.RightTrigger),
+        first.HasFailed || second.HasFailed);
 
     private static double Further(double first, double second) => Math.Abs(second) > Math.Abs(first) ? second : first;
 }

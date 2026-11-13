@@ -54,7 +54,10 @@ internal sealed class GamepadReader
 
     public bool HasPads => _pads.Count > 0;
 
-    /// <summary>All pads as one; a pad at rest when there is none, or when Windows could not be asked.</summary>
+    /// <summary>
+    /// All pads as one; a pad at rest when there is none. When Windows could not be asked there is no reading
+    /// (<see cref="PadReading.Failed"/>): a pad at rest would let go of what was held, and press it.
+    /// </summary>
     public PadReading Read()
     {
         var merged = default(PadReading);
@@ -75,7 +78,7 @@ internal sealed class GamepadReader
                 _hasFailed = true;
                 _logger.LogWarning(ex, "A game controller could not be read");
             }
-            return default;
+            return PadReading.Failed;
         }
     }
 

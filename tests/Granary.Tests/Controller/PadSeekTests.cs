@@ -222,6 +222,31 @@ public sealed class PadSeekTests
     }
 
     [Fact]
+    public void AReadingThatFailsMidScrub_CallsTheSeekOff_AndTheTriggerStillPulledScrubsNoMore()
+    {
+        _bench.Hold(FullRightTrigger, Second);
+
+        var lost = _bench.Read(PadReading.Failed);
+        var after = _bench.Hold(FullRightTrigger, Second);
+        after.AddRange(_bench.Rest(Second));
+
+        Assert.Equal([new PadAction(PadActionKind.SeekCancel)], lost);
+        Assert.Empty(after);
+    }
+
+    [Fact]
+    public void AReadingThatFailsWhileAStepWaits_CallsTheSeekOff()
+    {
+        _bench.Tap(PadButtons.DPadRight);
+
+        var lost = _bench.Read(PadReading.Failed);
+        var after = _bench.Rest(Second);
+
+        Assert.Equal([new PadAction(PadActionKind.SeekCancel)], lost);
+        Assert.Empty(after);
+    }
+
+    [Fact]
     public void AMenuOpenedMidScrub_SeeksAtOnceToWhereTheBarShowed()
     {
         var held = _bench.Hold(FullRightTrigger, Second);

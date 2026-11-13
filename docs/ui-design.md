@@ -1006,7 +1006,8 @@ Always:
   its way and until it falls under 50 %, on its stronger axis only; a trigger is pressed from half way and until it is
   nearly let go.
 - A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
-  dropped rather than sent, and any pad that comes (back) works at once. Several pads count as one.
+  dropped rather than sent, a button it held presses nothing (a short A that ends with the pad is no press), and any
+  pad that comes (back) works at once. Several pads count as one.
 - Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
 - PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
   or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. A tool that presents the pad to
