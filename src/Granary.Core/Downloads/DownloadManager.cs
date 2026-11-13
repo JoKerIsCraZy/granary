@@ -121,6 +121,10 @@ public sealed partial class DownloadManager
     public DownloadItem? ForItem(string mediaItemId) =>
         DownloadScope.Of(_session) is { } scope && _store.FindByItem(scope, mediaItemId) is { } download ? ItemOf(download, _queue.IsWaitingForUnmetered) : null;
 
+    /// <summary>One of the active profile's downloads by its own id; null when it is not there.</summary>
+    public DownloadItem? Find(string downloadId) =>
+        DownloadScope.Of(_session) is { } scope && _store.Find(scope, downloadId) is { } download ? ItemOf(download, _queue.IsWaitingForUnmetered) : null;
+
     /// <summary>
     /// The bytes one of the active profile's downloads has on this PC, as <see cref="DownloadItem.BytesDone"/> counts them; 0
     /// when it is not there. It reads neither the disk nor the connection, so a page can follow a transfer with it.

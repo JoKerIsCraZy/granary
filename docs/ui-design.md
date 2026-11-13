@@ -274,29 +274,47 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
   hides the button. The space left is the downloads folder's: when Settings → Downloads names another folder
-  while the page is in memory, the line shows only the space used until the new folder's is read. Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
-  semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
-  or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
-  the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
-  ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
-  not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
-  hand, which then has no Play; the page has the folders looked at as it shows),
-  and a 3 px bar in the accent while it downloads; the size on the right (13 px muted), then two 34 px round outline
-  buttons (History's look): Pause, Resume or Retry, one button that stays while its action changes and goes only when
-  there is nothing left to do, in whose place a download that is whole has Play (the apps' Play on a download's row; it
-  starts the title in the player from where the profile left it, from the file on this PC), and Delete, which asks first
-  as the title page does. Each has a tooltip and its name for
-  screen readers. A click on the row opens the film's or the episode's page. After a Delete, and when the transfer button
-  goes, the focus moves to the row (after a Delete, the one now in its place). The sidebar's page has no Back disc.
+  while the page is in memory, the line shows only the space used until the new folder's is read. Then "Films" and
+  "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
+  gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
+  each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
+  files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
+  title stands in, as on any card. Every card has three lines: the title, the size (the poster's overline: "8.0 GB", a
+  series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status in
+  the apps' words ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded",
+  "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file
+  was deleted by hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed
+  one, missing files and one the server no longer has. A series' card says how many episodes it has here ("3 episodes",
+  "1 episode"; "2 of 3 episodes" while some are not whole yet, the Android app's words). The card's bar (3 px, the
+  accent) shows how much of the file is here while it comes or waits with bytes on this PC, and on a series' card how
+  much of its episodes is. Screen readers hear the card's title, size and status.
+  A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
+  as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
+  did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
+  remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads), Pause, Resume or Retry
+  (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
+  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete All
+  Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
+  from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
+  downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
+  was deleted goes, and the grid hands the focus on to a card beside it. The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
-  the header, above Reclaim Watched and the list, an informational `InfoBar` that cannot be closed says "Can't reach
+  the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
   your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
   button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
   ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
   Home opens as from the sidebar, so a download that plays in the minimized player plays on; while it still can't be
   reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
   "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
+- A series' downloads (`DownloadedSeriesPage`, `AppRoute.DownloadedSeries`, opened from its card on the Downloads page, as
+  the Apple app opens a series' downloads on a screen of their own): the page's padding, the series' name in the display
+  style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;
+  "Specials" last) with its episodes in a grid of 16:9 stills (`MediaGrid`'s landscape cards, as a season's page shows
+  them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
+  status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
+  to the Downloads page, which stays picked in the sidebar. Once the series has no downloads left on this PC (its last
+  episode deleted), the page goes back by itself.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row

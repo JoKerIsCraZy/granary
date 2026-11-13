@@ -61,9 +61,15 @@ public sealed partial class MediaCardView : UserControl
     private double _artWidth;
     // Done at the card's first size, which a card just made waits for before it decodes its artwork.
     private TaskCompletionSource? _sized;
-    // The shown card's artwork, and the width it was decoded for (0 before it was), to decode it again at another width.
+    // The shown card's artwork, from the server or a file on this PC, and the width it was decoded for (0 before it was), to
+    // decode it again at another width.
     private Uri? _artworkUrl;
+    private string? _artworkPath;
     private double _decodedWidth;
+    // The card shown, the card the artwork is for, and whether the artwork could not be shown.
+    private MediaCard? _shown;
+    private MediaCard? _pictured;
+    private bool _artworkFailed;
     // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
@@ -168,28 +174,22 @@ public sealed partial class MediaCardView : UserControl
     // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
     private void Show(MediaCard? card)
     {
-        // A container given another card under a resting pointer starts unarmed: its Request takes no click until the
-        // pointer comes in again and it has shown long enough.
-        _pointerMayRequest = false;
-        Disarm();
-        _landscape = card?.Shape == MediaCardShape.Landscape;
-        // The thumbhash's blur shows at once; the title stands in only without one.
-        var blur = Thumbhashes.Get(card?.ImageThumbhash);
-        BlurImage.Source = blur;
-        Placeholder.Text = card?.Title ?? "";
-        Placeholder.Visibility = Visible(blur is null);
-        _artwork?.Cancel();
-        _artwork = null;
-        _artworkUrl = card?.ImageUrl;
-        _decodedWidth = 0;
-        ArtImage.OpacityTransition = null;
-        ArtImage.Opacity = 0;
-        ArtImage.Source = null;
-        ShowSpoiler(card);
-        if (_artworkUrl is { } url)
+        // The same title's next look (a live card: a download's progress) keeps what the pointer did on it, its play disc and
+        // buttons too, which would otherwise go each time its bar moves.
+        bool sameTitle = card is not null && _shown is { } before && before.Id == card.Id;
+        _shown = card;
+        if (!sameTitle)
         {
-            _artwork = new CancellationTokenSource();
-            _ = ShowArtworkAsync(url, _artwork.Token);
+            // A container given another card under a resting pointer starts unarmed: its Request takes no click until the
+            // pointer comes in again and it has shown long enough.
+            _pointerMayRequest = false;
+            Disarm();
+        }
+        _landscape = card?.Shape == MediaCardShape.Landscape;
+        Placeholder.Text = card?.Title ?? "";
+        if (!KeepsPicture(card))
+        {
+            ShowPicture(card);
         }
 
         ShowBadges(card);
@@ -219,9 +219,43 @@ public sealed partial class MediaCardView : UserControl
             }
         }
 
-        SetHovered(false);
+        if (!sameTitle)
+        {
+            SetHovered(false);
+        }
         ShowState();
         UpdateSize(ActualWidth);
+    }
+
+    // The same title with the same picture, as a live card's next look (LiveCard: a download's progress), keeps its artwork
+    // rather than blinking through its blur twice a second. A picture that failed is tried again.
+    private bool KeepsPicture(MediaCard? card) =>
+        !_artworkFailed && _pictured is { } shown && card is not null && shown.Id == card.Id && shown.Shape == card.Shape
+        && Equals(shown.ImageUrl, card.ImageUrl) && shown.LocalImagePath == card.LocalImagePath
+        && shown.ImageThumbhash == card.ImageThumbhash && shown.BlursImage == card.BlursImage;
+
+    private void ShowPicture(MediaCard? card)
+    {
+        _pictured = card;
+        _artworkFailed = false;
+        // The thumbhash's blur shows at once; the title stands in only without one.
+        var blur = Thumbhashes.Get(card?.ImageThumbhash);
+        BlurImage.Source = blur;
+        Placeholder.Visibility = Visible(blur is null);
+        _artwork?.Cancel();
+        _artwork = null;
+        _artworkUrl = card?.ImageUrl;
+        _artworkPath = card?.LocalImagePath is { Length: > 0 } path ? path : null;
+        _decodedWidth = 0;
+        ArtImage.OpacityTransition = null;
+        ArtImage.Opacity = 0;
+        ArtImage.Source = null;
+        ShowSpoiler(card);
+        if (_artworkUrl is not null || _artworkPath is not null)
+        {
+            _artwork = new CancellationTokenSource();
+            _ = ShowArtworkAsync(_artwork.Token);
+        }
     }
 
     // What the viewer can change on the card, as the server or this session last left it.
@@ -1073,7 +1107,7 @@ public sealed partial class MediaCardView : UserControl
     // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing. A
     // card just made also waits for its first measure, so its artwork is decoded at the size it shows, not a guess: a grid's
     // new cards were decoded half again as large.
-    private async Task ShowArtworkAsync(Uri url, CancellationToken cancellationToken)
+    private async Task ShowArtworkAsync(CancellationToken cancellationToken)
     {
         _artworkShownAt = Stopwatch.GetTimestamp();
         await ScrollMotion.WhenSlowAsync();
@@ -1093,15 +1127,25 @@ public sealed partial class MediaCardView : UserControl
         }
         if (!cancellationToken.IsCancellationRequested)
         {
-            LoadArtwork(url, cancellationToken);
+            LoadArtwork(cancellationToken);
         }
     }
 
     // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
-    // blurred, never sharp.
-    private void LoadArtwork(Uri url, CancellationToken cancellationToken)
+    // blurred, never sharp. A download's artwork comes from its file, as wide as the card: a poster for a poster, a still for
+    // a wide card.
+    private void LoadArtwork(CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
+        if (_artworkPath is { } path)
+        {
+            ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3));
+            return;
+        }
+        if (_artworkUrl is not { } url)
+        {
+            return;
+        }
         if (_blurs)
         {
             _ = LoadSpoilerAsync(url, cancellationToken);
@@ -1117,14 +1161,14 @@ public sealed partial class MediaCardView : UserControl
     // show it blurred, larger would hold memory for nothing. A smaller change, as a window resized by a few pixels, keeps it.
     private void RedecodeIfResized()
     {
-        if (_decodedWidth <= 0 || _artworkUrl is not { } url || Math.Abs(_artWidth - _decodedWidth) <= _decodedWidth * RedecodeChange)
+        if (_decodedWidth <= 0 || (_artworkUrl is null && _artworkPath is null) || Math.Abs(_artWidth - _decodedWidth) <= _decodedWidth * RedecodeChange)
         {
             return;
         }
         _artwork?.Cancel();
         _artwork = new CancellationTokenSource();
         _artworkShownAt = Stopwatch.GetTimestamp();
-        LoadArtwork(url, _artwork.Token);
+        LoadArtwork(_artwork.Token);
     }
 
     private static int DecodeSize(double shown, double fallback) => (int)Math.Ceiling(shown > 0 ? shown : fallback);
@@ -1138,6 +1182,10 @@ public sealed partial class MediaCardView : UserControl
         ArtImage.Opacity = 1;
     }
 
-    // A missing or expired artwork URL leaves the blur, or without one the title, in place.
-    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ArtImage.Source = null;
+    // A missing or expired artwork URL leaves the blur, or without one the title, in place; the card's next look tries again.
+    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        ArtImage.Source = null;
+        _artworkFailed = true;
+    }
 }

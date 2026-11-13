@@ -9,18 +9,18 @@ release's section is what its update says it changes (docs/release.md).
 ### Added
 
 - **Downloads:** download a film, an episode or a whole season from its ⋯ menu, in the original quality or a smaller one
-  your Silo server offers, and manage them on the new Downloads page: progress, pause and resume, delete and the space
-  they take. Downloads wait on a metered connection unless Settings → Downloads allows them, and carry on where they
-  stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
+  your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
+  each with its size and where it stands, and a bar while it downloads; a series' card opens its episodes by season.
+  Each card's menu pauses, resumes, retries and deletes, and the top says the space they take. Downloads wait on a
+  metered connection unless Settings → Downloads allows them, and carry on where they stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
   server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline
   goes back to your Silo server once Granary reaches it again; signing out of a server or removing it sends what it
-  still can first, and its question says how much progress is lost. The Downloads page has Play on each download, says Missing file for
-  one whose file was deleted outside Granary, and Reclaim
-  Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
-  watched downloads is on.
+  still can first, and its question says how much progress is lost. On the Downloads page a downloaded card plays at a
+  click, says Missing file for one whose file was deleted outside Granary, and Reclaim Watched deletes the downloads you
+  have finished to free up space, after asking, unless Settings → Downloads → Keep watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
   with Retry.
 - **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross

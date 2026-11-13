@@ -16,7 +16,8 @@ namespace Granary.App.Controls;
 /// realized, so a paged list grows while the user scrolls. A list loaded by window instead gets what is in view
 /// through <see cref="ViewportCommand"/> (a <see cref="GridViewport"/>), and <see cref="ScrollToIndex"/> brings a
 /// card's row to the top. The cards' artwork is prefetched as they arrive. Once an episode's poster is among them, every
-/// card keeps the line of its episode title: the grid sizes all cards by its first one.
+/// card keeps the line of its episode title: the grid sizes all cards by its first one. A list of <see cref="LiveCard"/>s
+/// (the Downloads page) has each card follow its changes in place, so it keeps its place and the focus.
 /// </summary>
 public sealed partial class MediaGrid : UserControl, ICardMenuHost
 {
@@ -126,6 +127,12 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
         set => SetValue(LoadMoreCommandProperty, value);
     }
 
+    /// <summary>
+    /// Its cards show their title and every line under it whatever the profile chose under posters: the Downloads page's lines
+    /// say where each download stands.
+    /// </summary>
+    public bool ShowsAllLines { get; set; }
+
     /// <summary>Entries of the list's own in its cards' ⋯ menu (a collection's Edit and Delete); null adds none.</summary>
     // Set from code, not XAML: the page's own list (the XAML compiler stumbles on an interface-typed property here).
     public ICardMenuSource? CardMenu { get; set; }
@@ -222,7 +229,7 @@ public sealed partial class MediaGrid : UserControl, ICardMenuHost
         switch (element)
         {
             case Button { Content: MediaCardView card }:
-                card.Caption = _look.Presentation.Caption;
+                card.Caption = ShowsAllLines ? CardCaption.TitleMetadata : _look.Presentation.Caption;
                 break;
             // The skeleton template's plain root (MediaGrid.xaml).
             case Grid { Children: [MediaCardSkeleton skeleton] }:

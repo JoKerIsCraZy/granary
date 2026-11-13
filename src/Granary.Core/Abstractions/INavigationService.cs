@@ -85,6 +85,9 @@ public enum AppRoute
 
     /// <summary>The active profile's downloads on this PC.</summary>
     Downloads,
+
+    /// <summary>A series' downloads on this PC, by season; the parameter is the series' id.</summary>
+    DownloadedSeries,
 }
 
 /// <summary>A movie box set, by its TMDB collection id in one library; the title names the page while it loads.</summary>

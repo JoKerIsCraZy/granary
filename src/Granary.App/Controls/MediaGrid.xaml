@@ -18,13 +18,21 @@
                 <controls:MediaCardView Card="{x:Bind}" />
             </Button>
         </DataTemplate>
+        <!-- A card that changes while it shows (a download's): the same button and card, following the card in place. -->
+        <DataTemplate x:Key="LiveCardTemplate" x:DataType="cards:LiveCard">
+            <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top" Click="OnCardClick" PointerEntered="OnCardPointerEntered"
+                    GotFocus="OnCardGotFocus" AutomationProperties.Name="{x:Bind Card.AccessibleName, Mode=OneWay}">
+                <controls:MediaCardView Card="{x:Bind Card, Mode=OneWay}" />
+            </Button>
+        </DataTemplate>
         <DataTemplate x:Key="SkeletonTemplate">
             <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
             <Grid>
                 <controls:MediaCardSkeleton />
             </Grid>
         </DataTemplate>
-        <controls:MediaCardTemplateSelector x:Key="CardTemplateSelector" Card="{StaticResource CardTemplate}" Skeleton="{StaticResource SkeletonTemplate}" />
+        <controls:MediaCardTemplateSelector x:Key="CardTemplateSelector" Card="{StaticResource CardTemplate}" Skeleton="{StaticResource SkeletonTemplate}"
+                                            Live="{StaticResource LiveCardTemplate}" />
     </UserControl.Resources>
 
     <!-- Cards are made half a screen above and below the view, not ItemsRepeater's whole screen: fewer live cards make the

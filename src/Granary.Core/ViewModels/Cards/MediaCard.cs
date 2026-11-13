@@ -46,6 +46,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     public Uri? ImageUrl { get; init; }
 
+    /// <summary>
+    /// Artwork kept on this PC with a download, by its file's path, in place of <see cref="ImageUrl"/>: read from the file
+    /// (never through a URI, which could misread a <c>#</c> in a folder's name), so the card shows without the server.
+    /// </summary>
+    public string? LocalImagePath { get; init; }
+
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
     public string? ImageThumbhash { get; init; }
 
@@ -117,10 +123,16 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? HeadingId { get; init; }
 
+    /// <summary>
+    /// What screen readers hear of the card after its lines, where its caption says what matters: a download's status,
+    /// "Downloading · 42%". Null on every other card.
+    /// </summary>
+    public string? AccessibleStatus { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
-            .Where(text => !string.IsNullOrEmpty(text)));
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName, AccessibleStatus }
+            .Where(text => !string.IsNullOrWhiteSpace(text)));
 
     private string? CurrentName => CurrentMark switch
     {

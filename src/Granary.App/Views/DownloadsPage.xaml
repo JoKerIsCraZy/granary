@@ -1,29 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The active profile's downloads on this PC. The web has no such page: it is laid out as Granary's list pages
-    (PersonalListPage), in the apps' words. The space they use and the space left; then the films, and each series with its
-    poster by season, a row per download: its artwork, title, status and size, a bar while it comes, one Pause, Resume or
-    Retry button, or Play once it is whole, and Delete. Above them, while the profile has watched downloads and does not keep
-    them, the Android app's Reclaim Watched; and, after a start that could not reach the server, a note that says so, with
-    Retry. The page is cached and follows the downloads only while it shows.
+    (PersonalListPage), its cards are the library's in its grid, and its words are the apps'. The space they use and the
+    space left; then the films' posters and the series' posters, each with its size and status under it and a bar while it
+    comes; a series' card opens its episodes (DownloadedSeriesPage). Play, Pause, Resume, Retry, More Info and Delete are in
+    each card's ⋮ menu (DownloadCardActions). Above them, while the profile has watched downloads and does not keep them,
+    the Android app's Reclaim Watched; and, after a start that could not reach the server, a note that says so, with Retry.
+    The page is cached and follows the downloads only while it shows.
 -->
 <Page
     x:Class="Granary.App.Views.DownloadsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:views="using:Granary.App.Views"
-    xmlns:downloads="using:Granary.Core.ViewModels.Downloads"
+    xmlns:controls="using:Granary.App.Controls"
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
-        <!-- History's small outline buttons (PersonalListPage's HistoryButtonStyle), as round icon buttons. -->
-        <Style x:Key="DownloadIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="34" />
-            <Setter Property="MinHeight" Value="0" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="FontSize" Value="13" />
-        </Style>
         <!-- History's outline button, for Reclaim Watched. -->
         <Style x:Key="DownloadStripButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
             <Setter Property="MinHeight" Value="34" />
@@ -44,7 +36,7 @@
             <!--
                 Granary started without its server and opened this page instead of Home (Core's OfflineStart). Retry asks the
                 server again and opens Home once it answers; the button stays enabled while it asks, so the focus stays on it,
-                and a ring in it says that it asks. Collapsed with the note: a closed bar would still take the list's spacing.
+                and a ring in it says that it asks. Collapsed with the note: a closed bar would still take the page's spacing.
             -->
             <InfoBar IsOpen="{x:Bind ViewModel.ShowsOfflineNote, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowsOfflineNote, Mode=OneWay}"
                      Severity="Informational" IsClosable="False" Message="{x:Bind OfflineNote}">
@@ -80,118 +72,20 @@
                 </StackPanel>
             </Grid>
 
-            <!-- The films, then each series by title. Every template's root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
-            <ItemsRepeater x:Name="SectionsRepeater" ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="40" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="downloads:DownloadSection">
-                        <Grid>
-                            <StackPanel Spacing="16">
-                                <!-- A series' title with its poster beside it; the films' title alone. -->
-                                <StackPanel Orientation="Horizontal" Spacing="14">
-                                    <Border Width="40" Height="60" CornerRadius="6" Background="{StaticResource SiloSurfaceRaisedBrush}"
-                                            Visibility="{x:Bind views:DownloadsPage.HasPath(PosterPath)}">
-                                        <Image Source="{x:Bind views:DownloadsPage.SeriesPoster(PosterPath)}" Stretch="UniformToFill"
-                                               AutomationProperties.AccessibilityView="Raw" />
-                                    </Border>
-                                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level2" />
-                                </StackPanel>
-                                <ItemsRepeater ItemsSource="{x:Bind Groups}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="20" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <!-- "Season 1", "Specials"; the films' one group has no title. -->
-                                        <DataTemplate x:DataType="downloads:DownloadGroup">
-                                            <Grid>
-                                                <StackPanel Spacing="12">
-                                                    <TextBlock Text="{x:Bind Title}" Visibility="{x:Bind views:DownloadsPage.HasText(Title)}"
-                                                               FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
-                                                               Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
-                                                    <ItemsRepeater ItemsSource="{x:Bind Rows}">
-                                                        <ItemsRepeater.Layout>
-                                                            <StackLayout Spacing="12" />
-                                                        </ItemsRepeater.Layout>
-                                                        <ItemsRepeater.ItemTemplate>
-                                                            <DataTemplate x:DataType="downloads:DownloadRowViewModel">
-                                                                <Grid ColumnSpacing="16">
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="*" />
-                                                                        <ColumnDefinition Width="80" />
-                                                                        <ColumnDefinition Width="34" />
-                                                                        <ColumnDefinition Width="34" />
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <!-- The row opens the film's or the episode's page. -->
-                                                                    <Button x:Name="OpenButton" Style="{StaticResource SiloCardButtonStyle}" FocusVisualMargin="-4"
-                                                                            Command="{x:Bind OpenCommand}"
-                                                                            AutomationProperties.Name="{x:Bind views:DownloadsPage.RowName(Title, Detail, StatusText), Mode=OneWay}">
-                                                                        <Grid ColumnSpacing="16">
-                                                                            <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="Auto" />
-                                                                                <ColumnDefinition Width="*" />
-                                                                            </Grid.ColumnDefinitions>
-                                                                            <!-- A film's poster (60 x 90) or an episode's still (96 x 54), from this PC. -->
-                                                                            <Border Width="{x:Bind views:DownloadsPage.ArtWidth(IsEpisode), Mode=OneWay}"
-                                                                                    Height="{x:Bind views:DownloadsPage.ArtHeight(IsEpisode), Mode=OneWay}"
-                                                                                    CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Center">
-                                                                                <Grid>
-                                                                                    <FontIcon Glyph="{x:Bind views:DownloadsPage.ArtGlyph(IsEpisode), Mode=OneWay}" FontSize="18"
-                                                                                              Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.AccessibilityView="Raw" />
-                                                                                    <Image Source="{x:Bind views:DownloadsPage.Art(PosterPath, IsEpisode), Mode=OneWay}"
-                                                                                           Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
-                                                                                </Grid>
-                                                                            </Border>
-                                                                            <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                                                                                <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}"
-                                                                                           FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource SiloForegroundBrush}"
-                                                                                           TextTrimming="CharacterEllipsis" />
-                                                                                <TextBlock Text="{x:Bind Detail, Mode=OneWay}" Visibility="{x:Bind views:DownloadsPage.HasText(Detail), Mode=OneWay}"
-                                                                                           FontSize="13" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
-                                                                                <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
-                                                                                           TextTrimming="CharacterEllipsis" />
-                                                                                <ProgressBar Margin="0,5,0,0" MaxWidth="320" HorizontalAlignment="Stretch" Height="3" MinHeight="3"
-                                                                                             CornerRadius="2" Maximum="1" Value="{x:Bind Progress, Mode=OneWay}"
-                                                                                             Foreground="{StaticResource SiloPrimaryBrush}" Background="#33FFFFFF"
-                                                                                             Visibility="{x:Bind ShowsProgress, Mode=OneWay}" AutomationProperties.Name="Progress" />
-                                                                            </StackPanel>
-                                                                        </Grid>
-                                                                    </Button>
-                                                                    <TextBlock Grid.Column="1" Text="{x:Bind SizeText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
-                                                                               HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                                                    <!-- Pause, Resume or Retry: one button that stays while its action changes. -->
-                                                                    <Button Grid.Column="2" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
-                                                                            Command="{x:Bind PrimaryActionCommand}" Visibility="{x:Bind HasPrimaryAction, Mode=OneWay}"
-                                                                            ToolTipService.ToolTip="{x:Bind PrimaryActionLabel, Mode=OneWay}"
-                                                                            AutomationProperties.Name="{x:Bind PrimaryActionLabel, Mode=OneWay}" Loaded="OnPrimaryButtonLoaded">
-                                                                        <FontIcon Glyph="{x:Bind views:DownloadsPage.ActionGlyph(PrimaryAction), Mode=OneWay}" FontSize="13" />
-                                                                    </Button>
-                                                                    <!-- Play, once the download is whole: in the transfer button's place, which has gone by then. -->
-                                                                    <Button Grid.Column="2" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
-                                                                            Command="{x:Bind PlayCommand}" Visibility="{x:Bind CanPlay, Mode=OneWay}"
-                                                                            ToolTipService.ToolTip="Play" AutomationProperties.Name="Play">
-                                                                        <FontIcon Glyph="&#xE768;" FontSize="13" />
-                                                                    </Button>
-                                                                    <Button Grid.Column="3" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
-                                                                            Tag="{x:Bind}" Click="OnDeleteClick" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete">
-                                                                        <FontIcon Glyph="&#xE74D;" FontSize="13" />
-                                                                    </Button>
-                                                                </Grid>
-                                                            </DataTemplate>
-                                                        </ItemsRepeater.ItemTemplate>
-                                                    </ItemsRepeater>
-                                                </StackPanel>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </StackPanel>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
+            <!--
+                The films, then the series, each a library's grid of posters (MediaGrid) whose cards follow their downloads in
+                place. Their lines are the downloads' status, so they show whatever the profile chose under posters.
+            -->
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasFilms, Mode=OneWay}">
+                <TextBlock Text="{x:Bind FilmsTitle}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Films}" ShowsAllLines="True"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" />
+            </StackPanel>
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasSeries, Mode=OneWay}">
+                <TextBlock Text="{x:Bind SeriesTitle}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Series}" ShowsAllLines="True"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" />
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>
