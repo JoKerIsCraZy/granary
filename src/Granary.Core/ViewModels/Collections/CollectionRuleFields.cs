@@ -1,4 +1,6 @@
+using System.Collections.Frozen;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 
@@ -62,13 +64,17 @@ public sealed record RuleField(string Value, string Label, string Group, IReadOn
 
 /// <summary>
 /// The fields, groups, kinds of title and sorts of a smart collection's rules, in the words of the web's
-/// <c>collectionBuilderFields.ts</c>, <c>RuleBuilder</c> and <c>OrderBlock</c>. Every list is built when asked for, in the
-/// language on screen; a view model keeps the lists its boxes pick from.
+/// <c>collectionBuilderFields.ts</c>, <c>RuleBuilder</c> and <c>OrderBlock</c>, in the language on screen. The fields are made
+/// once for each language, since every rule looks its field up on each keystroke and preview; the other lists are built
+/// when asked for, and a view model keeps the lists its boxes pick from.
 /// </summary>
 public static class CollectionRuleFields
 {
     /// <summary>The conditions that take a span ("30d") rather than a date.</summary>
     public static readonly IReadOnlySet<string> RelativeDateOperators = new HashSet<string>(StringComparer.Ordinal) { "in_last", "not_in_last" };
+
+    // The fields in each language they were asked in, held weakly so a language a test made goes with it.
+    private static readonly ConditionalWeakTable<TextLanguage, FieldSet> Made = new();
 
     public static IReadOnlyList<(string Key, string Label)> Groups =>
     [
@@ -141,7 +147,21 @@ public static class CollectionRuleFields
     private static RuleOperator[] SwitchOperators => [Is];
 
     /// <summary>In field-picker order: Title, People, File, You, Library.</summary>
-    public static IReadOnlyList<RuleField> All =>
+    public static IReadOnlyList<RuleField> All => Fields.All;
+
+    /// <summary>A field by its name ("rating" is the IMDb rating); null for one this app does not know.</summary>
+    public static RuleField? Find(string field) => Fields.ByValue.GetValueOrDefault(field == "rating" ? "rating_imdb" : field);
+
+    private static FieldSet Fields => Made.GetValue(AppText.Language, static _ => new FieldSet(Build()));
+
+    private sealed class FieldSet(IReadOnlyList<RuleField> all)
+    {
+        public IReadOnlyList<RuleField> All { get; } = all;
+
+        public FrozenDictionary<string, RuleField> ByValue { get; } = all.ToFrozenDictionary(f => f.Value, StringComparer.Ordinal);
+    }
+
+    private static RuleField[] Build() =>
     [
         new("title", AppText.Get("web.collections.builder.fieldTitle"), "title", TextOperators, RuleInput.Text) { Extended = true },
         new("show_title", AppText.Get("web.collections.builder.fieldShowTitle"), "title", TextOperators, RuleInput.Text) { EpisodesOnly = true },
@@ -216,9 +236,6 @@ public static class CollectionRuleFields
         Date("added_at", AppText.Get("web.collections.builder.fieldAdded"), "library"),
         Date("latest_episode_added", AppText.Get("web.collections.builder.fieldLatestEpisodeAdded"), "library") with { ShowsOnly = true, Extended = true },
     ];
-
-    /// <summary>A field by its name ("rating" is the IMDb rating); null for one this app does not know.</summary>
-    public static RuleField? Find(string field) => All.FirstOrDefault(f => f.Value == (field == "rating" ? "rating_imdb" : field));
 
     /// <summary>
     /// The fields a new rule can pick for a kind of title, as the web's <c>getFilterRuleFieldOptions</c>: the newer ones
