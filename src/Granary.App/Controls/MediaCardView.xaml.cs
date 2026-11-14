@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 
 namespace Granary.App.Controls;
@@ -1180,7 +1181,8 @@ public sealed partial class MediaCardView : UserControl
         _decodedWidth = _artWidth;
         if (_artworkPath is { } path)
         {
-            ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3));
+            ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3),
+                OnLocalArtworkFailed);
             return;
         }
         if (_artworkUrl is not { } url)
@@ -1228,5 +1230,17 @@ public sealed partial class MediaCardView : UserControl
     {
         ArtImage.Source = null;
         _artworkFailed = true;
+    }
+
+    // A download's picture that could not be read (a virus scan holding the new file a moment, a file deleted by hand) fails
+    // the same way: a live card's next look, as a download's progress, reads it again. Only the picture shown now; one the
+    // card moved on from says nothing.
+    private void OnLocalArtworkFailed(BitmapImage bitmap)
+    {
+        if (ReferenceEquals(ArtImage.Source, bitmap))
+        {
+            ArtImage.Source = null;
+            _artworkFailed = true;
+        }
     }
 }
