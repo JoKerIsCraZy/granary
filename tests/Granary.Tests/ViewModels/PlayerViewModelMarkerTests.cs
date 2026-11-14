@@ -190,6 +190,28 @@ public sealed class PlayerViewModelMarkerTests
         Assert.False(viewModel.HasSkipPrompt);
     }
 
+    // As the web's untimed offer answers Space while focused (silo-server #3511); every other pill, and Space without focus,
+    // keeps the full player's play and pause.
+    [Fact]
+    public async Task Space_PressesOnlyTheFocusedSkipIntroBackWithTheControls()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: false));
+
+        viewModel.AreControlsShown = false;
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(2550);
+        Assert.Equal("Skip Credits", viewModel.SkipLabel);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+    }
+
     [Fact]
     public async Task TheControls_BringNoPillBack_WhilePlaybackCannotSeek_NorAfterTheEnd()
     {

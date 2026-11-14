@@ -1849,9 +1849,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   than the web's does), as the web's untimed offer (Silo's design for intro skipping, `ask`); it is gone once playback
   leaves the intro, and seeking back in offers it with its 5 s again.
   That offer takes no focus and gives up the focus the timed pill had; Esc, a remote's Back and a pad's B are not its,
-  nor are OK and A from elsewhere: only with focus on it (Tab, or the arrows from the controls) do Enter, OK and A
-  press it, and Space still plays and pauses, as on every focused button of the full player. Esc turns a timed intro
-  pill away before it does anything else. A press is judged by where
+  nor are OK, Space and A from elsewhere: only with focus on it (Tab, or the arrows from the controls) do Enter, Space,
+  OK and A press it, as on the web; without focus Space plays and pauses, and over every other pill and focused button
+  of the full player it still does. Esc turns a timed intro pill away before it does anything else. A press is judged by where
   playback is then, a seek on its way included: Skip Intro and a part's pill skip only from inside their part, Watch
   Intro goes back only from the intro's start on; otherwise the pill just goes, so a press right after seeking away
   never skips what is not marked. From before the intro, Watch Intro lets playback reach the intro, which then plays.
@@ -1994,7 +1994,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   with the controls, which hides with them) or the marker editor is
   open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
   keys. A held OK does not press the button it lands on. Space wins over a
-  focused button; arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  focused button, but for the Skip Intro back with the controls, which it presses (see "Skip pill"); arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
   held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through

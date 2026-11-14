@@ -39,8 +39,8 @@ public sealed partial class PlayerViewModel
 
     /// <summary>
     /// The pill is "Skip Intro" back with the controls after its time ran out (Silo's design for intro skipping, the
-    /// untimed <c>ask</c> offer): it takes no focus as it comes, gives up the focus the timed pill had, and answers OK or a
-    /// pad's A only while it has focus; Esc and Back are not its.
+    /// untimed <c>ask</c> offer): it takes no focus as it comes, gives up the focus the timed pill had, and answers OK, Space
+    /// or a pad's A only while it has focus; Esc and Back are not its.
     /// </summary>
     [ObservableProperty]
     public partial bool IsSkipPromptWithControls { get; private set; }
@@ -48,6 +48,13 @@ public sealed partial class PlayerViewModel
     /// <summary>The player's controls show; the page sets it. A Skip Intro whose time ran out comes and goes with them.</summary>
     [ObservableProperty]
     public partial bool AreControlsShown { get; set; }
+
+    /// <summary>
+    /// Whether Space presses the pill rather than playing or pausing: only the Skip Intro back with the controls, and only
+    /// while it has focus, as the web's untimed offer answers Space (silo-server #3511). Over every other pill and focused
+    /// button of the full player Space plays and pauses.
+    /// </summary>
+    public bool SpacePressesSkipPrompt(bool hasFocus) => hasFocus && HasSkipPrompt && IsSkipPromptWithControls;
 
     /// <summary>The viewer turned the intro pill away (Esc): false when none shows, so Esc does what it does otherwise.</summary>
     public bool DismissSkipPrompt()

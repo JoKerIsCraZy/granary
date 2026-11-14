@@ -92,7 +92,8 @@ public sealed partial class PlayerPage
 
     // Any key shows the controls, not the cursor: only the mouse brings that back. Space is taken here, before a focused
     // button would press itself with it:
-    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) with
+    // on the player Space always plays or pauses, as on the web, but on the Skip Intro back with the controls while it
+    // has focus (SpacePressesSkipPrompt). In the bar a focused button keeps it. OK (Enter) with
     // focus on the picture shows the controls with focus on Play/Pause, as Silo's TV app reveals them
     // (requestIdleOverlayFocus); there the controls never show without focus, here a pointer shows them too, and an air
     // mouse keeps them up, so OK does it whether they show already or not. A button that shows while they are hidden
@@ -131,6 +132,17 @@ public sealed partial class PlayerPage
         {
             e.Handled = true;
             FocusTransport();
+            return;
+        }
+        // The Skip Intro back with the controls takes Space while it has focus, as the web's untimed offer; a held Space
+        // presses it once.
+        if (e.Key == VirtualKey.Space && AcceptsShortcut() && ViewModel.SpacePressesSkipPrompt(SkipButton.FocusState != FocusState.Unfocused))
+        {
+            e.Handled = true;
+            if (!e.KeyStatus.WasKeyDown && ViewModel.SkipCommand.CanExecute(null))
+            {
+                ViewModel.SkipCommand.Execute(null);
+            }
             return;
         }
         // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
