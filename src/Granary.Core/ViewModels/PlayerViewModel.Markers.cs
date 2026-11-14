@@ -29,6 +29,10 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial string SkipCaption { get; private set; } = "";
 
+    /// <summary>The line above the confirmation: how confident the marker's source is and where it came from ("20% · Detected"); empty for none.</summary>
+    [ObservableProperty]
+    public partial string SkipProvenance { get; private set; } = "";
+
     /// <summary>How far an intro pill's 5 s have run, 0 to 1; 0 for a pill that stays.</summary>
     [ObservableProperty]
     public partial double SkipProgress { get; private set; }
@@ -134,6 +138,7 @@ public sealed partial class PlayerViewModel
         }
         SkipLabel = prompt.Label;
         SkipCaption = prompt.Caption ?? "";
+        SkipProvenance = prompt.Provenance ?? "";
         SkipProgress = prompt.Progress ?? 0;
         HasSkipPrompt = true;
     }

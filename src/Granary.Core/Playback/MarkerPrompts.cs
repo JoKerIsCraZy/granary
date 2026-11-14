@@ -8,11 +8,16 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
     /// <summary>A frame of the part for the seek bar's bubble, when the server has one.</summary>
     public Uri? ThumbnailUrl { get; init; }
 
+    /// <summary>Where the part came from, as the server recorded it for its kind; the skip pill can say so.</summary>
+    public MarkerProvenance Provenance { get; init; } = MarkerProvenance.None;
+
     public bool Contains(double seconds) => seconds >= StartSeconds && seconds < EndSeconds;
 
     // The picture shows the part, it is not which part it is: a read that only renews its signed address changes nothing.
+    // Where it came from is what the pill's line says, so a read that names another source is news.
     public bool Equals(PlaybackMarker? other) =>
-        other is not null && Kind == other.Kind && StartSeconds.Equals(other.StartSeconds) && EndSeconds.Equals(other.EndSeconds);
+        other is not null && Kind == other.Kind && StartSeconds.Equals(other.StartSeconds) && EndSeconds.Equals(other.EndSeconds)
+        && Provenance == other.Provenance;
 
     public override int GetHashCode() => HashCode.Combine(Kind, StartSeconds, EndSeconds);
 
@@ -24,22 +29,24 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
     /// The parts of <paramref name="version"/> the player acts on (docs/api-contract.md, 11.1): the intro from its
     /// single projection, as Android takes it, so a second intro segment is never offered; every recap, credits and
     /// preview segment, or a kind's projection when the server lists no segment of it. A part's picture is its
-    /// segment's, resolved against <paramref name="server"/>.
+    /// segment's, resolved against <paramref name="server"/>; where it came from is its kind's projection's, as the web
+    /// takes it (<c>watchPageMarkers.ts</c>): the server keeps one origin per kind.
     /// </summary>
     public static IReadOnlyList<PlaybackMarker> Of(WatchFileVersion version, Uri? server = null)
     {
         ArgumentNullException.ThrowIfNull(version);
         var markers = new List<PlaybackMarker>();
-        PlaybackMarker FromSegment(WatchMarkerSegment s) =>
-            new(s.Kind, s.StartSeconds, s.EndSeconds) { ThumbnailUrl = Picture(s) };
+        PlaybackMarker FromSegment(WatchMarkerSegment s, WatchMarker? single) =>
+            new(s.Kind, s.StartSeconds, s.EndSeconds) { ThumbnailUrl = Picture(s), Provenance = MarkerProvenance.Of(single) };
         Uri? Picture(WatchMarkerSegment segment) => server is null ? null : Api.Images.ArtworkUrl.Resolve(server, segment.ThumbnailUrl);
         var intro = version.Intro is { } projection
             ? new PlaybackMarker(WatchMarkerKinds.Intro, projection.StartSeconds, projection.EndSeconds)
             {
                 ThumbnailUrl = version.MarkerSegments.FirstOrDefault(s => s.Kind == WatchMarkerKinds.Intro
                     && s.StartSeconds < projection.EndSeconds && projection.StartSeconds < s.EndSeconds) is { } segment ? Picture(segment) : null,
+                Provenance = MarkerProvenance.Of(projection),
             }
-            : version.MarkerSegments.Where(s => s.Kind == WatchMarkerKinds.Intro).Select(FromSegment).FirstOrDefault();
+            : version.MarkerSegments.Where(s => s.Kind == WatchMarkerKinds.Intro).Select(s => FromSegment(s, null)).FirstOrDefault();
         if (intro is not null)
         {
             markers.Add(intro);
@@ -54,11 +61,11 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
             var segments = version.MarkerSegments.Where(s => s.Kind == kind).ToList();
             if (segments.Count > 0)
             {
-                markers.AddRange(segments.Select(FromSegment));
+                markers.AddRange(segments.Select(s => FromSegment(s, single)));
             }
             else if (single is not null)
             {
-                markers.Add(new PlaybackMarker(kind, single.StartSeconds, single.EndSeconds));
+                markers.Add(new PlaybackMarker(kind, single.StartSeconds, single.EndSeconds) { Provenance = MarkerProvenance.Of(single) });
             }
         }
         return [.. markers.Where(m => m.EndSeconds > m.StartSeconds).OrderBy(m => m.StartSeconds)];
@@ -92,6 +99,12 @@ public sealed record MarkerSettings(string IntroSkipMode, bool AutoSkipCredits, 
     /// <summary><c>playback.auto_play_next_preview</c>: the next episode is offered from the preview teaser on, not the credits.</summary>
     public bool AutoPlayNextPreview { get; init; }
 
+    /// <summary><c>playback.show_marker_confidence</c>: the skip pill says how confident the marker's source is.</summary>
+    public bool ShowMarkerConfidence { get; init; }
+
+    /// <summary><c>playback.show_marker_source</c>: the skip pill says where the marker came from.</summary>
+    public bool ShowMarkerSource { get; init; }
+
     /// <summary>
     /// Where the next episode is offered, as Silo's web player finds it (resolveAutoplayMarker): from the end back, the
     /// credits, and with <see cref="AutoPlayNextPreview"/> the preview, that run on to the end, taken together; null
@@ -121,7 +134,14 @@ public sealed record MarkerSettings(string IntroSkipMode, bool AutoSkipCredits, 
 
 /// <summary>The pill the player shows over the picture: its label, a confirmation above it, and how far its time has run.</summary>
 /// <param name="Progress">0 to 1 for an intro prompt, which goes away after 5 s; null for a pill that stays.</param>
-public sealed record SkipPrompt(string Label, string? Caption, double? Progress);
+public sealed record SkipPrompt(string Label, string? Caption, double? Progress)
+{
+    /// <summary>
+    /// The line above the caption: how confident the marker's source is and where it came from, as far as the profile
+    /// asks (<see cref="MarkerProvenance.Line"/>); null for none.
+    /// </summary>
+    public string? Provenance { get; init; }
+}
 
 /// <summary>What the player is doing, as the intro prompt's clock sees it.</summary>
 public enum MarkerActivity
@@ -144,6 +164,8 @@ public enum MarkerActivity
 /// its start; either way it is resolved.</item>
 /// <item>A resolved intro is never offered again. Recap, credits and preview get a pill that stays while inside
 /// them ("Skip Credits"), and skip themselves once where the profile says so, as Apple's player does.</item>
+/// <item>Where the profile asks, a line above a pill says how confident its marker's source is and where it came from
+/// ("20% · Detected", <see cref="MarkerProvenance"/>).</item>
 /// </list>
 /// The clock starts once playback runs; a pause stops it, a stall only after 1.5 s. A part counts as the one before when
 /// the server measures it again (a later read of the markers). Positions are the title's own seconds.
@@ -174,13 +196,18 @@ public sealed class MarkerPrompts
     private PlaybackMarker? _timedOut;
     private PlaybackMarker? _part;
 
+    // Where the last update saw playback: a pill that skips forward outlives another read only while its part holds it.
+    private double? _position;
+
     public SkipPrompt? Prompt { get; private set; }
 
     public IReadOnlyList<PlaybackMarker> Markers => _markers;
 
     /// <summary>
     /// Takes the parts of the file that plays now; what was resolved stays resolved, and a prompt whose part is still
-    /// there goes on as it was.
+    /// there goes on as it was. Skip Intro and a recap's, credits' or preview's pill go on only while their part, as
+    /// measured now, still holds the position: a pick seeks to its end and must not pass over what is no longer marked.
+    /// The next update offers it again where it is. The undo pill goes on regardless, as it only goes back.
     /// </summary>
     public void Reset(IReadOnlyList<PlaybackMarker> markers, MarkerSettings settings)
     {
@@ -188,11 +215,17 @@ public sealed class MarkerPrompts
         ArgumentNullException.ThrowIfNull(settings);
         _markers = markers;
         _settings = settings;
-        _intro = _intro is { } intro ? markers.FirstOrDefault(intro.IsSamePart) : null;
+        _intro = _intro is { } intro ? markers.FirstOrDefault(m => intro.IsSamePart(m) && (_undo || HoldsPosition(m))) : null;
         _timedOut = _timedOut is { } timedOut ? markers.FirstOrDefault(timedOut.IsSamePart) : null;
-        _part = null;
+        // A part that now skips itself loses its pill too: the next update settles that.
+        _part = _part is { } part && markers.FirstOrDefault(m => part.IsSamePart(m) && HoldsPosition(m)) is { } same && !SkipsItself(same)
+            ? same
+            : null;
         ShowPrompt();
     }
+
+    // Without a position seen no pill can be showing; were one, dropping it is safe, as the next update offers it again.
+    private bool HoldsPosition(PlaybackMarker marker) => _position is { } position && marker.Contains(position);
 
     /// <summary>Playback cannot go on for now (a reconnect, a new plan): the prompt's clock stops until the next update.</summary>
     public void Suspend(TimeSpan now) => Tick(MarkerActivity.Paused, now);
@@ -201,6 +234,7 @@ public sealed class MarkerPrompts
     public double? Update(double position, MarkerActivity activity, TimeSpan now)
     {
         Tick(activity, now);
+        _position = position;
 
         var intro = _settings.IntroSkipMode is MarkerSettings.Ask or MarkerSettings.Always
             ? _markers.FirstOrDefault(m => m.Kind == WatchMarkerKinds.Intro && m.Contains(position))
@@ -328,20 +362,26 @@ public sealed class MarkerPrompts
         _ => false,
     };
 
+    // The undo pill keeps its intro's line too, as the web's (activeIntro stays the intro just skipped).
     private void ShowPrompt()
     {
-        if (_intro is not null)
+        if (_intro is { } intro)
         {
             double progress = Math.Clamp(_shown / PromptTime, 0, 1);
-            Prompt = _undo ? new SkipPrompt("Watch Intro", "Intro skipped", progress) : new SkipPrompt("Skip Intro", null, progress);
+            var prompt = _undo ? new SkipPrompt("Watch Intro", "Intro skipped", progress) : new SkipPrompt("Skip Intro", null, progress);
+            Prompt = prompt with { Provenance = LineOf(intro) };
             return;
         }
-        Prompt = _part?.Kind switch
-        {
-            WatchMarkerKinds.Recap => new SkipPrompt("Skip Recap", null, null),
-            WatchMarkerKinds.Credits => new SkipPrompt("Skip Credits", null, null),
-            WatchMarkerKinds.Preview => new SkipPrompt("Skip Preview", null, null),
-            _ => null,
-        };
+        Prompt = _part is { } part && PartLabel(part.Kind) is { } label ? new SkipPrompt(label, null, null) { Provenance = LineOf(part) } : null;
     }
+
+    private static string? PartLabel(string kind) => kind switch
+    {
+        WatchMarkerKinds.Recap => "Skip Recap",
+        WatchMarkerKinds.Credits => "Skip Credits",
+        WatchMarkerKinds.Preview => "Skip Preview",
+        _ => null,
+    };
+
+    private string? LineOf(PlaybackMarker marker) => marker.Provenance.Line(_settings.ShowMarkerConfidence, _settings.ShowMarkerSource);
 }

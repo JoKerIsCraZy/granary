@@ -127,6 +127,32 @@ public sealed class WatchApiTests
     }
 
     [Fact]
+    public void AMarker_SaysWhereItCameFrom_AndOneNobodyRatedHasNoConfidence()
+    {
+        var detail = Parse("""
+            {
+              "content_id": "movie:heat-1995", "type": "movie", "title": "Heat",
+              "versions": [
+                {
+                  "file_id": "42",
+                  "intro": { "start_seconds": 0, "end_seconds": 90, "source": "plugin", "provider": "plugin:4:introdb", "confidence": 0.2,
+                    "algorithm": "introdb:v4" },
+                  "recap": { "start_seconds": 0, "end_seconds": 30, "source": "scanner", "confidence": 0 }
+                }
+              ],
+              "credits": { "start_seconds": 10000, "end_seconds": 10200, "source": "manual" }
+            }
+            """);
+
+        var version = Assert.Single(detail.Versions);
+        Assert.Equal(new WatchMarker(0, 90) { Source = "plugin", Provider = "plugin:4:introdb", Confidence = 0.2 }, version.Intro);
+        // A rated 0 is a rating; absence is "nobody rated it".
+        Assert.Equal(new WatchMarker(0, 30) { Source = "scanner", Confidence = 0 }, version.Recap);
+        Assert.Equal(new WatchMarker(10000, 10200) { Source = "manual" }, detail.Credits);
+        Assert.Null(detail.Credits!.Confidence);
+    }
+
+    [Fact]
     public void Fixture_PreferenceDefaultsApplyToOmittedMembers()
     {
         var detail = Parse(PlaybackPayloads.WatchStateOk);

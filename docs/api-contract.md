@@ -562,7 +562,7 @@ white when white contrasts more than the dark label `#141417`. Granary reads it 
 ### 6.6 Settings the client reads
 
 Profile and device settings live on the server (manifest
-`silo-server/contracts/settings/v1/manifest.json`, revision 23).
+`silo-server/contracts/settings/v1/manifest.json`, revision 24).
 
 - Read: `GET /api/v2/settings/values/effective?keys=a&keys=b` with `X-Profile-Id` and
   `X-Silo-Device-Id` (needed for keys that allow `profile_device`; see [11.2](#112-intro-skip-mode)) →
@@ -583,6 +583,7 @@ Profile and device settings live on the server (manifest
 | `playback.audio_language`, `playback.subtitle_language`, `playback.subtitle_mode`, `playback.show_forced_subtitles` | profile, profile_device, profile_library, profile_series | –, –, `auto`, `true` | normally read through watch-detail `effective_*` ([8.8.1](#881-initial-track-selection-before-start)) |
 | `playback.subtitle_appearance` | profile, profile_device | style object | text subtitle styling in mpv |
 | `playback.intro_skip_mode` | profile, profile_device | `ask` | [11.2](#112-intro-skip-mode) |
+| `playback.show_marker_confidence`, `playback.show_marker_source` | profile, profile_device (resolved device, profile, default) | `false`, `false` | the line above the skip pill: the marker's confidence and where it came from ([11.1](#111-where-markers-come-from)); since revision 24, so read at each start in a batch of their own, and a server that refuses them (`422`) leaves the line off and keeps the other marker settings; Settings → Playback shows their switches only where the server knows them |
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
 | `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
@@ -2371,8 +2372,18 @@ The playback start decision contains **no** markers or chapters. The watch detai
 - `marker_segments[]`: `{ "kind": "intro" | "credits" | "recap" | "preview", "start_seconds", "end_seconds", "thumbnail_url"?, "thumbnail_thumbhash"?, "thumbnail_capture_seconds"? }`,
   in source-time order. A kind may occur more than once; act on the range that contains the
   current position.
-- Singular `intro`, `credits`, `recap`, `preview` objects `{ "start_seconds", "end_seconds" }` as
-  compatibility projections (one range each).
+- Singular `intro`, `credits`, `recap`, `preview` objects
+  `{ "start_seconds", "end_seconds", "source"?, "provider"?, "confidence"?, "algorithm"? }` as compatibility
+  projections (one range each).
+- Where a range came from, beside it on the singular object (`silo-server/internal/apiv2/watch.go:178-195`), item level
+  and per version. The file keeps one origin per kind, so every occurrence of a kind in `marker_segments` shares it, as
+  the web takes it (`web/src/player/utils/watchPageMarkers.ts`, `provenanceOf`). `source`: `scanner` (Silo's own
+  detection), `plugin` or `online` (a provider), `s3`, `manual` (a person). `provider`: a capability id (`introdb`,
+  `built_in`) or, from a plugin, `plugin:<installation id>:<capability id>`; absent for Silo's own detection.
+  `confidence`: 0 to 1 on the source's own scale, so only comparable within one source; **absent** when nobody rated
+  the range, and a rated 0 is sent as 0. `algorithm` (`chromaprint:v4`, `introdb:v4`) is not read. A server from before
+  leaves all four out. Granary reads them into the skip pill's line ([6.6](#66-settings-the-client-reads); the web's
+  `lib/markerProvenance.ts`).
 
 Use the entry of the version that is actually playing (`source.media_file_id` in the plan). The
 item-level singular fields mirror one selected file: the `file_id` version when it is one of the
@@ -2388,7 +2399,8 @@ Dedicated reads, if needed: `GET /api/v2/markers/files/{file_id}` (preferred) an
 `file_id`, `marker_segments`, and `intro`/`credits`/`recap`/`preview` as
 `{ "start_seconds"?, "end_seconds"?, "source"?, "provider"?, "confidence"?, "algorithm"?, "detected_at"? }`
 (`{}` when absent). Sources: `silo-server/internal/apiv2/markers.go:21-48`,
-`silo-server/docs/markers-api.md:202-248`.
+`silo-server/docs/markers-api.md:202-248`. The answer to a save (`PUT /api/v2/markers/files/{file_id}`) is read the same
+way, its `source`, `provider` and `confidence` included: a marker a person set is `manual` with confidence 1.
 
 During playback, the per-session control socket can push `markers_updated` (see
 [8.9](#89-control-socket-optional)); Android re-reads `getWatchState(file_id)` after a reconnect or a

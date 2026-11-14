@@ -150,6 +150,26 @@ public sealed class PlayerViewModelMarkerTests
     }
 
     [Fact]
+    public async Task ThePill_ShowsWhereItsMarkerCameFrom_AndARereadThatNamesAnotherSourceChangesIt()
+    {
+        var viewModel = await PlayingAsync(MarkerSettings.Default with { ShowMarkerConfidence = true, ShowMarkerSource = true });
+        At(30);
+        Assert.Equal("", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("plugin", "plugin:4:introdb", 0.2) }, Credits]);
+        At(61);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+        Assert.Equal("20% · TheIntroDB", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.Equal("100% · Edited", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro, Credits]);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("", viewModel.SkipProvenance);
+    }
+
+    [Fact]
     public async Task Esc_TurnsTheIntroPillAway_OnlyWhenOneShows()
     {
         var viewModel = await PlayingAsync();
