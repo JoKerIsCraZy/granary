@@ -141,6 +141,12 @@ public sealed record SkipPrompt(string Label, string? Caption, double? Progress)
     /// asks (<see cref="MarkerProvenance.Line"/>); null for none.
     /// </summary>
     public string? Provenance { get; init; }
+
+    /// <summary>
+    /// "Skip Intro" back with the controls after its time ran out: no time of its own, it shows and hides with them,
+    /// takes no focus and answers a key only while it has focus (the design's untimed <c>ask</c> offer).
+    /// </summary>
+    public bool WithControls { get; init; }
 }
 
 /// <summary>What the player is doing, as the intro prompt's clock sees it.</summary>
@@ -159,7 +165,8 @@ public enum MarkerActivity
 /// (docs/api-contract.md, 11.2) and its web player shows it:
 /// <list type="bullet">
 /// <item><c>ask</c>: entering the intro shows "Skip Intro" for 5 s of playing time; skipping seeks to its end and
-/// resolves it, the time running out only hides it, so seeking back in offers it again.</item>
+/// resolves it, the time running out only hides it, so seeking back in offers it again. Until playback leaves the intro
+/// it comes back without a timer while the controls show (<see cref="FollowControls"/>), as the web's does.</item>
 /// <item><c>always</c>: entering the intro skips it at once and offers "Watch Intro" for 5 s, which seeks back to
 /// its start (from before it, nowhere); either way it is resolved.</item>
 /// <item>A resolved intro is never offered again. Recap, credits and preview get a pill that stays while inside
@@ -192,8 +199,9 @@ public sealed class MarkerPrompts
     private MarkerActivity _lastActivity = MarkerActivity.Paused;
     private TimeSpan? _stalledSince;
 
-    // An ask prompt whose time ran out stays away until the viewer leaves the intro.
+    // An ask prompt whose time ran out: until the viewer leaves the intro it comes back only with the controls.
     private PlaybackMarker? _timedOut;
+    private bool _controlsShown;
     private PlaybackMarker? _part;
 
     public SkipPrompt? Prompt { get; private set; }
@@ -214,7 +222,7 @@ public sealed class MarkerPrompts
         _markers = markers;
         _settings = settings;
         _intro = _intro is { } intro ? markers.FirstOrDefault(m => intro.IsSamePart(m) && (_undo || m.Contains(position))) : null;
-        _timedOut = _timedOut is { } timedOut ? markers.FirstOrDefault(timedOut.IsSamePart) : null;
+        _timedOut = _timedOut is { } timedOut ? markers.FirstOrDefault(m => timedOut.IsSamePart(m) && m.Contains(position)) : null;
         // A part that now skips itself loses its pill too: the next update settles that.
         _part = _part is { } part && markers.FirstOrDefault(m => part.IsSamePart(m) && m.Contains(position)) is { } same && !SkipsItself(same)
             ? same
@@ -224,6 +232,16 @@ public sealed class MarkerPrompts
 
     /// <summary>Playback cannot go on for now (a reconnect, a new plan): the prompt's clock stops until the next update.</summary>
     public void Suspend(TimeSpan now) => Tick(MarkerActivity.Paused, now);
+
+    /// <summary>
+    /// The player's controls showed or hid: an ask prompt whose time ran out comes back with them, without a timer, while
+    /// playback is still in its intro, and goes with them (<see cref="SkipPrompt.WithControls"/>).
+    /// </summary>
+    public void FollowControls(bool shown)
+    {
+        _controlsShown = shown;
+        ShowPrompt();
+    }
 
     /// <summary>Follows the position; answers where to seek when a part skips itself.</summary>
     public double? Update(double position, MarkerActivity activity, TimeSpan now)
@@ -324,6 +342,17 @@ public sealed class MarkerPrompts
             Prompt = null;
             return part.Contains(position) ? part.EndSeconds : null;
         }
+        if (Offer is { } expired)
+        {
+            _timedOut = null;
+            Prompt = null;
+            if (!expired.Contains(position))
+            {
+                return null;
+            }
+            _resolved.Add(expired);
+            return expired.EndSeconds;
+        }
         return null;
     }
 
@@ -381,8 +410,20 @@ public sealed class MarkerPrompts
             Prompt = prompt with { Provenance = LineOf(intro) };
             return;
         }
-        Prompt = _part is { } part && PartLabel(part.Kind) is { } label ? new SkipPrompt(label, null, null) { Provenance = LineOf(part) } : null;
+        if (_part is { } part && PartLabel(part.Kind) is { } label)
+        {
+            Prompt = new SkipPrompt(label, null, null) { Provenance = LineOf(part) };
+            return;
+        }
+        // The same pill without its fill.
+        Prompt = Offer is { } expired ? new SkipPrompt("Skip Intro", null, null) { Provenance = LineOf(expired), WithControls = true } : null;
     }
+
+    // The ask prompt whose time ran out, back while the controls show; null when none is.
+    private PlaybackMarker? Offer =>
+        _controlsShown && _settings.IntroSkipMode == MarkerSettings.Ask && _timedOut is { } expired && !_resolved.Any(expired.IsSamePart)
+            ? expired
+            : null;
 
     private static string? PartLabel(string kind) => kind switch
     {
