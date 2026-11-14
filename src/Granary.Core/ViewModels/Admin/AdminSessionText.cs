@@ -203,9 +203,9 @@ public static class AdminSessionText
         string executionName = Or(session.RoutingExecutionNodeName, session.NodeDisplayName ?? "");
         if (execution is "transcode" or "proxy")
         {
-            nodes.Add(Named(execution, executionName));
+            nodes.Add(Named(execution, executionName, session.RoutingExecutionNodeId));
         }
-        if (egress == "proxy" && Named("proxy", session.RoutingEgressNodeName ?? "") is var proxy && nodes.All(n => n.Key != proxy.Key))
+        if (egress == "proxy" && Named("proxy", session.RoutingEgressNodeName ?? "", session.RoutingEgressNodeId) is var proxy && nodes.All(n => n.Key != proxy.Key))
         {
             nodes.Add(proxy);
         }
@@ -216,14 +216,17 @@ public static class AdminSessionText
         return nodes.Count > 0 ? nodes : [ReportingServer(session)];
     }
 
-    private static AdminRouteNode Named(string kind, string name)
+    // Keyed as the web keys a node: by its id where the server gives one, else by its name. A node with neither is keyed by
+    // its kind alone, which no named node's key can be, so an unnamed proxy and one named "unknown" stay two nodes.
+    private static AdminRouteNode Named(string kind, string name, string? id)
     {
         bool isTranscode = kind == "transcode";
         string label = AppText.Get(isTranscode ? "web.admin.activity.route.transcode" : "web.admin.activity.route.proxy");
         string trimmed = name.Trim();
         string shown = trimmed.Length > 0 ? trimmed
             : AppText.Get(isTranscode ? "web.admin.activity.route.unknownTranscodeNode" : "web.admin.activity.route.unknownProxyNode");
-        return new AdminRouteNode($"{kind}:{(trimmed.Length > 0 ? trimmed : "unknown")}", label, shown);
+        string? known = string.IsNullOrWhiteSpace(id) ? (trimmed.Length > 0 ? trimmed : null) : id.Trim();
+        return new AdminRouteNode(known is null ? kind : $"{kind}:{known}", label, shown);
     }
 
     private static AdminRouteNode ReportingServer(AdminPlaybackSession session)

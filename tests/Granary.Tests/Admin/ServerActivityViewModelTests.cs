@@ -227,6 +227,8 @@ public sealed class ServerActivityViewModelTests : IDisposable
     [InlineData(0.4, "0.4%")]
     [InlineData(42, "42%")]
     [InlineData(12.34, "12.3%")]
+    [InlineData(12.04, "12.0%")]
+    [InlineData(41.97, "42.0%")]
     [InlineData(99.96, "99.9%")]
     [InlineData(100, "100%")]
     [InlineData(250, "100%")]

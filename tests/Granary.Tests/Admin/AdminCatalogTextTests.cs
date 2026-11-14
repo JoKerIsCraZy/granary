@@ -71,6 +71,29 @@ public sealed class AdminCatalogTextTests
     }
 
     [Fact]
+    public void AnUnnamedNode_AndANodeNamedUnknown_StayTwoNodesOfTheRoute()
+    {
+        var session = new AdminPlaybackSession { RoutingExecution = "proxy", RoutingEgress = "proxy", RoutingEgressNodeName = "unknown" };
+
+        var route = AdminSessionText.Route(session);
+
+        Assert.Equal(2, route.Count);
+        Assert.NotEqual(route[0].Key, route[1].Key);
+    }
+
+    [Fact]
+    public void ANodesKey_IsItsIdWhereTheServerGivesOne_AsTheWebKeysIt()
+    {
+        // Two sessions on one proxy, one of them from before the node was named: one node for the filter.
+        var named = new AdminPlaybackSession { RoutingExecution = "proxy", RoutingExecutionNodeId = "3", RoutingExecutionNodeName = "edge" };
+        var unnamed = new AdminPlaybackSession { RoutingExecution = "proxy", RoutingExecutionNodeId = "3" };
+
+        Assert.Equal("proxy:3", AdminSessionText.Route(named)[0].Key);
+        Assert.Equal("proxy:3", AdminSessionText.Route(unnamed)[0].Key);
+        Assert.Equal("edge", AdminSessionText.Route(named)[0].Name);
+    }
+
+    [Fact]
     public void TheIndicatorsWords_AreTheWebs_InTheLanguageOnScreen()
     {
         var job = new AdminDownloadPreparation
@@ -86,6 +109,7 @@ public sealed class AdminCatalogTextTests
         Assert.Equal("Transkodierung 1080p H.264", ServerActivityText.PreparationKind(job));
         Assert.Equal("noch etwa 1 Std. 30 Min.", ServerActivityText.PreparationRemaining(job.Progress));
         Assert.Equal("12,5 %", ServerActivityText.TaskProgress(12.5));
+        Assert.Equal("12,0 %", ServerActivityText.TaskProgress(12.04));
         Assert.Equal("Abgleich · 1.200 / 4.800 (25 %)",
             ServerActivityText.ScanProgress(new AdminScanResult { Message = "Abgleich", FilesProcessed = 1200, TotalFiles = 4800 }));
     }

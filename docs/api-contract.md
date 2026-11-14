@@ -1270,7 +1270,7 @@ else of the admin API is used.
   `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, `stream_bitrate_kbps`,
   `transcode_hw_accel`, where (`position_seconds`, `file_duration`, `is_paused`, `started_at`), the client
   (`client_label`, `client_label_full`, `client_name`, `client_version`, `client_ip`), the route (`routing_execution`,
-  `routing_egress` and their node names; older servers only `reporting_node` and `node_display_name`),
+  `routing_egress` and their node names and ids; older servers only `reporting_node` and `node_display_name`),
   `stream_location`, and `has_playback_control` (the player takes pause, resume and messages).
 - Commands: `POST /api/v2/admin/sessions/{id}/pause|resume|stop|message` with `{ "command_id" (a UUID), "sequence",
   "message"? }` → `202` (or `200` replaying a retry) `{ "command_id", "delivery" ("dispatched", or "fallback_scheduled":
