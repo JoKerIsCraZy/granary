@@ -458,7 +458,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   in its place, or the last one (`MediaGrid.Focus.cs`): the grid notes the place of the card that took the focus, sees
   the focused card cleared (`ElementClearing`; the repeater keeps a focused card it only scrolled away) and, once the
   change is laid out, focuses that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere
-  stays there.
+  stays there. A grid left without cards asks the page above it (`ICardFocusHost`; the Downloads page moves on to its
+  other grid), and a series' downloads page moves on to the next season when one goes with its focused card.
 - A card's bar is in percent (0 to 100), the value screen readers say. A card whose lines change as it shows names itself
   by `MediaCard.AccessibleLines` instead of them, so its name stays while its bar moves; `MediaCard.ToolTip` gives its
   whole status where its lines show it in parts, and `MediaCard.PlainSubtitle` sets a poster's second line in the

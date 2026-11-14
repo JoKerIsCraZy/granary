@@ -313,7 +313,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
-  remote carries on through the grid. The sidebar's page has no Back disc.
+  remote carries on through the grid; after the last film the first series takes it, after the last series the last
+  film, and with neither left Reclaim Watched when it shows. The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
@@ -329,8 +330,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Specials" last) with its episodes in a grid of 16:9 stills (`MediaGrid`'s landscape cards, as a season's page shows
   them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
   status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
-  to the Downloads page, which stays picked in the sidebar. Once the series has no downloads left on this PC (its last
-  episode deleted), the page goes back by itself.
+  to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
+  focus, the next season's first card takes it (the one before, after the last season). Once the series has no downloads
+  left on this PC (its last episode deleted), the page goes back by itself.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row

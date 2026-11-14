@@ -13,7 +13,7 @@ namespace Granary.App.Views;
 /// only while it shows: attached as it is shown, detached as it is left, and as it unloads, so the downloads, which live as
 /// long as the app, never hold it (<c>DownloadsViewModelTests</c>). Its cards' ⋮ menus get their entries from it.
 /// </summary>
-public sealed partial class DownloadsPage : Page, ICardMenuHost
+public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost
 {
     public DownloadsPage()
     {
@@ -37,6 +37,20 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost
 
     /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus.</summary>
     public ICardMenuSource CardMenu => ViewModel.Actions;
+
+    /// <summary>
+    /// The last film went with the focus: the first series takes it; the last series: the last film; neither is left: Reclaim
+    /// Watched, when it shows. Whatever is left, a keyboard, a controller or a remote carries on from there.
+    /// </summary>
+    public void FocusAfterLastCard(MediaGrid grid, FocusState state)
+    {
+        bool moved = ReferenceEquals(grid, FilmsGrid) ? SeriesGrid.FocusCardAt(0, state)
+            : ReferenceEquals(grid, SeriesGrid) && FilmsGrid.FocusCardAt(int.MaxValue, state);
+        if (!moved && ReclaimButton.Visibility == Visibility.Visible)
+        {
+            ReclaimButton.Focus(state);
+        }
+    }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
