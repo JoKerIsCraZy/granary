@@ -254,6 +254,88 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ANewcomerAtItsAddressesLimit_ClosesOnlyItsAddressesOldest_ThoughFourWait()
+    {
+        var elsewhere = new[] { (await _harness.ServeAsync(pair: false)).Serving, (await _harness.ServeAsync(pair: false)).Serving };
+        var first = await _harness.ServeAsync(pair: false, peer: OnePeer);
+        var second = await _harness.ServeAsync(pair: false, peer: OnePeer);
+
+        // Four wait, two of them from the newcomer's address: its address's oldest makes room, and that is enough.
+        var newcomer = await _harness.ServeAsync(pair: false, peer: OnePeer);
+
+        await first.Serving.WaitAsync(HangGuard, Token);
+        Assert.True(await newcomer.Phone.PairAsync());
+        Assert.False(second.Serving.IsCompleted);
+        Assert.All(elsewhere, serving => Assert.False(serving.IsCompleted));
+    }
+
+    [Fact]
+    public async Task ANewcomerBelowItsAddressesLimit_ClosesTheOldestOfAll_WhenFourWait()
+    {
+        var oldest = await _harness.ServeAsync(pair: false);
+        var others = new[]
+        {
+            (await _harness.ServeAsync(pair: false)).Serving, (await _harness.ServeAsync(pair: false)).Serving,
+            (await _harness.ServeAsync(pair: false, peer: OnePeer)).Serving,
+        };
+
+        var newcomer = await _harness.ServeAsync(pair: false, peer: OnePeer);
+
+        await oldest.Serving.WaitAsync(HangGuard, Token);
+        Assert.True(await newcomer.Phone.PairAsync());
+        Assert.All(others, serving => Assert.False(serving.IsCompleted));
+    }
+
+    [Fact]
+    public async Task TwoPhonesBehindOneAddress_BothControl_AndConnectionsWithoutAHelloThereDoNotTakeTheirPlace()
+    {
+        var (first, firstServing) = await _harness.HelloAsync(deviceId: "phone-1", peer: OnePeer);
+        await first.NextAsync("state");
+        var (second, secondServing) = await _harness.HelloAsync(deviceId: "phone-2", deviceName: "Elena's tablet", peer: OnePeer);
+        await second.NextAsync("state");
+
+        // Three more from that address that never say hello: only the two newest of them are kept.
+        var waiting = new List<Task>();
+        for (int i = 0; i < 3; i++)
+        {
+            waiting.Add((await _harness.ServeAsync(peer: OnePeer)).Serving);
+        }
+
+        await waiting[0].WaitAsync(HangGuard, Token);
+        Assert.False(waiting[1].IsCompleted || waiting[2].IsCompleted);
+        Assert.Equal(2, Receiver.Phones.Count(phone => phone.IsActive));
+        foreach (var (phone, serving) in new[] { (first, firstServing), (second, secondServing) })
+        {
+            await phone.SendAsync("""{"type":"ping","v":2}""");
+            Assert.Equal("pong", FakePhone.TypeOf(await phone.NextAsync("pong")));
+            Assert.False(serving.IsCompleted);
+        }
+    }
+
+    [Fact]
+    public async Task UnknownTypes_DoNotSpendTheCommandBudget()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+
+        for (int i = 0; i < CommandBudget.Burst + 10; i++)
+        {
+            await phone.SendAsync("""{"type":"surprise","v":2}""");
+        }
+        for (int i = 0; i < CommandBudget.Burst; i++)
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"seek","seconds":10},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+
+        Assert.Equal(CommandBudget.Burst, player.Applied.Count);
+        Assert.DoesNotContain(phone.Received, message => message.Contains("rate_limited", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AHelloOfAConnectionClosedToMakeRoom_TakesNoPhonesPlace()
     {
         var connected = new List<ConnectedPhone>();

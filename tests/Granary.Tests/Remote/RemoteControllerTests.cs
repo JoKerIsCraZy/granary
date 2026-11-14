@@ -580,6 +580,23 @@ public sealed class RemoteControllerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AHandshakeUnderAKeyForgottenMeanwhile_IsRefused()
+    {
+        var (controller, phone, _) = _harness.Connect();
+        // The material is still the PC's by its id, but a reset forgot its key as the handshake read it.
+        var forgotten = new PairingMaterial(RemoteHarness.ReceiverId, RemoteHarness.Key);
+        forgotten.Dispose();
+        _harness.Pairing = forgotten;
+        await phone.SendSealedHelloAsync();
+
+        Assert.False(await controller.OpenAsync(Token));
+
+        Assert.Equal("""{"type":"close","v":2,"close":{"reason":"unauthorized"}}""", await phone.ReadPlainAsync());
+        Assert.False(controller.IsKeyed);
+        Assert.Contains("Connection 1 closed: the pairing code was reset", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task TheLog_NamesTheConnectionAndAReason_AndNothingAFrameCarries()
     {
         var (_, phone, _, running) = await _harness.OpenAsync();

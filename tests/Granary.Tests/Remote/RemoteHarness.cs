@@ -215,9 +215,10 @@ internal sealed class RemoteHarness : IAsyncDisposable
     /// receiver's hello.
     /// </summary>
     public async Task<(FakePhone Phone, Task Serving)> HelloAsync(string? serverId = null, string? serverIdentity = null,
-        string deviceId = FakePhone.DefaultDeviceId, string deviceName = FakePhone.DefaultDeviceName, bool passive = false)
+        string deviceId = FakePhone.DefaultDeviceId, string deviceName = FakePhone.DefaultDeviceName, bool passive = false,
+        IPAddress? peer = null)
     {
-        var (phone, _, serving) = await ServeAsync();
+        var (phone, _, serving) = await ServeAsync(peer: peer);
         Assert.Equal("hello", FakePhone.TypeOf(await phone.ReadAsync() ?? ""));
         await phone.HelloAsync(serverId ?? ServerId, serverIdentity, deviceId, deviceName, passive);
         return (phone, serving);
