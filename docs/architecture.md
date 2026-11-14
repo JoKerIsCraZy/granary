@@ -1787,9 +1787,11 @@ device.
   position arrives within seconds, as a session's sample would; without it, it waits.
 - **The server back.** A server that comes back on the same network is none of the session's or the link's changes, so
   `ServerRecovery` says when Granary hears from it again: the Downloads page's Retry finding it (`OfflineStart`), the
-  events connection subscribing after a connection of its lane that could not (`RealtimeEvents`; the server's end of a
-  connection every five minutes, with the next one at once, is no recovery), and the downloads capability read after a
-  read of the same profile's that failed (`DownloadsFeature`). Each says so once per recovery. While the active profile has
+  events connection subscribing after a connection of its lane that could not (`RealtimeEvents`; also when the lane was
+  replaced meanwhile for the same profile with other channels; the server's end of a connection every five minutes, with
+  the next one at once, is no recovery, nor is another profile's first connection), and the downloads capability read
+  after a read of the same profile's that failed (`DownloadsFeature`). Each says so once per recovery; a listener that
+  fails is logged by its kind and reaches neither the one that told it nor the other listeners. While the active profile has
   pending positions, `OfflineProgressSync` then flushes through the same 2 s settle and reads back, so a recovery that
   several of them tell is one run; with nothing waiting it starts none. The retry stays the fallback: a send after a
   recovery that fails again waits for it as before.

@@ -449,6 +449,52 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
         Assert.Equal(1, Recoveries);
     }
 
+    [Fact]
+    public async Task ASessionsFirstConnection_IsNoRecovery()
+    {
+        await StartedAsync();
+
+        Assert.Equal(0, Recoveries);
+    }
+
+    // The account became an administrator's while the server was away: the same profile's connection is replaced by one that
+    // asks for more channels, and its subscription is still the server answering again.
+    [Fact]
+    public async Task TheSameProfilesConnectionReplacedWhileTheServerWasAway_StillSaysItAnswersAgain()
+    {
+        _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
+        _events.Start();
+        await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        _harness.Session.Account = ServerActivityHarness.Administrator;
+        _harness.Session.RaiseChanged();
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the new connection");
+        Socket(0).Push(EventsLaneTests.Hello);
+        Socket(0).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 1, "its subscription");
+
+        Assert.Equal(1, Recoveries);
+    }
+
+    // Another profile gets a connection of its own, and the session's change already sends what waits: its first
+    // subscription is no recovery, whatever the last profile's connection went through.
+    [Fact]
+    public async Task AnotherProfilesFirstConnection_IsNoRecovery()
+    {
+        _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
+        _events.Start();
+        await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the other profile's connection");
+        Socket(0).Push(EventsLaneTests.Hello);
+        Socket(0).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 1, "its subscription");
+
+        Assert.Equal(0, Recoveries);
+    }
+
     // The server ends every connection after five minutes, and the next one opens at once: the server was there all along.
     [Fact]
     public async Task AConnectionThatComesBackAtOnce_IsNoRecovery()

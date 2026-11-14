@@ -91,8 +91,8 @@ public sealed class RealtimeEvents : IDisposable
     // Since when the profile's connection is being replaced by one that asks for other channels; null once the new one
     // subscribed.
     private DateTimeOffset? _replacingSince;
-    // The followed lane's connection under way has subscribed; one of its connections ended without subscribing since the
-    // last that did: the server could not be reached.
+    // The followed lane's connection under way has subscribed; a connection for this viewer (its lane, or the one it replaced
+    // for other channels) ended without subscribing since the last that did: the server could not be reached.
     private bool _attemptSubscribed;
     private bool _unreachable;
     private int _handled;
@@ -345,9 +345,9 @@ public sealed class RealtimeEvents : IDisposable
             previous = _lane;
             _lane = null;
             _attemptSubscribed = false;
-            _unreachable = false;
             // The same profile on the same server, only with other channels to ask for (the indicator switched, the
-            // account made or unmade an administrator): what waits to be reported still counts.
+            // account made or unmade an administrator): what waits to be reported still counts, and so does a server the
+            // last connection could not reach. Another viewer starts over: the session's change sends what waits.
             bool isSameViewer = following is not null && _following is not null
                 && following with { FollowsActivity = _following.FollowsActivity } == _following;
             _following = following;
@@ -358,6 +358,7 @@ public sealed class RealtimeEvents : IDisposable
             else
             {
                 ClearPendingLocked();
+                _unreachable = false;
             }
             // The activity starts over on the same change the lane is replaced on, and drops what the old one still sends.
             long feed = _activity.Follow(following is { FollowsActivity: true } ? following.BaseUri : null);

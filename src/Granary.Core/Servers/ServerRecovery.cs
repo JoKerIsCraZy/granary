@@ -14,10 +14,28 @@ public sealed class ServerRecovery(ILogger<ServerRecovery> logger)
     /// <summary>Raised on the reporter's thread, any thread.</summary>
     public event EventHandler? Recovered;
 
-    /// <summary>The server answered again; <paramref name="how"/> names how, for the log: "Retry", "the events connection".</summary>
+    /// <summary>
+    /// The server answered again; <paramref name="how"/> names how, for the log: "Retry", "the events connection". Each
+    /// listener hears it on its own: one that fails is logged by its kind, and neither the reporter (a read, a frame of the
+    /// events connection) nor the other listeners feel it.
+    /// </summary>
     public void Report(string how)
     {
         logger.LogInformation("The server answers again ({How})", how);
-        Recovered?.Invoke(this, EventArgs.Empty);
+        if (Recovered is not { } recovered)
+        {
+            return;
+        }
+        foreach (var listener in recovered.GetInvocationList().Cast<EventHandler>())
+        {
+            try
+            {
+                listener(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("A listener of the server's recovery failed ({Failure})", ex.GetType().Name);
+            }
+        }
     }
 }

@@ -15,10 +15,10 @@ release's section is what its update says it changes (docs/release.md).
   server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
-  read them, and the next episode plays when it is downloaded too. What you watch offline
-  goes back to your Silo server as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or removing it sends what it
-  still can first, and its question says how much progress is lost. The Downloads page has Play on each download, says Missing file for
-  one whose file was deleted outside Granary, and Reclaim
+  read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
+  as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
+  removing it sends what it still can first, and its question says how much progress is lost. The Downloads page has
+  Play on each download, says Missing file for one whose file was deleted outside Granary, and Reclaim
   Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
   watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
