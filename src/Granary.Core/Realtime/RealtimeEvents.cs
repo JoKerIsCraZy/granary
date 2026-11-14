@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +26,9 @@ namespace Granary.Core.Realtime;
 /// <remarks>
 /// The stream does not say which device made a change, so this app's own come back too. A change of the profile's state
 /// within <see cref="EchoWindow"/> of one this app reported, and progress while this app plays, are taken as its own echo:
-/// the app already reloaded for them.
+/// the app already reloaded for them. A connection that subscribes after one that could not (the server was away, or Granary
+/// started without it) says the server answers again (<see cref="ServerRecovery"/>); the server's own end of a connection
+/// every five minutes, followed by the next at once, does not.
 /// </remarks>
 public sealed class RealtimeEvents : IDisposable
 {
@@ -71,6 +74,7 @@ public sealed class RealtimeEvents : IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger<RealtimeEvents> _logger;
     private readonly ActivityIndicatorSetting? _indicator;
+    private readonly ServerRecovery? _recovery;
     private readonly ITimer _settle;
     private readonly ITimer _progress;
     private readonly ITimer _count;
@@ -87,10 +91,15 @@ public sealed class RealtimeEvents : IDisposable
     // Since when the profile's connection is being replaced by one that asks for other channels; null once the new one
     // subscribed.
     private DateTimeOffset? _replacingSince;
+    // The followed lane's connection under way has subscribed; a connection for this viewer (its lane, or the one it replaced
+    // for other channels) ended without subscribing since the last that did: the server could not be reached.
+    private bool _attemptSubscribed;
+    private bool _unreachable;
     private int _handled;
 
     public RealtimeEvents(ISessionManager session, Func<EventsLane> lanes, ViewerStateChanges changes, PlaybackStops stops, NotificationBadge badge,
-        ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time, ILogger<RealtimeEvents> logger, ActivityIndicatorSetting? indicator = null)
+        ServerActivity activity, IUiDispatcher dispatcher, TimeProvider time, ILogger<RealtimeEvents> logger, ActivityIndicatorSetting? indicator = null,
+        ServerRecovery? recovery = null)
     {
         _session = session;
         _lanes = lanes;
@@ -102,6 +111,7 @@ public sealed class RealtimeEvents : IDisposable
         _time = time;
         _logger = logger;
         _indicator = indicator;
+        _recovery = recovery;
         _settle = time.CreateTimer(_ => OnSettled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _progress = time.CreateTimer(_ => OnProgressWindowClosed(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _count = time.CreateTimer(_ => OnNotificationsSettled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -175,12 +185,18 @@ public sealed class RealtimeEvents : IDisposable
     {
         try
         {
+            bool recovered = false;
             lock (_gate)
             {
                 if (_following?.ProfileId == profileId && (from is null || ReferenceEquals(_lane, from)))
                 {
-                    HandleLocked(frame, profileId);
+                    recovered = HandleLocked(frame, profileId);
                 }
+            }
+            // Outside the lock: whoever waited for the server goes on in its own handler.
+            if (recovered)
+            {
+                _recovery?.Report("the events connection");
             }
         }
         finally
@@ -189,13 +205,33 @@ public sealed class RealtimeEvents : IDisposable
         }
     }
 
-    private void HandleLocked(EventsFrame frame, string profileId)
+    // How the followed lane's connection stands: one that ended without subscribing means the server could not be reached.
+    private void Connection(EventsConnection connection, EventsLane from)
+    {
+        lock (_gate)
+        {
+            if (!ReferenceEquals(_lane, from))
+            {
+                return;
+            }
+            if (connection == EventsConnection.Connecting)
+            {
+                _attemptSubscribed = false;
+            }
+            else if (connection == EventsConnection.Disconnected && !_attemptSubscribed)
+            {
+                _unreachable = true;
+            }
+        }
+    }
+
+    // True when the frame is a subscription that says the server answers again (SubscribedLocked).
+    private bool HandleLocked(EventsFrame frame, string profileId)
     {
         switch (frame.Type)
         {
             case EventsFrameTypes.Subscribed:
-                SubscribedLocked(frame);
-                break;
+                return SubscribedLocked(frame);
             case EventsFrameTypes.AccessChanged:
                 SettleLocked(forOthers: true, forViewer: false);
                 break;
@@ -212,11 +248,13 @@ public sealed class RealtimeEvents : IDisposable
                 HandleUserStateLocked(frame, profileId);
                 break;
         }
+        return false;
     }
 
     // A lane's first connection knows of no gap before it. One that replaced the same profile's connection has the time
-    // since: what the server sent meanwhile was sent to nobody.
-    private void SubscribedLocked(EventsFrame frame)
+    // since: what the server sent meanwhile was sent to nobody. True when a connection of the lane could not subscribe since
+    // the last that did: the server answers again.
+    private bool SubscribedLocked(EventsFrame frame)
     {
         var gap = frame.Gap ?? _time.GetUtcNow() - _replacingSince;
         _replacingSince = null;
@@ -224,6 +262,10 @@ public sealed class RealtimeEvents : IDisposable
         {
             SettleLocked(forOthers: true, forViewer: true);
         }
+        _attemptSubscribed = true;
+        bool recovered = _unreachable;
+        _unreachable = false;
+        return recovered;
     }
 
     private void HandleUserStateLocked(EventsFrame frame, string profileId)
@@ -302,8 +344,10 @@ public sealed class RealtimeEvents : IDisposable
             }
             previous = _lane;
             _lane = null;
+            _attemptSubscribed = false;
             // The same profile on the same server, only with other channels to ask for (the indicator switched, the
-            // account made or unmade an administrator): what waits to be reported still counts.
+            // account made or unmade an administrator): what waits to be reported still counts, and so does a server the
+            // last connection could not reach. Another viewer starts over: the session's change sends what waits.
             bool isSameViewer = following is not null && _following is not null
                 && following with { FollowsActivity = _following.FollowsActivity } == _following;
             _following = following;
@@ -314,6 +358,7 @@ public sealed class RealtimeEvents : IDisposable
             else
             {
                 ClearPendingLocked();
+                _unreachable = false;
             }
             // The activity starts over on the same change the lane is replaced on, and drops what the old one still sends.
             long feed = _activity.Follow(following is { FollowsActivity: true } ? following.BaseUri : null);
@@ -326,7 +371,11 @@ public sealed class RealtimeEvents : IDisposable
                 {
                     _activity.Handle(feed, frame);
                     Handle(frame, following.ProfileId, next);
-                }, connection => _activity.Connection(feed, connection));
+                }, connection =>
+                {
+                    _activity.Connection(feed, connection);
+                    Connection(connection, next);
+                });
             }
         }
         if (previous is not null)

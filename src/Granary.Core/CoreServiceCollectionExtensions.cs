@@ -297,6 +297,9 @@ public static class CoreServiceCollectionExtensions
         // title preview's is. The stream and the indicator both follow it.
         services.AddSingleton(sp => new ActivityIndicatorSetting(ActivityIndicatorSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<ActivityIndicatorSetting>>()));
+        // The server answering again after it could not be reached: the stream, Retry and the downloads' capability say
+        // so, and the positions recorded offline go at once.
+        services.AddSingleton<ServerRecovery>();
         services.AddSingleton<RealtimeEvents>();
     }
 
@@ -339,6 +342,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
             () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
         services.AddSingleton<DownloadActions>();
+        // Every film's, episode's and season's card has Download in its menu; its dialog reads the title's files as it opens.
+        services.AddSingleton<DownloadOfferReader>();
+        services.AddSingleton<CardDownloads>();
         // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.

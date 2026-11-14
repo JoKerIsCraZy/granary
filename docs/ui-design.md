@@ -176,11 +176,18 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   Enter opens the card itself. A card's ⋮ menu is the web's
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
-  Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
-  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Below a line come the entries of the list a card is
-  in, from the nearest grid or page above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a
-  collection's own, a season's episodes' Download (Detail pages). Right-click, Shift+F10 and the menu key open the
-  same menu. The web's admin entries (play history, metadata) are not there yet.
+  Watchlist, Download, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
+  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Download is Granary's: the web's card menu has none,
+  so it stands where the title page's ⋮ has it among the web's items (after the watchlist and Add to Collection, before
+  Not Interested; on an episode, after Reset Progress). Every film's and episode's card has it wherever cards show
+  (Home's rows, Continue Watching and Next Up, the libraries, search, collections, a title page's rows and episodes),
+  with the title page's entries and rules (Detail pages, below): "Download" while your Silo server lets the profile
+  download, or the download's status in the Downloads page's words, which opens the Downloads page, and "Delete download"
+  under it; a season's card "Download season"; a series' card nothing (`CardDownloads`). They come from what this PC
+  knows, so opening the menu asks the server nothing. Below a line come the entries of the list a card is in, from the
+  nearest grid above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a collection's own.
+  Right-click, Shift+F10, the menu key and a controller's Menu open the same menu. The web's admin entries (play
+  history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter in the accent with its label; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
@@ -321,7 +328,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
   button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
   ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
-  Home opens as from the sidebar, so a download that plays in the minimized player plays on; while it still can't be
+  Home opens as from the sidebar, so a download that plays in the minimized player plays on, and what was watched offline
+  goes to the server a moment later (docs/architecture.md, "Offline progress"); while it still can't be
   reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
   "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
 - A series' downloads (`DownloadedSeriesPage`, `AppRoute.DownloadedSeries`, opened from its card on the Downloads page, as
@@ -750,16 +758,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
     page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
     server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
-    downloads: the title's progress, and its episodes' on a season's page. The episode cards of a season's grid (and of a
-    single-season series') carry the same entries at the foot of their ⋮ menu, below a line: Download, or the status,
-    which opens the Downloads page, and Delete download.
+    downloads: the title's progress, and its episodes' on a season's page. Its cards (the episodes of a season's grid,
+    More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as every card does
+    (Components, cards above); the page adds none to them.
   - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
     Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season), "Choose
     a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
     files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
     download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
-    picked under the buttons chosen (from an episode card, the episode's first file), and the web's "Larger files require
-    more storage space." at the foot. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    picked under the buttons chosen (from a card, the one Play would take), and the web's "Larger files require
+    more storage space." at the foot. A card does not carry its files, so its dialog opens at once with the title
+    "Download" and reads the title as its page does, as the web's card menu reads an item for its dialogs: "Loading the
+    latest item details…" in place of the description and a 16 px ring with "Loading…", Download off; then the dialog as
+    from the title page. A read that failed says "The item details could not be loaded." with "Please try again." and
+    Try Again; a title without a file (or a season none of whose episodes has one) says the web's "No media files for this
+    item.", a season whose episodes are all on this PC "Every episode of this season is on this PC.", and Download stays
+    off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
     more, never above the file; "10 episodes · 21.4 GB" for a season in Original) and under it the free space where

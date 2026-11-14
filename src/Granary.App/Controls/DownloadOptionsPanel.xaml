@@ -3,7 +3,8 @@
     The body of the download dialog, as the web's DownloadVersionPicker.tsx: its description, the title's files as rows with
     a download disc, the quality line and the size (one row per file, a choice here: Download starts the chosen one), and
     the footer under more than one. Granary adds the qualities your Silo server offers as pills, the size of what starts, the
-    free space on this PC, and the web's error in an error bar. Shown in a ContentDialog (Services/DownloadOptionsDialog.cs).
+    free space on this PC, and the web's error in an error bar. From a card, the title's files come while it shows: its
+    parts follow the view model. Shown in a ContentDialog (Services/DownloadOptionsDialog.cs).
 -->
 <UserControl
     x:Class="Granary.App.Controls.DownloadOptionsPanel"
@@ -34,11 +35,30 @@
     </UserControl.Resources>
 
     <StackPanel Width="400" Spacing="16">
-        <TextBlock Text="{x:Bind Description}" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+        <!-- The web's description; from a card, its words while the title is read, or why there is nothing to download. -->
+        <TextBlock Text="{x:Bind ViewModel.DescriptionText, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
 
-        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsVersions}">
+        <!--
+            A card's dialog reads the title's files as it opens, as the web's card menu reads an item for its dialogs
+            (MediaItemMenu.tsx, MetadataActionStatusDialog): a turning ring and "Loading…", then, when the read failed,
+            "Please try again." with Try Again.
+        -->
+        <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.IsReading, Mode=OneWay}">
+            <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsReading, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock Text="Loading…" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" />
+        </StackPanel>
+        <Grid ColumnSpacing="12" Visibility="{x:Bind ViewModel.ReadFailed, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Please try again." FontSize="14" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+            <Button Grid.Column="1" Content="Try Again" Command="{x:Bind ViewModel.TryAgainCommand}" />
+        </Grid>
+
+        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsVersions, Mode=OneWay}">
             <TextBlock Text="VERSION" Style="{StaticResource EyebrowStyle}" AutomationProperties.AccessibilityView="Raw" />
-            <ListView x:Name="VersionList" ItemsSource="{x:Bind ViewModel.Versions}" SelectionMode="Single" MaxHeight="280"
+            <ListView x:Name="VersionList" ItemsSource="{x:Bind ViewModel.Versions, Mode=OneWay}" SelectionMode="Single" MaxHeight="280"
                       SelectedItem="{x:Bind ViewModel.SelectedVersion, Mode=TwoWay}" ItemContainerStyle="{StaticResource VersionRowStyle}"
                       ContainerContentChanging="OnVersionContainerChanging" AutomationProperties.Name="Version">
                 <ListView.ItemTemplate>
@@ -65,14 +85,14 @@
             </ListView>
         </StackPanel>
 
-        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsQualities}">
+        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsQualities, Mode=OneWay}">
             <TextBlock Text="QUALITY" Style="{StaticResource EyebrowStyle}" AutomationProperties.AccessibilityView="Raw" />
             <controls:PillChoices ItemsSource="{x:Bind Qualities}" SelectedItem="{x:Bind SelectedQuality, Mode=TwoWay}"
                                   AutomationProperties.Name="Quality" />
         </StackPanel>
 
         <!-- What starts and whether it fits: "About 2.1 GB", then "200.0 GB free on this PC." or why it does not fit, in red. -->
-        <StackPanel Spacing="4">
+        <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasOffer, Mode=OneWay}">
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -90,7 +110,7 @@
         </StackPanel>
 
         <TextBlock Text="{x:Bind Footer}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}"
-                   Visibility="{x:Bind ViewModel.ShowsFooter}" />
+                   Visibility="{x:Bind ViewModel.ShowsFooter, Mode=OneWay}" />
 
         <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                  Message="{x:Bind ViewModel.ErrorText, Mode=OneWay}" />

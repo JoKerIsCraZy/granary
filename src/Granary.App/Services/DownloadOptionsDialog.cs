@@ -11,9 +11,10 @@ namespace Granary.App.Services;
 
 /// <summary>
 /// The download dialog over the main window: the web's <c>components/DownloadVersionPicker.tsx</c> with its title and texts,
-/// and Granary's qualities and free space (<see cref="DownloadOptionsPanel"/>). Download stays pressable while the selection
-/// fits; the dialog stays open while the start runs and when it did not start, which the panel says, and closes once it did.
-/// Cancel closes it. One at a time, as <see cref="DialogConfirmation"/> asks.
+/// and Granary's qualities and free space (<see cref="DownloadOptionsPanel"/>). Download stays pressable while there is
+/// something to download and the selection fits (off while a card's dialog reads the title's files); the dialog stays open
+/// while the start runs and when it did not start, which the panel says, and closes once it did. Cancel closes it. One at a
+/// time, as <see cref="DialogConfirmation"/> asks.
 /// </summary>
 internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<DownloadOptionsDialog> logger) : IDownloadOptionsDialog
 {
@@ -29,11 +30,20 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
         }
         _showing = true;
         ContentDialog? dialog = null;
-        void FollowCanStart(object? sender, PropertyChangedEventArgs e)
+        // Download follows whether it can start; a card's dialog gets its title once it has read the title's files.
+        void FollowOptions(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(DownloadOptionsViewModel.CanStart) && dialog is not null)
+            if (dialog is null)
+            {
+                return;
+            }
+            if (e.PropertyName == nameof(DownloadOptionsViewModel.CanStart))
             {
                 dialog.IsPrimaryButtonEnabled = options.CanStart;
+            }
+            else if (e.PropertyName == nameof(DownloadOptionsViewModel.Title))
+            {
+                dialog.Title = options.Title;
             }
         }
         // Download starts what the dialog shows; a start that did not happen keeps it open with the reason.
@@ -70,7 +80,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 args.Cancel = true;
             }
         }
-        options.PropertyChanged += FollowCanStart;
+        options.PropertyChanged += FollowOptions;
         try
         {
             dialog = new ContentDialog
@@ -94,7 +104,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
         }
         finally
         {
-            options.PropertyChanged -= FollowCanStart;
+            options.PropertyChanged -= FollowOptions;
             if (dialog is not null)
             {
                 dialog.PrimaryButtonClick -= OnDownloadClick;
