@@ -59,7 +59,7 @@ public sealed partial class RemoteController : IAsyncDisposable
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly TaskCompletionSource _ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private SealedSessionKeys? _keys;
-    private string? _keyId;
+    private PairingMaterial? _material;
     private ITimer? _helloWatch;
     private int _state;
     private int _ending;
@@ -132,8 +132,8 @@ public sealed partial class RemoteController : IAsyncDisposable
     /// <summary>Completes once the connection is closed and its keys are gone.</summary>
     public Task Ended => _ended.Task;
 
-    /// <summary>The id of the pairing key the session was keyed under, or null before.</summary>
-    internal string? SessionKeyId => Volatile.Read(ref _keys) is null ? null : _keyId;
+    /// <summary>The pairing material the session was keyed under, or null before.</summary>
+    internal PairingMaterial? SessionMaterial => Volatile.Read(ref _keys) is null ? null : _material;
 
     /// <summary>The session's keys are still held: false once the connection ended.</summary>
     internal bool HoldsSessionKeys => Volatile.Read(ref _keys) is { IsDisposed: false };
@@ -177,7 +177,8 @@ public sealed partial class RemoteController : IAsyncDisposable
             return false;
         }
 
-        // The material as it is now: a code reset a moment ago already counts.
+        // The material as it is now: a code reset a moment ago already counts. The id is all a phone names here; a phone
+        // on another key with the same id derives other session keys, and its first frame does not open.
         var pairing = _pairing();
         var hello = SiloCastSealed.ReadHello(first);
         if (pairing is null || hello is null || !string.Equals(hello.KeyId, pairing.KeyId, StringComparison.Ordinal))
@@ -185,7 +186,13 @@ public sealed partial class RemoteController : IAsyncDisposable
             await RefuseAsync(hello is null ? RemoteLogReasons.NotAPairingHello : RemoteLogReasons.WrongKey).ConfigureAwait(false);
             return false;
         }
-        return await KeyAsync(pairing, hello).ConfigureAwait(false);
+        if (DeriveKeys(pairing, hello) is not { } derived)
+        {
+            // Forgotten under the handshake: the code was reset.
+            await RefuseAsync(RemoteLogReasons.KeyReset).ConfigureAwait(false);
+            return false;
+        }
+        return await KeyAsync(pairing, derived.Keys, derived.Nonce).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -329,12 +336,27 @@ public sealed partial class RemoteController : IAsyncDisposable
         _lifetime.Dispose();
     }
 
-    // Answers a sealed_hello under the key: the receiver's own, with a fresh nonce, so a recorded session cannot be played
-    // back to it. The session is keyed only once the answer left; nothing sealed goes before it.
-    private async Task<bool> KeyAsync(PairingMaterial pairing, SealedHello hello)
+    // The session's keys from the pairing key and both nonces, with a fresh nonce of the receiver's own, so a recorded
+    // session cannot be played back. The pairing key is held while it is read: a reset cannot zero it half way. Null when
+    // it was forgotten.
+    private static (SealedSessionKeys Keys, byte[] Nonce)? DeriveKeys(PairingMaterial pairing, SealedHello hello)
     {
         byte[] nonce = RandomNumberGenerator.GetBytes(SiloCastSealed.NonceBytes);
-        var keys = SiloCastSealed.DeriveSessionKeys(pairing.Key, hello.Nonce, nonce);
+        try
+        {
+            using var key = pairing.UseKey();
+            return (SiloCastSealed.DeriveSessionKeys(key.Key, hello.Nonce, nonce), nonce);
+        }
+        catch (ObjectDisposedException)
+        {
+            return null;
+        }
+    }
+
+    // Answers a sealed_hello under the key with the receiver's own and its nonce. The session is keyed only once the answer
+    // left; nothing sealed goes before it.
+    private async Task<bool> KeyAsync(PairingMaterial pairing, SealedSessionKeys keys, byte[] nonce)
+    {
         // The deadlines run from before the answer leaves, so they exist by the time the phone has it.
         _helloWatch = _time.CreateTimer(static self => ((RemoteController)self!).HelloOverdue(), this, _timings.HelloWait, Timeout.InfiniteTimeSpan);
         StartHeartbeat();
@@ -354,7 +376,7 @@ public sealed partial class RemoteController : IAsyncDisposable
                 keys.Dispose();
                 return false;
             }
-            _keyId = pairing.KeyId;
+            _material = pairing;
             Volatile.Write(ref _keys, keys);
         }
         finally
@@ -489,11 +511,12 @@ public sealed partial class RemoteController : IAsyncDisposable
         }
     }
 
-    // The key this session was keyed under is still the PC's. Checked with every frame in and out, so a reset takes a phone
-    // off at its next frame even if the news of it never reached the receiver.
+    // The key this session was keyed under is still the PC's: the same material, not merely the same 32-bit id. Checked with
+    // every frame in and out, so a reset takes a phone off at its next frame even if the news of it never reached the
+    // receiver.
     private bool StillPaired()
     {
-        if (_keyId is null || string.Equals(_pairing()?.KeyId, _keyId, StringComparison.Ordinal))
+        if (_material is null || PairingMaterial.Same(_pairing(), _material))
         {
             return true;
         }

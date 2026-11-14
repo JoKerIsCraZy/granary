@@ -55,11 +55,31 @@ public sealed partial class RemoteReceiver
 
     /// <summary>
     /// The link in the pairing code while the receiver listens, with the bound address and port and the key; null
-    /// otherwise. It holds the key: it is shown in the code and never logged, saved or copied.
+    /// otherwise. It is made from the PC's key as it is now, and is null while that is not yet the key the receiver runs
+    /// under (just after a reset), so a code that was taken back is never shown. It holds the key: it is shown in the
+    /// code and never logged, saved or copied.
     /// </summary>
-    public string? PairingLink => Volatile.Read(ref _running) is { } running
-        ? ReceiverAdvertisement.PairingLink(running.Identity, running.Endpoint, running.Material.Key)
-        : null;
+    public string? PairingLink
+    {
+        get
+        {
+            var current = _pairing.Current;
+            if (Volatile.Read(ref _running) is not { } running || !PairingMaterial.Same(current, running.Material))
+            {
+                return null;
+            }
+            try
+            {
+                using var key = current!.UseKey();
+                return ReceiverAdvertisement.PairingLink(running.Identity, running.Endpoint, key.Key);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Reset meanwhile.
+                return null;
+            }
+        }
+    }
 
     /// <summary>Follows the switch, the session, the PC's address and the pairing key from now on.</summary>
     public void Start()
@@ -131,7 +151,7 @@ public sealed partial class RemoteReceiver
         lock (_gate)
         {
             lingering = before is not null && _sessions.Any(session =>
-                session.Controller.SessionKeyId == before.KeyId && !session.Controller.Ended.IsCompleted);
+                PairingMaterial.Same(session.Controller.SessionMaterial, before) && !session.Controller.Ended.IsCompleted);
         }
         if (lingering)
         {
@@ -286,7 +306,7 @@ public sealed partial class RemoteReceiver
         {
             return "another server";
         }
-        if (!string.Equals(_pairing.Current?.KeyId, running.Material.KeyId, StringComparison.Ordinal))
+        if (!PairingMaterial.Same(_pairing.Current, running.Material))
         {
             return RemoteLogReasons.KeyReset;
         }

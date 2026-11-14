@@ -89,10 +89,12 @@ public sealed class RemotePairing
     public async Task<PairingMaterial> ResetKeyAsync(CancellationToken cancellationToken)
     {
         PairingMaterial material;
+        PairingMaterial? replaced;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            string receiverId = _material?.ReceiverId ?? await LoadOrCreateIdAsync(cancellationToken).ConfigureAwait(false);
+            replaced = Volatile.Read(ref _material);
+            string receiverId = replaced?.ReceiverId ?? await LoadOrCreateIdAsync(cancellationToken).ConfigureAwait(false);
             material = await CreateKeyAsync(receiverId, cancellationToken).ConfigureAwait(false);
             Volatile.Write(ref _material, material);
         }
@@ -100,6 +102,8 @@ public sealed class RemotePairing
         {
             _gate.Release();
         }
+        // The old key is forgotten: zeroed once no handshake still reads it.
+        replaced?.Dispose();
         _logger.LogInformation("The phone remote's pairing code was reset");
         NotifyKeyChanged();
         return material;
@@ -235,13 +239,25 @@ public sealed class RemotePairing
 
 /// <summary>
 /// The receiver's id and its pairing key, as the receiver uses them. <see cref="ToString"/> shows the receiver's id and
-/// nothing else; the key is only ever read through <see cref="Key"/>.
+/// nothing else. One material is one key: whether the PC's key is still the one a session was keyed under is asked of
+/// the material itself (<see cref="Same"/>), never of its 32-bit id. A material that was replaced is forgotten: its key
+/// is zeroed once no handshake reads it any more (<see cref="UseKey"/>), and nothing reads it after.
 /// </summary>
-public sealed class PairingMaterial
+public sealed class PairingMaterial : IDisposable
 {
     private readonly byte[] _key;
+    private readonly Lock _gate = new();
+    private int _inUse;
+    private bool _disposed;
+    private bool _zeroed;
 
     public PairingMaterial(string receiverId, byte[] key)
+        : this(receiverId, key, keyId: null)
+    {
+    }
+
+    /// <summary>With a key id given rather than computed: for a test of two keys whose ids collide.</summary>
+    internal PairingMaterial(string receiverId, byte[] key, string? keyId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(receiverId);
         ArgumentNullException.ThrowIfNull(key);
@@ -251,19 +267,102 @@ public sealed class PairingMaterial
         }
         ReceiverId = receiverId;
         _key = (byte[])key.Clone();
-        KeyId = SiloCastSealed.KeyId(_key);
+        KeyId = keyId ?? SiloCastSealed.KeyId(_key);
     }
 
     /// <summary>The receiver's stable id, under which every phone keeps the key.</summary>
     public string ReceiverId { get; }
 
-    /// <summary>The key's public id: TXT <c>kid</c> and <c>sealed_hello.keyId</c>.</summary>
+    /// <summary>The key's public id: TXT <c>kid</c> and <c>sealed_hello.keyId</c>. It names the key; it does not tell keys apart.</summary>
     public string KeyId { get; }
 
-    /// <summary>The 16-byte pairing key.</summary>
-    public ReadOnlySpan<byte> Key => _key;
+    /// <summary>The 16-byte pairing key, for a reader that holds it only for a moment; Granary's own readers use <see cref="UseKey"/>.</summary>
+    internal ReadOnlySpan<byte> Key
+    {
+        get
+        {
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                return _key;
+            }
+        }
+    }
+
+    /// <summary>The key was replaced and is zeroed.</summary>
+    internal bool IsForgotten
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _zeroed;
+            }
+        }
+    }
+
+    /// <summary>Whether two materials are one key: the same material, not merely the same id.</summary>
+    public static bool Same(PairingMaterial? left, PairingMaterial? right) => left is not null && ReferenceEquals(left, right);
+
+    /// <summary>Holds the key for one handshake or one pairing link; it stays whole until disposed. Throws once forgotten.</summary>
+    internal KeyInUse UseKey()
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _inUse++;
+        }
+        return new KeyInUse(this);
+    }
+
+    /// <summary>Forgets the key: nothing new may read it, and it is zeroed once the last reader is done.</summary>
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            _disposed = true;
+            if (_inUse == 0)
+            {
+                Zero();
+            }
+        }
+    }
 
     public override string ToString() => ReceiverId;
+
+    private void Leave()
+    {
+        lock (_gate)
+        {
+            _inUse--;
+            if (_disposed && _inUse == 0)
+            {
+                Zero();
+            }
+        }
+    }
+
+    private void Zero()
+    {
+        CryptographicOperations.ZeroMemory(_key);
+        _zeroed = true;
+    }
+
+    /// <summary>The key held for one reader.</summary>
+    internal readonly ref struct KeyInUse
+    {
+        private readonly PairingMaterial _material;
+
+        internal KeyInUse(PairingMaterial material) => _material = material;
+
+        public ReadOnlySpan<byte> Key => _material._key;
+
+        public void Dispose() => _material.Leave();
+    }
 }
 
 /// <summary><c>phone-remote.json</c>: <c>{ "receiver_id": "…" }</c>, and nothing secret.</summary>

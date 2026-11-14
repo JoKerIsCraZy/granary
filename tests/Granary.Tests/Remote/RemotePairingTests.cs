@@ -95,6 +95,49 @@ public sealed class RemotePairingTests : IDisposable
     }
 
     [Fact]
+    public async Task AReset_ForgetsTheOldKey()
+    {
+        var pairing = Create();
+        var before = await pairing.LoadOrCreateAsync(Token);
+
+        await pairing.ResetKeyAsync(Token);
+
+        Assert.True(before.IsForgotten);
+        Assert.Throws<ObjectDisposedException>(() => before.Key.Length);
+        Assert.False(pairing.Current!.IsForgotten);
+    }
+
+    [Fact]
+    public void AKeyInUse_StaysWholeUntilTheUseEnds_ThenIsForgotten()
+    {
+        var material = new PairingMaterial(AnotherReceiverId, SealedVectors.Key);
+
+        using (var use = material.UseKey())
+        {
+            // Forgotten on another thread while a handshake still derives from it.
+            material.Dispose();
+
+            Assert.Equal(SealedVectors.Key, use.Key.ToArray());
+            Assert.False(material.IsForgotten);
+            Assert.Throws<ObjectDisposedException>(() => material.UseKey().Key.Length);
+        }
+
+        Assert.True(material.IsForgotten);
+    }
+
+    [Fact]
+    public void TwoMaterials_AreNotTheSame_EvenWithTheSameKeyId()
+    {
+        var first = new PairingMaterial(AnotherReceiverId, SealedVectors.Key);
+        var collision = new PairingMaterial(AnotherReceiverId, Convert.FromHexString("0f0e0d0c0b0a09080706050403020100"), first.KeyId);
+
+        Assert.Equal(first.KeyId, collision.KeyId);
+        Assert.True(PairingMaterial.Same(first, first));
+        Assert.False(PairingMaterial.Same(first, collision));
+        Assert.False(PairingMaterial.Same(first, null));
+    }
+
+    [Fact]
     public async Task AListenerThatFails_NeitherUndoesTheReset_NorKeepsItFromTheOthers()
     {
         var pairing = Create();

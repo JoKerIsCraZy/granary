@@ -494,6 +494,21 @@ public sealed class RemoteControllerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AfterAResetToAKeyWithTheSameId_APhoneOnTheOldKey_IsDroppedStill()
+    {
+        var (_, phone, _, running) = await _harness.OpenAsync();
+        string keyId = _harness.Pairing!.KeyId;
+
+        // A new key whose id happens to be the old one's: the id is 32 bits, the key is not.
+        _harness.Pairing = new PairingMaterial(RemoteHarness.ReceiverId, RemoteHarness.OtherKey, keyId);
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+
+        await running.WaitAsync(HangGuard, Token);
+        Assert.Empty(phone.Received);
+        Assert.Contains("closed: the pairing code was reset", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AfterAReset_AHandshakeWithTheOldCode_IsRefused()
     {
         var (controller, phone, _) = _harness.Connect();

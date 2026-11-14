@@ -1249,6 +1249,10 @@ not in a profile.
   phone then says the PC's pairing code has changed, instead of keeping a dead receiver beside a new one.
 - Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for
   the rest of the run. Nothing here logs a value.
+- **A reset forgets the old key.** The replaced `PairingMaterial` is zeroed in memory once no handshake still reads it
+  (readers hold it through `UseKey`, so it is never zeroed under one), and nothing reads it after. Whether the PC's key
+  is still the one a session or the running receiver uses is asked of the material itself (`PairingMaterial.Same`),
+  never of its key id: the id is 32 bits and public.
 
 ### A phone's connection
 
@@ -1279,7 +1283,7 @@ decides what a message means; the controller carries it.
   frame over the limit or one that does not open; its own `close` or its going away. A `close` from the PC carries its
   reason only to a phone that lists `close_reason`, and waits at most half a second to leave.
 - **A reset code takes effect at the next frame.** Every frame in and out checks that the key the session was keyed
-  under is still the PC's. A phone on a code that was reset is dropped at its next frame even if the news of the reset
+  under is still the PC's: the same key, not merely a key with the same id. A phone on a code that was reset is dropped at its next frame even if the news of the reset
   never reached the receiver.
 - **The end.** A connection ends by closing its stream, never by cancelling a read (see ClientWebSocket under Gotchas
   in AGENTS.md). The end logs once, by number and reason ("Connection 3 closed: wrong pairing key"), then the session's
@@ -1379,7 +1383,8 @@ then on; `StopAsync` ends it for good when Granary closes.
     that its key is still the PC's, so a phone on the old code is refused even if a notice was missed.
 - **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` or `Listening` with the address,
   the port, whether Windows took the advertisement, and the server's address for the pairing panel's hint;
-  `StatusChanged` comes on the UI thread. `PairingLink` exists only while it listens.
+  `StatusChanged` comes on the UI thread. `PairingLink` exists only while it listens; it is made from the PC's key as it is
+  now and is null between a reset and the restart under the new key, so a code that was taken back is never shown.
 
 ## Windows App SDK
 

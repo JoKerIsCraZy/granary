@@ -432,6 +432,27 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ThePairingLink_NeverShowsTheOldCode_AfterAReset()
+    {
+        await _harness.StartListeningAsync();
+        string oldLink = Receiver.PairingLink!;
+
+        // The reset and a look at the link in one turn of the UI thread, before the receiver could start again.
+        var (resetDone, linkMeanwhile) = await _harness.Dispatcher.InvokeAsync(() =>
+        {
+            var reset = _harness.PairingStore.ResetKeyAsync(Token);
+            return (reset.IsCompletedSuccessfully, Receiver.PairingLink);
+        });
+        Assert.True(resetDone);
+        Assert.Null(linkMeanwhile);
+
+        await SettledAsync();
+        string newLink = Receiver.PairingLink!;
+        Assert.NotEqual(oldLink, newLink);
+        Assert.EndsWith($"&key={Base32.Encode(_harness.PairingStore.Current!.Key)}", newLink, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AStepThatThrows_StillLeavesNothingListening()
     {
         _harness.Advertiser.Throws = new InvalidOperationException("Windows failed.");
