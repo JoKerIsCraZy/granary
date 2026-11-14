@@ -233,6 +233,25 @@ public sealed class PlayerViewModelMarkerTests
     }
 
     [Fact]
+    public async Task AMarkerReadWhilePlaybackCannotSeek_BringsNoPillBack_UntilItCanAgain()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        Assert.False(viewModel.HasSkipPrompt);
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.False(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+    }
+
+    [Fact]
     public async Task ANewTitle_StillKnowsTheControlsShow()
     {
         var viewModel = await PlayingAsync();

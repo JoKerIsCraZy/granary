@@ -82,14 +82,11 @@ public sealed partial class PlayerViewModel
         ShowSkipPrompt();
     }
 
-    // While playback cannot go on the pills stay hidden until it does (FollowMarkers), whatever the controls do.
+    // While playback cannot go on the pills stay hidden until it does (ShowSkipPrompt), whatever the controls do.
     partial void OnAreControlsShownChanged(bool value)
     {
         _markerPrompts.FollowControls(value);
-        if (FollowsMarkers)
-        {
-            ShowSkipPrompt();
-        }
+        ShowSkipPrompt();
     }
 
     // A new playback starts with nothing resolved; the controls stay as they are.
@@ -152,7 +149,7 @@ public sealed partial class PlayerViewModel
         {
             // Hidden and its clock stopped until playback goes on.
             _markerPrompts.Suspend(now);
-            HasSkipPrompt = false;
+            ShowSkipPrompt();
             return;
         }
         var activity = state.IsPaused ? MarkerActivity.Paused : IsBuffering ? MarkerActivity.Stalled : MarkerActivity.Playing;
@@ -166,10 +163,11 @@ public sealed partial class PlayerViewModel
     private bool FollowsMarkers => _playback is not null && CanSeek && Phase == PlayerPhase.Playing;
 
     // The texts first: whoever sees the pill appear reads them. The card and the screen of the next episode take its place,
-    // and a room's guest, who cannot seek, has none.
+    // and a room's guest, who cannot seek, has none. While playback cannot go on (a reconnect, a new plan, the end) none
+    // shows, also when a read of the markers comes meanwhile; a pause is no such time.
     private void ShowSkipPrompt()
     {
-        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None || !CanSeekInRoom)
+        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None || !CanSeekInRoom || !FollowsMarkers)
         {
             HasSkipPrompt = false;
             // After the pill: the page reads a change of it as a pill that shows becoming another.
