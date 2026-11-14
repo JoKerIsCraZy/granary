@@ -1295,13 +1295,17 @@ decides what a message means; the controller carries it.
 anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy`.
 
 - **Who may connect.** Only a private (10/8, 172.16/12, 192.168/16), link-local or loopback IPv4 address, also written
-  as an IPv4-mapped IPv6 one. At most 20 new connections a minute from one address. At most 4 connections that have
-  not shown the key at once. Anything else is closed at once, unread.
-- **Admission.** A connection that has shown the key takes its place among the others, half-open ones counted. Below 4 it
-  is let in; at 4 a connection makes room, oldest first: one that never said `hello`, then an unauthorized one, then a
-  passive one. If all 4 are authorized phones that actively control, the newcomer gets the receiver's `hello`,
-  `error too_many_controllers` and `close too_many_controllers`. A newer `hello` from the same phone closes its older
-  connections as `replaced`.
+  as an IPv4-mapped IPv6 one, and at most 20 new connections a minute from one address; anything else is closed at once,
+  unread.
+- **Connections that have proven nothing.** Until its `hello` (the first frame that opens under the key) a connection
+  has proven nothing: the key id it names in its `sealed_hello` is public in the advertisement. At most 4 such
+  connections at a time, and 2 from one address. A newcomer beyond either limit closes the oldest such connection, of
+  its own address first, unanswered; it is not the newcomer that is turned away, so one host cannot keep phones out.
+- **Admission at the `hello`.** Only a phone's `hello` takes a place among the phones, weighed against the others that
+  said theirs; a peer that has only named the key id never takes an authenticated phone's place. The phone's own older
+  connections give theirs up first (closed as `replaced`). Below 4 it is let in; at 4 a phone makes room, oldest first:
+  an unauthorized one, then a passive one. If all 4 are authorized phones that actively control, the newcomer gets
+  `error too_many_controllers` and `close too_many_controllers`.
 - **Authorization by server.** A phone's `hello` must say `role: "phone"`, list version 2 and name a server, or it gets
   `error version_unsupported` and `close unauthorized`. It is authorized when its server matches Granary's by id or by
   identity (`SiloCastServerId.ServersMatch`). A phone on another server stays connected but gets no status, and every
@@ -1325,8 +1329,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 
 | Limit | Value |
 |---|---|
-| Connections at a time, half-open ones included | 4 |
-| Connections that have not shown the key | 4; more are closed unread |
+| Phones that said `hello` | 4; a fifth's `hello` takes an unauthorized or passive one's place, or is refused |
+| Connections that have not said `hello` | 4, and 2 from one address; a newcomer closes the oldest such |
 | New connections from one address | 20 a minute; more are closed unread |
 | Frame size | 64 KiB; the first, plain frame 1 KiB |
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |

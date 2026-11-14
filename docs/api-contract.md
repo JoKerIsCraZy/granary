@@ -3101,7 +3101,7 @@ The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary
 | Play, pause or seek a Watch Party's rules refuse | `error command_failed` | "This Watch Party does not allow this playback action." |
 | Any other command the player refuses | `error command_failed` | "Not available on this PC." |
 | More than 40 commands at once, or 20 a second after that | `error rate_limited`, at most once a second | "Too many commands. Slow down and try again." |
-| A fifth phone while four control actively | `hello`, `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
+| A fifth phone's `hello` while four phones control actively | `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
 | A launch (no offer is made ready yet) | `error handoff_required` | "Prepare the phone profile before playing." |
 | An offer before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
 | An offer from another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
@@ -3110,7 +3110,8 @@ The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary
 Closes: `replaced` for an older connection of a phone that said `hello` again, `too_many_controllers` for a connection
 closed to make room, `timeout` without a `hello` within 5 seconds, `tv_disconnected` when the PC lets phones go
 (Disconnect Remote, the switch, a stop). A reason goes only to a phone that lists `close_reason`, except with the
-refusal of a fifth phone, which comes before the phone's features are known. An unknown type and an unknown control
+refusal of a fifth phone, as on silo-roku. A connection that has not said `hello` and is closed to make room for a
+newcomer gets no answer. An unknown type and an unknown control
 name get no answer; a known type with a malformed payload ends that connection with a bare `close`.
 
 ## Appendix: where docs and code disagree

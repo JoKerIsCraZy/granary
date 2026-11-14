@@ -35,4 +35,7 @@ public static class RemoteLogReasons
     public const string KeyReset = "the pairing code was reset";
     public const string Stopped = "the receiver stopped";
     public const string MessageFailed = "a message could not be handled";
+    public const string MadeRoom = "made room for a new connection";
+    public const string MadeRoomForPhone = "made room for another phone";
+    public const string TooManyPhones = "too many phones";
 }

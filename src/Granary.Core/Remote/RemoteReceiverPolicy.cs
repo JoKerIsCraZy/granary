@@ -16,6 +16,15 @@ public static class RemoteReceiverPolicy
     public const int MaxNewConnectionsPerMinute = 20;
 
     /// <summary>
+    /// Connections at a time that have not said <c>hello</c>, so have proven nothing: naming the key's id proves nothing,
+    /// since the id is public in the advertisement. A newcomer beyond them closes the oldest such, not itself.
+    /// </summary>
+    public const int MaxUnauthenticated = 4;
+
+    /// <summary>Connections at a time from one address that have not said <c>hello</c>; a third closes that address's oldest.</summary>
+    public const int MaxUnauthenticatedPerAddress = 2;
+
+    /// <summary>
     /// Whether a peer may connect at all: a private (RFC 1918), link-local or loopback IPv4 address, also when written as
     /// an IPv4-mapped IPv6 one (<c>isLocalPeer</c>). Every other address is closed at once.
     /// </summary>
@@ -40,9 +49,10 @@ public static class RemoteReceiverPolicy
     }
 
     /// <summary>
-    /// What to do with a newly keyed connection, given the others: admit it below <see cref="MaxControllers"/>; at the
-    /// limit close, oldest first, one that never said hello, then an unauthorized one, then a passive one; otherwise
-    /// refuse the newcomer (<c>admission</c>).
+    /// What to do with a phone's <c>hello</c>, given the other connections it is weighed against: admit it below
+    /// <see cref="MaxControllers"/>; at the limit close, oldest first, one that never said hello, then an unauthorized one,
+    /// then a passive one; otherwise refuse the newcomer (<c>admission</c>). Granary weighs a hello only against phones
+    /// that said theirs, so a peer that has proven nothing never takes an authenticated phone's place.
     /// </summary>
     public static Admission Admit(IReadOnlyList<ControllerFacts> existing)
     {
@@ -93,7 +103,7 @@ public static class RemoteReceiverPolicy
     }
 }
 
-/// <summary>What the receiver does with a newly keyed connection.</summary>
+/// <summary>What the receiver does with a phone's <c>hello</c>.</summary>
 public abstract record Admission
 {
     private Admission()

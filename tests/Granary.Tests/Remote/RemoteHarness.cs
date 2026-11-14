@@ -28,6 +28,7 @@ internal sealed class RemoteHarness : IAsyncDisposable
     private readonly bool _lifetime;
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private int _numbers;
+    private int _peers;
 
     public RemoteHarness(bool lifetime = false)
     {
@@ -90,7 +91,7 @@ internal sealed class RemoteHarness : IAsyncDisposable
         _pipes.Add(pipe);
         var phone = new FakePhone(pipe.Phone, key ?? PairingStore.Current!.Key.ToArray());
         _owned.Add(phone);
-        var serving = Listener.AcceptAsync(pipe.Connection(closeWaitsFor: closeWaitsFor));
+        var serving = Listener.AcceptAsync(pipe.Connection(NextPeer(), closeWaitsFor));
         if (pair)
         {
             Assert.True(await phone.PairAsync());
@@ -141,6 +142,9 @@ internal sealed class RemoteHarness : IAsyncDisposable
         return (controller, phone, pipe, running);
     }
 
+    /// <summary>Each phone on an address of its own, as phones on a LAN are, unless a test gives one.</summary>
+    public IPAddress NextPeer() => IPAddress.Parse($"192.168.1.{40 + (Interlocked.Increment(ref _peers) % 200)}");
+
     /// <summary>The address Granary is signed in to, as its id.</summary>
     public static string ServerId { get; } = SiloCastServerId.From(new Uri("https://silo.example"));
 
@@ -177,7 +181,7 @@ internal sealed class RemoteHarness : IAsyncDisposable
         _pipes.Add(pipe);
         var phone = new FakePhone(pipe.Phone, Key);
         _owned.Add(phone);
-        var serving = Receiver.ServeAsync(pipe.Connection(peer), Token);
+        var serving = Receiver.ServeAsync(pipe.Connection(peer ?? NextPeer()), Token);
         if (pair)
         {
             Assert.True(await phone.PairAsync());

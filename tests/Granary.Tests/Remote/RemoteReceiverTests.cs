@@ -13,6 +13,8 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
 {
     private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(10);
 
+    private static readonly IPAddress OnePeer = IPAddress.Parse("192.168.1.30");
+
     private readonly RemoteHarness _harness = new();
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -173,13 +175,13 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     {
         for (int i = 0; i < RemoteReceiverPolicy.MaxNewConnectionsPerMinute; i++)
         {
-            var (phone, _, serving) = await _harness.ServeAsync(pair: false);
+            var (phone, _, serving) = await _harness.ServeAsync(pair: false, peer: OnePeer);
             await phone.DisposeAsync();
             await serving.WaitAsync(HangGuard, Token);
             Time.Advance(TimeSpan.FromSeconds(1));
         }
 
-        var (refused, _, refusedServing) = await _harness.ServeAsync(pair: false);
+        var (refused, _, refusedServing) = await _harness.ServeAsync(pair: false, peer: OnePeer);
         await refusedServing.WaitAsync(HangGuard, Token);
         Assert.Null(await refused.ReadPlainAsync());
         // From another address it goes on.
@@ -188,34 +190,71 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
 
         // The first of the twenty is a minute old one second after the last came.
         Time.Advance(TimeSpan.FromSeconds(41));
-        var (again, _, _) = await _harness.ServeAsync(pair: false);
+        var (again, _, _) = await _harness.ServeAsync(pair: false, peer: OnePeer);
         Assert.True(await again.PairAsync());
     }
 
     [Fact]
-    public async Task HalfOpenConnections_CountTowardsTheFour()
+    public async Task AFifthConnectionWithoutAHello_ClosesTheOldestSuch_NotTheNewcomer()
     {
         var waiting = new List<Task>();
-        for (int i = 0; i < RemoteReceiverPolicy.MaxControllers; i++)
+        for (int i = 0; i < RemoteReceiverPolicy.MaxUnauthenticated; i++)
         {
             waiting.Add((await _harness.ServeAsync(pair: false)).Serving);
         }
 
-        var (fifth, _, fifthServing) = await _harness.ServeAsync(pair: false);
+        var (fifth, _, _) = await _harness.ServeAsync(pair: false);
 
-        await fifthServing.WaitAsync(HangGuard, Token);
-        Assert.Null(await fifth.ReadPlainAsync());
-        Assert.Contains("Connection 5 refused: too many connections without the key", _harness.Logs.All, StringComparison.Ordinal);
-
-        // The four say nothing for 5 seconds and are gone; the next one is let in.
-        Time.Advance(TimeSpan.FromSeconds(5));
-        await Task.WhenAll(waiting).WaitAsync(HangGuard, Token);
-        var (next, _, _) = await _harness.ServeAsync(pair: false);
-        Assert.True(await next.PairAsync());
+        // The oldest goes, unanswered; the newcomer is let in.
+        await waiting[0].WaitAsync(HangGuard, Token);
+        Assert.True(await fifth.PairAsync());
+        Assert.All(waiting.Skip(1), serving => Assert.False(serving.IsCompleted));
+        Assert.Contains("Connection 1 closed: made room for a new connection", _harness.Logs.All, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task AFifthPhone_IsRefusedWithTooManyControllers_WhenFourControl()
+    public async Task OneAddress_HoldsAtMostTwoConnectionsWithoutAHello()
+    {
+        var first = await _harness.ServeAsync(pair: false, peer: OnePeer);
+        var second = await _harness.ServeAsync(pair: false, peer: OnePeer);
+
+        var third = await _harness.ServeAsync(pair: false, peer: OnePeer);
+
+        await first.Serving.WaitAsync(HangGuard, Token);
+        Assert.Null(await first.Phone.ReadPlainAsync());
+        Assert.False(second.Serving.IsCompleted);
+        Assert.True(await third.Phone.PairAsync());
+    }
+
+    [Fact]
+    public async Task APeerThatOnlyNamedTheKey_EvictsNoPhone()
+    {
+        var phones = new List<(FakePhone Phone, Task Serving)>();
+        var (passive, passiveServing) = await _harness.HelloAsync(deviceId: "phone-1", passive: true);
+        await passive.NextAsync("state");
+        phones.Add((passive, passiveServing));
+        for (int i = 2; i <= 4; i++)
+        {
+            var (phone, serving) = await _harness.HelloAsync(deviceId: $"phone-{i}");
+            await phone.NextAsync("state");
+            phones.Add((phone, serving));
+        }
+
+        // The key id is public: a peer that names it and says nothing that opens has proven nothing.
+        var (newcomer, _, _) = await _harness.ServeAsync();
+        Assert.Equal("hello", FakePhone.TypeOf(await newcomer.ReadAsync() ?? ""));
+
+        Assert.Equal(4, Receiver.Phones.Count);
+        foreach (var (phone, serving) in phones)
+        {
+            await phone.SendAsync("""{"type":"ping","v":2}""");
+            Assert.Equal("pong", FakePhone.TypeOf(await phone.NextAsync("pong")));
+            Assert.False(serving.IsCompleted);
+        }
+    }
+
+    [Fact]
+    public async Task AFifthPhone_IsRefusedWithTooManyControllers_AtItsHello_WhenFourControl()
     {
         for (int i = 1; i <= 4; i++)
         {
@@ -223,13 +262,31 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
             await phone.NextAsync("state");
         }
 
-        var (fifth, _, serving) = await _harness.ServeAsync();
+        var (fifth, serving) = await _harness.HelloAsync(deviceId: "phone-5");
 
-        Assert.Equal("hello", FakePhone.TypeOf(await fifth.ReadAsync() ?? ""));
         Assert.Equal("""{"type":"error","v":2,"error":{"code":"too_many_controllers","message":"Too many devices are controlling this PC. Disconnect one and try again."}}""",
             await fifth.ReadAsync());
         Assert.Equal("""{"type":"close","v":2,"close":{"reason":"too_many_controllers"}}""", await fifth.ReadAsync());
         await serving.WaitAsync(HangGuard, Token);
+        Assert.Equal(4, Receiver.Phones.Count);
+    }
+
+    [Fact]
+    public async Task ANewHelloOfAPhoneAlreadyConnected_TakesItsOwnPlace_NotAnothers()
+    {
+        var (older, olderServing) = await _harness.HelloAsync(deviceId: "phone-1");
+        await older.NextAsync("state");
+        for (int i = 2; i <= 4; i++)
+        {
+            var (phone, _) = await _harness.HelloAsync(deviceId: $"phone-{i}");
+            await phone.NextAsync("state");
+        }
+
+        var (newer, _) = await _harness.HelloAsync(deviceId: "phone-1");
+
+        Assert.Equal("""{"type":"close","v":2,"close":{"reason":"replaced"}}""", await older.NextAsync("close"));
+        await olderServing.WaitAsync(HangGuard, Token);
+        Assert.Equal("state", FakePhone.TypeOf(await newer.NextAsync("state")));
         Assert.Equal(4, Receiver.Phones.Count);
     }
 

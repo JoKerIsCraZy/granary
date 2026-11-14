@@ -99,10 +99,12 @@ public sealed partial class RemoteReceiver
     internal RemoteTimings Timings { get; set; } = RemoteTimings.Default;
 
     /// <summary>
-    /// Serves one accepted connection to its end. A peer that is not local, an address that opened more than
-    /// <see cref="RemoteReceiverPolicy.MaxNewConnectionsPerMinute"/> connections in the last minute, and a connection
-    /// beyond <see cref="RemoteReceiverPolicy.MaxControllers"/> that have not shown the key are closed unread. Every
-    /// other one gets its handshake, its place among the phones, the receiver's <c>hello</c>, and then its messages.
+    /// Serves one accepted connection to its end. A peer that is not local and an address that opened more than
+    /// <see cref="RemoteReceiverPolicy.MaxNewConnectionsPerMinute"/> connections in the last minute are closed unread.
+    /// Connections that have not said <c>hello</c> are few at a time: a newcomer beyond them closes the oldest such,
+    /// from its own address first, rather than being turned away, so no one host can keep phones out. Every connection
+    /// let in gets its handshake, the receiver's <c>hello</c>, and then its messages; its place among the phones is
+    /// decided at its own <c>hello</c>, the first frame that proves the key.
     /// </summary>
     public async Task ServeAsync(IRemoteConnection connection, CancellationToken cancellationToken)
     {
@@ -110,7 +112,9 @@ public sealed partial class RemoteReceiver
         int number = Interlocked.Increment(ref _numbers);
         string? refusal = null;
         Session? session = null;
-        if (!RemoteReceiverPolicy.IsLocalPeer(connection.Peer))
+        List<Session> madeRoom = [];
+        var peer = connection.Peer.IsIPv4MappedToIPv6 ? connection.Peer.MapToIPv4() : connection.Peer;
+        if (!RemoteReceiverPolicy.IsLocalPeer(peer))
         {
             refusal = "not a local address";
         }
@@ -118,21 +122,22 @@ public sealed partial class RemoteReceiver
         {
             lock (_gate)
             {
-                if (!TakeConnectionLocked(connection.Peer))
+                if (!TakeConnectionLocked(peer))
                 {
                     refusal = "too many new connections from one address";
                 }
-                else if (_sessions.Count(other => other.Controller.IsOpen && !other.Controller.IsKeyed) >= RemoteReceiverPolicy.MaxControllers)
-                {
-                    refusal = "too many connections without the key";
-                }
                 else
                 {
+                    madeRoom = MakeRoomLocked(peer);
                     var controller = new RemoteController(number, connection, () => Pairing(), Timings, _time, _logger);
-                    session = new Session(controller, new CommandBudget(_time));
+                    session = new Session(controller, new CommandBudget(_time), peer);
                     _sessions.Add(session);
                 }
             }
+        }
+        foreach (var leaving in madeRoom)
+        {
+            leaving.Controller.Drop(RemoteLogReasons.MadeRoom);
         }
         if (session is null)
         {
@@ -189,7 +194,7 @@ public sealed partial class RemoteReceiver
     private async Task RunAsync(Session session, CancellationToken cancellationToken)
     {
         var controller = session.Controller;
-        if (!await controller.OpenAsync(cancellationToken).ConfigureAwait(false) || !await AdmitAsync(session).ConfigureAwait(false))
+        if (!await controller.OpenAsync(cancellationToken).ConfigureAwait(false))
         {
             return;
         }
@@ -203,41 +208,31 @@ public sealed partial class RemoteReceiver
         await controller.RunAsync(message => OnMessageAsync(session, message), cancellationToken).ConfigureAwait(false);
     }
 
-    // A keyed connection's place among the others, half-open ones counted: below the limit it is let in; at it, one that
-    // never said hello, then an unauthorized one, then the oldest passive one makes room; otherwise it is told there are
-    // too many and closed.
-    private async Task<bool> AdmitAsync(Session session)
+    // Room for a newcomer among the connections that have not said hello: at the per-address limit that address's oldest
+    // goes, at the overall limit the oldest of all. They have proven nothing, so the newcomer is not the one turned away.
+    private List<Session> MakeRoomLocked(IPAddress peer)
     {
-        Admission decision;
-        Session? evicted = null;
-        lock (_gate)
+        var waiting = _sessions.Where(IsUnauthenticatedLocked).OrderBy(session => session.Controller.ConnectedAt)
+            .ThenBy(session => session.Controller.Number).ToList();
+        var leaving = new List<Session>();
+        if (waiting.Where(session => session.Peer.Equals(peer)).ToList() is { Count: >= RemoteReceiverPolicy.MaxUnauthenticatedPerAddress } ownAddress)
         {
-            decision = RemoteReceiverPolicy.Admit([.. OthersLocked(session).Select(Facts)]);
-            if (decision is Admission.Evict(int number))
-            {
-                evicted = _sessions.First(other => other.Controller.Number == number);
-                evicted.Leaving = true;
-            }
+            leaving.Add(ownAddress[0]);
+            waiting.Remove(ownAddress[0]);
         }
-        var controller = session.Controller;
-        switch (decision)
+        if (waiting.Count >= RemoteReceiverPolicy.MaxUnauthenticated)
         {
-            case Admission.Refuse:
-                if (Identity() is { } identity)
-                {
-                    await controller.SendAsync(SiloCastMessages.Hello(identity)).ConfigureAwait(false);
-                }
-                await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.TooManyControllers, RemoteTexts.TooManyControllers)).ConfigureAwait(false);
-                // The reason goes before the phone listed its features: every phone ignores what it does not read.
-                await controller.CloseAsync(SiloCastCloseReasons.TooManyControllers, "too many phones", evenUnlisted: true).ConfigureAwait(false);
-                return false;
-            case Admission.Evict when evicted is not null:
-                _ = evicted.Controller.CloseAsync(SiloCastCloseReasons.TooManyControllers, "made room for another phone");
-                return true;
-            default:
-                return true;
+            leaving.Add(waiting[0]);
         }
+        foreach (var session in leaving)
+        {
+            session.Leaving = true;
+        }
+        return leaving;
     }
+
+    private static bool IsUnauthenticatedLocked(Session session) =>
+        session.Controller.IsOpen && !session.Leaving && !session.Controller.SaidHello;
 
     // Within the minute's window, the connections one address opened; old ones of every address are forgotten, so the
     // table never outgrows the addresses that connected in the last minute.
@@ -282,8 +277,9 @@ public sealed partial class RemoteReceiver
         }
     }
 
-    private IEnumerable<Session> OthersLocked(Session session) =>
-        _sessions.Where(other => !ReferenceEquals(other, session) && other.Controller.IsOpen && !other.Leaving);
+    // The other phones that said hello: the ones a newcomer's hello is weighed against.
+    private IEnumerable<Session> PhonesLocked(Session session) =>
+        _sessions.Where(other => !ReferenceEquals(other, session) && other.Controller.IsOpen && !other.Leaving && other.Controller.SaidHello);
 
     private List<Session> AuthorizedSessions()
     {
@@ -336,11 +332,14 @@ public sealed partial class RemoteReceiver
     }
 
     // One connection and what the receiver keeps for it beside the controller's own facts.
-    private sealed class Session(RemoteController controller, CommandBudget budget)
+    private sealed class Session(RemoteController controller, CommandBudget budget, IPAddress peer)
     {
         public RemoteController Controller { get; } = controller;
 
         public CommandBudget Budget { get; } = budget;
+
+        /// <summary>The address it came from, as IPv4.</summary>
+        public IPAddress Peer { get; } = peer;
 
         /// <summary>The phone's name as Granary shows it, cleaned at its hello.</summary>
         public string Name { get; set; } = "";

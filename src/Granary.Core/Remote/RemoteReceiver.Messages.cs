@@ -106,26 +106,51 @@ public sealed partial class RemoteReceiver
             return;
         }
 
-        List<Session> replaced;
+        // The hello is the first frame that proves the key: only now does the connection take a phone's place. The phone's
+        // own older connections give theirs up first; then, at the limit, an unauthorized phone, then the oldest passive
+        // one makes room, or the newcomer is told there are too many.
+        Admission admission;
+        List<Session> replaced = [];
+        Session? evicted = null;
         lock (_gate)
         {
-            controller.Features = hello.Features;
-            controller.DeviceId = hello.DeviceId;
-            controller.DeviceName = hello.DeviceName;
-            controller.IsPassive = hello.Passive;
-            controller.IsAuthorized = verdict == HelloVerdict.Authorized;
-            controller.SaidHello = true;
-            session.Name = RemoteTexts.CleanName(hello.DeviceName);
-            var numbers = RemoteReceiverPolicy.ReplacedBy(hello.DeviceId, controller.Number, [.. OthersLocked(session).Select(Facts)]);
-            replaced = [.. _sessions.Where(other => numbers.Contains(other.Controller.Number))];
-            foreach (var other in replaced)
+            var numbers = RemoteReceiverPolicy.ReplacedBy(hello.DeviceId, controller.Number, [.. PhonesLocked(session).Select(Facts)]);
+            var phones = PhonesLocked(session).Where(other => !numbers.Contains(other.Controller.Number)).ToList();
+            admission = RemoteReceiverPolicy.Admit([.. phones.Select(Facts)]);
+            if (admission is not Admission.Refuse)
             {
-                other.Leaving = true;
+                replaced = [.. PhonesLocked(session).Where(other => numbers.Contains(other.Controller.Number))];
+                if (admission is Admission.Evict(int number))
+                {
+                    evicted = phones.First(other => other.Controller.Number == number);
+                }
+                foreach (var other in replaced.Append(evicted).OfType<Session>())
+                {
+                    other.Leaving = true;
+                }
+                controller.Features = hello.Features;
+                controller.DeviceId = hello.DeviceId;
+                controller.DeviceName = hello.DeviceName;
+                controller.IsPassive = hello.Passive;
+                controller.IsAuthorized = verdict == HelloVerdict.Authorized;
+                controller.SaidHello = true;
+                session.Name = RemoteTexts.CleanName(hello.DeviceName);
             }
+        }
+        if (admission is Admission.Refuse)
+        {
+            await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.TooManyControllers, RemoteTexts.TooManyControllers)).ConfigureAwait(false);
+            // As silo-roku's refusal: the reason goes whatever the phone lists, since every phone ignores what it does not read.
+            await controller.CloseAsync(SiloCastCloseReasons.TooManyControllers, RemoteLogReasons.TooManyPhones, evenUnlisted: true).ConfigureAwait(false);
+            return;
         }
         foreach (var other in replaced)
         {
             _ = other.Controller.CloseAsync(SiloCastCloseReasons.Replaced, "a newer connection of the same phone");
+        }
+        if (evicted is not null)
+        {
+            _ = evicted.Controller.CloseAsync(SiloCastCloseReasons.TooManyControllers, RemoteLogReasons.MadeRoomForPhone);
         }
         _logger.LogInformation("Connection {Number}: a phone {Verdict}", controller.Number,
             verdict == HelloVerdict.Authorized ? "on this server" : "on another server");
