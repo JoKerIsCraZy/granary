@@ -65,7 +65,9 @@ public sealed class SonyPad
         {
             _order = OrderOf(axes[3], axes[5]);
         }
-        var (rightY, leftTrigger, rightTrigger) = _order switch
+        // A reading short of the last three axes is read as before the order was known.
+        var order = axes.Length >= AxisCount ? _order : AxisOrder.Unknown;
+        var (rightY, leftTrigger, rightTrigger) = order switch
         {
             AxisOrder.ByUsage => (Up(axes[5]), axes[3], axes[4]),
             AxisOrder.ByReport => (Up(axes[3]), axes[4], axes[5]),

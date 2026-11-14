@@ -947,6 +947,15 @@
             <StackPanel.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </StackPanel.TranslationTransition>
+            <!--
+                Where the profile asks (Settings → Playback): how confident the marker's source is and where it came from, as
+                the web's IntroSkipButton puts it, above the caption, so the caption stays next to its pill. None takes no room.
+            -->
+            <Grid Margin="0,0,12,0" HorizontalAlignment="Right" Visibility="{x:Bind Shows(ViewModel.SkipProvenance), Mode=OneWay}">
+                <Canvas x:Name="SkipProvenanceShade" IsHitTestVisible="False" />
+                <TextBlock x:Name="SkipProvenanceText" Text="{x:Bind ViewModel.SkipProvenance, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
+                           FontWeight="Medium" FontSize="12" Foreground="#BFFFFFFF" />
+            </Grid>
             <Grid Margin="0,0,12,0" HorizontalAlignment="Right" Visibility="{x:Bind Shows(ViewModel.SkipCaption), Mode=OneWay}">
                 <Canvas x:Name="SkipCaptionShade" IsHitTestVisible="False" />
                 <TextBlock x:Name="SkipCaptionText" Text="{x:Bind ViewModel.SkipCaption, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"

@@ -84,6 +84,8 @@ public sealed partial class NotificationsPage : Page
                 var link = new Microsoft.UI.Xaml.Documents.Hyperlink { Foreground = (Brush)Application.Current.Resources["SiloForegroundBrush"] };
                 link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = run.Text });
                 link.Click += OnSeriesPreferencesClick;
+                // A game controller's A on the link, as Enter on it.
+                PadControls.PressesWith(link, OpenPreferences);
                 SeriesIntro.Inlines.Add(link);
             }
             else
@@ -200,7 +202,9 @@ public sealed partial class NotificationsPage : Page
 
     // "Preferences" in the Series view's words opens the popover beside the title.
     private void OnSeriesPreferencesClick(Microsoft.UI.Xaml.Documents.Hyperlink sender, Microsoft.UI.Xaml.Documents.HyperlinkClickEventArgs args) =>
-        PreferencesFlyout.ShowAt(PreferencesButton);
+        OpenPreferences();
+
+    private void OpenPreferences() => PreferencesFlyout.ShowAt(PreferencesButton);
 
     private void OnReasonMenuOpening(object? sender, object e) => CheckChosen(ReasonMenu, ViewModel.Series.Reason);
 

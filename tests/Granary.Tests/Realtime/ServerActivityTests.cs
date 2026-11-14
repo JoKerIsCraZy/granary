@@ -65,11 +65,21 @@ public sealed class ServerActivityTests : IAsyncDisposable
     [Fact]
     public async Task AProfileTheServerTurnsDown_HasNoIndicator()
     {
-        // An administrator account on a profile that is not its primary one: every administrator's channel is forbidden.
-        await _harness.StartedAsync();
+        // A server that offers the administrator's channels in its hello, and then forbids every one of them to the profile.
+        _harness.Events.Start();
+        await ServerPlaybackFixture.Until(() => _harness.SocketCount == 1, "the connection");
+        var socket = _harness.Socket(0);
+        socket.Push(ServerActivityHarness.HelloOffering(EventsChannels.Admin));
+        await ServerPlaybackFixture.Until(() => !socket.Sent.IsEmpty, "the subscribe");
 
+        await _harness.PushedAsync(socket, ServerActivityHarness.Subscribed([], EventsChannels.Admin));
+
+        Assert.Contains("\"sessions\",\"tasks\",\"scans\",\"download_preparations\"", Assert.Single(socket.Sent), StringComparison.Ordinal);
+        Assert.Contains(_harness.Library.Logs.Lines, line => line.Contains("turned down", StringComparison.Ordinal));
         Assert.False(_harness.State.IsAvailable);
         Assert.Equal(EventsConnection.Live, _harness.State.Connection);
+        await _harness.ReadsDoneAsync();
+        Assert.Empty(_harness.Library.Silo.SentTo(HttpMethod.Get, "api/v2/admin/sessions"));
     }
 
     [Fact]

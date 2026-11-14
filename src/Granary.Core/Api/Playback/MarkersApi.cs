@@ -79,12 +79,20 @@ public sealed record FileMarkers
     };
 }
 
-/// <summary>A kind's range; both ends are left out when the file has none of that kind.</summary>
+/// <summary>A kind's range and where it came from (<see cref="WatchMarker"/>); both ends are left out when the file has none of that kind.</summary>
 public sealed record FileMarkerRange
 {
     public double? StartSeconds { get; init; }
 
     public double? EndSeconds { get; init; }
 
-    public WatchMarker? AsMarker() => StartSeconds is { } start && EndSeconds is { } end && end > start ? new WatchMarker(start, end) : null;
+    public string? Source { get; init; }
+
+    public string? Provider { get; init; }
+
+    public double? Confidence { get; init; }
+
+    public WatchMarker? AsMarker() => StartSeconds is { } start && EndSeconds is { } end && end > start
+        ? new WatchMarker(start, end) { Source = Source, Provider = Provider, Confidence = Confidence }
+        : null;
 }

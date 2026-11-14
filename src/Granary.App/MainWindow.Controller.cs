@@ -40,6 +40,8 @@ public sealed partial class MainWindow
     private DispatcherQueueTimer _padTimer = null!;
     private bool _isInFront;
     private bool _hasPadFailed;
+    // A seek of the viewer's own replaced the pad's since this reading began (DropPadSeek).
+    private bool _isPadSeekDropped;
     private PadMode _padMode;
     private long _presenceNoted;
 
@@ -88,14 +90,16 @@ public sealed partial class MainWindow
 
     private void ReadPad()
     {
+        _isPadSeekDropped = false;
         try
         {
             var reading = ReadPads();
-            // A pad lying on the table: nothing to decide, and nothing of the window is even looked at. A reading that
-            // failed is no pad at rest (IsAtRest) and goes on, so that a button down when the pad is read again is no
-            // press.
+            // A pad lying on the table: nothing to decide, and nothing of the window is even looked at; only the time
+            // goes on, so the first reading in use moves no further than one poll's worth. A reading that failed is no
+            // pad at rest (IsAtRest) and goes on, so that a button down when the pad is read again is no press.
             if (_pad.IsIdle && PadInterpreter.IsAtRest(reading))
             {
+                _pad.Skip();
                 return;
             }
             var context = _player is { IsDocked: false } player ? player.PadContext : PadContext.Browsing;
@@ -107,10 +111,14 @@ public sealed partial class MainWindow
                 _player?.CancelPadSeek();
             }
             var actions = _pad.Update(reading, context);
-            // By index: the list is the interpreter's own, and stands until the next reading.
+            // By index: the list is the interpreter's own, and stands until the next reading. Once a seek of the
+            // viewer's own replaced the pad's (DropPadSeek), what this reading still says of the pad's is not done.
             for (int index = 0; index < actions.Count; index++)
             {
-                TakePad(actions[index]);
+                if (!(_isPadSeekDropped && actions[index].Kind is PadActionKind.SeekPreview or PadActionKind.SeekCommit or PadActionKind.SeekCancel))
+                {
+                    TakePad(actions[index]);
+                }
             }
             if (_pad.IsActive)
             {
@@ -136,6 +144,15 @@ public sealed partial class MainWindow
             _pad.Reset();
             _player?.CancelPadSeek();
         }
+    }
+
+    // Another seek of the viewer's (a key, the mouse, a skip, a chapter, the seek bar's own step) replaces the one the pad
+    // was making: the player dropped its preview, the interpreter drops the seek, and a trigger still pulled scrubs no
+    // more until it is let go. Raised inside a pad's action too (the D-pad on the seek bar, a bumper's jump).
+    private void DropPadSeek()
+    {
+        _pad.CancelSeek();
+        _isPadSeekDropped = true;
     }
 
     private void TakePad(PadAction action)
