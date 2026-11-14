@@ -1345,9 +1345,13 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   ("This PC plays from …"), as on Silo's Roku app, rather than a bare failure; it is also the first to go when the
   connections are full.
 - **The budget.** Messages are handled one at a time per phone, and every one but `ping`, `pong` and `close` takes from
-  the phone's budget (`CommandBudget`: 40 at once, then 20 a second): a `hello`, a `presence`, an offer, a launch, a
-  command, also one that is only answered `unauthorized`. Over the budget a message is dropped unanswered and the phone
-  is told `rate_limited` at most once a second; the player is not asked. Unknown types and controls are skipped before
+  one of the phone's two budgets. An offer, a launch and a command, also one that is only answered `unauthorized`, take
+  from the commands' (`CommandBudget`: 40 at once, then 20 a second, as silo-roku's). The `hello`, a `presence` and the
+  phone's own `handoff_cancel` take from a small one of their own (`CommandBudget.ForSignals`: 10 at once, then 5 a
+  second; Granary's own): a phone sends each once, when something changed, and never again, so a burst of commands
+  before one (a seek dragged along the timeline, then the app put away) must not drop it and leave the phone counted
+  as active, or passive, for good. Over a budget a message is dropped unanswered and the phone is told `rate_limited`
+  at most once a second, for both together; the player is not asked. Unknown types and controls are skipped before
   the budget, as they cause no more work than the frame they came in, which the connection's frame budget counts. A
   `presence` that changes nothing changes no phone.
 - **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
@@ -1372,7 +1376,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Frames from one phone, every one counted before it is opened | 200 a second, bursts of 400, and 256 KiB a second, bursts of 1 MiB; more drops the phone |
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
 | Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
-| Messages but the heartbeat and `close` | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
+| Commands, offers and launches | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
+| `hello`, `presence` and the phone's `handoff_cancel` | 5 a second, bursts of 10, per phone, a budget of their own |
 | Slow reader | dropped when one write waits 10 seconds or more than 128 KiB waits |
 | Close | at most half a second for the `close` to leave |
 

@@ -130,7 +130,7 @@ public sealed partial class RemoteReceiver
                 {
                     madeRoom = MakeRoomLocked(peer);
                     var controller = new RemoteController(number, connection, () => Pairing(), Timings, _time, _logger);
-                    session = new Session(controller, new CommandBudget(_time), peer);
+                    session = new Session(controller, new CommandBudget(_time), CommandBudget.ForSignals(_time), peer);
                     _sessions.Add(session);
                 }
             }
@@ -332,11 +332,15 @@ public sealed partial class RemoteReceiver
     }
 
     // One connection and what the receiver keeps for it beside the controller's own facts.
-    private sealed class Session(RemoteController controller, CommandBudget budget, IPAddress peer)
+    private sealed class Session(RemoteController controller, CommandBudget budget, CommandBudget signals, IPAddress peer)
     {
         public RemoteController Controller { get; } = controller;
 
+        /// <summary>For commands, offers and launches; its reports of a rate limit stand for both budgets.</summary>
         public CommandBudget Budget { get; } = budget;
+
+        /// <summary>For the hello, a presence and a phone's cancel.</summary>
+        public CommandBudget Signals { get; } = signals;
 
         /// <summary>The address it came from, as IPv4.</summary>
         public IPAddress Peer { get; } = peer;

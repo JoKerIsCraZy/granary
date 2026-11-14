@@ -455,8 +455,8 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.SendAsync("""{"type":"ping","v":2}""");
         await phone.NextAsync("pong");
 
-        // The hello took one of the forty.
-        Assert.Equal(39, player.Applied.Count);
+        // The hello has a budget of its own.
+        Assert.Equal(CommandBudget.Burst, player.Applied.Count);
         Assert.Single(phone.Received, message => message.Contains("rate_limited", StringComparison.Ordinal));
         Assert.Contains("""{"type":"error","v":2,"error":{"code":"rate_limited","message":"Too many commands. Slow down and try again."}}""",
             phone.Received);
@@ -469,20 +469,20 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.SendAsync("""{"type":"ping","v":2}""");
         await phone.NextAsync("pong");
 
-        Assert.Equal(59, player.Applied.Count);
+        Assert.Equal(CommandBudget.Burst + CommandBudget.PerSecond, player.Applied.Count);
         Assert.Equal(2, phone.Received.Count(message => message.Contains("rate_limited", StringComparison.Ordinal)));
     }
 
     [Fact]
-    public async Task EveryMessageButTheHeartbeat_CountsAgainstThePhonesBudget()
+    public async Task OffersLaunchesAndCommands_CountAgainstThePhonesBudget()
     {
         var player = new FakeRemotePlayer(_harness.Dispatcher);
         await _harness.AttachAsync(player);
         var (phone, _) = await _harness.HelloAsync();
         await phone.NextAsync("state");
 
-        // The hello took one of the forty; offers, presence and launches take theirs too.
-        for (int i = 0; i < 37; i++)
+        // Offers and launches take from the forty as commands do; a presence takes from the signals' own budget.
+        for (int i = 0; i < 39; i++)
         {
             await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-{{i}}","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7"},"v":2}""");
         }
@@ -496,11 +496,60 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.NextAsync("pong");
 
         var received = phone.Received;
-        Assert.Equal(37, received.Count(message => FakePhone.TypeOf(message) == "handoff_cancel"));
+        Assert.Equal(39, received.Count(message => FakePhone.TypeOf(message) == "handoff_cancel"));
         Assert.Single(received, message => message.Contains("handoff_required", StringComparison.Ordinal));
         Assert.Single(received, message => message.Contains("rate_limited", StringComparison.Ordinal));
         Assert.DoesNotContain(received, message => message.Contains("request-over", StringComparison.Ordinal));
         Assert.Empty(player.Applied);
+    }
+
+    [Fact]
+    public async Task APresenceAfterABurstOfCommands_StillLands()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+
+        // A seek dragged along the timeline uses the command budget up, and then the phone's app goes to the background:
+        // it says so once, and never again.
+        for (int i = 0; i < CommandBudget.Burst + 5; i++)
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"seek","seconds":10},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"presence","presence":{"passive":true},"v":2}""");
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+        await _harness.SettleUiAsync();
+
+        Assert.False(Assert.Single(Receiver.Phones).IsActive);
+    }
+
+    [Fact]
+    public async Task HelloPresenceAndCancel_HaveASmallBudgetOfTheirOwn()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+
+        // The hello took one of the ten; nine more, the last of them passive.
+        for (int i = 1; i < CommandBudget.SignalBurst; i++)
+        {
+            await phone.SendAsync(i % 2 == 1
+                ? """{"type":"presence","presence":{"passive":true},"v":2}"""
+                : """{"type":"handoff_cancel","handoffCancel":{"requestId":"request-1","reason":"controller_cancelled"},"v":2}""");
+        }
+        // One more is over the signals' budget, and the commands' budget is untouched.
+        await phone.SendAsync("""{"type":"presence","presence":{"passive":false},"v":2}""");
+        await phone.SendAsync("""{"type":"control","control":{"name":"pause"},"v":2}""");
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+        await _harness.SettleUiAsync();
+
+        Assert.False(Assert.Single(Receiver.Phones).IsActive);
+        Assert.Single(player.Applied);
+        Assert.Single(phone.Received, message => message.Contains("rate_limited", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -516,7 +565,7 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.NextAsync("pong");
 
         var received = phone.Received;
-        Assert.Equal(39, received.Count(message => message.Contains("\"code\":\"unauthorized\"", StringComparison.Ordinal)));
+        Assert.Equal(CommandBudget.Burst, received.Count(message => message.Contains("\"code\":\"unauthorized\"", StringComparison.Ordinal)));
         Assert.Single(received, message => message.Contains("rate_limited", StringComparison.Ordinal));
     }
 

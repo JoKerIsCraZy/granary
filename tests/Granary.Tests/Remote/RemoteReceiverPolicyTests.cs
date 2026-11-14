@@ -132,6 +132,19 @@ public sealed class RemoteReceiverPolicyTests
     }
 
     [Fact]
+    public void TheSignalsBudget_IsTenAtOnce_ThenFiveASecond()
+    {
+        var time = new ManualTimeProvider();
+        var budget = CommandBudget.ForSignals(time);
+
+        Assert.All(Enumerable.Range(0, CommandBudget.SignalBurst), _ => Assert.True(budget.TryTake()));
+        Assert.False(budget.TryTake());
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.All(Enumerable.Range(0, CommandBudget.SignalsPerSecond), _ => Assert.True(budget.TryTake()));
+        Assert.False(budget.TryTake());
+    }
+
+    [Fact]
     public void ARateLimit_IsReportedAtMostOnceASecond()
     {
         var time = new ManualTimeProvider();
