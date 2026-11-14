@@ -611,6 +611,52 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Empty((await LoadedAsync()).All);
     }
 
+    // The transfer of a removed download lets go of its part after the same id was kept again in the same folder: the
+    // folder is the new download's now, and a try at the old one's delete leaves it.
+    [Fact]
+    public async Task AFolderTriedAgainNow_StaysWhenTheIdWasKeptAgainInIt()
+    {
+        var store = await LoadedAsync();
+        var old = await store.AddAsync(Record("dl_1"), Token);
+        var held = new FileStream(old.PartPath, FileMode.Create, FileAccess.Write, FileShare.None);
+        await store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+        Assert.True(Directory.Exists(old.Folder));
+        await held.DisposeAsync();
+        var again = await store.AddAsync(Record("dl_1") with { Revision = 2 }, Token);
+
+        store.DeleteFolderNow(Scope7, "dl_1");
+        await store.FolderWork;
+
+        Assert.Equal(old.Folder, again.Folder);
+        Assert.True(File.Exists(Path.Combine(again.Folder, DownloadPaths.Record)));
+        Assert.Equal(2, Assert.Single((await LoadedAsync()).All).Record.Revision);
+    }
+
+    // Only the folder its transfer let go of is tried at once: another one something holds keeps its wait.
+    [Fact]
+    public async Task AFolderTriedAgainNow_LeavesAnotherHeldFolderItsWait()
+    {
+        var store = await LoadedAsync();
+        var first = await store.AddAsync(Record("dl_1"), Token);
+        var second = await store.AddAsync(Record("dl_2"), Token);
+        var heldFirst = new FileStream(first.PartPath, FileMode.Create, FileAccess.Write, FileShare.None);
+        await using var heldSecond = new FileStream(second.PartPath, FileMode.Create, FileAccess.Write, FileShare.None);
+        await store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+        await store.RemoveAsync(Scope7, "dl_2", queueServerDelete: false, Token);
+        Assert.Equal(2, FolderTries());
+        await heldFirst.DisposeAsync();
+
+        store.DeleteFolderNow(Scope7, "dl_1");
+        await store.FolderWork;
+
+        Assert.False(Directory.Exists(first.Folder));
+        Assert.True(Directory.Exists(second.Folder));
+        Assert.Equal(2, FolderTries());
+        Assert.Equal(ManualTimeProvider.DefaultStart + TimeSpan.FromMinutes(1), store.NextFolderDeleteAt);
+    }
+
+    private int FolderTries() => _logs.Lines.Count(line => line.Contains("could not be deleted yet", StringComparison.Ordinal));
+
     [Fact]
     public async Task AFollowerThatThrowsOnceTheFolderWent_IsLogged_AndTheRemoveEnds()
     {
