@@ -50,6 +50,9 @@ internal sealed class FakePhone : IAsyncDisposable
     /// <summary>The phone answers each ping with a pong; on by default.</summary>
     public bool AnswersPings { get; set; } = true;
 
+    /// <summary>The pairing key this phone scanned.</summary>
+    public byte[] Key => (byte[])_key.Clone();
+
     /// <summary>This phone's nonce in its <c>sealed_hello</c>.</summary>
     public byte[] Nonce { get; }
 
@@ -264,7 +267,14 @@ internal sealed class FakePhone : IAsyncDisposable
                 if (TypeOf(text) == "ping" && AnswersPings)
                 {
                     Interlocked.Increment(ref _pingsAnswered);
-                    await SendAsync("""{"type":"pong","v":2}""");
+                    try
+                    {
+                        await SendAsync("""{"type":"pong","v":2}""");
+                    }
+                    catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+                    {
+                        // The receiver closed after the ping; what it sent before that is still read.
+                    }
                 }
                 _messages.Writer.TryWrite(text);
             }

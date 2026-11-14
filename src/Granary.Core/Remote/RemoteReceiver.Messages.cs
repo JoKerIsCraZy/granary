@@ -258,10 +258,12 @@ public sealed partial class RemoteReceiver
     }
 
     // On the UI thread: the status as it is now, offered to every authorized phone. A phone that has not taken the last
-    // one yet gets this one instead.
+    // one yet gets this one instead. A title that plays also shows in the advertisement, once it settled.
     private void PublishState()
     {
-        Volatile.Write(ref _stateFrame, SiloCastMessages.State(_player?.State ?? SiloCastState.Idle));
+        var state = _player?.State ?? SiloCastState.Idle;
+        NotePlaying(_player is not null && state.ContentId is not null);
+        Volatile.Write(ref _stateFrame, SiloCastMessages.State(state));
         foreach (var session in AuthorizedSessions())
         {
             session.Controller.OfferState(_currentState);

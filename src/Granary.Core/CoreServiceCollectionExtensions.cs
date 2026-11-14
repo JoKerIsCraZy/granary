@@ -170,6 +170,15 @@ public static class CoreServiceCollectionExtensions
         // The phone remote's one pairing key for this PC, in the secret store, and the receiver's id beside it.
         services.AddSingleton(sp => new RemotePairing(sp.GetRequiredService<ISecretStore>(), RemotePairing.DefaultIdFilePath,
             sp.GetRequiredService<ILogger<RemotePairing>>()));
+        // The phone remote's receiver, one for the app. The app puts in its listener, its DNS-SD advertiser and the PC's
+        // LAN address first; without them nothing listens. Phones' connections are made by the receiver itself.
+        services.TryAddSingleton<IRemoteListener, NoRemoteListener>();
+        services.TryAddSingleton<IServiceAdvertiser, NoServiceAdvertiser>();
+        services.TryAddSingleton<ILanAddressSource, NoLanAddressSource>();
+        services.AddSingleton(sp => new RemoteReceiver(sp.GetRequiredService<IRemoteListener>(), sp.GetRequiredService<IServiceAdvertiser>(),
+            sp.GetRequiredService<ILanAddressSource>(), sp.GetRequiredService<RemotePairing>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),
+            sp.GetRequiredService<ISessionManager>(), sp.GetRequiredService<ClientIdentity>(), sp.GetRequiredService<IUiDispatcher>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<RemoteReceiver>>()));
         // Whether a title opens the player in full screen, as it was last left on this PC.
         services.AddSingleton<PlayerFullScreen>();
         // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.

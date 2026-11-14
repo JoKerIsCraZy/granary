@@ -1,5 +1,7 @@
 using System.Net;
 using Granary.Core.Abstractions;
+using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Remote;
@@ -14,6 +16,13 @@ public sealed partial class RemoteReceiver
 {
     private static readonly TimeSpan RateWindow = TimeSpan.FromMinutes(1);
 
+    private readonly IRemoteListener _listener;
+    private readonly IServiceAdvertiser _advertiser;
+    private readonly ILanAddressSource _addresses;
+    private readonly RemotePairing _pairing;
+    private readonly IPlaybackDevicePreferences _preferences;
+    private readonly ISessionManager _session;
+    private readonly string _name;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<RemoteReceiver> _logger;
@@ -23,15 +32,43 @@ public sealed partial class RemoteReceiver
     private readonly Func<byte[]?> _currentState;
     private int _numbers;
 
-    public RemoteReceiver(IUiDispatcher dispatcher, TimeProvider time, ILogger<RemoteReceiver> logger)
+    /// <param name="listener">Listens on the PC's LAN address (the App's <c>TcpListener</c>).</param>
+    /// <param name="advertiser">Registers the receiver with DNS-SD (the App's <c>DnsServiceRegister</c>).</param>
+    /// <param name="addresses">The PC's LAN address.</param>
+    /// <param name="pairing">The receiver's id and its one pairing key.</param>
+    /// <param name="preferences">The switch, kept on this PC.</param>
+    /// <param name="session">Who is signed in, where: the receiver runs only with a profile.</param>
+    /// <param name="client">This PC's name, which the phones show.</param>
+    /// <param name="dispatcher">The UI thread: the player is only touched there, and events are raised there.</param>
+    /// <param name="time">The clock every deadline runs on.</param>
+    /// <param name="logger">Events by connection number and reason only.</param>
+    public RemoteReceiver(IRemoteListener listener, IServiceAdvertiser advertiser, ILanAddressSource addresses, RemotePairing pairing,
+        IPlaybackDevicePreferences preferences, ISessionManager session, ClientIdentity client, IUiDispatcher dispatcher, TimeProvider time,
+        ILogger<RemoteReceiver> logger)
     {
+        ArgumentNullException.ThrowIfNull(listener);
+        ArgumentNullException.ThrowIfNull(advertiser);
+        ArgumentNullException.ThrowIfNull(addresses);
+        ArgumentNullException.ThrowIfNull(pairing);
+        ArgumentNullException.ThrowIfNull(preferences);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(logger);
+        _listener = listener;
+        _advertiser = advertiser;
+        _addresses = addresses;
+        _pairing = pairing;
+        _preferences = preferences;
+        _session = session;
+        _name = client.DeviceName;
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
         _currentState = () => Volatile.Read(ref _stateFrame);
+        Identity = () => Volatile.Read(ref _running)?.Identity;
+        Pairing = () => _pairing.Current;
     }
 
     /// <summary>The phones that said hello, in name order, with their names as Granary shows them.</summary>
@@ -53,11 +90,11 @@ public sealed partial class RemoteReceiver
     /// <summary>Raised on the UI thread once for each phone that actively controls, at its hello or when it stops being passive.</summary>
     public event EventHandler<ConnectedPhone>? PhoneConnected;
 
-    /// <summary>What the receiver says about itself at each hello; the lifetime sets it while the receiver runs.</summary>
-    internal Func<ReceiverIdentity?> Identity { get; set; } = static () => null;
+    /// <summary>What the receiver says about itself at each hello: what it runs as now, or null while it does not run.</summary>
+    internal Func<ReceiverIdentity?> Identity { get; set; }
 
-    /// <summary>The pairing material as it is now; the lifetime sets it while the receiver runs.</summary>
-    internal Func<PairingMaterial?> Pairing { get; set; } = static () => null;
+    /// <summary>The pairing material as it is now, read at every handshake and every frame (<see cref="RemotePairing.Current"/>).</summary>
+    internal Func<PairingMaterial?> Pairing { get; set; }
 
     internal RemoteTimings Timings { get; set; } = RemoteTimings.Default;
 

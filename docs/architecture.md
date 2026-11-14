@@ -32,6 +32,9 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
   `IThemeAudioOutput` plays title pages' theme music (see Theme music).
+  `IRemoteListener`, `IServiceAdvertiser` and `ILanAddressSource` give the phone remote its one listening socket, its
+  DNS-SD advertisement and the PC's LAN address; Core's stand-ins listen on nothing, advertise nothing and know no
+  address (see Phone remote).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -1333,6 +1336,46 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Close | at most half a second for the `close` to leave |
 
 None of these can be changed by a phone.
+
+### Lifetime
+
+The receiver exists only while all four hold: Granary runs (nothing survives the process), the switch is on, a profile
+is signed in (`SessionState.Ready` with an active server and a profile), and the PC has a private IPv4 address
+(`ILanAddressSource`). `RemoteReceiver.Start` follows the switch, the session, the address and the pairing key from
+then on; `StopAsync` ends it for good when Granary closes.
+
+- **One loop.** Every trigger (the switch, `ISessionManager.Changed`, `ILanAddressSource.Changed`,
+  `RemotePairing.KeyChanged`, a change of whether a title plays) only asks the loop to look again; the loop compares
+  what is wanted with what runs, under one gate, so starts and stops never overlap. It is started from the UI thread's
+  queue, so changes made in one turn (on, off, on) are looked at together and make one start.
+- **Start order: key, listener, advertisement, accepting.** The pairing code carries the address and port, and the
+  phones keep them; the advertisement's SRV record names the port too. So the listener is bound first and everything
+  else is written from what it got. Connections the listener hands over before the advertisement is done are closed
+  unread. A key that cannot be read (`IOException`, `UnauthorizedAccessException`, `CryptographicException`), no free
+  port, or an advertisement that throws leaves nothing listening; the status says `Failed` or `NoPort`.
+- **Ports.** 52817, or the first free one up to 52826, then any port Windows gives (`RemoteReceiver.Ports`, the rule of
+  Silo's Roku app), on the one LAN address the code names, IPv4 only. A second Granary on the same PC gets 52818.
+- **Stop order: phones, advertisement, listener.** Every phone gets `close tv_disconnected` under its half-second grace,
+  then the registration is removed, then the listener closed, each step by itself and bounded, so one that fails or
+  hangs skips none of the rest. `StopAsync` takes at most `StopBudget` (2 seconds), a phone that reads nothing
+  included, so the App can wait for it when its window closes.
+- **What each change does.**
+  - The switch off, sign-out, no profile, no LAN address: stop.
+  - Another server: stop, then start for it, with its id, name and identity in the advertisement and the code. The
+    key stays.
+  - Another profile on the same server: nothing; phones stay connected, since control is not bound to a profile.
+  - Another LAN address: the listener is bound there, on the same port when it is free, and the receiver registered
+    anew; phones on the old address end with their heartbeat. The code changes, the key does not.
+  - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
+    register once, and the status tick never does.
+  - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
+    not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
+    The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved
+    and the old one stays. Every handshake reads the key as it is at that moment, and every frame of a session checks
+    that its key is still the PC's, so a phone on the old code is refused even if a notice was missed.
+- **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` or `Listening` with the address,
+  the port, whether Windows took the advertisement, and the server's address for the pairing panel's hint;
+  `StatusChanged` comes on the UI thread. `PairingLink` exists only while it listens.
 
 ## Windows App SDK
 

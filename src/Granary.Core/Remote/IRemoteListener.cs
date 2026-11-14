@@ -22,11 +22,20 @@ public interface IRemoteListener
 {
     /// <summary>
     /// Binds the first port of <paramref name="ports"/> that is free on <paramref name="address"/> (0 for any port Windows
-    /// gives) and hands each accepted connection to <paramref name="onAccepted"/>. Answers the port bound; throws
-    /// <see cref="IOException"/> when none could be.
+    /// gives) and hands each accepted connection to <paramref name="onAccepted"/>, without waiting for the task it returns:
+    /// that task runs as long as the connection. Answers the port bound; throws <see cref="IOException"/> when none could be.
     /// </summary>
     Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken);
 
     /// <summary>Stops accepting and closes the listener. Connections already handed over stay with their owner.</summary>
     Task StopAsync();
+}
+
+/// <summary>Core's stand-in where the App gives no listener: no port can be bound.</summary>
+public sealed class NoRemoteListener : IRemoteListener
+{
+    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken) =>
+        Task.FromException<int>(new IOException("This build cannot listen for phones."));
+
+    public Task StopAsync() => Task.CompletedTask;
 }

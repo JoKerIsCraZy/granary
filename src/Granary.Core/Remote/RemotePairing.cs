@@ -43,6 +43,12 @@ public sealed class RemotePairing
     public event EventHandler? KeyChanged;
 
     /// <summary>
+    /// The material as it is now, or null before it was first loaded. Every handshake reads it at that moment, so a code
+    /// reset counts at once, whether or not the news of it reached anyone.
+    /// </summary>
+    public PairingMaterial? Current => Volatile.Read(ref _material);
+
+    /// <summary>
     /// The receiver's id and key: made the first time, read from then on, and the same for the rest of the run. A key the
     /// store does not have, or has in a form that is not 16 bytes, is drawn anew; so is an id file that cannot be read.
     /// </summary>
@@ -54,19 +60,21 @@ public sealed class RemotePairing
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_material is null)
+            var current = Volatile.Read(ref _material);
+            if (current is null)
             {
                 string receiverId = await LoadOrCreateIdAsync(cancellationToken).ConfigureAwait(false);
                 byte[]? key = ReadKey(await _secrets.GetAsync(SecretKey, cancellationToken).ConfigureAwait(false));
-                _material = key is null
+                current = key is null
                     ? await CreateKeyAsync(receiverId, cancellationToken).ConfigureAwait(false)
                     : new PairingMaterial(receiverId, key);
+                Volatile.Write(ref _material, current);
                 if (key is not null)
                 {
                     CryptographicOperations.ZeroMemory(key);
                 }
             }
-            return _material;
+            return current;
         }
         finally
         {
@@ -86,7 +94,7 @@ public sealed class RemotePairing
         {
             string receiverId = _material?.ReceiverId ?? await LoadOrCreateIdAsync(cancellationToken).ConfigureAwait(false);
             material = await CreateKeyAsync(receiverId, cancellationToken).ConfigureAwait(false);
-            _material = material;
+            Volatile.Write(ref _material, material);
         }
         finally
         {
@@ -98,7 +106,8 @@ public sealed class RemotePairing
     }
 
     // Each listener by itself, after the key changed: one that throws must neither undo the reset for the caller nor keep
-    // the news from the others. Only the exception's type is logged.
+    // the news from the others. The receiver does not rely on this news alone: every handshake and frame reads the
+    // material as it is (Current). The failure is logged by its kind and the listener's type, never a value.
     private void NotifyKeyChanged()
     {
         if (KeyChanged is not { } changed)
@@ -113,7 +122,8 @@ public sealed class RemotePairing
             }
             catch (Exception ex)
             {
-                _logger.LogError("A listener of the pairing code's reset failed ({Error})", ex.GetType().Name);
+                _logger.LogError("A listener of the pairing code's reset failed ({Error}, in {Listener})", RemoteLog.Failure(ex),
+                    listener.Method.DeclaringType?.Name ?? "an unknown type");
             }
         }
     }

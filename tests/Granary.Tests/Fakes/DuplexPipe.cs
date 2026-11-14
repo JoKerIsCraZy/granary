@@ -32,8 +32,12 @@ internal sealed class DuplexPipe : IDisposable
     /// <summary>The phone's end.</summary>
     public Stream Phone => _phone;
 
-    /// <summary>The receiver's end as an accepted connection from <paramref name="peer"/> (a LAN address unless given).</summary>
-    public PipeConnection Connection(IPAddress? peer = null) => new(_receiver, peer ?? IPAddress.Parse("192.168.1.30"));
+    /// <summary>
+    /// The receiver's end as an accepted connection from <paramref name="peer"/> (a LAN address unless given). Closing it
+    /// waits for <paramref name="closeWaitsFor"/> first, if a test holds it up.
+    /// </summary>
+    public PipeConnection Connection(IPAddress? peer = null, Task? closeWaitsFor = null) =>
+        new(_receiver, peer ?? IPAddress.Parse("192.168.1.30"), closeWaitsFor ?? Task.CompletedTask);
 
     /// <summary>The phone takes nothing more from its pipe until <see cref="PhoneReadsAgain"/>.</summary>
     public void PhoneStopsReading() => _phone.Pause();
@@ -47,7 +51,7 @@ internal sealed class DuplexPipe : IDisposable
     }
 
     /// <summary>An accepted connection over one end of the pipe; disposing it closes that end, as closing a socket does.</summary>
-    internal sealed class PipeConnection(Stream stream, IPAddress peer) : IRemoteConnection
+    internal sealed class PipeConnection(Stream stream, IPAddress peer, Task closeWaitsFor) : IRemoteConnection
     {
         private int _disposed;
 
@@ -59,6 +63,7 @@ internal sealed class DuplexPipe : IDisposable
 
         public async ValueTask DisposeAsync()
         {
+            await closeWaitsFor;
             Interlocked.Exchange(ref _disposed, 1);
             await stream.DisposeAsync();
         }

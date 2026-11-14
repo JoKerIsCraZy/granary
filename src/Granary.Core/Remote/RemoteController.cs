@@ -132,6 +132,9 @@ public sealed partial class RemoteController : IAsyncDisposable
     /// <summary>Completes once the connection is closed and its keys are gone.</summary>
     public Task Ended => _ended.Task;
 
+    /// <summary>The id of the pairing key the session was keyed under, or null before.</summary>
+    internal string? SessionKeyId => Volatile.Read(ref _keys) is null ? null : _keyId;
+
     /// <summary>The session's keys are still held: false once the connection ended.</summary>
     internal bool HoldsSessionKeys => Volatile.Read(ref _keys) is { IsDisposed: false };
 
@@ -332,8 +335,14 @@ public sealed partial class RemoteController : IAsyncDisposable
     {
         byte[] nonce = RandomNumberGenerator.GetBytes(SiloCastSealed.NonceBytes);
         var keys = SiloCastSealed.DeriveSessionKeys(pairing.Key, hello.Nonce, nonce);
-        if (!await EnterWriteGateAsync().ConfigureAwait(false))
+        // The deadlines run from before the answer leaves, so they exist by the time the phone has it.
+        _helloWatch = _time.CreateTimer(static self => ((RemoteController)self!).HelloOverdue(), this, _timings.HelloWait, Timeout.InfiniteTimeSpan);
+        StartHeartbeat();
+        if (!IsOpen || !await EnterWriteGateAsync().ConfigureAwait(false))
         {
+            // Ended meanwhile: its end may have come before the deadlines were made.
+            _helloWatch.Dispose();
+            StopHeartbeat();
             keys.Dispose();
             return false;
         }
@@ -358,8 +367,6 @@ public sealed partial class RemoteController : IAsyncDisposable
             keys.Dispose();
             return false;
         }
-        _helloWatch = _time.CreateTimer(static self => ((RemoteController)self!).HelloOverdue(), this, _timings.HelloWait, Timeout.InfiniteTimeSpan);
-        StartHeartbeat();
         _logger.LogInformation("Connection {Number} opened", Number);
         return true;
     }
@@ -557,10 +564,11 @@ public sealed partial class RemoteController : IAsyncDisposable
     }
 
     // Under the gate: the message sealed under the next number. A message too large for a frame is not sent and takes no
-    // number. False when the connection ended or failed.
-    private async Task<bool> WriteSealedLockedAsync(byte[] message)
+    // number. Under a code that was reset only the closing frame still goes, so the phone hears why it is let go. False
+    // when the connection ended or failed.
+    private async Task<bool> WriteSealedLockedAsync(byte[] message, bool isClose = false)
     {
-        if (Volatile.Read(ref _keys) is not { } keys || Volatile.Read(ref _state) == Ending || !StillPaired())
+        if (Volatile.Read(ref _keys) is not { } keys || Volatile.Read(ref _state) == Ending || (!isClose && !StillPaired()))
         {
             return false;
         }
@@ -590,7 +598,7 @@ public sealed partial class RemoteController : IAsyncDisposable
         }
         try
         {
-            return await WriteSealedLockedAsync(close).ConfigureAwait(false);
+            return await WriteSealedLockedAsync(close, isClose: true).ConfigureAwait(false);
         }
         finally
         {

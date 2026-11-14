@@ -21,8 +21,15 @@ internal sealed class InMemorySecretStore : ISecretStore
         return Values.TryGetValue(key, out var value) ? value : null;
     }
 
+    /// <summary>What every write throws, if a test makes the store fail.</summary>
+    public Exception? FailWrites { get; set; }
+
     public Task SetAsync(string key, string value, CancellationToken cancellationToken = default)
     {
+        if (FailWrites is { } failure)
+        {
+            return Task.FromException(failure);
+        }
         Values[key] = value;
         Interlocked.Increment(ref _writes);
         return Task.CompletedTask;

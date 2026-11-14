@@ -1,24 +1,101 @@
 using System.Net;
+using Granary.Core.Auth;
 using Granary.Core.Remote;
+using Granary.Core.Servers;
 using Granary.Tests.Fakes;
 
 namespace Granary.Tests.Remote;
 
 /// <summary>
 /// What the phone remote's tests share: the pairing material, a clock that moves only when the test moves it, the log,
-/// and phones joined to the receiver's side in memory. Nothing here opens a socket.
+/// and phones joined to the receiver's side in memory. Nothing here opens a socket or registers a service: the listener,
+/// the advertiser and the PC's address are fakes that note their calls in <see cref="Calls"/>.
+/// <para>
+/// By default the receiver's identity and pairing material are the harness's own (<see cref="Identity"/>,
+/// <see cref="Pairing"/>), for tests of what a connection does. With <c>lifetime</c> they are the receiver's own, made
+/// from the session, the switch, the address and <see cref="PairingStore"/> once it is started.
+/// </para>
 /// </summary>
 internal sealed class RemoteHarness : IAsyncDisposable
 {
     public const string ReceiverId = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 
+    /// <summary>The PC's LAN address in the tests.</summary>
+    public static readonly LanAddress Lan = new(IPAddress.Parse("192.168.1.20"), 7);
+
     private readonly List<IAsyncDisposable> _owned = [];
     private readonly List<IDisposable> _pipes = [];
+    private readonly bool _lifetime;
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private int _numbers;
 
-    public RemoteHarness()
+    public RemoteHarness(bool lifetime = false)
     {
+        _lifetime = lifetime;
         Pairing = new PairingMaterial(ReceiverId, Key);
+        Calls = new RemoteCalls();
+        Listener = new FakeRemoteListener(Calls);
+        Advertiser = new FakeServiceAdvertiser(Calls);
+        PairingStore = new RemotePairing(Secrets, Path.Combine(_directory, "phone-remote.json"), Logs.For<RemotePairing>());
+    }
+
+    public RemoteCalls Calls { get; }
+
+    public FakeRemoteListener Listener { get; }
+
+    public FakeServiceAdvertiser Advertiser { get; }
+
+    public FakeLanAddressSource Addresses { get; } = new();
+
+    public InMemoryPlaybackDevicePreferences Preferences { get; } = new();
+
+    public FakeSessionManager Session { get; } = new();
+
+    public InMemorySecretStore Secrets { get; } = new();
+
+    /// <summary>The pairing key's store, which the receiver reads when it runs on its own.</summary>
+    public RemotePairing PairingStore { get; }
+
+    public static ClientIdentity Client { get; } = new("device-1", "Elena's PC", ClientIdentity.Platform, "Granary", "0.3.1", "dev",
+        ClientIdentity.Family);
+
+    /// <summary>The server Granary is signed in to unless a test says otherwise.</summary>
+    public static ServerEntry Server(string address = "https://silo.example", string entryId = "entry-1", string? identity = ServerIdentity) =>
+        new(entryId, new Uri(address), "Example Server", identity, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, "7");
+
+    /// <summary>Signs in to <paramref name="server"/> with profile <paramref name="profileId"/>, as the session says when it is ready.</summary>
+    public void SignIn(ServerEntry? server = null, string profileId = "7")
+    {
+        Session.ActiveServer = server ?? Server();
+        Session.ProfileId = profileId;
+        Session.State = SessionState.Ready;
+        Session.RaiseChanged();
+    }
+
+    /// <summary>The switch on, a profile signed in and the PC on its LAN; then the receiver started and settled.</summary>
+    public async Task StartListeningAsync()
+    {
+        Addresses.Set(Lan);
+        SignIn();
+        await Preferences.SetPhoneRemoteAsync(true);
+        Receiver.Start();
+        await Receiver.SettledAsync().WaitAsync(TimeSpan.FromSeconds(10), Token);
+    }
+
+    /// <summary>A phone that connects through the listener with <paramref name="key"/> (the store's key unless given) and pairs.</summary>
+    public async Task<(FakePhone Phone, DuplexPipe Pipe, Task Serving)> ConnectThroughListenerAsync(byte[]? key = null, bool pair = true,
+        long pauseAt = 64 * 1024, Task? closeWaitsFor = null)
+    {
+        var pipe = new DuplexPipe(pauseAt);
+        _pipes.Add(pipe);
+        var phone = new FakePhone(pipe.Phone, key ?? PairingStore.Current!.Key.ToArray());
+        _owned.Add(phone);
+        var serving = Listener.AcceptAsync(pipe.Connection(closeWaitsFor: closeWaitsFor));
+        if (pair)
+        {
+            Assert.True(await phone.PairAsync());
+        }
+        return (phone, pipe, serving);
     }
 
     /// <summary>The pairing key the phones scanned.</summary>
@@ -80,11 +157,17 @@ internal sealed class RemoteHarness : IAsyncDisposable
 
     private RemoteReceiver? _receiver;
 
-    private RemoteReceiver MakeReceiver() => new(Dispatcher, Time, Logs.For<RemoteReceiver>())
+    private RemoteReceiver MakeReceiver()
     {
-        Identity = () => Identity,
-        Pairing = () => Pairing,
-    };
+        var receiver = new RemoteReceiver(Listener, Advertiser, Addresses, PairingStore, Preferences, Session, Client, Dispatcher, Time,
+            Logs.For<RemoteReceiver>());
+        if (!_lifetime)
+        {
+            receiver.Identity = () => Identity;
+            receiver.Pairing = () => Pairing;
+        }
+        return receiver;
+    }
 
     /// <summary>A phone served by the receiver over a new pipe; paired unless <paramref name="pair"/> is false.</summary>
     public async Task<(FakePhone Phone, DuplexPipe Pipe, Task Serving)> ServeAsync(bool pair = true, IPAddress? peer = null,
@@ -134,9 +217,12 @@ internal sealed class RemoteHarness : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_receiver is not null)
+        if (_receiver is not null && _lifetime)
         {
-            await _receiver.CloseAllAsync(SiloCastCloseReasons.TvDisconnected).WaitAsync(TimeSpan.FromSeconds(10));
+            // Its deadlines run on the test's clock; a stop that still waits on one after it is left behind.
+            var stopping = _receiver.StopAsync();
+            Time.Advance(RemoteReceiver.StopBudget);
+            await Task.WhenAny(stopping, Task.Delay(TimeSpan.FromSeconds(10), CancellationToken.None));
         }
         foreach (var owned in _owned)
         {
@@ -148,5 +234,9 @@ internal sealed class RemoteHarness : IAsyncDisposable
             pipe.Dispose();
         }
         Dispatcher.Dispose();
+        if (Directory.Exists(_directory))
+        {
+            Directory.Delete(_directory, recursive: true);
+        }
     }
 }
