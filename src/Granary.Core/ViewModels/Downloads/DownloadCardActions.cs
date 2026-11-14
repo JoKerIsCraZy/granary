@@ -166,28 +166,31 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         }
     }
 
-    /// <summary>Deletes the download from this PC after the title page's question; the server hears it once the files are gone.</summary>
+    /// <summary>
+    /// Deletes the download from this PC after the title page's question; the server hears it once the files are gone. Each
+    /// delete here acts in the profile its question was asked in (<see cref="DownloadManager.ActiveScope"/>).
+    /// </summary>
     [RelayCommand]
     private async Task DeleteAsync(MediaCard? card)
     {
-        if (card is null || DownloadOf(card) is null)
+        if (card is null || _downloads.ActiveScope is not { } scope || DownloadOf(card) is null)
         {
             return;
         }
         if (await _confirmation.AskAsync(DownloadActions.DeleteTitle, DownloadActions.DeleteMessage, DownloadActions.DeleteAction))
         {
-            await _downloads.DeleteAsync(card.Id, CancellationToken.None);
+            await _downloads.DeleteAsync(scope, card.Id, CancellationToken.None);
         }
     }
 
     /// <summary>
     /// Deletes every download of the series after asking, in the Apple app's words ("Delete 3 Downloads"): the ones the question
-    /// counted, as a single delete goes, all of them in the profile the answer came in.
+    /// counted, as a single delete goes.
     /// </summary>
     [RelayCommand]
     private async Task DeleteSeriesAsync(MediaCard? card)
     {
-        if (card is null || EpisodesOf(card.Id) is not { Count: > 0 } episodes)
+        if (card is null || _downloads.ActiveScope is not { } scope || EpisodesOf(card.Id) is not { Count: > 0 } episodes)
         {
             return;
         }
@@ -198,7 +201,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        await _downloads.DeleteAllAsync([.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
+        await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
     }
 
     private DownloadItem? DownloadOf(MediaCard card) => card.Type == DownloadCards.DownloadType ? _downloads.Find(card.Id) : null;

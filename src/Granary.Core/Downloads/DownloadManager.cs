@@ -103,6 +103,14 @@ public sealed partial class DownloadManager
     /// </summary>
     public event EventHandler? Changed;
 
+    /// <summary>
+    /// The active profile's scope, whose downloads the manager answers for; null without one. A question about downloads takes
+    /// it as it opens, and its answer acts in it (<see cref="DeleteAsync(DownloadScope, string, CancellationToken)"/>,
+    /// <see cref="DeleteAllAsync"/>, <see cref="DeleteWatchedAsync"/>): read again after the answer, with another profile
+    /// active by then, the ids would find nothing, or, ids being unique only on their server, another server's downloads.
+    /// </summary>
+    public DownloadScope? ActiveScope => DownloadScope.Of(_session);
+
     /// <summary>The active profile's downloads, newest first.</summary>
     public IReadOnlyList<DownloadItem> Items
     {
@@ -187,8 +195,8 @@ public sealed partial class DownloadManager
     }
 
     /// <summary>
-    /// Deletes a download from this PC: its transfer stops and its files go first, then the server hears it, bound to the
-    /// download's profile. While the server cannot be reached, the queue keeps the delete and sends it once it can.
+    /// Deletes one of the active profile's downloads from this PC, as
+    /// <see cref="DeleteAsync(DownloadScope, string, CancellationToken)"/> deletes one of a scope's.
     /// </summary>
     public async Task DeleteAsync(string downloadId, CancellationToken cancellationToken)
     {
@@ -199,49 +207,49 @@ public sealed partial class DownloadManager
     }
 
     /// <summary>
-    /// Deletes each of <paramref name="downloadIds"/> still on this PC, as <see cref="DeleteAsync(string, CancellationToken)"/>
-    /// deletes one: a series' episodes once the viewer said yes. They are the downloads of the profile that was active when the
-    /// answer came, also when another one becomes active while they go: read in that one's scope, the ids would find nothing,
-    /// or, ids being unique only on their server, another server's downloads.
+    /// Deletes one of <paramref name="scope"/>'s downloads from this PC, also when another profile is active now (the one a
+    /// question asked about, <see cref="ActiveScope"/>): its transfer stops and its files go first, then the server hears it,
+    /// bound to the download's profile. While the server cannot be reached, the queue keeps the delete and sends it once it
+    /// can. One that is not kept here (deleted meanwhile, as from another page) is no change.
     /// </summary>
-    public async Task DeleteAllAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    public async Task DeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(downloadIds);
-        if (DownloadScope.Of(_session) is not { } scope)
+        ArgumentNullException.ThrowIfNull(scope);
+        if (_store.Find(scope, downloadId) is null)
         {
             return;
         }
-        foreach (string downloadId in downloadIds)
-        {
-            // One deleted meanwhile, as from another page, is no change.
-            if (_store.Find(scope, downloadId) is not null)
-            {
-                await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
-            }
-        }
-    }
-
-    private async Task DeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
-    {
         await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Download {DownloadId} was deleted from this PC", downloadId);
         _queue.Wake();
     }
 
     /// <summary>
-    /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
-    /// as <see cref="DeleteAsync"/> deletes one, and answers how many went. The ids are the ones the viewer was asked about:
-    /// a download that became watched after the question stays, and so does one that is no longer watched, or that plays now:
-    /// its file is never taken from under the player. They are the downloads of the profile that was active when the answer
-    /// came, also when another one becomes active while they go.
+    /// Deletes each of <paramref name="downloadIds"/> that <paramref name="scope"/> still has on this PC, as
+    /// <see cref="DeleteAsync(DownloadScope, string, CancellationToken)"/> deletes one: a series' episodes once the viewer said
+    /// yes, in the profile the question was asked in, whichever becomes active while they go.
     /// </summary>
-    public async Task<int> DeleteWatchedAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    public async Task DeleteAllAsync(DownloadScope scope, IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(downloadIds);
-        if (DownloadScope.Of(_session) is not { } scope)
+        foreach (string downloadId in downloadIds)
         {
-            return 0;
+            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Deletes those of <paramref name="downloadIds"/> that are still whole and watched (<see cref="DownloadItem.IsReclaimable"/>),
+    /// as <see cref="DeleteAsync(DownloadScope, string, CancellationToken)"/> deletes one, and answers how many went. The ids
+    /// are the ones the viewer was asked about: a download that became watched after the question stays, and so does one that
+    /// is no longer watched, or that plays now: its file is never taken from under the player. They are
+    /// <paramref name="scope"/>'s, the profile the question was asked in, whichever becomes active while they go.
+    /// </summary>
+    public async Task<int> DeleteWatchedAsync(DownloadScope scope, IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(downloadIds);
         int deleted = 0;
         foreach (string downloadId in downloadIds)
         {

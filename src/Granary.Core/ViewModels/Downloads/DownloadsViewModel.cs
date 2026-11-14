@@ -177,7 +177,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private async Task ReclaimAsync()
     {
         var asked = _reclaimable;
-        if (asked.Count == 0)
+        // The profile the question is about: the answer deletes its downloads, whichever is active by then.
+        if (asked.Count == 0 || _downloads.ActiveScope is not { } scope)
         {
             return;
         }
@@ -187,7 +188,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             : $"Delete {count} watched downloads and free {Size(asked.Sum(i => i.ExpectedBytes))}?";
         if (await _confirmation.AskAsync(ReclaimTitle, message, ReclaimAction))
         {
-            await _downloads.DeleteWatchedAsync([.. asked.Select(i => i.DownloadId)], CancellationToken.None);
+            await _downloads.DeleteWatchedAsync(scope, [.. asked.Select(i => i.DownloadId)], CancellationToken.None);
         }
     }
 

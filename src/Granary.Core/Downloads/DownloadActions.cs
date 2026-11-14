@@ -116,14 +116,18 @@ public sealed class DownloadActions
         }
     }
 
-    /// <summary>Deletes the download of a film or an episode from this PC, after asking; the server hears it once the files are gone.</summary>
+    /// <summary>
+    /// Deletes the download of a film or an episode from this PC, after asking; the server hears it once the files are gone. It
+    /// goes in the profile the question was asked in, whichever is active once it is answered.
+    /// </summary>
     public async Task DeleteAsync(string mediaItemId)
     {
-        if (_downloads.ForItem(mediaItemId) is not { } download || !await _confirmation.AskAsync(DeleteTitle, DeleteMessage, DeleteAction))
+        if (_downloads.ActiveScope is not { } scope || _downloads.ForItem(mediaItemId) is not { } download
+            || !await _confirmation.AskAsync(DeleteTitle, DeleteMessage, DeleteAction))
         {
             return;
         }
-        await _downloads.DeleteAsync(download.DownloadId, CancellationToken.None);
+        await _downloads.DeleteAsync(scope, download.DownloadId, CancellationToken.None);
     }
 
     /// <summary>The Downloads page, as its sidebar entry opens it.</summary>

@@ -1777,7 +1777,9 @@ device.
   the row holds a position: the mark returns when that watch ends. The Downloads page suggests deleting
   the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
   them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
-  about that are still watched, each as a single delete goes. A download that plays is neither suggested nor deleted
+  about that are still watched, each as a single delete goes, in the profile the question was asked in
+  (`DownloadManager.ActiveScope`, taken as a question opens, as every delete after a question does), whichever is active
+  once it is answered. A download that plays is neither suggested nor deleted
   that way: `LocalPlayback` marks it in `PlayingDownloads` from the moment it is made until it is let go, since a title
   counts as watched while its credits still run and the player stays up, minimized, over the Downloads page (Silo's
   Android app keeps the same mark, `ActivePlaybackFile`). The card's own Delete download still deletes it.

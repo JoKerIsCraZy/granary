@@ -177,6 +177,23 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         Assert.Equal(["Download"], Labels(cards, Episode));
     }
 
+    // Another profile becomes active while the question is open: the download it asked about still goes.
+    [Fact]
+    public async Task ADownloadedCardsDelete_TakesTheDownloadItAskedAbout_WhenAnotherProfileBecameActiveWhileItAsked()
+    {
+        await _h.AddAsync("dl_5", DownloadState.Completed, mediaItemId: "ep_5");
+        var cards = await CardsAsync();
+        _confirmation.WhileAsking = () =>
+        {
+            _h.Session.ProfileId = "8";
+            return Task.CompletedTask;
+        };
+
+        await ChooseAsync(cards, Episode, entry: 1);
+
+        Assert.Null(_h.Find("dl_5"));
+    }
+
     [Fact]
     public async Task ADownloadedCard_KeepsItsEntries_WhenTheServerStoppedDownloads()
     {

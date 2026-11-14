@@ -525,6 +525,52 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         Assert.Null(_h.Find("dl_12"));
     }
 
+    // Another profile becomes active while a question is open: the answer still acts on the downloads it asked about, of the
+    // profile that was active as it opened. Read in the other one's, the ids find nothing, or another server's downloads.
+    [Fact]
+    public async Task DeleteAllEpisodes_TakesTheEpisodesItAskedAbout_WhenAnotherProfileBecameActiveWhileItAsked()
+    {
+        await AddEpisodeAsync("dl_11", 1, 1, "Pilot");
+        await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two");
+        var page = await AttachedAsync();
+        SwitchProfileWhileAsking();
+
+        await PickAsync(page, "sr_1", "Delete All Episodes");
+
+        Assert.Null(_h.Find("dl_11"));
+        Assert.Null(_h.Find("dl_12"));
+    }
+
+    [Fact]
+    public async Task Delete_TakesTheDownloadItAskedAbout_WhenAnotherProfileBecameActiveWhileItAsked()
+    {
+        await AddFilmAsync("dl_1", "Example Movie");
+        var page = await AttachedAsync();
+        SwitchProfileWhileAsking();
+
+        await PickAsync(page, "dl_1", "Delete download");
+
+        Assert.Null(_h.Find("dl_1"));
+    }
+
+    [Fact]
+    public async Task Reclaim_TakesTheDownloadsItAskedAbout_WhenAnotherProfileBecameActiveWhileItAsked()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var page = await AttachedAsync();
+        SwitchProfileWhileAsking();
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Null(_h.Find("dl_1"));
+    }
+
+    private void SwitchProfileWhileAsking() => _confirmation.WhileAsking = () =>
+    {
+        _h.Session.ProfileId = "8";
+        return Task.CompletedTask;
+    };
+
     [Fact]
     public async Task OneEpisodesSeries_IsAskedAboutInTheSingular()
     {
@@ -910,7 +956,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             }
         };
 
-        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+        int deleted = await downloads.DeleteWatchedAsync(Scope7, ["dl_1", "dl_2"], Token);
 
         Assert.Equal(1, deleted);
         Assert.Single(new[] { "dl_1", "dl_2" }, id => _h.Find(id) is not null);
@@ -931,7 +977,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             }
         };
 
-        int deleted = await downloads.DeleteWatchedAsync(["dl_1", "dl_2"], Token);
+        int deleted = await downloads.DeleteWatchedAsync(Scope7, ["dl_1", "dl_2"], Token);
 
         Assert.Equal(2, deleted);
         Assert.Null(_h.Find("dl_1"));
