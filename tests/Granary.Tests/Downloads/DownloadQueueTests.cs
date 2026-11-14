@@ -458,6 +458,28 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         Assert.Null(_h.Find("dl_1"));
     }
 
+    // A busy PC: the stopped transfer holds its part past the store's tries at the folder, which then waits a minute as a
+    // folder something else holds would. It goes as soon as the transfer let go, and the server's delete after it.
+    [Fact]
+    public async Task ADeletedDownloadsFolder_GoesOnceItsTransferLetGo_NotAMinuteLater()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        var stubborn = new StubbornStream();
+        _h.ServeFile("dl_1", DownloadPayloads.Streamed(HttpStatusCode.OK, stubborn, 3000, "\"v1\""));
+        _h.StartQueue();
+        await stubborn.Reading.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+        Assert.True(Directory.Exists(stored.Folder));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
+
+        stubborn.Release();
+
+        // The clock stays where it is.
+        await Until(() => !Directory.Exists(stored.Folder), "the folder went");
+        await Until(() => _h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")).Count == 1, "the server heard of the delete");
+    }
+
     [Fact]
     public async Task AnotherProfilesDownloads_WaitForThatProfile()
     {

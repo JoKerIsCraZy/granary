@@ -1240,7 +1240,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
   a folder something still holds, or whose drive is away, stays in `folder_deletes`, tried again at the next start and at a
   recheck a minute later, then twice as long each time up to `MaxFolderDeleteWait` (10 minutes), unless a row lives in
-  that very folder again. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
+  that very folder again. A transfer that held its part past those tries (slow to stop, on a busy PC) has its folder tried
+  again as it ends, as one not tried yet (`DownloadStore.DeleteFolderNow`, in a write's turn after the pass that found it
+  held); the other folders keep their waits. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
   as above is ever deleted. The log names downloads by id: a file system error's message holds the full path, with the
   Windows user name, so only its kind and code are logged.
 - **`SafeFile`** (`IO/SafeFile`) writes every one of these files, the settings and the mpv folder's: whole beside the
@@ -1330,7 +1332,8 @@ missing their folder.
   beside the loop, one at a time, which the loop does not wait for: a server slow to answer never holds a transfer back. It
   wakes the loop when it ends; one that fails unexpectedly waits a minute.
 - **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
-  `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
+  `Changed` comes before the folder is deleted, so the part is let go first; one that lets go later has the folder tried
+  again as it ends), paused by the viewer or no longer to be
   fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
   starts then either), when the session's profile changes (only the active profile's downloads run; another profile's
   carry on when it is active again), when a sign-out took its account's downloads off this PC (below), and when the queue

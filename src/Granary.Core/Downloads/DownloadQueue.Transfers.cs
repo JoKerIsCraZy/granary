@@ -28,6 +28,13 @@ public sealed partial class DownloadQueue
                 WakeLocked();
             }
             run.Cancel.Dispose();
+            // Its download was deleted: the store tried the folder as the transfer stopped, and a transfer slow to let go of its
+            // part (a busy PC) left it waiting a minute. The part is closed now, so the folder is tried again at once, and the
+            // server's delete it holds back follows. Outside the lock: the store is never called under it.
+            if (_store.Find(run.Key.Scope, run.Key.Id) is null)
+            {
+                _store.DeleteFolderNow(run.Key.Scope, run.Key.Id);
+            }
         }
     }
 
