@@ -90,7 +90,7 @@ internal sealed class RemoteHarness : IAsyncDisposable
     {
         var pipe = new DuplexPipe(pauseAt);
         _pipes.Add(pipe);
-        var phone = new FakePhone(pipe.Phone, key ?? PairingStore.Current!.Key.ToArray());
+        var phone = new FakePhone(pipe.Phone, key ?? KeyOf(PairingStore.Current!));
         _owned.Add(phone);
         var serving = Listener.AcceptAsync(pipe.Connection(NextPeer(), closeWaitsFor));
         if (pair)
@@ -102,6 +102,13 @@ internal sealed class RemoteHarness : IAsyncDisposable
 
     /// <summary>The pairing key the phones scanned.</summary>
     public static byte[] Key => Convert.FromHexString("8f3a1c5e9b0d2f4a6c8e0b1d3f5a7c9e");
+
+    /// <summary>A copy of <paramref name="material"/>'s key, read as Granary reads it: held while it is copied.</summary>
+    public static byte[] KeyOf(PairingMaterial material)
+    {
+        using var key = material.UseKey();
+        return key.Key.ToArray();
+    }
 
     /// <summary>A key no phone of the tests scanned.</summary>
     public static byte[] OtherKey => Convert.FromHexString("0f0e0d0c0b0a09080706050403020100");

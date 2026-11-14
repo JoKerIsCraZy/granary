@@ -276,19 +276,6 @@ public sealed class PairingMaterial : IDisposable
     /// <summary>The key's public id: TXT <c>kid</c> and <c>sealed_hello.keyId</c>. It names the key; it does not tell keys apart.</summary>
     public string KeyId { get; }
 
-    /// <summary>The 16-byte pairing key, for a reader that holds it only for a moment; Granary's own readers use <see cref="UseKey"/>.</summary>
-    internal ReadOnlySpan<byte> Key
-    {
-        get
-        {
-            lock (_gate)
-            {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-                return _key;
-            }
-        }
-    }
-
     /// <summary>The key was replaced and is zeroed.</summary>
     internal bool IsForgotten
     {
@@ -304,7 +291,10 @@ public sealed class PairingMaterial : IDisposable
     /// <summary>Whether two materials are one key: the same material, not merely the same id.</summary>
     public static bool Same(PairingMaterial? left, PairingMaterial? right) => left is not null && ReferenceEquals(left, right);
 
-    /// <summary>Holds the key for one handshake or one pairing link; it stays whole until disposed. Throws once forgotten.</summary>
+    /// <summary>
+    /// Holds the key for one handshake or one pairing link, the only way to read it; it stays whole until disposed. Throws
+    /// once forgotten.
+    /// </summary>
     internal KeyInUse UseKey()
     {
         lock (_gate)
@@ -312,7 +302,7 @@ public sealed class PairingMaterial : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             _inUse++;
         }
-        return new KeyInUse(this);
+        return new KeyInUse(this, new Hold());
     }
 
     /// <summary>Forgets the key: nothing new may read it, and it is zeroed once the last reader is done.</summary>
@@ -352,16 +342,48 @@ public sealed class PairingMaterial : IDisposable
         _zeroed = true;
     }
 
-    /// <summary>The key held for one reader.</summary>
+    /// <summary>
+    /// The key held for one reader. Letting go a second time does nothing, so a reader cannot let go for another and have
+    /// the key zeroed under it; once let go, it reads the key no more.
+    /// </summary>
     internal readonly ref struct KeyInUse
     {
         private readonly PairingMaterial _material;
+        private readonly Hold _hold;
 
-        internal KeyInUse(PairingMaterial material) => _material = material;
+        internal KeyInUse(PairingMaterial material, Hold hold)
+        {
+            _material = material;
+            _hold = hold;
+        }
 
-        public ReadOnlySpan<byte> Key => _material._key;
+        public ReadOnlySpan<byte> Key
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_hold is null || _hold.IsReleased, typeof(KeyInUse));
+                return _material._key;
+            }
+        }
 
-        public void Dispose() => _material.Leave();
+        public void Dispose()
+        {
+            if (_hold is not null && _hold.Release())
+            {
+                _material.Leave();
+            }
+        }
+    }
+
+    /// <summary>One reader's hold on the key, let go once.</summary>
+    internal sealed class Hold
+    {
+        private int _released;
+
+        public bool IsReleased => Volatile.Read(ref _released) != 0;
+
+        /// <summary>Lets go; true only the first time.</summary>
+        public bool Release() => Interlocked.Exchange(ref _released, 1) == 0;
     }
 }
 

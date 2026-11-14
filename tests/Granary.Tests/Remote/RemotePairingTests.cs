@@ -39,9 +39,9 @@ public sealed class RemotePairingTests : IDisposable
         var material = await Create().LoadOrCreateAsync(Token);
 
         Assert.True(Guid.TryParseExact(material.ReceiverId, "D", out _));
-        Assert.Equal(16, material.Key.Length);
-        Assert.Equal(SiloCastSealed.KeyId(material.Key), material.KeyId);
-        Assert.Equal(Convert.ToBase64String(material.Key), _secrets.Values["phone-remote/pairing-key"]);
+        Assert.Equal(16, RemoteHarness.KeyOf(material).Length);
+        Assert.Equal(SiloCastSealed.KeyId(RemoteHarness.KeyOf(material)), material.KeyId);
+        Assert.Equal(Convert.ToBase64String(RemoteHarness.KeyOf(material)), _secrets.Values["phone-remote/pairing-key"]);
         Assert.Equal("phone-remote/pairing-key", RemotePairing.SecretKey);
         Assert.True(File.Exists(IdFile));
         Assert.Equal(Path.Combine(AppPaths.DataDirectory, "phone-remote.json"), RemotePairing.DefaultIdFilePath);
@@ -55,7 +55,7 @@ public sealed class RemotePairingTests : IDisposable
         var again = await Create().LoadOrCreateAsync(Token);
 
         Assert.Equal(first.ReceiverId, again.ReceiverId);
-        Assert.Equal(first.Key.ToArray(), again.Key.ToArray());
+        Assert.Equal(RemoteHarness.KeyOf(first), RemoteHarness.KeyOf(again));
         Assert.Equal(1, _secrets.Writes);
     }
 
@@ -69,7 +69,7 @@ public sealed class RemotePairingTests : IDisposable
         Assert.Equal(["receiver_id"], document.RootElement.EnumerateObject().Select(member => member.Name));
         Assert.Equal(material.ReceiverId, document.RootElement.GetProperty("receiver_id").GetString());
         Assert.Empty(Directory.GetFiles(_directory, "*.tmp"));
-        foreach (string text in KeyTexts(material.Key.ToArray()))
+        foreach (string text in KeyTexts(RemoteHarness.KeyOf(material)))
         {
             Assert.DoesNotContain(text, file, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(text, _logs.All, StringComparison.OrdinalIgnoreCase);
@@ -89,7 +89,7 @@ public sealed class RemotePairingTests : IDisposable
         Assert.Equal(before.ReceiverId, after.ReceiverId);
         Assert.NotEqual(before.KeyId, after.KeyId);
         Assert.Equal(1, changes);
-        Assert.Equal(Convert.ToBase64String(after.Key), _secrets.Values[RemotePairing.SecretKey]);
+        Assert.Equal(Convert.ToBase64String(RemoteHarness.KeyOf(after)), _secrets.Values[RemotePairing.SecretKey]);
         Assert.Equal(after.KeyId, (await pairing.LoadOrCreateAsync(Token)).KeyId);
         Assert.Equal(after.KeyId, (await Create().LoadOrCreateAsync(Token)).KeyId);
     }
@@ -103,7 +103,7 @@ public sealed class RemotePairingTests : IDisposable
         await pairing.ResetKeyAsync(Token);
 
         Assert.True(before.IsForgotten);
-        Assert.Throws<ObjectDisposedException>(() => before.Key.Length);
+        Assert.Throws<ObjectDisposedException>(() => RemoteHarness.KeyOf(before).Length);
         Assert.False(pairing.Current!.IsForgotten);
     }
 
@@ -122,6 +122,35 @@ public sealed class RemotePairingTests : IDisposable
             Assert.Throws<ObjectDisposedException>(() => material.UseKey().Key.Length);
         }
 
+        Assert.True(material.IsForgotten);
+    }
+
+    [Fact]
+    public void AReaderThatLetsGoTwice_DoesNotLetGoForAnother()
+    {
+        var material = new PairingMaterial(AnotherReceiverId, SealedVectors.Key);
+        var firstUse = material.UseKey();
+        var secondUse = material.UseKey();
+
+        firstUse.Dispose();
+        firstUse.Dispose();
+        material.Dispose();
+
+        // The second reader still holds the key whole.
+        Assert.False(material.IsForgotten);
+        Assert.Equal(SealedVectors.Key, secondUse.Key.ToArray());
+        // And the reader that let go reads no more.
+        bool refused = false;
+        try
+        {
+            _ = firstUse.Key.Length;
+        }
+        catch (ObjectDisposedException)
+        {
+            refused = true;
+        }
+        Assert.True(refused);
+        secondUse.Dispose();
         Assert.True(material.IsForgotten);
     }
 
@@ -164,8 +193,8 @@ public sealed class RemotePairingTests : IDisposable
 
         Assert.Equal(first.ReceiverId, again.ReceiverId);
         Assert.NotEqual(first.KeyId, again.KeyId);
-        Assert.Equal(16, again.Key.Length);
-        Assert.Equal(Convert.ToBase64String(again.Key), emptied.Values[RemotePairing.SecretKey]);
+        Assert.Equal(16, RemoteHarness.KeyOf(again).Length);
+        Assert.Equal(Convert.ToBase64String(RemoteHarness.KeyOf(again)), emptied.Values[RemotePairing.SecretKey]);
     }
 
     [Theory]
@@ -181,8 +210,8 @@ public sealed class RemotePairingTests : IDisposable
 
         var material = await Create().LoadOrCreateAsync(Token);
 
-        Assert.Equal(16, material.Key.Length);
-        Assert.Equal(Convert.ToBase64String(material.Key), _secrets.Values[RemotePairing.SecretKey]);
+        Assert.Equal(16, RemoteHarness.KeyOf(material).Length);
+        Assert.Equal(Convert.ToBase64String(RemoteHarness.KeyOf(material)), _secrets.Values[RemotePairing.SecretKey]);
         Assert.Contains(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal)
             && line.Contains("pairing key could not be read", StringComparison.Ordinal));
         if (stored.Length > 0)
@@ -227,7 +256,7 @@ public sealed class RemotePairingTests : IDisposable
         var materials = await Task.WhenAll(first, second);
 
         Assert.Equal(materials[0].ReceiverId, materials[1].ReceiverId);
-        Assert.Equal(materials[0].Key.ToArray(), materials[1].Key.ToArray());
+        Assert.Equal(RemoteHarness.KeyOf(materials[0]), RemoteHarness.KeyOf(materials[1]));
         Assert.Equal(1, _secrets.Writes);
     }
 
@@ -248,7 +277,7 @@ public sealed class RemotePairingTests : IDisposable
         }
         // The material keeps a copy of its own: changing the bytes it was made from changes nothing.
         key[0] ^= 0xFF;
-        Assert.Equal(SealedVectors.Key, material.Key.ToArray());
+        Assert.Equal(SealedVectors.Key, RemoteHarness.KeyOf(material));
         Assert.Equal(SealedVectors.KeyId, material.KeyId);
     }
 

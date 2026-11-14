@@ -318,7 +318,7 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     public async Task ResetPairing_StopsAndStartsWithANewKid_AndTheOldKeyIsRefused()
     {
         await _harness.StartListeningAsync();
-        byte[] oldKey = _harness.PairingStore.Current!.Key.ToArray();
+        byte[] oldKey = RemoteHarness.KeyOf(_harness.PairingStore.Current!);
         string oldKid = _harness.Advertiser.Txt("kid")!;
         var (phone, _, serving) = await _harness.ConnectThroughListenerAsync();
         await phone.HelloAsync(RemoteHarness.ServerId, null);
@@ -422,7 +422,7 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
         var material = _harness.PairingStore.Current!;
         Assert.Equal(
             $"silo://cast?v=2&host=192.168.1.20&port=52817&id={material.ReceiverId}&name=Elena%27s%20PC&server={RemoteHarness.ServerId}"
-            + $"&security=sealed&key={Base32.Encode(material.Key)}",
+            + $"&security=sealed&key={Base32.Encode(RemoteHarness.KeyOf(material))}",
             Receiver.PairingLink);
 
         await _harness.Preferences.SetPhoneRemoteAsync(false);
@@ -449,7 +449,7 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
         await SettledAsync();
         string newLink = Receiver.PairingLink!;
         Assert.NotEqual(oldLink, newLink);
-        Assert.EndsWith($"&key={Base32.Encode(_harness.PairingStore.Current!.Key)}", newLink, StringComparison.Ordinal);
+        Assert.EndsWith($"&key={Base32.Encode(RemoteHarness.KeyOf(_harness.PairingStore.Current!))}", newLink, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -564,7 +564,7 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
         Assert.Contains("port 52817", log, StringComparison.Ordinal);
         var material = _harness.PairingStore.Current!;
         foreach (string secret in new[] { "silo.example", RemoteHarness.ServerId, "192.168.1.20", "Elena", "deploy-1", material.KeyId,
-            material.ReceiverId, Base32.Encode(material.Key), "silo://" })
+            material.ReceiverId, Base32.Encode(RemoteHarness.KeyOf(material)), "silo://" })
         {
             Assert.DoesNotContain(secret, log, StringComparison.OrdinalIgnoreCase);
         }

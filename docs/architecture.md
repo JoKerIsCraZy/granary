@@ -1272,7 +1272,9 @@ What the receiver requires of the code behind its ports (their XML docs say the 
 - Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for
   the rest of the run. Nothing here logs a value.
 - **A reset forgets the old key.** The replaced `PairingMaterial` is zeroed in memory once no handshake still reads it
-  (readers hold it through `UseKey`, so it is never zeroed under one), and nothing reads it after. Whether the PC's key
+  (readers hold it through `UseKey`, so it is never zeroed under one), and nothing reads it after. `UseKey` is the only
+  way to read a key, the tests' included; a reader that lets go twice lets go once, so it cannot let go for another
+  reader, and once it let go it reads the key no more. Whether the PC's key
   is still the one a session or the running receiver uses is asked of the material itself (`PairingMaterial.Same`),
   never of its key id: the id is 32 bits and public.
 
