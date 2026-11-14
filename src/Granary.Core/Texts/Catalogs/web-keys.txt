@@ -248,6 +248,347 @@ watchParty.whoSeen.inProgress
 watchParty.whoSeen.title
 watchParty.whoSeen.watched
 
+# Admin → Activity, in the words of the web's AdminActivity page (pages/AdminActivity.tsx, pages/adminActivityPresentation.ts):
+# src/Granary.App/Views/Admin/AdminActivityView.xaml(.cs) and AdminActivityViewModel*.cs, AdminSessionRow.cs and
+# AdminSessionText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.activity.client.heading
+web.admin.activity.column.route
+web.admin.activity.detail.transcoding
+web.admin.activity.empty.noMatches
+web.admin.activity.filter.clear
+web.admin.activity.filter.movies
+web.admin.activity.filter.placeholder
+web.admin.activity.filter.series
+web.admin.activity.filter.showing
+web.admin.activity.ipLookup.column.firstSeen
+web.admin.activity.ipLookup.column.lastSeen
+web.admin.activity.ipLookup.column.requests
+web.admin.activity.ipLookup.column.user
+web.admin.activity.ipLookup.empty
+web.admin.activity.ipLookup.heading
+web.admin.activity.ipLookup.loadError
+web.admin.activity.ipLookup.loadMore
+web.admin.activity.ipLookup.loadMoreError
+web.admin.activity.ipLookup.placeholder
+web.admin.activity.ipLookup.searching
+web.admin.activity.ipLookup.submit
+web.admin.activity.page.noStreams
+web.admin.activity.page.refresh
+web.admin.activity.page.refreshing
+web.admin.activity.page.subtitle
+web.admin.activity.page.title
+web.admin.activity.route.localServer
+web.admin.activity.route.node
+web.admin.activity.route.proxy
+web.admin.activity.route.server
+web.admin.activity.route.transcode
+web.admin.activity.route.unknownProxyNode
+web.admin.activity.route.unknownTranscodeNode
+web.admin.activity.row.audio
+web.admin.activity.row.container
+web.admin.activity.row.details
+web.admin.activity.row.sessionActive
+web.admin.activity.row.video
+web.admin.activity.summary.byNode
+web.admin.activity.summary.hlsOutput
+web.admin.activity.summary.methodDistribution
+web.admin.activity.summary.methodFilter
+web.admin.activity.summary.methodHeading
+web.admin.activity.summary.methodSegment
+web.admin.activity.summary.unknownOutputContainer
+web.admin.activity.summary.unknownSource
+web.admin.activity.transcodeMode.audioTranscode
+web.admin.activity.transcodeMode.hardware
+web.admin.activity.transcodeMode.pending
+web.admin.activity.transcodeMode.software
+web.admin.activity.transcodeMode.unknown
+web.admin.activity.userFallback
+
+# An administrator's role on Admin → Dashboard's Users, as the web's accountRoleLabel (lib/accountOwner.ts): Role in
+# src/Granary.Core/ViewModels/Admin/AdminText.cs.
+web.admin.common.accounts.role
+
+# The activity indicator at the top right of every page an administrator sees, in the words of the web's ServerActivity
+# (components/ServerActivity.tsx): src/Granary.App/Controls/ServerActivityButton.xaml(.cs) and ServerActivityViewModel.cs,
+# ServerActivityRows.cs and ServerActivityText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.common.serverActivity.connecting
+web.admin.common.serverActivity.disconnected
+web.admin.common.serverActivity.empty
+web.admin.common.serverActivity.failedRecent
+web.admin.common.serverActivity.libraryFallback
+web.admin.common.serverActivity.moreRunning
+web.admin.common.serverActivity.moreScans
+web.admin.common.serverActivity.moreScansAtLeast
+web.admin.common.serverActivity.noPreparations
+web.admin.common.serverActivity.noScans
+web.admin.common.serverActivity.noStreams
+web.admin.common.serverActivity.noTasks
+web.admin.common.serverActivity.paused
+web.admin.common.serverActivity.percent
+web.admin.common.serverActivity.preparing
+web.admin.common.serverActivity.processingFiles
+web.admin.common.serverActivity.progressLabel
+web.admin.common.serverActivity.queued
+web.admin.common.serverActivity.retrying
+web.admin.common.serverActivity.running
+web.admin.common.serverActivity.scanMode.file
+web.admin.common.serverActivity.scanMode.library
+web.admin.common.serverActivity.scanMode.subtree
+web.admin.common.serverActivity.scanProgress
+web.admin.common.serverActivity.scanQueued
+web.admin.common.serverActivity.scanning
+web.admin.common.serverActivity.scans
+web.admin.common.serverActivity.streamCount
+web.admin.common.serverActivity.streams
+web.admin.common.serverActivity.tasks
+web.admin.common.serverActivity.title
+web.admin.common.serverActivity.trigger.active
+web.admin.common.serverActivity.trigger.atLeast
+web.admin.common.serverActivity.trigger.idle
+web.admin.common.serverActivity.viewAll
+
+# Admin → Dashboard, in the words of the web's dashboard (pages/AdminDashboard.tsx, components/admin/dashboard: its widgets,
+# charts, format.ts and range.ts): src/Granary.App/Views/Admin/AdminDashboardView.xaml(.cs), AdminStatTileView.xaml.cs,
+# src/Granary.App/Controls/PlaybackChart.cs and RateChart.cs, and AdminDashboardViewModel*.cs, AdminDashboardRows.cs and
+# AdminText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.dashboard.chart.columnReading
+web.admin.dashboard.format.fileCount
+web.admin.dashboard.page.refresh
+web.admin.dashboard.page.refreshing
+web.admin.dashboard.page.subtitle
+web.admin.dashboard.page.title
+web.admin.dashboard.page.updatedJustNow
+web.admin.dashboard.page.updatedMinutesAgo
+web.admin.dashboard.range.edgeEnd
+web.admin.dashboard.range.edgeStart.day
+web.admin.dashboard.range.phrase.day
+web.admin.dashboard.range.phrase.week
+web.admin.dashboard.range.title.day
+web.admin.dashboard.range.title.week
+web.admin.dashboard.widgetCatalog.healthStrip.title
+web.admin.dashboard.widgetCatalog.nowPlaying.title
+web.admin.dashboard.widgetCatalog.recentActivity.title
+web.admin.dashboard.widgets.activeStreams.label
+web.admin.dashboard.widgets.activeStreams.sessions
+web.admin.dashboard.widgets.egress.chartLabel
+web.admin.dashboard.widgets.egress.empty
+web.admin.dashboard.widgets.egress.loadFailed
+web.admin.dashboard.widgets.egress.peak
+web.admin.dashboard.widgets.egress.title
+web.admin.dashboard.widgets.egress.total
+web.admin.dashboard.widgets.egressNow.label
+web.admin.dashboard.widgets.egressNow.source
+web.admin.dashboard.widgets.egressNow.waiting
+web.admin.dashboard.widgets.healthStrip.dirtyBuild
+web.admin.dashboard.widgets.healthStrip.errors24h
+web.admin.dashboard.widgets.healthStrip.loadFailed
+web.admin.dashboard.widgets.healthStrip.nodes
+web.admin.dashboard.widgets.healthStrip.nodesHealthy
+web.admin.dashboard.widgets.healthStrip.nodesLocal
+web.admin.dashboard.widgets.healthStrip.nodesNone
+web.admin.dashboard.widgets.healthStrip.nodesUnavailable
+web.admin.dashboard.widgets.healthStrip.notConfigured
+web.admin.dashboard.widgets.healthStrip.ok
+web.admin.dashboard.widgets.healthStrip.optional
+web.admin.dashboard.widgets.healthStrip.restartRequired
+web.admin.dashboard.widgets.healthStrip.unreachable
+web.admin.dashboard.widgets.healthStrip.uptime
+web.admin.dashboard.widgets.healthStrip.version
+web.admin.dashboard.widgets.healthStrip.versionUnknown
+web.admin.dashboard.widgets.healthStrip.warnings
+web.admin.dashboard.widgets.libraries.disabled
+web.admin.dashboard.widgets.libraries.empty
+web.admin.dashboard.widgets.libraries.enabled
+web.admin.dashboard.widgets.libraries.loadFailed
+web.admin.dashboard.widgets.libraries.title
+web.admin.dashboard.widgets.libraries.typeAndPaths
+web.admin.dashboard.widgets.movies.label
+web.admin.dashboard.widgets.nowPlaying.episodeFallback
+web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries
+web.admin.dashboard.widgets.nowPlaying.fileFallback
+web.admin.dashboard.widgets.nowPlaying.idle
+web.admin.dashboard.widgets.nowPlaying.justNow
+web.admin.dashboard.widgets.nowPlaying.loadFailed
+web.admin.dashboard.widgets.nowPlaying.moreStreams
+web.admin.dashboard.widgets.nowPlaying.movie
+web.admin.dashboard.widgets.nowPlaying.paused
+web.admin.dashboard.widgets.nowPlaying.series
+web.admin.dashboard.widgets.nowPlaying.title
+web.admin.dashboard.widgets.nowPlaying.userFallback
+web.admin.dashboard.widgets.nowPlaying.viewActivity
+web.admin.dashboard.widgets.nowPlaying.viewAll
+web.admin.dashboard.widgets.playbackActivity.chartLabelHourly
+web.admin.dashboard.widgets.playbackActivity.empty
+web.admin.dashboard.widgets.playbackActivity.emptyDetail
+web.admin.dashboard.widgets.playbackActivity.loadFailed
+web.admin.dashboard.widgets.playbackActivity.series.directPlay
+web.admin.dashboard.widgets.playbackActivity.series.directStream
+web.admin.dashboard.widgets.playbackActivity.series.transcode
+web.admin.dashboard.widgets.playbackActivity.sessionCount
+web.admin.dashboard.widgets.playbackActivity.title
+web.admin.dashboard.widgets.playbackActivity.totalLabel
+web.admin.dashboard.widgets.profilesActive.detail
+web.admin.dashboard.widgets.profilesActive.label
+web.admin.dashboard.widgets.recentActivity.empty
+web.admin.dashboard.widgets.recentActivity.justNow
+web.admin.dashboard.widgets.recentActivity.loadFailed
+web.admin.dashboard.widgets.recentActivity.startedWatching
+web.admin.dashboard.widgets.recentActivity.startedWatchingWithProfile
+web.admin.dashboard.widgets.recentActivity.title
+web.admin.dashboard.widgets.recentActivity.viewAll
+web.admin.dashboard.widgets.shows.label
+web.admin.dashboard.widgets.statTile.unavailable
+web.admin.dashboard.widgets.storage.label
+web.admin.dashboard.widgets.topProfiles.empty
+web.admin.dashboard.widgets.topProfiles.loadFailed
+web.admin.dashboard.widgets.topProfiles.playCount
+web.admin.dashboard.widgets.topProfiles.title
+web.admin.dashboard.widgets.topProfiles.userFallback
+web.admin.dashboard.widgets.topTitles.empty
+web.admin.dashboard.widgets.topTitles.loadFailed
+web.admin.dashboard.widgets.topTitles.playCount
+web.admin.dashboard.widgets.topTitles.title
+web.admin.dashboard.widgets.users.active
+web.admin.dashboard.widgets.users.disabled
+web.admin.dashboard.widgets.users.empty
+web.admin.dashboard.widgets.users.justNow
+web.admin.dashboard.widgets.users.lastActive
+web.admin.dashboard.widgets.users.loadFailed
+web.admin.dashboard.widgets.users.status
+web.admin.dashboard.widgets.users.title
+web.admin.dashboard.widgets.users.user
+
+# More of the activity indicator's words: a download being prepared, as the web's
+# pages/adminDownloadPreparationPresentation.ts words it, as above under web.admin.common.serverActivity.connecting.
+web.admin.downloads.preparation.compactEpisodeTitle
+web.admin.downloads.preparation.episodeCode
+web.admin.downloads.preparation.fileFallback
+web.admin.downloads.preparation.kind.remux
+web.admin.downloads.preparation.kind.transcode
+web.admin.downloads.preparation.kind.transcodeTarget
+web.admin.downloads.preparation.remaining.hours
+web.admin.downloads.preparation.remaining.hoursMinutes
+web.admin.downloads.preparation.remaining.minutes
+web.admin.downloads.preparation.remaining.underOneMinute
+web.admin.downloads.preparation.running.encoding
+web.admin.downloads.preparation.running.remuxing
+web.admin.downloads.preparation.worker.localServer
+web.admin.downloads.preparation.worker.node
+web.admin.downloads.preparation.worker.nodeWithId
+
+# More of Admin → Activity's words: a stream's commands and their answers, as the web's AdminSessionActions
+# (components/AdminSessionActions.tsx), as above under web.admin.activity.client.heading.
+web.admin.sessions.playback.action.message
+web.admin.sessions.playback.action.pause
+web.admin.sessions.playback.action.resume
+web.admin.sessions.playback.action.stop
+web.admin.sessions.playback.action.terminate
+web.admin.sessions.playback.failure.conflictReason
+web.admin.sessions.playback.failure.ended
+web.admin.sessions.playback.failure.generic
+web.admin.sessions.playback.failure.notApplied
+web.admin.sessions.playback.failure.unavailable
+web.admin.sessions.playback.menu.ariaLabel
+web.admin.sessions.playback.messageDialog.description
+web.admin.sessions.playback.messageDialog.placeholder
+web.admin.sessions.playback.messageDialog.send
+web.admin.sessions.playback.messageDialog.title
+web.admin.sessions.playback.toast.messageRequired
+web.admin.sessions.playback.toast.messageSent
+web.admin.sessions.playback.toast.pauseFallback
+web.admin.sessions.playback.toast.pauseSent
+web.admin.sessions.playback.toast.resumeFallback
+web.admin.sessions.playback.toast.resumeSent
+web.admin.sessions.playback.toast.stopFallback
+web.admin.sessions.playback.toast.stopSent
+web.admin.sessions.playback.toast.terminateReceipt
+web.admin.sessions.playback.unsupportedControl
+
+# The admin area's own sidebar, in the words of the web's AdminSidebar and admin navigation (components/AdminSidebar.tsx,
+# lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml and AdminSidebarViewModel.cs.
+web.admin.shell.mobileHeader.eyebrow
+web.admin.shell.nav.page.activity.label
+web.admin.shell.nav.page.dashboard.label
+web.admin.shell.nav.section.monitor
+web.admin.shell.sidebar.backToApp
+web.admin.shell.sidebar.build.dev
+web.admin.shell.sidebar.build.heading
+web.admin.shell.sidebar.build.loadFailed
+web.admin.shell.sidebar.build.loading
+web.admin.shell.sidebar.liveSessions
+web.admin.shell.sidebar.navigation
+
+# More of the activity indicator's words: a running task's progress (lib/taskProgress.ts) and the names of Silo's own
+# tasks, as the web's taskText (lib/taskText.ts) shows them by key, as above under
+# web.admin.common.serverActivity.connecting.
+web.admin.tasks.lib.taskProgress.percent
+web.admin.tasks.task.autoscan_poll.name
+web.admin.tasks.task.autoscan_webhook_retry.name
+web.admin.tasks.task.backfill_ebook_metadata.name
+web.admin.tasks.task.backfill_hdr10_plus.name
+web.admin.tasks.task.backfill_matroska_track_numbers.name
+web.admin.tasks.task.backfill_media_item_aliases.name
+web.admin.tasks.task.backfill_metadata_images.name
+web.admin.tasks.task.backup.name
+web.admin.tasks.task.bulk_metadata_enrichment.name
+web.admin.tasks.task.cache_metadata_images.name
+web.admin.tasks.task.chapter_thumbnail_backfill.name
+web.admin.tasks.task.check_plugin_updates.name
+web.admin.tasks.task.cleanup_activity_log.name
+web.admin.tasks.task.cleanup_artwork_revisions.name
+web.admin.tasks.task.cleanup_auth_sessions.name
+web.admin.tasks.task.cleanup_autoscan_events.name
+web.admin.tasks.task.cleanup_catalog_search_index_events.name
+web.admin.tasks.task.cleanup_chapter_thumbnail_originals.name
+web.admin.tasks.task.cleanup_client_diagnostics.name
+web.admin.tasks.task.cleanup_device_logins.name
+web.admin.tasks.task.cleanup_oauth_flows.name
+web.admin.tasks.task.cleanup_operational_log.name
+web.admin.tasks.task.cleanup_orphaned_media_items.name
+web.admin.tasks.task.cleanup_policy_decision_log.name
+web.admin.tasks.task.cleanup_removed_media_images.name
+web.admin.tasks.task.cleanup_task_history.name
+web.admin.tasks.task.contribute_markers.name
+web.admin.tasks.task.database_maintenance.name
+web.admin.tasks.task.detect_intro_markers.name
+web.admin.tasks.task.encode_download_artifacts.name
+web.admin.tasks.task.generate_extra_stills.name
+web.admin.tasks.task.match_media.name
+web.admin.tasks.task.notifications_retention.name
+web.admin.tasks.task.queue_seek_previews.name
+web.admin.tasks.task.rebuild_catalog_search_index.name
+web.admin.tasks.task.rebuild_release_interest.name
+web.admin.tasks.task.recheck_external_identities.name
+web.admin.tasks.task.reconcile_artwork_cache.name
+web.admin.tasks.task.reconcile_requests.name
+web.admin.tasks.task.reconcile_watch_history.name
+web.admin.tasks.task.refresh_all_library_metadata.name
+web.admin.tasks.task.refresh_anime_ids.name
+web.admin.tasks.task.refresh_metadata.name
+web.admin.tasks.task.refresh_request_discover_lists.name
+web.admin.tasks.task.refresh_request_downloads.name
+web.admin.tasks.task.refresh_seasonal_lists.name
+web.admin.tasks.task.refresh_series_air_dates.name
+web.admin.tasks.task.refresh_trending_discover.name
+web.admin.tasks.task.release_stored_artwork.name
+web.admin.tasks.task.repair_provider_id_integrity.name
+web.admin.tasks.task.scan_libraries.name
+web.admin.tasks.task.seed_content_availability.name
+web.admin.tasks.task.setting_mutations_retention.name
+web.admin.tasks.task.summarize_api_usage.name
+web.admin.tasks.task.sweep_artwork_storage.name
+web.admin.tasks.task.sweep_orphaned_media_images.name
+web.admin.tasks.task.sync_audiobook_metadata.name
+web.admin.tasks.task.sync_catalog_search_index.name
+web.admin.tasks.task.sync_collections.name
+web.admin.tasks.task.sync_ebook_metadata.name
+web.admin.tasks.task.sync_manga_metadata.name
+web.admin.tasks.task.sync_markers.name
+web.admin.tasks.task.sync_movie_box_sets.name
+web.admin.tasks.task.sync_podcast_feeds.name
+web.admin.tasks.task.sync_user_collections.name
+web.admin.tasks.task.sync_watch_providers.name
+
 # More of the collection editor's words, as above under catalog.sort.author.
 # More of the Requests words, as above under requests.error.create.
 web.audiobooks.duration.hours
@@ -800,6 +1141,23 @@ web.collections.types.kindSynced
 # More of the collection editor's words, as above under catalog.sort.author.
 web.collections.whereItShows.heading
 
+# More of Admin's words: a play method, and a session's title and kind on Activity, as the web's
+# pages/adminActivityPresentation.ts, as above under web.admin.activity.client.heading.
+web.common.activity.method.direct.label
+web.common.activity.method.directStream.label
+web.common.activity.method.remux.label
+web.common.activity.method.transcode.label
+web.common.activity.method.unknown.label
+web.common.activity.subtitle.movie
+web.common.activity.subtitle.series
+web.common.activity.title.file
+
+# More of Admin → Dashboard's words: a time ago, as the web's formatRelativeTime (lib/date.ts), as above under
+# web.admin.dashboard.chart.columnReading.
+web.common.date.daysAgo
+web.common.date.hoursAgo
+web.common.date.minutesAgo
+
 # A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
 # src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
 web.common.devicePlatform.kind.desktop
@@ -811,6 +1169,16 @@ web.common.devicePlatform.kind.unknown
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
+
+# More of Admin → Dashboard's words: a library's kind, as the web's libraryTypeLabel
+# (components/admin/libraries/libraryTypes.ts), as above under web.admin.dashboard.chart.columnReading.
+web.common.libraryType.audiobooks
+web.common.libraryType.ebooks
+web.common.libraryType.manga
+web.common.libraryType.mixed
+web.common.libraryType.movies
+web.common.libraryType.podcasts
+web.common.libraryType.series
 
 # More of the Requests words, as above under requests.error.create.
 # More of a TMDB title's page's words, as above under requests.error.create.
@@ -1350,6 +1718,11 @@ web.player.audioMenu.trigger
 # More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.bar.pause
 web.player.bar.play
+
+# More of Admin → Activity's words: a stream's position bar, as above under web.admin.activity.client.heading.
+web.player.bar.positionLabel
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.bar.returnTitle
 web.player.bar.skipBackTitle
 web.player.bar.skipForwardTitle
@@ -1439,6 +1812,11 @@ web.player.room.noticeTitle
 web.player.room.onlyHostCanControl
 web.player.room.onlyHostCanSeek
 web.player.room.reconnecting
+
+# More of Admin → Activity's words: where a stream's viewer is, as the web's route badge (components/PlaybackRouteBadges.tsx),
+# as above under web.admin.activity.client.heading.
+web.player.routeBadge.local
+web.player.routeBadge.remote
 
 # More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.seekBar.dragMarkerEnd

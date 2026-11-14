@@ -1037,6 +1037,2807 @@
       "value": "已观看"
     }
   ],
+  "web.admin.activity.client.heading": [
+    {
+      "type": 0,
+      "value": "客户端"
+    }
+  ],
+  "web.admin.activity.column.route": [
+    {
+      "type": 0,
+      "value": "路由"
+    }
+  ],
+  "web.admin.activity.detail.transcoding": [
+    {
+      "type": 0,
+      "value": "正在转码"
+    }
+  ],
+  "web.admin.activity.empty.noMatches": [
+    {
+      "type": 0,
+      "value": "没有符合筛选条件的串流"
+    }
+  ],
+  "web.admin.activity.filter.clear": [
+    {
+      "type": 0,
+      "value": "清除筛选"
+    }
+  ],
+  "web.admin.activity.filter.movies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.admin.activity.filter.placeholder": [
+    {
+      "type": 0,
+      "value": "按用户、媒体、客户端或节点筛选……"
+    }
+  ],
+  "web.admin.activity.filter.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.admin.activity.filter.showing": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "显示"
+            },
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "个，共"
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "个串流"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.firstSeen": [
+    {
+      "type": 0,
+      "value": "首次出现"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.lastSeen": [
+    {
+      "type": 0,
+      "value": "最后出现"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.requests": [
+    {
+      "type": 0,
+      "value": "请求"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.user": [
+    {
+      "type": 0,
+      "value": "用户"
+    }
+  ],
+  "web.admin.activity.ipLookup.empty": [
+    {
+      "type": 0,
+      "value": "过去30天内没有找到使用"
+    },
+    {
+      "type": 1,
+      "value": "ip"
+    },
+    {
+      "type": 0,
+      "value": "的用户。"
+    }
+  ],
+  "web.admin.activity.ipLookup.heading": [
+    {
+      "type": 0,
+      "value": "IP查询"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadError": [
+    {
+      "type": 0,
+      "value": "无法加载IP历史记录。"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMore": [
+    {
+      "type": 0,
+      "value": "加载更多"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMoreError": [
+    {
+      "type": 0,
+      "value": "无法加载更多历史记录。"
+    }
+  ],
+  "web.admin.activity.ipLookup.placeholder": [
+    {
+      "type": 0,
+      "value": "IP查询（例如203.0.113.50）"
+    }
+  ],
+  "web.admin.activity.ipLookup.searching": [
+    {
+      "type": 0,
+      "value": "正在搜索……"
+    }
+  ],
+  "web.admin.activity.ipLookup.submit": [
+    {
+      "type": 0,
+      "value": "查询"
+    }
+  ],
+  "web.admin.activity.page.noStreams": [
+    {
+      "type": 0,
+      "value": "没有活动串流"
+    }
+  ],
+  "web.admin.activity.page.refresh": [
+    {
+      "type": 0,
+      "value": "刷新"
+    }
+  ],
+  "web.admin.activity.page.refreshing": [
+    {
+      "type": 0,
+      "value": "正在刷新……"
+    }
+  ],
+  "web.admin.activity.page.subtitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个活动串流"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    },
+    {
+      "type": 0,
+      "value": "，分布在"
+    },
+    {
+      "type": 6,
+      "value": "nodes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "nodes_text"
+            },
+            {
+              "type": 0,
+              "value": "个节点"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    },
+    {
+      "type": 0,
+      "value": "上"
+    }
+  ],
+  "web.admin.activity.page.title": [
+    {
+      "type": 0,
+      "value": "活动"
+    }
+  ],
+  "web.admin.activity.route.localServer": [
+    {
+      "type": 0,
+      "value": "本地服务器"
+    }
+  ],
+  "web.admin.activity.route.node": [
+    {
+      "type": 0,
+      "value": "节点"
+    }
+  ],
+  "web.admin.activity.route.proxy": [
+    {
+      "type": 0,
+      "value": "代理"
+    }
+  ],
+  "web.admin.activity.route.server": [
+    {
+      "type": 0,
+      "value": "服务器"
+    }
+  ],
+  "web.admin.activity.route.transcode": [
+    {
+      "type": 0,
+      "value": "转码"
+    }
+  ],
+  "web.admin.activity.route.unknownProxyNode": [
+    {
+      "type": 0,
+      "value": "未知代理节点"
+    }
+  ],
+  "web.admin.activity.route.unknownTranscodeNode": [
+    {
+      "type": 0,
+      "value": "未知转码节点"
+    }
+  ],
+  "web.admin.activity.row.audio": [
+    {
+      "type": 0,
+      "value": "音频"
+    }
+  ],
+  "web.admin.activity.row.container": [
+    {
+      "type": 0,
+      "value": "容器"
+    }
+  ],
+  "web.admin.activity.row.details": [
+    {
+      "type": 0,
+      "value": "详情"
+    }
+  ],
+  "web.admin.activity.row.sessionActive": [
+    {
+      "type": 0,
+      "value": "会话已持续"
+    },
+    {
+      "type": 1,
+      "value": "elapsed"
+    }
+  ],
+  "web.admin.activity.row.video": [
+    {
+      "type": 0,
+      "value": "视频"
+    }
+  ],
+  "web.admin.activity.summary.byNode": [
+    {
+      "type": 0,
+      "value": "按路由节点"
+    }
+  ],
+  "web.admin.activity.summary.hlsOutput": [
+    {
+      "type": 1,
+      "value": "container"
+    },
+    {
+      "type": 0,
+      "value": "（HLS）"
+    }
+  ],
+  "web.admin.activity.summary.methodDistribution": [
+    {
+      "type": 0,
+      "value": "播放方式分布"
+    }
+  ],
+  "web.admin.activity.summary.methodFilter": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.methodHeading": [
+    {
+      "type": 0,
+      "value": "播放方式"
+    }
+  ],
+  "web.admin.activity.summary.methodSegment": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": "："
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.unknownOutputContainer": [
+    {
+      "type": 0,
+      "value": "未知输出容器"
+    }
+  ],
+  "web.admin.activity.summary.unknownSource": [
+    {
+      "type": 0,
+      "value": "未知来源"
+    }
+  ],
+  "web.admin.activity.transcodeMode.audioTranscode": [
+    {
+      "type": 0,
+      "value": "音频转码"
+    }
+  ],
+  "web.admin.activity.transcodeMode.hardware": [
+    {
+      "type": 0,
+      "value": "硬件"
+    },
+    {
+      "type": 1,
+      "value": "accel"
+    }
+  ],
+  "web.admin.activity.transcodeMode.pending": [
+    {
+      "type": 0,
+      "value": "硬件/软件待定"
+    }
+  ],
+  "web.admin.activity.transcodeMode.software": [
+    {
+      "type": 0,
+      "value": "软件"
+    }
+  ],
+  "web.admin.activity.transcodeMode.unknown": [
+    {
+      "type": 0,
+      "value": "硬件/软件未知"
+    }
+  ],
+  "web.admin.activity.userFallback": [
+    {
+      "type": 0,
+      "value": "用户#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.accounts.role": [
+    {
+      "type": 5,
+      "value": "role",
+      "options": {
+        "owner": {
+          "value": [
+            {
+              "type": 0,
+              "value": "所有者"
+            }
+          ]
+        },
+        "admin": {
+          "value": [
+            {
+              "type": 0,
+              "value": "管理员"
+            }
+          ]
+        },
+        "user": {
+          "value": [
+            {
+              "type": 0,
+              "value": "用户"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "role"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.admin.common.serverActivity.connecting": [
+    {
+      "type": 0,
+      "value": "正在连接……"
+    }
+  ],
+  "web.admin.common.serverActivity.disconnected": [
+    {
+      "type": 0,
+      "value": "已断开连接"
+    }
+  ],
+  "web.admin.common.serverActivity.empty": [
+    {
+      "type": 0,
+      "value": "服务器当前无活动"
+    }
+  ],
+  "web.admin.common.serverActivity.failedRecent": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "过去24小时内有"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项失败"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.libraryFallback": [
+    {
+      "type": 0,
+      "value": "媒体库#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.serverActivity.moreRunning": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "另有"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项正在运行"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScans": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "另有"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项扫描在队列中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScansAtLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "另有至少"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项扫描在队列中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.noPreparations": [
+    {
+      "type": 0,
+      "value": "没有正在准备的下载"
+    }
+  ],
+  "web.admin.common.serverActivity.noScans": [
+    {
+      "type": 0,
+      "value": "没有正在进行的扫描"
+    }
+  ],
+  "web.admin.common.serverActivity.noStreams": [
+    {
+      "type": 0,
+      "value": "没有正在进行的串流"
+    }
+  ],
+  "web.admin.common.serverActivity.noTasks": [
+    {
+      "type": 0,
+      "value": "没有正在运行的任务"
+    }
+  ],
+  "web.admin.common.serverActivity.paused": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项已暂停"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.admin.common.serverActivity.preparing": [
+    {
+      "type": 0,
+      "value": "正在准备下载"
+    }
+  ],
+  "web.admin.common.serverActivity.processingFiles": [
+    {
+      "type": 0,
+      "value": "正在处理文件"
+    }
+  ],
+  "web.admin.common.serverActivity.progressLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "进度"
+    }
+  ],
+  "web.admin.common.serverActivity.queued": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项排队中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.retrying": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项等待重试"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.running": [
+    {
+      "type": 0,
+      "value": "正在运行"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.file": [
+    {
+      "type": 0,
+      "value": "单个文件"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.library": [
+    {
+      "type": 0,
+      "value": "整个媒体库"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.subtree": [
+    {
+      "type": 0,
+      "value": "子文件夹"
+    }
+  ],
+  "web.admin.common.serverActivity.scanProgress": [
+    {
+      "type": 1,
+      "value": "message"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "processed"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "（"
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%）"
+    }
+  ],
+  "web.admin.common.serverActivity.scanQueued": [
+    {
+      "type": 0,
+      "value": "排队中"
+    }
+  ],
+  "web.admin.common.serverActivity.scanning": [
+    {
+      "type": 0,
+      "value": "正在扫描……"
+    }
+  ],
+  "web.admin.common.serverActivity.scans": [
+    {
+      "type": 0,
+      "value": "扫描"
+    }
+  ],
+  "web.admin.common.serverActivity.streamCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个"
+            },
+            {
+              "type": 1,
+              "value": "method"
+            },
+            {
+              "type": 0,
+              "value": "串流"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.streams": [
+    {
+      "type": 0,
+      "value": "串流"
+    }
+  ],
+  "web.admin.common.serverActivity.tasks": [
+    {
+      "type": 0,
+      "value": "任务"
+    }
+  ],
+  "web.admin.common.serverActivity.title": [
+    {
+      "type": 0,
+      "value": "服务器活动"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.active": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "服务器活动："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项进行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.atLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "服务器活动：至少"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "项进行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.idle": [
+    {
+      "type": 0,
+      "value": "服务器活动"
+    }
+  ],
+  "web.admin.common.serverActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "查看全部"
+    }
+  ],
+  "web.admin.dashboard.chart.columnReading": [
+    {
+      "type": 1,
+      "value": "bucket"
+    },
+    {
+      "type": 0,
+      "value": "："
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.format.fileCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个文件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.page.refresh": [
+    {
+      "type": 0,
+      "value": "刷新"
+    }
+  ],
+  "web.admin.dashboard.page.refreshing": [
+    {
+      "type": 0,
+      "value": "正在刷新……"
+    }
+  ],
+  "web.admin.dashboard.page.subtitle": [
+    {
+      "type": 0,
+      "value": "在一个视图中查看实时会话、内容健康状况和服务器活动。"
+    }
+  ],
+  "web.admin.dashboard.page.title": [
+    {
+      "type": 0,
+      "value": "仪表板"
+    }
+  ],
+  "web.admin.dashboard.page.updatedJustNow": [
+    {
+      "type": 0,
+      "value": "不到1分钟前更新"
+    }
+  ],
+  "web.admin.dashboard.page.updatedMinutesAgo": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": "分钟前更新"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.range.edgeEnd": [
+    {
+      "type": 0,
+      "value": "现在"
+    }
+  ],
+  "web.admin.dashboard.range.edgeStart.day": [
+    {
+      "type": 0,
+      "value": "24小时前"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.day": [
+    {
+      "type": 0,
+      "value": "最近24小时"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.week": [
+    {
+      "type": 0,
+      "value": "最近7天"
+    }
+  ],
+  "web.admin.dashboard.range.title.day": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " · 最近24小时"
+    }
+  ],
+  "web.admin.dashboard.range.title.week": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " · 最近7天"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.healthStrip.title": [
+    {
+      "type": 0,
+      "value": "服务器健康状况"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "正在播放"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "最近活动"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.label": [
+    {
+      "type": 0,
+      "value": "活跃串流"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.sessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个会话"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.chartLabel": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "内的出站流量，单位为兆比特每秒"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.empty": [
+    {
+      "type": 0,
+      "value": "尚无出站流量采样"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载出站流量历史。"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.peak": [
+    {
+      "type": 0,
+      "value": "峰值"
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.title": [
+    {
+      "type": 0,
+      "value": "出站流量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.total": [
+    {
+      "type": 0,
+      "value": "总计"
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.label": [
+    {
+      "type": 0,
+      "value": "当前出站流量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.source": [
+    {
+      "type": 0,
+      "value": "节点+服务器出站流量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.waiting": [
+    {
+      "type": 0,
+      "value": "正在等待采样"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.dirtyBuild": [
+    {
+      "type": 0,
+      "value": "含未提交更改的构建"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.errors24h": [
+    {
+      "type": 0,
+      "value": "错误 · 24小时"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载服务器健康状况。"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodes": [
+    {
+      "type": 0,
+      "value": "节点"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesHealthy": [
+    {
+      "type": 0,
+      "value": "健康"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesLocal": [
+    {
+      "type": 0,
+      "value": "由此服务器转码"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesNone": [
+    {
+      "type": 0,
+      "value": "无"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesUnavailable": [
+    {
+      "type": 0,
+      "value": "不可用"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.notConfigured": [
+    {
+      "type": 0,
+      "value": "未配置"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.ok": [
+    {
+      "type": 0,
+      "value": "正常"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.optional": [
+    {
+      "type": 0,
+      "value": "可选"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.restartRequired": [
+    {
+      "type": 0,
+      "value": "需要重启"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.unreachable": [
+    {
+      "type": 0,
+      "value": "无法连接"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.uptime": [
+    {
+      "type": 0,
+      "value": "运行时间"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.version": [
+    {
+      "type": 0,
+      "value": "版本"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.versionUnknown": [
+    {
+      "type": 0,
+      "value": "未知"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.warnings": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个警告"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.disabled": [
+    {
+      "type": 0,
+      "value": "媒体库已停用"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.empty": [
+    {
+      "type": 0,
+      "value": "尚未配置媒体库。"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.enabled": [
+    {
+      "type": 0,
+      "value": "媒体库已启用"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载媒体库。"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.title": [
+    {
+      "type": 0,
+      "value": "媒体库"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.typeAndPaths": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "type"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个路径"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.movies.label": [
+    {
+      "type": 0,
+      "value": "电影总数"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeFallback": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "series"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.fileFallback": [
+    {
+      "type": 0,
+      "value": "文件#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.idle": [
+    {
+      "type": 0,
+      "value": "当前没有正在播放的内容"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.justNow": [
+    {
+      "type": 0,
+      "value": "刚刚"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载串流。"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.moreStreams": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "+"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个其他活跃串流"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.movie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.paused": [
+    {
+      "type": 0,
+      "value": "已暂停"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "正在播放"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.userFallback": [
+    {
+      "type": 0,
+      "value": "用户#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewActivity": [
+    {
+      "type": 0,
+      "value": "查看活动 ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewAll": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "查看全部"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个串流 ›"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.chartLabelHourly": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "内每小时的播放会话数（按播放方式）"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "内没有播放"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.emptyDetail": [
+    {
+      "type": 0,
+      "value": "有人开始观看后，会话就会显示在这里。"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载播放活动。"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directPlay": [
+    {
+      "type": 0,
+      "value": "直接播放"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directStream": [
+    {
+      "type": 0,
+      "value": "直接串流"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.transcode": [
+    {
+      "type": 0,
+      "value": "转码"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.sessionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个会话"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.title": [
+    {
+      "type": 0,
+      "value": "播放活动"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.totalLabel": [
+    {
+      "type": 0,
+      "value": "会话"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.detail": [
+    {
+      "type": 0,
+      "value": "在此服务器上观看过"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.label": [
+    {
+      "type": 0,
+      "value": "个人资料 · 24小时"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.empty": [
+    {
+      "type": 0,
+      "value": "暂无最近活动。"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.justNow": [
+    {
+      "type": 0,
+      "value": "刚刚"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载活动。"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatching": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "开始观看"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatchingWithProfile": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "pill",
+      "children": [
+        {
+          "type": 1,
+          "value": "profile"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "开始观看"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "最近活动"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "查看全部 ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.shows.label": [
+    {
+      "type": 0,
+      "value": "剧集总数"
+    }
+  ],
+  "web.admin.dashboard.widgets.statTile.unavailable": [
+    {
+      "type": 0,
+      "value": "不可用"
+    }
+  ],
+  "web.admin.dashboard.widgets.storage.label": [
+    {
+      "type": 0,
+      "value": "存储"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "内没有个人资料活动"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载个人资料活动。"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "次播放"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.title": [
+    {
+      "type": 0,
+      "value": "最活跃的个人资料"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.userFallback": [
+    {
+      "type": 0,
+      "value": "用户#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "内没有播放"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载热门作品。"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "次播放"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.title": [
+    {
+      "type": 0,
+      "value": "热门作品"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.active": [
+    {
+      "type": 0,
+      "value": "已启用"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.disabled": [
+    {
+      "type": 0,
+      "value": "已停用"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.empty": [
+    {
+      "type": 0,
+      "value": "没有用户。"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.justNow": [
+    {
+      "type": 0,
+      "value": "刚刚"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.lastActive": [
+    {
+      "type": 0,
+      "value": "上次活动"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.loadFailed": [
+    {
+      "type": 0,
+      "value": "无法加载用户。"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.status": [
+    {
+      "type": 0,
+      "value": "状态"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.title": [
+    {
+      "type": 0,
+      "value": "用户"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.user": [
+    {
+      "type": 0,
+      "value": "用户"
+    }
+  ],
+  "web.admin.downloads.preparation.compactEpisodeTitle": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.downloads.preparation.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.downloads.preparation.fileFallback": [
+    {
+      "type": 0,
+      "value": "文件#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.remux": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcode": [
+    {
+      "type": 0,
+      "value": "转码"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcodeTarget": [
+    {
+      "type": 0,
+      "value": "转码为"
+    },
+    {
+      "type": 1,
+      "value": "target"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hours": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "剩余约"
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": "小时"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hoursMinutes": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "剩余约"
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": "小时"
+            },
+            {
+              "type": 1,
+              "value": "minutes"
+            },
+            {
+              "type": 0,
+              "value": "分钟"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.minutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "剩余约"
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "分钟"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.underOneMinute": [
+    {
+      "type": 0,
+      "value": "剩余不到1分钟"
+    }
+  ],
+  "web.admin.downloads.preparation.running.encoding": [
+    {
+      "type": 0,
+      "value": "正在编码"
+    }
+  ],
+  "web.admin.downloads.preparation.running.remuxing": [
+    {
+      "type": 0,
+      "value": "正在Remux"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.localServer": [
+    {
+      "type": 0,
+      "value": "本地服务器"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.node": [
+    {
+      "type": 0,
+      "value": "节点"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.nodeWithId": [
+    {
+      "type": 0,
+      "value": "节点"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.sessions.playback.action.message": [
+    {
+      "type": 0,
+      "value": "发送消息……"
+    }
+  ],
+  "web.admin.sessions.playback.action.pause": [
+    {
+      "type": 0,
+      "value": "暂停"
+    }
+  ],
+  "web.admin.sessions.playback.action.resume": [
+    {
+      "type": 0,
+      "value": "继续"
+    }
+  ],
+  "web.admin.sessions.playback.action.stop": [
+    {
+      "type": 0,
+      "value": "停止"
+    }
+  ],
+  "web.admin.sessions.playback.action.terminate": [
+    {
+      "type": 0,
+      "value": "终止"
+    }
+  ],
+  "web.admin.sessions.playback.failure.conflictReason": [
+    {
+      "type": 0,
+      "value": "会话状态已更改"
+    }
+  ],
+  "web.admin.sessions.playback.failure.ended": [
+    {
+      "type": 0,
+      "value": "此播放会话已结束。"
+    }
+  ],
+  "web.admin.sessions.playback.failure.generic": [
+    {
+      "type": 0,
+      "value": "无法发送会话命令"
+    }
+  ],
+  "web.admin.sessions.playback.failure.notApplied": [
+    {
+      "type": 5,
+      "value": "action",
+      "options": {
+        "pause": {
+          "value": [
+            {
+              "type": 0,
+              "value": "暂停"
+            }
+          ]
+        },
+        "resume": {
+          "value": [
+            {
+              "type": 0,
+              "value": "继续"
+            }
+          ]
+        },
+        "stop": {
+          "value": [
+            {
+              "type": 0,
+              "value": "停止"
+            }
+          ]
+        },
+        "message": {
+          "value": [
+            {
+              "type": 0,
+              "value": "消息"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "终止"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "命令未执行："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.admin.sessions.playback.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "此服务器上无法使用播放控制。"
+    }
+  ],
+  "web.admin.sessions.playback.menu.ariaLabel": [
+    {
+      "type": 0,
+      "value": "会话操作"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.description": [
+    {
+      "type": 0,
+      "value": "在播放期间向"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "发送自定义消息。"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.placeholder": [
+    {
+      "type": 0,
+      "value": "服务器将在5分钟后重启。请尽快看完这一集。"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.send": [
+    {
+      "type": 0,
+      "value": "发送消息"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.title": [
+    {
+      "type": 0,
+      "value": "发送消息"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageRequired": [
+    {
+      "type": 0,
+      "value": "请输入消息"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageSent": [
+    {
+      "type": 0,
+      "value": "消息已发送"
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseFallback": [
+    {
+      "type": 0,
+      "value": "暂停命令无法直接送达播放器。Silo将很快结束该会话。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseSent": [
+    {
+      "type": 0,
+      "value": "暂停命令已发送"
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeFallback": [
+    {
+      "type": 0,
+      "value": "继续命令无法直接送达播放器。Silo将很快结束该会话。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeSent": [
+    {
+      "type": 0,
+      "value": "继续命令已发送"
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopFallback": [
+    {
+      "type": 0,
+      "value": "停止命令无法直接送达播放器。Silo将很快结束该会话。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopSent": [
+    {
+      "type": 0,
+      "value": "停止命令已发送"
+    }
+  ],
+  "web.admin.sessions.playback.toast.terminateReceipt": [
+    {
+      "type": 5,
+      "value": "revoked",
+      "options": {
+        "already": {
+          "value": [
+            {
+              "type": 0,
+              "value": "播放权限此前已被撤销"
+            }
+          ]
+        },
+        "revoked": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已撤销播放权限"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "未撤销播放权限"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "；"
+    },
+    {
+      "type": 5,
+      "value": "notified",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 0,
+              "value": "已通知播放器停止"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "无法连接播放器，播放器将在下次联系服务器时停止"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.admin.sessions.playback.unsupportedControl": [
+    {
+      "type": 0,
+      "value": "此会话不支持实时暂停、继续或发送消息。仍可使用停止和终止来结束播放。"
+    }
+  ],
+  "web.admin.shell.mobileHeader.eyebrow": [
+    {
+      "type": 0,
+      "value": "管理"
+    }
+  ],
+  "web.admin.shell.nav.page.activity.label": [
+    {
+      "type": 0,
+      "value": "活动"
+    }
+  ],
+  "web.admin.shell.nav.page.dashboard.label": [
+    {
+      "type": 0,
+      "value": "仪表板"
+    }
+  ],
+  "web.admin.shell.nav.section.monitor": [
+    {
+      "type": 0,
+      "value": "监控"
+    }
+  ],
+  "web.admin.shell.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "返回应用"
+    }
+  ],
+  "web.admin.shell.sidebar.build.dev": [
+    {
+      "type": 0,
+      "value": "开发版构建"
+    }
+  ],
+  "web.admin.shell.sidebar.build.heading": [
+    {
+      "type": 0,
+      "value": "构建"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loadFailed": [
+    {
+      "type": 0,
+      "value": "加载失败"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loading": [
+    {
+      "type": 0,
+      "value": "正在加载……"
+    }
+  ],
+  "web.admin.shell.sidebar.liveSessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "个进行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.shell.sidebar.navigation": [
+    {
+      "type": 0,
+      "value": "管理导航"
+    }
+  ],
+  "web.admin.tasks.lib.taskProgress.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_poll.name": [
+    {
+      "type": 0,
+      "value": "Autoscan轮询"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_webhook_retry.name": [
+    {
+      "type": 0,
+      "value": "Autoscan webhook重试"
+    }
+  ],
+  "web.admin.tasks.task.backfill_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "回填电子书元数据"
+    }
+  ],
+  "web.admin.tasks.task.backfill_hdr10_plus.name": [
+    {
+      "type": 0,
+      "value": "检测HDR10+视频"
+    }
+  ],
+  "web.admin.tasks.task.backfill_matroska_track_numbers.name": [
+    {
+      "type": 0,
+      "value": "记录Matroska字幕轨道编号"
+    }
+  ],
+  "web.admin.tasks.task.backfill_media_item_aliases.name": [
+    {
+      "type": 0,
+      "value": "回填媒体项目别名"
+    }
+  ],
+  "web.admin.tasks.task.backfill_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "回填元数据图片"
+    }
+  ],
+  "web.admin.tasks.task.backup.name": [
+    {
+      "type": 0,
+      "value": "备份服务器"
+    }
+  ],
+  "web.admin.tasks.task.bulk_metadata_enrichment.name": [
+    {
+      "type": 0,
+      "value": "批量元数据扩充"
+    }
+  ],
+  "web.admin.tasks.task.cache_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "缓存元数据图片"
+    }
+  ],
+  "web.admin.tasks.task.chapter_thumbnail_backfill.name": [
+    {
+      "type": 0,
+      "value": "回填章节缩略图"
+    }
+  ],
+  "web.admin.tasks.task.check_plugin_updates.name": [
+    {
+      "type": 0,
+      "value": "检查插件更新"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_activity_log.name": [
+    {
+      "type": 0,
+      "value": "清理活动日志"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_artwork_revisions.name": [
+    {
+      "type": 0,
+      "value": "清理图片版本"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_auth_sessions.name": [
+    {
+      "type": 0,
+      "value": "清理已过期的登录会话"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_autoscan_events.name": [
+    {
+      "type": 0,
+      "value": "清理Autoscan事件"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_catalog_search_index_events.name": [
+    {
+      "type": 0,
+      "value": "清理目录搜索索引事件"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_chapter_thumbnail_originals.name": [
+    {
+      "type": 0,
+      "value": "清理全尺寸章节缩略图"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_client_diagnostics.name": [
+    {
+      "type": 0,
+      "value": "清理客户端诊断"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_device_logins.name": [
+    {
+      "type": 0,
+      "value": "清理已过期的设备登录请求"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_oauth_flows.name": [
+    {
+      "type": 0,
+      "value": "清理已过期的OAuth登录流程"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_operational_log.name": [
+    {
+      "type": 0,
+      "value": "清理运行日志"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_orphaned_media_items.name": [
+    {
+      "type": 0,
+      "value": "清理孤立的媒体项目"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_policy_decision_log.name": [
+    {
+      "type": 0,
+      "value": "清理策略决策日志"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_removed_media_images.name": [
+    {
+      "type": 0,
+      "value": "清理已移除媒体的图片"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_task_history.name": [
+    {
+      "type": 0,
+      "value": "清理任务历史"
+    }
+  ],
+  "web.admin.tasks.task.contribute_markers.name": [
+    {
+      "type": 0,
+      "value": "共享检测到的标记"
+    }
+  ],
+  "web.admin.tasks.task.database_maintenance.name": [
+    {
+      "type": 0,
+      "value": "数据库维护"
+    }
+  ],
+  "web.admin.tasks.task.detect_intro_markers.name": [
+    {
+      "type": 0,
+      "value": "在此服务器上检测标记"
+    }
+  ],
+  "web.admin.tasks.task.encode_download_artifacts.name": [
+    {
+      "type": 0,
+      "value": "准备下载文件"
+    }
+  ],
+  "web.admin.tasks.task.generate_extra_stills.name": [
+    {
+      "type": 0,
+      "value": "生成花絮缩略图"
+    }
+  ],
+  "web.admin.tasks.task.match_media.name": [
+    {
+      "type": 0,
+      "value": "匹配媒体文件"
+    }
+  ],
+  "web.admin.tasks.task.notifications_retention.name": [
+    {
+      "type": 0,
+      "value": "清理通知"
+    }
+  ],
+  "web.admin.tasks.task.queue_seek_previews.name": [
+    {
+      "type": 0,
+      "value": "将拖动预览加入队列"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "重建目录搜索索引"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_release_interest.name": [
+    {
+      "type": 0,
+      "value": "重建通知关注"
+    }
+  ],
+  "web.admin.tasks.task.recheck_external_identities.name": [
+    {
+      "type": 0,
+      "value": "重新检查外部登录账户"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_artwork_cache.name": [
+    {
+      "type": 0,
+      "value": "核对图片缓存"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_requests.name": [
+    {
+      "type": 0,
+      "value": "核对请求"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_watch_history.name": [
+    {
+      "type": 0,
+      "value": "核对观看历史"
+    }
+  ],
+  "web.admin.tasks.task.refresh_all_library_metadata.name": [
+    {
+      "type": 0,
+      "value": "刷新所有媒体库元数据"
+    }
+  ],
+  "web.admin.tasks.task.refresh_anime_ids.name": [
+    {
+      "type": 0,
+      "value": "刷新动画列表"
+    }
+  ],
+  "web.admin.tasks.task.refresh_metadata.name": [
+    {
+      "type": 0,
+      "value": "刷新元数据"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_discover_lists.name": [
+    {
+      "type": 0,
+      "value": "刷新请求发现列表"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_downloads.name": [
+    {
+      "type": 0,
+      "value": "刷新请求下载"
+    }
+  ],
+  "web.admin.tasks.task.refresh_seasonal_lists.name": [
+    {
+      "type": 0,
+      "value": "刷新季节列表"
+    }
+  ],
+  "web.admin.tasks.task.refresh_series_air_dates.name": [
+    {
+      "type": 0,
+      "value": "刷新剧集播出日期"
+    }
+  ],
+  "web.admin.tasks.task.refresh_trending_discover.name": [
+    {
+      "type": 0,
+      "value": "刷新热门发现"
+    }
+  ],
+  "web.admin.tasks.task.release_stored_artwork.name": [
+    {
+      "type": 0,
+      "value": "释放已存储的图片"
+    }
+  ],
+  "web.admin.tasks.task.repair_provider_id_integrity.name": [
+    {
+      "type": 0,
+      "value": "修复提供商ID完整性"
+    }
+  ],
+  "web.admin.tasks.task.scan_libraries.name": [
+    {
+      "type": 0,
+      "value": "将媒体库扫描加入队列"
+    }
+  ],
+  "web.admin.tasks.task.seed_content_availability.name": [
+    {
+      "type": 0,
+      "value": "初始化内容可用性"
+    }
+  ],
+  "web.admin.tasks.task.setting_mutations_retention.name": [
+    {
+      "type": 0,
+      "value": "清理设置更改回执"
+    }
+  ],
+  "web.admin.tasks.task.summarize_api_usage.name": [
+    {
+      "type": 0,
+      "value": "汇总API使用情况"
+    }
+  ],
+  "web.admin.tasks.task.sweep_artwork_storage.name": [
+    {
+      "type": 0,
+      "value": "清理图片存储"
+    }
+  ],
+  "web.admin.tasks.task.sweep_orphaned_media_images.name": [
+    {
+      "type": 0,
+      "value": "清理孤立的媒体图片"
+    }
+  ],
+  "web.admin.tasks.task.sync_audiobook_metadata.name": [
+    {
+      "type": 0,
+      "value": "同步有声书元数据"
+    }
+  ],
+  "web.admin.tasks.task.sync_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "同步目录搜索索引"
+    }
+  ],
+  "web.admin.tasks.task.sync_collections.name": [
+    {
+      "type": 0,
+      "value": "同步合集"
+    }
+  ],
+  "web.admin.tasks.task.sync_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "同步电子书元数据"
+    }
+  ],
+  "web.admin.tasks.task.sync_manga_metadata.name": [
+    {
+      "type": 0,
+      "value": "同步漫画元数据"
+    }
+  ],
+  "web.admin.tasks.task.sync_markers.name": [
+    {
+      "type": 0,
+      "value": "同步在线标记"
+    }
+  ],
+  "web.admin.tasks.task.sync_movie_box_sets.name": [
+    {
+      "type": 0,
+      "value": "同步系列电影"
+    }
+  ],
+  "web.admin.tasks.task.sync_podcast_feeds.name": [
+    {
+      "type": 0,
+      "value": "同步播客订阅源"
+    }
+  ],
+  "web.admin.tasks.task.sync_user_collections.name": [
+    {
+      "type": 0,
+      "value": "同步用户合集"
+    }
+  ],
+  "web.admin.tasks.task.sync_watch_providers.name": [
+    {
+      "type": 0,
+      "value": "同步观看提供商"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -4492,6 +7293,124 @@
       "value": "显示位置"
     }
   ],
+  "web.common.activity.method.direct.label": [
+    {
+      "type": 0,
+      "value": "直接播放"
+    }
+  ],
+  "web.common.activity.method.directStream.label": [
+    {
+      "type": 0,
+      "value": "直接串流"
+    }
+  ],
+  "web.common.activity.method.remux.label": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.common.activity.method.transcode.label": [
+    {
+      "type": 0,
+      "value": "转码"
+    }
+  ],
+  "web.common.activity.method.unknown.label": [
+    {
+      "type": 0,
+      "value": "未知"
+    }
+  ],
+  "web.common.activity.subtitle.movie": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.common.activity.subtitle.series": [
+    {
+      "type": 0,
+      "value": "剧集"
+    }
+  ],
+  "web.common.activity.title.file": [
+    {
+      "type": 0,
+      "value": "文件#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.common.date.daysAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "天前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.hoursAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "小时前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.minutesAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分钟前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.common.devicePlatform.kind.desktop": [
     {
       "type": 0,
@@ -4560,6 +7479,48 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.libraryType.audiobooks": [
+    {
+      "type": 0,
+      "value": "有声书"
+    }
+  ],
+  "web.common.libraryType.ebooks": [
+    {
+      "type": 0,
+      "value": "电子书"
+    }
+  ],
+  "web.common.libraryType.manga": [
+    {
+      "type": 0,
+      "value": "漫画"
+    }
+  ],
+  "web.common.libraryType.mixed": [
+    {
+      "type": 0,
+      "value": "混合"
+    }
+  ],
+  "web.common.libraryType.movies": [
+    {
+      "type": 0,
+      "value": "电影"
+    }
+  ],
+  "web.common.libraryType.podcasts": [
+    {
+      "type": 0,
+      "value": "播客"
+    }
+  ],
+  "web.common.libraryType.series": [
+    {
+      "type": 0,
+      "value": "剧集"
     }
   ],
   "web.common.requests.toast.cancelFailed": [
@@ -7808,6 +10769,12 @@
       "value": "播放"
     }
   ],
+  "web.player.bar.positionLabel": [
+    {
+      "type": 0,
+      "value": "播放位置"
+    }
+  ],
   "web.player.bar.returnTitle": [
     {
       "type": 0,
@@ -8435,6 +11402,18 @@
     {
       "type": 0,
       "value": "正在重新连接房间。控制功能暂时不可用。"
+    }
+  ],
+  "web.player.routeBadge.local": [
+    {
+      "type": 0,
+      "value": "本地"
+    }
+  ],
+  "web.player.routeBadge.remote": [
+    {
+      "type": 0,
+      "value": "远程"
     }
   ],
   "web.player.seekBar.dragMarkerEnd": [

@@ -181,10 +181,16 @@ public sealed record AdminPlaybackSession
 
     public string? RoutingExecutionNodeName { get; init; }
 
+    /// <summary>The node the work runs on, when it is a registered one; it tells nodes apart, as the web keys them.</summary>
+    public string? RoutingExecutionNodeId { get; init; }
+
     /// <summary>Where the stream leaves for the viewer: proxy or api.</summary>
     public string? RoutingEgress { get; init; }
 
     public string? RoutingEgressNodeName { get; init; }
+
+    /// <summary>The node the stream leaves from, when it is a registered one.</summary>
+    public string? RoutingEgressNodeId { get; init; }
 
     public bool HasPlaybackControl { get; init; }
 }

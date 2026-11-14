@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -85,7 +86,7 @@ internal sealed partial class RateChart : Grid
             _plot.Children.Add(new Polyline { Points = points, Stroke = new SolidColorBrush(color), StrokeThickness = 2, StrokeLineJoin = PenLineJoin.Round });
         }
         AddText(StartLabel, AxisWidth, TopInset + height + 4, width / 2, TextAlignment.Left);
-        AddText("now", AxisWidth + width / 2, TopInset + height + 4, width / 2, TextAlignment.Right);
+        AddText(AppText.Get("web.admin.dashboard.range.edgeEnd"), AxisWidth + width / 2, TopInset + height + 4, width / 2, TextAlignment.Right);
     }
 
     // The indexes of each stretch of samples between gaps.

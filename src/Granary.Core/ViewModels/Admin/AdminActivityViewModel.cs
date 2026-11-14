@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -107,7 +108,7 @@ public sealed partial class AdminActivityViewModel : ObservableObject
     [ObservableProperty]
     public partial bool NoticeIsError { get; private set; }
 
-    public string RefreshText => IsRefreshing ? "Refreshing..." : "Refresh";
+    public string RefreshText => AppText.Get(IsRefreshing ? "web.admin.activity.page.refreshing" : "web.admin.activity.page.refresh");
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 
@@ -125,11 +126,12 @@ public sealed partial class AdminActivityViewModel : ObservableObject
 
     /// <summary>"2 active streams across 1 node", or "No active streams".</summary>
     public string SubtitleText => _rows.Count == 0
-        ? "No active streams"
-        : $"{_rows.Count} active stream{(_rows.Count == 1 ? "" : "s")} across {Nodes.Count} node{(Nodes.Count == 1 ? "" : "s")}";
+        ? AppText.Get("web.admin.activity.page.noStreams")
+        : AppText.Get("web.admin.activity.page.subtitle",
+            ("count", _rows.Count), ("count_text", _rows.Count), ("nodes", Nodes.Count), ("nodes_text", Nodes.Count));
 
     /// <summary>Nothing to list: "No active streams", or "No streams match your filters".</summary>
-    public string EmptyText => _rows.Count == 0 ? "No active streams" : "No streams match your filters";
+    public string EmptyText => AppText.Get(_rows.Count == 0 ? "web.admin.activity.page.noStreams" : "web.admin.activity.empty.noMatches");
 
     public bool HasNoStreamsShown => State is LibraryLoadState.Ready or LibraryLoadState.Empty && Streams.Count == 0;
 
@@ -256,7 +258,7 @@ public sealed partial class AdminActivityViewModel : ObservableObject
             if (State == LibraryLoadState.Loading)
             {
                 ErrorText = ex is SiloApiException { Status: 401 or 403 }
-                    ? "This account can't see the server's activity. Only administrators can."
+                    ? AppText.Get("granary.admin.activity.forbidden")
                     : LibraryErrors.Describe(ex);
                 State = LibraryLoadState.Error;
             }
@@ -359,7 +361,9 @@ public sealed partial class AdminActivityViewModel : ObservableObject
             }
         }
         HasFilters = MethodFilter is not null || NodeFilter is not null || TypeFilter is not null;
-        FilterStatusText = query.Length > 0 || HasFilters ? $"Showing {shown.Count} of {_rows.Count} streams" : "";
+        FilterStatusText = query.Length > 0 || HasFilters
+            ? AppText.Get("web.admin.activity.filter.showing", ("total", _rows.Count), ("shown", shown.Count), ("total_text", _rows.Count))
+            : "";
         if (Methods.Any(share => share.IsSelected != (share.Method == MethodFilter)) || Nodes.Any(share => share.IsSelected != (share.Key == NodeFilter)))
         {
             ShowShares();

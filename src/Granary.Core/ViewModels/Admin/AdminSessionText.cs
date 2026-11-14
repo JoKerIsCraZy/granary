@@ -1,10 +1,12 @@
 using System.Globalization;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
 /// <summary>A node a session's stream passes: "Transcode gpu", "Proxy edge", "Server Local server".</summary>
-/// <param name="Label">Transcode, Proxy, Server, or Node for an older server's report.</param>
+/// <param name="Key">The same in every language, so a filter by node holds whatever the language on screen.</param>
+/// <param name="Label">Transcode, Proxy, Server, or Node for an older server's report, in the language on screen.</param>
 public sealed record AdminRouteNode(string Key, string Label, string Name);
 
 /// <summary>
@@ -19,20 +21,41 @@ public static class AdminSessionText
         ["h264"] = "H.264", ["hevc"] = "HEVC", ["mp3"] = "MP3", ["opus"] = "Opus", ["truehd"] = "TrueHD",
     };
 
+    /// <summary>
+    /// What Activity calls a session, as the web's <c>getPlaybackSessionTitle</c>: an episode's name ("S1E3" without one,
+    /// a code the web writes the same in every language), else the media's title ("File #id" without one).
+    /// </summary>
+    public static string Title(AdminPlaybackSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        if (!string.IsNullOrEmpty(session.SeriesName) && session.SeasonNumber is { } season && session.EpisodeNumber is { } episode)
+        {
+            return session.EpisodeName is { Length: > 0 } name ? name : string.Create(CultureInfo.InvariantCulture, $"S{season}E{episode}");
+        }
+        return session.MediaTitle.Length > 0 ? session.MediaTitle : AppText.Get("web.common.activity.title.file", ("id", session.MediaFileId));
+    }
+
     /// <summary>"S1E3 · Dark" for an episode, "Movie" or "Series" otherwise; empty when the server says nothing.</summary>
     public static string Subtitle(AdminPlaybackSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         if (!string.IsNullOrEmpty(session.SeriesName) && session.SeasonNumber is { } season && session.EpisodeNumber is { } episode)
         {
-            return $"S{season}E{episode} · {session.SeriesName}";
+            return string.Create(CultureInfo.InvariantCulture, $"S{season}E{episode} · {session.SeriesName}");
         }
         return session.MediaType switch
         {
-            "movie" => "Movie",
-            "series" => "Series",
+            "movie" => AppText.Get("web.common.activity.subtitle.movie"),
+            "series" => AppText.Get("web.common.activity.subtitle.series"),
             _ => "",
         };
+    }
+
+    /// <summary>The account that watches on Activity; "User #id" when the server sent no name.</summary>
+    public static string Username(AdminPlaybackSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        return session.Username.Length > 0 ? session.Username : AppText.Get("web.admin.activity.userFallback", ("id", session.UserId));
     }
 
     /// <summary>The container that reaches the viewer: the source's for direct play, else the output's ("fMP4 (HLS)").</summary>
@@ -41,18 +64,18 @@ public static class AdminSessionText
         ArgumentNullException.ThrowIfNull(session);
         if (session.PlayMethod.Trim() == "direct")
         {
-            return Upper(session.SourceContainer) ?? "Unknown source";
+            return Upper(session.SourceContainer) ?? UnknownSource;
         }
         bool hls = session.OutputProtocol == "hls";
         string? container = session.OutputContainer?.Trim().ToLowerInvariant();
         string label = container switch
         {
-            null or "" => "Unknown output container",
+            null or "" => AppText.Get("web.admin.activity.summary.unknownOutputContainer"),
             "fmp4" => "fMP4",
             "mpegts" => "MPEG-TS",
             _ => container.ToUpperInvariant(),
         };
-        return hls ? $"{label} (HLS)" : label;
+        return hls ? AppText.Get("web.admin.activity.summary.hlsOutput", ("container", label)) : label;
     }
 
     /// <summary>The video that reaches the viewer: the target's codec and size for a transcode, else the source's.</summary>
@@ -61,9 +84,11 @@ public static class AdminSessionText
         ArgumentNullException.ThrowIfNull(session);
         if ((Or(session.VideoDecision, session.PlayMethod)) != "transcode")
         {
-            return Join(" · ", Codec(session.SourceVideoCodec), session.SourceVideoResolution?.Trim()) is { Length: > 0 } source ? source : "Unknown source";
+            return Join(" · ", Codec(session.SourceVideoCodec), session.SourceVideoResolution?.Trim()) is { Length: > 0 } source ? source : UnknownSource;
         }
-        return Join(" · ", Codec(session.TargetVideoCodec), DeliveredResolution(session)) is { Length: > 0 } target ? target : "Transcoding";
+        return Join(" · ", Codec(session.TargetVideoCodec), DeliveredResolution(session)) is { Length: > 0 } target
+            ? target
+            : AppText.Get("web.admin.activity.detail.transcoding");
     }
 
     /// <summary>
@@ -76,11 +101,13 @@ public static class AdminSessionText
         string decision = Or(session.AudioDecision, session.TranscodeAudio ? "transcode" : session.PlayMethod);
         if (decision == "transcode")
         {
-            return Join(" ", Codec(Or(session.TargetAudioCodec, "aac")), Layout(session.TargetAudioChannels)) is { Length: > 0 } target ? target : "Audio Transcode";
+            return Join(" ", Codec(Or(session.TargetAudioCodec, "aac")), Layout(session.TargetAudioChannels)) is { Length: > 0 } target
+                ? target
+                : AppText.Get("web.admin.activity.transcodeMode.audioTranscode");
         }
         string? lead = session.SourceAudioTitle?.Trim() is { Length: > 0 } title ? title : session.SourceAudioLanguage?.Trim();
         string format = Join(" ", Codec(session.SourceAudioCodec), Layout(session.SourceAudioChannels));
-        return Join(" · ", lead, format) is { Length: > 0 } source ? source : "Unknown source";
+        return Join(" · ", lead, format) is { Length: > 0 } source ? source : UnknownSource;
     }
 
     /// <summary>"8.0 Mbps", "640 kbps"; empty when unknown.</summary>
@@ -99,17 +126,29 @@ public static class AdminSessionText
         string audio = Or(session.AudioDecision, session.TranscodeAudio ? "transcode" : session.PlayMethod);
         if (video != "transcode")
         {
-            return audio == "transcode" ? "Audio Transcode" : "";
+            return audio == "transcode" ? AppText.Get("web.admin.activity.transcodeMode.audioTranscode") : "";
         }
         return session.TranscodeHwAccel?.Trim().ToLowerInvariant() switch
         {
-            null or "" => "HW/SW unknown",
-            "qsv" => "HW QSV",
-            "vaapi" => "HW VAAPI",
-            "videotoolbox" => "HW VideoToolbox",
-            "none" => "SW",
-            "auto" => "HW/SW pending",
-            var accel => $"HW {accel.ToUpperInvariant()}",
+            null or "" => AppText.Get("web.admin.activity.transcodeMode.unknown"),
+            "qsv" => Hardware("QSV"),
+            "vaapi" => Hardware("VAAPI"),
+            "videotoolbox" => Hardware("VideoToolbox"),
+            "none" => AppText.Get("web.admin.activity.transcodeMode.software"),
+            "auto" => AppText.Get("web.admin.activity.transcodeMode.pending"),
+            var accel => Hardware(accel.ToUpperInvariant()),
+        };
+    }
+
+    /// <summary>Local or Remote, as the server's bitrate policy sees the viewer (the web's route badge); empty when unsaid.</summary>
+    public static string Location(AdminPlaybackSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        return session.StreamLocation switch
+        {
+            "local" => AppText.Get("web.player.routeBadge.local"),
+            "remote" => AppText.Get("web.player.routeBadge.remote"),
+            _ => "",
         };
     }
 
@@ -153,16 +192,20 @@ public static class AdminSessionText
         if (string.IsNullOrWhiteSpace(session.RoutingWorkload) && execution.Length == 0 && egress.Length == 0)
         {
             string reported = Or(session.NodeDisplayName, session.ReportingNode);
-            string name = reported.Length == 0 || reported.Equals("local", StringComparison.OrdinalIgnoreCase) ? "Local server" : reported;
-            return [new AdminRouteNode($"legacy:{name}", "Node", name)];
+            bool isLocal = reported.Length == 0 || reported.Equals("local", StringComparison.OrdinalIgnoreCase);
+            return
+            [
+                new AdminRouteNode(isLocal ? "legacy:local" : $"legacy:{reported}", AppText.Get("web.admin.activity.route.node"),
+                    isLocal ? LocalServer : reported),
+            ];
         }
         var nodes = new List<AdminRouteNode>();
         string executionName = Or(session.RoutingExecutionNodeName, session.NodeDisplayName ?? "");
         if (execution is "transcode" or "proxy")
         {
-            nodes.Add(Named(execution, executionName));
+            nodes.Add(Named(execution, executionName, session.RoutingExecutionNodeId));
         }
-        if (egress == "proxy" && Named("proxy", session.RoutingEgressNodeName ?? "") is var proxy && nodes.All(n => n.Key != proxy.Key))
+        if (egress == "proxy" && Named("proxy", session.RoutingEgressNodeName ?? "", session.RoutingEgressNodeId) is var proxy && nodes.All(n => n.Key != proxy.Key))
         {
             nodes.Add(proxy);
         }
@@ -173,20 +216,33 @@ public static class AdminSessionText
         return nodes.Count > 0 ? nodes : [ReportingServer(session)];
     }
 
-    private static AdminRouteNode Named(string kind, string name)
+    // Keyed as the web keys a node: by its id where the server gives one, else by its name. A node with neither is keyed by
+    // its kind alone, which no named node's key can be, so an unnamed proxy and one named "unknown" stay two nodes.
+    private static AdminRouteNode Named(string kind, string name, string? id)
     {
-        string label = kind == "transcode" ? "Transcode" : "Proxy";
-        string shown = name.Trim() is { Length: > 0 } trimmed ? trimmed : $"Unknown {kind} node";
-        return new AdminRouteNode($"{kind}:{shown}", label, shown);
+        bool isTranscode = kind == "transcode";
+        string label = AppText.Get(isTranscode ? "web.admin.activity.route.transcode" : "web.admin.activity.route.proxy");
+        string trimmed = name.Trim();
+        string shown = trimmed.Length > 0 ? trimmed
+            : AppText.Get(isTranscode ? "web.admin.activity.route.unknownTranscodeNode" : "web.admin.activity.route.unknownProxyNode");
+        string? known = string.IsNullOrWhiteSpace(id) ? (trimmed.Length > 0 ? trimmed : null) : id.Trim();
+        return new AdminRouteNode(known is null ? kind : $"{kind}:{known}", label, shown);
     }
 
     private static AdminRouteNode ReportingServer(AdminPlaybackSession session)
     {
         string reported = session.ReportingNode.Trim();
+        string label = AppText.Get("web.admin.activity.route.server");
         return reported.Length == 0 || reported.Equals("local", StringComparison.OrdinalIgnoreCase)
-            ? new AdminRouteNode("server:local", "Server", "Local server")
-            : new AdminRouteNode($"server:{reported}", "Server", reported);
+            ? new AdminRouteNode("server:local", label, LocalServer)
+            : new AdminRouteNode($"server:{reported}", label, reported);
     }
+
+    private static string UnknownSource => AppText.Get("web.admin.activity.summary.unknownSource");
+
+    private static string LocalServer => AppText.Get("web.admin.activity.route.localServer");
+
+    private static string Hardware(string accel) => AppText.Get("web.admin.activity.transcodeMode.hardware", ("accel", accel));
 
     // The catalog names a file by its size class (3840x1600 is "2160p"), a transcode by its output height ("1600p"): a
     // transcode that keeps the source's height is named as the source, so it does not read as a downscale.

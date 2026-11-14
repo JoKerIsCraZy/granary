@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
@@ -60,7 +61,8 @@ public sealed partial class ActivityStreamRow(string method) : ObservableObject
     [NotifyPropertyChangedFor(nameof(Text))]
     public partial int Count { get; set; }
 
-    public string Text => $"{Count} {AdminPlayMethod.Label(Method)}";
+    public string Text => AppText.Get("web.admin.common.serverActivity.streamCount",
+        ("count", Count), ("count_text", Count), ("method", AdminPlayMethod.Label(Method)));
 }
 
 /// <summary>A running task: its name, and "42%" over a bar once it says how far it is, "Running" until then.</summary>
@@ -68,7 +70,7 @@ public sealed partial class ActivityTaskRow(string key) : ObservableObject
 {
     public string Key { get; } = key;
 
-    /// <summary>The server's English name for the task; its key without one.</summary>
+    /// <summary>The task's name in the web's words for Silo's own tasks, else the server's English name; its key without one.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ReadText))]
     public partial string Name { get; private set; } = key;
@@ -86,14 +88,14 @@ public sealed partial class ActivityTaskRow(string key) : ObservableObject
     /// <summary>The bar's fill, 0 to 100.</summary>
     public double ProgressValue => ServerActivityText.ClampPercent(Progress);
 
-    public string StatusText => HasProgress ? ServerActivityText.TaskProgress(Progress) : "Running";
+    public string StatusText => HasProgress ? ServerActivityText.TaskProgress(Progress) : AppText.Get("web.admin.common.serverActivity.running");
 
     /// <summary>The row as one text for a screen reader.</summary>
     public string ReadText => $"{Name}, {StatusText}";
 
     internal void Show(AdminTask task)
     {
-        Name = task.Name.Length > 0 ? task.Name : task.Key;
+        Name = ServerActivityText.TaskName(task.Key, task.Name.Length > 0 ? task.Name : task.Key);
         Progress = task.Progress;
     }
 }
@@ -118,7 +120,7 @@ public sealed partial class ActivityScanRow(string id) : ObservableObject
 
     public bool IsQueued => !IsRunning;
 
-    public string StatusText => IsRunning ? "Scanning…" : "Queued";
+    public string StatusText => AppText.Get(IsRunning ? "web.admin.common.serverActivity.scanning" : "web.admin.common.serverActivity.scanQueued");
 
     /// <summary>"Full library", or "Subtree · /media/tv/Dark".</summary>
     [ObservableProperty]
@@ -138,7 +140,9 @@ public sealed partial class ActivityScanRow(string id) : ObservableObject
     internal void Show(AdminScanRun scan, FrozenDictionary<string, string>? libraryNames)
     {
         string library = scan.LibraryId.ToString(CultureInfo.InvariantCulture);
-        LibraryName = libraryNames is not null && libraryNames.TryGetValue(library, out string? name) && name.Length > 0 ? name : $"Library #{library}";
+        LibraryName = libraryNames is not null && libraryNames.TryGetValue(library, out string? name) && name.Length > 0
+            ? name
+            : AppText.Get("web.admin.common.serverActivity.libraryFallback", ("id", library));
         IsRunning = scan.IsRunning;
         string mode = ServerActivityText.ScanMode(scan.Mode);
         DetailText = string.IsNullOrEmpty(scan.Path) ? mode : $"{mode} · {scan.Path}";
@@ -181,7 +185,7 @@ public sealed partial class ActivityPreparationRow(string id) : ObservableObject
     public partial string DetailText { get; private set; } = "";
 
     /// <summary>The bar's name for a screen reader, as the web's: "Dark S01E03 progress".</summary>
-    public string ProgressName => $"{Title} progress";
+    public string ProgressName => AppText.Get("web.admin.common.serverActivity.progressLabel", ("title", Title));
 
     /// <summary>The row as one text for a screen reader.</summary>
     public string ReadText => string.Join(", ", new[] { Title, StatusText, DetailText }.Where(part => part.Length > 0));
@@ -192,9 +196,9 @@ public sealed partial class ActivityPreparationRow(string id) : ObservableObject
         double? percent = ServerActivityText.PreparationPercent(job.Progress);
         HasProgress = percent is not null;
         ProgressValue = percent ?? 0;
-        StatusText = percent is { } known ? string.Create(CultureInfo.InvariantCulture, $"{Math.Floor(known):0}%")
-            : job.Format == "remux" ? "Remuxing"
-            : "Encoding";
+        StatusText = percent is { } known
+            ? AppText.Get("web.admin.common.serverActivity.percent", ("percent", Math.Floor(known)))
+            : ServerActivityText.PreparationRunning(job);
         DetailText = string.Join(" · ", new[]
         {
             ServerActivityText.PreparationKind(job),

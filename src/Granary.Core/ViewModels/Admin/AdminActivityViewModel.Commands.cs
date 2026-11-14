@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -28,7 +29,7 @@ public sealed partial class AdminActivityViewModel
         string text = message?.Trim() ?? "";
         if (text.Length == 0)
         {
-            Say("Message is required", isError: true);
+            Say(AppText.Get("web.admin.sessions.playback.toast.messageRequired"), isError: true);
             return false;
         }
         return row.CanControl && await SendAsync(row, AdminSessionCommands.Message, text);
@@ -46,13 +47,9 @@ public sealed partial class AdminActivityViewModel
         try
         {
             var receipt = await _admin.TerminateAsync(server.BaseUri, row.SessionId);
-            string revoked = receipt.AlreadyRevoked ? "Playback authority was already revoked"
-                : receipt.AuthorityRevoked ? "Playback authority revoked"
-                : "Playback authority was not revoked";
-            string notified = receipt.ClientNotified
-                ? "the player was told to stop"
-                : "the player could not be reached and will stop when it next contacts the server";
-            Say($"{revoked}; {notified}.", isError: false);
+            Say(AppText.Get("web.admin.sessions.playback.toast.terminateReceipt",
+                ("revoked", receipt.AlreadyRevoked ? "already" : receipt.AuthorityRevoked ? "revoked" : "other"),
+                ("notified", receipt.ClientNotified ? "yes" : "other")), isError: false);
             await LoadAsync(manual: false);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
@@ -79,7 +76,7 @@ public sealed partial class AdminActivityViewModel
             var receipt = await _admin.SendCommandAsync(server.BaseUri, row.SessionId, action, command);
             if (receipt.CommandId != command.CommandId)
             {
-                Say("The server answered a different command.", isError: true);
+                Say(AppText.Get("granary.admin.activity.otherCommand"), isError: true);
                 return false;
             }
             bool dispatched = receipt.Delivery == "dispatched";
@@ -87,12 +84,7 @@ public sealed partial class AdminActivityViewModel
             {
                 row.ExpectPaused(action == AdminSessionCommands.Pause, _time.GetUtcNow());
             }
-            Say(action switch
-            {
-                AdminSessionCommands.Message => "Message sent",
-                _ when !dispatched => $"{Capitalized(action)} could not reach the player directly. Silo will end the session shortly instead.",
-                _ => $"{Capitalized(action)} command sent",
-            }, isError: false);
+            Say(Answered(action, dispatched), isError: false);
             if (action == AdminSessionCommands.Stop)
             {
                 await LoadAsync(manual: false);
@@ -116,10 +108,22 @@ public sealed partial class AdminActivityViewModel
     {
         if (row.IsBusy)
         {
-            Say("A command for this stream is still on its way. Try again in a moment.", isError: true);
+            Say(AppText.Get("granary.admin.activity.commandWaiting"), isError: true);
         }
         return row.IsBusy;
     }
+
+    // What a command's answer says, as the web's toasts: sent, or the server ends the session in its place.
+    private static string Answered(string action, bool dispatched) => (action, dispatched) switch
+    {
+        (AdminSessionCommands.Message, _) => AppText.Get("web.admin.sessions.playback.toast.messageSent"),
+        (AdminSessionCommands.Pause, true) => AppText.Get("web.admin.sessions.playback.toast.pauseSent"),
+        (AdminSessionCommands.Pause, false) => AppText.Get("web.admin.sessions.playback.toast.pauseFallback"),
+        (AdminSessionCommands.Resume, true) => AppText.Get("web.admin.sessions.playback.toast.resumeSent"),
+        (AdminSessionCommands.Resume, false) => AppText.Get("web.admin.sessions.playback.toast.resumeFallback"),
+        (_, true) => AppText.Get("web.admin.sessions.playback.toast.stopSent"),
+        _ => AppText.Get("web.admin.sessions.playback.toast.stopFallback"),
+    };
 
     // A clock in milliseconds, so two commands never share a sequence, even after the app started again.
     private long NextSequence(string sessionId)
@@ -129,16 +133,18 @@ public sealed partial class AdminActivityViewModel
         return next;
     }
 
+    // The conflict's reason is the server's own words, in English, as the web shows them in English.
     private static string Failure(string action, Exception ex) => ex switch
     {
-        SiloApiException { Status: 409 } conflict =>
-            $"The {action} command was not applied: {(string.IsNullOrWhiteSpace(conflict.Problem.Detail) ? "the session state changed" : conflict.Problem.Detail)}",
-        SiloApiException { Code: ProblemCodes.NotFound } or SiloApiException { Status: 404 } => "This playback session has already ended.",
-        SiloApiException { Code: ProblemCodes.DependencyUnavailable } => "Playback control is unavailable on this server.",
-        SiloApiException { Status: 401 or 403 } => "This account can't control playback sessions.",
-        SiloApiException => "Failed to send session command",
+        SiloApiException { Status: 409 } conflict => AppText.Get("web.admin.sessions.playback.failure.notApplied", ("action", action),
+            ("reason", string.IsNullOrWhiteSpace(conflict.Problem.Detail)
+                ? AppText.Get("web.admin.sessions.playback.failure.conflictReason")
+                : conflict.Problem.Detail)),
+        SiloApiException { Code: ProblemCodes.NotFound } or SiloApiException { Status: 404 } =>
+            AppText.Get("web.admin.sessions.playback.failure.ended"),
+        SiloApiException { Code: ProblemCodes.DependencyUnavailable } => AppText.Get("web.admin.sessions.playback.failure.unavailable"),
+        SiloApiException { Status: 401 or 403 } => AppText.Get("granary.admin.activity.controlForbidden"),
+        SiloApiException => AppText.Get("web.admin.sessions.playback.failure.generic"),
         _ => LibraryErrors.Describe(ex),
     };
-
-    private static string Capitalized(string action) => char.ToUpperInvariant(action[0]) + action[1..];
 }

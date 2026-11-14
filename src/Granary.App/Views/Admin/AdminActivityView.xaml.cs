@@ -40,6 +40,16 @@ public sealed partial class AdminActivityView : UserControl
     /// <summary>The live count beside the title, shared with the admin sidebar.</summary>
     public AdminSidebarViewModel Sidebar { get; }
 
+    // The summary's headings, which the web's CSS shows in capitals: by the rules of the language on screen.
+    public string MethodHeading => AppText.Upper(AppText.Get("web.admin.activity.summary.methodHeading"));
+
+    public string NodeHeading => AppText.Upper(AppText.Get("web.admin.activity.summary.byNode"));
+
+    // Granary's own: the web follows its streams live, Granary reads them again every ten seconds.
+    public string AutoRefreshHeading => AppText.Upper(AppText.Get("granary.admin.activity.autoRefresh"));
+
+    public string AutoRefreshEvery => AppText.Get("granary.admin.activity.autoRefreshEvery", ("seconds", (int)AdminActivityViewModel.RefreshEvery.TotalSeconds));
+
     /// <summary>Shows the streams and starts the clock.</summary>
     public async Task ActivateAsync()
     {
@@ -75,15 +85,17 @@ public sealed partial class AdminActivityView : UserControl
 
     public static double DimmedOpacity(bool isDimmed) => isDimmed ? 0.3 : 1;
 
-    public static string ShareName(string label, int count, bool isSelected) => $"{label} {count}{(isSelected ? ", filtering" : "")}";
+    // "Direct Play 2", as the web's filter names it, and that it filters while it does.
+    public static string ShareName(string label, int count, bool isSelected)
+    {
+        string share = AppText.Get("web.admin.activity.summary.methodFilter", ("method", label), ("count", count));
+        return isSelected ? AppText.Get("granary.admin.activity.filtering", ("share", share)) : share;
+    }
 
     public static Visibility NotLoading(bool isLoading, bool hasError) => isLoading || hasError ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>"MKV · HEVC · 2160p · TrueHD 7.1": what reaches the viewer, in one line.</summary>
     public static string StreamLine(string container, string video, string audio) => $"{container} · {video} · {audio}";
-
-    /// <summary>"Started 5m ago · 5:00".</summary>
-    public static string TimeLine(string started, string elapsed) => $"Started {started} · {elapsed}";
 
     public static string AddressLine(string ip, string location) => location.Length > 0 ? $"{ip} ({location})" : ip;
 
@@ -124,7 +136,7 @@ public sealed partial class AdminActivityView : UserControl
         {
             MethodBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(share.Count, GridUnitType.Star) });
             var part = new Border { Background = AdminDashboardView.MethodBrush(share.Method) };
-            ToolTipService.SetToolTip(part, $"{share.Label}: {share.Count}");
+            ToolTipService.SetToolTip(part, AppText.Get("web.admin.activity.summary.methodSegment", ("method", share.Label), ("count", share.Count)));
             Grid.SetColumn(part, MethodBar.ColumnDefinitions.Count - 1);
             MethodBar.Children.Add(part);
         }
@@ -171,9 +183,9 @@ public sealed partial class AdminActivityView : UserControl
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "Terminate playback?",
-            Content = $"{row.Username} stops watching {row.Title}. The session's playback is revoked for good; the player is told to stop as soon as it can be reached.",
-            PrimaryButtonText = "Terminate",
+            Title = AppText.Get("granary.admin.activity.terminateTitle"),
+            Content = AppText.Get("granary.admin.activity.terminateBody", ("username", row.Username), ("title", row.Title)),
+            PrimaryButtonText = AppText.Get("web.admin.sessions.playback.action.terminate"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
@@ -195,22 +207,26 @@ public sealed partial class AdminActivityView : UserControl
         }
         var text = new TextBox
         {
-            PlaceholderText = "Server restart in 5 minutes. Please finish this episode soon.",
+            PlaceholderText = AppText.Get("web.admin.sessions.playback.messageDialog.placeholder"),
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             MaxLength = MessageMaxLength,
             MinHeight = 96,
         };
-        AutomationProperties.SetName(text, "Message");
+        AutomationProperties.SetName(text, AppText.Get("granary.admin.activity.messageName"));
         var content = new StackPanel { Spacing = 12 };
-        content.Children.Add(new TextBlock { Text = $"Send a custom message to {row.Username} during playback.", TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock
+        {
+            Text = AppText.Get("web.admin.sessions.playback.messageDialog.description", ("name", row.Username)),
+            TextWrapping = TextWrapping.Wrap,
+        });
         content.Children.Add(text);
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "Send Message",
+            Title = AppText.Get("web.admin.sessions.playback.messageDialog.title"),
             Content = content,
-            PrimaryButtonText = "Send Message",
+            PrimaryButtonText = AppText.Get("web.admin.sessions.playback.messageDialog.send"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Primary,
             // Nothing to send until there is text: the dialog stays open with what was typed.

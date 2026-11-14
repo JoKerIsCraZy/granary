@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Admin;
 using Granary.Core.Api.Images;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
@@ -13,22 +14,22 @@ public sealed partial class AdminDashboardViewModel
     private const int RecentShown = 10;
 
     [ObservableProperty]
-    public partial AdminStatTile ActiveStreamsTile { get; private set; } = Waiting("Active Streams");
+    public partial AdminStatTile ActiveStreamsTile { get; private set; } = Waiting(ActiveStreamsLabel);
 
     [ObservableProperty]
-    public partial AdminStatTile EgressNowTile { get; private set; } = Waiting("Egress now");
+    public partial AdminStatTile EgressNowTile { get; private set; } = Waiting(EgressNowLabel);
 
     [ObservableProperty]
-    public partial AdminStatTile ProfilesTile { get; private set; } = Waiting("Profiles · 24h");
+    public partial AdminStatTile ProfilesTile { get; private set; } = Waiting(ProfilesLabel);
 
     [ObservableProperty]
-    public partial AdminStatTile MoviesTile { get; private set; } = Waiting("Total Movies");
+    public partial AdminStatTile MoviesTile { get; private set; } = Waiting(MoviesLabel);
 
     [ObservableProperty]
-    public partial AdminStatTile ShowsTile { get; private set; } = Waiting("Total Shows");
+    public partial AdminStatTile ShowsTile { get; private set; } = Waiting(ShowsLabel);
 
     [ObservableProperty]
-    public partial AdminStatTile StorageTile { get; private set; } = Waiting("Storage");
+    public partial AdminStatTile StorageTile { get; private set; } = Waiting(StorageLabel);
 
     /// <summary>Version, Uptime, Postgres, Redis, Nodes and Errors · 24h; empty when the server's status failed.</summary>
     [ObservableProperty]
@@ -47,7 +48,7 @@ public sealed partial class AdminDashboardViewModel
 
     /// <summary>"View all 6 streams ›", or "View activity ›" when nothing plays.</summary>
     [ObservableProperty]
-    public partial string StreamsLinkText { get; private set; } = "View activity ›";
+    public partial string StreamsLinkText { get; private set; } = AppText.Get("web.admin.dashboard.widgets.nowPlaying.viewActivity");
 
     /// <summary>"+2 more active streams" past the cards shown; empty otherwise.</summary>
     [ObservableProperty]
@@ -104,6 +105,18 @@ public sealed partial class AdminDashboardViewModel
     [ObservableProperty]
     public partial LibraryLoadState UsersState { get; private set; }
 
+    private static string ActiveStreamsLabel => AppText.Get("web.admin.dashboard.widgets.activeStreams.label");
+
+    private static string EgressNowLabel => AppText.Get("web.admin.dashboard.widgets.egressNow.label");
+
+    private static string ProfilesLabel => AppText.Get("web.admin.dashboard.widgets.profilesActive.label");
+
+    private static string MoviesLabel => AppText.Get("web.admin.dashboard.widgets.movies.label");
+
+    private static string ShowsLabel => AppText.Get("web.admin.dashboard.widgets.shows.label");
+
+    private static string StorageLabel => AppText.Get("web.admin.dashboard.widgets.storage.label");
+
     private static AdminStatTile Waiting(string label) => new(label, AdminText.None, "");
 
     private static AdminStatTile Unavailable(string label) => new(label, AdminText.None, "", IsUnavailable: true);
@@ -121,14 +134,16 @@ public sealed partial class AdminDashboardViewModel
         PlaybackColumns = AdminCharts.PlaybackColumns(read.Playback.Value, ChartHours, read.Playback.Value?.To ?? now);
         int started = PlaybackColumns.Sum(column => column.Total);
         PlaybackState = StateOf(read.Playback, started == 0);
-        PlaybackTotalText = AdminText.Sessions(started);
+        PlaybackTotalText = AdminText.StartedSessions(started);
         Egress = AdminCharts.Rate(read.Egress.Value, point => point.EgressKbps / 1000d);
         EgressState = StateOf(read.Egress, !Egress.HasSamples);
-        EgressTotalText = read.Egress.Value is { } egress ? $"Total {AdminText.DataTotal(egress.EgressBytes)}" : "";
-        EgressPeakText = $"Peak {AdminText.Mbps(Egress.Peak)}";
+        EgressTotalText = read.Egress.Value is { } egress
+            ? AppText.Get("web.admin.dashboard.widgets.egress.total", ("value", AdminText.DataTotal(egress.EgressBytes)))
+            : "";
+        EgressPeakText = AppText.Get("web.admin.dashboard.widgets.egress.peak", ("value", AdminText.Mbps(Egress.Peak)));
         ShowTop(read.Top);
-        Libraries = [.. (read.Libraries.Value?.Items ?? []).Select(library => new AdminLibraryRow(library.Name,
-            $"{library.Type} · {library.Paths.Count} {(library.Paths.Count == 1 ? "path" : "paths")}", library.Enabled))];
+        Libraries = [.. (read.Libraries.Value?.Items ?? []).Select(library =>
+            new AdminLibraryRow(library.Name, AdminText.LibraryDetail(library.Type, library.Paths.Count), library.Enabled))];
         LibrariesState = StateOf(read.Libraries, Libraries.Count == 0);
         Users = [.. (read.Users.Value?.Items ?? []).OrderByDescending(user => user.LastActiveAt ?? DateTimeOffset.MinValue)
             .ThenBy(user => user.Username, StringComparer.Ordinal).Take(UsersShown).Select(user => UserRow(user, now))];
@@ -138,68 +153,97 @@ public sealed partial class AdminDashboardViewModel
     private void ShowTiles(DashboardRead read, DateTimeOffset now)
     {
         ActiveStreamsTile = read.Sessions.Value is { } sessions
-            ? new("Active Streams", AdminText.Count(sessions.Items.Count), AdminText.Sessions(sessions.Items.Count))
-            : Unavailable("Active Streams");
+            ? new(ActiveStreamsLabel, AdminText.Count(sessions.Items.Count), AdminText.Sessions(sessions.Items.Count))
+            : Unavailable(ActiveStreamsLabel);
         var latest = AdminCharts.LatestFresh(read.Egress.Value, now);
-        EgressNowTile = read.Egress.Value is null ? Unavailable("Egress now")
-            : latest is null ? new("Egress now", AdminText.None, "waiting for a sample")
-            : new("Egress now", AdminText.Mbps(latest.EgressKbps / 1000d), "node + server egress");
+        EgressNowTile = read.Egress.Value is null ? Unavailable(EgressNowLabel)
+            : latest is null ? new(EgressNowLabel, AdminText.None, AppText.Get("web.admin.dashboard.widgets.egressNow.waiting"))
+            : new(EgressNowLabel, AdminText.Mbps(latest.EgressKbps / 1000d), AppText.Get("web.admin.dashboard.widgets.egressNow.source"));
         ProfilesTile = read.Playback.Value is { } playback
-            ? new("Profiles · 24h", AdminText.Count(playback.ProfilesActive24h), "watched on this server")
-            : Unavailable("Profiles · 24h");
+            ? new(ProfilesLabel, AdminText.Count(playback.ProfilesActive24h), AppText.Get("web.admin.dashboard.widgets.profilesActive.detail"))
+            : Unavailable(ProfilesLabel);
         if (read.Stats.Value is { } stats)
         {
-            MoviesTile = new("Total Movies", AdminText.Count(stats.TotalMovies), AdminText.Files(stats.TotalMovieFiles));
-            ShowsTile = new("Total Shows", AdminText.Count(stats.TotalShows), AdminText.Files(stats.TotalShowFiles));
-            StorageTile = new("Storage", AdminText.Storage(stats.TotalStorageBytes), AdminText.Files(stats.TotalFiles));
+            MoviesTile = new(MoviesLabel, AdminText.Count(stats.TotalMovies), AdminText.Files(stats.TotalMovieFiles));
+            ShowsTile = new(ShowsLabel, AdminText.Count(stats.TotalShows), AdminText.Files(stats.TotalShowFiles));
+            StorageTile = new(StorageLabel, AdminText.Storage(stats.TotalStorageBytes), AdminText.Files(stats.TotalFiles));
         }
         else
         {
-            MoviesTile = Unavailable("Total Movies");
-            ShowsTile = Unavailable("Total Shows");
-            StorageTile = Unavailable("Storage");
+            MoviesTile = Unavailable(MoviesLabel);
+            ShowsTile = Unavailable(ShowsLabel);
+            StorageTile = Unavailable(StorageLabel);
         }
     }
 
     // Version, uptime and node health come from their own endpoints, as the web composes the strip.
     private static List<AdminHealthCell> HealthOf(AdminServerStatus status, AdminBuildInfo? build, AdminNodeCollection? nodes, DateTimeOffset now)
     {
-        string display = build?.Display is { Length: > 0 } shown ? shown : "unknown";
+        string display = build?.Display is { Length: > 0 } shown ? shown : HealthWord("versionUnknown");
         var health = status.Health;
         // A disabled node is not expected to be healthy, so it counts on neither side.
         var enabled = nodes?.Items.Where(node => node.Enabled).ToList();
         int healthy = enabled?.Count(node => node.Healthy) ?? 0;
+        string nodesLabel = HealthWord("nodes");
+        string errorsLabel = HealthWord("errors24h");
         return
         [
-            new("Version", build is { BuildNumber: > 0 } ? $"{build.BuildNumber} · {display}" : display, build?.Dirty == true ? "dirty build" : ""),
-            new("Uptime", AdminText.Uptime(status.StartedAt, now), status.RestartRequired ? "restart required" : "",
+            new(AdminHealthKind.Version, HealthWord("version"), build is { BuildNumber: > 0 } ? $"{build.BuildNumber} · {display}" : display,
+                build?.Dirty == true ? HealthWord("dirtyBuild") : ""),
+            new(AdminHealthKind.Uptime, HealthWord("uptime"), AdminText.Uptime(status.StartedAt, now), status.RestartRequired ? HealthWord("restartRequired") : "",
                 status.RestartRequired ? AdminTone.Warn : AdminTone.Normal),
-            DependencyCell("Postgres", health?.Postgres),
-            DependencyCell("Redis", health?.Redis),
-            enabled is null ? new("Nodes", AdminText.None, "unavailable")
-                : enabled.Count == 0 ? new("Nodes", "none", "this server transcodes")
-                : new("Nodes", $"{healthy}/{enabled.Count}", "healthy", healthy < enabled.Count ? AdminTone.Warn : AdminTone.Normal),
-            health is null ? new("Errors · 24h", AdminText.None)
-                : new("Errors · 24h", AdminText.Count(health.Errors24h), $"{AdminText.Count(health.Warnings24h)} warnings",
+            // The web names the two by their product names in every language.
+            DependencyCell(AdminHealthKind.Postgres, "Postgres", health?.Postgres),
+            DependencyCell(AdminHealthKind.Redis, "Redis", health?.Redis),
+            enabled is null ? new(AdminHealthKind.Nodes, nodesLabel, AdminText.None, HealthWord("nodesUnavailable"))
+                : enabled.Count == 0 ? new(AdminHealthKind.Nodes, nodesLabel, HealthWord("nodesNone"), HealthWord("nodesLocal"))
+                : new(AdminHealthKind.Nodes, nodesLabel, $"{healthy}/{enabled.Count}", HealthWord("nodesHealthy"),
+                    healthy < enabled.Count ? AdminTone.Warn : AdminTone.Normal),
+            health is null ? new(AdminHealthKind.Errors, errorsLabel, AdminText.None)
+                : new(AdminHealthKind.Errors, errorsLabel, AdminText.Count(health.Errors24h),
+                    AppText.Get("web.admin.dashboard.widgets.healthStrip.warnings", ("count", health.Warnings24h), ("count_text", AppText.Number(health.Warnings24h))),
                     health.Errors24h > 0 ? AdminTone.Error : AdminTone.Normal),
         ];
     }
 
     // Configured before up: a server without Redis is healthy, not an outage.
-    private static AdminHealthCell DependencyCell(string label, AdminServerHealthComponent? component) => component switch
+    private static AdminHealthCell DependencyCell(AdminHealthKind kind, string label, AdminServerHealthComponent? component) => component switch
     {
-        null => new(label, AdminText.None),
-        { Configured: false } => new(label, "Not configured", "optional"),
-        { Ok: not true } => new(label, "Unreachable", "", AdminTone.Error),
-        _ => new(label, "OK", component.LatencyMs is { } latency ? AdminText.Latency(latency) : ""),
+        null => new(kind, label, AdminText.None),
+        { Configured: false } => new(kind, label, HealthWord("notConfigured"), HealthWord("optional")),
+        { Ok: not true } => new(kind, label, HealthWord("unreachable"), "", AdminTone.Error),
+        _ => new(kind, label, HealthWord("ok"), component.LatencyMs is { } latency ? AdminText.Latency(latency) : ""),
+    };
+
+    // A word of the web's health strip (components/admin/dashboard/widgets/HealthStripWidget.tsx).
+    private static string HealthWord(string name) => name switch
+    {
+        "version" => AppText.Get("web.admin.dashboard.widgets.healthStrip.version"),
+        "versionUnknown" => AppText.Get("web.admin.dashboard.widgets.healthStrip.versionUnknown"),
+        "dirtyBuild" => AppText.Get("web.admin.dashboard.widgets.healthStrip.dirtyBuild"),
+        "uptime" => AppText.Get("web.admin.dashboard.widgets.healthStrip.uptime"),
+        "restartRequired" => AppText.Get("web.admin.dashboard.widgets.healthStrip.restartRequired"),
+        "nodes" => AppText.Get("web.admin.dashboard.widgets.healthStrip.nodes"),
+        "nodesUnavailable" => AppText.Get("web.admin.dashboard.widgets.healthStrip.nodesUnavailable"),
+        "nodesNone" => AppText.Get("web.admin.dashboard.widgets.healthStrip.nodesNone"),
+        "nodesLocal" => AppText.Get("web.admin.dashboard.widgets.healthStrip.nodesLocal"),
+        "nodesHealthy" => AppText.Get("web.admin.dashboard.widgets.healthStrip.nodesHealthy"),
+        "errors24h" => AppText.Get("web.admin.dashboard.widgets.healthStrip.errors24h"),
+        "notConfigured" => AppText.Get("web.admin.dashboard.widgets.healthStrip.notConfigured"),
+        "optional" => AppText.Get("web.admin.dashboard.widgets.healthStrip.optional"),
+        "unreachable" => AppText.Get("web.admin.dashboard.widgets.healthStrip.unreachable"),
+        _ => AppText.Get("web.admin.dashboard.widgets.healthStrip.ok"),
     };
 
     private void ShowSessions(AdminPlaybackSessionCollection? sessions, Uri server, DateTimeOffset now)
     {
         var items = sessions?.Items ?? [];
         SessionsState = sessions is null ? LibraryLoadState.Error : items.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
-        StreamsLinkText = items.Count > 0 ? $"View all {items.Count} streams ›" : "View activity ›";
-        MoreStreamsText = items.Count > StreamsShown ? $"+{items.Count - StreamsShown} more active streams" : "";
+        StreamsLinkText = items.Count > 0
+            ? AppText.Get("web.admin.dashboard.widgets.nowPlaying.viewAll", ("count", items.Count), ("count_text", items.Count))
+            : AppText.Get("web.admin.dashboard.widgets.nowPlaying.viewActivity");
+        int more = items.Count - StreamsShown;
+        MoreStreamsText = more > 0 ? AppText.Get("web.admin.dashboard.widgets.nowPlaying.moreStreams", ("count", more), ("count_text", more)) : "";
         Streams = [.. items.Take(StreamsShown).Select(session => new AdminStreamCard(
             AdminText.Title(session),
             AdminText.Subtitle(session),
@@ -216,7 +260,10 @@ public sealed partial class AdminDashboardViewModel
             AdminText.Username(session),
             AdminText.Profile(session),
             AdminText.Title(session),
-            string.Join(" · ", new[] { AdminText.Ago(session.StartedAt, now), AdminText.Client(session) }.Where(part => part.Length > 0))))];
+            string.Join(" · ", new[]
+            {
+                AdminText.Ago(session.StartedAt, now, AppText.Get("web.admin.dashboard.widgets.recentActivity.justNow")), AdminText.Client(session),
+            }.Where(part => part.Length > 0))))];
     }
 
     private void ShowTop(Fetched<AdminDashboardTopActivity> top)
@@ -236,7 +283,7 @@ public sealed partial class AdminDashboardViewModel
         TopProfiles = [.. profiles.Select((profile, i) => new AdminBarRow(
             AdminText.Count(i + 1),
             ProfileLabel(profile),
-            AdminText.Plays(profile.Plays),
+            AdminText.ProfilePlays(profile.Plays),
             AdminText.WatchTime(profile.TotalSeconds),
             profile.Plays / (double)profilePlays))];
         TopTitlesState = StateOf(top, TopTitles.Count == 0);
@@ -246,7 +293,9 @@ public sealed partial class AdminDashboardViewModel
     // "Kids · elena", or the account alone when the profile is named as it is.
     private static string ProfileLabel(AdminDashboardTopProfile profile)
     {
-        string account = profile.Username is { Length: > 0 } username ? username : $"User #{profile.UserId}";
+        string account = profile.Username is { Length: > 0 } username
+            ? username
+            : AppText.Get("web.admin.dashboard.widgets.topProfiles.userFallback", ("id", profile.UserId));
         string name = profile.ProfileName is { Length: > 0 } profileName ? profileName
             : profile.ProfileId is { Length: > 0 } id ? id : account;
         return name == account ? account : $"{name} · {account}";
@@ -255,7 +304,7 @@ public sealed partial class AdminDashboardViewModel
     private static AdminUserRow UserRow(AdminUser user, DateTimeOffset now) => new(
         user.Username,
         user.Email,
-        user.Role != "admin" ? "" : user.IsOwner ? "owner" : user.Role,
-        user.LastActiveAt is { } at ? AdminText.Ago(at, now) : AdminText.None,
+        user.Role != "admin" ? "" : AdminText.Role(user.Role, user.IsOwner),
+        user.LastActiveAt is { } at ? AdminText.Ago(at, now, AppText.Get("web.admin.dashboard.widgets.users.justNow")) : AdminText.None,
         user.Enabled);
 }

@@ -1037,6 +1037,3585 @@
       "value": "Visto"
     }
   ],
+  "web.admin.activity.client.heading": [
+    {
+      "type": 0,
+      "value": "Cliente"
+    }
+  ],
+  "web.admin.activity.column.route": [
+    {
+      "type": 0,
+      "value": "Ruta"
+    }
+  ],
+  "web.admin.activity.detail.transcoding": [
+    {
+      "type": 0,
+      "value": "Transcodificando"
+    }
+  ],
+  "web.admin.activity.empty.noMatches": [
+    {
+      "type": 0,
+      "value": "Ninguna transmisión coincide con tus filtros"
+    }
+  ],
+  "web.admin.activity.filter.clear": [
+    {
+      "type": 0,
+      "value": "Borrar filtros"
+    }
+  ],
+  "web.admin.activity.filter.movies": [
+    {
+      "type": 0,
+      "value": "Películas"
+    }
+  ],
+  "web.admin.activity.filter.placeholder": [
+    {
+      "type": 0,
+      "value": "Filtrar por usuario, contenido, cliente o nodo..."
+    }
+  ],
+  "web.admin.activity.filter.series": [
+    {
+      "type": 0,
+      "value": "Series"
+    }
+  ],
+  "web.admin.activity.filter.showing": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Mostrando "
+            },
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisión"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Mostrando "
+            },
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " de transmisiones"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Mostrando "
+            },
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": " de "
+            },
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisiones"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.firstSeen": [
+    {
+      "type": 0,
+      "value": "Primer acceso"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.lastSeen": [
+    {
+      "type": 0,
+      "value": "Último acceso"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.requests": [
+    {
+      "type": 0,
+      "value": "Solicitudes"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.user": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.activity.ipLookup.empty": [
+    {
+      "type": 0,
+      "value": "No se encontraron usuarios para "
+    },
+    {
+      "type": 1,
+      "value": "ip"
+    },
+    {
+      "type": 0,
+      "value": " en los últimos 30 días."
+    }
+  ],
+  "web.admin.activity.ipLookup.heading": [
+    {
+      "type": 0,
+      "value": "Búsqueda de IP"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadError": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar el historial de IP."
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMore": [
+    {
+      "type": 0,
+      "value": "Cargar más"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMoreError": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar más historial."
+    }
+  ],
+  "web.admin.activity.ipLookup.placeholder": [
+    {
+      "type": 0,
+      "value": "Buscar IP (p. ej., 203.0.113.50)"
+    }
+  ],
+  "web.admin.activity.ipLookup.searching": [
+    {
+      "type": 0,
+      "value": "Buscando..."
+    }
+  ],
+  "web.admin.activity.ipLookup.submit": [
+    {
+      "type": 0,
+      "value": "Buscar"
+    }
+  ],
+  "web.admin.activity.page.noStreams": [
+    {
+      "type": 0,
+      "value": "No hay transmisiones activas"
+    }
+  ],
+  "web.admin.activity.page.refresh": [
+    {
+      "type": 0,
+      "value": "Actualizar"
+    }
+  ],
+  "web.admin.activity.page.refreshing": [
+    {
+      "type": 0,
+      "value": "Actualizando..."
+    }
+  ],
+  "web.admin.activity.page.subtitle": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisión activa"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de transmisiones activas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisiones activas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    },
+    {
+      "type": 0,
+      "value": " en "
+    },
+    {
+      "type": 6,
+      "value": "nodes",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "nodes_text"
+            },
+            {
+              "type": 0,
+              "value": " nodo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "nodes_text"
+            },
+            {
+              "type": 0,
+              "value": " de nodos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "nodes_text"
+            },
+            {
+              "type": 0,
+              "value": " nodos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.activity.page.title": [
+    {
+      "type": 0,
+      "value": "Actividad"
+    }
+  ],
+  "web.admin.activity.route.localServer": [
+    {
+      "type": 0,
+      "value": "Servidor local"
+    }
+  ],
+  "web.admin.activity.route.node": [
+    {
+      "type": 0,
+      "value": "Nodo"
+    }
+  ],
+  "web.admin.activity.route.proxy": [
+    {
+      "type": 0,
+      "value": "Proxy"
+    }
+  ],
+  "web.admin.activity.route.server": [
+    {
+      "type": 0,
+      "value": "Servidor"
+    }
+  ],
+  "web.admin.activity.route.transcode": [
+    {
+      "type": 0,
+      "value": "Transcodificación"
+    }
+  ],
+  "web.admin.activity.route.unknownProxyNode": [
+    {
+      "type": 0,
+      "value": "Nodo proxy desconocido"
+    }
+  ],
+  "web.admin.activity.route.unknownTranscodeNode": [
+    {
+      "type": 0,
+      "value": "Nodo de transcodificación desconocido"
+    }
+  ],
+  "web.admin.activity.row.audio": [
+    {
+      "type": 0,
+      "value": "Audio"
+    }
+  ],
+  "web.admin.activity.row.container": [
+    {
+      "type": 0,
+      "value": "Contenedor"
+    }
+  ],
+  "web.admin.activity.row.details": [
+    {
+      "type": 0,
+      "value": "Detalles"
+    }
+  ],
+  "web.admin.activity.row.sessionActive": [
+    {
+      "type": 0,
+      "value": "Sesión activa: "
+    },
+    {
+      "type": 1,
+      "value": "elapsed"
+    }
+  ],
+  "web.admin.activity.row.video": [
+    {
+      "type": 0,
+      "value": "Video"
+    }
+  ],
+  "web.admin.activity.summary.byNode": [
+    {
+      "type": 0,
+      "value": "Por nodo de enrutamiento"
+    }
+  ],
+  "web.admin.activity.summary.hlsOutput": [
+    {
+      "type": 1,
+      "value": "container"
+    },
+    {
+      "type": 0,
+      "value": " (HLS)"
+    }
+  ],
+  "web.admin.activity.summary.methodDistribution": [
+    {
+      "type": 0,
+      "value": "Distribución de métodos de reproducción"
+    }
+  ],
+  "web.admin.activity.summary.methodFilter": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.methodHeading": [
+    {
+      "type": 0,
+      "value": "Método de reproducción"
+    }
+  ],
+  "web.admin.activity.summary.methodSegment": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": ": "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.unknownOutputContainer": [
+    {
+      "type": 0,
+      "value": "Contenedor de salida desconocido"
+    }
+  ],
+  "web.admin.activity.summary.unknownSource": [
+    {
+      "type": 0,
+      "value": "Origen desconocido"
+    }
+  ],
+  "web.admin.activity.transcodeMode.audioTranscode": [
+    {
+      "type": 0,
+      "value": "Transcodificación de audio"
+    }
+  ],
+  "web.admin.activity.transcodeMode.hardware": [
+    {
+      "type": 0,
+      "value": "HW "
+    },
+    {
+      "type": 1,
+      "value": "accel"
+    }
+  ],
+  "web.admin.activity.transcodeMode.pending": [
+    {
+      "type": 0,
+      "value": "HW/SW pendiente"
+    }
+  ],
+  "web.admin.activity.transcodeMode.software": [
+    {
+      "type": 0,
+      "value": "SW"
+    }
+  ],
+  "web.admin.activity.transcodeMode.unknown": [
+    {
+      "type": 0,
+      "value": "HW/SW desconocido"
+    }
+  ],
+  "web.admin.activity.userFallback": [
+    {
+      "type": 0,
+      "value": "Usuario #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.accounts.role": [
+    {
+      "type": 5,
+      "value": "role",
+      "options": {
+        "owner": {
+          "value": [
+            {
+              "type": 0,
+              "value": "propietario"
+            }
+          ]
+        },
+        "admin": {
+          "value": [
+            {
+              "type": 0,
+              "value": "administrador"
+            }
+          ]
+        },
+        "user": {
+          "value": [
+            {
+              "type": 0,
+              "value": "usuario"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "role"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.admin.common.serverActivity.connecting": [
+    {
+      "type": 0,
+      "value": "Conectando…"
+    }
+  ],
+  "web.admin.common.serverActivity.disconnected": [
+    {
+      "type": 0,
+      "value": "Desconectado"
+    }
+  ],
+  "web.admin.common.serverActivity.empty": [
+    {
+      "type": 0,
+      "value": "No hay actividad del servidor"
+    }
+  ],
+  "web.admin.common.serverActivity.failedRecent": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " falló en las últimas 24 horas"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " fallaron en las últimas 24 horas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " fallaron en las últimas 24 horas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.libraryFallback": [
+    {
+      "type": 0,
+      "value": "Biblioteca #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.serverActivity.moreRunning": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " más en curso"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " más en curso"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " más en curso"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScans": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " escaneo más en cola"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de escaneos más en cola"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " escaneos más en cola"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScansAtLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " escaneo más en cola"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de escaneos más en cola"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " escaneos más en cola"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.noPreparations": [
+    {
+      "type": 0,
+      "value": "No se está preparando ninguna descarga"
+    }
+  ],
+  "web.admin.common.serverActivity.noScans": [
+    {
+      "type": 0,
+      "value": "No hay escaneos activos"
+    }
+  ],
+  "web.admin.common.serverActivity.noStreams": [
+    {
+      "type": 0,
+      "value": "No hay transmisiones activas"
+    }
+  ],
+  "web.admin.common.serverActivity.noTasks": [
+    {
+      "type": 0,
+      "value": "No hay tareas en ejecución"
+    }
+  ],
+  "web.admin.common.serverActivity.paused": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en pausa"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en pausa"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en pausa"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.admin.common.serverActivity.preparing": [
+    {
+      "type": 0,
+      "value": "Preparando descargas"
+    }
+  ],
+  "web.admin.common.serverActivity.processingFiles": [
+    {
+      "type": 0,
+      "value": "Procesando archivos"
+    }
+  ],
+  "web.admin.common.serverActivity.progressLabel": [
+    {
+      "type": 0,
+      "value": "Progreso de "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "web.admin.common.serverActivity.queued": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en cola"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en cola"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en cola"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.retrying": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " esperando para reintentar"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " esperando para reintentar"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " esperando para reintentar"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.running": [
+    {
+      "type": 0,
+      "value": "En curso"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.file": [
+    {
+      "type": 0,
+      "value": "Un solo archivo"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.library": [
+    {
+      "type": 0,
+      "value": "Biblioteca completa"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.subtree": [
+    {
+      "type": 0,
+      "value": "Subcarpeta"
+    }
+  ],
+  "web.admin.common.serverActivity.scanProgress": [
+    {
+      "type": 1,
+      "value": "message"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "processed"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": " ("
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %)"
+    }
+  ],
+  "web.admin.common.serverActivity.scanQueued": [
+    {
+      "type": 0,
+      "value": "En cola"
+    }
+  ],
+  "web.admin.common.serverActivity.scanning": [
+    {
+      "type": 0,
+      "value": "Analizando…"
+    }
+  ],
+  "web.admin.common.serverActivity.scans": [
+    {
+      "type": 0,
+      "value": "Análisis"
+    }
+  ],
+  "web.admin.common.serverActivity.streamCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 1,
+              "value": "method"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 1,
+              "value": "method"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 1,
+              "value": "method"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.streams": [
+    {
+      "type": 0,
+      "value": "Transmisiones"
+    }
+  ],
+  "web.admin.common.serverActivity.tasks": [
+    {
+      "type": 0,
+      "value": "Tareas"
+    }
+  ],
+  "web.admin.common.serverActivity.title": [
+    {
+      "type": 0,
+      "value": "Actividad del servidor"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.active": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.atLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actividad del servidor: al menos "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en curso"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.idle": [
+    {
+      "type": 0,
+      "value": "Actividad del servidor"
+    }
+  ],
+  "web.admin.common.serverActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "Ver todo"
+    }
+  ],
+  "web.admin.dashboard.chart.columnReading": [
+    {
+      "type": 1,
+      "value": "bucket"
+    },
+    {
+      "type": 0,
+      "value": ": "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.format.fileCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " archivo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de archivos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " archivos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.page.refresh": [
+    {
+      "type": 0,
+      "value": "Actualizar"
+    }
+  ],
+  "web.admin.dashboard.page.refreshing": [
+    {
+      "type": 0,
+      "value": "Actualizando..."
+    }
+  ],
+  "web.admin.dashboard.page.subtitle": [
+    {
+      "type": 0,
+      "value": "Sesiones en directo, estado del contenido y actividad del servidor en una sola vista."
+    }
+  ],
+  "web.admin.dashboard.page.title": [
+    {
+      "type": 0,
+      "value": "Panel"
+    }
+  ],
+  "web.admin.dashboard.page.updatedJustNow": [
+    {
+      "type": 0,
+      "value": "Actualizado hace menos de 1 minuto"
+    }
+  ],
+  "web.admin.dashboard.page.updatedMinutesAgo": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actualizado hace "
+            },
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " minuto"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actualizado hace "
+            },
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " de minutos"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Actualizado hace "
+            },
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": " minutos"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.range.edgeEnd": [
+    {
+      "type": 0,
+      "value": "ahora"
+    }
+  ],
+  "web.admin.dashboard.range.edgeStart.day": [
+    {
+      "type": 0,
+      "value": "hace 24 h"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.day": [
+    {
+      "type": 0,
+      "value": "las últimas 24 horas"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.week": [
+    {
+      "type": 0,
+      "value": "los últimos 7 días"
+    }
+  ],
+  "web.admin.dashboard.range.title.day": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " · últimas 24 h"
+    }
+  ],
+  "web.admin.dashboard.range.title.week": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": " · últimos 7 d"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.healthStrip.title": [
+    {
+      "type": 0,
+      "value": "Estado del servidor"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "En reproducción"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "Actividad reciente"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.label": [
+    {
+      "type": 0,
+      "value": "Transmisiones activas"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.sessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " sesión"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de sesiones"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " sesiones"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.chartLabel": [
+    {
+      "type": 0,
+      "value": "Tráfico de salida en "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": ", en megabits por segundo"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.empty": [
+    {
+      "type": 0,
+      "value": "Aún no hay muestras de tráfico de salida"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar el historial de tráfico de salida."
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.peak": [
+    {
+      "type": 0,
+      "value": "Máximo "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.title": [
+    {
+      "type": 0,
+      "value": "Tráfico de salida"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.total": [
+    {
+      "type": 0,
+      "value": "Total "
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.label": [
+    {
+      "type": 0,
+      "value": "Salida actual"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.source": [
+    {
+      "type": 0,
+      "value": "salida: nodos + servidor"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.waiting": [
+    {
+      "type": 0,
+      "value": "esperando una muestra"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.dirtyBuild": [
+    {
+      "type": 0,
+      "value": "con cambios locales"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.errors24h": [
+    {
+      "type": 0,
+      "value": "Errores · 24 h"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar el estado del servidor."
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodes": [
+    {
+      "type": 0,
+      "value": "Nodos"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesHealthy": [
+    {
+      "type": 0,
+      "value": "en buen estado"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesLocal": [
+    {
+      "type": 0,
+      "value": "este servidor transcodifica"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesNone": [
+    {
+      "type": 0,
+      "value": "ninguno"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesUnavailable": [
+    {
+      "type": 0,
+      "value": "no disponible"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.notConfigured": [
+    {
+      "type": 0,
+      "value": "No configurado"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.ok": [
+    {
+      "type": 0,
+      "value": "OK"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.optional": [
+    {
+      "type": 0,
+      "value": "opcional"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.restartRequired": [
+    {
+      "type": 0,
+      "value": "requiere reinicio"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.unreachable": [
+    {
+      "type": 0,
+      "value": "Inaccesible"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.uptime": [
+    {
+      "type": 0,
+      "value": "Tiempo activo"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.version": [
+    {
+      "type": 0,
+      "value": "Versión"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.versionUnknown": [
+    {
+      "type": 0,
+      "value": "desconocida"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.warnings": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " advertencia"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de advertencias"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " advertencias"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.disabled": [
+    {
+      "type": 0,
+      "value": "Biblioteca desactivada"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.empty": [
+    {
+      "type": 0,
+      "value": "No hay bibliotecas configuradas."
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.enabled": [
+    {
+      "type": 0,
+      "value": "Biblioteca activada"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar las bibliotecas."
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.title": [
+    {
+      "type": 0,
+      "value": "Bibliotecas"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.typeAndPaths": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "type"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " ruta"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "type"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de rutas"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "type"
+            },
+            {
+              "type": 0,
+              "value": " · "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " rutas"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.movies.label": [
+    {
+      "type": 0,
+      "value": "Total de películas"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeFallback": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "series"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.fileFallback": [
+    {
+      "type": 0,
+      "value": "Archivo #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.idle": [
+    {
+      "type": 0,
+      "value": "No se está reproduciendo nada"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.justNow": [
+    {
+      "type": 0,
+      "value": "Justo ahora"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar las transmisiones."
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.moreStreams": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "+"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisión activa más"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "+"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de transmisiones activas más"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "+"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisiones activas más"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.movie": [
+    {
+      "type": 0,
+      "value": "Película"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.paused": [
+    {
+      "type": 0,
+      "value": "En pausa"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.series": [
+    {
+      "type": 0,
+      "value": "Serie"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "Reproduciendo ahora"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.userFallback": [
+    {
+      "type": 0,
+      "value": "Usuario #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewActivity": [
+    {
+      "type": 0,
+      "value": "Ver actividad ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewAll": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ver "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisión ›"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ver las "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de transmisiones ›"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Ver las "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " transmisiones ›"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.chartLabelHourly": [
+    {
+      "type": 0,
+      "value": "Sesiones de reproducción por hora durante "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": ", por método de reproducción"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.empty": [
+    {
+      "type": 0,
+      "value": "No hubo reproducciones en "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.emptyDetail": [
+    {
+      "type": 0,
+      "value": "Las sesiones aparecen aquí en cuanto alguien empieza a ver algo."
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar la actividad de reproducción."
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directPlay": [
+    {
+      "type": 0,
+      "value": "Reproducción directa"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directStream": [
+    {
+      "type": 0,
+      "value": "Transmisión directa"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.transcode": [
+    {
+      "type": 0,
+      "value": "Transcodificación"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.sessionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " sesión"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de sesiones"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " sesiones"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.title": [
+    {
+      "type": 0,
+      "value": "Actividad de reproducción"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.totalLabel": [
+    {
+      "type": 0,
+      "value": "Sesiones"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.detail": [
+    {
+      "type": 0,
+      "value": "vieron en este servidor"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.label": [
+    {
+      "type": 0,
+      "value": "Perfiles · 24 h"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.empty": [
+    {
+      "type": 0,
+      "value": "No hay actividad reciente."
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.justNow": [
+    {
+      "type": 0,
+      "value": "Justo ahora"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar la actividad."
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatching": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " empezó a ver "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatchingWithProfile": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "pill",
+      "children": [
+        {
+          "type": 1,
+          "value": "profile"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " empezó a ver "
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "Actividad reciente"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "Ver todo ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.shows.label": [
+    {
+      "type": 0,
+      "value": "Total de series"
+    }
+  ],
+  "web.admin.dashboard.widgets.statTile.unavailable": [
+    {
+      "type": 0,
+      "value": "No disponible"
+    }
+  ],
+  "web.admin.dashboard.widgets.storage.label": [
+    {
+      "type": 0,
+      "value": "Almacenamiento"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.empty": [
+    {
+      "type": 0,
+      "value": "No hay actividad de perfiles en "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudo cargar la actividad de los perfiles."
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " reproducción"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de reproducciones"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " reproducciones"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.title": [
+    {
+      "type": 0,
+      "value": "Perfiles más activos"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.userFallback": [
+    {
+      "type": 0,
+      "value": "Usuario #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.empty": [
+    {
+      "type": 0,
+      "value": "No hay reproducciones en "
+    },
+    {
+      "type": 1,
+      "value": "range"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar los títulos más vistos."
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " reproducción"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " de reproducciones"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " reproducciones"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.title": [
+    {
+      "type": 0,
+      "value": "Títulos más vistos"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.active": [
+    {
+      "type": 0,
+      "value": "Activo"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.disabled": [
+    {
+      "type": 0,
+      "value": "Deshabilitado"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.empty": [
+    {
+      "type": 0,
+      "value": "No hay usuarios."
+    }
+  ],
+  "web.admin.dashboard.widgets.users.justNow": [
+    {
+      "type": 0,
+      "value": "Ahora mismo"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.lastActive": [
+    {
+      "type": 0,
+      "value": "Última actividad"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.loadFailed": [
+    {
+      "type": 0,
+      "value": "No se pudieron cargar los usuarios."
+    }
+  ],
+  "web.admin.dashboard.widgets.users.status": [
+    {
+      "type": 0,
+      "value": "Estado"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.title": [
+    {
+      "type": 0,
+      "value": "Usuarios"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.user": [
+    {
+      "type": 0,
+      "value": "Usuario"
+    }
+  ],
+  "web.admin.downloads.preparation.compactEpisodeTitle": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.downloads.preparation.episodeCode": [
+    {
+      "type": 0,
+      "value": "T"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.downloads.preparation.fileFallback": [
+    {
+      "type": 0,
+      "value": "Archivo #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.remux": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcode": [
+    {
+      "type": 0,
+      "value": "Transcodificación"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcodeTarget": [
+    {
+      "type": 0,
+      "value": "Transcodificación "
+    },
+    {
+      "type": 1,
+      "value": "target"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hours": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "queda aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hoursMinutes": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h "
+            },
+            {
+              "type": 1,
+              "value": "minutes"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h "
+            },
+            {
+              "type": 1,
+              "value": "minutes"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": " h "
+            },
+            {
+              "type": 1,
+              "value": "minutes"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.minutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "queda aproximadamente "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "quedan aproximadamente "
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.underOneMinute": [
+    {
+      "type": 0,
+      "value": "queda menos de 1 min"
+    }
+  ],
+  "web.admin.downloads.preparation.running.encoding": [
+    {
+      "type": 0,
+      "value": "Codificando"
+    }
+  ],
+  "web.admin.downloads.preparation.running.remuxing": [
+    {
+      "type": 0,
+      "value": "Haciendo remux"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.localServer": [
+    {
+      "type": 0,
+      "value": "Servidor local"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.node": [
+    {
+      "type": 0,
+      "value": "Nodo"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.nodeWithId": [
+    {
+      "type": 0,
+      "value": "Nodo "
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.sessions.playback.action.message": [
+    {
+      "type": 0,
+      "value": "Mensaje…"
+    }
+  ],
+  "web.admin.sessions.playback.action.pause": [
+    {
+      "type": 0,
+      "value": "Pausar"
+    }
+  ],
+  "web.admin.sessions.playback.action.resume": [
+    {
+      "type": 0,
+      "value": "Reanudar"
+    }
+  ],
+  "web.admin.sessions.playback.action.stop": [
+    {
+      "type": 0,
+      "value": "Detener"
+    }
+  ],
+  "web.admin.sessions.playback.action.terminate": [
+    {
+      "type": 0,
+      "value": "Terminar"
+    }
+  ],
+  "web.admin.sessions.playback.failure.conflictReason": [
+    {
+      "type": 0,
+      "value": "el estado de la sesión cambió"
+    }
+  ],
+  "web.admin.sessions.playback.failure.ended": [
+    {
+      "type": 0,
+      "value": "Esta sesión de reproducción ya terminó."
+    }
+  ],
+  "web.admin.sessions.playback.failure.generic": [
+    {
+      "type": 0,
+      "value": "No se pudo enviar el comando a la sesión"
+    }
+  ],
+  "web.admin.sessions.playback.failure.notApplied": [
+    {
+      "type": 0,
+      "value": "No se aplicó el comando "
+    },
+    {
+      "type": 5,
+      "value": "action",
+      "options": {
+        "pause": {
+          "value": [
+            {
+              "type": 0,
+              "value": "pausar"
+            }
+          ]
+        },
+        "resume": {
+          "value": [
+            {
+              "type": 0,
+              "value": "reanudar"
+            }
+          ]
+        },
+        "stop": {
+          "value": [
+            {
+              "type": 0,
+              "value": "detener"
+            }
+          ]
+        },
+        "message": {
+          "value": [
+            {
+              "type": 0,
+              "value": "mensaje"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "terminar"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": ": "
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.admin.sessions.playback.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "El control de reproducción no está disponible en este servidor."
+    }
+  ],
+  "web.admin.sessions.playback.menu.ariaLabel": [
+    {
+      "type": 0,
+      "value": "Acciones de la sesión"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.description": [
+    {
+      "type": 0,
+      "value": "Envía un mensaje personalizado a "
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": " durante la reproducción."
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.placeholder": [
+    {
+      "type": 0,
+      "value": "El servidor se reiniciará en 5 minutos. Termina este episodio pronto."
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.send": [
+    {
+      "type": 0,
+      "value": "Enviar mensaje"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.title": [
+    {
+      "type": 0,
+      "value": "Enviar mensaje"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageRequired": [
+    {
+      "type": 0,
+      "value": "El mensaje es obligatorio"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageSent": [
+    {
+      "type": 0,
+      "value": "Mensaje enviado"
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseFallback": [
+    {
+      "type": 0,
+      "value": "La pausa no pudo llegar directamente al reproductor. En su lugar, Silo terminará la sesión en breve."
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseSent": [
+    {
+      "type": 0,
+      "value": "Comando de pausa enviado"
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeFallback": [
+    {
+      "type": 0,
+      "value": "La reanudación no pudo llegar directamente al reproductor. En su lugar, Silo terminará la sesión en breve."
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeSent": [
+    {
+      "type": 0,
+      "value": "Comando de reanudación enviado"
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopFallback": [
+    {
+      "type": 0,
+      "value": "La detención no pudo llegar directamente al reproductor. En su lugar, Silo terminará la sesión en breve."
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopSent": [
+    {
+      "type": 0,
+      "value": "Comando de detención enviado"
+    }
+  ],
+  "web.admin.sessions.playback.toast.terminateReceipt": [
+    {
+      "type": 5,
+      "value": "revoked",
+      "options": {
+        "already": {
+          "value": [
+            {
+              "type": 0,
+              "value": "La autorización de reproducción ya estaba revocada"
+            }
+          ]
+        },
+        "revoked": {
+          "value": [
+            {
+              "type": 0,
+              "value": "Se revocó la autorización de reproducción"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "No se revocó la autorización de reproducción"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "; "
+    },
+    {
+      "type": 5,
+      "value": "notified",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 0,
+              "value": "se indicó al reproductor que se detuviera"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "no se pudo contactar con el reproductor, que se detendrá la próxima vez que se comunique con el servidor"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "."
+    }
+  ],
+  "web.admin.sessions.playback.unsupportedControl": [
+    {
+      "type": 0,
+      "value": "Esta sesión no admite pausar, reanudar ni enviar mensajes en directo. Detener y Terminar aún pueden finalizar la reproducción."
+    }
+  ],
+  "web.admin.shell.mobileHeader.eyebrow": [
+    {
+      "type": 0,
+      "value": "Administración"
+    }
+  ],
+  "web.admin.shell.nav.page.activity.label": [
+    {
+      "type": 0,
+      "value": "Actividad"
+    }
+  ],
+  "web.admin.shell.nav.page.dashboard.label": [
+    {
+      "type": 0,
+      "value": "Panel"
+    }
+  ],
+  "web.admin.shell.nav.section.monitor": [
+    {
+      "type": 0,
+      "value": "Supervisar"
+    }
+  ],
+  "web.admin.shell.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "Volver a la app"
+    }
+  ],
+  "web.admin.shell.sidebar.build.dev": [
+    {
+      "type": 0,
+      "value": "compilación de desarrollo"
+    }
+  ],
+  "web.admin.shell.sidebar.build.heading": [
+    {
+      "type": 0,
+      "value": "Compilación"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loadFailed": [
+    {
+      "type": 0,
+      "value": "error de carga"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loading": [
+    {
+      "type": 0,
+      "value": "cargando..."
+    }
+  ],
+  "web.admin.shell.sidebar.liveSessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en directo"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en directo"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " en directo"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.shell.sidebar.navigation": [
+    {
+      "type": 0,
+      "value": "Navegación de administración"
+    }
+  ],
+  "web.admin.tasks.lib.taskProgress.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_poll.name": [
+    {
+      "type": 0,
+      "value": "Sondeo de Autoscan"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_webhook_retry.name": [
+    {
+      "type": 0,
+      "value": "Reintento de webhooks de Autoscan"
+    }
+  ],
+  "web.admin.tasks.task.backfill_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "Completar metadatos de libros electrónicos"
+    }
+  ],
+  "web.admin.tasks.task.backfill_hdr10_plus.name": [
+    {
+      "type": 0,
+      "value": "Detectar video HDR10+"
+    }
+  ],
+  "web.admin.tasks.task.backfill_matroska_track_numbers.name": [
+    {
+      "type": 0,
+      "value": "Registrar números de pista de subtítulos Matroska"
+    }
+  ],
+  "web.admin.tasks.task.backfill_media_item_aliases.name": [
+    {
+      "type": 0,
+      "value": "Completar alias de elementos multimedia"
+    }
+  ],
+  "web.admin.tasks.task.backfill_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "Completar imágenes de metadatos"
+    }
+  ],
+  "web.admin.tasks.task.backup.name": [
+    {
+      "type": 0,
+      "value": "Hacer copia de seguridad del servidor"
+    }
+  ],
+  "web.admin.tasks.task.bulk_metadata_enrichment.name": [
+    {
+      "type": 0,
+      "value": "Enriquecimiento masivo de metadatos"
+    }
+  ],
+  "web.admin.tasks.task.cache_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "Almacenar en caché imágenes de metadatos"
+    }
+  ],
+  "web.admin.tasks.task.chapter_thumbnail_backfill.name": [
+    {
+      "type": 0,
+      "value": "Completar miniaturas de capítulos"
+    }
+  ],
+  "web.admin.tasks.task.check_plugin_updates.name": [
+    {
+      "type": 0,
+      "value": "Buscar actualizaciones de complementos"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_activity_log.name": [
+    {
+      "type": 0,
+      "value": "Limpiar registro de actividad"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_artwork_revisions.name": [
+    {
+      "type": 0,
+      "value": "Limpiar revisiones de imágenes"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_auth_sessions.name": [
+    {
+      "type": 0,
+      "value": "Limpiar sesiones de inicio de sesión caducadas"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_autoscan_events.name": [
+    {
+      "type": 0,
+      "value": "Limpiar eventos de Autoscan"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_catalog_search_index_events.name": [
+    {
+      "type": 0,
+      "value": "Limpiar eventos del índice de búsqueda del catálogo"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_chapter_thumbnail_originals.name": [
+    {
+      "type": 0,
+      "value": "Limpiar miniaturas de capítulos a tamaño completo"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_client_diagnostics.name": [
+    {
+      "type": 0,
+      "value": "Limpiar diagnósticos de clientes"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_device_logins.name": [
+    {
+      "type": 0,
+      "value": "Limpiar solicitudes de inicio de sesión de dispositivos caducadas"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_oauth_flows.name": [
+    {
+      "type": 0,
+      "value": "Limpiar flujos de inicio de sesión OAuth caducados"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_operational_log.name": [
+    {
+      "type": 0,
+      "value": "Limpiar registro operativo"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_orphaned_media_items.name": [
+    {
+      "type": 0,
+      "value": "Limpiar elementos multimedia huérfanos"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_policy_decision_log.name": [
+    {
+      "type": 0,
+      "value": "Limpiar registro de decisiones de políticas"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_removed_media_images.name": [
+    {
+      "type": 0,
+      "value": "Limpiar imágenes de contenido quitado"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_task_history.name": [
+    {
+      "type": 0,
+      "value": "Limpiar historial de tareas"
+    }
+  ],
+  "web.admin.tasks.task.contribute_markers.name": [
+    {
+      "type": 0,
+      "value": "Compartir marcadores detectados"
+    }
+  ],
+  "web.admin.tasks.task.database_maintenance.name": [
+    {
+      "type": 0,
+      "value": "Mantenimiento de la base de datos"
+    }
+  ],
+  "web.admin.tasks.task.detect_intro_markers.name": [
+    {
+      "type": 0,
+      "value": "Detectar marcadores en este servidor"
+    }
+  ],
+  "web.admin.tasks.task.encode_download_artifacts.name": [
+    {
+      "type": 0,
+      "value": "Preparar artefactos de descarga"
+    }
+  ],
+  "web.admin.tasks.task.generate_extra_stills.name": [
+    {
+      "type": 0,
+      "value": "Generar miniaturas de extras"
+    }
+  ],
+  "web.admin.tasks.task.match_media.name": [
+    {
+      "type": 0,
+      "value": "Identificar archivos multimedia"
+    }
+  ],
+  "web.admin.tasks.task.notifications_retention.name": [
+    {
+      "type": 0,
+      "value": "Limpiar notificaciones"
+    }
+  ],
+  "web.admin.tasks.task.queue_seek_previews.name": [
+    {
+      "type": 0,
+      "value": "Poner en cola vistas previas de desplazamiento"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "Reconstruir índice de búsqueda del catálogo"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_release_interest.name": [
+    {
+      "type": 0,
+      "value": "Reconstruir intereses de notificaciones"
+    }
+  ],
+  "web.admin.tasks.task.recheck_external_identities.name": [
+    {
+      "type": 0,
+      "value": "Volver a comprobar cuentas de inicio de sesión externo"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_artwork_cache.name": [
+    {
+      "type": 0,
+      "value": "Conciliar caché de imágenes"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_requests.name": [
+    {
+      "type": 0,
+      "value": "Conciliar solicitudes"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_watch_history.name": [
+    {
+      "type": 0,
+      "value": "Conciliar historial de visualización"
+    }
+  ],
+  "web.admin.tasks.task.refresh_all_library_metadata.name": [
+    {
+      "type": 0,
+      "value": "Actualizar metadatos de todas las bibliotecas"
+    }
+  ],
+  "web.admin.tasks.task.refresh_anime_ids.name": [
+    {
+      "type": 0,
+      "value": "Actualizar lista de anime"
+    }
+  ],
+  "web.admin.tasks.task.refresh_metadata.name": [
+    {
+      "type": 0,
+      "value": "Actualizar metadatos"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_discover_lists.name": [
+    {
+      "type": 0,
+      "value": "Actualizar listas de Descubrir de solicitudes"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_downloads.name": [
+    {
+      "type": 0,
+      "value": "Actualizar descargas de solicitudes"
+    }
+  ],
+  "web.admin.tasks.task.refresh_seasonal_lists.name": [
+    {
+      "type": 0,
+      "value": "Actualizar listas de temporada"
+    }
+  ],
+  "web.admin.tasks.task.refresh_series_air_dates.name": [
+    {
+      "type": 0,
+      "value": "Actualizar fechas de emisión de series"
+    }
+  ],
+  "web.admin.tasks.task.refresh_trending_discover.name": [
+    {
+      "type": 0,
+      "value": "Actualizar Tendencias en Descubrir"
+    }
+  ],
+  "web.admin.tasks.task.release_stored_artwork.name": [
+    {
+      "type": 0,
+      "value": "Liberar imágenes almacenadas"
+    }
+  ],
+  "web.admin.tasks.task.repair_provider_id_integrity.name": [
+    {
+      "type": 0,
+      "value": "Reparar integridad de ID de proveedor"
+    }
+  ],
+  "web.admin.tasks.task.scan_libraries.name": [
+    {
+      "type": 0,
+      "value": "Poner en cola análisis de bibliotecas multimedia"
+    }
+  ],
+  "web.admin.tasks.task.seed_content_availability.name": [
+    {
+      "type": 0,
+      "value": "Inicializar disponibilidad de contenido"
+    }
+  ],
+  "web.admin.tasks.task.setting_mutations_retention.name": [
+    {
+      "type": 0,
+      "value": "Limpiar recibos de cambios de configuración"
+    }
+  ],
+  "web.admin.tasks.task.summarize_api_usage.name": [
+    {
+      "type": 0,
+      "value": "Resumir uso de la API"
+    }
+  ],
+  "web.admin.tasks.task.sweep_artwork_storage.name": [
+    {
+      "type": 0,
+      "value": "Limpiar almacenamiento de imágenes"
+    }
+  ],
+  "web.admin.tasks.task.sweep_orphaned_media_images.name": [
+    {
+      "type": 0,
+      "value": "Limpiar imágenes multimedia huérfanas"
+    }
+  ],
+  "web.admin.tasks.task.sync_audiobook_metadata.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar metadatos de audiolibros"
+    }
+  ],
+  "web.admin.tasks.task.sync_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar índice de búsqueda del catálogo"
+    }
+  ],
+  "web.admin.tasks.task.sync_collections.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar colecciones"
+    }
+  ],
+  "web.admin.tasks.task.sync_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar metadatos de libros electrónicos"
+    }
+  ],
+  "web.admin.tasks.task.sync_manga_metadata.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar metadatos de manga"
+    }
+  ],
+  "web.admin.tasks.task.sync_markers.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar marcadores en línea"
+    }
+  ],
+  "web.admin.tasks.task.sync_movie_box_sets.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar sagas de películas"
+    }
+  ],
+  "web.admin.tasks.task.sync_podcast_feeds.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar feeds de pódcast"
+    }
+  ],
+  "web.admin.tasks.task.sync_user_collections.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar colecciones de usuarios"
+    }
+  ],
+  "web.admin.tasks.task.sync_watch_providers.name": [
+    {
+      "type": 0,
+      "value": "Sincronizar proveedores de visualización"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -4811,6 +8390,232 @@
       "value": "Dónde aparece"
     }
   ],
+  "web.common.activity.method.direct.label": [
+    {
+      "type": 0,
+      "value": "Reproducción directa"
+    }
+  ],
+  "web.common.activity.method.directStream.label": [
+    {
+      "type": 0,
+      "value": "Transmisión directa"
+    }
+  ],
+  "web.common.activity.method.remux.label": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.common.activity.method.transcode.label": [
+    {
+      "type": 0,
+      "value": "Transcodificación"
+    }
+  ],
+  "web.common.activity.method.unknown.label": [
+    {
+      "type": 0,
+      "value": "Desconocido"
+    }
+  ],
+  "web.common.activity.subtitle.movie": [
+    {
+      "type": 0,
+      "value": "Película"
+    }
+  ],
+  "web.common.activity.subtitle.series": [
+    {
+      "type": 0,
+      "value": "Serie"
+    }
+  ],
+  "web.common.activity.title.file": [
+    {
+      "type": 0,
+      "value": "Archivo #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.common.date.daysAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " d"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " d"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " d"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.hoursAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " h"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.minutesAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "hace "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " min"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.common.devicePlatform.kind.desktop": [
     {
       "type": 0,
@@ -4903,6 +8708,48 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.libraryType.audiobooks": [
+    {
+      "type": 0,
+      "value": "Audiolibros"
+    }
+  ],
+  "web.common.libraryType.ebooks": [
+    {
+      "type": 0,
+      "value": "Libros electrónicos"
+    }
+  ],
+  "web.common.libraryType.manga": [
+    {
+      "type": 0,
+      "value": "Manga"
+    }
+  ],
+  "web.common.libraryType.mixed": [
+    {
+      "type": 0,
+      "value": "Mixta"
+    }
+  ],
+  "web.common.libraryType.movies": [
+    {
+      "type": 0,
+      "value": "Películas"
+    }
+  ],
+  "web.common.libraryType.podcasts": [
+    {
+      "type": 0,
+      "value": "Podcasts"
+    }
+  ],
+  "web.common.libraryType.series": [
+    {
+      "type": 0,
+      "value": "Series"
     }
   ],
   "web.common.requests.toast.cancelFailed": [
@@ -8421,6 +12268,12 @@
       "value": "Reproducir"
     }
   ],
+  "web.player.bar.positionLabel": [
+    {
+      "type": 0,
+      "value": "Posición de reproducción"
+    }
+  ],
   "web.player.bar.returnTitle": [
     {
       "type": 0,
@@ -9202,6 +13055,18 @@
     {
       "type": 0,
       "value": "Reconectando con la sala. Los controles no están disponibles temporalmente."
+    }
+  ],
+  "web.player.routeBadge.local": [
+    {
+      "type": 0,
+      "value": "Local"
+    }
+  ],
+  "web.player.routeBadge.remote": [
+    {
+      "type": 0,
+      "value": "Remota"
     }
   ],
   "web.player.seekBar.dragMarkerEnd": [

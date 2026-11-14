@@ -1037,6 +1037,2819 @@
       "value": "視聴済み"
     }
   ],
+  "web.admin.activity.client.heading": [
+    {
+      "type": 0,
+      "value": "クライアント"
+    }
+  ],
+  "web.admin.activity.column.route": [
+    {
+      "type": 0,
+      "value": "経路"
+    }
+  ],
+  "web.admin.activity.detail.transcoding": [
+    {
+      "type": 0,
+      "value": "トランスコード中"
+    }
+  ],
+  "web.admin.activity.empty.noMatches": [
+    {
+      "type": 0,
+      "value": "フィルターに一致するストリームはありません"
+    }
+  ],
+  "web.admin.activity.filter.clear": [
+    {
+      "type": 0,
+      "value": "フィルターをクリア"
+    }
+  ],
+  "web.admin.activity.filter.movies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.admin.activity.filter.placeholder": [
+    {
+      "type": 0,
+      "value": "ユーザー、メディア、クライアント、ノードで絞り込み…"
+    }
+  ],
+  "web.admin.activity.filter.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.admin.activity.filter.showing": [
+    {
+      "type": 6,
+      "value": "total",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "total_text"
+            },
+            {
+              "type": 0,
+              "value": "件中"
+            },
+            {
+              "type": 1,
+              "value": "shown"
+            },
+            {
+              "type": 0,
+              "value": "件のストリームを表示"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.firstSeen": [
+    {
+      "type": 0,
+      "value": "初回確認"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.lastSeen": [
+    {
+      "type": 0,
+      "value": "最終確認"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.requests": [
+    {
+      "type": 0,
+      "value": "リクエスト"
+    }
+  ],
+  "web.admin.activity.ipLookup.column.user": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.activity.ipLookup.empty": [
+    {
+      "type": 0,
+      "value": "過去30日間に"
+    },
+    {
+      "type": 1,
+      "value": "ip"
+    },
+    {
+      "type": 0,
+      "value": "を使用したユーザーは見つかりませんでした。"
+    }
+  ],
+  "web.admin.activity.ipLookup.heading": [
+    {
+      "type": 0,
+      "value": "IP検索"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadError": [
+    {
+      "type": 0,
+      "value": "IP履歴を読み込めませんでした。"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMore": [
+    {
+      "type": 0,
+      "value": "さらに読み込む"
+    }
+  ],
+  "web.admin.activity.ipLookup.loadMoreError": [
+    {
+      "type": 0,
+      "value": "履歴をさらに読み込めませんでした。"
+    }
+  ],
+  "web.admin.activity.ipLookup.placeholder": [
+    {
+      "type": 0,
+      "value": "IP検索（例：203.0.113.50）"
+    }
+  ],
+  "web.admin.activity.ipLookup.searching": [
+    {
+      "type": 0,
+      "value": "検索中…"
+    }
+  ],
+  "web.admin.activity.ipLookup.submit": [
+    {
+      "type": 0,
+      "value": "検索"
+    }
+  ],
+  "web.admin.activity.page.noStreams": [
+    {
+      "type": 0,
+      "value": "アクティブなストリームはありません"
+    }
+  ],
+  "web.admin.activity.page.refresh": [
+    {
+      "type": 0,
+      "value": "更新"
+    }
+  ],
+  "web.admin.activity.page.refreshing": [
+    {
+      "type": 0,
+      "value": "更新中…"
+    }
+  ],
+  "web.admin.activity.page.subtitle": [
+    {
+      "type": 6,
+      "value": "nodes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "nodes_text"
+            },
+            {
+              "type": 0,
+              "value": "ノード"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    },
+    {
+      "type": 0,
+      "value": "で"
+    },
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のアクティブなストリーム"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.activity.page.title": [
+    {
+      "type": 0,
+      "value": "アクティビティ"
+    }
+  ],
+  "web.admin.activity.route.localServer": [
+    {
+      "type": 0,
+      "value": "ローカルサーバー"
+    }
+  ],
+  "web.admin.activity.route.node": [
+    {
+      "type": 0,
+      "value": "ノード"
+    }
+  ],
+  "web.admin.activity.route.proxy": [
+    {
+      "type": 0,
+      "value": "プロキシ"
+    }
+  ],
+  "web.admin.activity.route.server": [
+    {
+      "type": 0,
+      "value": "サーバー"
+    }
+  ],
+  "web.admin.activity.route.transcode": [
+    {
+      "type": 0,
+      "value": "トランスコード"
+    }
+  ],
+  "web.admin.activity.route.unknownProxyNode": [
+    {
+      "type": 0,
+      "value": "不明なプロキシノード"
+    }
+  ],
+  "web.admin.activity.route.unknownTranscodeNode": [
+    {
+      "type": 0,
+      "value": "不明なトランスコードノード"
+    }
+  ],
+  "web.admin.activity.row.audio": [
+    {
+      "type": 0,
+      "value": "音声"
+    }
+  ],
+  "web.admin.activity.row.container": [
+    {
+      "type": 0,
+      "value": "コンテナ"
+    }
+  ],
+  "web.admin.activity.row.details": [
+    {
+      "type": 0,
+      "value": "詳細"
+    }
+  ],
+  "web.admin.activity.row.sessionActive": [
+    {
+      "type": 0,
+      "value": "セッション継続時間"
+    },
+    {
+      "type": 1,
+      "value": "elapsed"
+    }
+  ],
+  "web.admin.activity.row.video": [
+    {
+      "type": 0,
+      "value": "映像"
+    }
+  ],
+  "web.admin.activity.summary.byNode": [
+    {
+      "type": 0,
+      "value": "ルーティングノード別"
+    }
+  ],
+  "web.admin.activity.summary.hlsOutput": [
+    {
+      "type": 1,
+      "value": "container"
+    },
+    {
+      "type": 0,
+      "value": "（HLS）"
+    }
+  ],
+  "web.admin.activity.summary.methodDistribution": [
+    {
+      "type": 0,
+      "value": "再生方法の内訳"
+    }
+  ],
+  "web.admin.activity.summary.methodFilter": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.methodHeading": [
+    {
+      "type": 0,
+      "value": "再生方法"
+    }
+  ],
+  "web.admin.activity.summary.methodSegment": [
+    {
+      "type": 1,
+      "value": "method"
+    },
+    {
+      "type": 0,
+      "value": "："
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
+  "web.admin.activity.summary.unknownOutputContainer": [
+    {
+      "type": 0,
+      "value": "不明な出力コンテナ"
+    }
+  ],
+  "web.admin.activity.summary.unknownSource": [
+    {
+      "type": 0,
+      "value": "不明なソース"
+    }
+  ],
+  "web.admin.activity.transcodeMode.audioTranscode": [
+    {
+      "type": 0,
+      "value": "音声トランスコード"
+    }
+  ],
+  "web.admin.activity.transcodeMode.hardware": [
+    {
+      "type": 0,
+      "value": "HW "
+    },
+    {
+      "type": 1,
+      "value": "accel"
+    }
+  ],
+  "web.admin.activity.transcodeMode.pending": [
+    {
+      "type": 0,
+      "value": "HW/SW判定中"
+    }
+  ],
+  "web.admin.activity.transcodeMode.software": [
+    {
+      "type": 0,
+      "value": "SW"
+    }
+  ],
+  "web.admin.activity.transcodeMode.unknown": [
+    {
+      "type": 0,
+      "value": "HW/SW不明"
+    }
+  ],
+  "web.admin.activity.userFallback": [
+    {
+      "type": 0,
+      "value": "ユーザー#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.accounts.role": [
+    {
+      "type": 5,
+      "value": "role",
+      "options": {
+        "owner": {
+          "value": [
+            {
+              "type": 0,
+              "value": "オーナー"
+            }
+          ]
+        },
+        "admin": {
+          "value": [
+            {
+              "type": 0,
+              "value": "管理者"
+            }
+          ]
+        },
+        "user": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ユーザー"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "role"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "web.admin.common.serverActivity.connecting": [
+    {
+      "type": 0,
+      "value": "接続中…"
+    }
+  ],
+  "web.admin.common.serverActivity.disconnected": [
+    {
+      "type": 0,
+      "value": "切断"
+    }
+  ],
+  "web.admin.common.serverActivity.empty": [
+    {
+      "type": 0,
+      "value": "実行中のサーバーアクティビティはありません"
+    }
+  ],
+  "web.admin.common.serverActivity.failedRecent": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "過去24時間に"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件失敗"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.libraryFallback": [
+    {
+      "type": 0,
+      "value": "ライブラリ#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.common.serverActivity.moreRunning": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "ほか"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件を実行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScans": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "キュー内のスキャン：ほか"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.moreScansAtLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "キュー内のスキャン：ほか"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件以上"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.noPreparations": [
+    {
+      "type": 0,
+      "value": "準備中のダウンロードはありません"
+    }
+  ],
+  "web.admin.common.serverActivity.noScans": [
+    {
+      "type": 0,
+      "value": "実行中のスキャンはありません"
+    }
+  ],
+  "web.admin.common.serverActivity.noStreams": [
+    {
+      "type": 0,
+      "value": "アクティブなストリームはありません"
+    }
+  ],
+  "web.admin.common.serverActivity.noTasks": [
+    {
+      "type": 0,
+      "value": "実行中のタスクはありません"
+    }
+  ],
+  "web.admin.common.serverActivity.paused": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "一時停止中"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.admin.common.serverActivity.preparing": [
+    {
+      "type": 0,
+      "value": "ダウンロードを準備中"
+    }
+  ],
+  "web.admin.common.serverActivity.processingFiles": [
+    {
+      "type": 0,
+      "value": "ファイルを処理中"
+    }
+  ],
+  "web.admin.common.serverActivity.progressLabel": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "の進行状況"
+    }
+  ],
+  "web.admin.common.serverActivity.queued": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "待機中"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.retrying": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再試行待ち"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.running": [
+    {
+      "type": 0,
+      "value": "実行中"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.file": [
+    {
+      "type": 0,
+      "value": "単一ファイル"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.library": [
+    {
+      "type": 0,
+      "value": "ライブラリ全体"
+    }
+  ],
+  "web.admin.common.serverActivity.scanMode.subtree": [
+    {
+      "type": 0,
+      "value": "サブツリー"
+    }
+  ],
+  "web.admin.common.serverActivity.scanProgress": [
+    {
+      "type": 1,
+      "value": "message"
+    },
+    {
+      "type": 0,
+      "value": " · "
+    },
+    {
+      "type": 1,
+      "value": "processed"
+    },
+    {
+      "type": 0,
+      "value": " / "
+    },
+    {
+      "type": 1,
+      "value": "total"
+    },
+    {
+      "type": 0,
+      "value": "（"
+    },
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%）"
+    }
+  ],
+  "web.admin.common.serverActivity.scanQueued": [
+    {
+      "type": 0,
+      "value": "待機中"
+    }
+  ],
+  "web.admin.common.serverActivity.scanning": [
+    {
+      "type": 0,
+      "value": "スキャン中…"
+    }
+  ],
+  "web.admin.common.serverActivity.scans": [
+    {
+      "type": 0,
+      "value": "スキャン"
+    }
+  ],
+  "web.admin.common.serverActivity.streamCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "method"
+            },
+            {
+              "type": 0,
+              "value": " "
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.streams": [
+    {
+      "type": 0,
+      "value": "ストリーム"
+    }
+  ],
+  "web.admin.common.serverActivity.tasks": [
+    {
+      "type": 0,
+      "value": "タスク"
+    }
+  ],
+  "web.admin.common.serverActivity.title": [
+    {
+      "type": 0,
+      "value": "サーバーのアクティビティ"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.active": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "サーバーのアクティビティ："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件実行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.atLeast": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "サーバーのアクティビティ："
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件以上実行中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.common.serverActivity.trigger.idle": [
+    {
+      "type": 0,
+      "value": "サーバーのアクティビティ"
+    }
+  ],
+  "web.admin.common.serverActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "すべて表示"
+    }
+  ],
+  "web.admin.dashboard.chart.columnReading": [
+    {
+      "type": 1,
+      "value": "bucket"
+    },
+    {
+      "type": 0,
+      "value": "："
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.format.fileCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "ファイル"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.page.refresh": [
+    {
+      "type": 0,
+      "value": "更新"
+    }
+  ],
+  "web.admin.dashboard.page.refreshing": [
+    {
+      "type": 0,
+      "value": "更新中…"
+    }
+  ],
+  "web.admin.dashboard.page.subtitle": [
+    {
+      "type": 0,
+      "value": "ライブセッション、コンテンツの状態、サーバーのアクティビティをひと目で確認できます。"
+    }
+  ],
+  "web.admin.dashboard.page.title": [
+    {
+      "type": 0,
+      "value": "ダッシュボード"
+    }
+  ],
+  "web.admin.dashboard.page.updatedJustNow": [
+    {
+      "type": 0,
+      "value": "1分以内に更新"
+    }
+  ],
+  "web.admin.dashboard.page.updatedMinutesAgo": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "minutes_text"
+            },
+            {
+              "type": 0,
+              "value": "分前に更新"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.range.edgeEnd": [
+    {
+      "type": 0,
+      "value": "現在"
+    }
+  ],
+  "web.admin.dashboard.range.edgeStart.day": [
+    {
+      "type": 0,
+      "value": "24時間前"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.day": [
+    {
+      "type": 0,
+      "value": "過去24時間"
+    }
+  ],
+  "web.admin.dashboard.range.phrase.week": [
+    {
+      "type": 0,
+      "value": "過去7日"
+    }
+  ],
+  "web.admin.dashboard.range.title.day": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "・過去24時間"
+    }
+  ],
+  "web.admin.dashboard.range.title.week": [
+    {
+      "type": 1,
+      "value": "title"
+    },
+    {
+      "type": 0,
+      "value": "・過去7日"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.healthStrip.title": [
+    {
+      "type": 0,
+      "value": "サーバーの状態"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "再生中"
+    }
+  ],
+  "web.admin.dashboard.widgetCatalog.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "最近のアクティビティ"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.label": [
+    {
+      "type": 0,
+      "value": "アクティブなストリーム"
+    }
+  ],
+  "web.admin.dashboard.widgets.activeStreams.sessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "セッション"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.chartLabel": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "の送信量（メガビット/秒）"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.empty": [
+    {
+      "type": 0,
+      "value": "送信量のサンプルはまだありません"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.loadFailed": [
+    {
+      "type": 0,
+      "value": "送信量の履歴を読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.peak": [
+    {
+      "type": 0,
+      "value": "ピーク"
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.title": [
+    {
+      "type": 0,
+      "value": "送信量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egress.total": [
+    {
+      "type": 0,
+      "value": "合計"
+    },
+    {
+      "type": 1,
+      "value": "value"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.label": [
+    {
+      "type": 0,
+      "value": "現在の送信量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.source": [
+    {
+      "type": 0,
+      "value": "ノード＋サーバーの送信量"
+    }
+  ],
+  "web.admin.dashboard.widgets.egressNow.waiting": [
+    {
+      "type": 0,
+      "value": "サンプル待ち"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.dirtyBuild": [
+    {
+      "type": 0,
+      "value": "未コミットのビルド"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.errors24h": [
+    {
+      "type": 0,
+      "value": "エラー・24時間"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.loadFailed": [
+    {
+      "type": 0,
+      "value": "サーバーの状態を読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodes": [
+    {
+      "type": 0,
+      "value": "ノード"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesHealthy": [
+    {
+      "type": 0,
+      "value": "正常"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesLocal": [
+    {
+      "type": 0,
+      "value": "このサーバーでトランスコード"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesNone": [
+    {
+      "type": 0,
+      "value": "なし"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.nodesUnavailable": [
+    {
+      "type": 0,
+      "value": "利用不可"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.notConfigured": [
+    {
+      "type": 0,
+      "value": "未設定"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.ok": [
+    {
+      "type": 0,
+      "value": "OK"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.optional": [
+    {
+      "type": 0,
+      "value": "任意"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.restartRequired": [
+    {
+      "type": 0,
+      "value": "再起動が必要"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.unreachable": [
+    {
+      "type": 0,
+      "value": "接続不可"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.uptime": [
+    {
+      "type": 0,
+      "value": "稼働時間"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.version": [
+    {
+      "type": 0,
+      "value": "バージョン"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.versionUnknown": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.admin.dashboard.widgets.healthStrip.warnings": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件の警告"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.disabled": [
+    {
+      "type": 0,
+      "value": "ライブラリは無効です"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.empty": [
+    {
+      "type": 0,
+      "value": "ライブラリが設定されていません。"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.enabled": [
+    {
+      "type": 0,
+      "value": "ライブラリは有効です"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.loadFailed": [
+    {
+      "type": 0,
+      "value": "ライブラリを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.title": [
+    {
+      "type": 0,
+      "value": "ライブラリ"
+    }
+  ],
+  "web.admin.dashboard.widgets.libraries.typeAndPaths": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "type"
+            },
+            {
+              "type": 0,
+              "value": " · パス"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.movies.label": [
+    {
+      "type": 0,
+      "value": "映画の総数"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeFallback": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": " · E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    },
+    {
+      "type": 0,
+      "value": " — "
+    },
+    {
+      "type": 1,
+      "value": "series"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.fileFallback": [
+    {
+      "type": 0,
+      "value": "ファイル #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.idle": [
+    {
+      "type": 0,
+      "value": "現在再生中のものはありません"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.justNow": [
+    {
+      "type": 0,
+      "value": "たった今"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.loadFailed": [
+    {
+      "type": 0,
+      "value": "ストリームを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.moreStreams": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "他"
+            },
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のアクティブなストリーム"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.movie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.paused": [
+    {
+      "type": 0,
+      "value": "一時停止中"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.title": [
+    {
+      "type": 0,
+      "value": "再生中"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.userFallback": [
+    {
+      "type": 0,
+      "value": "ユーザー #"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewActivity": [
+    {
+      "type": 0,
+      "value": "アクティビティを表示 ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.nowPlaying.viewAll": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件のストリームをすべて表示 ›"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.chartLabelHourly": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "の1時間あたりの再生セッション数（再生方法別）"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "の再生はありません"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.emptyDetail": [
+    {
+      "type": 0,
+      "value": "誰かが視聴を始めると、ここにセッションが表示されます。"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "再生アクティビティを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directPlay": [
+    {
+      "type": 0,
+      "value": "ダイレクト再生"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.directStream": [
+    {
+      "type": 0,
+      "value": "ダイレクトストリーム"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.series.transcode": [
+    {
+      "type": 0,
+      "value": "トランスコード"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.sessionCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "セッション"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.title": [
+    {
+      "type": 0,
+      "value": "再生アクティビティ"
+    }
+  ],
+  "web.admin.dashboard.widgets.playbackActivity.totalLabel": [
+    {
+      "type": 0,
+      "value": "セッション"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.detail": [
+    {
+      "type": 0,
+      "value": "このサーバーで視聴"
+    }
+  ],
+  "web.admin.dashboard.widgets.profilesActive.label": [
+    {
+      "type": 0,
+      "value": "プロフィール · 24時間"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.empty": [
+    {
+      "type": 0,
+      "value": "最近のアクティビティはありません。"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.justNow": [
+    {
+      "type": 0,
+      "value": "たった今"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.loadFailed": [
+    {
+      "type": 0,
+      "value": "アクティビティを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatching": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "の視聴を開始しました"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.startedWatchingWithProfile": [
+    {
+      "type": 8,
+      "value": "user",
+      "children": [
+        {
+          "type": 1,
+          "value": "username"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 8,
+      "value": "pill",
+      "children": [
+        {
+          "type": 1,
+          "value": "profile"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "が"
+    },
+    {
+      "type": 8,
+      "value": "link",
+      "children": [
+        {
+          "type": 1,
+          "value": "title"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": "の視聴を開始しました"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.title": [
+    {
+      "type": 0,
+      "value": "最近のアクティビティ"
+    }
+  ],
+  "web.admin.dashboard.widgets.recentActivity.viewAll": [
+    {
+      "type": 0,
+      "value": "すべて表示 ›"
+    }
+  ],
+  "web.admin.dashboard.widgets.shows.label": [
+    {
+      "type": 0,
+      "value": "シリーズ合計"
+    }
+  ],
+  "web.admin.dashboard.widgets.statTile.unavailable": [
+    {
+      "type": 0,
+      "value": "利用不可"
+    }
+  ],
+  "web.admin.dashboard.widgets.storage.label": [
+    {
+      "type": 0,
+      "value": "ストレージ"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "のプロフィールのアクティビティはありません"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.loadFailed": [
+    {
+      "type": 0,
+      "value": "プロフィールのアクティビティを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "回再生"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.title": [
+    {
+      "type": 0,
+      "value": "アクティブなプロフィール"
+    }
+  ],
+  "web.admin.dashboard.widgets.topProfiles.userFallback": [
+    {
+      "type": 0,
+      "value": "ユーザー#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.empty": [
+    {
+      "type": 1,
+      "value": "range"
+    },
+    {
+      "type": 0,
+      "value": "の再生はありません"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.loadFailed": [
+    {
+      "type": 0,
+      "value": "人気タイトルを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.playCount": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "回再生"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.dashboard.widgets.topTitles.title": [
+    {
+      "type": 0,
+      "value": "人気タイトル"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.active": [
+    {
+      "type": 0,
+      "value": "有効"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.disabled": [
+    {
+      "type": 0,
+      "value": "無効"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.empty": [
+    {
+      "type": 0,
+      "value": "ユーザーがいません。"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.justNow": [
+    {
+      "type": 0,
+      "value": "たった今"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.lastActive": [
+    {
+      "type": 0,
+      "value": "最終アクティブ"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.loadFailed": [
+    {
+      "type": 0,
+      "value": "ユーザーを読み込めませんでした。"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.status": [
+    {
+      "type": 0,
+      "value": "ステータス"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.title": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.dashboard.widgets.users.user": [
+    {
+      "type": 0,
+      "value": "ユーザー"
+    }
+  ],
+  "web.admin.downloads.preparation.compactEpisodeTitle": [
+    {
+      "type": 1,
+      "value": "series"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "code"
+    }
+  ],
+  "web.admin.downloads.preparation.episodeCode": [
+    {
+      "type": 0,
+      "value": "S"
+    },
+    {
+      "type": 1,
+      "value": "season"
+    },
+    {
+      "type": 0,
+      "value": "E"
+    },
+    {
+      "type": 1,
+      "value": "episode"
+    }
+  ],
+  "web.admin.downloads.preparation.fileFallback": [
+    {
+      "type": 0,
+      "value": "ファイル#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.remux": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcode": [
+    {
+      "type": 0,
+      "value": "トランスコード"
+    }
+  ],
+  "web.admin.downloads.preparation.kind.transcodeTarget": [
+    {
+      "type": 0,
+      "value": "トランスコード "
+    },
+    {
+      "type": 1,
+      "value": "target"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hours": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "残り約"
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": "時間"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.hoursMinutes": [
+    {
+      "type": 6,
+      "value": "hours",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "残り約"
+            },
+            {
+              "type": 1,
+              "value": "hours_text"
+            },
+            {
+              "type": 0,
+              "value": "時間"
+            },
+            {
+              "type": 1,
+              "value": "minutes"
+            },
+            {
+              "type": 0,
+              "value": "分"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.minutes": [
+    {
+      "type": 6,
+      "value": "minutes",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "残り約"
+            },
+            {
+              "type": 7
+            },
+            {
+              "type": 0,
+              "value": "分"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.downloads.preparation.remaining.underOneMinute": [
+    {
+      "type": 0,
+      "value": "残り1分未満"
+    }
+  ],
+  "web.admin.downloads.preparation.running.encoding": [
+    {
+      "type": 0,
+      "value": "エンコード中"
+    }
+  ],
+  "web.admin.downloads.preparation.running.remuxing": [
+    {
+      "type": 0,
+      "value": "Remux中"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.localServer": [
+    {
+      "type": 0,
+      "value": "ローカルサーバー"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.node": [
+    {
+      "type": 0,
+      "value": "ノード"
+    }
+  ],
+  "web.admin.downloads.preparation.worker.nodeWithId": [
+    {
+      "type": 0,
+      "value": "ノード"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.admin.sessions.playback.action.message": [
+    {
+      "type": 0,
+      "value": "メッセージ…"
+    }
+  ],
+  "web.admin.sessions.playback.action.pause": [
+    {
+      "type": 0,
+      "value": "一時停止"
+    }
+  ],
+  "web.admin.sessions.playback.action.resume": [
+    {
+      "type": 0,
+      "value": "再開"
+    }
+  ],
+  "web.admin.sessions.playback.action.stop": [
+    {
+      "type": 0,
+      "value": "停止"
+    }
+  ],
+  "web.admin.sessions.playback.action.terminate": [
+    {
+      "type": 0,
+      "value": "強制終了"
+    }
+  ],
+  "web.admin.sessions.playback.failure.conflictReason": [
+    {
+      "type": 0,
+      "value": "セッションの状態が変更されました"
+    }
+  ],
+  "web.admin.sessions.playback.failure.ended": [
+    {
+      "type": 0,
+      "value": "この再生セッションはすでに終了しています。"
+    }
+  ],
+  "web.admin.sessions.playback.failure.generic": [
+    {
+      "type": 0,
+      "value": "セッションコマンドを送信できませんでした"
+    }
+  ],
+  "web.admin.sessions.playback.failure.notApplied": [
+    {
+      "type": 0,
+      "value": "「"
+    },
+    {
+      "type": 5,
+      "value": "action",
+      "options": {
+        "pause": {
+          "value": [
+            {
+              "type": 0,
+              "value": "一時停止"
+            }
+          ]
+        },
+        "resume": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再開"
+            }
+          ]
+        },
+        "stop": {
+          "value": [
+            {
+              "type": 0,
+              "value": "停止"
+            }
+          ]
+        },
+        "message": {
+          "value": [
+            {
+              "type": 0,
+              "value": "メッセージ"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "強制終了"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "」コマンドは適用されませんでした："
+    },
+    {
+      "type": 1,
+      "value": "reason"
+    }
+  ],
+  "web.admin.sessions.playback.failure.unavailable": [
+    {
+      "type": 0,
+      "value": "このサーバーでは再生の操作を利用できません。"
+    }
+  ],
+  "web.admin.sessions.playback.menu.ariaLabel": [
+    {
+      "type": 0,
+      "value": "セッションの操作"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.description": [
+    {
+      "type": 0,
+      "value": "再生中の"
+    },
+    {
+      "type": 1,
+      "value": "name"
+    },
+    {
+      "type": 0,
+      "value": "にカスタムメッセージを送信します。"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.placeholder": [
+    {
+      "type": 0,
+      "value": "5分後にサーバーを再起動します。このエピソードを早めに見終えてください。"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.send": [
+    {
+      "type": 0,
+      "value": "メッセージを送信"
+    }
+  ],
+  "web.admin.sessions.playback.messageDialog.title": [
+    {
+      "type": 0,
+      "value": "メッセージを送信"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageRequired": [
+    {
+      "type": 0,
+      "value": "メッセージを入力してください"
+    }
+  ],
+  "web.admin.sessions.playback.toast.messageSent": [
+    {
+      "type": 0,
+      "value": "メッセージを送信しました"
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseFallback": [
+    {
+      "type": 0,
+      "value": "一時停止をプレーヤーに直接送信できませんでした。代わりに、Siloがまもなくセッションを終了します。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.pauseSent": [
+    {
+      "type": 0,
+      "value": "一時停止コマンドを送信しました"
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeFallback": [
+    {
+      "type": 0,
+      "value": "再開をプレーヤーに直接送信できませんでした。代わりに、Siloがまもなくセッションを終了します。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.resumeSent": [
+    {
+      "type": 0,
+      "value": "再開コマンドを送信しました"
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopFallback": [
+    {
+      "type": 0,
+      "value": "停止をプレーヤーに直接送信できませんでした。代わりに、Siloがまもなくセッションを終了します。"
+    }
+  ],
+  "web.admin.sessions.playback.toast.stopSent": [
+    {
+      "type": 0,
+      "value": "停止コマンドを送信しました"
+    }
+  ],
+  "web.admin.sessions.playback.toast.terminateReceipt": [
+    {
+      "type": 5,
+      "value": "revoked",
+      "options": {
+        "already": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再生権限はすでに取り消されています"
+            }
+          ]
+        },
+        "revoked": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再生権限を取り消しました"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "再生権限は取り消されませんでした"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "。"
+    },
+    {
+      "type": 5,
+      "value": "notified",
+      "options": {
+        "yes": {
+          "value": [
+            {
+              "type": 0,
+              "value": "プレーヤーに停止を指示しました"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 0,
+              "value": "プレーヤーに接続できませんでした。次にサーバーに接続したときに停止します"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": "。"
+    }
+  ],
+  "web.admin.sessions.playback.unsupportedControl": [
+    {
+      "type": 0,
+      "value": "このセッションは、ライブでの一時停止、再開、メッセージに対応していません。「停止」と「強制終了」で再生を終了することはできます。"
+    }
+  ],
+  "web.admin.shell.mobileHeader.eyebrow": [
+    {
+      "type": 0,
+      "value": "管理"
+    }
+  ],
+  "web.admin.shell.nav.page.activity.label": [
+    {
+      "type": 0,
+      "value": "アクティビティ"
+    }
+  ],
+  "web.admin.shell.nav.page.dashboard.label": [
+    {
+      "type": 0,
+      "value": "ダッシュボード"
+    }
+  ],
+  "web.admin.shell.nav.section.monitor": [
+    {
+      "type": 0,
+      "value": "監視"
+    }
+  ],
+  "web.admin.shell.sidebar.backToApp": [
+    {
+      "type": 0,
+      "value": "アプリに戻る"
+    }
+  ],
+  "web.admin.shell.sidebar.build.dev": [
+    {
+      "type": 0,
+      "value": "開発ビルド"
+    }
+  ],
+  "web.admin.shell.sidebar.build.heading": [
+    {
+      "type": 0,
+      "value": "ビルド"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loadFailed": [
+    {
+      "type": 0,
+      "value": "読み込み失敗"
+    }
+  ],
+  "web.admin.shell.sidebar.build.loading": [
+    {
+      "type": 0,
+      "value": "読み込み中…"
+    }
+  ],
+  "web.admin.shell.sidebar.liveSessions": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "件再生中"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.admin.shell.sidebar.navigation": [
+    {
+      "type": 0,
+      "value": "管理ナビゲーション"
+    }
+  ],
+  "web.admin.tasks.lib.taskProgress.percent": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_poll.name": [
+    {
+      "type": 0,
+      "value": "Autoscanのポーリング"
+    }
+  ],
+  "web.admin.tasks.task.autoscan_webhook_retry.name": [
+    {
+      "type": 0,
+      "value": "AutoscanのWebhook再試行"
+    }
+  ],
+  "web.admin.tasks.task.backfill_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "電子書籍メタデータの補完"
+    }
+  ],
+  "web.admin.tasks.task.backfill_hdr10_plus.name": [
+    {
+      "type": 0,
+      "value": "HDR10+動画の検出"
+    }
+  ],
+  "web.admin.tasks.task.backfill_matroska_track_numbers.name": [
+    {
+      "type": 0,
+      "value": "Matroska字幕のトラック番号を記録"
+    }
+  ],
+  "web.admin.tasks.task.backfill_media_item_aliases.name": [
+    {
+      "type": 0,
+      "value": "メディアアイテムの別名の補完"
+    }
+  ],
+  "web.admin.tasks.task.backfill_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "メタデータ画像の補完"
+    }
+  ],
+  "web.admin.tasks.task.backup.name": [
+    {
+      "type": 0,
+      "value": "サーバーのバックアップ"
+    }
+  ],
+  "web.admin.tasks.task.bulk_metadata_enrichment.name": [
+    {
+      "type": 0,
+      "value": "メタデータの一括補完"
+    }
+  ],
+  "web.admin.tasks.task.cache_metadata_images.name": [
+    {
+      "type": 0,
+      "value": "メタデータ画像のキャッシュ"
+    }
+  ],
+  "web.admin.tasks.task.chapter_thumbnail_backfill.name": [
+    {
+      "type": 0,
+      "value": "チャプターサムネイルの補完"
+    }
+  ],
+  "web.admin.tasks.task.check_plugin_updates.name": [
+    {
+      "type": 0,
+      "value": "プラグインの更新を確認"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_activity_log.name": [
+    {
+      "type": 0,
+      "value": "アクティビティログのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_artwork_revisions.name": [
+    {
+      "type": 0,
+      "value": "アートワークリビジョンのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_auth_sessions.name": [
+    {
+      "type": 0,
+      "value": "期限切れのログインセッションのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_autoscan_events.name": [
+    {
+      "type": 0,
+      "value": "Autoscanイベントのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_catalog_search_index_events.name": [
+    {
+      "type": 0,
+      "value": "カタログ検索インデックスイベントのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_chapter_thumbnail_originals.name": [
+    {
+      "type": 0,
+      "value": "フルサイズのチャプターサムネイルのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_client_diagnostics.name": [
+    {
+      "type": 0,
+      "value": "クライアント診断のクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_device_logins.name": [
+    {
+      "type": 0,
+      "value": "期限切れのデバイスサインインリクエストのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_oauth_flows.name": [
+    {
+      "type": 0,
+      "value": "期限切れのOAuthサインインフローのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_operational_log.name": [
+    {
+      "type": 0,
+      "value": "運用ログのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_orphaned_media_items.name": [
+    {
+      "type": 0,
+      "value": "孤立したメディアアイテムのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_policy_decision_log.name": [
+    {
+      "type": 0,
+      "value": "ポリシー判定ログのクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_removed_media_images.name": [
+    {
+      "type": 0,
+      "value": "削除済みメディアの画像のクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.cleanup_task_history.name": [
+    {
+      "type": 0,
+      "value": "タスク履歴のクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.contribute_markers.name": [
+    {
+      "type": 0,
+      "value": "検出したマーカーの共有"
+    }
+  ],
+  "web.admin.tasks.task.database_maintenance.name": [
+    {
+      "type": 0,
+      "value": "データベースのメンテナンス"
+    }
+  ],
+  "web.admin.tasks.task.detect_intro_markers.name": [
+    {
+      "type": 0,
+      "value": "このサーバーでマーカーを検出"
+    }
+  ],
+  "web.admin.tasks.task.encode_download_artifacts.name": [
+    {
+      "type": 0,
+      "value": "ダウンロード用ファイルの準備"
+    }
+  ],
+  "web.admin.tasks.task.generate_extra_stills.name": [
+    {
+      "type": 0,
+      "value": "特典映像のサムネイルを生成"
+    }
+  ],
+  "web.admin.tasks.task.match_media.name": [
+    {
+      "type": 0,
+      "value": "メディアファイルの照合"
+    }
+  ],
+  "web.admin.tasks.task.notifications_retention.name": [
+    {
+      "type": 0,
+      "value": "通知のクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.queue_seek_previews.name": [
+    {
+      "type": 0,
+      "value": "シークプレビューをキューに追加"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "カタログ検索インデックスの再構築"
+    }
+  ],
+  "web.admin.tasks.task.rebuild_release_interest.name": [
+    {
+      "type": 0,
+      "value": "通知対象の関心の再構築"
+    }
+  ],
+  "web.admin.tasks.task.recheck_external_identities.name": [
+    {
+      "type": 0,
+      "value": "外部サインインアカウントの再確認"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_artwork_cache.name": [
+    {
+      "type": 0,
+      "value": "アートワークキャッシュの照合"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_requests.name": [
+    {
+      "type": 0,
+      "value": "リクエストの照合"
+    }
+  ],
+  "web.admin.tasks.task.reconcile_watch_history.name": [
+    {
+      "type": 0,
+      "value": "視聴履歴の照合"
+    }
+  ],
+  "web.admin.tasks.task.refresh_all_library_metadata.name": [
+    {
+      "type": 0,
+      "value": "全ライブラリのメタデータを更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_anime_ids.name": [
+    {
+      "type": 0,
+      "value": "アニメ一覧の更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_metadata.name": [
+    {
+      "type": 0,
+      "value": "メタデータの更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_discover_lists.name": [
+    {
+      "type": 0,
+      "value": "リクエストのディスカバーリストを更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_request_downloads.name": [
+    {
+      "type": 0,
+      "value": "リクエストのダウンロード状況を更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_seasonal_lists.name": [
+    {
+      "type": 0,
+      "value": "季節のリストを更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_series_air_dates.name": [
+    {
+      "type": 0,
+      "value": "シリーズの放送日を更新"
+    }
+  ],
+  "web.admin.tasks.task.refresh_trending_discover.name": [
+    {
+      "type": 0,
+      "value": "トレンド（ディスカバー）を更新"
+    }
+  ],
+  "web.admin.tasks.task.release_stored_artwork.name": [
+    {
+      "type": 0,
+      "value": "保存済みアートワークの解放"
+    }
+  ],
+  "web.admin.tasks.task.repair_provider_id_integrity.name": [
+    {
+      "type": 0,
+      "value": "プロバイダーIDの整合性を修復"
+    }
+  ],
+  "web.admin.tasks.task.scan_libraries.name": [
+    {
+      "type": 0,
+      "value": "メディアライブラリのスキャンをキューに追加"
+    }
+  ],
+  "web.admin.tasks.task.seed_content_availability.name": [
+    {
+      "type": 0,
+      "value": "コンテンツの公開状況を初期化"
+    }
+  ],
+  "web.admin.tasks.task.setting_mutations_retention.name": [
+    {
+      "type": 0,
+      "value": "設定変更のレシートをクリーンアップ"
+    }
+  ],
+  "web.admin.tasks.task.summarize_api_usage.name": [
+    {
+      "type": 0,
+      "value": "API使用状況を集計"
+    }
+  ],
+  "web.admin.tasks.task.sweep_artwork_storage.name": [
+    {
+      "type": 0,
+      "value": "アートワークストレージを整理"
+    }
+  ],
+  "web.admin.tasks.task.sweep_orphaned_media_images.name": [
+    {
+      "type": 0,
+      "value": "孤立したメディア画像を整理"
+    }
+  ],
+  "web.admin.tasks.task.sync_audiobook_metadata.name": [
+    {
+      "type": 0,
+      "value": "オーディオブックのメタデータを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_catalog_search_index.name": [
+    {
+      "type": 0,
+      "value": "カタログの検索インデックスを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_collections.name": [
+    {
+      "type": 0,
+      "value": "コレクションを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_ebook_metadata.name": [
+    {
+      "type": 0,
+      "value": "電子書籍のメタデータを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_manga_metadata.name": [
+    {
+      "type": 0,
+      "value": "マンガのメタデータを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_markers.name": [
+    {
+      "type": 0,
+      "value": "オンラインマーカーを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_movie_box_sets.name": [
+    {
+      "type": 0,
+      "value": "映画のボックスセットを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_podcast_feeds.name": [
+    {
+      "type": 0,
+      "value": "ポッドキャストフィードを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_user_collections.name": [
+    {
+      "type": 0,
+      "value": "ユーザーコレクションを同期"
+    }
+  ],
+  "web.admin.tasks.task.sync_watch_providers.name": [
+    {
+      "type": 0,
+      "value": "視聴プロバイダーを同期"
+    }
+  ],
   "web.audiobooks.duration.hours": [
     {
       "type": 1,
@@ -4468,6 +7281,124 @@
       "value": "表示場所"
     }
   ],
+  "web.common.activity.method.direct.label": [
+    {
+      "type": 0,
+      "value": "ダイレクト再生"
+    }
+  ],
+  "web.common.activity.method.directStream.label": [
+    {
+      "type": 0,
+      "value": "ダイレクトストリーム"
+    }
+  ],
+  "web.common.activity.method.remux.label": [
+    {
+      "type": 0,
+      "value": "Remux"
+    }
+  ],
+  "web.common.activity.method.transcode.label": [
+    {
+      "type": 0,
+      "value": "トランスコード"
+    }
+  ],
+  "web.common.activity.method.unknown.label": [
+    {
+      "type": 0,
+      "value": "不明"
+    }
+  ],
+  "web.common.activity.subtitle.movie": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.common.activity.subtitle.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
+    }
+  ],
+  "web.common.activity.title.file": [
+    {
+      "type": 0,
+      "value": "ファイル#"
+    },
+    {
+      "type": 1,
+      "value": "id"
+    }
+  ],
+  "web.common.date.daysAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "日前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.hoursAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "時間前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.minutesAgo": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "分前"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
   "web.common.devicePlatform.kind.desktop": [
     {
       "type": 0,
@@ -4536,6 +7467,48 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.libraryType.audiobooks": [
+    {
+      "type": 0,
+      "value": "オーディオブック"
+    }
+  ],
+  "web.common.libraryType.ebooks": [
+    {
+      "type": 0,
+      "value": "電子書籍"
+    }
+  ],
+  "web.common.libraryType.manga": [
+    {
+      "type": 0,
+      "value": "マンガ"
+    }
+  ],
+  "web.common.libraryType.mixed": [
+    {
+      "type": 0,
+      "value": "混合"
+    }
+  ],
+  "web.common.libraryType.movies": [
+    {
+      "type": 0,
+      "value": "映画"
+    }
+  ],
+  "web.common.libraryType.podcasts": [
+    {
+      "type": 0,
+      "value": "ポッドキャスト"
+    }
+  ],
+  "web.common.libraryType.series": [
+    {
+      "type": 0,
+      "value": "シリーズ"
     }
   ],
   "web.common.requests.toast.cancelFailed": [
@@ -7752,6 +10725,12 @@
       "value": "再生"
     }
   ],
+  "web.player.bar.positionLabel": [
+    {
+      "type": 0,
+      "value": "再生位置"
+    }
+  ],
   "web.player.bar.returnTitle": [
     {
       "type": 0,
@@ -8363,6 +11342,18 @@
     {
       "type": 0,
       "value": "ルームに再接続しています。操作は一時的に使用できません。"
+    }
+  ],
+  "web.player.routeBadge.local": [
+    {
+      "type": 0,
+      "value": "ローカル"
+    }
+  ],
+  "web.player.routeBadge.remote": [
+    {
+      "type": 0,
+      "value": "リモート"
     }
   ],
   "web.player.seekBar.dragMarkerEnd": [
