@@ -1230,6 +1230,15 @@ Silo's phone apps can control Granary's player over the local network: Granary i
 `IPlaybackDevicePreferences.PhoneRemote` (`phone_remote` in `playback-device.json`), off by default and kept on this PC,
 not in a profile.
 
+What the receiver requires of the code behind its ports (their XML docs say the same):
+
+- `IRemotePlayer.Apply` range-checks and clamps every number a phone sends before it reaches the player: `seconds` into
+  the title, `trackId` to a track of the list last sent (else ignored), `speed` to the player's speeds, `volume` to 0 to
+  1, `milliseconds` to the subtitle delay's limits; a value that is not finite is ignored. Nothing before it checks them.
+- `IRemoteConnection.DisposeAsync` aborts every read and write in flight at once and never waits for the phone: a slow
+  phone's end and the receiver's stop rely on it.
+- `IRemoteListener.StopAsync` never hangs and never waits for accepted connections; it is safe to call twice.
+
 ### Pairing
 
 - **One key per PC.** `RemotePairing` draws a 16-byte key (`RandomNumberGenerator`) the first time the receiver needs

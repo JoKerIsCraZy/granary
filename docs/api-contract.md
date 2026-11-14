@@ -3011,6 +3011,12 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
 
   A pair has to fit one DNS character string of 255 bytes. When one does not (a very long server address), Granary
   advertises nothing and phones pair through the code alone (`ReceiverAdvertisement.For` gives null).
+
+  **What the whole network can read.** DNS-SD answers anyone on the local network, without a key. While the switch is
+  on, every device there can read the PC's name, the server's name, the deployment identity when known, whether a title
+  plays, the key id, and the **server id, which is the server's address in base64url** (15.2) and decodes to it. Silo's
+  Roku receiver advertises the same pairs, and Silo's Apple app lists no receiver without `server`. The key id is 32 bits
+  of the key's hash and does not help a guess of the key. Nothing else is readable without the key.
 - **The pairing link**, which the code in Connect a Phone holds:
 
   ```text

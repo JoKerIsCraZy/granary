@@ -5,6 +5,11 @@ namespace Granary.Core.Remote;
 /// <summary>
 /// One connection a phone opened to the receiver. Disposing it closes it, as closing a socket does: a read or write in
 /// progress on <see cref="Stream"/> then fails, which is how a connection is ended rather than by cancelling a read.
+/// <para>
+/// Required of an implementation: <see cref="IAsyncDisposable.DisposeAsync"/> aborts every read and write in flight at
+/// once (they end with <see cref="IOException"/> or <see cref="ObjectDisposedException"/>), does not wait for the phone,
+/// and never hangs; the receiver's stop and the end of a slow phone rely on it.
+/// </para>
 /// </summary>
 public interface IRemoteConnection : IAsyncDisposable
 {
@@ -27,7 +32,11 @@ public interface IRemoteListener
     /// </summary>
     Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken);
 
-    /// <summary>Stops accepting and closes the listener. Connections already handed over stay with their owner.</summary>
+    /// <summary>
+    /// Stops accepting and closes the listener. Connections already handed over stay with their owner. Required: it never
+    /// hangs and never waits for an accepted connection or for <c>onAccepted</c>'s tasks; it is safe to call twice and when
+    /// nothing listens.
+    /// </summary>
     Task StopAsync();
 }
 
