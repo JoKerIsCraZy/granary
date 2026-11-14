@@ -161,7 +161,7 @@ public enum MarkerActivity
 /// <item><c>ask</c>: entering the intro shows "Skip Intro" for 5 s of playing time; skipping seeks to its end and
 /// resolves it, the time running out only hides it, so seeking back in offers it again.</item>
 /// <item><c>always</c>: entering the intro skips it at once and offers "Watch Intro" for 5 s, which seeks back to
-/// its start; either way it is resolved.</item>
+/// its start (from before it, nowhere); either way it is resolved.</item>
 /// <item>A resolved intro is never offered again. Recap, credits and preview get a pill that stays while inside
 /// them ("Skip Credits"), and skip themselves once where the profile says so, as Apple's player does.</item>
 /// <item>Where the profile asks, a line above a pill says how confident its marker's source is and where it came from
@@ -196,9 +196,6 @@ public sealed class MarkerPrompts
     private PlaybackMarker? _timedOut;
     private PlaybackMarker? _part;
 
-    // Where the last update saw playback: a pill that skips forward outlives another read only while its part holds it.
-    private double? _position;
-
     public SkipPrompt? Prompt { get; private set; }
 
     public IReadOnlyList<PlaybackMarker> Markers => _markers;
@@ -206,26 +203,24 @@ public sealed class MarkerPrompts
     /// <summary>
     /// Takes the parts of the file that plays now; what was resolved stays resolved, and a prompt whose part is still
     /// there goes on as it was. Skip Intro and a recap's, credits' or preview's pill go on only while their part, as
-    /// measured now, still holds the position: a pick seeks to its end and must not pass over what is no longer marked.
-    /// The next update offers it again where it is. The undo pill goes on regardless, as it only goes back.
+    /// measured now, holds <paramref name="position"/>, where playback is now (a seek on its way included): a pick
+    /// seeks to its end and must not pass over what is no longer marked. The next update offers it again where it is.
+    /// The undo pill goes on regardless, as it only goes back.
     /// </summary>
-    public void Reset(IReadOnlyList<PlaybackMarker> markers, MarkerSettings settings)
+    public void Reset(IReadOnlyList<PlaybackMarker> markers, MarkerSettings settings, double position)
     {
         ArgumentNullException.ThrowIfNull(markers);
         ArgumentNullException.ThrowIfNull(settings);
         _markers = markers;
         _settings = settings;
-        _intro = _intro is { } intro ? markers.FirstOrDefault(m => intro.IsSamePart(m) && (_undo || HoldsPosition(m))) : null;
+        _intro = _intro is { } intro ? markers.FirstOrDefault(m => intro.IsSamePart(m) && (_undo || m.Contains(position))) : null;
         _timedOut = _timedOut is { } timedOut ? markers.FirstOrDefault(timedOut.IsSamePart) : null;
         // A part that now skips itself loses its pill too: the next update settles that.
-        _part = _part is { } part && markers.FirstOrDefault(m => part.IsSamePart(m) && HoldsPosition(m)) is { } same && !SkipsItself(same)
+        _part = _part is { } part && markers.FirstOrDefault(m => part.IsSamePart(m) && m.Contains(position)) is { } same && !SkipsItself(same)
             ? same
             : null;
         ShowPrompt();
     }
-
-    // Without a position seen no pill can be showing; were one, dropping it is safe, as the next update offers it again.
-    private bool HoldsPosition(PlaybackMarker marker) => _position is { } position && marker.Contains(position);
 
     /// <summary>Playback cannot go on for now (a reconnect, a new plan): the prompt's clock stops until the next update.</summary>
     public void Suspend(TimeSpan now) => Tick(MarkerActivity.Paused, now);
@@ -234,7 +229,6 @@ public sealed class MarkerPrompts
     public double? Update(double position, MarkerActivity activity, TimeSpan now)
     {
         Tick(activity, now);
-        _position = position;
 
         var intro = _settings.IntroSkipMode is MarkerSettings.Ask or MarkerSettings.Always
             ? _markers.FirstOrDefault(m => m.Kind == WatchMarkerKinds.Intro && m.Contains(position))
@@ -299,21 +293,36 @@ public sealed class MarkerPrompts
         return seek;
     }
 
-    /// <summary>The viewer pressed the pill: answers where to seek, or null when nothing shows.</summary>
-    public double? Select()
+    /// <summary>
+    /// The viewer pressed the pill at <paramref name="position"/>, where playback is now (a seek on its way included):
+    /// the pill goes, and the answer is where to seek, or null when nothing shows or the pill no longer fits the
+    /// position. Skip Intro and a part's pill skip only from inside their part, so a seek out of it that no update has
+    /// seen yet never makes them pass over what is not marked; the next update offers them again inside. Watch Intro
+    /// goes back to the intro's start only from there on: from before it, playback reaches the intro, which then plays.
+    /// </summary>
+    public double? Select(double position)
     {
         if (_intro is { } intro)
         {
-            _resolved.Add(intro);
             _intro = null;
             Prompt = null;
-            return _undo ? intro.StartSeconds : intro.EndSeconds;
+            if (_undo)
+            {
+                _resolved.Add(intro);
+                return position >= intro.StartSeconds ? intro.StartSeconds : null;
+            }
+            if (!intro.Contains(position))
+            {
+                return null;
+            }
+            _resolved.Add(intro);
+            return intro.EndSeconds;
         }
         if (_part is { } part)
         {
             _part = null;
             Prompt = null;
-            return part.EndSeconds;
+            return part.Contains(position) ? part.EndSeconds : null;
         }
         return null;
     }
