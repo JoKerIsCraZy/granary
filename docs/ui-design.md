@@ -119,7 +119,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   A click on a link is the click of the card's button, with its pressed look, its focus and "release elsewhere cancels":
   the card only notes a press of the left button, a finger or a pen that begins on a title line that opens its series
   (`HeadingPress`), and the row or grid asks the card first when the button clicks (`MediaCardView.TryOpenHeading`,
-  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. The press is
+  `CardClick`): such a click opens the series and leaves the page's own command and a pick alone. A card that is given
+  an episode under a pointer that stays where it is (a recycled card, a row that changed) notes that press too, before
+  the pointer moves. The press is
   forgotten when the pointer leaves or is cancelled, when the button lets go of the pointer, and before a key reaches
   the button or a game controller's A presses it, so Enter, a remote's Select and A always open the card itself.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
@@ -968,14 +970,14 @@ On the pages, and in the minimized player's bar:
 | Pad | Does |
 |---|---|
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
-| A | Presses what has focus, as OK. Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
+| A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
 | B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
 | X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as show, less one. |
-| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
 
@@ -989,7 +991,7 @@ In the full player:
 | D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
 | D-pad up and down | On the picture: the bar shows with focus on Play/Pause. On a control: move focus. The volume slider is passed by, as for a remote. |
 | LT, RT | Scrub back and forward while held, from 5 to 180 seconds a second by how far the trigger is pulled; the seek bar shows the target, and one seek is sent when the trigger is let go. The scrub stops at the title's start and at its end likewise. |
-| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. |
+| LB, RB | The chapter before (first this one's start) and the next one. Without chapters, or with the Chapters button hidden in Settings, five minutes back or on, no further than the title's start or end. A seek being made is called off first, so it never lands over the jump. |
 | Right stick up and down | Volume by 5, again while held. |
 | Y | The audio menu when there is a track to choose, else the subtitles', else the playback settings (what Down opens for a remote). Pressed while a menu is open it closes that. |
 | Menu | The playback settings menu; likewise. |
@@ -1000,8 +1002,10 @@ In the full player:
 With focus on a control the bar waits as long as for a remote (5 s) and then hides, and focus goes back to the picture.
 In a menu the D-pad moves, A picks and B closes; the bumpers, the triggers and the right stick wait until it is closed.
 A seek being made when a menu opens (a trigger still pulled, or a step still waiting) is sent at once, to where the seek
-bar showed it. A that closes the player presses nothing on the page behind it, whether it is still held when the page
-shows or was let go just before.
+bar showed it. A seek made otherwise meanwhile (a key, a click or drag on the seek bar, a skip button, a chapter, the
+D-pad on the focused seek bar) replaces it: the pad's is dropped unsent, and a trigger or a direction still held does nothing more until it is let
+go, as after a chapter jump. A that closes the player presses nothing on the page behind it, whether it is still held
+when the page shows or was let go just before.
 
 Always:
 
@@ -1014,7 +1018,7 @@ Always:
 - A pad that sleeps, runs out of battery or is unplugged changes nothing: what plays goes on, a seek it was making is
   dropped rather than sent, a button it held presses nothing (a short A that ends with the pad is no press), a button
   found down when a pad that could not be read is read again is no press either, and any pad that comes (back) works at
-  once. Several pads count as one.
+  once. Several pads count as one, each trigger as far as the pad that pulls it furthest.
 - Using the pad counts as being there: Windows' screen saver and display timers are set back as they are for a key.
 - PlayStation pads (DualShock 4, its wireless adapter, DualSense and DualSense Edge) work by the same positions, by cable
   or Bluetooth, with nothing else installed. The PS button and the touchpad do nothing. L2 and R2 count by how far they
@@ -1436,7 +1440,8 @@ by `MainWindow.Activity.cs`.
     the button's then end in "+" ("12+"; "99+" stays), the button's name says "Server activity: at least 500
     active", and the line "At least 475 more scans queued". That lasts until a snapshot that is not full, however
     many of the known scans end (the web goes by the number it knows at the moment). The same when a connection's
-    snapshot could not be read, or did not come while scans of the last connection may still run: the scans are then
+    snapshot could not be read, or did not come while scans of the last connection may still run, and when a scan's
+    event could not be read (it may have begun or ended a scan): the scans are then
     not known, and those the stream tells of since are the least there is. A snapshot that does not come with no
     scan known to run says nothing, so a server that sends none does not keep the button up. Without any: "No active scans" when the stream said so; while it is away, "Connecting…"
     or "Disconnected", since scans are known from the stream alone (the web says "No active scans" there too); and
@@ -1839,7 +1844,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
   or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
-  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. The other keys
+  and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. A control of
+  the hidden bar is none the viewer is on: one the mouse pressed keeps focus as the bar hides, and the prompt takes it
+  from there, so Enter does not press that control unseen. The other keys
   go on as on the picture: Space plays and pauses, Left and Right skip, Up brings the controls. When the prompt goes,
   focus is the picture's again (`PlayerPage.SkipPrompt.cs`).
 - **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
@@ -1880,29 +1887,51 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
   follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
-  still pointer as the window goes full screen or changes scale), any move of a finger or a pen, and when the player
-  closes, never with a key or the player's own changes, so a remote does not put it back over the picture; paused,
-  it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
+  still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
+  brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never
+  with a key or the player's own changes, so a remote does not put it back over the picture; paused by a key, it too
+  stays away until the mouse moves or clicks. A cursor the controls left showing because another window was under the
   pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
   250 ms while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
-  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
-  cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
-  the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
+  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
   Moves count from where the pointer is as the cursor hides, not from where the page saw the mouse last: it does not see
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
-  While the cursor is hidden, Granary's windows answer Windows' question for the cursor themselves
-  (`CursorWindowHook`, a subclass on the main window and every window in it that takes `WM_SETCURSOR` for the client
-  area and sets `BlankCursor.Handle` while the pointer is over the picture), so neither WinUI nor the window's class can
-  put an arrow or a hand back, whatever the page's elements say, and whichever of the windows Windows asks; logs had
-  shown WinUI answering with the arrow though the page's cursor was the blank one, and a blank cursor set from a timer
-  not holding. The hook lets go when the cursor shows, the page unloads or a window is destroyed; the title bar, menus
-  and other windows keep their cursors. A look every 250 ms still checks what Windows draws: a visible cursor over the
-  picture is asked away once more, and the log says whether that helped, which of Granary's windows lay under the
-  pointer, whether Granary or another program was in front, and how many requests the hook had answered since the
-  cursor hid. The log also says what brought a hidden cursor back (how far the mouse moved and how long it had lain
-  still, or a finger or pen) and how far the mouse went while the cursor showed.
+  WinUI does not keep a hidden cursor, though. Whenever Windows works the cursor out again without the mouse having
+  moved, as it does when any window changes, WinUI shows the arrow, and nothing an app sets shows until the mouse really
+  moves: not an element's cursor, not the window's (`InputPointerSource.Cursor`), not `SetCursor`, whether from a timer
+  or in answer to `WM_SETCURSOR` (microsoft-ui-xaml issue 11942; each of these was tried and measured here). A hidden
+  cursor came back that way by itself, a moment after the controls went or minutes into a pause. So while the cursor is
+  hidden in the full player, an invisible window of Granary's own lies over the picture (`CursorShield`, laid by
+  `PlayerPage.KeepShield`): a child of the main window, layered and without a surface, as WinUI's own input window over
+  the title bar is. Over it Windows asks Granary for the cursor each time (`WM_SETCURSOR`) and draws the blank one, also
+  under a mouse that lies still. It covers the page without the title bar's strip in a window, so the title bar, the
+  caption buttons and other windows keep their cursors, and it is taken away while a dialog, a menu or a flyout is
+  open (seen at the next look, every 250 ms): one inside the window would lie under it. It is made at the place it covers, and made anew
+  when that changes (the window's size or mode): Windows finds such a window under the pointer only where it was made.
+  While it is up the pointer is not WinUI's, so the page does what WinUI did with it:
+  - a move of the mouse or a pen is measured as any other, and a real one shows the cursor and the controls and takes
+    the shield away;
+  - a finger's drag shows them too, as a finger's move over WinUI does, once it went further than a tap may (the
+    click's 16 px), and is then no tap wherever it ends; the move Windows makes to where a finger goes down, and a tap's
+    small one, are none;
+  - a press of a mouse button shows the cursor and the controls too, whichever button, and the shield goes with its
+    release; only the left one clicks;
+  - a double click is told from its two clicks (`PlayerClicks`, within Windows' double-click time): the first shows the
+    cursor and takes the shield away, so WinUI sees only the second and reports a click;
+  - the click or tap goes to what WinUI had under the pointer as the press began, before the controls came up: the
+    picture, which plays, pauses or goes full screen as ever, or a button (the skip pill, the next episode's card),
+    which is pressed as a screen reader presses it; anything else gets no click, the viewer having aimed at what they
+    could not see;
+  - a finger or a pen always shows the cursor, so what it touches next is WinUI's again;
+  - the mouse's back button goes back.
+
+  Uncovered or laid elsewhere during a press, the shield stays for the release, or the click would be lost between the
+  two. The log says
+  when the shield is laid and gone, should Windows ever draw one of its own cursors over it (with the window under the
+  pointer), what brought a hidden cursor back (how far the mouse moved and how long it had lain still, or a finger or
+  pen) and how far the mouse went while the cursor showed.
 
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.

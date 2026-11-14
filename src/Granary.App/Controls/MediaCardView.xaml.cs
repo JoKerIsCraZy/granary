@@ -220,6 +220,7 @@ public sealed partial class MediaCardView : UserControl
         }
 
         SetHovered(false);
+        FollowPressesUnderPointer();
         ShowState();
         UpdateSize(ActualWidth);
     }
@@ -840,6 +841,7 @@ public sealed partial class MediaCardView : UserControl
     // it (ShowPointer). The keyboard reaches the card's buttons through focus.
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
+        _isPointerOn = true;
         if (Card is null || Pick is not null)
         {
             SetHovered(false);
@@ -883,7 +885,11 @@ public sealed partial class MediaCardView : UserControl
         return null;
     }
 
-    private void OnPointerExited(object sender, PointerRoutedEventArgs e) => SetHovered(false);
+    private void OnPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        _isPointerOn = false;
+        SetHovered(false);
+    }
 
     private void OnPlayClick(object sender, RoutedEventArgs e)
     {
@@ -1027,6 +1033,7 @@ public sealed partial class MediaCardView : UserControl
     {
         // A click that opens a title takes the page away under the pointer, so the card never hears it leave; a cached
         // page would show it hovered on the way back until the pointer crossed it again.
+        _isPointerOn = false;
         SetHovered(false);
         _actions.Changed -= OnStateChanged;
         _overlays.PropertyChanged -= OnOverlaysChanged;

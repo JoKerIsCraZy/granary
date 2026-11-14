@@ -82,6 +82,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.MinimizeRequested += (_, _) => Dock();
         page.ExpandRequested += (_, _) => Expand();
         page.StopRequested += (_, _) => ClosePlayer();
+        page.PadSeekReplaced += (_, _) => DropPadSeek();
         page.ViewModel.PropertyChanged += OnPlayerChanged;
         _player = page;
         ShowOtherMedia();

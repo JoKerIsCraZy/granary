@@ -294,7 +294,7 @@
                 <TextBlock FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="12,0">
                     <!-- The line break between the runs is the space before "Preferences"; none comes before ", or mute". -->
                     <Run Text="New episodes of these series notify this profile. Change which reasons count in" />
-                    <Hyperlink Click="OnSeriesPreferencesClick" Foreground="{StaticResource SiloForegroundBrush}"><Run Text="Preferences" /></Hyperlink><Run Text="{x:Bind ViewModel.Series.IntroEnd, Mode=OneWay}" />
+                    <Hyperlink x:Name="SeriesPreferencesLink" Click="OnSeriesPreferencesClick" Foreground="{StaticResource SiloForegroundBrush}"><Run Text="Preferences" /></Hyperlink><Run Text="{x:Bind ViewModel.Series.IntroEnd, Mode=OneWay}" />
                 </TextBlock>
 
                 <Grid ColumnSpacing="8" Margin="12,0">
