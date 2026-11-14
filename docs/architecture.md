@@ -1466,8 +1466,10 @@ client guide.
   Download opens the dialog at once (`DownloadActions.OfferReadAsync`, `DownloadOptionsViewModel.ForReading`) and
   `DownloadOfferReader` reads the title as its page reads it (`GET /api/v2/catalog/items/{id}`; a season with
   `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
-  can be tried again; one the dialog closed on is cancelled and shows nothing. No page adds download entries to its
-  cards: `ICardMenuHost` is left to the collections' grid.
+  can be tried again; one the dialog closed on is cancelled and shows nothing; one that answers after another server,
+  account or profile became the active one counts as failed (`ProfileChangedException`), so Try Again reads for the
+  active one. Download from a card never throws at the menu: what fails is logged by its kind. No page adds download
+  entries to its cards: `ICardMenuHost` is left to the collections' grid.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
   reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow

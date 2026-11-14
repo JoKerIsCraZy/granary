@@ -42,10 +42,25 @@ public sealed partial class CardDownloads(DownloadActions actions, DownloadOffer
         return state.IsShown ? [new(DownloadActions.DownloadLabel, DownloadCommand)] : [];
     }
 
-    /// <summary>The download dialog for the card's title, which reads its files while it shows.</summary>
+    // The download dialog for the card's title, which reads its files while it shows. A menu's command: what fails is logged
+    // by its kind, never thrown at the menu, and the menu's Download can be chosen again. A card has no place of its own to
+    // say it, as the title page has.
     [RelayCommand]
-    private Task DownloadAsync(MediaCard? card) =>
-        card is null ? Task.CompletedTask : actions.OfferReadAsync(cancellationToken => offers.ReadAsync(card.Id, card.Type, cancellationToken));
+    private async Task DownloadAsync(MediaCard? card)
+    {
+        if (card is null)
+        {
+            return;
+        }
+        try
+        {
+            await actions.OfferReadAsync(cancellationToken => offers.ReadAsync(card.Id, card.Type, cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Opening the download dialog from a card's menu failed ({Failure})", DownloadLog.Failure(ex));
+        }
+    }
 
     [RelayCommand]
     private void OpenDownloads() => actions.OpenDownloads();

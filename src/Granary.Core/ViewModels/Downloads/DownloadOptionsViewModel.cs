@@ -2,6 +2,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
@@ -216,7 +217,15 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     }
 
     /// <summary>The dialog closed: a read under way stops, and nothing of it shows.</summary>
-    public void StopReading() => _reading?.Cancel();
+    public void StopReading()
+    {
+        if (_reading is { } reading)
+        {
+            _reading = null;
+            reading.Cancel();
+            reading.Dispose();
+        }
+    }
 
     /// <summary>The web's Try Again after a read that failed: the title is read again.</summary>
     [RelayCommand]
@@ -310,13 +319,14 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     }
 
     // One read at a time, off the UI thread and shown on it; one the dialog closed on, or that Try Again replaced, shows nothing.
+    // Its token's source is the UI thread's: whoever stops a read, or the read that ends, lets go of it.
     private async Task ReadOfferAsync()
     {
         if (_read is not { } read)
         {
             return;
         }
-        _reading?.Cancel();
+        StopReading();
         var reading = new CancellationTokenSource();
         _reading = reading;
         int attempt = ++_offerReads;
@@ -334,8 +344,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            // The dialog says the read failed and offers Try Again; nothing is thrown into it. Only the failure's kind is logged.
-            if (LibraryErrors.IsExpected(ex))
+            // The dialog says the read failed and offers Try Again, which reads for the profile active then; nothing is thrown
+            // into it. Only the failure's kind is logged.
+            if (LibraryErrors.IsExpected(ex) || ex is ProfileChangedException)
             {
                 _logger.LogWarning("The title's files could not be read for the download dialog ({Failure})", DownloadLog.Failure(ex));
             }
@@ -349,6 +360,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         {
             return;
         }
+        _reading = null;
+        reading.Dispose();
         IsReading = false;
         if (offer is null)
         {

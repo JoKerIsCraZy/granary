@@ -308,6 +308,41 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADialogThatFails_IsLoggedByItsKind_AndNotThrownAtTheMenu()
+    {
+        _dialog.WhileShown = _ => throw new InvalidOperationException("The dialog went wrong.");
+        var cards = await CardsAsync();
+
+        await ChooseAsync(cards, Movie);
+
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("Opening the download dialog from a card's menu failed (InvalidOperationException",
+            StringComparison.Ordinal));
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains("The dialog went wrong.", StringComparison.Ordinal));
+        // The menu's Download can be chosen again.
+        Assert.True(cards.EntriesFor(Movie)[0].Command.CanExecute(Movie));
+    }
+
+    [Fact]
+    public async Task AnAnswerThatCameAfterAnotherProfileBecameActive_IsDropped()
+    {
+        var (held, gate) = ItemDetailFixture.Held();
+        _h.Silo.On(HttpMethod.Get, ItemDetailFixture.ItemPath("mv_1"), held);
+        _dialog.WhileShown = async options =>
+        {
+            _h.SwitchProfile("8");
+            gate.SetResult(await ItemDetailFixture.Ok(TitlePayloads.Movie)());
+            await options.Reading;
+        };
+        var cards = await CardsAsync();
+
+        await ChooseAsync(cards, Movie);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(("Download", false, false), (shown.Title, shown.HasOffer, shown.CanStart));
+        Assert.Equal((true, DownloadOptionsViewModel.DetailsFailed), (shown.ReadFailed, shown.DescriptionText));
+    }
+
+    [Fact]
     public async Task ClosingTheDialog_StopsTheRead_AndShowsNothingOfIt()
     {
         var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
