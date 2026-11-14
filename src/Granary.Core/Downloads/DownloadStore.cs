@@ -411,6 +411,20 @@ public sealed partial class DownloadStore
         }
     }
 
+    /// <summary>
+    /// The transfer of a removed download let go of its files: its folder, while still to be deleted, is tried again now, as one
+    /// not tried yet, rather than once the wait the store's own tries left it with is over (a transfer slow to stop, on a busy
+    /// PC, held its part past them). It goes beside the caller (<see cref="FolderWork"/>), after the index without it is on
+    /// disk, as every removed folder does; one something else still holds waits again. The other folders keep their waits.
+    /// </summary>
+    internal void DeleteFolderNow(DownloadScope scope, string downloadId)
+    {
+        if (FolderBeingDeleted(scope, downloadId) is not null)
+        {
+            DeleteFoldersBeside(() => ForgetFolderWait(scope, downloadId));
+        }
+    }
+
     /// <summary>The bytes the scope's download folders take on their drives.</summary>
     public long BytesOnDisk(DownloadScope scope)
     {
@@ -462,26 +476,26 @@ public sealed partial class DownloadStore
     }
 
     // The removed downloads' folders, on the thread pool, after the folder work under way: that one deletes only the folders
-    // of the index it wrote.
-    private void DeleteFoldersBeside()
+    // of the index it wrote. beforeTry runs first in the pass's write turn.
+    private void DeleteFoldersBeside(Action? beforeTry = null)
     {
         lock (_gate)
         {
             var before = FolderWork;
             FolderWork = before.IsCompleted
-                ? Task.Run(FolderWorkAsync, CancellationToken.None)
-                : before.ContinueWith(_ => FolderWorkAsync(), CancellationToken.None, TaskContinuationOptions.None,
+                ? Task.Run(() => FolderWorkAsync(beforeTry), CancellationToken.None)
+                : before.ContinueWith(_ => FolderWorkAsync(beforeTry), CancellationToken.None, TaskContinuationOptions.None,
                     TaskScheduler.Default).Unwrap();
         }
     }
 
     // The index and the folders beside a caller, as FolderWork: nothing may wait for it, so a failure is logged here. The
     // folders still to delete stay in the state, and the next recheck tries them again.
-    private async Task FolderWorkAsync()
+    private async Task FolderWorkAsync(Action? beforeTry = null)
     {
         try
         {
-            await WriteIndexThenDeleteFoldersAsync();
+            await WriteIndexThenDeleteFoldersAsync(beforeTry);
         }
         catch (Exception ex)
         {
@@ -491,9 +505,13 @@ public sealed partial class DownloadStore
 
     // The index, then the removed downloads' folders. Changed follows when a folder went, so a server delete it held back goes;
     // a follower that throws then is logged, since the change it hears of is done already.
-    private async Task WriteIndexThenDeleteFoldersAsync()
+    private async Task WriteIndexThenDeleteFoldersAsync(Action? beforeTry = null)
     {
-        if (!await PersistAsync(WriteIndexThenDeleteFolders))
+        if (!await PersistAsync(() =>
+        {
+            beforeTry?.Invoke();
+            return WriteIndexThenDeleteFolders();
+        }))
         {
             return;
         }

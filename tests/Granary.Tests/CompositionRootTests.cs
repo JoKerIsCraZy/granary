@@ -68,6 +68,7 @@ public sealed class CompositionRootTests
         Assert.Same(provider.GetRequiredService<DownloadManager>(), provider.GetRequiredService<DownloadManager>());
         // The Downloads page and Settings → Downloads make theirs outside the container, which would keep a disposable one.
         using var downloads = ActivatorUtilities.CreateInstance<DownloadsViewModel>(provider);
+        using var seriesDownloads = ActivatorUtilities.CreateInstance<DownloadedSeriesViewModel>(provider);
         Assert.NotNull(ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(provider));
         // A title on this PC plays from it, and the next episode can come from this PC too.
         Assert.Same(provider.GetRequiredService<DownloadPlaybacks>(), provider.GetRequiredService<DownloadPlaybacks>());

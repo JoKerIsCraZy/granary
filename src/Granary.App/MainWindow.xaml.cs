@@ -753,6 +753,8 @@ public sealed partial class MainWindow : Window
             AppRoute.Title or AppRoute.RequestTitles => nameof(AppRoute.Requests),
             // The room opens from the Watch Party hub, which stays picked.
             AppRoute.WatchPartyRoom => nameof(AppRoute.WatchParty),
+            // A series' downloads open from the Downloads page, which stays picked.
+            AppRoute.DownloadedSeries => nameof(AppRoute.Downloads),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

@@ -232,6 +232,19 @@ public sealed partial class DownloadStore
         return done;
     }
 
+    // A removed download's folder is due now, as one not tried yet. Run in a write's turn, where the passes go one at a time: a
+    // pass that found the folder held a moment ago has set its wait by then, so that wait is not set again after this.
+    private void ForgetFolderWait(DownloadScope scope, string downloadId)
+    {
+        lock (_gate)
+        {
+            foreach (var delete in _folderRetries.Keys.Where(d => d.Scope == scope && d.DownloadId == downloadId).ToList())
+            {
+                _folderRetries.Remove(delete);
+            }
+        }
+    }
+
     // True when the folder is gone; false while something holds it, or while its drive is not there to look.
     private bool TryDeleteFolder(FolderDelete delete)
     {

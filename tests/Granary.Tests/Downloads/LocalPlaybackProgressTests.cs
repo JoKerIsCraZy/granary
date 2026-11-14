@@ -43,6 +43,22 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheDownload_KeepsTheTitlesLength_WithEachPosition()
+    {
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
+        // Kept before the store read manifests for the length.
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Assert.Null(Record.DurationMs);
+        Frame(9.5);
+
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+
+        // The Downloads page says from it how much is left, also for a download whose manifest never said it to the store.
+        await Until(() => Record.DurationMs == 7_200_000, "the download kept the title's length");
+        await playback.StopAsync();
+    }
+
+    [Fact]
     public async Task NothingIsRecorded_BeforeTheFirstFrame()
     {
         await _fixture.Harness.AddPlayableAsync();

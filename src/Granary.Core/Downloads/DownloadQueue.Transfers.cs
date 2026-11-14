@@ -24,9 +24,17 @@ public sealed partial class DownloadQueue
             lock (_gate)
             {
                 _running.Remove(run.Key);
+                _rates.Remove(run.Key);
                 WakeLocked();
             }
             run.Cancel.Dispose();
+            // Its download was deleted: the store tried the folder as the transfer stopped, and a transfer slow to let go of its
+            // part (a busy PC) left it waiting a minute. The part is closed now, so the folder is tried again at once, and the
+            // server's delete it holds back follows. Outside the lock: the store is never called under it.
+            if (_store.Find(run.Key.Scope, run.Key.Id) is null)
+            {
+                _store.DeleteFolderNow(run.Key.Scope, run.Key.Id);
+            }
         }
     }
 
@@ -149,6 +157,7 @@ public sealed partial class DownloadQueue
             {
                 ExpectedBytes = expected,
                 ManifestReadAt = now,
+                DurationMs = DownloadRecords.DurationOf(fetched.Manifest) ?? r.DurationMs,
                 ArtworkFiles = fetched.ArtworkFiles,
                 SubtitleRevisions = fetched.SubtitleRevisions,
             }, run.Cancel.Token).ConfigureAwait(false);
@@ -296,11 +305,22 @@ public sealed partial class DownloadQueue
 
     private void OnProgress(Key key, long bytes)
     {
-        var now = _time.GetUtcNow();
         bool say;
         lock (_gate)
         {
+            // Read under the lock, so the times the speed's measure gets follow its bytes' order.
+            var now = _time.GetUtcNow();
             _bytes[key] = bytes;
+            // Only while its transfer runs: the measure goes with it (RunAsync), and nothing makes it again after.
+            if (_running.ContainsKey(key))
+            {
+                if (!_rates.TryGetValue(key, out var rate))
+                {
+                    rate = new TransferRate();
+                    _rates[key] = rate;
+                }
+                rate.Add(now, bytes);
+            }
             say = !_progressSaid.TryGetValue(key, out var said) || now - said >= ProgressInterval;
             if (say)
             {

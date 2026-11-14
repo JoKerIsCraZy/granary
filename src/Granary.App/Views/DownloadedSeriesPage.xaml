@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A series' downloads on this PC, opened from its card on the Downloads page, as the Apple app opens a series' downloads on a
+    screen of their own: the series' name and how many episodes and how much space, then each season ("Season 1", Specials
+    last) with its episodes' stills in a grid, as a season's page shows them, with their size and status and the Downloads
+    page's menus. Back (the disc at the top left, Alt+Left, a controller's B, a remote's Back) leads to the Downloads page.
+-->
+<Page
+    x:Class="Granary.App.Views.DownloadedSeriesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:downloads="using:Granary.Core.ViewModels.Downloads"
+    NavigationCacheMode="Enabled">
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
+        <StackPanel Padding="48,32,48,48" Spacing="24">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" TextTrimming="CharacterEllipsis"
+                           AutomationProperties.HeadingLevel="Level1" />
+                <!-- "3 episodes · 12.0 GB". -->
+                <TextBlock Text="{x:Bind ViewModel.Summary, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloMutedBrush}" />
+            </StackPanel>
+
+            <!-- Each season with its episodes. Every template's root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
+            <ItemsRepeater x:Name="SeasonsRepeater" ItemsSource="{x:Bind ViewModel.Seasons}" GotFocus="OnSeasonGotFocus"
+                           ElementClearing="OnSeasonClearing">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="40" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="downloads:DownloadSeason">
+                        <Grid>
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="{x:Bind Title}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                                <controls:MediaGrid ItemsSource="{x:Bind Episodes}" CardShape="Landscape" ShowsAllLines="True"
+                                                    CardInvokedCommand="{x:Bind OpenCard}" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

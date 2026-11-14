@@ -51,4 +51,39 @@ public sealed class DownloadTextTests
         Assert.False(Item(DownloadState.Completed, missing: true).IsPlayable);
         Assert.False(Item(DownloadState.Downloading, bytesDone: 1000).IsPlayable);
     }
+
+    // The Apple app's speed, in the size the page says everywhere.
+    [Theory]
+    [InlineData(12_897_484, "12.3 MB/s")]
+    [InlineData(1_048_576, "1.0 MB/s")]
+    [InlineData(512_000, "500.0 KB/s")]
+    [InlineData(800, "800 B/s")]
+    public void Speed_IsTheSizeASecond(double bytesPerSecond, string expected) =>
+        Assert.Equal(expected, DownloadText.Speed(bytesPerSecond));
+
+    // The Apple app's time left: whole minutes, rounded; hours past the hour.
+    [Theory]
+    [InlineData(29, "under 1 min left")]
+    [InlineData(31, "1 min left")]
+    [InlineData(4 * 60 + 29, "4 min left")]
+    [InlineData(59 * 60 + 29, "59 min left")]
+    [InlineData(59 * 60 + 31, "1 hr left")]
+    [InlineData(65 * 60, "1 hr 5 min left")]
+    [InlineData(150 * 60, "2 hr 30 min left")]
+    public void TimeLeft_IsInMinutes_AndHoursPastTheHour(int seconds, string expected) =>
+        Assert.Equal(expected, DownloadText.TimeLeft(TimeSpan.FromSeconds(seconds)));
+
+    [Fact]
+    public void ADownloadingStatus_AddsTheSpeedAndTheTimeLeft_OnceTheyAreKnown()
+    {
+        // 420 of 1000 bytes, 580 to go at 2 bytes a second: 290 s.
+        var downloading = Item(DownloadState.Downloading, bytesDone: 420);
+
+        Assert.Equal("Downloading · 42% · 2 B/s · 5 min left", DownloadText.Status(downloading, bytesPerSecond: 2));
+        Assert.Equal("Downloading · 42%", DownloadText.Status(downloading, bytesPerSecond: null));
+        Assert.Equal("Downloading · 42%", DownloadText.Status(downloading, bytesPerSecond: 0.5));
+        // Only a download that comes has a speed.
+        Assert.Equal("Paused", DownloadText.Status(Item(DownloadState.Downloading, bytesDone: 420, paused: true), bytesPerSecond: 2));
+        Assert.Equal("Queued", DownloadText.Status(Item(DownloadState.Queued, bytesDone: 420), bytesPerSecond: 2));
+    }
 }

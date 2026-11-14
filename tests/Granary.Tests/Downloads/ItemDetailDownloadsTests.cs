@@ -116,11 +116,17 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await _h.AddAsync("dl_1", mediaItemId: MovieId);
         var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
         var queue = _h.StartQueue();
-        var page = await FollowedAsync(MovieId, queue);
+        // The test's thread is the UI thread: what the running queue posts runs here, never beside the test's own calls.
+        var ui = new QueuedDispatcher();
+        var page = await FollowedAsync(MovieId, queue, ui);
 
         body.Release(1260);
 
-        await Until(() => page.DownloadLabel == "Downloading · 42%", "the item showed the progress");
+        await Until(() =>
+        {
+            ui.RunAll();
+            return page.DownloadLabel == "Downloading · 42%";
+        }, "the item showed the progress");
         Assert.True(page.ShowsDownload);
         await page.OpenDownloadCommand.ExecuteAsync(null);
         Assert.Equal([AppRoute.Downloads], _detail.Navigation.Sections);

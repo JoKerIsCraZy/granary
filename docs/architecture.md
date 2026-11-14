@@ -448,6 +448,24 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   (`EpisodeSpoilerState.Loading`), Home makes the banner's and the hero's titles as if images were hidden
   (`HomeViewModel.TopSpoilers`), and it looks at the settings' state on the UI thread's next turn, after the switches the
   read brought, so a hidden still never shows sharp in between.
+- A card whose look changes while it shows, as a download's progress, comes to a grid as a `LiveCard`, which `MediaGrid`
+  shows with a template of its own (`MediaCardTemplateSelector.Live`) that follows `LiveCard.Card` in place: the same
+  button and card, so the card keeps its place and the focus. Replacing a `MediaCard` in the list would have the repeater
+  make the element anew and take the focus off it. A card given the same title again keeps what the pointer did on it
+  (its play disc and buttons), and with the same picture its artwork (`MediaCardView.KeepsPicture`) rather than going back
+  through its blur, unless that picture failed.
+- A card that had the focus and leaves its grid's list (a download deleted from its menu) hands the focus to the card now
+  in its place, or the last one (`MediaGrid.Focus.cs`): the grid notes the place of the card that took the focus, sees
+  the focused card cleared (`ElementClearing`; the repeater keeps a focused card it only scrolled away) and, once the
+  change is laid out, focuses that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere
+  stays there. A grid left without cards asks the page above it (`ICardFocusHost`; the Downloads page moves on to its
+  other grid), and a series' downloads page moves on to the next season when one goes with its focused card.
+- A card's bar is in percent (0 to 100), the value screen readers say. A card whose lines change as it shows names itself
+  by `MediaCard.AccessibleLines` instead of them, so its name stays while its bar moves; `MediaCard.ToolTip` gives its
+  whole status where its lines show it in parts, and `MediaCard.PlainSubtitle` sets a poster's second line in the
+  caption's style, which holds more than the overline.
+- A download's artwork comes from its file on this PC (`MediaCard.LocalImagePath`), read on the thread pool by
+  `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the
@@ -1222,7 +1240,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
   a folder something still holds, or whose drive is away, stays in `folder_deletes`, tried again at the next start and at a
   recheck a minute later, then twice as long each time up to `MaxFolderDeleteWait` (10 minutes), unless a row lives in
-  that very folder again. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
+  that very folder again. A transfer that held its part past those tries (slow to stop, on a busy PC) has its folder tried
+  again as it ends, as one not tried yet (`DownloadStore.DeleteFolderNow`, in a write's turn after the pass that found it
+  held); the other folders keep their waits. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
   as above is ever deleted. The log names downloads by id: a file system error's message holds the full path, with the
   Windows user name, so only its kind and code are logged.
 - **`SafeFile`** (`IO/SafeFile`) writes every one of these files, the settings and the mpv folder's: whole beside the
@@ -1312,7 +1332,8 @@ missing their folder.
   beside the loop, one at a time, which the loop does not wait for: a server slow to answer never holds a transfer back. It
   wakes the loop when it ends; one that fails unexpectedly waits a minute.
 - **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
-  `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
+  `Changed` comes before the folder is deleted, so the part is let go first; one that lets go later has the folder tried
+  again as it ends), paused by the viewer or no longer to be
   fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
   starts then either), when the session's profile changes (only the active profile's downloads run; another profile's
   carry on when it is active again), when a sign-out took its account's downloads off this PC (below), and when the queue
@@ -1349,6 +1370,13 @@ missing their folder.
   a new revision) does not wait out the delay of the one it replaces. One the server will not take (another revision, an entry
   preparing again, a time it refuses) is dropped. A completed transfer renames `media.part` to its media name before the
   record says Completed.
+- **Speed.** Each running transfer measures how fast its bytes come (`TransferRate`, kept under the queue's lock from the
+  bytes each read reports, on the `TimeProvider`'s clock): the bytes of the last 5 s over the time they took. There is no
+  speed before 2 s of bytes, so a first read says nothing it cannot know, and none once no bytes came for 3 s, as the
+  Apple app drops its rate; bytes after such a gap, or fewer than before (a part that started over), start a new measure.
+  Points under a quarter second after the one kept before are not kept, so a fast link's hundreds of reads a second
+  cost nothing. The measure goes with the transfer. `DownloadManager.BytesPerSecond` reads it for a page, without the disk
+  or the connection.
 - **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
   go of their files, logging when they did not or when one failed; it never throws, also when a request was cancelled
   under way or `Dispose` came first. `Dispose` stops everything without waiting and lets go of the queue's cancellation
@@ -1468,21 +1496,32 @@ client guide.
   `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
   can be tried again; one the dialog closed on is cancelled and shows nothing; one that answers after another server,
   account or profile became the active one counts as failed (`ProfileChangedException`), so Try Again reads for the
-  active one. Download from a card never throws at the menu: what fails is logged by its kind. No page adds download
-  entries to its cards: `ICardMenuHost` is left to the collections' grid.
-- **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
-  UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
-  reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow
-  their download's state themselves, and the sections (films, then each series by season, Specials last) are made again
-  only when downloads come, go or move or a series' poster arrives. So pausing a row never makes the page anew: Pause,
-  Resume and Retry are one button per row (`PrimaryAction`), pressable while its press runs, and the focused button stays
-  put as its action changes. The free space is read on the thread pool when the page shows and when a download comes,
-  goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than
-  `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used. The App's `DownloadsPage` is
-  cached; it attaches in `OnNavigatedTo` and detaches in `OnNavigatedFrom` and as it unloads, and makes its view model with
-  `ActivatorUtilities`, since the root provider would keep a disposable transient, and the page with it, until exit. So
-  `DownloadManager`, a singleton, never holds a page that left (`DownloadsViewModelTests`). A row's artwork is read from its
-  file on the thread pool (`LocalArtwork`), never through a URI. The sidebar's entry follows `DownloadsFeature.IsOffered`,
+  active one. Download from a card never throws at the menu: what fails is logged by its kind. No title page adds download
+  entries to its cards: `ICardMenuHost` is left to the collections' grid and the Downloads pages.
+- **The Downloads page.** `DownloadsViewModel` and a series' downloads, `DownloadedSeriesViewModel`, follow `Changed`
+  between `Attach` and `Detach` through a `DownloadsFollower`, which posts one refresh to the UI thread per burst. Progress
+  alone updates the cards of those downloads from `BytesDone(id)` and the space used from `BytesUsed()`, without reading
+  every download again through `Items`. Anything else reads `Items` again. The cards are `MediaCard`s made by
+  `DownloadCards` (a film's or a series' poster, an episode's still, from the artwork files the record names), each held
+  by a `LiveCard` in an observable list: `LiveCard.Sync` brings the list in line by card id, in place, so a card that stays
+  keeps its `LiveCard`, its element in the grid and the focus, and only takes its new look (a `MediaCard` compares by
+  value, so an unchanged card tells nothing). What a card's click and its ⋮ menu do is `DownloadCardActions`, an
+  `ICardMenuSource` the pages hand to their cards (`ICardMenuHost`); each entry acts on the download as it is when it is
+  picked (`DownloadManager.Find`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
+  a play from this PC left it, or the server's position read back when that is newer; see "Offline progress") over
+  `DurationMs`, the title's length, which the manifest gives when it is read (before the first transfer, and again a day
+  on) and a play from this PC keeps with each position, for a download kept before the record had it. So it needs no
+  server and moves as the store's `Changed` comes with each position a play keeps. `IsWatched` gives the watched mark.
+  While a download the page shows comes, the follower reads its speed once a second on the `TimeProvider`'s timer
+  (`DownloadsFollower.RateInterval`), as the Apple app's row refreshes, and has the card say it with the time left
+  from the bytes still to come, over its two lines and whole in its tip (`DownloadCards`); the timer runs only while
+  one comes and the page shows, and a speed that stopped is noticed then though no progress comes. The free space is
+  read on the thread pool when the page shows and when a download comes, goes or finishes, through
+  `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says
+  only the space used. The App's `DownloadsPage` and `DownloadedSeriesPage` are cached; they attach in `OnNavigatedTo` and detach in `OnNavigatedFrom`
+  and as they unload, and make their view models with `ActivatorUtilities`, since the root provider would keep a
+  disposable transient, and the page with it, until exit. So `DownloadManager`, a singleton, never holds a page that left
+  (`DownloadsViewModelTests`, `DownloadedSeriesViewModelTests`). The sidebar's entry follows `DownloadsFeature.IsOffered`,
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
@@ -1686,7 +1725,7 @@ while the server answers.
   lists are read), with its title and no still; an episode that is not on this PC is passed over. A server that answers
   "none" is taken at its word: the series ends there for this profile, also when a later episode is still on this PC,
   as one the profile may no longer see (a maturity limit, a library taken away) or the server dropped; that download
-  still plays from its row. A server that only takes
+  still plays from its card on the Downloads page. A server that only takes
   longer than the budget is still waited for when no download follows, so a slow server names the next episode of a title
   that streams as before. The previous episode is the one
   before on this PC in the same season, as the web's button stays in the season. Neither app looks for a next episode on
@@ -1738,10 +1777,12 @@ device.
   the row holds a position: the mark returns when that watch ends. The Downloads page suggests deleting
   the watched downloads that are whole and that the server still has (`DownloadItem.IsReclaimable`) unless this PC keeps
   them (`IDownloadPreferences.KeepWatched`); `DownloadManager.DeleteWatchedAsync` deletes the ones the viewer was asked
-  about that are still watched, each as a single delete goes. A download that plays is neither suggested nor deleted
+  about that are still watched, each as a single delete goes, in the profile the question was asked in
+  (`DownloadManager.ActiveScope`, taken as a question opens, as every delete after a question does), whichever is active
+  once it is answered. A download that plays is neither suggested nor deleted
   that way: `LocalPlayback` marks it in `PlayingDownloads` from the moment it is made until it is let go, since a title
   counts as watched while its credits still run and the player stays up, minimized, over the Downloads page (Silo's
-  Android app keeps the same mark, `ActivePlaybackFile`). The row's own Delete still deletes it.
+  Android app keeps the same mark, `ActivePlaybackFile`). The card's own Delete download still deletes it.
 - **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
   (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending or on
   its way (`Sending`, claimed by a send); which, only the run knows, so after a Granary that closed during a send every

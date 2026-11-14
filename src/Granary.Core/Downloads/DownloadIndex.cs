@@ -127,8 +127,15 @@ internal static class DownloadRecords
             SubtitleRevisions = record.SubtitleRevisions.Where(r => r.Key is not null && r.Value is not null).ToDictionary(),
             ArtworkFiles = record.ArtworkFiles.Where(a => DownloadPaths.IsArtworkName(a.Key, a.Value)).ToDictionary(),
             SubtitlePreference = record.SubtitlePreference is { Mode.Length: > 0 } ? record.SubtitlePreference : null,
+            DurationMs = record.DurationMs is > 0 ? record.DurationMs : null,
         };
     }
+
+    /// <summary>A manifest's length in milliseconds; null when it says none, or one that cannot be.</summary>
+    public static long? DurationOf(Api.Downloads.OfflineManifest manifest) =>
+        manifest.DurationSeconds is { } seconds && double.IsFinite(seconds) && seconds > 0 && seconds < long.MaxValue / 1000.0
+            ? (long)Math.Round(seconds * 1000)
+            : null;
 }
 
 /// <summary>The index and each folder's <see cref="DownloadRecord"/>, as Granary writes them.</summary>
