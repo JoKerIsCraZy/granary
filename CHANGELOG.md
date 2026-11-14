@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
 ### Added
 
 - **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
