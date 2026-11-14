@@ -27,17 +27,40 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
-    // The page over the harness's downloads, on a UI thread that runs posted work at once unless the test gives its own.
+    // The page over the harness's downloads, on a UI thread that runs posted work at once unless the test gives its own. Over a
+    // running queue the test gives its own (ShownOnAsync): the queue's threads post the refreshes, which would otherwise run
+    // there, beside the test's own calls.
     private DownloadsViewModel Page(DownloadQueue? queue = null, IUiDispatcher? dispatcher = null, IDiskSpace? disk = null) =>
         new(_h.NewManager(queue), disk ?? _h.Disk, _h.Preferences, _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher(), _h.Time,
             _h.Logs.For<DownloadsViewModel>());
 
-    private async Task<DownloadsViewModel> AttachedAsync(DownloadQueue? queue = null)
+    private async Task<DownloadsViewModel> AttachedAsync()
     {
-        var page = Page(queue);
+        var page = Page();
         page.Attach();
         await page.SpaceRead;
         return page;
+    }
+
+    // The page shown on a UI thread of its own, as the app's: what it is told runs there one at a time, never side by side.
+    // Disposing the answer leaves the page on that thread, before the thread goes.
+    private static async Task<IAsyncDisposable> ShownOnAsync(DownloadsViewModel page, SerialDispatcher ui)
+    {
+        await ui.RunAsync(() =>
+        {
+            page.Attach();
+            return page.SpaceRead;
+        });
+        return new Leaving(page, ui);
+    }
+
+    private sealed class Leaving(DownloadsViewModel page, SerialDispatcher ui) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => new(ui.RunAsync(() =>
+        {
+            page.Detach();
+            return Task.CompletedTask;
+        }));
     }
 
     // A film kept here, its media item "mv_<id>".
@@ -230,11 +253,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await AddFilmAsync("dl_1", "Example Movie", DownloadState.Queued);
         var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
         var page = Page(_h.StartQueue(), ui);
-        await ui.RunAsync(() =>
-        {
-            page.Attach();
-            return page.SpaceRead;
-        });
+        await using var shown = await ShownOnAsync(page, ui);
         var card = ui.Read(() => Live(page, "dl_1"));
         await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 0%", "the card said it is downloading");
 
@@ -262,11 +281,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
         var queue = _h.StartQueue();
         var page = Page(queue, ui);
-        await ui.RunAsync(() =>
-        {
-            page.Attach();
-            return page.SpaceRead;
-        });
+        await using var shown = await ShownOnAsync(page, ui);
         var card = ui.Read(() => Live(page, "dl_1"));
         await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 0%", "the card said it is downloading");
         long sent = 0;
@@ -453,11 +468,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two", state: DownloadState.Queued);
         var body = _h.ServeGated("dl_12", DownloadPayloads.Source(3000));
         var page = Page(_h.StartQueue(), ui);
-        await ui.RunAsync(() =>
-        {
-            page.Attach();
-            return page.SpaceRead;
-        });
+        await using var shown = await ShownOnAsync(page, ui);
         var card = ui.Read(() => Live(page, "sr_1"));
         Assert.Equal("1 of 2 episodes", ui.Read(() => card.Card.Caption));
 
@@ -550,24 +561,29 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     [Fact]
     public async Task ADownloadWhoseMediaFileWasDeletedByHand_SaysMissingFile_AndOffersNoPlay()
     {
+        using var ui = new SerialDispatcher();
         var download = await _h.AddPlayableAsync();
         await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsWatched = true, SeriesId = null }, Token);
-        var queue = _h.StartQueue();
-        var page = await AttachedAsync(queue);
-        var card = Live(page, "dl_1");
-        Assert.Equal(("Watched", "ep_5"), (card.Card.Caption, card.Card.PlayContentId));
+        var page = Page(_h.StartQueue(), ui);
+        await using var shown = await ShownOnAsync(page, ui);
+        var card = ui.Read(() => Live(page, "dl_1"));
+        Assert.Equal(("Watched", "ep_5"), ui.Read(() => (card.Card.Caption, card.Card.PlayContentId)));
 
         // Deleted in Explorer while Granary runs; the page is left and shown again.
         File.Delete(download.MediaPath!);
-        page.Detach();
-        page.Attach();
+        await ui.RunAsync(() =>
+        {
+            page.Detach();
+            page.Attach();
+            return page.SpaceRead;
+        });
 
-        await Until(() => card.Card.Caption == DownloadText.MissingFile, "the card says the file is missing");
-        Assert.Null(card.Card.PlayContentId);
-        Assert.True(card.Card.IsCaptionAttention);
-        Assert.Equal(["More Info", "Delete download"], Menu(page, "dl_1"));
+        await Until(() => ui.Read(() => card.Card.Caption) == DownloadText.MissingFile, "the card says the file is missing");
+        Assert.Equal(((string?)null, true), ui.Read(() => (card.Card.PlayContentId, card.Card.IsCaptionAttention)));
+        Assert.Equal(["More Info", "Delete download"], ui.Read(() => Menu(page, "dl_1")));
         // Nothing to free: it is not offered for deletion, and takes no space.
-        Assert.False(page.ShowsReclaim);
+        Assert.False(ui.Read(() => page.ShowsReclaim));
+        Assert.Empty(ui.Failures);
     }
 
     [Fact]
@@ -658,11 +674,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             }
         };
 
-        await ui.RunAsync(() =>
-        {
-            page.Attach();
-            return page.SpaceRead;
-        });
+        await using var shown = await ShownOnAsync(page, ui);
 
         Assert.Equal([false], disk.ReadOnUi);
         Assert.Equal("12.0 GB used · 200.0 GB free", ui.Read(() => page.SpaceText));
@@ -733,24 +745,28 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
         await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
         await AddFilmAsync("dl_2", "Unwatched Movie", size: 5 * GB);
-        var page = await AttachedAsync(_h.StartQueue());
+        using var ui = new SerialDispatcher();
+        var page = Page(_h.StartQueue(), ui);
+        await using var shown = await ShownOnAsync(page, ui);
         _confirmation.Answer = false;
 
-        await page.ReclaimCommand.ExecuteAsync(null);
+        await ui.RunAsync(() => page.ReclaimCommand.ExecuteAsync(null));
 
         // The Android app's words, whole: its dialog's title, its question and its yes.
         Assert.Equal(("Reclaim Watched", "Delete 2 watched downloads and free 3.0 GB?", "Reclaim"), Assert.Single(_confirmation.Asked));
-        Assert.Equal(3, Cards(page).Count());
+        Assert.Equal(3, ui.Read(() => Cards(page).Count()));
 
         _confirmation.Answer = true;
-        await page.ReclaimCommand.ExecuteAsync(null);
+        await ui.RunAsync(() => page.ReclaimCommand.ExecuteAsync(null));
 
-        Assert.Equal(["dl_2"], Cards(page).Select(c => c.Card.Id));
+        // The refreshes the deletes posted run before this read.
+        Assert.Equal(["dl_2"], ui.Read(() => Cards(page).Select(c => c.Card.Id).ToList()));
         Assert.Null(_h.Find("dl_1"));
         Assert.Null(_h.Find("dl_15"));
-        Assert.False(page.ShowsReclaim);
+        Assert.False(ui.Read(() => page.ShowsReclaim));
         // The server hears of each, once its files are gone.
         await Until(() => _h.Silo.Sent.Count(r => r.Method == HttpMethod.Delete) == 2, "both deletes reached the server");
+        Assert.Empty(ui.Failures);
     }
 
     [Fact]
