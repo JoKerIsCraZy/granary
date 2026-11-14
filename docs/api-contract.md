@@ -3086,6 +3086,33 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   `replace_confirmation_required`, `watch_party_active`, `version_unsupported`, `launch_pending`, `handoff_failed`,
   `controller_cancelled`.
 
+### 15.5 What Granary answers
+
+The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary's texts are Silo's Roku app's with
+"Roku" as "PC" (`RemoteTexts`; silo-roku's `receiver.bs`, `AppSceneControl.bs`, `PlayerRemote.bs`). Texts marked
+*new* have no Silo source.
+
+| When | Granary sends | `message` |
+|---|---|---|
+| A `hello` that is not a phone's, lists no version 2 or names no server | `error version_unsupported`, then `close unauthorized` | "Update Silo on both devices to continue." |
+| A command or launch from a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
+| A command with no player open (except `stop`, which is simply done) | `error player_not_ready` | "The PC player is not ready yet." |
+| `play_next` without a next episode | `error command_failed` | "There is no next episode." |
+| Play, pause or seek a Watch Party's rules refuse | `error command_failed` | "This Watch Party does not allow this playback action." |
+| Any other command the player refuses | `error command_failed` | "Not available on this PC." |
+| More than 40 commands at once, or 20 a second after that | `error rate_limited`, at most once a second | "Too many commands. Slow down and try again." |
+| A fifth phone while four control actively | `hello`, `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
+| A launch (no offer is made ready yet) | `error handoff_required` | "Prepare the phone profile before playing." |
+| An offer before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
+| An offer from another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
+| An offer on Granary's server (until a phone can start titles here) | `handoff_cancel handoff_failed` | "This PC can't start titles from a phone yet." (*new*) |
+
+Closes: `replaced` for an older connection of a phone that said `hello` again, `too_many_controllers` for a connection
+closed to make room, `timeout` without a `hello` within 5 seconds, `tv_disconnected` when the PC lets phones go
+(Disconnect Remote, the switch, a stop). A reason goes only to a phone that lists `close_reason`, except with the
+refusal of a fifth phone, which comes before the phone's features are known. An unknown type and an unknown control
+name get no answer; a known type with a malformed payload ends that connection with a bare `close`.
+
 ## Appendix: where docs and code disagree
 
 These were found while deriving this document. The code is authoritative; the entries explain why

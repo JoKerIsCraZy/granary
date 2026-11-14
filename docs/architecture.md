@@ -1286,6 +1286,54 @@ decides what a message means; the controller carries it.
 - Every deadline runs on the `TimeProvider`; the tests move a `ManualTimeProvider` and join a `FakePhone` over a
   `DuplexPipe` in memory. The fake phone seals with its own copy of the construction, from the phones' source.
 
+### The receiver
+
+`RemoteReceiver` is one per app. It follows silo-roku's `receiver.bs`, `policy.bs` and `AppSceneControl.bs`, without
+anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy`.
+
+- **Who may connect.** Only a private (10/8, 172.16/12, 192.168/16), link-local or loopback IPv4 address, also written
+  as an IPv4-mapped IPv6 one. At most 20 new connections a minute from one address. At most 4 connections that have
+  not shown the key at once. Anything else is closed at once, unread.
+- **Admission.** A connection that has shown the key takes its place among the others, half-open ones counted. Below 4 it
+  is let in; at 4 a connection makes room, oldest first: one that never said `hello`, then an unauthorized one, then a
+  passive one. If all 4 are authorized phones that actively control, the newcomer gets the receiver's `hello`,
+  `error too_many_controllers` and `close too_many_controllers`. A newer `hello` from the same phone closes its older
+  connections as `replaced`.
+- **Authorization by server.** A phone's `hello` must say `role: "phone"`, list version 2 and name a server, or it gets
+  `error version_unsupported` and `close unauthorized`. It is authorized when its server matches Granary's by id or by
+  identity (`SiloCastServerId.ServersMatch`). A phone on another server stays connected but gets no status, and every
+  command or launch gets `error unauthorized`. It stays so that its offer to start a title can be told why
+  ("This PC plays from …"), as on Silo's Roku app, rather than a bare failure; it is also the first to go when the
+  connections are full.
+- **Commands.** One at a time per phone. A command within the phone's budget (`CommandBudget`: 40 at once, then 20 a
+  second) is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries it out with the
+  player's own commands. After it is done every authorized phone is offered the new status. Over the budget the phone
+  is told so at most once a second and the player is not asked. Without a player every command but `stop` gets
+  `player_not_ready`.
+- **The status tick.** While a player is attached, one timer for the receiver posts to the UI thread every 500 ms; the
+  status is read from the player there, kept as the newest frame, and offered to every authorized phone. A change the
+  player reports, an attach and a detach do the same at once. Without a player the idle status goes to a phone once,
+  when it is authorized, and again only when it changes. Nothing is offered before authorization.
+- **What the PC sees.** `Phones` lists the phones that said `hello`, by their cleaned names (the cleaning of discovered
+  server names, cut to 64 characters); `PhonesChanged` and `PhoneConnected` (once for each phone that actively controls)
+  come on the UI thread. `DisconnectAsync` closes one phone with `tv_disconnected`, `CloseAllAsync` every one.
+- **Offers and launches** are refused until a phone can start titles here (Part 2): an offer with `handoff_cancel
+  handoff_failed`, a launch with `error handoff_required`. docs/api-contract.md 15.5 lists every answer.
+
+| Limit | Value |
+|---|---|
+| Connections at a time, half-open ones included | 4 |
+| Connections that have not shown the key | 4; more are closed unread |
+| New connections from one address | 20 a minute; more are closed unread |
+| Frame size | 64 KiB; the first, plain frame 1 KiB |
+| Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
+| Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
+| Commands | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
+| Slow reader | dropped when one write waits 10 seconds or more than 128 KiB waits |
+| Close | at most half a second for the `close` to leave |
+
+None of these can be changed by a phone.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

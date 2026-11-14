@@ -29,6 +29,7 @@ internal sealed class FakePhone : IAsyncDisposable
     private readonly Stream _stream;
     private readonly byte[] _key;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
+    private readonly List<string> _received = [];
     private readonly Channel<string> _messages = Channel.CreateUnbounded<string>();
     private readonly TaskCompletionSource _ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private byte[]? _encKey;
@@ -61,8 +62,17 @@ internal sealed class FakePhone : IAsyncDisposable
     /// <summary>Every sealed body it sent, in order.</summary>
     public List<byte[]> SentBodies { get; } = [];
 
-    /// <summary>Every message it received, opened, pings included, in order.</summary>
-    public List<string> Received { get; } = [];
+    /// <summary>Every message it received so far, opened, pings included, in order.</summary>
+    public IReadOnlyList<string> Received
+    {
+        get
+        {
+            lock (_received)
+            {
+                return [.. _received];
+            }
+        }
+    }
 
     public int PingsAnswered => Volatile.Read(ref _pingsAnswered);
 
@@ -247,9 +257,9 @@ internal sealed class FakePhone : IAsyncDisposable
                     break;
                 }
                 _recvSeq++;
-                lock (Received)
+                lock (_received)
                 {
-                    Received.Add(text);
+                    _received.Add(text);
                 }
                 if (TypeOf(text) == "ping" && AnswersPings)
                 {
