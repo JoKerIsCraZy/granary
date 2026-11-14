@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -30,8 +31,8 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
-    private DownloadedSeriesViewModel Page(DownloadManager? downloads = null) =>
-        new(downloads ?? _h.NewManager(), _navigation, _confirmation, new ImmediateDispatcher(), _h.Time);
+    private DownloadedSeriesViewModel Page(DownloadManager? downloads = null, IUiDispatcher? dispatcher = null) =>
+        new(downloads ?? _h.NewManager(), _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher(), _h.Time);
 
     private DownloadedSeriesViewModel Shown(string seriesId = "sr_1")
     {
@@ -150,6 +151,81 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
         Assert.Empty(page.Seasons);
         Assert.Equal(1, _navigation.BackCount);
         Assert.Equal(AppRoute.Downloads, _navigation.Current);
+    }
+
+    // The page goes back on the UI thread's next turn. Before that turn the cached page is shown for another series: it stays
+    // on that one.
+    [Fact]
+    public async Task GoingBackFromASeriesWithNothingLeft_LeavesAnotherSeriesShownMeanwhile()
+    {
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        await AddEpisodeAsync("dl_a1", 1, 1, "Pilot", seriesTitle: "A Series", seriesId: "sr_2");
+        var ui = new TurnDispatcher();
+        var page = Page(dispatcher: ui);
+        page.Open("sr_1");
+        page.Attach();
+        await _h.Store.RemoveAsync(Scope7, "dl_15", queueServerDelete: false, Token);
+        ui.RunPending();
+        Assert.Empty(page.Seasons);
+
+        page.Open("sr_2");
+        page.Attach();
+        ui.RunAll();
+
+        Assert.Equal(0, _navigation.BackCount);
+        Assert.Equal(["dl_a1"], Cards(page).Select(c => c.Card.Id));
+    }
+
+    // Before the turn the page goes back in, an episode of the series is on this PC again: the page stays, and goes back once
+    // nothing is left again.
+    [Fact]
+    public async Task GoingBack_LooksAgainWhetherNothingOfTheSeriesIsLeft()
+    {
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        var ui = new TurnDispatcher();
+        var page = Page(dispatcher: ui);
+        page.Open("sr_1");
+        page.Attach();
+        await _h.Store.RemoveAsync(Scope7, "dl_15", queueServerDelete: false, Token);
+        ui.RunPending();
+        await AddEpisodeAsync("dl_16", 1, 6, "Chapter Six");
+
+        ui.RunAll();
+
+        Assert.Equal(0, _navigation.BackCount);
+        Assert.Equal(["dl_16"], Cards(page).Select(c => c.Card.Id));
+
+        await _h.Store.RemoveAsync(Scope7, "dl_16", queueServerDelete: false, Token);
+        ui.RunAll();
+
+        Assert.Equal(1, _navigation.BackCount);
+    }
+
+    // A UI thread whose turns the test runs: what is posted waits for them, as on the app's UI thread.
+    private sealed class TurnDispatcher : IUiDispatcher
+    {
+        private readonly ConcurrentQueue<Action> _work = new();
+
+        public bool HasThreadAccess => true;
+
+        public void Post(Action action) => _work.Enqueue(action);
+
+        /// <summary>Runs what was posted before this call; what that posts waits for the next.</summary>
+        public void RunPending()
+        {
+            for (int count = _work.Count; count > 0 && _work.TryDequeue(out var action); count--)
+            {
+                action();
+            }
+        }
+
+        public void RunAll()
+        {
+            while (_work.TryDequeue(out var action))
+            {
+                action();
+            }
+        }
     }
 
     [Fact]

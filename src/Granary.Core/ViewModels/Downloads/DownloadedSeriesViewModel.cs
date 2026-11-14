@@ -53,8 +53,11 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     // On the UI thread: the series' downloads as last read, by download.
     private readonly Dictionary<string, DownloadItem> _items = new(StringComparer.Ordinal);
 
-    // The page asked to go back once its series had nothing left.
-    private bool _left;
+    // On the UI thread: which showing of which series this is (Open with another series, or Attach, starts the next), and the
+    // showing in which the page asked to go back once its series had nothing left (-1 for none). The page is cached and shows
+    // other series, so a departure asked for one showing must not move the viewer from the next.
+    private int _showing;
+    private int _leftIn = -1;
 
     public DownloadedSeriesViewModel(DownloadManager downloads, INavigationService navigation, IConfirmation confirmation, IUiDispatcher dispatcher,
         TimeProvider time)
@@ -95,6 +98,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
             return;
         }
         SeriesId = seriesId;
+        _showing++;
         Title = "";
         Summary = "";
         _items.Clear();
@@ -107,7 +111,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
         // Shown again before it unloaded, it still follows; another series opened meanwhile shows now all the same.
         if (_follow.Attach())
         {
-            _left = false;
+            _showing++;
         }
         Show();
     }
@@ -218,16 +222,28 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     }
 
     // Nothing of the series is left on this PC (its last episode was deleted, or it was gone when the page came back): the
-    // Downloads page shows again, once. Posted, so it never goes back in the middle of the navigation that showed the page.
+    // Downloads page shows again, once. Posted, so it never goes back in the middle of the navigation that showed the page;
+    // when its turn comes, only from the showing it was asked in, and only while the series still has nothing here. One
+    // that came back meanwhile keeps the page, which asks again once it is empty again.
     private void LeaveOnce()
     {
-        if (_left)
+        if (_leftIn == _showing)
         {
             return;
         }
-        _left = true;
+        _leftIn = _showing;
+        int showing = _showing;
         _dispatcher.Post(() =>
         {
+            if (showing != _showing)
+            {
+                return;
+            }
+            if (_downloads.Items.Any(i => string.Equals(i.SeriesId, SeriesId, StringComparison.Ordinal)))
+            {
+                _leftIn = -1;
+                return;
+            }
             if (_follow.IsAttached && _navigation.Current == AppRoute.DownloadedSeries && _navigation.CanGoBack)
             {
                 _navigation.GoBack();
