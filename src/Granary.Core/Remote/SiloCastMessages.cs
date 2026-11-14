@@ -122,6 +122,25 @@ public static class SiloCastMessages
     /// <summary>The longest device id Granary takes from a phone: the phones send a UUID; a longer id makes the hello malformed.</summary>
     public const int MaxDeviceIdLength = 128;
 
+    /// <summary>
+    /// The longest name Granary takes from a phone's hello, the phone's own or its server's: Silo Server's own limit for a
+    /// server's name (<c>server_name</c>, 1024, in silo-server's <c>webhook_sync.go</c>); a phone's name is shown cut to 64
+    /// anyway. A longer one makes the hello malformed.
+    /// </summary>
+    public const int MaxNameLength = 1024;
+
+    /// <summary>
+    /// The longest server id Granary takes from a phone's hello: the id (base64url) of an address of up to 2048 bytes, the
+    /// longest address Silo's Roku app keeps (<c>pairing.bs</c> <c>MAX_TEXT</c>). A longer one makes the hello malformed.
+    /// </summary>
+    public const int MaxServerIdLength = ((2048 * 4) + 2) / 3;
+
+    /// <summary>
+    /// The longest deployment identity Granary takes from a phone's hello: Silo Server's is a UUID, so, as for the device
+    /// id, a longer one makes the hello malformed.
+    /// </summary>
+    public const int MaxServerIdentityLength = 128;
+
     /// <summary>How many of a hello's features Granary keeps: the first, in order; the phones list three.</summary>
     public const int MaxFeatures = 32;
 
@@ -263,13 +282,17 @@ public static class SiloCastMessages
                 ? reason.GetString()
                 : null);
 
-    // As silo-roku's validHello: role phone or tv, a name and an id, a list of versions, features a list of text. The id is
-    // kept to compare with later hellos, so one longer than any phone's makes the hello malformed; of the features only
-    // the first few are kept.
+    // As silo-roku's validHello: role phone or tv, a name and an id, a list of versions, features a list of text. The id,
+    // the names and the server's id and identity are kept with the connection, so one longer than any phone's makes the
+    // hello malformed; of the features only the first few are kept.
     private static SiloCastMessage.PhoneHello? ReadHello(WireHello hello)
     {
         if (hello is not { Role: SiloCastRoles.Phone or SiloCastRoles.Tv, DeviceName: { } name, DeviceId: { } id, SupportedVersions: { } versions }
             || id.Length > MaxDeviceIdLength
+            || name.Length > MaxNameLength
+            || hello.ServerName?.Length > MaxNameLength
+            || hello.ServerId?.Length > MaxServerIdLength
+            || hello.ServerIdentity?.Length > MaxServerIdentityLength
             || hello.Features?.Any(feature => feature is null) == true)
         {
             return null;

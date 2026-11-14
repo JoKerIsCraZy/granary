@@ -1376,6 +1376,7 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Connections that have not said `hello` | 4, and 2 from one address; a newcomer closes the oldest such |
 | New connections from one address | 20 a minute; more are closed unread |
 | Frame size | 64 KiB; the first, plain frame 1 KiB |
+| A `hello`'s texts | device id and server identity 128 characters, the phone's and the server's names 1024, the server id 2731, 32 features kept; longer ends the connection as malformed |
 | Frames from one phone, every one counted before it is opened | 200 a second, bursts of 400, and 256 KiB a second, bursts of 1 MiB; more drops the phone |
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
 | Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |

@@ -394,6 +394,20 @@ public sealed class SiloCastMessagesTests
         Assert.Null(Decode(HelloWith(over, """["close_reason"]""")));
     }
 
+    [Theory]
+    [InlineData("deviceName", SiloCastMessages.MaxNameLength)]
+    [InlineData("serverName", SiloCastMessages.MaxNameLength)]
+    [InlineData("serverId", SiloCastMessages.MaxServerIdLength)]
+    [InlineData("serverIdentity", SiloCastMessages.MaxServerIdentityLength)]
+    public void AHelloWithAnOverlongText_IsMalformed(string member, int limit)
+    {
+        string fits = HelloWithText(member, new string('a', limit));
+        string over = HelloWithText(member, new string('a', limit + 1));
+
+        Assert.IsType<SiloCastMessage.PhoneHello>(Decode(fits));
+        Assert.Null(Decode(over));
+    }
+
     [Fact]
     public void AHello_KeepsAtMostItsFirst32Features()
     {
@@ -432,6 +446,23 @@ public sealed class SiloCastMessagesTests
     }
 
     private static SiloCastMessage.Control Control(string name) => new(name, null, null, null, null, null, null, null);
+
+    // A phone's hello with one of its texts set to text.
+    private static string HelloWithText(string member, string text)
+    {
+        var hello = new Dictionary<string, object>
+        {
+            ["role"] = "phone",
+            ["deviceName"] = "Elena's phone",
+            ["deviceId"] = "phone-1",
+            ["serverId"] = ServerId,
+            ["serverName"] = "Example Server",
+            ["serverIdentity"] = "deploy-1",
+            ["supportedVersions"] = new[] { 2 },
+        };
+        hello[member] = text;
+        return System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object> { ["type"] = "hello", ["hello"] = hello, ["v"] = 2 });
+    }
 
     private static string HelloWith(string deviceId, string features) =>
         $$"""{"type":"hello","hello":{"role":"phone","deviceName":"Elena's phone","deviceId":"{{deviceId}}","serverId":"{{ServerId}}","supportedVersions":[2],"features":{{features}}},"v":2}""";
