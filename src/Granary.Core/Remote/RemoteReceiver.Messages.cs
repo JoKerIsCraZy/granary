@@ -53,8 +53,19 @@ public sealed partial class RemoteReceiver
         PublishState();
     }
 
+    // Every message a phone sends but ping, pong and close (which the controller answers) takes from its budget, since each
+    // may post to the UI thread, log or be answered. Over the budget it is dropped, and the phone is told at most once a
+    // second; a phone that floods gets nothing more. Unknown types and controls never get here.
     private async ValueTask OnMessageAsync(Session session, SiloCastMessage message)
     {
+        if (!session.Budget.TryTake())
+        {
+            if (session.Budget.MayReport())
+            {
+                await session.Controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.RateLimited, RemoteTexts.RateLimited)).ConfigureAwait(false);
+            }
+            return;
+        }
         switch (message)
         {
             case SiloCastMessage.PhoneHello hello:
@@ -168,7 +179,7 @@ public sealed partial class RemoteReceiver
     private void OnPresence(Session session, SiloCastMessage.Presence presence)
     {
         var controller = session.Controller;
-        if (!controller.SaidHello)
+        if (!controller.SaidHello || controller.IsPassive == presence.Passive)
         {
             return;
         }
@@ -208,19 +219,11 @@ public sealed partial class RemoteReceiver
         await controller.SendAsync(SiloCastMessages.HandoffCancel(offer.RequestId, reason, message)).ConfigureAwait(false);
     }
 
-    // A command within the phone's budget goes to the player on the UI thread; after it is done every authorized phone gets
-    // the new status. Over the budget, the phone is told so at most once a second and the player is not asked.
+    // A command (within the phone's budget, OnMessageAsync) goes to the player on the UI thread; after it is done every
+    // authorized phone gets the new status.
     private async Task OnControlAsync(Session session, SiloCastMessage.Control control)
     {
         var controller = session.Controller;
-        if (!session.Budget.TryTake())
-        {
-            if (session.Budget.MayReport())
-            {
-                await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.RateLimited, RemoteTexts.RateLimited)).ConfigureAwait(false);
-            }
-            return;
-        }
         var applying = OnUiThreadAsync(() => Apply(controller.Number, control));
         if (await Task.WhenAny(applying, controller.Ended).ConfigureAwait(false) != applying)
         {

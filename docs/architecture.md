@@ -1316,11 +1316,14 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   command or launch gets `error unauthorized`. It stays so that its offer to start a title can be told why
   ("This PC plays from …"), as on Silo's Roku app, rather than a bare failure; it is also the first to go when the
   connections are full.
-- **Commands.** One at a time per phone. A command within the phone's budget (`CommandBudget`: 40 at once, then 20 a
-  second) is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries it out with the
-  player's own commands. After it is done every authorized phone is offered the new status. Over the budget the phone
-  is told so at most once a second and the player is not asked. Without a player every command but `stop` gets
-  `player_not_ready`.
+- **The budget.** Messages are handled one at a time per phone, and every one but `ping`, `pong` and `close` takes from
+  the phone's budget (`CommandBudget`: 40 at once, then 20 a second): a `hello`, a `presence`, an offer, a launch, a
+  command, also one that is only answered `unauthorized`. Over the budget a message is dropped unanswered and the phone
+  is told `rate_limited` at most once a second; the player is not asked. Unknown types and controls are skipped before
+  the budget, as they cause no work. A `presence` that changes nothing changes no phone.
+- **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
+  it out with the player's own commands. After it is done every authorized phone is offered the new status. Without a
+  player every command but `stop` gets `player_not_ready`.
 - **The status tick.** While a player is attached, one timer for the receiver posts to the UI thread every 500 ms; the
   status is read from the player there, kept as the newest frame, and offered to every authorized phone. A change the
   player reports, an attach and a detach do the same at once. Without a player the idle status goes to a phone once,
@@ -1339,7 +1342,7 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Frame size | 64 KiB; the first, plain frame 1 KiB |
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
 | Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
-| Commands | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
+| Messages but the heartbeat and `close` | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
 | Slow reader | dropped when one write waits 10 seconds or more than 128 KiB waits |
 | Close | at most half a second for the `close` to leave |
 

@@ -3100,7 +3100,7 @@ The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary
 | `play_next` without a next episode | `error command_failed` | "There is no next episode." |
 | Play, pause or seek a Watch Party's rules refuse | `error command_failed` | "This Watch Party does not allow this playback action." |
 | Any other command the player refuses | `error command_failed` | "Not available on this PC." |
-| More than 40 commands at once, or 20 a second after that | `error rate_limited`, at most once a second | "Too many commands. Slow down and try again." |
+| More than 40 messages at once, or 20 a second after that (any but `ping`, `pong` and `close`; the message is dropped) | `error rate_limited`, at most once a second | "Too many commands. Slow down and try again." |
 | A fifth phone's `hello` while four phones control actively | `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
 | A launch (no offer is made ready yet) | `error handoff_required` | "Prepare the phone profile before playing." |
 | An offer before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |

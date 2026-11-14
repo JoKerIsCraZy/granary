@@ -455,7 +455,8 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.SendAsync("""{"type":"ping","v":2}""");
         await phone.NextAsync("pong");
 
-        Assert.Equal(40, player.Applied.Count);
+        // The hello took one of the forty.
+        Assert.Equal(39, player.Applied.Count);
         Assert.Single(phone.Received, message => message.Contains("rate_limited", StringComparison.Ordinal));
         Assert.Contains("""{"type":"error","v":2,"error":{"code":"rate_limited","message":"Too many commands. Slow down and try again."}}""",
             phone.Received);
@@ -468,8 +469,78 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         await phone.SendAsync("""{"type":"ping","v":2}""");
         await phone.NextAsync("pong");
 
-        Assert.Equal(60, player.Applied.Count);
+        Assert.Equal(59, player.Applied.Count);
         Assert.Equal(2, phone.Received.Count(message => message.Contains("rate_limited", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task EveryMessageButTheHeartbeat_CountsAgainstThePhonesBudget()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+
+        // The hello took one of the forty; offers, presence and launches take theirs too.
+        for (int i = 0; i < 37; i++)
+        {
+            await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-{{i}}","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7"},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"presence","presence":{"passive":false},"v":2}""");
+        await phone.SendAsync($$$"""{"type":"launch","launch":{"serverId":"{{{RemoteHarness.ServerId}}}","playback":{"contentId":"movie-1","startFromBeginning":true}},"v":2}""");
+        // Over the budget: an offer and a command go unanswered but for one rate limit.
+        await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-over","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7"},"v":2}""");
+        await phone.SendAsync("""{"type":"control","control":{"name":"pause"},"v":2}""");
+        // The heartbeat is never budgeted.
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+
+        var received = phone.Received;
+        Assert.Equal(37, received.Count(message => FakePhone.TypeOf(message) == "handoff_cancel"));
+        Assert.Single(received, message => message.Contains("handoff_required", StringComparison.Ordinal));
+        Assert.Single(received, message => message.Contains("rate_limited", StringComparison.Ordinal));
+        Assert.DoesNotContain(received, message => message.Contains("request-over", StringComparison.Ordinal));
+        Assert.Empty(player.Applied);
+    }
+
+    [Fact]
+    public async Task RepliesToAPhoneOnAnotherServer_CountAgainstItsBudget()
+    {
+        var (phone, _) = await _harness.HelloAsync(SiloCastServerId.From(new Uri("https://other.example")));
+
+        for (int i = 0; i < 45; i++)
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"pause"},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+
+        var received = phone.Received;
+        Assert.Equal(39, received.Count(message => message.Contains("\"code\":\"unauthorized\"", StringComparison.Ordinal)));
+        Assert.Single(received, message => message.Contains("rate_limited", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APresenceThatChangesNothing_ChangesNoPhones()
+    {
+        int changes = 0;
+        Receiver.PhonesChanged += (_, _) => changes++;
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+        await _harness.SettleUiAsync();
+        int afterHello = changes;
+
+        for (int i = 0; i < 5; i++)
+        {
+            await phone.SendAsync("""{"type":"presence","presence":{"passive":false},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"presence","presence":{"passive":true},"v":2}""");
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+        await _harness.SettleUiAsync();
+
+        Assert.Equal(afterHello + 1, changes);
+        Assert.False(Assert.Single(Receiver.Phones).IsActive);
     }
 
     [Fact]
