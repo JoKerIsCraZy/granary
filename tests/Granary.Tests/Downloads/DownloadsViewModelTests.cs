@@ -504,6 +504,28 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task DeleteAllEpisodes_TakesEachOne_AlsoWhenAnotherProfileBecomesActiveWhileTheyGo()
+    {
+        await AddEpisodeAsync("dl_11", 1, 1, "Pilot");
+        await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two");
+        var page = await AttachedAsync();
+        // The answer was about profile 7's series; profile 8 becomes the active one while the first episode goes.
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Session.ProfileId == "7" && (_h.Find("dl_11") is null || _h.Find("dl_12") is null))
+            {
+                _h.Session.ProfileId = "8";
+            }
+        };
+
+        await PickAsync(page, "sr_1", "Delete All Episodes");
+
+        Assert.Equal("8", _h.Session.ProfileId);
+        Assert.Null(_h.Find("dl_11"));
+        Assert.Null(_h.Find("dl_12"));
+    }
+
+    [Fact]
     public async Task OneEpisodesSeries_IsAskedAboutInTheSingular()
     {
         await AddEpisodeAsync("dl_11", 1, 1, "Pilot");

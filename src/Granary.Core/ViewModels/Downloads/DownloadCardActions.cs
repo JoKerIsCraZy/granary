@@ -182,7 +182,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
 
     /// <summary>
     /// Deletes every download of the series after asking, in the Apple app's words ("Delete 3 Downloads"): the ones the question
-    /// counted, as a single delete goes.
+    /// counted, as a single delete goes, all of them in the profile the answer came in.
     /// </summary>
     [RelayCommand]
     private async Task DeleteSeriesAsync(MediaCard? card)
@@ -198,10 +198,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        foreach (var episode in episodes)
-        {
-            await _downloads.DeleteAsync(episode.DownloadId, CancellationToken.None);
-        }
+        await _downloads.DeleteAllAsync([.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
     }
 
     private DownloadItem? DownloadOf(MediaCard card) => card.Type == DownloadCards.DownloadType ? _downloads.Find(card.Id) : null;

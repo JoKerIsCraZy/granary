@@ -198,6 +198,29 @@ public sealed partial class DownloadManager
         }
     }
 
+    /// <summary>
+    /// Deletes each of <paramref name="downloadIds"/> still on this PC, as <see cref="DeleteAsync(string, CancellationToken)"/>
+    /// deletes one: a series' episodes once the viewer said yes. They are the downloads of the profile that was active when the
+    /// answer came, also when another one becomes active while they go: read in that one's scope, the ids would find nothing,
+    /// or, ids being unique only on their server, another server's downloads.
+    /// </summary>
+    public async Task DeleteAllAsync(IReadOnlyCollection<string> downloadIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(downloadIds);
+        if (DownloadScope.Of(_session) is not { } scope)
+        {
+            return;
+        }
+        foreach (string downloadId in downloadIds)
+        {
+            // One deleted meanwhile, as from another page, is no change.
+            if (_store.Find(scope, downloadId) is not null)
+            {
+                await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
     private async Task DeleteAsync(DownloadScope scope, string downloadId, CancellationToken cancellationToken)
     {
         await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken).ConfigureAwait(false);
