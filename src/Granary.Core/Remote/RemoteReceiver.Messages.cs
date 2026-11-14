@@ -121,7 +121,7 @@ public sealed partial class RemoteReceiver
         {
             controller.Features = hello.Features;
             await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.VersionUnsupported, RemoteTexts.VersionUnsupported)).ConfigureAwait(false);
-            await controller.CloseAsync(SiloCastCloseReasons.Unauthorized, "the hello was not a phone's").ConfigureAwait(false);
+            await controller.CloseAsync(SiloCastCloseReasons.Unauthorized, RemoteLogReasons.NotAPhonesHello).ConfigureAwait(false);
             return;
         }
 
@@ -171,7 +171,7 @@ public sealed partial class RemoteReceiver
         }
         foreach (var other in replaced)
         {
-            _ = other.Controller.CloseAsync(SiloCastCloseReasons.Replaced, "a newer connection of the same phone");
+            _ = other.Controller.CloseAsync(SiloCastCloseReasons.Replaced, RemoteLogReasons.Replaced);
         }
         if (evicted is not null)
         {

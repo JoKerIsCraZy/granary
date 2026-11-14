@@ -41,6 +41,8 @@ public sealed partial class RemoteReceiver
     private CancellationTokenSource? _accepting;
     private RemoteReceiverState _failure = RemoteReceiverState.Listening;
     private RemoteReceiverStatus _status = RemoteReceiverStatus.Off;
+    // The key the published status was made under; the lifetime loop's only.
+    private PairingMaterial? _publishedMaterial;
 
     // Whether a title plays now (set on the UI thread) and what the advertisement says once it settled.
     private ITimer? _playingSettle;
@@ -50,7 +52,10 @@ public sealed partial class RemoteReceiver
     /// <summary>Whether the receiver listens, where, and if not, why.</summary>
     public RemoteReceiverStatus Status => Volatile.Read(ref _status);
 
-    /// <summary>Raised on the UI thread when <see cref="Status"/> changed.</summary>
+    /// <summary>
+    /// Raised on the UI thread when <see cref="Status"/> changed, or <see cref="PairingLink"/> did: a new key under the same
+    /// address and port.
+    /// </summary>
     public event EventHandler? StatusChanged;
 
     /// <summary>
@@ -297,14 +302,14 @@ public sealed partial class RemoteReceiver
         {
             return want.State switch
             {
-                RemoteReceiverState.Off => "switched off",
-                RemoteReceiverState.NotSignedIn => "no profile signed in",
-                _ => "no local network",
+                RemoteReceiverState.Off => RemoteLogReasons.SwitchedOff,
+                RemoteReceiverState.NotSignedIn => RemoteLogReasons.NoProfile,
+                _ => RemoteLogReasons.NoLocalNetwork,
             };
         }
         if (!string.Equals(running.Server.Id, want.Server!.Id, StringComparison.Ordinal) || running.Server.BaseUri != want.Server.BaseUri)
         {
-            return "another server";
+            return RemoteLogReasons.AnotherServer;
         }
         if (!PairingMaterial.Same(_pairing.Current, running.Material))
         {
@@ -372,7 +377,7 @@ public sealed partial class RemoteReceiver
             int? port = await BindAsync(want.Address, [running.Port, .. Ports.Where(other => other != running.Port)], running.Stop).ConfigureAwait(false);
             if (port is null)
             {
-                return await StopRunningAsync(running, "no port at the new address").ConfigureAwait(false);
+                return await StopRunningAsync(running, RemoteLogReasons.NoPortAtNewAddress).ConfigureAwait(false);
             }
             running = running with { Address = want.Address, Port = port.Value };
             rebound = true;
@@ -389,7 +394,7 @@ public sealed partial class RemoteReceiver
             catch (Exception ex) when (ex is not OutOfMemoryException)
             {
                 _logger.LogError("The phone remote's advertisement failed ({Error}); it stops", RemoteLog.Failure(ex));
-                await StopRunningAsync(running, "the advertisement failed").ConfigureAwait(false);
+                await StopRunningAsync(running, RemoteLogReasons.AdvertisementFailed).ConfigureAwait(false);
                 _failure = RemoteReceiverState.Failed;
                 return null;
             }
@@ -534,10 +539,13 @@ public sealed partial class RemoteReceiver
                 ServerAddress(running.Server))
             : new RemoteReceiverStatus(want.State == RemoteReceiverState.Listening ? _failure : want.State, null, 0, IsAdvertised: false,
                 want.Server is { } server ? ServerAddress(server) : null);
-        if (status == Volatile.Read(ref _status))
+        // A new key under the same address and port is a new pairing code, which the Connect a Phone panel shows anew.
+        var material = running?.Material;
+        if (status == Volatile.Read(ref _status) && ReferenceEquals(material, _publishedMaterial))
         {
             return;
         }
+        _publishedMaterial = material;
         Volatile.Write(ref _status, status);
         _dispatcher.Post(() => StatusChanged?.Invoke(this, EventArgs.Empty));
     }

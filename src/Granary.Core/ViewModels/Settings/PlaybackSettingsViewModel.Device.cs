@@ -148,6 +148,12 @@ public sealed partial class PlaybackSettingsViewModel
         }
     }
 
+    /// <summary>
+    /// "Control Granary from your phone", below the Discord status, and its Connect a Phone panel; null where the page is
+    /// made without it, as in tests of the other rows. The view attaches it while it shows.
+    /// </summary>
+    public PhoneRemoteViewModel? PhoneRemote { get; }
+
     /// <summary>Discord's status shows what plays (<see cref="IPlaybackDevicePreferences.DiscordStatus"/>).</summary>
     [ObservableProperty]
     public partial bool DiscordStatus { get; set; }

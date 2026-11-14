@@ -17,9 +17,23 @@ internal static class RemoteLog
     }
 }
 
-/// <summary>Why a phone's connection ended, as the log says it.</summary>
+/// <summary>
+/// Why a phone's connection ended or was refused, or why the receiver stopped, as the log says it: every reason the log
+/// names is one of these.
+/// </summary>
 public static class RemoteLogReasons
 {
+    public const string NotLocal = "not a local address";
+    public const string TooManyNewConnections = "too many new connections from one address";
+    public const string NotAPhonesHello = "the hello was not a phone's";
+    public const string Replaced = "a newer connection of the same phone";
+    public const string DisconnectedHere = "disconnected on this PC";
+    public const string SwitchedOff = "switched off";
+    public const string NoProfile = "no profile signed in";
+    public const string NoLocalNetwork = "no local network";
+    public const string AnotherServer = "another server";
+    public const string NoPortAtNewAddress = "no port at the new address";
+    public const string AdvertisementFailed = "the advertisement failed";
     public const string NotAPairingHello = "the first frame was not a pairing hello";
     public const string WrongKey = "wrong pairing key";
     public const string FirstFrameTooLarge = "the first frame was too large";

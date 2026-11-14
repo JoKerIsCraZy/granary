@@ -116,7 +116,7 @@ public sealed partial class RemoteReceiver
         var peer = connection.Peer.IsIPv4MappedToIPv6 ? connection.Peer.MapToIPv4() : connection.Peer;
         if (!RemoteReceiverPolicy.IsLocalPeer(peer))
         {
-            refusal = "not a local address";
+            refusal = RemoteLogReasons.NotLocal;
         }
         else
         {
@@ -124,7 +124,7 @@ public sealed partial class RemoteReceiver
             {
                 if (!TakeConnectionLocked(peer))
                 {
-                    refusal = "too many new connections from one address";
+                    refusal = RemoteLogReasons.TooManyNewConnections;
                 }
                 else
                 {
@@ -167,7 +167,7 @@ public sealed partial class RemoteReceiver
         }
         if (session is not null)
         {
-            await session.Controller.CloseAsync(SiloCastCloseReasons.TvDisconnected, "disconnected on this PC").ConfigureAwait(false);
+            await session.Controller.CloseAsync(SiloCastCloseReasons.TvDisconnected, RemoteLogReasons.DisconnectedHere).ConfigureAwait(false);
         }
     }
 

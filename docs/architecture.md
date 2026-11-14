@@ -1425,8 +1425,45 @@ then on; `StopAsync` ends it for good when Granary closes.
     that its key is still the PC's, so a phone on the old code is refused even if a notice was missed.
 - **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` or `Listening` with the address,
   the port, whether Windows took the advertisement, and the server's address for the pairing panel's hint;
-  `StatusChanged` comes on the UI thread. `PairingLink` exists only while it listens; it is made from the PC's key as it is
-  now and is null between a reset and the restart under the new key, so a code that was taken back is never shown.
+  `StatusChanged` comes on the UI thread, also when only the code changed (a new key under the same address and port).
+  `PairingLink` exists only while it listens; it is made from the PC's key as it is now and is null between a reset and
+  the restart under the new key, so a code that was taken back is never shown.
+
+### The settings row
+
+`PhoneRemoteViewModel` is Settings → Playback → This PC's "Control Granary from your phone" and its Connect a Phone
+panel; `PlaybackSettingsViewModel.PhoneRemote` hands it to the page, which attaches it while it shows. Between `Attach`
+and `Detach` it follows `StatusChanged` and `PhonesChanged`, on the UI thread; after `Detach` it follows nothing.
+
+- The switch is `IPlaybackDevicePreferences.PhoneRemote`; the receiver follows it.
+- The row's line names the phones that actively control (as silo-roku's `AppSceneControl.bs` lists them), says "No
+  phone is connected.", or, when the receiver cannot run, "Remote control isn't available right now." with a second
+  line that says why: no local network, no port, no profile, or a start that failed.
+- **The code is read only while the panel is open.** `PairingLink` is the receiver's link, read when the panel opens
+  and again at every change of the status or the code; closing the panel, switching off and `Detach` drop it. The view
+  draws the code from it and keeps it nowhere else.
+- Reset Pairing Code asks first (`IConfirmation`), then resets through the receiver and says so when a phone could not
+  be let go or the new key could not be saved (the old code then still works).
+- Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
+  with "TV" as "PC"; Silo's web has no wording for this.
+
+### What is logged
+
+The phone remote logs events by connection number and a reason, never a value from a frame (design 6.3):
+
+- **Logged:** "Connection 3 opened", "Connection 3: a phone on this server", "Connection 3: an offer to start a title
+  was refused", "Connection 3 closed: wrong pairing key", "The phone remote listens on port 52817", "The phone remote
+  stopped: another server", and failures by their exception's type and code only (`RemoteLog.Failure`), since a
+  socket's or a file's message can name an address or a path. Every reason a connection's end, its refusal or a stop
+  names is one of `RemoteLogReasons`.
+- **Never logged:** the pairing key in any form (hex, base64, base32) and its link or QR text, either side's nonce,
+  resume tokens, frames or any part of one, server addresses and server ids (an id is an address), server names and
+  identities, profile ids and names, a phone's id and name, content ids and titles.
+- `RemoteLoggingTests` guards it: it runs pairing, a wrong key, the hello, the status, commands, an offer, a launch, a
+  reset, a change of server and the stop with fake phones under a logger that keeps every line at every level, then
+  finds none of the never-list and no `{`, and checks that every connection's end is logged with its number and a
+  reason of the list. A line the test catches is fixed where it is written; the test is not weakened. Every line also
+  passes `LogRedactor`, and this list does not rely on it.
 
 ### The player
 

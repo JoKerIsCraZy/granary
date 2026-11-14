@@ -56,8 +56,10 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     public PlaybackSettingsViewModel(
         IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
         ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences,
-        MpvConfigFolder mpvConfig, IFileLauncher files, IMpvConfigStatus mpvStatus, MpvConfigChanges mpvChanges)
+        MpvConfigFolder mpvConfig, IFileLauncher files, IMpvConfigStatus mpvStatus, MpvConfigChanges mpvChanges,
+        PhoneRemoteViewModel? phoneRemote = null)
     {
+        PhoneRemote = phoneRemote;
         _settings = settings;
         _playback = playback;
         _connectionApi = connection;
