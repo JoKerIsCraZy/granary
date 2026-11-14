@@ -18,10 +18,14 @@
                 <controls:MediaCardView Card="{x:Bind}" />
             </Button>
         </DataTemplate>
-        <!-- A card that changes while it shows (a download's): the same button and card, following the card in place. -->
+        <!--
+            A card that changes while it shows (a download's): the same button and card, following the card in place, with the
+            whole status in a tip where its lines show it in parts (MediaCard.ToolTip).
+        -->
         <DataTemplate x:Key="LiveCardTemplate" x:DataType="cards:LiveCard">
             <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top" Click="OnCardClick" PointerEntered="OnCardPointerEntered"
-                    GotFocus="OnCardGotFocus" AutomationProperties.Name="{x:Bind Card.AccessibleName, Mode=OneWay}">
+                    GotFocus="OnCardGotFocus" AutomationProperties.Name="{x:Bind Card.AccessibleName, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind Card.ToolTip, Mode=OneWay}">
                 <controls:MediaCardView Card="{x:Bind Card, Mode=OneWay}" />
             </Button>
         </DataTemplate>

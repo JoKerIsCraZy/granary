@@ -155,8 +155,9 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
 
         string[] ids = ["dl_1", "dl_2", "dl_3", "dl_4", "dl_5", "dl_6", "dl_7"];
+        // The whole status line: a card's tip until it is whole, its caption once it is.
         Assert.Equal(["Downloading · 0%", "Paused", "Failed", "No longer available", "Downloaded", "Queued", "Failed · not enough space"],
-            ids.Select(id => Card(page, id).Caption));
+            ids.Select(id => Card(page, id).ToolTip ?? Card(page, id).Caption));
         Assert.Equal([false, false, true, true, false, false, true], ids.Select(id => Card(page, id).IsCaptionAttention));
     }
 
@@ -235,18 +236,18 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             return page.SpaceRead;
         });
         var card = ui.Read(() => Live(page, "dl_1"));
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 0%", "the card said it is downloading");
+        await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 0%", "the card said it is downloading");
 
         body.Release(1800);
 
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 60%", "the card showed the progress");
+        await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 60%", "the card showed the progress");
         Assert.Same(card, ui.Read(() => Live(page, "dl_1")));
         Assert.Equal(0.6, ui.Read(() => card.Card.Progress) ?? 0, 3);
 
         _h.Time.Advance(TimeSpan.FromSeconds(1));
         body.Release(600);
 
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 80%", "the card showed the next progress");
+        await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 80%", "the card showed the next progress");
         Assert.Same(card, ui.Read(() => Live(page, "dl_1")));
         // 2400 bytes so far.
         Assert.StartsWith("2.3 KB used · ", ui.Read(() => page.SpaceText), StringComparison.Ordinal);
@@ -267,7 +268,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             return page.SpaceRead;
         });
         var card = ui.Read(() => Live(page, "dl_1"));
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 0%", "the card said it is downloading");
+        await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 0%", "the card said it is downloading");
         long sent = 0;
         async Task SendAsync(long count)
         {
@@ -282,20 +283,23 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await SendAsync(300);
         _h.Time.Advance(TimeSpan.FromSeconds(1));
         await SendAsync(300);
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30%", "the card showed the progress");
+        await Until(() => ui.Read(() => card.Card.Subtitle) == "Downloading · 30%", "the card showed the progress");
+        Assert.Equal("2.9 KB", ui.Read(() => card.Card.Caption));
 
         _h.Time.Advance(TimeSpan.FromSeconds(1));
 
-        // 2100 bytes to go at 300 a second.
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30% · 300 B/s · under 1 min left", "the card said its speed");
+        // 2100 bytes to go at 300 a second: how far and how long, then how fast; the whole line in the card's tip.
+        await Until(() => ui.Read(() => card.Card.Caption) == "300 B/s", "the card said its speed");
+        Assert.Equal(("30% · under 1 min left", "Downloading · 30% · 300 B/s · under 1 min left"),
+            ui.Read(() => (card.Card.Subtitle, card.Card.ToolTip)));
         Assert.Same(card, ui.Read(() => Live(page, "dl_1")));
-        // Screen readers are not told a new speed every second.
-        Assert.Equal("Example Movie, 2.9 KB, Downloading · 30%", ui.Read(() => card.Card.AccessibleName));
+        // Screen readers hear neither the speed nor the percentage again at every step.
+        Assert.Equal("Example Movie, 2.9 KB, Downloading", ui.Read(() => card.Card.AccessibleName));
 
         // Nothing comes for more than three seconds: the speed goes, as no progress would tell.
         _h.Time.Advance(TimeSpan.FromSeconds(4));
 
-        await Until(() => ui.Read(() => card.Card.Caption) == "Downloading · 30%", "the card dropped the speed");
+        await Until(() => ui.Read(() => (card.Card.Subtitle, card.Card.Caption)) == ("Downloading · 30%", "2.9 KB"), "the card dropped the speed");
         body.ReleaseAll();
         await Until(() => ui.Read(() => card.Card.Caption) == "Downloaded", "the download finished");
         Assert.Empty(ui.Failures);

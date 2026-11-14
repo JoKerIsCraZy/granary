@@ -459,6 +459,10 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   the focused card cleared (`ElementClearing`; the repeater keeps a focused card it only scrolled away) and, once the
   change is laid out, focuses that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere
   stays there.
+- A card's bar is in percent (0 to 100), the value screen readers say. A card whose lines change as it shows names itself
+  by `MediaCard.AccessibleLines` instead of them, so its name stays while its bar moves; `MediaCard.ToolTip` gives its
+  whole status where its lines show it in parts, and `MediaCard.PlainSubtitle` sets a poster's second line in the
+  caption's style, which holds more than the overline.
 - A download's artwork comes from its file on this PC (`MediaCard.LocalImagePath`), read on the thread pool by
   `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
@@ -1494,12 +1498,12 @@ client guide.
   `DurationMs`, the title's length, which the manifest gives when it is read (before the first transfer, and again a day
   on) and a play from this PC keeps with each position, for a download kept before the record had it. So it needs no
   server and moves as the store's `Changed` comes with each position a play keeps. `IsWatched` gives the watched mark.
-  While a download the page shows comes, the follower reads its speed once a second on
-  the `TimeProvider`'s timer (`DownloadsFollower.RateInterval`), as the Apple app's row refreshes, and has the card say it
-  with the time left from the bytes still to come (`DownloadText.Status`); the timer runs only while one comes and the page
-  shows, and a speed that stopped is noticed then though no progress comes. The free space is read on the thread pool
-  when the page shows and when a download comes, goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog
-  reads it: a read that fails or takes longer than `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says
+  While a download the page shows comes, the follower reads its speed once a second on the `TimeProvider`'s timer
+  (`DownloadsFollower.RateInterval`), as the Apple app's row refreshes, and has the card say it with the time left
+  from the bytes still to come, over its two lines and whole in its tip (`DownloadCards`); the timer runs only while
+  one comes and the page shows, and a speed that stopped is noticed then though no progress comes. The free space is
+  read on the thread pool when the page shows and when a download comes, goes or finishes, through
+  `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says
   only the space used. The App's `DownloadsPage` and `DownloadedSeriesPage` are cached; they attach in `OnNavigatedTo` and detach in `OnNavigatedFrom`
   and as they unload, and make their view models with `ActivatorUtilities`, since the root provider would keep a
   disposable transient, and the page with it, until exit. So `DownloadManager`, a singleton, never holds a page that left

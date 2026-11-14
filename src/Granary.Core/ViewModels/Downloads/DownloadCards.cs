@@ -8,9 +8,11 @@ namespace Granary.Core.ViewModels.Downloads;
 /// <summary>
 /// The Downloads page's cards (docs/ui-design.md, "Downloads"), Granary's own cards with what a download has to say: a film's
 /// or a series' poster, an episode's still, all from the files on this PC. Under the title the size, then the status in the
-/// apps' words ("Downloading · 42%", "Paused", "Missing file"), and a bar on the artwork while the file comes. Once it is
+/// apps' words ("Queued", "Paused", "Missing file"), both in the caption's style; while the file comes, its status over both
+/// lines, each short enough for the narrowest poster, the whole line in the card's tip, and a bar on the artwork. Once it is
 /// whole, how much of it was watched, as a Continue Watching card says it: the bar and "18 min left", or the watched mark
 /// and "Watched". Every card has those three lines, so a grid, which sizes its cards by its first, keeps its rows even.
+/// Screen readers hear the size and a status that does not change while the bar moves.
 /// </summary>
 public static class DownloadCards
 {
@@ -37,21 +39,56 @@ public static class DownloadCards
         ArgumentNullException.ThrowIfNull(item);
         bool episode = item.SeriesId is not null;
         bool watched = item.State == DownloadState.Completed && !item.FilesMissing && item.IsWatched;
-        string status = Status(item, bytesPerSecond);
+        bool whole = item.State == DownloadState.Completed && !item.FilesMissing && !item.IsNoLongerAvailable;
+        var (upper, lower) = Lines(item, bytesPerSecond);
         return new MediaCard(item.DownloadId, DownloadType, episode ? EpisodeTitle(item) : item.Title)
         {
             Shape = episode ? MediaCardShape.Landscape : MediaCardShape.Poster,
-            Subtitle = SizeLine(item.ExpectedBytes),
-            Caption = status,
-            IsCaptionAttention = NeedsAttention(item),
-            // Without the speed, which changes every second.
-            AccessibleStatus = Status(item, bytesPerSecond: null),
+            Subtitle = upper,
+            PlainSubtitle = true,
+            Caption = lower,
+            IsCaptionAttention = !DownloadText.IsComing(item) && NeedsAttention(item),
+            // Neither the speed nor the percentage, which change as it comes: the bar has the progress.
+            AccessibleLines = string.Join(", ", new[] { SizeText(item.ExpectedBytes), SteadyStatus(item) }.Where(s => s.Length > 0)),
+            ToolTip = whole ? null : DownloadText.Status(item, bytesPerSecond),
             LocalImagePath = item.PosterPath,
             Progress = Bar(item),
             IsWatched = watched,
             ShowsWatchedMark = watched,
             PlayContentId = item.IsPlayable ? item.MediaItemId : null,
         };
+    }
+
+    // The two lines under the title. While the file comes, its status over both, each short enough for the narrowest poster:
+    // "Downloading · 42%" over its size until the speed is known, then "42% · 4 min left" over "12.3 MB/s". Any other time,
+    // the size over the status.
+    private static (string Upper, string Lower) Lines(DownloadItem item, double? bytesPerSecond)
+    {
+        string size = SizeLine(item.ExpectedBytes);
+        if (!DownloadText.IsComing(item))
+        {
+            return (size, Status(item, bytesPerSecond: null));
+        }
+        if (!DownloadText.IsMeasured(item, bytesPerSecond))
+        {
+            return (DownloadText.Status(item), size);
+        }
+        double rate = bytesPerSecond!.Value;
+        string speed = DownloadText.Speed(rate);
+        return DownloadText.TimeLeft(item, rate) is { } left
+            ? ($"{DownloadText.PercentText(item)} · {left}", speed)
+            : (DownloadText.Status(item), speed);
+    }
+
+    // Where it stands without what changes as it comes: "Downloading", "Preparing…".
+    private static string SteadyStatus(DownloadItem item)
+    {
+        if (DownloadText.IsComing(item))
+        {
+            return DownloadText.Downloading;
+        }
+        bool held = item.FilesMissing || item.IsNoLongerAvailable || item.IsPausedByViewer;
+        return !held && item.State == DownloadState.Preparing ? DownloadText.Preparing : Status(item, bytesPerSecond: null);
     }
 
     /// <summary>
@@ -66,18 +103,21 @@ public static class DownloadCards
         var usable = episodes.Where(e => !e.FilesMissing).ToList();
         long expected = usable.Sum(e => e.ExpectedBytes);
         bool whole = usable.All(e => e.State == DownloadState.Completed);
+        double here = expected > 0 ? Math.Clamp((double)usable.Sum(e => e.BytesDone) / expected, 0, 1) : 0;
         // Every episode here watched, as the Apple app's series says "all watched".
         bool watched = episodes.Count > 0 && episodes.All(e => e.IsWatched);
         return new MediaCard(seriesId, SeriesType, title)
         {
             Shape = MediaCardShape.Poster,
             Subtitle = SizeLine(expected),
+            PlainSubtitle = true,
             Caption = count,
-            AccessibleStatus = count,
+            AccessibleLines = string.Join(", ", new[] { SizeText(expected), count }.Where(s => s.Length > 0)),
             IsWatched = watched,
             ShowsWatchedMark = watched,
             LocalImagePath = episodes.Select(e => e.SeriesPosterPath).FirstOrDefault(p => p is not null),
-            Progress = whole || expected <= 0 ? null : Math.Clamp((double)usable.Sum(e => e.BytesDone) / expected, 0, 1),
+            // No bar before any of their bytes came, as a download's card has none.
+            Progress = whole || here <= 0 ? null : here,
         };
     }
 

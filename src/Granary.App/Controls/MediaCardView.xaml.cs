@@ -75,7 +75,7 @@ public sealed partial class MediaCardView : UserControl
     private CardOverlayPrefs? _badgedPrefs;
     private OverlayPreset? _badgedPreset;
     // What the subtitle's style and the caption's colour are set for: null before the first card.
-    private bool? _subtitleLandscape;
+    private bool? _subtitleAsCaption;
     private bool _captionAttention;
     // The shown card's shape and whether its progress bar shows, which size the artwork and place the badges; and what
     // they were last done for.
@@ -198,10 +198,12 @@ public sealed partial class MediaCardView : UserControl
 
         TitleText.Text = card?.Title ?? "";
         // A recycled card mostly shows the same shape and colours: each is set only when it changes.
-        if (_subtitleLandscape != _landscape)
+        // A wide card's subtitle is a caption line, and so is a poster's that says more than an overline holds (a download's).
+        bool asCaption = _landscape || card?.PlainSubtitle == true;
+        if (_subtitleAsCaption != asCaption)
         {
-            _subtitleLandscape = _landscape;
-            SubtitleText.Style = Resource<Style>(_landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle");
+            _subtitleAsCaption = asCaption;
+            SubtitleText.Style = Resource<Style>(asCaption ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle");
         }
         ShowCaption(card);
         bool attention = card?.IsCaptionAttention == true;
@@ -273,9 +275,10 @@ public sealed partial class MediaCardView : UserControl
         }
         if (Progress is { } bar)
         {
-            bar.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
+            // In percent, as screen readers say a bar's value.
+            bar.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) * 100 : 0;
             bar.Visibility = Visible(hasProgress);
-            bar.Foreground = Brush(state.IsWatched || bar.Value >= 1 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
+            bar.Foreground = Brush(state.IsWatched || bar.Value >= 100 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
         }
         // A TMDB title's request state can change on the card: its watchlist add requested it.
         SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));

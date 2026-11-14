@@ -17,6 +17,7 @@ public static class DownloadText
     public const string Queued = "Queued";
     public const string PausedMetered = "Paused · metered connection";
     public const string Downloaded = "Downloaded";
+    public const string Downloading = "Downloading";
     public const string Failed = "Failed";
     public const string FailedNoSpace = "Failed · not enough space";
     public const string Original = "Original";
@@ -38,7 +39,7 @@ public static class DownloadText
             { State: DownloadState.Preparing } => Preparing,
             { State: DownloadState.Queued, WaitsForUnmetered: true } => PausedMetered,
             { State: DownloadState.Queued } => Queued,
-            { State: DownloadState.Downloading } => $"Downloading · {Percent(item.Progress)}%",
+            { State: DownloadState.Downloading } => $"{Downloading} · {PercentText(item)}",
             { State: DownloadState.Completed } => Downloaded,
             { Failure: DownloadFailure.NotEnoughSpace } => FailedNoSpace,
             _ => Failed,
@@ -52,15 +53,41 @@ public static class DownloadText
     public static string Status(DownloadItem item, double? bytesPerSecond)
     {
         string status = Status(item);
-        if (item.State != DownloadState.Downloading || item.FilesMissing || item.IsNoLongerAvailable || item.IsPausedByViewer
-            || bytesPerSecond is not >= 1 || !double.IsFinite(bytesPerSecond.Value))
+        if (!IsMeasured(item, bytesPerSecond))
         {
             return status;
         }
-        double rate = bytesPerSecond.Value;
-        string withSpeed = $"{status} · {Speed(rate)}";
+        string withSpeed = $"{status} · {Speed(bytesPerSecond!.Value)}";
+        return TimeLeft(item, bytesPerSecond.Value) is { } left ? $"{withSpeed} · {left}" : withSpeed;
+    }
+
+    /// <summary>
+    /// The download comes now and <paramref name="bytesPerSecond"/> is a speed to say: a byte a second or more. Not one the
+    /// viewer paused, whose files are gone or that the server no longer has.
+    /// </summary>
+    public static bool IsMeasured(DownloadItem item, double? bytesPerSecond) =>
+        IsComing(item) && bytesPerSecond is >= 1 && double.IsFinite(bytesPerSecond.Value);
+
+    /// <summary>The download's file comes now: it is downloading, and nothing (a pause, its files gone, the server) holds it.</summary>
+    public static bool IsComing(DownloadItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item is { State: DownloadState.Downloading, FilesMissing: false, IsNoLongerAvailable: false, IsPausedByViewer: false };
+    }
+
+    /// <summary>"4 min left" for the bytes still to come at <paramref name="bytesPerSecond"/>; null while its size is not known.</summary>
+    public static string? TimeLeft(DownloadItem item, double bytesPerSecond)
+    {
+        ArgumentNullException.ThrowIfNull(item);
         long left = item.ExpectedBytes - item.BytesDone;
-        return item.ExpectedBytes > 0 && left > 0 ? $"{withSpeed} · {TimeLeft(TimeSpan.FromSeconds(left / rate))}" : withSpeed;
+        return item.ExpectedBytes > 0 && left > 0 && bytesPerSecond > 0 ? TimeLeft(TimeSpan.FromSeconds(left / bytesPerSecond)) : null;
+    }
+
+    /// <summary>"42%": how much of the file is here, in whole percent, never rounded up.</summary>
+    public static string PercentText(DownloadItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return Percent(item.Progress) + "%";
     }
 
     /// <summary>"12.3 MB/s": the size a second, in the sizes the page says everywhere.</summary>

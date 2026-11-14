@@ -279,14 +279,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
   files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
-  title stands in, as on any card. Every card has three lines: the title, the size (the poster's overline: "8.0 GB", a
-  series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status in
-  the apps' words ("Preparing…", "Queued", "Downloading · 42%", and once it can be measured the speed and the time left,
-  as the Apple app's row says them: "Downloading · 42% · 12.3 MB/s · 4 min left", read once a second, gone again when no
-  bytes came for 3 s; "under 1 min left", "1 hr 5 min left"; "Paused", "Paused · metered connection", "Downloaded",
-  "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file
-  was deleted by hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed
-  one, missing files and one the server no longer has. A whole download says instead how much of it was watched, as a
+  title stands in, as on any card. Every card has three lines, the two under the title in the caption's style (12 px,
+  also on a poster, where a library's poster has its overline: they say more than an overline holds): the size ("8.0 GB",
+  a series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status
+  in the apps' words ("Preparing…", "Queued", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
+  not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
+  hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed one, missing
+  files and one the server no longer has. While the file comes, its status takes both lines, each short enough for a
+  compact poster in a 1920 px window (about 141 px of text; `DownloadCardsTests` measures them in the app's font):
+  "Downloading · 42%" over the size until the speed can be measured, then the time left and the speed, as the Apple app's
+  row says them, "42% · 4 min left" over "12.3 MB/s" ("under 1 min left", "1 hr 5 min left"), read once a second and gone
+  again when no bytes came for 3 s. The pointer's tip on a card that is not whole says its whole status in one line:
+  "Downloading · 42% · 12.3 MB/s · 4 min left". A whole download says instead how much of it was watched, as a
   Continue Watching card does: the bar at how far in and "18 min left" (to the nearest minute, as Continue Watching
   rounds it), or the watched mark (the green check of season and episode cards) and "Watched", or "Downloaded" before it
   was started; one whose files are gone or that the server no longer has says that first, and keeps its bar. The
@@ -296,8 +300,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   watched. A series' card says how many episodes it has here ("3 episodes",
   "1 episode"; "2 of 3 episodes" while some are not whole yet, the Android app's words). The card's bar (3 px, the
   accent) shows how much of the file is here while it comes or waits with bytes on this PC, and on a series' card how
-  much of its episodes is. Screen readers hear the card's title, size and status (without the speed, which changes every
-  second).
+  much of its episodes is once any of it came. Screen readers hear the card's title, size and status, "Example Movie, 8.0
+  GB, Downloading", the same while it comes: the percentage is the bar's value (in percent, on every card).
   A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
   as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
   did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
