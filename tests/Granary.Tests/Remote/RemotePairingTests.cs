@@ -95,6 +95,23 @@ public sealed class RemotePairingTests : IDisposable
     }
 
     [Fact]
+    public async Task AListenerThatFails_NeitherUndoesTheReset_NorKeepsItFromTheOthers()
+    {
+        var pairing = Create();
+        int heard = 0;
+        pairing.KeyChanged += (_, _) => throw new InvalidOperationException("listener failed");
+        pairing.KeyChanged += (_, _) => heard++;
+        var before = await pairing.LoadOrCreateAsync(Token);
+
+        var after = await pairing.ResetKeyAsync(Token);
+
+        Assert.NotEqual(before.KeyId, after.KeyId);
+        Assert.Equal(1, heard);
+        Assert.Equal(after.KeyId, (await pairing.LoadOrCreateAsync(Token)).KeyId);
+        Assert.Contains("InvalidOperationException", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ALostSecretStore_MeansANewKey_UnderTheOldId()
     {
         var first = await Create().LoadOrCreateAsync(Token);

@@ -384,6 +384,30 @@ public sealed class SiloCastMessagesTests
         Assert.DoesNotContain("phone-1", hello.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TheWireShapes_NeverPrintWhatTheyCarry()
+    {
+        object[] shapes =
+        [
+            new WireHello { DeviceName = "Elena's phone", DeviceId = "phone-1", ServerId = ServerId, ServerName = "Example Server" },
+            new WireOffer { RequestId = "request-1", ServerId = ServerId, ServerUrl = "https://silo.example", ProfileId = "7", ResumeToken = "token-1" },
+            new WireCancel { RequestId = "request-1", Reason = "handoff_failed", Message = "This PC plays from Example Server." },
+            new WireControl { Name = "seek", Seconds = 1798.25 },
+            new WireLaunch { ServerId = ServerId, Playback = new WirePlayback { ContentId = "movie-1" } },
+            new WirePlayback { ContentId = "movie-1" },
+            new WirePresence { Passive = true },
+            new WireError("unauthorized", "Connect with a matching Silo account first."),
+            new WireReady("request-1", ServerId, "7", "2026-11-14T19:17:36Z", true, "token-1"),
+            new WireClose("tv_disconnected"),
+        ];
+
+        foreach (object shape in shapes)
+        {
+            string text = shape.ToString()!;
+            Assert.Equal(shape.GetType().Name, text);
+        }
+    }
+
     private static SiloCastMessage.Control Control(string name) => new(name, null, null, null, null, null, null, null);
 
     private static SiloCastMessage? Decode(string frame) => SiloCastMessages.Decode(Encoding.UTF8.GetBytes(frame));

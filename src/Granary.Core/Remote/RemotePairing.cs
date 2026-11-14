@@ -46,6 +46,9 @@ public sealed class RemotePairing
     /// The receiver's id and key: made the first time, read from then on, and the same for the rest of the run. A key the
     /// store does not have, or has in a form that is not 16 bytes, is drawn anew; so is an id file that cannot be read.
     /// </summary>
+    /// <exception cref="IOException">The id file exists but the disk did not give it, or the secret store's file failed.</exception>
+    /// <exception cref="UnauthorizedAccessException">Windows refused the id file or the secret store's file.</exception>
+    /// <exception cref="CryptographicException">Windows could not encrypt a new key for the secret store.</exception>
     public async Task<PairingMaterial> LoadOrCreateAsync(CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -90,8 +93,29 @@ public sealed class RemotePairing
             _gate.Release();
         }
         _logger.LogInformation("The phone remote's pairing code was reset");
-        KeyChanged?.Invoke(this, EventArgs.Empty);
+        NotifyKeyChanged();
         return material;
+    }
+
+    // Each listener by itself, after the key changed: one that throws must neither undo the reset for the caller nor keep
+    // the news from the others. Only the exception's type is logged.
+    private void NotifyKeyChanged()
+    {
+        if (KeyChanged is not { } changed)
+        {
+            return;
+        }
+        foreach (var listener in changed.GetInvocationList().Cast<EventHandler>())
+        {
+            try
+            {
+                listener(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("A listener of the pairing code's reset failed ({Error})", ex.GetType().Name);
+            }
+        }
     }
 
     private async Task<PairingMaterial> CreateKeyAsync(string receiverId, CancellationToken cancellationToken)

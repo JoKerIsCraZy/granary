@@ -42,6 +42,9 @@ public static class SiloCastSealed
     private const int BlockBytes = 16;
     private const int TagBytes = 32;
 
+    // 16 bytes in base64url without padding.
+    private const int NonceTextLength = 22;
+
     // A sealed_hello is one flat object; anything deeper is not one.
     private static readonly JsonDocumentOptions HelloReading = new() { MaxDepth = 4, AllowDuplicateProperties = false };
 
@@ -105,23 +108,25 @@ public static class SiloCastSealed
         byte[] body = new byte[SeqBytes + IvBytes + cipherLength + TagBytes];
         BinaryPrimitives.WriteUInt64BigEndian(body, seq);
         iv.CopyTo(body.AsSpan(SeqBytes));
+        using var inUse = keys.Enter();
         using (var aes = Aes.Create())
         {
-            aes.SetKey(keys.EncKey);
+            aes.SetKey(inUse.EncKey);
             aes.EncryptCbc(plaintext, iv, body.AsSpan(SeqBytes + IvBytes, cipherLength), PaddingMode.PKCS7);
         }
-        Tag(keys, direction, body.AsSpan(0, body.Length - TagBytes), body.AsSpan(body.Length - TagBytes));
+        Tag(inUse.MacKey, direction, body.AsSpan(0, body.Length - TagBytes), body.AsSpan(body.Length - TagBytes));
         return body;
     }
 
     /// <summary>
     /// The text of a body sealed in <paramref name="direction"/> that has to be frame <paramref name="expectedSeq"/>, or
-    /// null for a frame that is short, tampered with, replayed, reordered, sealed by the other side or under another key.
-    /// The tag is checked, in constant time, before anything is decrypted.
+    /// null for a frame that is short, tampered with, replayed, reordered, sealed by the other side or under another key,
+    /// or that holds no text. The tag is checked, in constant time, before anything is decrypted.
     /// </summary>
     public static byte[]? Open(SealedSessionKeys keys, byte direction, ulong expectedSeq, ReadOnlySpan<byte> body)
     {
         ArgumentNullException.ThrowIfNull(keys);
+        using var inUse = keys.Enter();
         int cipherLength = body.Length - SeqBytes - IvBytes - TagBytes;
         if (cipherLength < BlockBytes || cipherLength % BlockBytes != 0)
         {
@@ -130,7 +135,7 @@ public static class SiloCastSealed
 
         ReadOnlySpan<byte> signed = body[..^TagBytes];
         Span<byte> tag = stackalloc byte[TagBytes];
-        Tag(keys, direction, signed, tag);
+        Tag(inUse.MacKey, direction, signed, tag);
         if (!CryptographicOperations.FixedTimeEquals(tag, body[^TagBytes..]))
         {
             return null;
@@ -140,17 +145,20 @@ public static class SiloCastSealed
             return null;
         }
 
+        byte[] plaintext;
         try
         {
             using var aes = Aes.Create();
-            aes.SetKey(keys.EncKey);
-            return aes.DecryptCbc(signed[(SeqBytes + IvBytes)..], signed.Slice(SeqBytes, IvBytes), PaddingMode.PKCS7);
+            aes.SetKey(inUse.EncKey);
+            plaintext = aes.DecryptCbc(signed[(SeqBytes + IvBytes)..], signed.Slice(SeqBytes, IvBytes), PaddingMode.PKCS7);
         }
         catch (CryptographicException)
         {
             // Padding that does not check out, under a tag that does: only a broken sender makes that.
             return null;
         }
+        // A frame of padding alone is no message; silo-roku's open refuses it too.
+        return plaintext.Length == 0 ? null : plaintext;
     }
 
     /// <summary>The plain opening frame's text: <c>{"type":"sealed_hello","v":1,"keyId":…,"nonce":…}</c>, the nonce in base64url.</summary>
@@ -207,13 +215,31 @@ public static class SiloCastSealed
         {
             return null;
         }
-        if (Text(frame, "nonce") is not { } nonceText
-            || !Base64Url.IsValid(nonceText, out int nonceLength) || nonceLength != NonceBytes)
+        if (Text(frame, "nonce") is not { } nonceText || Nonce(nonceText) is not { } nonce)
         {
             return null;
         }
-        return new SealedHello(keyId.ToLowerInvariant(), Base64Url.DecodeFromChars(nonceText));
+        return new SealedHello(keyId.ToLowerInvariant(), nonce);
     }
+
+    // 16 bytes as the phones write them: 22 characters of the base64url alphabet, no padding, no white space, and no
+    // bits after the last byte, so one nonce has one spelling.
+    private static byte[]? Nonce(string text)
+    {
+        if (text.Length != NonceTextLength || !text.All(IsBase64UrlDigit))
+        {
+            return null;
+        }
+        byte[] nonce = new byte[NonceBytes];
+        // The status form, which refuses bits after the last byte without throwing.
+        var status = Base64Url.DecodeFromChars(text, nonce, out int consumed, out int written);
+        return status == OperationStatus.Done && consumed == text.Length && written == NonceBytes
+            && Base64Url.EncodeToString(nonce) == text
+                ? nonce
+                : null;
+    }
+
+    private static bool IsBase64UrlDigit(char character) => char.IsAsciiLetterOrDigit(character) || character is '-' or '_';
 
     private static string? Text(JsonElement frame, string name) =>
         frame.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
@@ -230,9 +256,9 @@ public static class SiloCastSealed
     }
 
     // HMAC(macKey, label || direction || seq || iv || ciphertext); signed is the last three.
-    private static void Tag(SealedSessionKeys keys, byte direction, ReadOnlySpan<byte> signed, Span<byte> tag)
+    private static void Tag(ReadOnlySpan<byte> macKey, byte direction, ReadOnlySpan<byte> signed, Span<byte> tag)
     {
-        using var hmac = IncrementalHash.CreateHMAC(HashAlgorithmName.SHA256, keys.MacKey);
+        using var hmac = IncrementalHash.CreateHMAC(HashAlgorithmName.SHA256, macKey);
         hmac.AppendData(Label);
         hmac.AppendData([direction]);
         hmac.AppendData(signed);
@@ -246,12 +272,19 @@ public sealed record SealedHello(string KeyId, byte[] Nonce);
 /// <summary>
 /// One session's encryption and authentication keys. They are zeroed when it is disposed, and nothing prints them: the
 /// type has no members that show them outside Granary.
+/// <para>
+/// A connection may end on one thread while it seals or opens a frame on another. A seal or open in progress therefore
+/// holds the keys (<see cref="Enter"/>); <see cref="Dispose"/> refuses every new use at once and zeroes the keys when the
+/// last use in progress has ended, so no frame is ever sealed or opened under keys zeroed half way. Dispose never waits.
+/// </para>
 /// </summary>
 public sealed class SealedSessionKeys : IDisposable
 {
     private readonly byte[] _encKey;
     private readonly byte[] _macKey;
-    private volatile bool _disposed;
+    private readonly Lock _gate = new();
+    private int _inUse;
+    private bool _disposed;
 
     internal SealedSessionKeys(byte[] encKey, byte[] macKey)
     {
@@ -259,30 +292,88 @@ public sealed class SealedSessionKeys : IDisposable
         _macKey = macKey;
     }
 
-    /// <summary>The AES-128 key, 16 bytes.</summary>
+    /// <summary>The AES-128 key, 16 bytes. For tests; a seal or open reads it through <see cref="Enter"/>.</summary>
     internal ReadOnlySpan<byte> EncKey
     {
         get
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            return _encKey;
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                return _encKey;
+            }
         }
     }
 
-    /// <summary>The HMAC-SHA256 key, 32 bytes.</summary>
+    /// <summary>The HMAC-SHA256 key, 32 bytes. For tests; a seal or open reads it through <see cref="Enter"/>.</summary>
     internal ReadOnlySpan<byte> MacKey
     {
         get
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            return _macKey;
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                return _macKey;
+            }
         }
+    }
+
+    /// <summary>Holds the keys for one seal or open; they stay whole until it is disposed. Throws once the keys are disposed.</summary>
+    internal InUse Enter()
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _inUse++;
+        }
+        return new InUse(this);
     }
 
     public void Dispose()
     {
-        _disposed = true;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            _disposed = true;
+            if (_inUse == 0)
+            {
+                Zero();
+            }
+        }
+    }
+
+    private void Leave()
+    {
+        lock (_gate)
+        {
+            _inUse--;
+            if (_disposed && _inUse == 0)
+            {
+                Zero();
+            }
+        }
+    }
+
+    private void Zero()
+    {
         CryptographicOperations.ZeroMemory(_encKey);
         CryptographicOperations.ZeroMemory(_macKey);
+    }
+
+    /// <summary>The keys held for one seal or open.</summary>
+    internal readonly ref struct InUse
+    {
+        private readonly SealedSessionKeys _keys;
+
+        internal InUse(SealedSessionKeys keys) => _keys = keys;
+
+        public ReadOnlySpan<byte> EncKey => _keys._encKey;
+
+        public ReadOnlySpan<byte> MacKey => _keys._macKey;
+
+        public void Dispose() => _keys.Leave();
     }
 }

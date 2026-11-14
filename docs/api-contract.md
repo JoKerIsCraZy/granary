@@ -2928,7 +2928,9 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   The key id is compared in lower case. A receiver that holds no key with that id answers a plain `close` with reason
   `unauthorized` and drops the connection; a phone takes an answer with another key id as a refusal. Granary reads
   nothing else before the key is shown: a first frame that is not a well-formed `sealed_hello` (not JSON, deeper than
-  one object, a member twice, a key id that is not 8 hex digits, a nonce that is not 16 bytes) is a refusal.
+  one object, a member twice, a key id that is not 8 hex digits, a nonce that is not 16 bytes as the phones write
+  them: 22 characters of the base64url alphabet, without padding, white space or bits after the last byte) is a
+  refusal.
 - **Session keys**, HKDF-SHA256 with one output block each:
 
   ```text
@@ -2949,8 +2951,9 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
 
 - **What closes a connection.** The reader checks the length (at least one block of ciphertext, whole blocks only), then
   the tag in constant time, then that `seq` is exactly the next number from that side, and only then decrypts. A frame
-  that fails any check (tampered, replayed, reordered, sealed by the other side or under another key, bad padding), a
-  length over the cap, and a peer that closes inside a frame all end the connection without an answer.
+  that fails any check (tampered, replayed, reordered, sealed by the other side or under another key, bad padding, or
+  padding alone with no text, which silo-roku's `open` refuses too), a length over the cap, and a peer that closes
+  inside a frame all end the connection without an answer.
 - Granary meets Silo's vectors byte for byte (`tests/Granary.Tests/Remote/SealedVectorTests`): silo-roku's
   `tests/control/sealed.spec.bs`, which silo-android's `SiloCastSealedTest.kt` and silo-apple's
   `SiloControlSealedTests.swift` repeat.

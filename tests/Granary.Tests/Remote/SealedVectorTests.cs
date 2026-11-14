@@ -48,6 +48,28 @@ public sealed class SealedVectorTests
     }
 
     [Fact]
+    public void TheSessionKeys_StayForASealUnderWay_AndAreZeroedWhenItEnds()
+    {
+        var keys = VectorKeys();
+        ReadOnlySpan<byte> encKey = keys.EncKey;
+        ReadOnlySpan<byte> macKey = keys.MacKey;
+
+        using (var inUse = keys.Enter())
+        {
+            // Dispose on another connection's thread, while this seal still runs.
+            keys.Dispose();
+
+            Assert.Equal(SealedVectors.EncKey, Convert.ToHexStringLower(inUse.EncKey));
+            Assert.Equal(SealedVectors.MacKey, Convert.ToHexStringLower(inUse.MacKey));
+            Assert.Throws<ObjectDisposedException>(() => SiloCastSealed.Seal(keys, SiloCastSealed.FromReceiver, 0, "{}"u8));
+            Assert.Throws<ObjectDisposedException>(() => SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 0, new byte[72]));
+        }
+
+        Assert.True(encKey.IndexOfAnyExcept((byte)0) < 0);
+        Assert.True(macKey.IndexOfAnyExcept((byte)0) < 0);
+    }
+
+    [Fact]
     public void TheKey_IsWrittenInBase32_AsThePairingLinkCarriesIt()
     {
         string text = Base32.Encode(SealedVectors.Key);
@@ -59,6 +81,18 @@ public sealed class SealedVectorTests
         Assert.Equal(SealedVectors.Key, Base32.Decode(text.ToLowerInvariant()));
         Assert.Null(Base32.Decode("AAAQ-EAYE"));
         Assert.Null(Base32.Decode(text + "A"));
+    }
+
+    [Fact]
+    public void OnlyAsciiLetters_AreReadInEitherCase()
+    {
+        Assert.Equal([0x90], Base32.Decode("SA"));
+        Assert.Equal([0x90], Base32.Decode("sa"));
+        Assert.Equal([0x40], Base32.Decode("iA"));
+
+        // Letters that only an invariant upper-casing turns into S and I.
+        Assert.Null(Base32.Decode("Å¿A"));
+        Assert.Null(Base32.Decode("Ä±A"));
     }
 
     [Fact]
@@ -93,6 +127,13 @@ public sealed class SealedVectorTests
         """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"AAAA"}""",
         """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"EBESExQVFhcYGRobHB0e!w"}""",
         """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":16}""",
+        // The nonce with padding, with white space inside or around it, and with bits after its last byte: the phones
+        // write 22 characters of the base64url alphabet and nothing else.
+        """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"EBESExQVFhcYGRobHB0eHw=="}""",
+        """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"EBESExQVFhcY GRobHB0eHw"}""",
+        """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":" EBESExQVFhcYGRobHB0eHw"}""",
+        """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"EBESExQVFhcYGRobHB0eHw\n"}""",
+        """{"type":"sealed_hello","v":1,"keyId":"be45cb26","nonce":"EBESExQVFhcYGRobHB0eHx"}""",
         // A plain hello, and the plain close a receiver without the key answers.
         """{"type":"hello"}""",
         """{"type":"close","v":2,"close":{"reason":"unauthorized"}}""",
@@ -143,6 +184,7 @@ public sealed class SealedVectorTests
     [InlineData("replayed")]
     [InlineData("reordered")]
     [InlineData("misdirected")]
+    [InlineData("the receiver's own")]
     [InlineData("another key")]
     [InlineData("short")]
     [InlineData("one byte")]
@@ -167,6 +209,9 @@ public sealed class SealedVectorTests
             "reordered" => SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 1,
                 SiloCastSealed.Seal(keys, SiloCastSealed.FromPhone, 2, Encoding.UTF8.GetBytes(SealedVectors.ReceiverPlaintext))),
             "misdirected" => SiloCastSealed.Open(keys, SiloCastSealed.FromReceiver, 0, body),
+            // A frame the receiver sealed, sent back to it as if the phone had.
+            "the receiver's own" => SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 0,
+                SiloCastSealed.Seal(keys, SiloCastSealed.FromReceiver, 0, Encoding.UTF8.GetBytes(SealedVectors.ReceiverPlaintext))),
             "another key" => SiloCastSealed.Open(otherKeys, SiloCastSealed.FromPhone, 0, body),
             // Sequence number, IV and tag without a block of ciphertext.
             "short" => SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 0, [.. body.AsSpan(0, 24), .. body.AsSpan(body.Length - 32)]),
@@ -177,6 +222,37 @@ public sealed class SealedVectorTests
         };
 
         Assert.Null(opened);
+    }
+
+    [Fact]
+    public void AFrameThatOpensToNothing_IsRefused()
+    {
+        using var keys = VectorKeys();
+        // One block of padding alone, under a good tag: silo-roku's open refuses it.
+        byte[] body = SiloCastSealed.Seal(keys, SiloCastSealed.FromPhone, 0, ReadOnlySpan<byte>.Empty);
+        Assert.Equal(8 + 16 + 16 + 32, body.Length);
+
+        Assert.Null(SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 0, body));
+    }
+
+    [Fact]
+    public void AGoodTagOverBadPadding_IsRefused()
+    {
+        using var keys = VectorKeys();
+        byte[] iv = new byte[16];
+        // A last byte of 0 is no PKCS#7 padding.
+        byte[] block = new byte[16];
+        byte[] ciphertext;
+        using (var aes = Aes.Create())
+        {
+            aes.Key = Convert.FromHexString(SealedVectors.EncKey);
+            ciphertext = aes.EncryptCbc(block, iv, PaddingMode.None);
+        }
+        byte[] signed = [.. new byte[8], .. iv, .. ciphertext];
+        byte[] tagged = [.. "silo-cast-sealed-1"u8, SiloCastSealed.FromPhone, .. signed];
+        byte[] tag = HMACSHA256.HashData(Convert.FromHexString(SealedVectors.MacKey), tagged);
+
+        Assert.Null(SiloCastSealed.Open(keys, SiloCastSealed.FromPhone, 0, [.. signed, .. tag]));
     }
 
     [Fact]

@@ -33,7 +33,7 @@ internal static class Base32
     }
 
     /// <summary>
-    /// The bytes of <paramref name="text"/> in either case, or null for a character outside the alphabet, padding, or a
+    /// The bytes of <paramref name="text"/> in either ASCII case, or null for a character outside the alphabet, padding, or a
     /// length or last digit no encoding gives.
     /// </summary>
     public static byte[]? Decode(string text)
@@ -45,7 +45,9 @@ internal static class Base32
         int bits = 0;
         foreach (char character in text)
         {
-            int digit = Alphabet.IndexOf(char.ToUpperInvariant(character), StringComparison.Ordinal);
+            // ASCII letters only: no letter outside ASCII may stand for one of the alphabet's.
+            char upper = char.IsAsciiLetterLower(character) ? (char)(character - ('a' - 'A')) : character;
+            int digit = Alphabet.IndexOf(upper, StringComparison.Ordinal);
             if (digit < 0)
             {
                 return null;
