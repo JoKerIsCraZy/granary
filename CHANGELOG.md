@@ -32,6 +32,12 @@ release's section is what its update says it changes (docs/release.md).
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
+- **Where a skip came from:** Settings → Playback → Skipping has Show marker confidence and Show marker source, as on
+  Silo's web. Turned on, a line above Skip Intro (and Watch Intro, Skip Recap, Skip Credits and Skip Preview) says how
+  confident the source of the marker is, such as 20%, and where the marker came from: Detected for Silo's own
+  detection, Edited for a person, or the name of the provider that supplied it. Each source rates on its own scale, so
+  a percentage is only comparable within one source. A marker nobody rated shows no percentage. Both are off until you
+  turn them on, and a server that does not have these settings yet shows neither switch.
 - **Hero size:** Settings → Navigation & Cards → Pages has a new choice. Full makes the picture at the top of Home, For
   You and Discover as tall as on Silo's web, with the rows under it; Compact, as before, shows the first row without
   scrolling.
@@ -56,6 +62,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- When an intro's marker changed while Skip Intro showed, for example after an edit, so that it no longer covered where
+  you were, the button stayed and skipped past part of the episode. It now goes away until playback reaches the intro.
+- A skip button pressed just after you seek away from its part no longer skips part of the episode, and Watch Intro,
+  after you seek back to before the intro, no longer jumps ahead to it: the intro plays when you get there.
 - An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
   arrows, also for an episode near the season's end. They opened with the page's own card in the very middle, which cut
   the card at the row's start in two.

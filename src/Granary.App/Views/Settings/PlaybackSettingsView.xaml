@@ -281,6 +281,15 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.IntroSkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedIntroSkip, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowsIntroSkip, Mode=OneWay}" />
                 </controls:SettingsRow>
+                <!-- Settings contract 24, as the web's PlaybackSettings.tsx: left out on a server that does not know them. -->
+                <controls:SettingsRow Label="Show marker confidence" Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}"
+                                      Description="Show how confident the source is above the Skip Intro button. Each source rates on its own scale, so the percentage is only comparable within one source; turn the source line on to see which one it is.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerConfidence, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Show marker source" Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}"
+                                      Description="Show where the skip came from above the Skip Intro button: Silo's own detection, a person, or the provider that supplied the marker.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerSource, Mode=TwoWay}" />
+                </controls:SettingsRow>
                 <controls:SettingsRow Label="Auto-skip recaps" Description="Skip 'previously on…' recaps automatically when Silo can detect them.">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipRecaps, Mode=TwoWay}" />
                 </controls:SettingsRow>

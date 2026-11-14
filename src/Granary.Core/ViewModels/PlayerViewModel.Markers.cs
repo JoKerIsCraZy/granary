@@ -29,6 +29,10 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial string SkipCaption { get; private set; } = "";
 
+    /// <summary>The line above the confirmation: how confident the marker's source is and where it came from ("20% · Detected"); empty for none.</summary>
+    [ObservableProperty]
+    public partial string SkipProvenance { get; private set; } = "";
+
     /// <summary>How far an intro pill's 5 s have run, 0 to 1; 0 for a pill that stays.</summary>
     [ObservableProperty]
     public partial double SkipProgress { get; private set; }
@@ -44,11 +48,15 @@ public sealed partial class PlayerViewModel
         return true;
     }
 
-    /// <summary>The pill: skips the part, or for "Watch Intro" goes back to the intro's start.</summary>
+    /// <summary>
+    /// The pill: skips the part, or for "Watch Intro" goes back to the intro's start. It is judged by where playback is
+    /// now, a seek on its way included, as the pills follow that position: one the viewer has sought away from seeks
+    /// nowhere and goes.
+    /// </summary>
     [RelayCommand]
     private void Skip()
     {
-        if (_markerPrompts.Select() is { } target)
+        if (_markerPrompts.Select(SkipOrigin) is { } target)
         {
             SeekTo(target);
         }
@@ -80,7 +88,9 @@ public sealed partial class PlayerViewModel
         }
     }
 
-    // Another file, or more markers of this one; a change of tracks alone leaves a pill as it is.
+    // Another file, or more markers of this one; a change of tracks alone leaves a pill as it is. A showing pill is
+    // judged by where playback is now, so a read during a seek the engine has not reported yet does not keep one it
+    // has left.
     private void TakeMarkers(IServerPlayback playback)
     {
         var markers = playback.Markers;
@@ -89,7 +99,7 @@ public sealed partial class PlayerViewModel
             return;
         }
         Markers = markers;
-        _markerPrompts.Reset(markers, RoomMarkers(playback.Preferences.Markers));
+        _markerPrompts.Reset(markers, RoomMarkers(playback.Preferences.Markers), SkipOrigin);
         TakeCredits(markers);
         ShowSkipPrompt();
     }
@@ -99,7 +109,7 @@ public sealed partial class PlayerViewModel
     {
         if (_playback is { } playback && Markers.Count > 0)
         {
-            _markerPrompts.Reset(Markers, RoomMarkers(playback.Preferences.Markers));
+            _markerPrompts.Reset(Markers, RoomMarkers(playback.Preferences.Markers), SkipOrigin);
             ShowSkipPrompt();
         }
     }
@@ -134,6 +144,7 @@ public sealed partial class PlayerViewModel
         }
         SkipLabel = prompt.Label;
         SkipCaption = prompt.Caption ?? "";
+        SkipProvenance = prompt.Provenance ?? "";
         SkipProgress = prompt.Progress ?? 0;
         HasSkipPrompt = true;
     }

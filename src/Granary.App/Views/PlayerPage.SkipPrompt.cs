@@ -9,23 +9,30 @@ using Microsoft.UI.Xaml.Input;
 
 namespace Granary.App.Views;
 
-// The skip pill's confirmation ("Intro skipped"): read out when its pill appears, and shaded so that it stays readable
-// where the picture behind it is bright. The web player's drop shadow is fainter; on a white corner its line disappears.
+// The skip pill's confirmation ("Intro skipped"), read out when its pill appears, and the line above it ("20% ·
+// Detected"): both shaded so that they stay readable where the picture behind them is bright. The web player's drop
+// shadow is fainter; on a white corner its line disappears.
 public sealed partial class PlayerPage
 {
     private void InitializeSkipPrompt()
     {
-        var compositor = ElementCompositionPreview.GetElementVisual(SkipCaptionText).Compositor;
+        Shade(SkipProvenanceText, SkipProvenanceShade);
+        Shade(SkipCaptionText, SkipCaptionShade);
+    }
+
+    private static void Shade(TextBlock text, Canvas shade)
+    {
+        var compositor = ElementCompositionPreview.GetElementVisual(text).Compositor;
         var shadow = compositor.CreateDropShadow();
-        shadow.Mask = SkipCaptionText.GetAlphaMask();
+        shadow.Mask = text.GetAlphaMask();
         shadow.Color = Colors.Black;
         shadow.Opacity = 0.85f;
         shadow.BlurRadius = 6;
         shadow.Offset = new Vector3(0, 1, 0);
         var visual = compositor.CreateSpriteVisual();
         visual.Shadow = shadow;
-        SkipCaptionText.SizeChanged += (_, e) => visual.Size = e.NewSize.ToVector2();
-        ElementCompositionPreview.SetElementChildVisual(SkipCaptionShade, visual);
+        text.SizeChanged += (_, e) => visual.Size = e.NewSize.ToVector2();
+        ElementCompositionPreview.SetElementChildVisual(shade, visual);
     }
 
     private void AnnounceSkipCaption() => Announcer.Announce(this, ViewModel.SkipCaption, "SkipPrompt");

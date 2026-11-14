@@ -9,6 +9,7 @@ namespace Granary.Tests.ViewModels;
 /// <summary>The skip pills of the player page, fed by the playback's markers and the engine's position.</summary>
 public sealed class PlayerViewModelMarkerTests
 {
+    private static readonly PlaybackMarker Recap = new(WatchMarkerKinds.Recap, 0, 40);
     private static readonly PlaybackMarker Intro = new(WatchMarkerKinds.Intro, 60, 120);
     private static readonly PlaybackMarker Credits = new(WatchMarkerKinds.Credits, 2500, 2600);
 
@@ -147,6 +148,74 @@ public sealed class PlayerViewModelMarkerTests
 
         viewModel.SkipCommand.Execute(null);
         Assert.Equal([120, 60], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task WatchIntro_PressedAfterSeekingBackBeforeTheIntro_DoesNotSeekForward()
+    {
+        var viewModel = await PlayingAsync(MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Always });
+        At(60.5);
+        At(120);
+        viewModel.SeekTo(30);
+        At(30);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("Watch Intro", viewModel.SkipLabel);
+
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([120, 30], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task ThePill_PressedWhileASeekOutOfItsPartIsOnItsWay_SkipsNothing()
+    {
+        var viewModel = await PlayingAsync();
+        At(2550);
+        Assert.Equal("Skip Credits", viewModel.SkipLabel);
+
+        viewModel.SeekTo(1000);
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([1000], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task AReadWhileASeekBackIsOnItsWay_TakesAwayAPillWhosePartNoLongerHoldsWherePlaybackGoes()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseMarkers([Recap, Intro, Credits]);
+        At(30, paused: true);
+        Assert.Equal("Skip Recap", viewModel.SkipLabel);
+
+        viewModel.SeekTo(10);
+        // Read again before the player reports the seek: the recap now starts at 20, which holds 30 but not 10.
+        Playback.RaiseMarkers([Recap with { StartSeconds = 20 }, Intro, Credits]);
+
+        Assert.False(viewModel.HasSkipPrompt);
+        viewModel.SkipCommand.Execute(null);
+        Assert.Equal([10], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task ThePill_ShowsWhereItsMarkerCameFrom_AndARereadThatNamesAnotherSourceChangesIt()
+    {
+        var viewModel = await PlayingAsync(MarkerSettings.Default with { ShowMarkerConfidence = true, ShowMarkerSource = true });
+        At(30);
+        Assert.Equal("", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("plugin", "plugin:4:introdb", 0.2) }, Credits]);
+        At(61);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+        Assert.Equal("20% · TheIntroDB", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.Equal("100% · Edited", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro, Credits]);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("", viewModel.SkipProvenance);
     }
 
     [Fact]

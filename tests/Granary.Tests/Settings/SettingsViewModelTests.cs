@@ -75,7 +75,7 @@ public sealed class SettingsViewModelTests : IDisposable
         }
     }
 
-    private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
+    private PlaybackSettingsViewModel Playback(IProfileSettings? settings = null) => new(settings ?? _settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
         new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus, _mpvChanges);
@@ -560,6 +560,57 @@ public sealed class SettingsViewModelTests : IDisposable
                 "save playback.max_bitrate_kbps 20000",
             ],
             _settings.Writes);
+    }
+
+    [Fact]
+    public async Task TheMarkerLineSwitches_ShowTheProfilesValues_AndAChangeIsSavedAtOnce()
+    {
+        _settings.Set(SettingKeys.ShowMarkerConfidence, "true", "profile_device");
+        _settings.Set(SettingKeys.ShowMarkerSource, "false", "default");
+        Capabilities();
+        var page = Playback();
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(page.ShowsMarkerProvenance);
+        Assert.True(page.ShowMarkerConfidence);
+        Assert.False(page.ShowMarkerSource);
+        Assert.Empty(_settings.Writes);
+
+        page.ShowMarkerConfidence = false;
+        page.ShowMarkerSource = true;
+
+        Assert.Equal(
+            [
+                "save playback.show_marker_confidence false clearing the device",
+                "save playback.show_marker_source true",
+            ],
+            _settings.Writes);
+    }
+
+    [Fact]
+    public async Task AServerFromBeforeTheMarkerLine_ShowsNeitherSwitch()
+    {
+        // Settings contract 24 brought them: an older server refuses them (422), in a batch and alone, and knows the rest.
+        _silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+        {
+            string query = Uri.UnescapeDataString(uri.Query);
+            return query.Contains("show_marker", StringComparison.Ordinal)
+                ? ScriptedSilo.Problem(422, "validation_failed")()
+                : ScriptedSilo.Json(HttpStatusCode.OK,
+                    $$"""{ "items": [ { "key": "{{query["?keys=".Length..]}}", "value": null, "source": "default" } ], "revision": 23 }""")();
+        });
+        Capabilities();
+        var session = new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" };
+        var page = Playback(new ProfileSettings(new SettingsApi(_silo.Http), session, new LogSink().For<ProfileSettings>()));
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("", page.ErrorMessage);
+        Assert.True(page.ShowsIntroSkip);
+        Assert.False(page.ShowsMarkerProvenance);
+        Assert.False(page.ShowMarkerConfidence || page.ShowMarkerSource);
+        Assert.Empty(_silo.SentTo(HttpMethod.Put, "api/v2/settings/values/playback.show_marker_confidence"));
     }
 
     [Fact]

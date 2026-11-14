@@ -1131,8 +1131,12 @@ says why above the sections.
   follows a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as
   the app closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is
   0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
-  intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
-  fast-forward intervals).
+  intros; Show marker confidence, "Show how confident the source is above the Skip Intro button. Each source rates on
+  its own scale, so the percentage is only comparable within one source; turn the source line on to see which one it
+  is.", and Show marker source, "Show where the skip came from above the Skip Intro button: Silo's own detection, a
+  person, or the provider that supplied the marker.", both switches off by default and left out on a server from before
+  settings contract 24, as on the web; auto-skip recaps and credits), Next episode (start next at preview, auto-play),
+  Seek controls (rewind and fast-forward intervals).
 - **Player buttons** (`PlayerButtonsSettingsViewModel` on `PlayerButtonsLayout`; Granary's own, Silo's clients have no
   such editor): which buttons the right of the player's bar shows, and in which order, laid out as Navigation & Cards →
   Sidebar, with Reset beside the title while the bar is not today's: "Which buttons the player shows on the right of its
@@ -1840,7 +1844,20 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls show; 44 px high, black at 75 % with a white 20 % edge, 14 px semibold. "Skip Intro" fills from the left
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
-  stay while inside their part. Esc turns an intro pill away before it does anything else.
+  stay while inside their part. Esc turns an intro pill away before it does anything else. A press is judged by where
+  playback is then, a seek on its way included: Skip Intro and a part's pill skip only from inside their part, Watch
+  Intro goes back only from the intro's start on; otherwise the pill just goes, so a press right after seeking away
+  never skips what is not marked. From before the intro, Watch Intro lets playback reach the intro, which then plays.
+  Where the profile turned on Show marker confidence or Show marker source (Settings → Playback), every pill (Watch Intro
+  too) has a line above it, and above "Intro skipped", 6 px apart, in the same 12 px white 75 %, shaded: the confidence
+  as a whole percentage, where the marker came from, or both, "20% · Detected" (the web's `lib/markerProvenance.ts`).
+  The source reads "Detected" for Silo's own detection, "Edited" for a person, and a provider by the name the web gives
+  it (a plugin's by its capability, not its installation), else its own id; "Online" for an online source that names
+  none. An unrated marker has no percentage, never 0 %; with nothing to say there is no line, and the pill keeps its
+  shape. A later read of the markers that names another source changes the line of a showing pill at once; one that
+  moves the part away from where playback is (a seek on its way included) takes Skip Intro or the part's pill away
+  until playback reaches it, so a pick never skips what is no longer marked (Watch Intro stays, it only goes back).
+  The two switches are read as a title starts, as the other skip settings, so a change applies from the next title.
   A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
   or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
