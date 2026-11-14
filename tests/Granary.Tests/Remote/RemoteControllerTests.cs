@@ -169,6 +169,65 @@ public sealed class RemoteControllerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APhoneThatFloodsFrames_IsDropped_EvenWithFramesNobodyAnswers()
+    {
+        int handed = 0;
+        var (controller, phone, _, running) = await _harness.OpenAsync(_ =>
+        {
+            handed++;
+            return ValueTask.CompletedTask;
+        });
+
+        // Types the receiver skips cost a tag check, a decryption and a parse each all the same.
+        for (int i = 0; i <= FrameBudget.FrameBurst; i++)
+        {
+            await phone.SendAsync("""{"type":"surprise","v":2}""");
+        }
+
+        await running.WaitAsync(HangGuard, Token);
+        Assert.False(controller.IsOpen);
+        Assert.Equal(0, handed);
+        Assert.Contains("Connection 1 closed: too many frames", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APhoneWithinTheFrameRate_StaysConnected()
+    {
+        var (controller, phone, _, _) = await _harness.OpenAsync();
+
+        for (int i = 0; i < FrameBudget.FrameBurst; i++)
+        {
+            await phone.SendAsync("""{"type":"surprise","v":2}""");
+        }
+        Time.Advance(TimeSpan.FromSeconds(1));
+        for (int i = 0; i < FrameBudget.FramesPerSecond - 1; i++)
+        {
+            await phone.SendAsync("""{"type":"surprise","v":2}""");
+        }
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+
+        Assert.Equal("pong", FakePhone.TypeOf(await phone.NextAsync("pong")));
+        Assert.True(controller.IsOpen);
+    }
+
+    [Fact]
+    public async Task APhoneThatSendsTooManyBytes_IsDropped()
+    {
+        var (controller, phone, _, running) = await _harness.OpenAsync();
+        string large = $$"""{"type":"surprise","padding":"{{new string('x', 60_000)}}","v":2}""";
+
+        // Each frame is within the 64 KiB limit; together they are more than a second's worth and the burst.
+        for (int i = 0; i <= FrameBudget.ByteBurst / 60_000; i++)
+        {
+            await phone.SendAsync(large);
+        }
+
+        await running.WaitAsync(HangGuard, Token);
+        Assert.False(controller.IsOpen);
+        Assert.Contains("Connection 1 closed: too many frames", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task FramesLeave_InTheOrderOfTheirSequenceNumbers()
     {
         var (controller, phone, _, _) = await _harness.OpenAsync();

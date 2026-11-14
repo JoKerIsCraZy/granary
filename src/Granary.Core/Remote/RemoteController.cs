@@ -58,6 +58,8 @@ public sealed partial class RemoteController : IAsyncDisposable
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly TaskCompletionSource _ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    // What the phone may send; the read loop's only.
+    private readonly FrameBudget _frames;
     private SealedSessionKeys? _keys;
     private PairingMaterial? _material;
     private ITimer? _helloWatch;
@@ -96,6 +98,7 @@ public sealed partial class RemoteController : IAsyncDisposable
         _timings = timings;
         _time = time;
         _logger = logger;
+        _frames = new FrameBudget(time);
         ConnectedAt = time.GetTimestamp();
     }
 
@@ -445,6 +448,12 @@ public sealed partial class RemoteController : IAsyncDisposable
             if (body is null)
             {
                 Drop(RemoteLogReasons.PhoneLeft);
+                return null;
+            }
+            // Counted before the frame is opened: opening it is the work a flood would make.
+            if (!_frames.TryTake(body.Length))
+            {
+                Drop(RemoteLogReasons.TooManyFrames);
                 return null;
             }
             if (!StillPaired())

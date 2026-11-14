@@ -1302,7 +1302,13 @@ decides what a message means; the controller carries it.
   connected by sending pongs. Until the receiver marks the phone's `hello` as said, the connection closes with reason
   `timeout` 5 seconds after the keys.
 - **What drops a phone.** One write that waits 10 seconds, or more than 128 KiB waiting for it; no answer to pings; a
-  frame over the limit or one that does not open; its own `close` or its going away. A `close` from the PC carries its
+  frame over the limit or one that does not open; more frames or bytes than `FrameBudget` allows; its own `close` or
+  its going away.
+- **How much a phone may send.** Every frame is counted as it arrives, before it is opened (`FrameBudget`): 200 a
+  second with bursts of 400, and 256 KiB a second with bursts of 1 MiB. Opening a frame (the tag check, the decryption,
+  the parse) is the work a flood would make, and the heartbeat and the types Granary skips cost it as well, so they
+  count too; the command budget comes after, for what a message does. A phone sends far less, so one over it is
+  dropped. Granary's own: Silo's receivers have no such limit. A `close` from the PC carries its
   reason only to a phone that lists `close_reason`, and waits at most half a second to leave.
 - **A reset code takes effect at the next frame.** Every frame in and out checks that the key the session was keyed
   under is still the PC's: the same key, not merely a key with the same id. A phone on a code that was reset is dropped at its next frame even if the news of the reset
@@ -1342,7 +1348,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   the phone's budget (`CommandBudget`: 40 at once, then 20 a second): a `hello`, a `presence`, an offer, a launch, a
   command, also one that is only answered `unauthorized`. Over the budget a message is dropped unanswered and the phone
   is told `rate_limited` at most once a second; the player is not asked. Unknown types and controls are skipped before
-  the budget, as they cause no work. A `presence` that changes nothing changes no phone.
+  the budget, as they cause no more work than the frame they came in, which the connection's frame budget counts. A
+  `presence` that changes nothing changes no phone.
 - **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
   it out with the player's own commands. After it is done every authorized phone is offered the new status. Without a
   player every command but `stop` gets `player_not_ready`.
@@ -1362,6 +1369,7 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Connections that have not said `hello` | 4, and 2 from one address; a newcomer closes the oldest such |
 | New connections from one address | 20 a minute; more are closed unread |
 | Frame size | 64 KiB; the first, plain frame 1 KiB |
+| Frames from one phone, every one counted before it is opened | 200 a second, bursts of 400, and 256 KiB a second, bursts of 1 MiB; more drops the phone |
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
 | Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
 | Messages but the heartbeat and `close` | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |

@@ -26,6 +26,7 @@ public static class RemoteLogReasons
     public const string NoPairingHello = "no pairing hello in time";
     public const string NoHello = "no hello in time";
     public const string FrameTooLarge = "a frame was too large";
+    public const string TooManyFrames = "too many frames";
     public const string FrameDidNotOpen = "a frame did not open";
     public const string Malformed = "a message could not be read";
     public const string PhoneClosed = "the phone closed";

@@ -2931,6 +2931,10 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   and at most **1 KiB** for a connection's first frame, the only one it reads from a peer that has not shown the key.
   A longer announced length ends the connection before its body is read; the length is read unsigned, so a high bit
   never makes it negative.
+- **How much a phone may send.** Granary's own limit, before a frame is opened: 200 frames a second with bursts of
+  400, and 256 KiB a second with bursts of 1 MiB, every frame counted, the heartbeat and types Granary skips included.
+  A phone over either is dropped without an answer. A phone sends far less: a seek dragged along the timeline is a
+  few dozen commands a second.
 - **`sealed_hello`.** Each side opens with one plain frame, the phone first:
 
   ```json
