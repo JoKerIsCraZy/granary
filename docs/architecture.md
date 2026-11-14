@@ -1247,6 +1247,45 @@ not in a profile.
 - Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for
   the rest of the run. Nothing here logs a value.
 
+### A phone's connection
+
+`RemoteController` is one phone's connection, in the order of events of silo-roku's `ControlTask.bs`. The receiver
+decides what a message means; the controller carries it.
+
+- **The handshake.** The first frame may be at most 1 KiB and has to come within 5 seconds. Only a `sealed_hello`
+  under the key id of the pairing material *as it is at that moment* is answered, with the receiver's own `sealed_hello`
+  and a fresh random nonce; the session keys come from the key and both nonces. Anything else (another key id, a plain
+  `hello`, not JSON) gets the plain `close` with reason `unauthorized`, under the half-second close grace, and the
+  connection ends. A first frame that announces more than 1 KiB, or no frame within 5 seconds, ends the connection
+  without an answer. Because the receiver's nonce is new for every connection, a recorded session played back to it
+  does not open.
+- **Reading.** Every later frame may be at most 64 KiB and is opened as the next number from the phone, counting from
+  0. The number advances only after a frame opened; a frame that does not open (tampered, replayed, reordered, from the
+  other side, padding alone) ends the connection without an answer, and nothing ever skips ahead. A message that is
+  not JSON with a known shape ends it with a bare `close`. `ping`, `pong` and the phone's `close` are handled here;
+  every other message goes to the receiver, one at a time.
+- **The write gate.** All writes go through one gate. Inside it the next number is taken, the frame sealed and written,
+  so the frames arrive in the order of their numbers, which the phone requires. The status is not queued: the receiver
+  offers a function that makes it, a newer offer replaces one still waiting, and it is made when its turn to be sealed
+  comes, ahead of the next other frame. A slow phone gets the newest status, not every one.
+- **The heartbeat.** A ping every 3 seconds; more than 3 unanswered in a row drops the phone. A pong counts only once a
+  ping has left for the phone, as silo-roku's `pingSent` counts it, so a phone that reads nothing cannot keep itself
+  connected by sending pongs. Until the receiver marks the phone's `hello` as said, the connection closes with reason
+  `timeout` 5 seconds after the keys.
+- **What drops a phone.** One write that waits 10 seconds, or more than 128 KiB waiting for it; no answer to pings; a
+  frame over the limit or one that does not open; its own `close` or its going away. A `close` from the PC carries its
+  reason only to a phone that lists `close_reason`, and waits at most half a second to leave.
+- **A reset code takes effect at the next frame.** Every frame in and out checks that the key the session was keyed
+  under is still the PC's. A phone on a code that was reset is dropped at its next frame even if the news of the reset
+  never reached the receiver.
+- **The end.** A connection ends by closing its stream, never by cancelling a read (see ClientWebSocket under Gotchas
+  in AGENTS.md). The end logs once, by number and reason ("Connection 3 closed: wrong pairing key"), then the session's
+  keys are zeroed. A seal or open still under way on another thread keeps them whole until it is done
+  (`SealedSessionKeys` counts its users), so no frame is sealed or opened under keys zeroed half way, and the end never
+  waits for it.
+- Every deadline runs on the `TimeProvider`; the tests move a `ManualTimeProvider` and join a `FakePhone` over a
+  `DuplexPipe` in memory. The fake phone seals with its own copy of the construction, from the phones' source.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

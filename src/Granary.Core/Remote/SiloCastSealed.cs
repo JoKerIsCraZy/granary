@@ -318,6 +318,18 @@ public sealed class SealedSessionKeys : IDisposable
         }
     }
 
+    /// <summary>The keys were disposed: nothing more is sealed or opened under them.</summary>
+    internal bool IsDisposed
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _disposed;
+            }
+        }
+    }
+
     /// <summary>Holds the keys for one seal or open; they stay whole until it is disposed. Throws once the keys are disposed.</summary>
     internal InUse Enter()
     {
