@@ -298,10 +298,11 @@ public sealed partial class DownloadQueue
 
     private void OnProgress(Key key, long bytes)
     {
-        var now = _time.GetUtcNow();
         bool say;
         lock (_gate)
         {
+            // Read under the lock, so the times the speed's measure gets follow its bytes' order.
+            var now = _time.GetUtcNow();
             _bytes[key] = bytes;
             // Only while its transfer runs: the measure goes with it (RunAsync), and nothing makes it again after.
             if (_running.ContainsKey(key))
