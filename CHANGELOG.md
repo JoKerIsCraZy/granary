@@ -68,6 +68,8 @@ release's section is what its update says it changes (docs/release.md).
   you were, the button stayed and skipped past part of the episode. It now goes away until playback reaches the intro.
 - A skip button pressed just after you seek away from its part no longer skips part of the episode, and Watch Intro,
   after you seek back to before the intro, no longer jumps ahead to it: the intro plays when you get there.
+- Skip Intro no longer stays away for the rest of the intro once its 5 seconds have run out: while you are still in
+  the intro, it comes back whenever the player's controls show, and hides again with them.
 - An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
   arrows, also for an episode near the season's end. They opened with the page's own card in the very middle, which cut
   the card at the row's start in two.

@@ -79,6 +79,8 @@ public sealed partial class PlayerPage
         _cursorTimer.IsRepeating = true;
         WeakTick.Subscribe(_cursorTimer, this, static page => page.LookAtCursorAgain("a while later", reassert: false));
         PointerMoved += OnPagePointerMoved;
+        // The page starts with its controls up; the view model hears every change after that (SetControlsVisible).
+        ViewModel.AreControlsShown = _areControlsVisible;
     }
 
     // As the page loads: the pointer resting where it is does not count as a move, and the window's changes have the
@@ -224,6 +226,8 @@ public sealed partial class PlayerPage
         ShowCornerButton();
         LiftSubtitles();
         PlaceSkipPrompt();
+        // A Skip Intro whose time ran out comes and goes with them (PlayerViewModel.IsSkipPromptWithControls).
+        ViewModel.AreControlsShown = visible;
         if (visible)
         {
             _cursor.ControlsShown();

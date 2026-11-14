@@ -724,7 +724,8 @@
 
         <!--
             The skip pill of Silo's web player: bottom right, above the controls while they show (PlaceSkipPrompt). An intro
-            pill fills from the left with its 5 s; above an automatic skip's pill, "Intro skipped" confirms it.
+            pill fills from the left with its 5 s, and once they ran out comes back without the fill while the controls show;
+            above an automatic skip's pill, "Intro skipped" confirms it.
         -->
         <!--
             The web player's Playback info: under Exit, 320 px wide, scrolling above the bottom bar; it stays while the

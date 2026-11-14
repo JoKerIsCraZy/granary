@@ -287,10 +287,12 @@ public sealed partial class PlayerPage
 
     // OK while a skip pill shows and the controls are hidden does what the pill says (Skip Intro, Recap, Credits or
     // Preview, or Watch Intro after it skipped itself), and the controls stay away, as on Silo's TV app. With the controls up
-    // the focused button keeps OK: taking it there made every OK skip for as long as the intro ran.
+    // the focused button keeps OK: taking it there made every OK skip for as long as the intro ran. The Skip Intro back with
+    // the controls after its time ran out claims no key from elsewhere, as the web's untimed offer: only focus on it presses it.
     private bool SkipsFromKey()
     {
-        if (IsCompact || ShowsNextUpScreen || !ViewModel.HasSkipPrompt || !AcceptsShortcut() || !ViewModel.SkipCommand.CanExecute(null))
+        if (IsCompact || ShowsNextUpScreen || !ViewModel.HasSkipPrompt || ViewModel.IsSkipPromptWithControls || !AcceptsShortcut()
+            || !ViewModel.SkipCommand.CanExecute(null))
         {
             return false;
         }
@@ -424,13 +426,14 @@ public sealed partial class PlayerPage
 
     // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
     // does as on the web player. Not while paused, where hidden controls would only leave a still picture, so Back closes;
-    // a skip pill and the marker editor take Back first (the switch below). A stream reloading for a subtitle just picked
+    // a skip pill and the marker editor take Back first (the switch below), but not the Skip Intro back with the controls
+    // after its time ran out, which claims no Back and goes with them. A stream reloading for a subtitle just picked
     // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on. The
     // cursor goes with the controls, as when they hide by themselves (SetControlsVisible).
     private bool HidesControls(VirtualKey key, bool isRepeat)
     {
         if (key is not (VirtualKey.GoBack or VirtualKey.Back) || isRepeat || !_controlsShownBeforeKey || IsCompact
-            || ViewModel.IsPaused || ViewModel.HasSkipPrompt || ViewModel.MarkerEditor.IsEditing)
+            || ViewModel.IsPaused || (ViewModel.HasSkipPrompt && !ViewModel.IsSkipPromptWithControls) || ViewModel.MarkerEditor.IsEditing)
         {
             return false;
         }

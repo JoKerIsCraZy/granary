@@ -56,6 +56,200 @@ public sealed class MarkerPromptsTests
         Assert.Equal("Skip Intro", _prompts.Prompt?.Label);
     }
 
+    // The design's untimed ask offer (intro-skip-mode, "Controls overlay shows after the timer ran out, still inside"), as
+    // the web's useIntroSkipPrompt brings it back: "Skip Intro" with no timer.
+    private static readonly SkipPrompt OfferWithControls = new("Skip Intro", null, null) { WithControls = true };
+
+    private void TimedOut()
+    {
+        With();
+        At(61);
+        At(66, afterSeconds: 5);
+    }
+
+    [Fact]
+    public void AnAskPromptWhoseTimeRanOut_ComesBackWithoutATimerWhileTheControlsShow_AndGoesWithThem()
+    {
+        TimedOut();
+        Assert.Null(_prompts.Prompt);
+
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+        At(80, afterSeconds: 14);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+
+        _prompts.FollowControls(shown: false);
+        Assert.Null(_prompts.Prompt);
+        At(81);
+        Assert.Null(_prompts.Prompt);
+    }
+
+    [Fact]
+    public void ATimeRunningOutWhileTheControlsShow_LeavesTheOfferInPlace_WithoutItsTimer()
+    {
+        With();
+        _prompts.FollowControls(shown: true);
+        At(61);
+        Assert.Equal(new SkipPrompt("Skip Intro", null, 0), _prompts.Prompt);
+
+        At(66, afterSeconds: 5);
+
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+    }
+
+    [Fact]
+    public void TheOfferBackWithTheControls_SkipsToTheIntrosEnd_AndResolvesIt()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+
+        Assert.Equal(120, _prompts.Select(70));
+        Assert.Null(_prompts.Prompt);
+
+        At(120);
+        At(65);
+        Assert.Null(_prompts.Prompt);
+        At(72, afterSeconds: 7);
+        Assert.Null(_prompts.Prompt);
+    }
+
+    [Fact]
+    public void TheOfferBackWithTheControls_IsNotTurnedAwayByEsc()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+
+        Assert.False(_prompts.Dismiss());
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+    }
+
+    [Fact]
+    public void SeekingOutOfTheIntro_TakesTheOfferAway_AndSeekingBackInOffersItWithAFullTimer()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+
+        At(130);
+        Assert.Null(_prompts.Prompt);
+        _prompts.FollowControls(shown: false);
+        _prompts.FollowControls(shown: true);
+        Assert.Null(_prompts.Prompt);
+
+        At(65);
+        Assert.Equal(new SkipPrompt("Skip Intro", null, 0), _prompts.Prompt);
+    }
+
+    [Fact]
+    public void TheOffer_PressedAfterASeekOutOfTheIntro_SeeksNowhere_AndTheIntroIsOfferedWithItsTimerWhenPlaybackIsBackIn()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+
+        Assert.Null(_prompts.Select(50));
+        Assert.Null(_prompts.Prompt);
+        At(50);
+        Assert.Null(_prompts.Prompt);
+        At(65);
+        Assert.Equal(new SkipPrompt("Skip Intro", null, 0), _prompts.Prompt);
+    }
+
+    [Fact]
+    public void AReadThatMovesTheIntroAwayFromThePosition_TakesTheOfferAway()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+
+        _prompts.Reset([Recap, Intro with { StartSeconds = 80, EndSeconds = 130 }, Credits], MarkerSettings.Default, 66);
+
+        Assert.Null(_prompts.Prompt);
+        Assert.Null(_prompts.Select(66));
+    }
+
+    [Fact]
+    public void AnotherRead_KeepsTheOffer_WithItsNewLine()
+    {
+        var settings = MarkerSettings.Default with { ShowMarkerSource = true };
+        _prompts.Reset([Recap, Intro, Credits], settings, 0);
+        At(61);
+        At(66, afterSeconds: 5);
+        _prompts.FollowControls(shown: true);
+
+        _prompts.Reset([Recap, Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits], settings, 66);
+
+        Assert.Equal(OfferWithControls with { Provenance = "Edited" }, _prompts.Prompt);
+        Assert.Equal(120, _prompts.Select(66));
+    }
+
+    [Fact]
+    public void TheOffer_PressedAfterTheControlsHid_SkipsNothing_AndComesBackWithThem()
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+        _prompts.FollowControls(shown: false);
+
+        Assert.Null(_prompts.Select(70));
+
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(OfferWithControls, _prompts.Prompt);
+    }
+
+    [Fact]
+    public void TheControls_LeaveTheTimedPillAndItsTimeAsTheyAre()
+    {
+        With();
+        At(61);
+        At(63, afterSeconds: 2);
+
+        _prompts.FollowControls(shown: true);
+        Assert.Equal(new SkipPrompt("Skip Intro", null, 0.4), _prompts.Prompt);
+        _prompts.FollowControls(shown: false);
+        Assert.Equal(new SkipPrompt("Skip Intro", null, 0.4), _prompts.Prompt);
+    }
+
+    [Fact]
+    public void EscWhileTheControlsShow_StillTurnsTheTimedPillAway_ForGood()
+    {
+        With();
+        _prompts.FollowControls(shown: true);
+        At(61);
+
+        Assert.True(_prompts.Dismiss());
+        At(66, afterSeconds: 5);
+
+        Assert.Null(_prompts.Prompt);
+    }
+
+    [Theory]
+    [InlineData(MarkerSettings.Never)]
+    [InlineData(MarkerSettings.Always)]
+    public void TheOffer_GoesWhenTheModeIsNoLongerAsk(string mode)
+    {
+        TimedOut();
+        _prompts.FollowControls(shown: true);
+
+        _prompts.Reset([Recap, Intro, Credits], MarkerSettings.Default with { IntroSkipMode = mode }, 66);
+
+        Assert.Null(_prompts.Prompt);
+        Assert.Null(_prompts.Select(66));
+    }
+
+    // A guard: the undo pill's time running out settles the intro, so nothing comes back.
+    [Fact]
+    public void Always_TheUndoPill_DoesNotComeBackWithTheControls()
+    {
+        With(MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Always });
+        At(60);
+        At(126, afterSeconds: 6);
+
+        _prompts.FollowControls(shown: true);
+        Assert.Null(_prompts.Prompt);
+        At(61);
+        Assert.Null(_prompts.Prompt);
+    }
+
     [Fact]
     public void APause_StopsThePromptsClock_ThoughThePlayerSaysNothingWhilePaused()
     {
