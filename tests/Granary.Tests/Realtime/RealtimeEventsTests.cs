@@ -4,6 +4,7 @@ using Granary.Core.Api.Notifications;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -24,9 +25,13 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
     private readonly NotificationBadge _badge;
     private readonly PlaybackStops _stops = new();
     private readonly RealtimeEvents _events;
+    private readonly ServerRecovery _recovery;
+    private int _recoveries;
 
     public RealtimeEventsTests()
     {
+        _recovery = new ServerRecovery(_harness.Logs.For<ServerRecovery>());
+        _recovery.Recovered += (_, _) => Interlocked.Increment(ref _recoveries);
         _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
         _harness.Answer("api/v2/notifications/capabilities", """{ "in_app": { "enabled": true } }""");
         _harness.Answer("api/v2/notifications/unread-count", """{ "count": 3 }""");
@@ -34,8 +39,10 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
         _badge = new NotificationBadge(_harness.Session, notifications, _harness.Clock, _harness.Logs.For<NotificationBadge>());
         var activity = new ServerActivity(new Granary.Core.Api.Admin.AdminApi(_harness.Silo.Http), _harness.Clock, _harness.Logs.For<ServerActivity>());
         _events = new RealtimeEvents(_harness.Session, Lane, _harness.ViewerState, _stops, _badge, activity, new ImmediateDispatcher(),
-            _harness.Clock, _harness.Logs.For<RealtimeEvents>());
+            _harness.Clock, _harness.Logs.For<RealtimeEvents>(), recovery: _recovery);
     }
+
+    private int Recoveries => Volatile.Read(ref _recoveries);
 
     private long Version => _harness.ViewerState.Version;
 
@@ -417,5 +424,91 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
 
         Assert.False(socket.Disposed);
         Assert.Equal(1, SocketCount);
+    }
+
+    // The server could not be reached when the connection was tried, as at a start without it: once a connection subscribes,
+    // the server answers again, and what waited for it goes (OfflineProgressRecoveryTests).
+    [Fact]
+    public async Task TheConnectionBackAfterTheServerCouldNotBeReached_SaysTheServerAnswersAgain()
+    {
+        _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(),
+            ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
+        _events.Start();
+        foreach (var wait in new[] { TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2) })
+        {
+            await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == wait, TestContext.Current.CancellationToken);
+            _harness.Clock.Advance(wait);
+        }
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the connection");
+        Assert.Equal(0, Recoveries);
+
+        Socket(0).Push(EventsLaneTests.Hello);
+        Socket(0).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 1, "the subscription");
+
+        Assert.Equal(1, Recoveries);
+    }
+
+    [Fact]
+    public async Task ASessionsFirstConnection_IsNoRecovery()
+    {
+        await StartedAsync();
+
+        Assert.Equal(0, Recoveries);
+    }
+
+    // The account became an administrator's while the server was away: the same profile's connection is replaced by one that
+    // asks for more channels, and its subscription is still the server answering again.
+    [Fact]
+    public async Task TheSameProfilesConnectionReplacedWhileTheServerWasAway_StillSaysItAnswersAgain()
+    {
+        _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
+        _events.Start();
+        await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        _harness.Session.Account = ServerActivityHarness.Administrator;
+        _harness.Session.RaiseChanged();
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the new connection");
+        Socket(0).Push(EventsLaneTests.Hello);
+        Socket(0).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 1, "its subscription");
+
+        Assert.Equal(1, Recoveries);
+    }
+
+    // Another profile gets a connection of its own, and the session's change already sends what waits: its first
+    // subscription is no recovery, whatever the last profile's connection went through.
+    [Fact]
+    public async Task AnotherProfilesFirstConnection_IsNoRecovery()
+    {
+        _harness.Silo.On(HttpMethod.Post, EventsLaneTests.TicketPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
+        _events.Start();
+        await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        await ServerPlaybackFixture.Until(() => SocketCount == 1, "the other profile's connection");
+        Socket(0).Push(EventsLaneTests.Hello);
+        Socket(0).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 1, "its subscription");
+
+        Assert.Equal(0, Recoveries);
+    }
+
+    // The server ends every connection after five minutes, and the next one opens at once: the server was there all along.
+    [Fact]
+    public async Task AConnectionThatComesBackAtOnce_IsNoRecovery()
+    {
+        var socket = await StartedAsync();
+
+        socket.Close();
+        await _harness.Clock.WaitUntilAsync(() => _harness.Clock.NextDue == TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        _harness.Clock.Advance(TimeSpan.FromSeconds(1));
+        await ServerPlaybackFixture.Until(() => SocketCount == 2, "the next connection");
+        Socket(1).Push(EventsLaneTests.Hello);
+        Socket(1).Push(EventsLaneTests.Subscribed);
+        await ServerPlaybackFixture.Until(() => _events.Handled == 2, "its subscription");
+
+        Assert.Equal(0, Recoveries);
     }
 }

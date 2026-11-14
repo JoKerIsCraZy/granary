@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using Granary.Core.Downloads;
 using Granary.Core.Overlays;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -52,6 +53,7 @@ public sealed partial class MediaCardView : UserControl
     private static readonly Dictionary<string, object> SharedResources = new(StringComparer.Ordinal);
 
     private readonly MediaCardActions _actions = App.Services.GetRequiredService<MediaCardActions>();
+    private readonly CardDownloads _downloads = App.Services.GetRequiredService<CardDownloads>();
     private readonly CardOverlaySettings _overlays = App.Services.GetRequiredService<CardOverlaySettings>();
 
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
@@ -99,6 +101,8 @@ public sealed partial class MediaCardView : UserControl
     // The entries the card's list adds to its menu, and the menu items made for them.
     private IReadOnlyList<CardMenuEntry> _entries = [];
     private readonly List<MenuFlyoutItemBase> _entryItems = [];
+    // The menu items made for the card's Download entries (CardDownloads).
+    private readonly List<MenuFlyoutItemBase> _downloadItems = [];
     private bool _hasOwnEntries;
     // The grid or page whose list adds entries to the card's menu, found once: a card stays where it is while it is reused.
     private ICardMenuHost? _menuHost;
@@ -510,6 +514,8 @@ public sealed partial class MediaCardView : UserControl
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
+        // Download comes only to a film's, an episode's or a season's card, which has Mark Watched: the ⋮ and its lines stand
+        // without it, so its entries are asked for only as the menu opens (ShowDownloadEntries), not with every card shown.
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
         // Only a grid or page with entries of its own asks for them; every other card skips this.
@@ -545,9 +551,12 @@ public sealed partial class MediaCardView : UserControl
         return null;
     }
 
-    // The list's entries at the menu's foot, after a line when the card's own are there too.
+    // The card's Download entries where the title page's ⋯ has Download among the web's items: after the watchlist (and Add
+    // to Collection, which the card's menu does not have) and before Not Interested. The list's entries at the menu's foot,
+    // after a line when the card's own are there too.
     private void ShowEntries()
     {
+        ShowDownloadEntries();
         foreach (var item in _entryItems)
         {
             MoreMenu.Items.Remove(item);
@@ -570,6 +579,35 @@ public sealed partial class MediaCardView : UserControl
         foreach (var item in _entryItems)
         {
             MoreMenu.Items.Add(item);
+        }
+    }
+
+    // Download, or the download's status and Delete download, as the menu opens: from what this PC knows, so the menu asks the
+    // server nothing. The commands are the app's (CardDownloads lives as long as it), so an item runs its entry's command
+    // when clicked rather than holding it: a Command would tie every item a menu ever made to the command's CanExecuteChanged.
+    private void ShowDownloadEntries()
+    {
+        foreach (var item in _downloadItems)
+        {
+            MoreMenu.Items.Remove(item);
+        }
+        _downloadItems.Clear();
+        IReadOnlyList<CardMenuEntry> entries = Card is { } card ? _downloads.EntriesFor(card) : [];
+        int at = MoreMenu.Items.IndexOf(MenuNotInterested);
+        foreach (var entry in entries)
+        {
+            var item = new MenuFlyoutItem { Text = entry.Label, Tag = entry };
+            item.Click += OnDownloadEntryClick;
+            _downloadItems.Add(item);
+            MoreMenu.Items.Insert(at++, item);
+        }
+    }
+
+    private void OnDownloadEntryClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem { Tag: CardMenuEntry entry } && Card is { } card && entry.Command.CanExecute(card))
+        {
+            entry.Command.Execute(card);
         }
     }
 

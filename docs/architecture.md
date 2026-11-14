@@ -1457,9 +1457,19 @@ client guide.
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
   `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
   `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
-  (`ItemDetailDownloadsTests`). A season's episode cards get their entries from the page: a `MediaCardView` asks the
-  nearest `ICardMenuHost` above it (a `MediaGrid`, or `ItemDetailPage`, whose list is its view model) as its menu opens,
-  except in a `MediaRow`.
+  (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
+  version rows with their sizes, the runtime, a season's episodes with a file that are not on this PC).
+- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's and season's card its entries, which
+  `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
+  Interested: from `DownloadActions.StateOf` and `CanDownload` alone, so a menu never waits for the server. The menu items run the entries' commands on Click rather
+  than binding them, since a command of the app's would hold every item a menu ever made. A card carries no files, so its
+  Download opens the dialog at once (`DownloadActions.OfferReadAsync`, `DownloadOptionsViewModel.ForReading`) and
+  `DownloadOfferReader` reads the title as its page reads it (`GET /api/v2/catalog/items/{id}`; a season with
+  `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
+  can be tried again; one the dialog closed on is cancelled and shows nothing; one that answers after another server,
+  account or profile became the active one counts as failed (`ProfileChangedException`), so Try Again reads for the
+  active one. Download from a card never throws at the menu: what fails is logged by its kind. No page adds download
+  entries to its cards: `ICardMenuHost` is left to the collections' grid.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
   reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow
@@ -1772,9 +1782,20 @@ device.
   server only caps a time more than 2 minutes ahead of its own. A position sent a second time after such a cap can get a
   later time than the first send did. Granary does not correct for a wrong clock.
 - **When.** After each record (`FlushSoon`, 2 s on, so one moment's changes go together), at the stop, at the app's
-  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, and at the
-  retry. So while the server can be reached, a position arrives within seconds, as a session's sample would; without it,
-  it waits.
+  start, when the session changes (a sign-in, a profile that becomes active), when the connection changes, at the
+  retry, and as soon as Granary hears from the server again while positions wait. So while the server can be reached, a
+  position arrives within seconds, as a session's sample would; without it, it waits.
+- **The server back.** A server that comes back on the same network is none of the session's or the link's changes, so
+  `ServerRecovery` says when Granary hears from it again: the Downloads page's Retry finding it (`OfflineStart`), the
+  events connection subscribing after a connection of its lane that could not (`RealtimeEvents`; also when the lane was
+  replaced meanwhile for the same profile with other channels; the server's end of a connection every five minutes, with
+  the next one at once, is no recovery, nor is another profile's first connection), and the downloads capability read
+  after a read of the same profile's that failed (`DownloadsFeature`). Each says so once per recovery; a listener that
+  fails is logged by its kind and reaches neither the one that told it nor the other listeners. While the active profile has
+  positions waiting or on their way, `OfflineProgressSync` then flushes through the same 2 s settle and reads back, so a
+  recovery that several of them tell is one run, and one that comes while a send is on its way runs after it and sends
+  again what that send could not; with nothing waiting it starts none. The retry stays the fallback: a send after a
+  recovery that fails again waits for it as before.
 - **Telling the pages.** Home's Continue Watching and Next Up and a title's page load again when a playback stops
   (`ViewerStateChanges`, raised by `PlaybackStops`). A stream's stop has told the server by then. A download's stop
   therefore waits for its last position to be sent (`LocalPlayback.StopAsync` flushes, for at most `StopSendBudget`, 3 s),

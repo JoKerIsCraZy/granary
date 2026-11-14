@@ -1,6 +1,8 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
@@ -24,13 +26,24 @@ public sealed record DownloadQualityRow(string Preset, string Label);
 /// (downloads-api.md, 10.3), and the free space line keeps a download that cannot fit from starting. The free space is read
 /// off the UI thread once per dialog (<see cref="SpaceRead"/>) and shown on it; a read that fails or takes longer than
 /// <see cref="SpaceReadTimeout"/> leaves it unknown, which stops nothing. Made per offer: <see cref="ForTitle"/> or
-/// <see cref="ForSeason"/>, then the dialog, whose Download calls <see cref="StartAsync"/>.
+/// <see cref="ForSeason"/> from a title page, which knows the files, or <see cref="ForReading"/> from a card, whose dialog
+/// opens at once and reads them while it shows (<see cref="Reading"/>), as the web's card menu reads an item for its dialogs
+/// (<c>MediaItemMenu.tsx</c>, <c>MetadataActionDialogHost</c>); then the dialog, whose Download calls <see cref="StartAsync"/>.
 /// </summary>
 public sealed partial class DownloadOptionsViewModel : ObservableObject
 {
     public const string Description = "Choose a file to download. Make sure you have enough disk space.";
     public const string Footer = "Larger files require more storage space.";
     public const string StartFailed = "Download could not be started. Check access and try again.";
+
+    /// <summary>The web's words while a card's dialog reads its item (<c>web.item.menu.loadingDetails</c>).</summary>
+    public const string LoadingDetails = "Loading the latest item details…";
+
+    /// <summary>The web's words when that read failed (<c>web.item.menu.detailsFailed</c>).</summary>
+    public const string DetailsFailed = "The item details could not be loaded.";
+
+    // The dialog's title before it knows what it offers (web: web.downloads.versionPicker.title).
+    private const string PlainTitle = "Download";
 
     /// <summary>
     /// The longest the free space is waited for (<see cref="DiskSpaceReads.Timeout"/>): a share that does not answer would
@@ -60,6 +73,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private long? _free;
     private int _reads;
 
+    // A card's read of what to offer, and the one under way (Try Again starts another, the dialog's close stops it).
+    private Func<CancellationToken, Task<DownloadOffer>>? _read;
+    private CancellationTokenSource? _reading;
+    private int _offerReads;
+
     public DownloadOptionsViewModel(DownloadManager downloads, DownloadsFeature feature, IDownloadPreferences preferences, IDiskSpace disk,
         IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadOptionsViewModel> logger)
     {
@@ -72,22 +90,54 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         _logger = logger;
     }
 
-    /// <summary>"Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1".</summary>
-    public string Title { get; private set; } = "Download";
+    /// <summary>
+    /// "Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1"; "Download" while
+    /// a card's dialog does not know its title yet.
+    /// </summary>
+    [ObservableProperty]
+    public partial string Title { get; private set; } = PlainTitle;
 
     /// <summary>The title's files, the highest resolution first; none for a season.</summary>
-    public IReadOnlyList<DownloadVersionRow> Versions { get; private set; } = [];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsVersions), nameof(ShowsFooter))]
+    public partial IReadOnlyList<DownloadVersionRow> Versions { get; private set; } = [];
+
+    /// <summary>
+    /// There is something to download: a title with a file, or a season's episodes. A card's dialog has it once it read its
+    /// title, and only when there is.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsVersions), nameof(ShowsFooter), nameof(ShowsQualities), nameof(CanStart))]
+    public partial bool HasOffer { get; private set; }
 
     /// <summary>Only a title with more than one file has version rows, as on the web.</summary>
-    public bool ShowsVersions => Versions.Count > 1;
+    public bool ShowsVersions => HasOffer && Versions.Count > 1;
 
     /// <summary>The web's footer goes with its version rows.</summary>
     public bool ShowsFooter => ShowsVersions;
 
     public IReadOnlyList<DownloadQualityRow> Qualities { get; private set; } = [];
 
-    /// <summary>A choice of quality shows only when the server offers more than Original.</summary>
-    public bool ShowsQualities => Qualities.Count > 1;
+    /// <summary>A choice of quality shows only when the server offers more than Original, and there is something to download.</summary>
+    public bool ShowsQualities => HasOffer && Qualities.Count > 1;
+
+    /// <summary>
+    /// What the dialog says under its title: the web's <see cref="Description"/>; while a card's dialog reads its title
+    /// <see cref="LoadingDetails"/>, and <see cref="DetailsFailed"/> when it could not; why nothing can be downloaded when nothing can.
+    /// </summary>
+    [ObservableProperty]
+    public partial string DescriptionText { get; private set; } = Description;
+
+    /// <summary>A card's dialog reads its title's files: the web's "Loading…" shows.</summary>
+    [ObservableProperty]
+    public partial bool IsReading { get; private set; }
+
+    /// <summary>That read failed: the web's "Please try again." and Try Again show.</summary>
+    [ObservableProperty]
+    public partial bool ReadFailed { get; private set; }
+
+    /// <summary>The read a card's dialog started last (Try Again starts another); done once the dialog shows what it read.</summary>
+    public Task Reading { get; private set; } = Task.CompletedTask;
 
     [ObservableProperty]
     public partial DownloadVersionRow? SelectedVersion { get; set; }
@@ -112,8 +162,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanStart))]
     public partial bool IsStarting { get; private set; }
 
-    /// <summary>Download can be pressed: nothing is starting and the selection fits, as far as the free space is known yet.</summary>
-    public bool CanStart => !IsStarting && !IsShortOfSpace;
+    /// <summary>
+    /// Download can be pressed: there is something to download, nothing is starting and the selection fits, as far as the free
+    /// space is known yet.
+    /// </summary>
+    public bool CanStart => HasOffer && !IsStarting && !IsShortOfSpace;
 
     /// <summary>Why the last press of Download did not start it; empty when it did, or before.</summary>
     [ObservableProperty]
@@ -133,30 +186,50 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(versions);
-        _title = request;
-        _season = null;
-        _seasonBytes = 0;
-        _runtimeSeconds = Math.Max(0, runtimeSeconds);
-        Title = "Download: " + TitleOf(request);
-        Versions = versions;
-        Open(versions.FirstOrDefault(v => v.FileId == request.MediaFileId) ?? versions.FirstOrDefault());
+        Open(Take(new TitleDownloadOffer(request, versions, runtimeSeconds)));
     }
 
     /// <summary>A season's episodes, one download each; <paramref name="knownBytes"/> is what their files take on the server.</summary>
     public void ForSeason(SeasonDownloadRequest request, string seasonTitle, long knownBytes)
     {
         ArgumentNullException.ThrowIfNull(request);
-        _title = null;
-        _season = request;
-        _seasonBytes = Math.Max(0, knownBytes);
-        _runtimeSeconds = 0;
-        string season = string.IsNullOrWhiteSpace(seasonTitle)
-            ? "Season " + request.SeasonNumber.ToString(CultureInfo.InvariantCulture)
-            : seasonTitle.Trim();
-        Title = $"Download: {request.SeriesTitle} · {season}";
-        Versions = [];
-        Open(null);
+        Open(Take(new SeasonDownloadOffer(request, seasonTitle, knownBytes)));
     }
+
+    /// <summary>
+    /// A card's film, episode or season, whose files the card does not carry: the dialog opens with "Download" and the web's
+    /// loading words while <paramref name="read"/> reads what to offer, then shows it as <see cref="ForTitle"/> or
+    /// <see cref="ForSeason"/> would, or why there is nothing to download, or that the read failed, with Try Again.
+    /// </summary>
+    public void ForReading(Func<CancellationToken, Task<DownloadOffer>> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        _read = read;
+        _title = null;
+        _season = null;
+        _seasonBytes = 0;
+        _runtimeSeconds = 0;
+        Title = PlainTitle;
+        Versions = [];
+        HasOffer = false;
+        Open(null);
+        Reading = ReadOfferAsync();
+    }
+
+    /// <summary>The dialog closed: a read under way stops, and nothing of it shows.</summary>
+    public void StopReading()
+    {
+        if (_reading is { } reading)
+        {
+            _reading = null;
+            reading.Cancel();
+            reading.Dispose();
+        }
+    }
+
+    /// <summary>The web's Try Again after a read that failed: the title is read again.</summary>
+    [RelayCommand]
+    private Task TryAgainAsync() => Reading = ReadOfferAsync();
 
     /// <summary>
     /// Starts what the dialog shows in the selected version and quality, once the free space is known: true when it started
@@ -213,6 +286,105 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     partial void OnSelectedQualityChanged(DownloadQualityRow? value)
     {
         ErrorText = "";
+        ShowSize();
+    }
+
+    // What the offer downloads, its title and files; answers the version to choose first, none for a season.
+    private DownloadVersionRow? Take(DownloadOffer offer)
+    {
+        _title = (offer as TitleDownloadOffer)?.Request;
+        _season = (offer as SeasonDownloadOffer)?.Request;
+        _seasonBytes = offer is SeasonDownloadOffer { KnownBytes: var bytes } ? Math.Max(0, bytes) : 0;
+        _runtimeSeconds = offer is TitleDownloadOffer { RuntimeSeconds: var seconds } ? Math.Max(0, seconds) : 0;
+        switch (offer)
+        {
+            case TitleDownloadOffer title:
+                Title = "Download: " + TitleOf(title.Request);
+                Versions = title.Versions;
+                HasOffer = true;
+                return title.Versions.FirstOrDefault(v => v.FileId == title.Request.MediaFileId) ?? title.Versions.FirstOrDefault();
+            case SeasonDownloadOffer season:
+                string name = string.IsNullOrWhiteSpace(season.SeasonTitle)
+                    ? "Season " + season.Request.SeasonNumber.ToString(CultureInfo.InvariantCulture)
+                    : season.SeasonTitle.Trim();
+                Title = $"Download: {season.Request.SeriesTitle} · {name}";
+                Versions = [];
+                HasOffer = true;
+                return null;
+            default:
+                Versions = [];
+                HasOffer = false;
+                return null;
+        }
+    }
+
+    // One read at a time, off the UI thread and shown on it; one the dialog closed on, or that Try Again replaced, shows nothing.
+    // Its token's source is the UI thread's: whoever stops a read, or the read that ends, lets go of it.
+    private async Task ReadOfferAsync()
+    {
+        if (_read is not { } read)
+        {
+            return;
+        }
+        StopReading();
+        var reading = new CancellationTokenSource();
+        _reading = reading;
+        int attempt = ++_offerReads;
+        IsReading = true;
+        ReadFailed = false;
+        DescriptionText = LoadingDetails;
+        DownloadOffer? offer = null;
+        try
+        {
+            offer = await read(reading.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (reading.IsCancellationRequested)
+        {
+            // The dialog closed, or Try Again read again.
+        }
+        catch (Exception ex)
+        {
+            // The dialog says the read failed and offers Try Again, which reads for the profile active then; nothing is thrown
+            // into it. Only the failure's kind is logged.
+            if (LibraryErrors.IsExpected(ex) || ex is ProfileChangedException)
+            {
+                _logger.LogWarning("The title's files could not be read for the download dialog ({Failure})", DownloadLog.Failure(ex));
+            }
+            else
+            {
+                _logger.LogError("Reading the title's files for the download dialog failed unexpectedly ({Failure})", DownloadLog.Failure(ex));
+            }
+        }
+        await _dispatcher.ResumeOnUi();
+        if (attempt != _offerReads || reading.IsCancellationRequested)
+        {
+            return;
+        }
+        _reading = null;
+        reading.Dispose();
+        IsReading = false;
+        if (offer is null)
+        {
+            ReadFailed = true;
+            DescriptionText = DetailsFailed;
+            return;
+        }
+        Show(offer);
+    }
+
+    // What was read: what it offers, with its first version chosen and its size, or why there is nothing to download. The
+    // qualities and the free space stay as the dialog opened with them.
+    private void Show(DownloadOffer offer)
+    {
+        if (offer is NoDownloadOffer nothing)
+        {
+            Take(offer);
+            DescriptionText = nothing.Reason;
+            return;
+        }
+        var version = Take(offer);
+        DescriptionText = Description;
+        SelectedVersion = version;
         ShowSize();
     }
 

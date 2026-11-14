@@ -3,10 +3,7 @@ using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
-using Granary.Core.Api.Catalog;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -19,9 +16,8 @@ using static Granary.Tests.Downloads.DownloadHarness;
 namespace Granary.Tests.Downloads;
 
 /// <summary>
-/// The title page's Download items in its ⋯ menu and its episode cards' entries: Download opens the dialog, a download on
-/// this PC shows its status and opens the Downloads page, a downloaded one can be deleted after asking, and a season page
-/// offers "Download season".
+/// The title page's Download items in its ⋯ menu: Download opens the dialog, a download on this PC shows its status and opens
+/// the Downloads page, a downloaded one can be deleted after asking, and a season page offers "Download season".
 /// </summary>
 public sealed class ItemDetailDownloadsTests : IAsyncDisposable
 {
@@ -245,47 +241,15 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Assert.Equal((true, "Download season"), (page.ShowsDownload, page.DownloadLabel));
     }
 
+    // A season's episode cards carry their Download as every film's and episode's card does (CardDownloadsTests): the page
+    // adds no entries of its own, so the menu never has them twice.
     [Fact]
-    public async Task TheSeasonsEpisodeCards_GetDownloadEntries()
+    public async Task ASeasonPage_AddsNoEntriesToItsEpisodeCards()
     {
         var page = await FollowedAsync(SeasonId);
         await Until(() => page.ShowsDownload, "Download season showed");
-        var first = page.Episodes[0].Card;
-        var fifth = page.Episodes[1].Card;
 
-        Assert.Equal(["Download"], page.EntriesFor(first).Select(e => e.Label));
-        Assert.Empty(page.EntriesFor(new MediaCard(MovieId, CatalogItemTypes.Movie, "Example Movie")));
-
-        await _h.AddAsync("dl_5", DownloadState.Completed, mediaItemId: EpisodeId,
-            change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series", SeasonNumber = 1, EpisodeNumber = 5 });
-        var entries = page.EntriesFor(fifth);
-
-        Assert.Equal(["Downloaded", "Delete download"], entries.Select(e => e.Label));
-        entries[0].Command.Execute(fifth);
-        Assert.Equal([AppRoute.Downloads], _detail.Navigation.Sections);
-        await RunAsync(entries[1].Command, fifth);
-        Assert.Null(_h.Find("dl_5"));
-        Assert.Single(_confirmation.Asked);
-    }
-
-    [Fact]
-    public async Task AnEpisodeCardsDownload_OffersItsFiles_TheFirstOneChosen()
-    {
-        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")));
-        _dialog.WhileShown = options => options.StartAsync();
-        var page = await FollowedAsync(SeasonId);
-        await Until(() => page.ShowsDownload, "Download season showed");
-        var first = page.Episodes[0].Card;
-
-        await RunAsync(Assert.Single(page.EntriesFor(first)).Command, first);
-
-        var shown = Assert.Single(_dialog.Shown);
-        Assert.Equal("Download: Example Series · S1 · E1", shown.Title);
-        Assert.Equal([("4571", "1080p · H264"), ("4570", "720p · H264")], shown.Versions.Select(v => (v.FileId, v.Summary)));
-        Assert.Equal("4570", shown.SelectedVersion?.FileId);
-        var body = Assert.Single(CreateBodies());
-        Assert.Equal(("sr_1", "ep_1", "4570"), (body.GetProperty("content_id").GetString(), body.GetProperty("episode_id").GetString(),
-            body.GetProperty("media_file_id").GetString()));
+        Assert.IsNotAssignableFrom<ICardMenuSource>(page);
     }
 
     [Fact]
@@ -434,17 +398,6 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     private static bool Progressed(IEnumerable<EventArgs> changes, string downloadId) =>
         changes.Any(e => e is DownloadProgressedEventArgs progressed && progressed.DownloadId == downloadId);
 
-    // A card entry's command as the card's menu runs it, awaited when it runs asynchronously (Download, Delete).
-    private static Task RunAsync(ICommand command, object? parameter)
-    {
-        if (command is IAsyncRelayCommand asyncCommand)
-        {
-            return asyncCommand.ExecuteAsync(parameter);
-        }
-        command.Execute(parameter);
-        return Task.CompletedTask;
-    }
-
     // A UI thread the test runs by hand: posted work waits until RunAll, and every post is counted.
     private sealed class QueuedDispatcher : IUiDispatcher
     {
@@ -468,59 +421,5 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
                 action();
             }
         }
-    }
-
-    /// <summary>A film, a season of "Example Series" with two episodes, and its fifth episode, as the catalog answers them.</summary>
-    private static class TitlePayloads
-    {
-        public const string Movie = """
-            {
-              "content_id": "mv_1", "type": "movie", "title": "Example Movie", "status": "matched", "genres": [], "keywords": [],
-              "year": 2026, "runtime": 120,
-              "user_state": { "played": false, "is_favorite": false, "in_watchlist": false, "not_interested": false },
-              "versions": [
-                { "file_id": "4567", "resolution": "1080p", "codec_video": "h264", "codec_audio": "eac3", "container": "mkv", "hdr": false,
-                  "file_size": 8589934592, "duration": 7200, "bitrate": 9000 }
-              ],
-              "videos": [], "subtitles": []
-            }
-            """;
-
-        public const string Season = """
-            {
-              "content_id": "se_1", "type": "season", "title": "Season 1", "status": "matched", "genres": [], "keywords": [],
-              "series_id": "sr_1", "series_title": "Example Series", "season_number": 1, "episode_count": 2,
-              "versions": [], "subtitles": []
-            }
-            """;
-
-        public const string SeasonEpisodes = """
-            {
-              "items": [
-                { "content_id": "ep_1", "season_number": 1, "episode_number": 1, "title": "Chapter One", "runtime": 50,
-                  "files": [
-                    { "file_id": "4570", "resolution": "720p", "codec_video": "h264", "hdr": false, "file_size": 1073741824 },
-                    { "file_id": "4571", "resolution": "1080p", "codec_video": "h264", "hdr": false, "file_size": 2147483648 },
-                    { "file_id": "4572", "resolution": "1080p", "hdr": false, "file_size": 4294967296, "unreadable": true }
-                  ] },
-                { "content_id": "ep_5", "season_number": 1, "episode_number": 5, "title": "Chapter Five", "runtime": 50,
-                  "files": [{ "file_id": "4575", "resolution": "1080p", "codec_video": "h264", "hdr": false, "file_size": 2147483648 }] },
-                { "content_id": "ep_6", "season_number": 1, "episode_number": 6, "title": "Chapter Six", "runtime": 50, "files": [] }
-              ]
-            }
-            """;
-
-        public const string Episode = """
-            {
-              "content_id": "ep_5", "type": "episode", "title": "Chapter Five", "status": "matched", "genres": [], "keywords": [],
-              "series_id": "sr_1", "series_title": "Example Series", "season_number": 1, "episode_number": 5, "runtime": 50,
-              "user_state": { "played": false, "is_favorite": false, "in_watchlist": false, "not_interested": false },
-              "versions": [
-                { "file_id": "4575", "resolution": "1080p", "codec_video": "h264", "codec_audio": "eac3", "container": "mkv", "hdr": false,
-                  "file_size": 2147483648, "duration": 3000, "bitrate": 5000 }
-              ],
-              "videos": [], "subtitles": []
-            }
-            """;
     }
 }

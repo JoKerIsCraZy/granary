@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +12,8 @@ namespace Granary.Core.Downloads;
 /// Whether the server lets this profile download (<c>GET /api/v2/capabilities/downloads</c>), as Silo's Apple app gates it:
 /// Download actions show only when it does. The sidebar's Downloads entry shows then, or while the profile has downloads on
 /// this PC, which stay playable and deletable whatever the server says, and show the entry before the server answered. Read
-/// once per profile; a failed read is tried again after <see cref="RetryAfter"/>.
+/// once per profile; a failed read is tried again after <see cref="RetryAfter"/>, and one that then answers says the server
+/// answers again (<see cref="ServerRecovery"/>).
 /// </summary>
 public sealed partial class DownloadsFeature : ObservableObject
 {
@@ -22,18 +24,21 @@ public sealed partial class DownloadsFeature : ObservableObject
     private readonly DownloadStore _store;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadsFeature> _logger;
+    private readonly ServerRecovery? _recovery;
     private DownloadScope? _readFor;
     // Which read is the latest: an earlier one answering or failing late changes nothing.
     private int _reads;
     private (DownloadScope Scope, DateTimeOffset At)? _failed;
 
-    public DownloadsFeature(ISessionManager session, DownloadsApi api, DownloadStore store, TimeProvider time, ILogger<DownloadsFeature> logger)
+    public DownloadsFeature(ISessionManager session, DownloadsApi api, DownloadStore store, TimeProvider time, ILogger<DownloadsFeature> logger,
+        ServerRecovery? recovery = null)
     {
         _session = session;
         _api = api;
         _store = store;
         _time = time;
         _logger = logger;
+        _recovery = recovery;
     }
 
     /// <summary>What the server offers the active profile; null until read, and when it could not be.</summary>
@@ -96,8 +101,14 @@ public sealed partial class DownloadsFeature : ObservableObject
             if (read == _reads && DownloadScope.Of(_session) == scope)
             {
                 Capability = capability;
+                // A read of this profile's failed last: the server answers again.
+                bool recovered = _failed?.Scope == scope;
                 _failed = null;
                 answered = true;
+                if (recovered)
+                {
+                    _recovery?.Report("the downloads capability");
+                }
             }
         }
         catch (Exception ex) when ((LibraryErrors.IsExpected(ex) || ex is ProfileChangedException) && !cancellationToken.IsCancellationRequested)

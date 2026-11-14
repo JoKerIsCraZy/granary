@@ -15,14 +15,17 @@ release's section is what its update says it changes (docs/release.md).
   server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
-  read them, and the next episode plays when it is downloaded too. What you watch offline
-  goes back to your Silo server once Granary reaches it again; signing out of a server or removing it sends what it
-  still can first, and its question says how much progress is lost. The Downloads page has Play on each download, says Missing file for
-  one whose file was deleted outside Granary, and Reclaim
+  read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
+  as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
+  removing it sends what it still can first, and its question says how much progress is lost. The Downloads page has
+  Play on each download, says Missing file for one whose file was deleted outside Granary, and Reclaim
   Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads → Keep
   watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
   with Retry.
+- **Download from any card:** the ⋯ menu of a film's, an episode's or a season's card has Download wherever the card
+  shows, on Home, in a library, in search, in a collection and on a title's page. A title on this PC shows how its
+  download stands there instead, which opens the Downloads page, with Delete download beside it.
 - **Game controller:** browse and watch with an Xbox or PlayStation controller (DualShock 4, DualSense), where Cross
   is A, Circle is B, Square is X and Triangle is Y. The D-pad or the left stick moves, A picks, B goes
   back, X plays the card you are on, Y searches, Menu (or holding A) opens a card's menu, View goes to the sidebar, the
