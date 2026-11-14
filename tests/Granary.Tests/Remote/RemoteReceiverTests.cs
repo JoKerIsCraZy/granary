@@ -254,6 +254,42 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AHelloOfAConnectionClosedToMakeRoom_TakesNoPhonesPlace()
+    {
+        var connected = new List<ConnectedPhone>();
+        Receiver.PhoneConnected += (_, phone) => connected.Add(phone);
+        var (phone, phoneServing) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+        // A second connection of the same phone, beside another one without a hello from its address.
+        var (late, _, lateServing) = await _harness.ServeAsync(peer: OnePeer);
+        Assert.Equal("hello", FakePhone.TypeOf(await late.ReadAsync() ?? ""));
+        var (other, _, _) = await _harness.ServeAsync(peer: OnePeer);
+        Assert.Equal("hello", FakePhone.TypeOf(await other.ReadAsync() ?? ""));
+        // While the late connection's hello is handled, a newcomer from that address makes room, and the late one goes.
+        var identity = _harness.Identity;
+        int calls = 0;
+        Receiver.Identity = () =>
+        {
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                _ = _harness.ServeAsync(pair: false, peer: OnePeer);
+            }
+            return identity;
+        };
+
+        await late.HelloAsync(RemoteHarness.ServerId, null);
+        await lateServing.WaitAsync(HangGuard, Token);
+        await _harness.SettleUiAsync();
+
+        // It neither replaced the phone's own connection nor was announced.
+        Assert.Single(connected);
+        Assert.Equal(1, Assert.Single(Receiver.Phones).Number);
+        Assert.False(phoneServing.IsCompleted);
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        Assert.Equal("pong", FakePhone.TypeOf(await phone.NextAsync("pong")));
+    }
+
+    [Fact]
     public async Task AFifthPhone_IsRefusedWithTooManyControllers_AtItsHello_WhenFourControl()
     {
         for (int i = 1; i <= 4; i++)

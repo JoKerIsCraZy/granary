@@ -133,6 +133,12 @@ public sealed partial class RemoteReceiver
         Session? evicted = null;
         lock (_gate)
         {
+            // Closed to make room while this hello waited its turn: it takes no phone's place, replaces none and is not
+            // announced.
+            if (session.Leaving || !controller.IsOpen)
+            {
+                return;
+            }
             var numbers = RemoteReceiverPolicy.ReplacedBy(hello.DeviceId, controller.Number, [.. PhonesLocked(session).Select(Facts)]);
             var phones = PhonesLocked(session).Where(other => !numbers.Contains(other.Controller.Number)).ToList();
             admission = RemoteReceiverPolicy.Admit([.. phones.Select(Facts)]);

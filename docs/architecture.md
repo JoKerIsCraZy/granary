@@ -1337,7 +1337,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   said theirs; a peer that has only named the key id never takes an authenticated phone's place. The phone's own older
   connections give theirs up first (closed as `replaced`). Below 4 it is let in; at 4 a phone makes room, oldest first:
   an unauthorized one, then a passive one. If all 4 are authorized phones that actively control, the newcomer gets
-  `error too_many_controllers` and `close too_many_controllers`.
+  `error too_many_controllers` and `close too_many_controllers`. A connection closed to make room while its `hello`
+  waited its turn takes no place, replaces none of the phone's other connections and is not announced.
 - **Authorization by server.** A phone's `hello` must say `role: "phone"`, list version 2 and name a server, or it gets
   `error version_unsupported` and `close unauthorized`. It is authorized when its server matches Granary's by id or by
   identity (`SiloCastServerId.ServersMatch`). A phone on another server stays connected but gets no status, and every
