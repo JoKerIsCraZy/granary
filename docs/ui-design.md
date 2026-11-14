@@ -1851,7 +1851,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   The source reads "Detected" for Silo's own detection, "Edited" for a person, and a provider by the name the web gives
   it (a plugin's by its capability, not its installation), else its own id; "Online" for an online source that names
   none. An unrated marker has no percentage, never 0 %; with nothing to say there is no line, and the pill keeps its
-  shape. A later read of the markers that names another source changes the line of a showing pill at once. The two
+  shape. A later read of the markers that names another source changes the line of a showing pill at once; one that
+  moves the part away from where playback is takes Skip Intro or the part's pill away until playback reaches it, so a
+  pick never skips what is no longer marked (Watch Intro stays, it only goes back). The two
   switches are read as a title starts, as the other skip settings, so a change applies from the next title.
   A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key

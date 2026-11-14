@@ -196,13 +196,18 @@ public sealed class MarkerPrompts
     private PlaybackMarker? _timedOut;
     private PlaybackMarker? _part;
 
+    // Where the last update saw playback: a pill that skips forward outlives another read only while its part holds it.
+    private double? _position;
+
     public SkipPrompt? Prompt { get; private set; }
 
     public IReadOnlyList<PlaybackMarker> Markers => _markers;
 
     /// <summary>
     /// Takes the parts of the file that plays now; what was resolved stays resolved, and a prompt whose part is still
-    /// there goes on as it was.
+    /// there goes on as it was. Skip Intro and a recap's, credits' or preview's pill go on only while their part, as
+    /// measured now, still holds the position: a pick seeks to its end and must not pass over what is no longer marked.
+    /// The next update offers it again where it is. The undo pill goes on regardless, as it only goes back.
     /// </summary>
     public void Reset(IReadOnlyList<PlaybackMarker> markers, MarkerSettings settings)
     {
@@ -210,12 +215,17 @@ public sealed class MarkerPrompts
         ArgumentNullException.ThrowIfNull(settings);
         _markers = markers;
         _settings = settings;
-        _intro = _intro is { } intro ? markers.FirstOrDefault(intro.IsSamePart) : null;
+        _intro = _intro is { } intro ? markers.FirstOrDefault(m => intro.IsSamePart(m) && (_undo || HoldsPosition(m))) : null;
         _timedOut = _timedOut is { } timedOut ? markers.FirstOrDefault(timedOut.IsSamePart) : null;
-        // A recap, credits or preview pill too, unless its part now skips itself: the next position settles that.
-        _part = _part is { } part && markers.FirstOrDefault(part.IsSamePart) is { } same && !SkipsItself(same) ? same : null;
+        // A part that now skips itself loses its pill too: the next update settles that.
+        _part = _part is { } part && markers.FirstOrDefault(m => part.IsSamePart(m) && HoldsPosition(m)) is { } same && !SkipsItself(same)
+            ? same
+            : null;
         ShowPrompt();
     }
+
+    // Without a position seen no pill can be showing; were one, dropping it is safe, as the next update offers it again.
+    private bool HoldsPosition(PlaybackMarker marker) => _position is { } position && marker.Contains(position);
 
     /// <summary>Playback cannot go on for now (a reconnect, a new plan): the prompt's clock stops until the next update.</summary>
     public void Suspend(TimeSpan now) => Tick(MarkerActivity.Paused, now);
@@ -224,6 +234,7 @@ public sealed class MarkerPrompts
     public double? Update(double position, MarkerActivity activity, TimeSpan now)
     {
         Tick(activity, now);
+        _position = position;
 
         var intro = _settings.IntroSkipMode is MarkerSettings.Ask or MarkerSettings.Always
             ? _markers.FirstOrDefault(m => m.Kind == WatchMarkerKinds.Intro && m.Contains(position))

@@ -379,6 +379,55 @@ public sealed class MarkerPromptsTests
     }
 
     [Fact]
+    public void AReadThatMovesAPartAwayFromThePosition_TakesItsPillAway_SoAPickNeverSkipsWhatIsNotMarked()
+    {
+        With();
+        At(30);
+        At(30, MarkerActivity.Paused);
+        Assert.Equal("Skip Recap", _prompts.Prompt?.Label);
+
+        _prompts.Reset([Recap with { StartSeconds = 35, EndSeconds = 50 }, Intro, Credits], MarkerSettings.Default);
+
+        // 30 to 35 is no longer marked: a pick would seek to 50 over it.
+        Assert.Null(_prompts.Prompt);
+        Assert.Null(_prompts.Select());
+        Assert.Null(At(30, MarkerActivity.Paused));
+        Assert.Null(_prompts.Prompt);
+    }
+
+    [Fact]
+    public void AReadThatMovesTheIntroAwayFromThePosition_TakesSkipIntroAway_UntilPlaybackReachesIt()
+    {
+        With();
+        At(70);
+        At(70, MarkerActivity.Paused);
+        Assert.Equal("Skip Intro", _prompts.Prompt?.Label);
+
+        _prompts.Reset([Recap, Intro with { StartSeconds = 80, EndSeconds = 130 }, Credits], MarkerSettings.Default);
+
+        Assert.Null(_prompts.Prompt);
+        Assert.Null(_prompts.Select());
+        At(85);
+        Assert.Equal("Skip Intro", _prompts.Prompt?.Label);
+        Assert.Equal(130, _prompts.Select());
+    }
+
+    [Fact]
+    public void TheUndoPill_OutlivesAReadThatMovesItsIntro_AndGoesBackToItsNewStart()
+    {
+        // The position is past the intro by design; its pill only ever seeks back, to where the intro now starts.
+        var always = MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Always };
+        With(always);
+        Assert.Equal(120, At(60));
+        At(120);
+
+        _prompts.Reset([Recap, Intro with { StartSeconds = 55, EndSeconds = 125 }, Credits], always);
+
+        Assert.Equal("Watch Intro", _prompts.Prompt?.Label);
+        Assert.Equal(55, _prompts.Select());
+    }
+
+    [Fact]
     public void AnIntroWithoutItsProjection_SaysNothingOfWhereItCameFrom()
     {
         // As the web: an occurrence takes its kind's single range's provenance, and there is none.

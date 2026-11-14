@@ -62,6 +62,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- When an intro's marker changed while Skip Intro showed, for example after an edit, so that it no longer covered where
+  you were, the button stayed and skipped past part of the episode. It now goes away until playback reaches the intro.
 - An episode's More Episodes row, and a movie's box set row, open with a whole card at their start, as after their
   arrows, also for an episode near the season's end. They opened with the page's own card in the very middle, which cut
   the card at the row's start in two.

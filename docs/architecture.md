@@ -577,8 +577,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and part of the part's equality, so a read that names another source is news); where
   `playback.show_marker_confidence` or `show_marker_source` say so, the pill has a line naming it, as the web's
   `lib/markerProvenance.ts` words it. The two are read as a batch of their own, so a server from before them keeps the
-  line off and the rest. Another read keeps a showing pill, the recap's, credits' or preview's too, unless its part now
-  skips itself.
+  line off and the rest. Another read keeps a showing pill, the recap's, credits' or preview's too, only while its part
+  as measured now still holds the position the last update saw and does not skip itself, so a pick never seeks over
+  what is no longer marked; the next update offers it again where it is. The undo pill stays regardless: it only goes
+  back, and the intro it was for starts before the position.
 - **Next episode** (10.7): the playback names its episode (series, season, number); `UpNextSource` reads the
   current season's episodes, and when none is later, those of the lowest later season that is not specials, and the
   smallest (season, episode) after this one plays next. `NextUpFlow` decides what shows: the card when playback
