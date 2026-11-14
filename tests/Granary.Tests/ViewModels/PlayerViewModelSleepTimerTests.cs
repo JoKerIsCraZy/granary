@@ -133,8 +133,8 @@ public sealed class PlayerViewModelSleepTimerTests
         using var german = AppText.Use(TextLanguage.Load("de"));
         var viewModel = await PlayingAsync(Ted);
 
-        // The end of the episode is Granary's own choice, in English until it is translated.
-        Assert.Equal(["5 Min.", "15 Min.", "30 Min.", "45 Min.", "60 Min.", "End of episode"], viewModel.SleepTimerOptions.Select(o => o.Label));
+        // The end of the episode is Granary's own choice, in Granary's own German.
+        Assert.Equal(["5 Min.", "15 Min.", "30 Min.", "45 Min.", "60 Min.", "Ende der Folge"], viewModel.SleepTimerOptions.Select(o => o.Label));
         Assert.Equal("Timer", viewModel.SleepTimerText);
 
         Choose(viewModel, "30 Min.");

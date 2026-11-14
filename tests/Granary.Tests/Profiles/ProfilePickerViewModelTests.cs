@@ -242,7 +242,7 @@ public sealed class ProfilePickerViewModelTests
         await harness.ViewModel.SubmitPinCommand.ExecuteAsync(Pin);
 
         Assert.Single(harness.Silo.SentTo(HttpMethod.Post, KidPinPath));
-        Assert.Equal("Could not reach the server. Check the connection and try again.", harness.ViewModel.PinError);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", harness.ViewModel.PinError);
         Assert.True(harness.ViewModel.IsPinPromptOpen);
     }
 
@@ -336,8 +336,8 @@ public sealed class ProfilePickerViewModelTests
     [InlineData("error", "The server could not list the profiles (error 500).")]
     [InlineData("busy", "The server is busy, try again.")]
     [InlineData("rate-limited", "The server is receiving too many requests. Try again in 2 minutes.")]
-    [InlineData("network", "Could not reach the server. Check the connection and try again.")]
-    [InlineData("malformed", "The server sent an answer this app does not understand.")]
+    [InlineData("network", "Can't reach the server. Check your connection and try again.")]
+    [InlineData("malformed", "The server response was in an unexpected format.")]
     public async Task Load_Failure_ShowsTheReasonAndRetryLoadsAgain(string failureKind, string expected)
     {
         using var harness = new Harness();
@@ -530,7 +530,7 @@ public sealed class ProfilePickerViewModelTests
         using var harness = new Harness();
         harness.Session.ActiveServer = null;
         await harness.ViewModel.LoadCommand.ExecuteAsync(null);
-        Assert.Equal("No server is selected.", harness.ViewModel.Status);
+        Assert.Equal("No server is configured.", harness.ViewModel.Status);
         Assert.False(harness.ViewModel.IsLoading);
 
         harness.Session.ActiveServer = ScriptedSilo.Server;

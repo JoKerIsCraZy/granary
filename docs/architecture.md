@@ -327,7 +327,17 @@ text only Granary has keeps its English under a key of its own. All of it is in 
     to the keys Granary uses (`web-keys.txt`): each key maps to formatjs' compiled message, an array of elements.
   - `granary/<tag>.json` holds Granary's own texts: `granary.<area>.<thing>` keys with ICU MessageFormat source, parsed
     by formatjs' rules into the same elements (`IcuMessageParser`). English is their source; `@`-keys, as in an ARB
-    file, are notes for translators and are skipped. A Granary key never takes the place of a web key.
+    file, are notes for translators and are skipped. Each other language's file holds every English key, in the
+    English order, without notes. A Granary key never takes the place of a web key.
+  - **Where Granary's own texts come from.** Where the web has no text for a place but Silo's Android and Apple apps do
+    (their generated catalogs, `strings_catalog.xml` and `Localizable.xcstrings`, carry the same translations), Granary
+    takes the apps' wording, English and translations, and its note names the app's key (`Silo apps: <key>`), in the
+    web's sentence case where the apps write Apple's title case. An app text that calls the app "Silo" or names the
+    device it runs on ("this Mac", "this Apple TV") is not taken as it is. Every other text Granary translates itself,
+    in the terms, form of address and punctuation Silo's web and app catalogs use in each language. A translation keeps
+    its English message's arguments, tags and select options and takes only its language's plural categories, and no
+    text names Silo more often than its English, which names it only for the server or the project
+    (`GranaryCatalogFilesTests`).
   - A missing file is an empty catalog. A message that cannot be read, such as an ordinal plural or a number with a
     style, which no upstream message has needed, is left out and logged when the language is loaded.
 - **Formatting** (`MessageFormatter`, `PluralRules`) gives what react-intl gives for the same message: `{name}`; a

@@ -334,7 +334,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
   which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
   the air time on the viewer's clock, the web's PREMIERE / NEW SEASON / FINALE, watched ones marked. Unlike the web,
-  a week with airings lists its empty days too, each with "Nothing scheduled." in a faint box, so picking one scrolls
+  a week with airings lists its empty days too, each with "Nothing scheduled" in a faint box, so picking one scrolls
   to its place instead of the top; a day picked in an empty week says "Nothing scheduled for …". An airing opens its series (a movie itself); airings have no card menu. An empty week names the
   other presets. The preset is kept while the app runs (the web keeps it in the browser).
 - Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with
@@ -1261,7 +1261,7 @@ says why above the sections.
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
   and grid at once and saves for the desktop apps. While it loads the group says "Loading…"; a failed read or an older
   server shows the web's panel instead of the buttons ("Couldn't load your poster settings", "Your server needs an
-  update"), and a value of this PC's own its notice with "Match my other computers". Then Badges,
+  update"), and a value of this PC's own its notice with "Use synced desktop settings". Then Badges,
   with Reset beside the title while the profile has its own (asks first: "Reset badges?"). "Show badges on posters";
   while on, Style as five 112 px tiles, each with its "4K" on a dark slate (the chosen one outlined and tinted in the
   accent), then the categories as a flat accordion (Media Info, Ratings & Certifications, Content Metadata, Status &
@@ -1307,7 +1307,7 @@ says why above the sections.
   Watching and Next Up on Home and in a library, Home's banner and hero, and the player's Playing Next screen. A
   switch the server refused goes back, and "Failed to save title page setting" (the web's words) shows above the group
   until the next change. While they load the group says "Loading…"; a failed read or an older server shows a panel instead
-  ("Couldn't load your spoiler settings", "Your server needs an update"). Age guidance follows, with "Show advisory age"
+  ("Couldn't load spoiler settings from the server.", "Your server needs an update"). Age guidance follows, with "Show advisory age"
   ("Show a suggested minimum viewer age, such as Common Sense Media's, on a title's page. This only shows the age; a
   household manager can limit a profile by it in the profile's access settings."), saved to the profile at once; open title
   pages follow it. The other groups' switches are off until the profile's choice is read, and a group the server does not

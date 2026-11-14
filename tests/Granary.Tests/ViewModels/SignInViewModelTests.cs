@@ -83,7 +83,7 @@ public sealed class SignInViewModelTests
     }
 
     [Theory]
-    [InlineData(401, ProblemCodes.InvalidToken, null, "Wrong username or password.")]
+    [InlineData(401, ProblemCodes.InvalidToken, null, "Incorrect username or password.")]
     [InlineData(403, ProblemCodes.PermissionDenied, null, "This account is disabled.")]
     [InlineData(429, ProblemCodes.RateLimited, 900, "Too many attempts. Try again in 15 minutes.")]
     [InlineData(429, ProblemCodes.RateLimited, 30, "Too many attempts. Try again in a minute.")]
@@ -128,7 +128,7 @@ public sealed class SignInViewModelTests
         await viewModel.SignInCommand.ExecuteAsync(null);
 
         Assert.False(viewModel.IsPasswordSignInAvailable);
-        Assert.Contains("code", viewModel.Status, StringComparison.Ordinal);
+        Assert.Contains("phone", viewModel.Status, StringComparison.Ordinal);
     }
 
     [Fact]

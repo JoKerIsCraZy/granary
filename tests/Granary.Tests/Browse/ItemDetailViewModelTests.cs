@@ -602,7 +602,7 @@ public sealed class ItemDetailViewModelTests
         var detail = await _fixture.LoadAsync(MovieId);
 
         Assert.True(detail.HasLoadError);
-        Assert.Equal("Could not reach the server. Check the connection and try again.", detail.LoadErrorText);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", detail.LoadErrorText);
     }
 
     [Fact]

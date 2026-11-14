@@ -81,7 +81,7 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
 
         await hub.JoinCommand.ExecuteAsync(null);
 
-        Assert.Equal("Enter the room's code or paste its invite link.", hub.Error);
+        Assert.Equal("Enter the 8-character party code or paste an invitation link.", hub.Error);
         Assert.Empty(_silo.SentTo(HttpMethod.Post, "api/v2/watch-together/join"));
     }
 

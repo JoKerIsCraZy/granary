@@ -38,8 +38,6 @@ public sealed partial class HomeViewModel : ObservableObject
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
     internal const int MaxConcurrentRowRequests = 4;
-    internal const string LoadingText = "Loading Home";
-    internal const string EmptyText = "Nothing here yet";
 
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
@@ -337,7 +335,7 @@ public sealed partial class HomeViewModel : ObservableObject
         if (!HasContent)
         {
             IsLoading = true;
-            ShowState(hasError: false, isEmpty: false, LoadingText);
+            ShowState(hasError: false, isEmpty: false, AppText.Get("granary.home.loading"));
         }
         try
         {
@@ -522,7 +520,7 @@ public sealed partial class HomeViewModel : ObservableObject
     private void ShowLoaded()
     {
         bool isEmpty = !HasContent;
-        ShowState(hasError: false, isEmpty, isEmpty ? EmptyText : "");
+        ShowState(hasError: false, isEmpty, isEmpty ? AppText.Get("granary.home.empty") : "");
     }
 
     private void ShowState(bool hasError, bool isEmpty, string status)
