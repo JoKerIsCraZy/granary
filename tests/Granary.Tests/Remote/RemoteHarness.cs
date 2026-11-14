@@ -3,6 +3,7 @@ using Granary.Core.Auth;
 using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Tests.Fakes;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Tests.Remote;
 
@@ -171,6 +172,19 @@ internal sealed class RemoteHarness : IAsyncDisposable
             receiver.Pairing = () => Pairing;
         }
         return receiver;
+    }
+
+    /// <summary>
+    /// A receiver that is never started, for a player to attach to, as the player's own tests need one: its posts go to
+    /// <paramref name="dispatcher"/>, and nothing of it listens or is saved.
+    /// </summary>
+    public static RemoteReceiver StandAlone(Granary.Core.Abstractions.IUiDispatcher dispatcher, TimeProvider time)
+    {
+        var calls = new RemoteCalls();
+        string idFile = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"), "phone-remote.json");
+        var pairing = new RemotePairing(new InMemorySecretStore(), idFile, NullLogger<RemotePairing>.Instance);
+        return new RemoteReceiver(new FakeRemoteListener(calls), new FakeServiceAdvertiser(calls), new FakeLanAddressSource(), pairing,
+            new InMemoryPlaybackDevicePreferences(), new FakeSessionManager(), Client, dispatcher, time, NullLogger<RemoteReceiver>.Instance);
     }
 
     /// <summary>A phone served by the receiver over a new pipe; paired unless <paramref name="pair"/> is false.</summary>

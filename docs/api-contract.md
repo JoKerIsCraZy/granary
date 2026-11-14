@@ -3114,10 +3114,11 @@ The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary
 |---|---|---|
 | A `hello` that is not a phone's, lists no version 2 or names no server | `error version_unsupported`, then `close unauthorized` | "Update Silo on both devices to continue." |
 | A command or launch from a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
-| A command with no player open (except `stop`, which is simply done) | `error player_not_ready` | "The PC player is not ready yet." |
+| A command with no player open (except `stop`, which is simply done), or while a file played directly is open | `error player_not_ready` | "The PC player is not ready yet." |
+| A command other than `stop`, `set_volume` and `set_muted` while a title still loads or after it failed | `error player_not_ready` | "The PC player is not ready yet." |
 | `play_next` without a next episode | `error command_failed` | "There is no next episode." |
 | Play, pause or seek a Watch Party's rules refuse | `error command_failed` | "This Watch Party does not allow this playback action." |
-| Any other command the player refuses | `error command_failed` | "Not available on this PC." |
+| Any other command the player refuses (a speed in a Watch Party) | `error command_failed` | "Not available on this PC." |
 | More than 40 messages at once, or 20 a second after that (any but `ping`, `pong` and `close`; the message is dropped) | `error rate_limited`, at most once a second | "Too many commands. Slow down and try again." |
 | A fifth phone's `hello` while four phones control actively | `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
 | A launch (no offer is made ready yet) | `error handoff_required` | "Prepare the phone profile before playing." |
@@ -3131,6 +3132,11 @@ closed to make room, `timeout` without a `hello` within 5 seconds, `tv_disconnec
 refusal of a fifth phone, as on silo-roku. A connection that has not said `hello` and is closed to make room for a
 newcomer gets no answer. An unknown type and an unknown control
 name get no answer; a known type with a malformed payload ends that connection with a bare `close`.
+
+A command that changes nothing (play while playing, the quality that is chosen), a command without its argument, a
+number that is not finite, a track number that is not in the list last sent, a speed at or below zero, a quality the
+menu does not offer and `set_subtitle_position` get no answer either. Other numbers are brought into range first: a
+seek into the title, a volume into 0 to 1, a speed to the nearest of 0.5× to 3×, a subtitle delay into ±10 seconds.
 
 ## Appendix: where docs and code disagree
 

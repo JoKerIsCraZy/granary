@@ -7,12 +7,14 @@ using Granary.Core.Api.Requests;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Remote;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Granary.Core.WatchParty;
 using Granary.Tests.Fakes;
 using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
+using Granary.Tests.Remote;
 
 namespace Granary.Tests.WatchParty;
 
@@ -429,6 +431,41 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.False(_engine.Current.IsPaused);
         await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the request");
     }
+
+    [Fact]
+    public async Task InAWatchParty_APhonesPlayPauseAndSeek_GoThroughTheRoomsRules()
+    {
+        var viewModel = await PlayingAsync();
+        using var remote = new PlayerRemoteControl(viewModel, RemoteHarness.StandAlone(new ImmediateDispatcher(), _time), new ImmediateDispatcher());
+
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(PhoneCommand(SiloCastControls.Pause)));
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(PhoneCommand(SiloCastControls.Seek, seconds: 600)));
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Empty(Playback.Seeks);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the pause request");
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"seek\"", StringComparison.Ordinal)), "the seek request");
+    }
+
+    [Fact]
+    public async Task InAWatchParty_AGuestsPhone_MayNotPlayPauseSeekOrChangeTheSpeed()
+    {
+        var viewModel = await PlayingAsync(role: "guest", transport: false);
+        using var remote = new PlayerRemoteControl(viewModel, RemoteHarness.StandAlone(new ImmediateDispatcher(), _time), new ImmediateDispatcher());
+
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.Pause)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.PlayPause)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.Seek, seconds: 600)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.SetPlaybackSpeed, speed: 1.5)));
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Empty(Playback.Seeks);
+        Assert.Empty(Playback.SpeedRequests);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    private static SiloCastMessage.Control PhoneCommand(string name, double? seconds = null, double? speed = null) =>
+        new(name, seconds, TrackId: null, speed, Volume: null, Value: null, Enabled: null, Milliseconds: null);
 
     [Fact]
     public async Task AGuestTheRoomDoesNotLetPause_HasNeitherPlayPauseNorSeekingOnWindowsMediaControls_AndTheirKeysDoNothing()

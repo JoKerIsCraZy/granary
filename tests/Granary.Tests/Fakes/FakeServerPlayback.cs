@@ -119,7 +119,17 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public int SubtitleDelayMs { get; set; }
 
-    public void SetSubtitleDelay(int milliseconds) => SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);
+    /// <summary>Every subtitle delay the player asked for, in order, before this fake keeps it within its limits.</summary>
+    public List<int> SubtitleDelayRequests { get; } = [];
+
+    public void SetSubtitleDelay(int milliseconds)
+    {
+        SubtitleDelayRequests.Add(milliseconds);
+        SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);
+    }
+
+    /// <summary>Every speed the player asked for, in order.</summary>
+    public List<double> SpeedRequests { get; } = [];
 
     /// <summary>Lists <paramref name="tracks"/> with <paramref name="selected"/> showing, as a newly taken plan does.</summary>
     public void RaiseSubtitles(IReadOnlyList<SubtitleInventoryItem> tracks, string? selected)
@@ -203,7 +213,11 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public double Speed { get; set; } = 1;
 
-    public void SetSpeed(double speed) => Speed = speed;
+    public void SetSpeed(double speed)
+    {
+        SpeedRequests.Add(speed);
+        Speed = speed;
+    }
 
     /// <summary>Every sleep timer duration the player saved as this device's, in order.</summary>
     public List<int> SleepTimerDefaults { get; } = [];

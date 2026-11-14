@@ -1411,6 +1411,41 @@ then on; `StopAsync` ends it for good when Granary closes.
   `StatusChanged` comes on the UI thread. `PairingLink` exists only while it listens; it is made from the PC's key as it is
   now and is null between a reset and the restart under the new key, so a code that was taken back is never shown.
 
+### The player
+
+`PlayerRemoteControl` (`ViewModels/Player`) is the open player as the receiver sees it (`IRemotePlayer`). The player
+page makes it beside `PlayerSystemMedia` and disposes it where it disposes that one; it attaches to the receiver when it
+is made and detaches when it is disposed, both on the UI thread. It is built as `PlayerSystemMedia` is: it reads the
+`PlayerViewModel`'s properties and calls the view model's own commands, never the engine, so a Watch Party's rules hold
+for a phone as for the PC's own buttons (silo-roku's `PlayerRemote.bs`: a command takes the path the viewer's own key
+takes).
+
+- **What a command becomes.** `play`, `pause` and `play_pause` are the pause button (`TogglePauseCommand`), pressed only
+  when the state differs; `seek` is `SeekTo` in the title's own time; `set_volume` sets the slider's `Volume` (0 to 1
+  becomes 0 to 100) and `set_muted` is the Mute button, so both are kept as the PC's own changes are; the tracks are
+  `SelectAudio` and `SelectSubtitle`; `set_playback_speed` is `SetSpeed`, `set_quality` `SelectQuality`,
+  `set_video_gravity` the Fill screen button, `set_subtitle_sync_ms` the subtitle delay, `play_next` the next-episode
+  button, and `stop` the player's Exit, also while a title still loads. `set_subtitle_position` is not supported.
+- **Every number is checked here** (security review 2): a seek is brought into the title (and a title of unknown length
+  is not sought); a volume into 0 to 1; a speed to the nearest of the player's speeds, none at or below zero; a subtitle
+  delay into ±10 seconds, the player's own limit; a track number has to be one of the list last sent. A value that is
+  not finite, a command without its argument and a name Granary does not know are ignored without an answer.
+- **When the player is not ready.** While a title loads or after it failed, only `stop`, the volume and mute are taken;
+  the rest gets `player_not_ready`. In a Watch Party, play, pause and seek go to the room as the player's own buttons'
+  requests do; a guest the room does not let gets `command_failed`, and so does a speed change, as the room plays at its
+  own. `play_next` without a next episode gets `command_failed` too.
+- **Track numbers.** The wire's `trackId` is an integer the phone only sends back. An audio track's is its ordinal, the
+  number the player's menu passes on. A subtitle's is its place in the list of the status that was sent, Off left out
+  (no number turns subtitles off); the control keeps the list it built last and maps a number back to the track's own
+  id, and a track no longer in the player's list is ignored, so a number from an older list never picks another track.
+- **What the status leaves out.** The session id, the poster and the overview, as Silo's Roku app leaves them out: no
+  signed address belongs on this channel, and the phones look artwork up themselves from the content id. A movie's
+  year is not sent as the episode line. A file played with `--play` shows as idle and takes no command: its name is
+  nobody's business. Until a title's details are in, its status says "Loading", with its content id, as Silo's Roku
+  app's does, so a phone that started it sees it at once.
+- **When it changes.** `StateChanged` follows the properties the status is read from; the position alone is not among
+  them, since the receiver's 500 ms tick carries it.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

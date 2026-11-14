@@ -17,6 +17,9 @@ public sealed partial class RemoteReceiver
     // The newest status frame, made on the UI thread and read when a phone's turn to be sent it comes.
     private byte[] _stateFrame = SiloCastMessages.State(SiloCastState.Idle);
 
+    /// <summary>The player the phones see and control now, or null; read on the UI thread.</summary>
+    internal IRemotePlayer? AttachedPlayer => _player;
+
     /// <summary>
     /// The player page opened <paramref name="player"/>: its status goes to every authorized phone now, every
     /// <see cref="StatusEvery"/> and whenever it changes, and phones' commands go to it. Called on the UI thread.
