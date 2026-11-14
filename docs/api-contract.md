@@ -3042,7 +3042,7 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
 
   | Type | Payload | What Granary keeps |
   |---|---|---|
-  | `hello` | **`role`** (`phone` or `tv`), **`deviceName`**, **`deviceId`**, **`supportedVersions`** (integers), `serverId`, `serverName`, `serverIdentity`, `features` (text), `passive`, `clientKind` | all but `clientKind` |
+  | `hello` | **`role`** (`phone` or `tv`), **`deviceName`**, **`deviceId`**, **`supportedVersions`** (integers), `serverId`, `serverName`, `serverIdentity`, `features` (text), `passive`, `clientKind` | all but `clientKind`; a `deviceId` over 128 characters makes the `hello` malformed, and only the first 32 `features` are kept |
   | `control` | **`name`**, and one of `seconds`, `trackId` (integer), `speed`, `volume`, `value`, `enabled`, `milliseconds` (integer) | all |
   | `launch` | **`serverId`**, **`playback`** {**`contentId`**, **`startFromBeginning`**, `fileId`, `audioTrackIndex`, `subtitleTrackIndex`, `libraryId` (integers), `resumePosition`, `pinsVersion`} | all but `libraryId`; `fileId` as text; a track index outside a 32-bit integer is dropped |
   | `handoff_offer` | **`requestId`**, **`serverId`**, **`serverURL`**, **`profileId`**, `serverName`, `profileName`, `title`, `serverIdentity`, `serverEndpoints`, `resumeToken`, `replaceConfirmed`, `replacingContentId` | `requestId`, `serverId`, `serverIdentity`, `profileId`, `replaceConfirmed`, `replacingContentId`: the phone's addresses and token are dropped as the frame is read, so nothing later can contact them |

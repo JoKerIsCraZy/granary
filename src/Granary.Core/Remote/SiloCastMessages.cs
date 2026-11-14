@@ -119,6 +119,12 @@ public static class SiloCastMessages
     /// <summary>The protocol version: the only one a receiver of the Roku type speaks.</summary>
     public const int Version = 2;
 
+    /// <summary>The longest device id Granary takes from a phone: the phones send a UUID; a longer id makes the hello malformed.</summary>
+    public const int MaxDeviceIdLength = 128;
+
+    /// <summary>How many of a hello's features Granary keeps: the first, in order; the phones list three.</summary>
+    public const int MaxFeatures = 32;
+
     // Deep enough for any message a phone sends; a member twice is not one message.
     private static readonly JsonDocumentOptions Reading = new() { MaxDepth = 16, AllowDuplicateProperties = false };
 
@@ -257,15 +263,18 @@ public static class SiloCastMessages
                 ? reason.GetString()
                 : null);
 
-    // As silo-roku's validHello: role phone or tv, a name and an id, a list of versions, features a list of text.
+    // As silo-roku's validHello: role phone or tv, a name and an id, a list of versions, features a list of text. The id is
+    // kept to compare with later hellos, so one longer than any phone's makes the hello malformed; of the features only
+    // the first few are kept.
     private static SiloCastMessage.PhoneHello? ReadHello(WireHello hello)
     {
         if (hello is not { Role: SiloCastRoles.Phone or SiloCastRoles.Tv, DeviceName: { } name, DeviceId: { } id, SupportedVersions: { } versions }
+            || id.Length > MaxDeviceIdLength
             || hello.Features?.Any(feature => feature is null) == true)
         {
             return null;
         }
-        var features = new HashSet<string>(hello.Features?.OfType<string>() ?? [], StringComparer.Ordinal);
+        var features = new HashSet<string>(hello.Features?.OfType<string>().Take(MaxFeatures) ?? [], StringComparer.Ordinal);
         return new SiloCastMessage.PhoneHello(
             name, id, hello.ServerId, hello.ServerName, hello.ServerIdentity, versions, features, hello.Passive == true, hello.Role);
     }

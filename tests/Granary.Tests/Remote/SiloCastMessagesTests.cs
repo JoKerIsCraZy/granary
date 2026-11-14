@@ -385,6 +385,29 @@ public sealed class SiloCastMessagesTests
     }
 
     [Fact]
+    public void AHelloWithAnOverlongDeviceId_IsMalformed()
+    {
+        string fits = new('a', SiloCastMessages.MaxDeviceIdLength);
+        string over = new('a', SiloCastMessages.MaxDeviceIdLength + 1);
+
+        Assert.IsType<SiloCastMessage.PhoneHello>(Decode(HelloWith(fits, """["close_reason"]""")));
+        Assert.Null(Decode(HelloWith(over, """["close_reason"]""")));
+    }
+
+    [Fact]
+    public void AHello_KeepsAtMostItsFirst32Features()
+    {
+        string features = "[" + string.Join(",", Enumerable.Range(0, 40).Select(i => $"\"feature-{i}\"")) + "]";
+
+        var hello = Assert.IsType<SiloCastMessage.PhoneHello>(Decode(HelloWith("phone-1", features)));
+
+        Assert.Equal(SiloCastMessages.MaxFeatures, hello.Features.Count);
+        Assert.Contains("feature-0", hello.Features);
+        Assert.Contains("feature-31", hello.Features);
+        Assert.DoesNotContain("feature-32", hello.Features);
+    }
+
+    [Fact]
     public void TheWireShapes_NeverPrintWhatTheyCarry()
     {
         object[] shapes =
@@ -409,6 +432,9 @@ public sealed class SiloCastMessagesTests
     }
 
     private static SiloCastMessage.Control Control(string name) => new(name, null, null, null, null, null, null, null);
+
+    private static string HelloWith(string deviceId, string features) =>
+        $$"""{"type":"hello","hello":{"role":"phone","deviceName":"Elena's phone","deviceId":"{{deviceId}}","serverId":"{{ServerId}}","supportedVersions":[2],"features":{{features}}},"v":2}""";
 
     private static SiloCastMessage? Decode(string frame) => SiloCastMessages.Decode(Encoding.UTF8.GetBytes(frame));
 
