@@ -1792,8 +1792,9 @@ device.
   the next one at once, is no recovery, nor is another profile's first connection), and the downloads capability read
   after a read of the same profile's that failed (`DownloadsFeature`). Each says so once per recovery; a listener that
   fails is logged by its kind and reaches neither the one that told it nor the other listeners. While the active profile has
-  pending positions, `OfflineProgressSync` then flushes through the same 2 s settle and reads back, so a recovery that
-  several of them tell is one run; with nothing waiting it starts none. The retry stays the fallback: a send after a
+  positions waiting or on their way, `OfflineProgressSync` then flushes through the same 2 s settle and reads back, so a
+  recovery that several of them tell is one run, and one that comes while a send is on its way runs after it and sends
+  again what that send could not; with nothing waiting it starts none. The retry stays the fallback: a send after a
   recovery that fails again waits for it as before.
 - **Telling the pages.** Home's Continue Watching and Next Up and a title's page load again when a playback stops
   (`ViewerStateChanges`, raised by `PlaybackStops`). A stream's stop has told the server by then. A download's stop

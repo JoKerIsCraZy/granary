@@ -100,6 +100,28 @@ public sealed class OfflineProgressRecoveryTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ARecoveryWhileThePositionIsOnItsWay_SendsItAgainAfterThatSend_NotAtTheRetry()
+    {
+        // The only position is on its way when the server answers again; that send then fails, and the position waits.
+        _queue.Record(Scope7, "ep_5", 10_000, 7_200_000);
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Post, SyncPath, () => answer.Task, Answered("ep_5"));
+        _sync.Start();
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        await Until(() => Sends.Count == 1, "the start's send left");
+        Assert.Equal(OfflineProgressState.Sending, Assert.Single(_queue.Entries(Scope7)).State);
+
+        _recovery.Report("the test");
+        _h.Time.Advance(OfflineProgressSync.Settle);
+        answer.SetException(new HttpRequestException(HttpRequestError.ConnectionError, "connection refused"));
+
+        // The run the recovery asked for waited for that send, and sends the position again: not five minutes on.
+        await Until(() => Sends.Count == 2, "the recovery's send");
+        await _sync.LatestRun;
+        Assert.Empty(_queue.Entries(Scope7));
+    }
+
+    [Fact]
     public async Task ARetryThatStillCannotReachTheServer_IsNoRecovery()
     {
         await _h.AddAsync("dl_5", DownloadState.Completed, mediaItemId: "ep_5");

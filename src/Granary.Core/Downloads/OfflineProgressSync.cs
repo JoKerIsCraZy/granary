@@ -187,10 +187,12 @@ public sealed class OfflineProgressSync : IDisposable
     private void OnChanged(object? sender, EventArgs e) => FlushSoon(readBack: true);
 
     // The server answers again (Retry found it, the events connection is back, the capability was read after a failure),
-    // any thread: the active profile's positions that wait go now, as their retry would have sent them. Nothing waits: no run.
+    // any thread: the active profile's positions that wait go now, as their retry would have sent them. One on its way counts
+    // too: should that send fail, the run asked for here waits for it and sends the position again. Nothing waits: no run.
     private void OnRecovered(object? sender, EventArgs e)
     {
-        if (Acting() is { } target && _queue.Entries(target.Scope).Any(entry => entry.State == OfflineProgressState.Pending))
+        if (Acting() is { } target
+            && _queue.Entries(target.Scope).Any(entry => entry.State is OfflineProgressState.Pending or OfflineProgressState.Sending))
         {
             FlushSoon(readBack: true);
         }
