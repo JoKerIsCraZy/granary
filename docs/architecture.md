@@ -573,6 +573,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   a picked, turned away (Esc) or settled intro is not offered again in that playback. Recap, credits and preview
   get a pill that stays, and skip themselves once where `playback.auto_skip_recap` or `auto_skip_credits` say so,
   as Apple's client does. The settings are read as their own batch; an unknown mode neither prompts nor skips.
+  Each part carries where its kind came from (`MarkerProvenance`, from the watch detail's or a save's singular range,
+  and part of the part's equality, so a read that names another source is news); where
+  `playback.show_marker_confidence` or `show_marker_source` say so, the pill has a line naming it, as the web's
+  `lib/markerProvenance.ts` words it. The two are read as a batch of their own, so a server from before them keeps the
+  line off and the rest. Another read keeps a showing pill, the recap's, credits' or preview's too, unless its part now
+  skips itself.
 - **Next episode** (10.7): the playback names its episode (series, season, number); `UpNextSource` reads the
   current season's episodes, and when none is later, those of the lowest later season that is not specials, and the
   smallest (season, episode) after this one plays next. `NextUpFlow` decides what shows: the card when playback

@@ -123,6 +123,26 @@ public sealed class ServerPlaybackMarkerTests
     }
 
     [Fact]
+    public async Task AReadThatNamesAnotherSource_ForTheSameParts_IsNews()
+    {
+        // Someone set the intro by hand where the scan had it: the line above the pill says so.
+        string edited = Regex.Replace(PlaybackPayloads.WatchStateOk, @"""intro"": \{[^}]*\}",
+            """ "intro": { "start_seconds": 0, "end_seconds": 90, "source": "manual", "confidence": 1 } """);
+        Assert.Contains("\"manual\"", edited, StringComparison.Ordinal);
+        var reread = new TaskCompletionSource();
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(PlaybackPayloads.WatchStateOk), After(reread.Task, Ok(edited)));
+        var playback = await _fixture.StartAsync();
+        int changes = 0;
+        playback.MarkersChanged += (_, _) => changes++;
+
+        _fixture.Engine.RaiseState(Frame(12.5));
+        reread.SetResult();
+        await Until(() => changes == 1, "the other source is taken");
+
+        Assert.Equal(new MarkerProvenance("manual", null, 1), Assert.Single(playback.Markers).Provenance);
+    }
+
+    [Fact]
     public async Task AFailedRead_KeepsTheWatchDetailsMarkers()
     {
         _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(PlaybackPayloads.WatchStateOk), ScriptedSilo.NetworkError());
@@ -139,7 +159,8 @@ public sealed class ServerPlaybackMarkerTests
     {
         const string MarkersPath = "api/v2/markers/files/42";
         _fixture.Silo.On(HttpMethod.Put, MarkersPath, Ok("""
-            { "file_id": "42", "intro": { "start_seconds": 5, "end_seconds": 80, "source": "manual" }, "credits": {}, "recap": {}, "preview": {},
+            { "file_id": "42", "intro": { "start_seconds": 5, "end_seconds": 80, "source": "manual", "confidence": 1, "algorithm": "manual:v1",
+              "detected_at": "2026-11-14T10:00:00Z" }, "credits": {}, "recap": {}, "preview": {},
               "marker_segments": [ { "kind": "intro", "start_seconds": 5, "end_seconds": 80 } ] }
             """));
         var playback = await _fixture.PlayingAsync();
@@ -153,7 +174,8 @@ public sealed class ServerPlaybackMarkerTests
         }, TestContext.Current.CancellationToken);
 
         Assert.Equal("""{"intro":{"start_seconds":5,"end_seconds":80},"credits":null}""", _fixture.Silo.SentTo(HttpMethod.Put, MarkersPath).Single().Body);
-        Assert.Equal([new PlaybackMarker(WatchMarkerKinds.Intro, 5, 80)], playback.Markers);
+        // The skip pill's line says at once that a person set it.
+        Assert.Equal([new PlaybackMarker(WatchMarkerKinds.Intro, 5, 80) { Provenance = new MarkerProvenance("manual", null, 1) }], playback.Markers);
         Assert.Equal(1, changes);
     }
 

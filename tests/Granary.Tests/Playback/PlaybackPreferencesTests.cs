@@ -32,6 +32,7 @@ public sealed class PlaybackPreferencesTests
                     + "&keys=playback.next_up_prompt_seconds",
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds"
                     + "&keys=player.playback_speed",
+                "?keys=playback.show_marker_confidence&keys=playback.show_marker_source",
                 "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
                 "?keys=player.audio_sync_ms",
                 "?keys=player.sleep_timer_default_minutes",
@@ -249,6 +250,40 @@ public sealed class PlaybackPreferencesTests
         _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "revision": 1 }"""));
 
         Assert.Equal(MarkerSettings.Default, (await Create().ReadAsync(ScriptedSilo.Base, Token)).Markers);
+    }
+
+    [Fact]
+    public async Task Read_TakesWhetherTheSkipPillSaysHowConfidentAndWhereItsMarkerCameFrom()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            {
+              "items": [
+                { "key": "playback.show_marker_confidence", "value": true, "source": "profile_device" },
+                { "key": "playback.show_marker_source", "value": true, "source": "profile" }
+              ],
+              "revision": 24
+            }
+            """));
+
+        var markers = (await Create().ReadAsync(ScriptedSilo.Base, Token)).Markers;
+
+        Assert.Equal(MarkerSettings.Default with { ShowMarkerConfidence = true, ShowMarkerSource = true }, markers);
+    }
+
+    [Fact]
+    public async Task Read_AServerFromBeforeTheMarkerLine_KeepsItOff_AndTheOtherMarkerSettings()
+    {
+        // Settings contract 24 brought the two switches; an older server refuses a batch with them (422).
+        _silo.OnUrl(HttpMethod.Get, EffectivePath, (uri, _) => uri.Query.Contains("show_marker", StringComparison.Ordinal)
+            ? ScriptedSilo.Problem(422, "validation_failed")()
+            : ScriptedSilo.Json(HttpStatusCode.OK, """
+                { "items": [ { "key": "playback.intro_skip_mode", "value": "always", "source": "profile" } ], "revision": 23 }
+                """)());
+
+        var markers = (await Create().ReadAsync(ScriptedSilo.Base, Token)).Markers;
+
+        Assert.Equal(MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Always }, markers);
+        Assert.False(markers.ShowMarkerConfidence || markers.ShowMarkerSource);
     }
 
     [Fact]
