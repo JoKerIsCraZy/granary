@@ -1493,8 +1493,7 @@ by `MainWindow.Activity.cs`.
   it is given). A section's heading is read with its count ("Streams, 3"). Esc or the remote's Back closes the
   panel, also while focus is still on the button, and focus is back on the button.
 - **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
-  scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
-  web shows too for a task it has no translation for).
+  scans or the preparation queue).
 
 ## Full screen
 
