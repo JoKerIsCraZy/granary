@@ -269,7 +269,7 @@ public sealed partial class PlayerViewModel
         if (_nextUp.Next is { } next)
         {
             StopCountdown();
-            _ = PlayAsync(PlayRequest.FromStart(next.ContentId));
+            _ = PlayAsync(Following(PlayRequest.FromStart(next.ContentId)));
         }
     }
 

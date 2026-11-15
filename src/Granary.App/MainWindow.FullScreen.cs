@@ -126,6 +126,7 @@ public sealed partial class MainWindow
     }
 
     [LibraryImport("user32.dll", EntryPoint = "PostMessageW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool PostMessage(nint window, uint message, nint wParam, nint lParam);
 }

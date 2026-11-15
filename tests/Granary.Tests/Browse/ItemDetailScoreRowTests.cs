@@ -15,7 +15,7 @@ public sealed class ItemDetailScoreRowTests
         var detail = await _fixture.Movie().LoadAsync(MovieId);
 
         Assert.True(detail.HasRatings);
-        Assert.Equal([new DetailRating("IMDb", "5.4"), new DetailRating("TMDB", "7.1")], detail.Ratings);
+        Assert.Equal([new DetailRating("IMDb", "5.4", "imdb"), new DetailRating("TMDB", "7.1", "tmdb")], detail.Ratings);
     }
 
     [Fact]
@@ -31,7 +31,18 @@ public sealed class ItemDetailScoreRowTests
     {
         var detail = await _fixture.Episode().LoadAsync(EpisodeId);
 
-        Assert.Equal([new DetailRating("IMDb", "8.1")], detail.Ratings);
+        Assert.Equal([new DetailRating("IMDb", "8.1", "imdb")], detail.Ratings);
+    }
+
+    [Fact]
+    public async Task TMDBsScore_IsDrawnWithItsLogo_AndEveryOtherSourceByItsName()
+    {
+        var detail = await _fixture.Series().LoadAsync(SeriesId);
+
+        // As the web's RatingEntry: TMDB's approved logo, the other sources' marks as text.
+        Assert.Equal([false, true, false, false], detail.Ratings.Select(r => r.ShowsLogo));
+        Assert.Equal([true, false, true, true], detail.Ratings.Select(r => r.ShowsMark));
+        Assert.Equal("TMDB 7.7", detail.Ratings[1].AccessibleName);
     }
 
     [Fact]

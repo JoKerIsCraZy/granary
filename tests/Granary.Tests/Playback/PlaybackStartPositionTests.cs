@@ -44,4 +44,37 @@ public sealed class PlaybackStartPositionTests
     [Fact]
     public void AChangeOfEpisode_ResumesExactly_WhateverTheRewind() =>
         Assert.Equal(1325.5, StartPosition(At(1325.5), PlayRequest.ResumeWithoutRewind("episode-1-4"), rewind: ResumeRewind.MaxSeconds));
+
+    [Fact]
+    public void At_KeepsThePositionAndTheChoice()
+    {
+        var choice = new PrePlayChoice("42", IsVersionPicked: true, AudioTrack: 1, SubtitleTrack: 3);
+
+        var request = PlayRequest.At("movie-1", 4747.284, choice);
+
+        Assert.Equal(("movie-1", 4747.284, choice), (request.ContentId, request.StartSeconds, request.Choice));
+        Assert.False(request.FromBeginning);
+        Assert.False(request.IsWatchParty);
+        Assert.Equal(0, PlayRequest.At("movie-1", 0).StartSeconds);
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    [InlineData(-0.5)]
+    public void At_RefusesWhatIsNotAPosition(double seconds) =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => PlayRequest.At("movie-1", seconds));
+
+    [Fact]
+    public void APositionGivenFromOutside_IsNotRewound_AndWinsOverTheSavedPoint() =>
+        Assert.Equal(4747.284, StartPosition(At(1325.5), PlayRequest.At("movie-1", 4747.284), rewind: ResumeRewind.MaxSeconds));
+
+    [Fact]
+    public void APositionGivenFromOutside_OfATitleOfUnknownLength_IsKeptWithinTheServersRange()
+    {
+        // No file says how long the title is: a position the server takes is kept, one beyond it resumes.
+        Assert.Equal(4747.284, StartPosition(At(1325.5), PlayRequest.At("movie-1", 4747.284), rewind: 0));
+        Assert.Equal(1325.5, StartPosition(At(1325.5), PlayRequest.At("movie-1", 31_536_001), rewind: 0));
+    }
 }

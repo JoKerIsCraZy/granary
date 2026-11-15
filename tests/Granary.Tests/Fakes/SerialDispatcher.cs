@@ -13,6 +13,7 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 {
     private readonly BlockingCollection<Action> _work = [];
     private readonly Thread _thread;
+    private TaskCompletionSource _posted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public SerialDispatcher()
     {
@@ -34,6 +35,22 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
         catch (InvalidOperationException) when (_work.IsAddingCompleted)
         {
             // Disposed meanwhile: checking first would leave a dispose between the check and the add.
+            return;
+        }
+        Interlocked.Exchange(ref _posted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
+    /// <summary>Completes once <paramref name="count"/> posts wait their turn, the work that runs now not counted.</summary>
+    public async Task UntilWaitingAsync(int count, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            var posted = Volatile.Read(ref _posted);
+            if (_work.Count >= count)
+            {
+                return;
+            }
+            await posted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
         }
     }
 

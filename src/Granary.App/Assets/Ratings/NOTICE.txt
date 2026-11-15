@@ -1,0 +1,13 @@
+TMDB LOGO - NOTICE
+==================
+
+tmdb-logo.svg is TMDB's approved "alt short" logo, unmodified, as TMDB serves it on
+https://www.themoviedb.org/about/logos-attribution and as Silo's web client ships it
+(web/src/assets/tmdb/tmdb-logo.svg of https://github.com/Silo-Server/silo-server).
+
+It is a trademark of TMDB and is NOT licensed under the GNU Affero General Public License that
+covers Granary's source code. Granary shows it only beside a TMDB score, where the score came from,
+as TMDB's terms allow, and keeps it smaller than Granary's own branding. Keep the file unmodified:
+its colours and proportions.
+
+Granary uses TMDB's data through your Silo server; it is not endorsed or certified by TMDB.
