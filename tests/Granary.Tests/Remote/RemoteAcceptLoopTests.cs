@@ -130,8 +130,8 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     [Fact]
     public async Task ABurstOfConnectionsThatFail_NeverStopsTheLoop_AndTheNextGoodOneIsTaken()
     {
-        // A peer on the network that makes accept after accept fail.
-        const int Burst = 40;
+        // A peer on the network that makes accept after accept fail, for less than GiveUpAfter.
+        const int Burst = 20;
         var source = Source();
         var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
         var loop = Loop(source, connection =>
@@ -172,6 +172,70 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         Assert.Single(_logs.Lines, line => line.Contains("ended while it was accepted", StringComparison.Ordinal));
         Assert.Single(_logs.Lines, line => line.Contains($"{Burst} connections in a row", StringComparison.Ordinal));
         Assert.DoesNotContain("192.168.1.30", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FailedConnectionsThatGoOnForHalfAMinute_AreTheListenersOwnFailure()
+    {
+        // Out of sockets or buffers for good: no connection gets through, and the port must not stay advertised.
+        var source = Source();
+        var loop = Loop(source, _ => Task.CompletedTask);
+        loop.Start();
+        for (int i = 0; i < 100; i++)
+        {
+            source.Fail(new SocketException((int)SocketError.TooManyOpenSockets));
+        }
+
+        await FireTimersUntilAsync(loop.Running);
+
+        Assert.Equal(1, Volatile.Read(ref _failures));
+        Assert.InRange(_time.Elapsed, RemoteAcceptLoop.GiveUpAfter, RemoteAcceptLoop.GiveUpAfter + RemoteAcceptLoop.LongestBackoff);
+        Assert.Contains("stopped taking connections", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AGoodConnection_StartsTheHalfMinuteAnew()
+    {
+        var source = Source();
+        int handed = 0;
+        var second = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, _ =>
+        {
+            if (Interlocked.Increment(ref handed) == 2)
+            {
+                second.TrySetResult();
+            }
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        // Twice 20 seconds and more of failures, a good connection between them.
+        for (int run = 0; run < 2; run++)
+        {
+            for (int i = 0; i < 25; i++)
+            {
+                source.Fail(new SocketException((int)SocketError.ConnectionReset));
+            }
+            source.Give(NewConnection());
+        }
+
+        await FireTimersUntilAsync(second.Task);
+
+        Assert.True(_time.Elapsed > RemoteAcceptLoop.GiveUpAfter);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+        Assert.False(loop.Running.IsCompleted);
+    }
+
+    // Moves the clock to each timer the loop sets, until done ends.
+    private async Task FireTimersUntilAsync(Task done)
+    {
+        while (!done.IsCompleted)
+        {
+            await Task.WhenAny(done, _time.WaitForTimerAsync(Token)).WaitAsync(HangGuard, Token);
+            if (!done.IsCompleted && _time.NextDue is { } due)
+            {
+                _time.Advance(due);
+            }
+        }
     }
 
     [Fact]

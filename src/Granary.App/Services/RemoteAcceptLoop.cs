@@ -11,8 +11,9 @@ namespace Granary.App.Services;
 /// <para>
 /// A connection that fails as it is accepted is skipped, whatever a peer does: a peer could make every accept fail, and
 /// it must neither stop the loop nor make it spin, so failures that come back to back are waited out, a little longer each
-/// time, up to <see cref="LongestBackoff"/>. Only a failure of the listener itself ends the loop, and the owner is told
-/// (<c>onFailed</c>), so no port stays open and advertised that nobody answers.
+/// time, up to <see cref="LongestBackoff"/>. Only a failure of the listener itself ends the loop: an error of its own, or
+/// connections that go on failing for <see cref="GiveUpAfter"/> without one getting through (out of sockets for good).
+/// The owner is told (<c>onFailed</c>), so no port stays open and advertised that nobody answers.
 /// </para>
 /// It logs by fixed phrases and an exception's type and code only (<see cref="RemoteLog"/>): a socket's message can name
 /// an address.
@@ -24,6 +25,12 @@ internal sealed class RemoteAcceptLoop
 
     /// <summary>The longest wait between failed connections in a row.</summary>
     public static readonly TimeSpan LongestBackoff = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// How long connections may fail in a row, none getting through, before it counts as the listener's own failure: out of
+    /// sockets or buffers for good, a port advertised that nobody answers.
+    /// </summary>
+    public static readonly TimeSpan GiveUpAfter = TimeSpan.FromSeconds(30);
 
     private const int NotStarted = 0;
     private const int Accepting = 1;
@@ -96,6 +103,7 @@ internal sealed class RemoteAcceptLoop
     private async Task LoopAsync(CancellationToken stop)
     {
         int failures = 0;
+        long runStarted = 0;
         while (!IsStopped)
         {
             IRemoteConnection connection;
@@ -113,7 +121,15 @@ internal sealed class RemoteAcceptLoop
                 // Logged once for a run of them: a peer that makes every accept fail must not fill the log either.
                 if (++failures == 1)
                 {
+                    runStarted = _time.GetTimestamp();
                     _logger.LogDebug("A connection ended while it was accepted ({Error})", RemoteLog.Failure(ex));
+                }
+                else if (_time.GetElapsedTime(runStarted) >= GiveUpAfter)
+                {
+                    _logger.LogWarning("The phone remote's listener stopped taking connections: {Count} failed in a row, none got through ({Error})",
+                        failures, RemoteLog.Failure(ex));
+                    Failed();
+                    return;
                 }
                 if (failures > 1 && !await BackOffAsync(failures, stop).ConfigureAwait(false))
                 {

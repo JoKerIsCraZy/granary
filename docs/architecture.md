@@ -1573,7 +1573,8 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   connection that fails as it is accepted is skipped, whatever a peer does, so no one on the network can stop the
   listener; failures back to back are waited out on the `TimeProvider`, from 50 ms doubling to at most a second, so
   none can make it spin either, and a run of them is logged once. Only a failure of the listening socket itself ends
-  the loop; it raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed,
+  the loop: an error of its own, or 30 seconds of failed connections without one getting through (out of sockets or
+  buffers for good). It raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed,
   the listener closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by
   itself, only at the next change of the switch, the session, the PC's address or the key.
   `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
