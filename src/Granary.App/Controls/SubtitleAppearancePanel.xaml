@@ -143,7 +143,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="1" Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}"
                                                AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.textOpacity')}" />
-                                    <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.percentSign')}" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Style="{StaticResource RowStyle}">
@@ -169,7 +169,7 @@
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="0" Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}"
                                                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.subtitlePanel.backgroundOpacity')}" />
-                                        <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.settings.subtitleAppearance.percentSign')}" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Style="{StaticResource RowStyle}">
