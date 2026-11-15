@@ -1158,8 +1158,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (`RowBleed`), so no ring is cut off.
   - Back (Esc, Backspace outside a text field, Browser Back): a page opened within a section goes back, focus on the card
     it was opened from (the same title wherever it moved, else the same place). On a section's own page Back first moves
-    focus to its sidebar entry, from there it goes Home, focus on Home's entry; on Home it does nothing, the app does
-    not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
+    focus to its sidebar entry, from there it goes Home, focus on Home's entry; from there, the root, it asks "Close
+    Granary?" with Close and Cancel, as Silo's TV apps leave at the root (`BackLadder`). Cancel is the default and has
+    focus, so a stray OK or Enter closes nothing; Esc, Backspace and Browser Back cancel. Close closes the window as the
+    title bar's Close does, the player's stop first. One question at a time, none while a menu or dialog is open (Back
+    closes that first) and none over the full player; Back with focus on the title bar's buttons asks nothing. A menu,
+    flyout or dialog closes on Browser Back and Backspace as on Esc.
   - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
     title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
     its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link). A page
@@ -1197,7 +1201,7 @@ On the pages, and in the minimized player's bar:
 |---|---|
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
 | A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
-| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
+| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar, and from there Home shows; on Home's entry it asks "Close Granary?". Cancel has focus, so A keeps Granary open, as B does; Close closes it as the title bar's Close does. |
 | X | Plays or resumes the focused card, as a remote's Play: on the Downloads pages a whole download from this PC, and a series' card its next episode there. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |

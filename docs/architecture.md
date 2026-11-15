@@ -2351,7 +2351,9 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
   Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer; a link in a text has no peer and
   its Click cannot be raised, so its page says what A does on it, `PadControls.PressesWith`), B runs the remote's back ladder
-  (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
+  (`Back`, the player's `StepBack`; at the root, Home's entry in the sidebar, `BackStep.AskToClose` asks whether Granary
+  closes, and Close posts the title bar's `SC_CLOSE`, so `OnClosing` runs as for Windows' own Close: `Window.Close` would
+  destroy the window without `AppWindow.Closing`), and the player's actions call the commands its keys call
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. The Downloads page and a series' downloads have no tabs

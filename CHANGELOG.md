@@ -65,6 +65,9 @@ release's section is what its update says it changes (docs/release.md).
   still to air among More Episodes, as the season's page does.
 - **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
   on Thursday" or "Season 4 starts tomorrow".
+- **Close Granary with a controller or a remote:** Back on Home's entry in the sidebar, B on a controller or a remote's
+  Back, asks "Close Granary?". Close closes it as the title bar's Close does; Cancel has the focus, so a stray A or
+  Enter keeps it open, and B, Esc or the remote's Back do too.
 
 ### Changed
 
