@@ -649,6 +649,34 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task WhileTheFileOfWritesStillToSendCannotBeRead_NothingIsDeletedSentOrWrittenOverIt()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        SyncAnswers(MonitorPayloads.Sync());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(deleteWatched: true)));
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+        byte[] kept = File.ReadAllBytes(PendingPath);
+
+        // Granary starts again while another program holds the file, and the server still says Delete after watching.
+        _monitors = NewMonitors(PendingFile());
+        using (new FileStream(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await Monitors.SyncAsync(Token);
+            Assert.Equal(MonitorResult.Failed, await Monitors.StopAsync("sub_1", Token));
+            await Monitors.PendingSaved;
+        }
+
+        Assert.NotNull(_h.Find("dl_1"));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Delete, Monitor1Path));
+        Assert.Equal(kept, File.ReadAllBytes(PendingPath));
+    }
+
+    [Fact]
     public async Task AFileOfWritesStillToSendThatCouldNotBeReadAtTheStart_IsReadWithALaterRun()
     {
         ListMonitors(MonitorPayloads.Monitor());

@@ -133,7 +133,10 @@ public sealed partial class SeriesMonitors
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
-            await LoadPendingAsync().ConfigureAwait(false);
+            if (!await LoadPendingAsync().ConfigureAwait(false))
+            {
+                return MonitorResult.Failed;
+            }
             return IsStill(scope) ? await write(scope, server, _stop.Token).ConfigureAwait(false) : MonitorResult.Unavailable;
         }
         finally
@@ -347,17 +350,18 @@ public sealed partial class SeriesMonitors
         }
     }
 
-    // Under _one: the stops and the choices a run before this one could not send, read off the caller's thread, once it could
-    // be read; what this run made meanwhile stays. A file that cannot be read now is read again with the next run or write.
-    private async Task LoadPendingAsync()
+    // Under _one: the stops and the choices a run before this one could not send, read off the caller's thread, once. False
+    // while the file cannot be read now: it is read again with the next run or write, and until then no run or write goes, as
+    // a run would delete on a monitor's old word or bring back a stopped one, and a write would be undone by what it holds.
+    private async Task<bool> LoadPendingAsync()
     {
         if (_pendingLoaded || _pendingFile is not { } file)
         {
-            return;
+            return true;
         }
         if (await Task.Run(file.Load).ConfigureAwait(false) is not { } kept)
         {
-            return;
+            return false;
         }
         lock (_gate)
         {
@@ -379,8 +383,7 @@ public sealed partial class SeriesMonitors
                 choices.TryAdd(choice.SubscriptionId, choice.Choice);
             }
         }
-        // What this run made before the file could be read goes in with it.
-        SavePending();
+        return true;
     }
 
     // Every scope's stops and choices as they are now, written one save after another on the thread pool, so the last written is

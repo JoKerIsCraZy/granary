@@ -1637,7 +1637,9 @@ titles of their series as a download dialog or a download named them.
   waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
   after watching delete what the viewer chose to keep. It is read before the first run or write, written one save after
   another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it)
-  is read again with the next run or write, and never written over before.
+  is read again with the next run or write, and never written over before; until then no run goes (as one that could not
+  read the monitors) and a write fails, so nothing deletes on a monitor's old word, brings back a stopped one or is undone
+  by what the file holds.
 - **The dialog's Monitor.** `DownloadOptionsViewModel.Monitor.cs` gives a series' dialog (a `SeriesMonitorTarget` from its
   page or its card) the Apple app's One Time | Monitor while the capability has `series_monitoring` with a mode Granary
   offers, or the series has a monitor. It prefills from the series' monitor, else the Monitoring Defaults and the default

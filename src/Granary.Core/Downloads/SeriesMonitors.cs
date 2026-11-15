@@ -204,8 +204,15 @@ public sealed partial class SeriesMonitors : IDisposable
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
-            await LoadPendingAsync().ConfigureAwait(false);
-            await RunOnceAsync(linked.Token).ConfigureAwait(false);
+            if (await LoadPendingAsync().ConfigureAwait(false))
+            {
+                await RunOnceAsync(linked.Token).ConfigureAwait(false);
+            }
+            else if (Target() is { } target)
+            {
+                // As a run that could not read the monitors: another comes in a minute while they were never read.
+                NoteUnreadRun(target.Scope);
+            }
         }
         finally
         {
