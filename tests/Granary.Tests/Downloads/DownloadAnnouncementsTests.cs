@@ -13,13 +13,13 @@ public sealed class DownloadAnnouncementsTests
     private readonly DownloadAnnouncements _announcements = new();
 
     private static DownloadItem Film(string id, DownloadState state, string title = "Example Movie", DownloadFailure failure = DownloadFailure.None,
-        bool gone = false, bool paused = false) =>
-        new(id, "mv_" + id, title, null, null, null, null, state, failure, paused, gone, false, false, ExpectedBytes: 1000,
+        bool gone = false, bool paused = false, bool missing = false) =>
+        new(id, "mv_" + id, title, null, null, null, null, state, failure, paused, gone, missing, false, ExpectedBytes: 1000,
             BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private static DownloadItem Episode(string id, int season, int episode, DownloadState state, string seriesId = "sr_1",
-        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false) =>
-        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, false, false, false,
+        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false, bool missing = false) =>
+        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, false, missing, false,
             ExpectedBytes: 1000, BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private IReadOnlyList<DownloadAnnouncement> Look(params DownloadItem[] items) => _announcements.Look(Scope7, items);
@@ -43,6 +43,16 @@ public sealed class DownloadAnnouncementsTests
         // A download that shows up done (its folder came back) did not finish now either.
         Assert.Empty(Look(Film("dl_1", DownloadState.Completed), Film("dl_2", DownloadState.Failed, failure: DownloadFailure.Server),
             Film("dl_3", DownloadState.Completed)));
+    }
+
+    [Fact]
+    public void ADownloadWhoseFolderComesBack_IsNotAnnounced()
+    {
+        // Granary started while the drive was away: each download is the row the index knew, queued, its files missing.
+        Look(Film("dl_1", DownloadState.Queued, missing: true), Film("dl_2", DownloadState.Queued, missing: true));
+
+        // The drive is back, and the folders' own records say how they ended, long ago.
+        Assert.Empty(Look(Film("dl_1", DownloadState.Completed), Film("dl_2", DownloadState.Failed, failure: DownloadFailure.Server)));
     }
 
     [Fact]

@@ -1756,7 +1756,8 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
 - **What finished or failed.** Each full refresh hands the downloads to `DownloadAnnouncements.Look` with the scope, read
   after them (a profile switched to in between then reads as a new scope). A download is news when it turned Completed or
   Failed since the look before; the first look, another scope's first look, and a download that shows up done (its
-  folder came back) are not. A film is said at once; an episode waits while another episode of its series is still to
+  folder came back) are not, nor one whose files were missing at the look before: a folder that was away as Granary
+  started gives a queued row of what the index knew, and the state its record brings back with the folder is old. A film is said at once; an episode waits while another episode of its series is still to
   come (`IsPending`), so a season or a series that finishes together is one `DownloadAnnouncement`, its failures counted
   in it, and an episode paused or deleted does not hold the others back. The words are the Apple app's
   (`DownloadNotifications.swift`): "Example Movie is ready to watch offline", an episode "Example Series (S2E8)", "… didn't

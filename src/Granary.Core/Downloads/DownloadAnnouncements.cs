@@ -12,9 +12,10 @@ public sealed record DownloadAnnouncement(string Text, bool IsFailure, string? P
 /// <summary>
 /// Which of a profile's downloads finished or failed since the last look, and how that is said. A download is announced when it
 /// turns Completed or Failed between two looks; one that was so at the first look, or that shows up so (its folder came back),
-/// is old news. A film is announced at once. Episodes go by their series: one that ends while another of its series is still to
-/// come (<see cref="DownloadTally.IsPending"/>) waits for them, so a season or a series that finishes together is one message
-/// ("8 episodes of Example Series are ready to watch offline"), failures counted in it; an episode paused by the viewer or
+/// is old news, as is one whose files were missing at the look before (a folder that was away as Granary started came back). A
+/// film is announced at once. Episodes go by their series: one that ends while another of its series is still to come
+/// (<see cref="DownloadTally.IsPending"/>) waits for them, so a season or a series that finishes together is one message ("8
+/// episodes of Example Series are ready to watch offline"), failures counted in it; an episode paused by the viewer or
 /// deleted does not hold the others back. Another scope starts afresh, its downloads old news and nothing of the last one's
 /// said. Used from one thread at a time (the UI thread's <c>DownloadActivity</c>).
 /// </summary>
@@ -96,8 +97,10 @@ public sealed class DownloadAnnouncements
         return announced;
     }
 
-    // Null while it goes on; false once it finished, true once it failed, since the last look.
-    private static bool? Ended(DownloadItem before, DownloadItem now) => now.State switch
+    // Null while it goes on; false once it finished, true once it failed, since the last look. Not one whose files were missing:
+    // a download whose folder was away as Granary started is a queued row of what the index knew, and the state its folder's
+    // record brings back once the folder is there again is old news.
+    private static bool? Ended(DownloadItem before, DownloadItem now) => before.FilesMissing ? null : now.State switch
     {
         DownloadState.Completed when before.State != DownloadState.Completed => false,
         DownloadState.Failed when before.State != DownloadState.Failed => true,
