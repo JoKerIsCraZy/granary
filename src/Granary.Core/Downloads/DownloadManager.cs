@@ -139,7 +139,9 @@ public sealed partial class DownloadManager
                 return [];
             }
             bool waits = _queue.IsWaitingForUnmetered;
-            return [.. _store.In(scope).OrderByDescending(d => d.Record.CreatedAt).Select(d => ItemOf(d, waits))];
+            // The limits counted once for the whole list, not once for each download.
+            var holds = _queue.HoldsOf(scope);
+            return [.. _store.In(scope).OrderByDescending(d => d.Record.CreatedAt).Select(d => ItemOf(d, waits, holds.GetValueOrDefault(d.Record.DownloadId)))];
         }
     }
 
@@ -298,7 +300,12 @@ public sealed partial class DownloadManager
         }
     }
 
-    private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered)
+    private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered) =>
+        ItemOf(download, waitsForUnmetered, download.Record is { State: DownloadState.Queued, SeriesId: not null }
+            ? _queue.HoldOf(download.Record.Scope, download.Record.DownloadId)
+            : DownloadHold.None);
+
+    private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered, DownloadHold hold)
     {
         var record = download.Record;
         // A finished download whose media file was deleted by hand is missing its file too, for all a page shows of it.
@@ -308,7 +315,7 @@ public sealed partial class DownloadManager
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
             record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
             _playing?.Contains(record.Scope, record.DownloadId) == true, record.ResumeMs, record.DurationMs,
-            record is { State: DownloadState.Queued, SeriesId: not null } ? _queue.HoldOf(record.Scope, record.DownloadId) : DownloadHold.None);
+            hold);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

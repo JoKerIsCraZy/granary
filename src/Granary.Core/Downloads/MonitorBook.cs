@@ -72,7 +72,8 @@ public sealed class MonitorBook
         {
             var before = _monitors.GetValueOrDefault(scope) ?? [];
             var after = change(before);
-            changed = !before.SequenceEqual(after);
+            // A monitor's validator changes with every change to it: the same ids and validators in the same order are the same.
+            changed = !before.Select(m => (m.Id, m.Etag)).SequenceEqual(after.Select(m => (m.Id, m.Etag)));
             _monitors[scope] = after;
         }
         if (changed)

@@ -133,23 +133,29 @@ public sealed partial class SeriesMonitors : IDisposable
                 return;
             }
             _started = true;
+        }
+        // Following first: a profile switch while the scope is read below is not missed.
+        _session.Changed += OnSessionChanged;
+        lock (_gate)
+        {
             _following = DownloadScope.Of(_session);
             _interval = _time.CreateTimer(static self => ((SeriesMonitors)self!).SyncSoon(), this, SyncInterval, SyncInterval);
         }
-        _session.Changed += OnSessionChanged;
         SyncSoon();
     }
 
-    /// <summary>A run in a moment (<see cref="Settle"/>); wishes made meanwhile are that one run.</summary>
+    /// <summary>
+    /// A run in a moment (<see cref="Settle"/>) after the first wish; wishes made meanwhile are that one run, so a stream of them
+    /// never puts it off.
+    /// </summary>
     public void SyncSoon()
     {
         lock (_gate)
         {
-            if (_disposed)
+            if (_disposed || _settle is not null)
             {
                 return;
             }
-            _settle?.Dispose();
             _settle = _time.CreateTimer(static self => ((SeriesMonitors)self!).Kick(), this, Settle, Timeout.InfiniteTimeSpan);
         }
     }
@@ -208,6 +214,8 @@ public sealed partial class SeriesMonitors : IDisposable
     {
         lock (_gate)
         {
+            _settle?.Dispose();
+            _settle = null;
             if (_disposed)
             {
                 return;

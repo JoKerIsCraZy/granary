@@ -18,15 +18,9 @@ public sealed partial class SeriesMonitors
         }
         if (_progress is not null)
         {
-            try
-            {
-                await _progress.FlushAsync(readBack: true, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                // What was read before stands: a watched mark is only ever the server's word or a play to the end here.
-                _logger.LogInformation("The progress could not be read before Delete after watching ({Failure})", ex.GetType().Name);
-            }
+            // Its runs never throw: what they could not send or read stays as it was, and a watched mark is only ever the
+            // server's word or a play to the end here.
+            await _progress.FlushAsync(readBack: true, cancellationToken).ConfigureAwait(false);
         }
         if (!IsStill(scope))
         {
@@ -39,10 +33,18 @@ public sealed partial class SeriesMonitors
         {
             return;
         }
-        int deleted = await _manager.DeleteWatchedAsync(scope, watched, cancellationToken).ConfigureAwait(false);
-        if (deleted > 0)
+        try
         {
-            _logger.LogInformation("{Count} watched episodes of monitored series were deleted from this PC", deleted);
+            int deleted = await _manager.DeleteWatchedAsync(scope, watched, cancellationToken).ConfigureAwait(false);
+            if (deleted > 0)
+            {
+                _logger.LogInformation("{Count} watched episodes of monitored series were deleted from this PC", deleted);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The index could not be written: what was not deleted is tried again with the next run.
+            _logger.LogWarning("Watched episodes of monitored series could not be deleted ({Failure})", DownloadLog.Failure(ex));
         }
     }
 }

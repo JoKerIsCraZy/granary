@@ -26,8 +26,10 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
         return queue;
     }
 
+    // As the server answers a change: with a validator of its own.
     private void Monitor(long maxStorageBytes) =>
-        _book.Put(Scope7, new DownloadSubscription { Id = "sub_1", SeriesId = "sr_1", Mode = SubscriptionModes.Future, MaxStorageBytes = maxStorageBytes, Active = true, Etag = "\"m1\"" });
+        _book.Put(Scope7, new DownloadSubscription { Id = "sub_1", SeriesId = "sr_1", Mode = SubscriptionModes.Future, MaxStorageBytes = maxStorageBytes, Active = true,
+            Etag = "\"m" + maxStorageBytes.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"" });
 
     private Task<StoredDownload> AddEpisodeAsync(string id, string episodeId, DownloadState state = DownloadState.Queued, long size = 3000) =>
         _h.AddAsync(id, state, size, mediaItemId: episodeId, change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });

@@ -47,7 +47,9 @@ public sealed partial class SeriesMonitors
             return;
         }
         await SendStopsAsync(scope, server, cancellationToken).ConfigureAwait(false);
-        await ReadListAsync(scope, server, cancellationToken).ConfigureAwait(false);
+        // A list that could not be read leaves the monitors as last read, which are synced as the Apple app syncs its stored
+        // ones; but nothing is taken or deleted on their word: another client may have stopped one or changed its rules.
+        bool listed = await ReadListAsync(scope, server, cancellationToken).ConfigureAwait(false);
         if (capability.CanMonitorSeries)
         {
             foreach (var monitor in _book.In(scope).Where(m => m.Active))
@@ -58,7 +60,7 @@ public sealed partial class SeriesMonitors
                 }
             }
         }
-        if (_book.In(scope).Count > 0 && IsStill(scope))
+        if (listed && _book.In(scope).Count > 0 && IsStill(scope))
         {
             await TakeRegisteredAsync(scope, server, cancellationToken).ConfigureAwait(false);
             await DeleteWatchedAsync(scope, cancellationToken).ConfigureAwait(false);
@@ -206,10 +208,11 @@ public sealed partial class SeriesMonitors
         }
         var deleting = _store.PendingDeletes(scope).Select(d => d.DownloadId).ToHashSet(StringComparer.Ordinal);
         var taken = new List<DownloadRecord>();
+        var takenEpisodes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in entries.Where(e => e.EpisodeId is { Length: > 0 } && series.Contains(e.ContentId) && Takeable.Contains(e.Status)))
         {
             if (_store.Find(scope, entry.Id) is not null || deleting.Contains(entry.Id) || _store.FindByItem(scope, entry.EpisodeId!) is not null
-                || taken.Any(t => t.MediaItemId == entry.EpisodeId))
+                || takenEpisodes.Contains(entry.EpisodeId!))
             {
                 continue;
             }
@@ -218,6 +221,7 @@ public sealed partial class SeriesMonitors
                 break;
             }
             taken.Add(record);
+            takenEpisodes.Add(record.MediaItemId);
         }
         var now = _time.GetUtcNow();
         int order = 0;
@@ -227,6 +231,11 @@ public sealed partial class SeriesMonitors
             if (!IsStill(scope))
             {
                 return;
+            }
+            // Deleted from this PC while the registry and the manifests were read: it is not brought back.
+            if (_store.PendingDeletes(scope).Any(d => d.DownloadId == record.DownloadId))
+            {
+                continue;
             }
             await KeepAsync(record with { CreatedAt = now.AddTicks(order++) }, clears).ConfigureAwait(false);
         }
@@ -317,6 +326,7 @@ public sealed partial class SeriesMonitors
         catch (InvalidOperationException)
         {
             // Kept meanwhile, as by a Download pressed for the same episode.
+            _logger.LogDebug("Download {DownloadId} of a monitored series was kept meanwhile", record.DownloadId);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

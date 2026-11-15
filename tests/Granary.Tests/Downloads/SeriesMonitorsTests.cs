@@ -197,10 +197,14 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         Assert.Single(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
     }
 
+    // Sent, and the connection ended before an answer came.
+    private static Func<Task<HttpResponseMessage>> NoAnswer() =>
+        () => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "The answer broke off."));
+
     [Fact]
     public async Task Create_ThatGotNoAnswer_IsLookedUpInTheList_NeverSentAgain()
     {
-        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.NetworkError());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, NoAnswer());
         ListMonitors(MonitorPayloads.Monitor());
         SyncAnswers(MonitorPayloads.Sync());
 
@@ -215,6 +219,67 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
 
         Assert.Equal(MonitorResult.Uncertain, unknown);
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Post, MonitorsPath).Count);
+    }
+
+    [Fact]
+    public async Task Create_ThatCouldNotConnect_SentNothing_AndFails()
+    {
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.NetworkError());
+        ListMonitors(MonitorPayloads.Monitor());
+
+        var result = await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+
+        Assert.Equal(MonitorResult.Failed, result);
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, MonitorsPath));
+    }
+
+    [Fact]
+    public async Task Update_OfAMonitorThatChanged_WhoseReadFailed_IsNotTakenAsRead()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.Problem(412, "precondition_failed"));
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.NetworkError());
+
+        var result = await Monitors.UpdateAsync("sub_1", new MonitorEdit(SubscriptionModes.All, false, 0, null), Token);
+
+        Assert.Equal(MonitorResult.Uncertain, result);
+    }
+
+    [Fact]
+    public async Task AListThatCouldNotBeRead_TakesAndDeletesNothing()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        Registered();
+        _h.List(DownloadPayloads.Entry("dl_9", "ready", episodeId: "ep_9"));
+        _h.Silo.On(HttpMethod.Get, MonitorsPath, ScriptedSilo.Problem(503, "dependency_unavailable"));
+
+        await Monitors.SyncAsync(Token);
+
+        // Another client may have stopped the monitor or turned Delete after watching off.
+        Assert.NotNull(_h.Find("dl_1"));
+        Assert.Null(_h.Find("dl_9"));
+    }
+
+    [Fact]
+    public async Task WishesInQuickSuccession_AreOneRun_ThatTheyDoNotPutOff()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        Monitors.Start();
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        Monitors.SyncSoon();
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        Monitors.SyncSoon();
+
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, MonitorsPath).Count == 1, "the run");
+        await Monitors.LatestRun;
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, MonitorsPath));
     }
 
     [Fact]

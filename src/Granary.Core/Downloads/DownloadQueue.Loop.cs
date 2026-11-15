@@ -282,6 +282,7 @@ public sealed partial class DownloadQueue
     {
         var now = _time.GetUtcNow();
         var all = _store.All;
+        LimitTally? tally = null;
         foreach (var download in all.Where(d => d.Record.Scope == scope && IsWanted(d)).OrderBy(d => d.Record.CreatedAt))
         {
             var key = Key.Of(download.Record);
@@ -291,13 +292,17 @@ public sealed partial class DownloadQueue
                 {
                     return;
                 }
+                tally ??= TallyLocked(all);
                 if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now)
-                    || HoldLocked(download, all) != DownloadHold.None)
+                    || HoldLocked(download, tally) != DownloadHold.None)
                 {
                     continue;
                 }
                 var run = new Running(key, server, download.Record.Revision, generation);
+                long before = TakenLocked(download);
                 _running[key] = run;
+                // Under way, it takes what it comes to: the episodes weighed after it in this pass count that.
+                tally.Add(download.Record, TakenLocked(download) - before);
                 run.Task = Task.Run(() => RunAsync(run));
             }
         }

@@ -1597,11 +1597,14 @@ titles of their series as a download dialog or a download named them.
   seconds later; a monitor that changed under its sync (409) is read again and its sync starts over, twice at most; one the
   server no longer has (404, and 404 again when read) leaves the list. A server that cannot be reached, or asks to wait
   (429, 503), ends the run's syncs: the next monitors would meet the same. While the server does not monitor series, a run
-  reads the list but syncs nothing, so a monitor that is there can still be stopped.
+  reads the list but syncs nothing, so a monitor that is there can still be stopped. A list that could not be read leaves
+  the monitors as last read, which are synced, as the Apple app syncs its stored ones; but that run takes nothing and
+  deletes nothing on their word, since another client may have stopped one or changed it.
 - **When.** At the start, when another server, account or profile becomes the active one, every `SyncInterval` (4 hours,
   the Apple app's background refresh) while Granary runs, after a monitor is made or changed (that monitor alone), and when
   a new notification comes for the profile on the events connection (`RealtimeEvents.NotificationArrived`, on
-  `notification.created`), as a push wakes the Apple app's sync: a new episode's notification is one (`SyncSoon`). Wishes settle for `Settle` (2 s) into one run; a wish while a run is under way is one more run after
+  `notification.created`), as a push wakes the Apple app's sync: a new episode's notification is one (`SyncSoon`).
+  Wishes settle into one run `Settle` (2 s) after the first of them, so a stream of them never puts the run off. Wishes settle for `Settle` (2 s) into one run; a wish while a run is under way is one more run after
   it. Signed out there is nothing to run, and the monitors stay on the server: they are the profile's.
 - **Taking registered episodes.** After the syncs, the registry (14.3) is read whole and each entry of a monitored series
   (its `content_id` a monitor's series, an episode) that the PC neither keeps, by id or by episode, nor is deleting, whose
@@ -1632,8 +1635,9 @@ titles of their series as a download dialog or a download named them.
   (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
   (`MonitorRules.StatusOf`: paused; a storage limit holding an episode; one under way; one waiting; the next airing the rule
   takes that this PC does not have; up to date once the calendar was read), from the page's downloads and
-  `MonitorSchedule`, which the page asks to read as it shows; the monitors' and the schedule's `Changed` refresh it
-  through the page's follower. A card's click and Options open `DownloadActions.OfferReadAsync` for the series, on Monitor.
+  `MonitorSchedule`, which the page asks to read as it shows and whenever the monitors change while it shows (a run at the
+  start fills them a moment later; the calendar itself is read only when due); the monitors' and the schedule's `Changed`
+  refresh it through the page's follower. A card's click and Options open `DownloadActions.OfferReadAsync` for the series, on Monitor.
 - **Delete after watching.** A monitor's `delete_watched` is the client's to carry out, as the Apple app does it
   (`retentionDeletions`): at the end of each run, once the server heard what was watched on this PC and its progress was
   read back (`OfflineProgressSync.FlushAsync`), the whole episodes of such a series that the profile watched for sure
@@ -1648,12 +1652,16 @@ titles of their series as a download dialog or a download named them.
   monitor's limit, or all downloads past Granary's (`DownloadQueue.HoldOf`, `DownloadHold`): whole files count their size,
   a transfer under way the size it comes to, the rest the bytes they have, and missing files nothing. It starts once
   there is room, as a delete, a raised limit (the book's `Changed` and the settings' wake the queue) or another monitor
-  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. Its card says "Series storage
+  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. What the downloads take is counted
+  once for each pass and each list a page reads (`LimitTally`), and a pass adds each transfer it starts at the size it comes
+  to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. Its card says "Series storage
   limit reached" (the Apple app's words) or "Storage limit for downloads reached". Other downloads are never held: the
   download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
   dialog opens, and what the choice needs), and says so.
 - **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that
-  landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it. Everything
+  landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it, and the
+  dialog's Cancel ends that wait (nothing is sent) but never a write that began. The book counts a monitor as changed when
+  its id or validator did, which changes with every change to it. Everything
   runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it
   applies nothing more. The log names no series, title or profile.
 

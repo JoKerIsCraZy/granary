@@ -80,8 +80,9 @@ public sealed partial class SeriesMonitors
     }
 
     /// <summary>
-    /// Stops monitoring: the monitor leaves the list at once, and its delete goes under its validator, now or with the next run
-    /// while the server cannot be reached; the list does not bring it back meanwhile. The downloads it registered stay.
+    /// Stops monitoring: the monitor leaves the list at once, and its delete goes under its validator, now or, while the server
+    /// cannot be reached, with a later run while Granary runs (it is not kept on disk); the list does not bring it back
+    /// meanwhile. The downloads it registered stay.
     /// </summary>
     public async Task<MonitorResult> StopAsync(string subscriptionId, CancellationToken cancellationToken)
     {
@@ -106,7 +107,8 @@ public sealed partial class SeriesMonitors
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    // One write at a time with the runs, for the scope it began in.
+    // One write at a time with the runs, for the scope it began in. The caller's token cancels the wait for a run under way
+    // (OperationCanceledException), never the write once it began: a create the server may have made is not cut off.
     private async Task<MonitorResult> WriteAsync(Func<DownloadScope, Uri, CancellationToken, Task<MonitorResult>> write, CancellationToken cancellationToken)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
@@ -117,7 +119,7 @@ public sealed partial class SeriesMonitors
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
-            return IsStill(scope) ? await write(scope, server, linked.Token).ConfigureAwait(false) : MonitorResult.Unavailable;
+            return IsStill(scope) ? await write(scope, server, _stop.Token).ConfigureAwait(false) : MonitorResult.Unavailable;
         }
         finally
         {
@@ -143,9 +145,11 @@ public sealed partial class SeriesMonitors
         catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
         {
             _logger.LogInformation("A monitor changed on the server since it was read ({Status}); it is read again", ex.Status);
-            return await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false) is null && _book.Find(scope, monitor.Id) is null
-                ? MonitorResult.Removed
-                : MonitorResult.Changed;
+            var reread = await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false);
+            // Changed only once what changed was read: a read that failed leaves the old monitor, which is not what changed.
+            return reread is not null ? MonitorResult.Changed
+                : _book.Find(scope, monitor.Id) is null ? MonitorResult.Removed
+                : MonitorResult.Uncertain;
         }
         catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
         {
@@ -246,8 +250,10 @@ public sealed partial class SeriesMonitors
         && monitor.MaxStorageBytes == Math.Max(0, choice.MaxStorageBytes)
         && (choice.Quality is null || choice.Quality == (monitor.Quality ?? DownloadQualities.Original));
 
-    // No answer, a conflict or a server error: the server may have made it.
+    // No answer, a conflict or a server error: the server may have made it. A connection that was never made sent nothing.
     private static bool IsUncertain(Exception ex, CancellationToken cancellationToken) =>
-        ex is HttpRequestException or SiloApiException { Status: (int)HttpStatusCode.Conflict or >= 500 }
+        ex is HttpRequestException { HttpRequestError: not (HttpRequestError.ConnectionError or HttpRequestError.NameResolutionError
+            or HttpRequestError.SecureConnectionError) }
+        || ex is SiloApiException { Status: (int)HttpStatusCode.Conflict or >= 500 }
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 }

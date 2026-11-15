@@ -31,8 +31,27 @@ public sealed partial class DownloadQueue
         }
         lock (_gate)
         {
-            return HoldLocked(download, all);
+            return HoldLocked(download, TallyLocked(all));
         }
+    }
+
+    /// <summary>The scope's downloads a limit holds back now, by id, counted in one go for a page's whole list.</summary>
+    public IReadOnlyDictionary<string, DownloadHold> HoldsOf(DownloadScope scope)
+    {
+        var all = _store.All;
+        var holds = new Dictionary<string, DownloadHold>(StringComparer.Ordinal);
+        lock (_gate)
+        {
+            var tally = TallyLocked(all);
+            foreach (var download in all.Where(d => d.Record.Scope == scope))
+            {
+                if (HoldLocked(download, tally) is not DownloadHold.None and var hold)
+                {
+                    holds[download.Record.DownloadId] = hold;
+                }
+            }
+        }
+        return holds;
     }
 
     /// <summary>
@@ -57,8 +76,8 @@ public sealed partial class DownloadQueue
     }
 
     // A monitored series' episode that has to come, not under way, whose bytes would take its series past its monitor's limit or
-    // the downloads past Granary's. A transfer under way is never stopped for a limit.
-    private DownloadHold HoldLocked(StoredDownload download, IReadOnlyList<StoredDownload> all)
+    // the downloads past Granary's, as the tally counts them. A transfer under way is never stopped for a limit.
+    private DownloadHold HoldLocked(StoredDownload download, LimitTally tally)
     {
         var record = download.Record;
         var key = Key.Of(record);
@@ -68,21 +87,47 @@ public sealed partial class DownloadQueue
         {
             return DownloadHold.None;
         }
+        long own = TakenLocked(download);
         long needs = Math.Max(record.ExpectedBytes, _bytes.GetValueOrDefault(key));
-        if (monitor.MaxStorageBytes > 0)
+        if (monitor.MaxStorageBytes > 0 && tally.SeriesTaken(record.Scope, seriesId) - own + needs > monitor.MaxStorageBytes)
         {
-            long series = all.Where(d => d.Record.Scope == record.Scope && d.Record.SeriesId == seriesId && Key.Of(d.Record) != key).Sum(TakenLocked);
-            if (series + needs > monitor.MaxStorageBytes)
-            {
-                return DownloadHold.SeriesLimit;
-            }
+            return DownloadHold.SeriesLimit;
         }
         long limit = _preferences.StorageLimitGb * DownloadPreferenceLimits.BytesPerGb;
-        if (limit > 0 && all.Where(d => Key.Of(d.Record) != key).Sum(TakenLocked) + needs > limit)
+        return limit > 0 && tally.Total - own + needs > limit ? DownloadHold.DownloadsLimit : DownloadHold.None;
+    }
+
+    // What every download takes now, in all and by series, counted once for a pass or a page's list.
+    private LimitTally TallyLocked(IReadOnlyList<StoredDownload> all)
+    {
+        var tally = new LimitTally();
+        foreach (var download in all)
         {
-            return DownloadHold.DownloadsLimit;
+            tally.Add(download.Record, TakenLocked(download));
         }
-        return DownloadHold.None;
+        return tally;
+    }
+
+    /// <summary>
+    /// What the downloads take, in all and by each scope's series. A pass adds what each transfer it starts comes to, so the
+    /// episodes it weighs after it count that one whole.
+    /// </summary>
+    private sealed class LimitTally
+    {
+        private readonly Dictionary<(DownloadScope Scope, string SeriesId), long> _series = [];
+
+        public long Total { get; private set; }
+
+        public long SeriesTaken(DownloadScope scope, string seriesId) => _series.GetValueOrDefault((scope, seriesId));
+
+        public void Add(DownloadRecord record, long bytes)
+        {
+            Total += bytes;
+            if (record.SeriesId is { } seriesId)
+            {
+                _series[(record.Scope, seriesId)] = SeriesTaken(record.Scope, seriesId) + bytes;
+            }
+        }
     }
 
     private long TakenLocked(StoredDownload download)
