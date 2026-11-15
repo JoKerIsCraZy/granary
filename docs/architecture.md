@@ -1576,8 +1576,8 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
   identity of the phone's `hello`), the PC's lock (`IPcLock`, the App's), a Watch Party (`WatchPartySession.IsInRoom`,
   the room page's and the player's own source), and a launch still opening. Then `RemoteReceiverPolicy.RequestFor` makes
   the `PlayRequest` (silo-roku's `launchIntent`: start over, `PlayRequest.At` the phone's position above 0, or resume; a
-  version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that can name no title
-  refused), `Launched` is raised with the phone's cleaned name and that request, and the player route opens it as a
+  version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that is not one Silo
+  Server makes, 1 to 256 printable ASCII characters without the space and not `.` or `..`, refused), `Launched` is raised with the phone's cleaned name and that request, and the player route opens it as a
   page's Play does, replacing what plays without asking. The server decides, under the PC's profile, what may play.
 - **The status at once.** A phone gives up 30 seconds after its launch without its title in the status, and the player
   page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's

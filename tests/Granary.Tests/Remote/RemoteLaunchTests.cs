@@ -206,16 +206,40 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
+    [InlineData(".")]
     [InlineData("..")]
-    public async Task ALaunchThatNamesNoTitle_OpensNothing(string contentId)
+    [InlineData("movie 1")]
+    [InlineData("movie-1\u0001")]
+    [InlineData("movie-1\n")]
+    [InlineData("film-\u00e9t\u00e9")]
+    [InlineData("movie-1\u200b")]
+    [InlineData(257)]
+    public async Task ALaunchThatNamesNoTitle_OpensNothing(object contentId)
     {
+        // Silo Server's ids are 1 to 256 characters, each printable ASCII but the space (userdata.go ValidContentID).
+        string id = contentId is int length ? new string('a', length) : (string)contentId;
         var phone = await ReadyAsync();
 
-        await phone.SendAsync(Launch($$"""{"contentId":"{{contentId}}","startFromBeginning":true}"""));
+        await phone.SendAsync(Launch($$"""{"contentId":{{JsonSerializer.Serialize(id)}},"startFromBeginning":true}"""));
 
         Assert.Equal("""{"type":"error","v":2,"error":{"code":"launch_failed","message":"This title is no longer available."}}""",
             await phone.NextAsync("error"));
         Assert.Empty(Navigations);
+    }
+
+    [Theory]
+    [InlineData("movie:heat-1995")]
+    [InlineData("episode-tvdb-296762-1-5")]
+    [InlineData(256)]
+    public async Task ATitleIdAsSiloWritesThem_Opens(object contentId)
+    {
+        string id = contentId is int length ? new string('~', length) : (string)contentId;
+        var phone = await ReadyAsync();
+
+        await phone.SendAsync(Launch($$"""{"contentId":{{JsonSerializer.Serialize(id)}},"startFromBeginning":true}"""));
+
+        await LoadingAsync(phone, id);
+        Assert.Equal(id, Assert.IsType<PlayRequest>(Assert.Single(Navigations).Parameter).ContentId);
     }
 
     [Fact]

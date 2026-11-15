@@ -25,6 +25,9 @@ public static class RemoteReceiverPolicy
     /// <summary>Connections at a time from one address that have not said <c>hello</c>; a third closes that address's oldest.</summary>
     public const int MaxUnauthenticatedPerAddress = 2;
 
+    /// <summary>The longest content id a launch may name: Silo Server's own limit (silo-server's <c>userdata.go</c> <c>ValidContentID</c>).</summary>
+    public const int MaxContentIdLength = 256;
+
     /// <summary>
     /// Whether a peer may connect at all: a private (RFC 1918), link-local or loopback IPv4 address, also when written as
     /// an IPv4-mapped IPv6 one (<c>isLocalPeer</c>). Every other address is closed at once.
@@ -109,13 +112,13 @@ public static class RemoteReceiverPolicy
     /// else from the profile's saved point. A version (<c>fileId</c>, pinned with <c>pinsVersion</c>) brings its track
     /// picks along: the audio ordinal (a negative one picks none) and the combined subtitle ordinal, any negative one off.
     /// Picks without a version are dropped, since a pick belongs to a file, and <c>libraryId</c> is not read. Null when the
-    /// content id can name no title: blank, "." or "..".
+    /// content id is not one Silo Server makes (<see cref="IsContentId"/>).
     /// </summary>
     public static PlayRequest? RequestFor(LaunchPlayback playback)
     {
         ArgumentNullException.ThrowIfNull(playback);
         string contentId = playback.ContentId;
-        if (string.IsNullOrWhiteSpace(contentId) || contentId is "." or "..")
+        if (!IsContentId(contentId))
         {
             return null;
         }
@@ -132,6 +135,14 @@ public static class RemoteReceiverPolicy
             ? PlayRequest.At(contentId, position, choice)
             : PlayRequest.Resume(contentId, choice);
     }
+
+    /// <summary>
+    /// An id as Silo Server makes them (silo-server's <c>userdata.go</c> <c>ValidContentID</c>): 1 to
+    /// <see cref="MaxContentIdLength"/> characters, each printable ASCII but the space, so no control, format or other
+    /// character reaches a request; and not "." or "..", which a path would read as another route.
+    /// </summary>
+    public static bool IsContentId(string? contentId) =>
+        contentId is { Length: > 0 and <= MaxContentIdLength } && contentId is not ("." or "..") && contentId.All(c => c is > ' ' and <= '~');
 }
 
 /// <summary>What the receiver does with a phone's <c>hello</c>.</summary>

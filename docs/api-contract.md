@@ -3190,7 +3190,7 @@ is checked afresh, in this order:
 | Windows is locked | `error player_not_ready` | "The PC player is not ready yet." |
 | This profile is in a Watch Party's room | `error watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
 | A launched title is still opening (below) | `error launch_pending` | "A title is already starting on this PC." |
-| `contentId` can name no title (blank, `.` or `..`) | `error launch_failed` | "This title is no longer available." (the player's words for a title the server does not have) |
+| `contentId` is not an id Silo Server makes: 1 to 256 characters, each printable ASCII but the space, and not `.` or `..` (silo-server's `ValidContentID`) | `error launch_failed` | "This title is no longer available." (the player's words for a title the server does not have) |
 | Otherwise | the player opens the title, as a detail page's Play does; then the status | |
 
 - **What plays.** `contentId` is the title. `startFromBeginning: true` starts over; else a `resumePosition` above 0
