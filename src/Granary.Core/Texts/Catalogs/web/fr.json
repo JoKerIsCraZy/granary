@@ -5900,6 +5900,16 @@
       "value": "Sélectionner les éléments chargés"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 0,
+      "value": "Sélection : "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,

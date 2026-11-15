@@ -4941,6 +4941,16 @@
       "value": "読み込み済みを選択"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "件選択中"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,

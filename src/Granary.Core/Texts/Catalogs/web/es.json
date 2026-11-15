@@ -5822,6 +5822,16 @@
       "value": "Seleccionar cargados"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " seleccionados"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,

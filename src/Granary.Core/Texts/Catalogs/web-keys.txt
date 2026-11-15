@@ -779,6 +779,7 @@ web.catalog.page.searchTitle
 # More of the personal lists' words, as above under web.catalog.history.dialogBody.
 web.catalog.page.select
 web.catalog.page.selectLoaded
+web.catalog.page.selectedCount
 
 # More of a library page's words, as above under catalog.sort.added.
 web.catalog.page.titleCount

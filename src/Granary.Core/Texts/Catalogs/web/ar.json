@@ -7090,6 +7090,16 @@
       "value": "تحديد المحمّل"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " محدد"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,

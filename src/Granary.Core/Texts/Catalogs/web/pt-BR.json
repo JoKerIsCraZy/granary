@@ -5834,6 +5834,16 @@
       "value": "Selecionar carregados"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 0,
+      "value": "Selecionados: "
+    },
+    {
+      "type": 1,
+      "value": "count"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,

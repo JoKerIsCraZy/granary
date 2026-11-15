@@ -1,5 +1,6 @@
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Tests.Playback;
 
@@ -45,6 +46,17 @@ public sealed class PlaybackMediaInfoTests
         var info = PlaybackMediaInfo.Of(new WatchDetail { Type = WatchItemTypes.Episode, SeriesTitle = "Dark", SeasonNumber = 2, EpisodeNumber = 1 }, Server);
 
         Assert.Equal(("Episode 1", "Dark — S2 · E1"), (info.Title, info.Subtitle));
+    }
+
+    [Fact]
+    public void AnEpisodeWithoutATitle_IsNamedInTheLanguage()
+    {
+        // The web's words for an episode without a title (web.detail.episodes.numbered), as its episode rows name one.
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        var info = PlaybackMediaInfo.Of(new WatchDetail { Type = WatchItemTypes.Episode, SeriesTitle = "Dark", SeasonNumber = 2, EpisodeNumber = 1 }, Server);
+
+        Assert.Equal("Folge 1", info.Title);
     }
 
     [Fact]

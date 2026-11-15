@@ -5384,6 +5384,16 @@
       "value": "Geladene auswählen"
     }
   ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " ausgewählt"
+    }
+  ],
   "web.catalog.page.titleCount": [
     {
       "type": 6,
