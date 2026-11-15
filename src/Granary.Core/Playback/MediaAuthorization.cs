@@ -1,5 +1,6 @@
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -18,6 +19,15 @@ public enum MediaAuthorizationFailure
 
 public sealed class MediaAuthorizationException(MediaAuthorizationFailure failure, string message) : Exception(message)
 {
+    /// <summary>This PC has no sign-in for the server.</summary>
+    public static string SignedOutText => AppText.Get("granary.player.error.signIn");
+
+    /// <summary>The server refused to renew the sign-in: it ended, as the web's player says of a 401.</summary>
+    public static string SessionEndedText => AppText.Get("web.player.error.authenticationRequired.message");
+
+    /// <summary>A fresh token was needed and the server could not issue one right now.</summary>
+    public static string RenewFailedText => AppText.Get("granary.player.error.renewFailed");
+
     public MediaAuthorizationFailure Failure { get; } = failure;
 }
 
@@ -54,14 +64,14 @@ public sealed class MediaAuthorization(
     {
         ArgumentNullException.ThrowIfNull(server);
         var session = await credentials.GetAsync(server.Id, cancellationToken).ConfigureAwait(false)
-            ?? throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, "Sign in to play from this server.");
+            ?? throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, MediaAuthorizationException.SignedOutText);
         if (rejected || NeedsFreshToken(session))
         {
             session = await RefreshAsync(server, session, rejected, cancellationToken).ConfigureAwait(false);
         }
         if (session.ProfileId is not { } profileId)
         {
-            throw new MediaAuthorizationException(MediaAuthorizationFailure.NoProfile, "Choose a profile to play from this server.");
+            throw new MediaAuthorizationException(MediaAuthorizationFailure.NoProfile, PlaybackUnavailableException.NoProfileText);
         }
         List<KeyValuePair<string, string>> headers =
         [
@@ -91,9 +101,9 @@ public sealed class MediaAuthorization(
             case RefreshStatus.Superseded:
                 // Another login took the server's place meanwhile; play with that one.
                 return await credentials.GetAsync(server.Id, cancellationToken).ConfigureAwait(false)
-                    ?? throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, "Sign in to play from this server.");
+                    ?? throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, MediaAuthorizationException.SignedOutText);
             case RefreshStatus.SignedOut:
-                throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, "The server ended the session. Sign in again to play.");
+                throw new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, MediaAuthorizationException.SessionEndedText);
         }
         // The refresh failed for now. A token the server has not refused yet still plays until it expires.
         if (!rejected && stale.AccessTokenExpiresAt > time.GetUtcNow())
@@ -101,6 +111,6 @@ public sealed class MediaAuthorization(
             logger.LogInformation("Could not refresh the token before a load from server {ServerEntryId}; playing with the current one", server.Id);
             return stale;
         }
-        throw new MediaAuthorizationException(MediaAuthorizationFailure.Unavailable, "The server could not renew the sign-in. Try again in a moment.");
+        throw new MediaAuthorizationException(MediaAuthorizationFailure.Unavailable, MediaAuthorizationException.RenewFailedText);
     }
 }

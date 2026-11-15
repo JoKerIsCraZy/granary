@@ -29,6 +29,8 @@ public sealed class RemoteTextsTests
     [InlineData("An administrator ended this playback session.")]
     [InlineData("An administrator stopped this playback session.")]
     [InlineData("Sign in to play from this server.")]
+    [InlineData("Your sign-in session has expired. Sign in again to continue playback.")]
+    [InlineData("No playable version found")]
     [InlineData("This title was started for a profile that is no longer signed in.")]
     public void GranarysOwnFailures_GoAsTheyAre(string message) => Assert.Equal(message, RemoteTexts.PlayerError(message));
 
@@ -60,6 +62,40 @@ public sealed class RemoteTextsTests
                 "The server is receiving too many requests. Try again in 3 minutes.",
                 "Playback error: loading failed",
                 "An administrator ended this playback session.",
+            ],
+            shown.Select(RemoteTexts.PlayerError));
+    }
+
+    [Fact]
+    public void ThePlayersStartFailures_InTheLanguageOnScreen_GoInEnglish()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var shown = new[]
+        {
+            MediaAuthorizationException.SignedOutText,
+            MediaAuthorizationException.SessionEndedText,
+            MediaAuthorizationException.RenewFailedText,
+            PlaybackUnavailableException.NoServerText,
+            PlaybackUnavailableException.NoProfileText,
+            PlaybackUnavailableException.NoFileText,
+            PlaybackUnavailableException.RoomFileUnavailableText,
+            PlaybackUnavailableException.NotOfferedText,
+            PlaybackUnavailableException.StartedForAnotherProfile,
+        };
+        Assert.DoesNotContain("Sign in to play from this server.", shown);
+        Assert.DoesNotContain("No playable version found", shown);
+
+        Assert.Equal(
+            [
+                "Sign in to play from this server.",
+                "Your sign-in session has expired. Sign in again to continue playback.",
+                "The server could not renew the sign-in. Try again in a moment.",
+                "Choose a server to play from.",
+                "Choose a profile to play from this server.",
+                "No playable version found",
+                "The room's file is not available here.",
+                "This server does not offer playback to this app.",
+                "This title was started for a profile that is no longer signed in.",
             ],
             shown.Select(RemoteTexts.PlayerError));
     }

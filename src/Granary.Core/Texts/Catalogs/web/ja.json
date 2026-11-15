@@ -11185,6 +11185,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "サインインのセッションの有効期限が切れました。再生を続けるには、もう一度サインインしてください。"
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "再生できるバージョンがありません"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -14921,6 +14933,12 @@
     {
       "type": 0,
       "value": "再生中の動画は、次のリクエストまで再生が続く場合があります。保存されたデバイスの設定は保持されます。"
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "サインアウト中…"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [

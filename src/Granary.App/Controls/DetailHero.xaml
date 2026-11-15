@@ -217,7 +217,7 @@
                 whitespace-nowrap); one wider than the row is cut short. A movie, a series or an episode; a season has none.
             -->
             <ItemsRepeater x:Name="ScoreRow" MaxWidth="900" HorizontalAlignment="Left" ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}"
-                           Visibility="{x:Bind ViewModel.HasRatings, Mode=OneWay}" AutomationProperties.Name="Ratings">
+                           Visibility="{x:Bind ViewModel.HasRatings, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.item.editMetadata.ratings')}">
                 <ItemsRepeater.Layout>
                     <controls:WrapLayout HorizontalSpacing="20" VerticalSpacing="8" />
                 </ItemsRepeater.Layout>

@@ -12129,6 +12129,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Your sign-in session has expired. Sign in again to continue playback."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "No playable version found"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -16233,6 +16245,12 @@
     {
       "type": 0,
       "value": "A video already playing may continue until its next request. Saved device settings are kept."
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Signing out…"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [

@@ -1486,13 +1486,14 @@ says why above the sections.
 - **This PC → Control Granary from your phone** (`PhoneRemoteViewModel`; docs/architecture.md, "Phone remote"), the
   group's last row: Silo's phone app on the local network as a remote for this PC. Silo's web has no wording for this, so
   the texts follow Silo's Roku app's Connect a Phone (`locale/en_US/strings.json`, `connect.*`) with "TV" as "PC"; the
-  ones marked *new* have no Silo source. The label is "Control Granary from your phone" (the Roku app's "Control Silo
+  ones marked *new* have no Silo source. In other languages they name Connect a Phone and Remote Control as Silo's phone
+  apps do. The label is "Control Granary from your phone" (the Roku app's "Control Silo
   from your phone"), the switch off by default and kept on this PC (`phone_remote` in `playback-device.json`). The
   description, *new*: "Silo's phone app on this network can control what plays on this PC and start titles here.
   Windows may ask to let Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
   name and your server's address." While it is on, a 13 px muted line under the row says what it does: "No phone is
-  connected." or "Connected: Elena's phone, Elena's tablet" (the phones that actively control, as the Roku app lists
-  them), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
+  connected." or "Connected: Elena's phone and Elena's tablet" (the phones that actively control, as the Roku app lists
+  them, in a list as the language writes one), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
   isn't available right now." (the Roku app's) with a second line why (*new*): "This PC is not on a local network.",
   "Windows did not give Granary a port.", "No profile is signed in on this PC." or "Granary couldn't start it. The log has
   the details." (the pairing key could not be read, Windows' advertisement failed, or the listener stopped). The row
@@ -1505,10 +1506,10 @@ says why above the sections.
   reader); the address and port, "192.168.1.20:52817", 16 px monospace (shown as on the Roku app), and under it "The phone
   has to be on this network and signed in to https://silo.example." (*new*); the connected phones, as under the row;
   "Phones can connect through this code only: Windows did not advertise this PC." (*new*) when Windows did not take the
-  advertisement; **Reset Pairing Code** (the Roku app's) with "Every phone has to scan the new code." (*new*) under it;
+  advertisement; **Reset pairing code** (the Roku app's, in the web's sentence case) with "Every phone has to scan the new code." (*new*) under it;
   and "Phone can't connect? Allow Granary under Windows Security → Firewall & network protection → Allow an app through
-  firewall." (*new*), always. Reset Pairing Code asks first in a flyout under the button, as no second dialog can open
-  over this one: "Reset Pairing Code?" / "Every phone has to scan the new code. Phones that are connected now are
+  firewall." (*new*), always. Reset pairing code asks first in a flyout under the button, as no second dialog can open
+  over this one: "Reset pairing code?" / "Every phone has to scan the new code. Phones that are connected now are
   disconnected." with Cancel and Reset; afterwards the code shows the new key, or a muted line says "The new code is in
   place, but a phone could not be disconnected. It can no longer control this PC." or "Couldn't reset the pairing code.
   The old code still works." The code holds the pairing key: it is drawn only while the dialog is open, from the link the
@@ -1853,10 +1854,10 @@ While Silo's phone app controls this PC (Settings → Playback → This PC → C
   window, 80 px down, over the pages and over the full player alike. A phone that only watches (passive) gets none.
 - **The indicator.** While a phone actively controls, a quiet glass disc with a phone icon left of the activity
   indicator at the top right of the page (20 px from the edge, 8 px from the activity disc when that shows), named and
-  tooltipped "Remote control active" (the TV apps'). Its menu has one item, **Disconnect Remote**, which lets every
-  phone that controls go; the phone then says it can't reach the PC and keeps it in its list. It shows where the activity
-  indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
-  icon and menu (under Player).
+  tooltipped "Remote control active" (the TV apps'). Its menu has one item, **Disconnect remote** (the TV apps'
+  "Disconnect Remote", in the web's sentence case), which lets every phone that controls go; the phone then says it
+  can't reach the PC and keeps it in its list. It shows where the activity indicator does: over the pages, also while
+  the player is its bar, never over the full player, whose bar has the same icon and menu (under Player).
 - **A title a phone starts** opens as a page's Play opens it, in place of what plays, without a question on the PC; the
   window is not brought to the front. Unless the window is the one in front (focused), it stays as it is, minimized,
   behind other windows or visible but unfocused on another display alike: the player opens inside it, a mini view stays
@@ -1983,7 +1984,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
   full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
   it close up). While Silo's phone app controls this PC, a phone icon leads them, "Remote control active", with a menu
-  of one item, Disconnect Remote (see Phone remote); it is none of the buttons Settings orders. By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  of one item, Disconnect remote (see Phone remote); it is none of the buttons Settings orders. By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
   track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the

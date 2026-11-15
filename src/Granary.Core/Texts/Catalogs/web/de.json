@@ -12097,6 +12097,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Deine Anmeldesitzung ist abgelaufen. Melde dich erneut an, um die Wiedergabe fortzusetzen."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "Keine abspielbare Version gefunden"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -16253,6 +16265,12 @@
     {
       "type": 0,
       "value": "Ein bereits laufendes Video kann bis zu seiner nächsten Anfrage weiterlaufen. Gespeicherte Geräteeinstellungen bleiben erhalten."
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Wird abgemeldet …"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [

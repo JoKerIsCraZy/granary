@@ -15079,6 +15079,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "انتهت صلاحية جلسة تسجيل الدخول. سجّل الدخول مرة أخرى لمتابعة التشغيل."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "لم يُعثر على إصدار قابل للتشغيل"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -20500,6 +20512,12 @@
     {
       "type": 0,
       "value": "قد يستمر تشغيل فيديو قيد التشغيل حتى طلبه التالي. تُحفظ إعدادات الجهاز المحفوظة."
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "جارٍ تسجيل الخروج…"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [

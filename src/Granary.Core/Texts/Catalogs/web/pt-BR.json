@@ -12904,6 +12904,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Sua sessão expirou. Entre novamente para continuar a reprodução."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "Nenhuma versão reproduzível encontrada"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -17408,6 +17420,12 @@
     {
       "type": 0,
       "value": "Um vídeo que já está sendo reproduzido pode continuar até a próxima solicitação. As configurações salvas do dispositivo são mantidas."
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Desconectando…"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [

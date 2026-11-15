@@ -6,6 +6,7 @@ using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 
@@ -364,6 +365,36 @@ public sealed class SidebarViewModelTests
         await sidebar.SignOutCommand.ExecuteAsync(null);
 
         Assert.Equal("", sidebar.SignOutError);
+    }
+
+    [Fact]
+    public async Task ASignOutThatFails_SaysSo_InTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        using var sidebar = Create();
+        _session.FailWith = new InvalidOperationException("no");
+
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("Die Abmeldung ist fehlgeschlagen. Versuche es erneut.", sidebar.SignOutError);
+        Assert.Equal("Menü von Elena. Die Abmeldung ist fehlgeschlagen. Versuche es erneut.",
+            SidebarViewModel.ProfileMenuName("Elena", signingOut: false, sidebar.SignOutError));
+    }
+
+    [Fact]
+    public void TheProfileEntry_WhileASignOutRuns_SaysSo_AsTheWebsSignOutDoes()
+    {
+        Assert.Equal("Signing out…", SidebarViewModel.ProfileLabel("Elena", signingOut: true));
+        Assert.Equal("Signing out…", SidebarViewModel.ProfileMenuName("Elena", signingOut: true, ""));
+        Assert.Equal("Elena", SidebarViewModel.ProfileLabel("Elena", signingOut: false));
+        Assert.Equal("Elena menu", SidebarViewModel.ProfileMenuName("Elena", signingOut: false, ""));
+        Assert.Equal("Elena menu. Couldn't sign out. Try again.",
+            SidebarViewModel.ProfileMenuName("Elena", signingOut: false, "Couldn't sign out. Try again."));
+
+        using var japanese = AppText.Use(TextLanguage.Load("ja"));
+        Assert.Equal("サインアウト中…", SidebarViewModel.ProfileLabel("Elena", signingOut: true));
+        Assert.Equal("Elenaのメニュー。サインアウトできませんでした。もう一度お試しください。",
+            SidebarViewModel.ProfileMenuName("Elena", signingOut: false, SidebarViewModel.SignOutFailed));
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 using System.Globalization;
-using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.Texts;
 
@@ -72,8 +71,8 @@ public static class RemoteTexts
     public const string CouldNotPlay = "This title could not be played on this PC.";
 
     // The player's own failure texts that it words in the language on screen, which name nothing (ServerPlayback,
-    // ServerPlayback.Recovery, PlaybackStarter, PlayerViewModel, ApiFailureText). A text added there later and not here goes
-    // to a phone as CouldNotPlay.
+    // ServerPlayback.Recovery, PlaybackStarter, MediaAuthorization, PlayerViewModel, ApiFailureText). A text added there
+    // later and not here goes to a phone as CouldNotPlay.
     private static readonly string[] PlayerFailureKeys =
     [
         "granary.player.error.titleUnavailable",
@@ -88,26 +87,21 @@ public static class RemoteTexts
         "granary.player.error.credentialsRejected",
         "granary.player.error.signInRejected",
         "granary.player.error.networkPath",
+        "granary.player.error.signIn",
+        "granary.player.error.chooseProfile",
+        "granary.player.error.chooseServer",
+        "granary.player.error.renewFailed",
+        "granary.player.error.roomFileUnavailable",
+        "granary.player.error.notOffered",
+        "granary.player.error.startedForAnotherProfile",
         "web.player.session.endedByAdmin",
+        "web.player.error.authenticationRequired.message",
+        "web.player.error.noPlayableVersion.title",
         "granary.apiFailure.busy",
         "granary.apiFailure.unreachable",
         "granary.apiFailure.unexpected",
         "granary.apiFailure.tooManyRequestsLater",
     ];
-
-    // The ones still worded in English in code (MediaAuthorization, PlaybackStarter).
-    private static readonly HashSet<string> EnglishPlayerFailures = new(StringComparer.Ordinal)
-    {
-        "Sign in to play from this server.",
-        "Choose a profile to play from this server.",
-        "Choose a server to play from.",
-        "The server ended the session. Sign in again to play.",
-        "The server could not renew the sign-in. Try again in a moment.",
-        "This title has no file to play.",
-        "The room's file is not available here.",
-        "This server does not offer playback to this app.",
-        PlaybackUnavailableException.StartedForAnotherProfile,
-    };
 
     /// <summary>A phone that gave no usable name. New.</summary>
     public const string UnnamedPhone = "A phone";
@@ -177,10 +171,6 @@ public static class RemoteTexts
         if (message.Length > MaxOwnFailureLength)
         {
             return null;
-        }
-        if (EnglishPlayerFailures.Contains(message))
-        {
-            return message;
         }
         foreach (string key in PlayerFailureKeys)
         {

@@ -12962,6 +12962,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Votre session de connexion a expiré. Reconnectez-vous pour reprendre la lecture."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "Aucune version lisible trouvée"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,
@@ -17474,6 +17486,12 @@
     {
       "type": 0,
       "value": "Une vidéo déjà en cours de lecture peut continuer jusqu’à sa prochaine demande. Les paramètres enregistrés de l’appareil sont conservés."
+    }
+  ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Déconnexion…"
     }
   ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
