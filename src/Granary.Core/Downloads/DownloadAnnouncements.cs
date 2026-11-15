@@ -91,7 +91,10 @@ public sealed class DownloadAnnouncements
             else if (!items.Any(i => DownloadTally.IsPending(i) && GroupOf(i) == batch.Group))
             {
                 _batches.Remove(batch);
-                announced.Add(batch.Announcement());
+                if (batch.Announcement(_seen) is { } announcement)
+                {
+                    announced.Add(announcement);
+                }
             }
         }
         return announced;
@@ -174,10 +177,21 @@ public sealed class DownloadAnnouncements
             return _ended.Count > 0;
         }
 
-        public DownloadAnnouncement Announcement()
+        /// <summary>
+        /// What to say of the batch as the downloads are <paramref name="now"/>: one that finished while the others came is said
+        /// ready, and played, only while it can still play (not once its drive went away or its file was deleted by hand), and
+        /// one that failed only while it still stands failed (not once Retry queued it again). Null when none is left to say.
+        /// </summary>
+        public DownloadAnnouncement? Announcement(IReadOnlyDictionary<string, DownloadItem> now)
         {
-            var finished = _ended.Where(e => !e.Failed).Select(e => e.Item).OrderBy(EpisodeOrder).ToList();
-            var failed = _ended.Where(e => e.Failed).Select(e => e.Item).ToList();
+            var finished = _ended.Where(e => !e.Failed && now.GetValueOrDefault(e.Item.DownloadId)?.IsPlayable == true)
+                .Select(e => e.Item).OrderBy(EpisodeOrder).ToList();
+            var failed = _ended.Where(e => e.Failed && now.GetValueOrDefault(e.Item.DownloadId)?.State == DownloadState.Failed)
+                .Select(e => e.Item).ToList();
+            if (finished.Count == 0 && failed.Count == 0)
+            {
+                return null;
+            }
             string text = (finished.Count, failed.Count) switch
             {
                 (> 0, 0) => Ready(finished),

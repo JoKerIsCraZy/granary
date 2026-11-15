@@ -219,6 +219,46 @@ public sealed class DownloadAnnouncementsTests
     }
 
     [Fact]
+    public void AnEpisodeThatFinishedWhileItsSeasonWasHeldBack_IsNeitherCountedNorPlayed_OnceItCanNoLongerPlay()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading),
+            Episode("dl_3", 1, 3, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Downloading),
+            Episode("dl_3", 1, 3, DownloadState.Downloading)));
+        // Its file goes, as when it is deleted by hand, while the others still come.
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Completed),
+            Episode("dl_3", 1, 3, DownloadState.Downloading)));
+
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Completed),
+            Episode("dl_3", 1, 3, DownloadState.Completed)));
+
+        Assert.Equal(new DownloadAnnouncement("2 episodes of Example Series are ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"),
+            announced);
+    }
+
+    [Fact]
+    public void ASeasonHeldBack_WhoseDriveGoesAway_SaysNothing()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Neither can play now, and the other no longer comes: nothing is ready to watch.
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Downloading, missing: true)));
+    }
+
+    [Fact]
+    public void AnEpisodeThatFailedWhileItsSeasonWasHeldBack_AndWasTriedAgain_IsNotSaidToHaveFailed()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Integrity), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Retry, and the viewer pauses it; the other finishes.
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Queued, paused: true), Episode("dl_2", 1, 2, DownloadState.Completed)));
+
+        Assert.Equal(new DownloadAnnouncement("Example Series (S1E2) is ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"), announced);
+    }
+
+    [Fact]
     public void ASeasonWhoseHeldEpisodesWereAllDeleted_SaysNothing()
     {
         Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Queued));
