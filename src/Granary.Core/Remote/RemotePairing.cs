@@ -182,14 +182,19 @@ public sealed class RemotePairing
     }
 
     // The saved id, or null when there is no file or it holds no id. A disk that fails to read throws: a passing lock
-    // must not replace the id every phone keeps the key under.
+    // must not replace the id every phone keeps the key under. Read at once rather than asked File.Exists first, which
+    // answers no for a file it could not look at, too.
     private async Task<string?> ReadIdAsync(CancellationToken cancellationToken)
     {
-        if (!File.Exists(_idFilePath))
+        string text;
+        try
+        {
+            text = await File.ReadAllTextAsync(_idFilePath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
             return null;
         }
-        string text = await File.ReadAllTextAsync(_idFilePath, cancellationToken).ConfigureAwait(false);
         try
         {
             if (JsonSerializer.Deserialize(text, RemotePairingJsonContext.Default.PhoneRemoteFile)?.ReceiverId is { } id

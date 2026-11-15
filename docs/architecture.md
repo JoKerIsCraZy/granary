@@ -1283,7 +1283,9 @@ What the receiver requires of the code behind its ports (their XML docs say the 
 - **The receiver id** is a GUID made once per data folder, in `phone-remote.json` (`{ "receiver_id": "…" }`), written
   whole beside the file and moved over it. It is not the device id Granary sends to servers, and not a secret: phones
   keep the key under it and find the PC again by it. A file that holds no id is replaced by a new one; a disk that
-  fails to read throws instead, so a passing lock never changes the id.
+  fails to read throws instead, so a passing lock never changes the id. The file is read at once, not looked for first:
+  only a file or folder that is not there counts as no id, while a check whether it exists answers no for one Windows
+  could not look at, too.
 - **Why the two are kept apart.** With the id outside the secret store, a lost store means a new key under the old id: a
   phone then says the PC's pairing code has changed, instead of keeping a dead receiver beside a new one.
 - Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for

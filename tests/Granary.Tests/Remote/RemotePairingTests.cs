@@ -244,6 +244,19 @@ public sealed class RemotePairingTests : IDisposable
     }
 
     [Fact]
+    public async Task AnIdFileTheDiskDoesNotGive_Throws_RatherThanMakingANewId()
+    {
+        // Something is at the id file's place that cannot be read: File.Exists says there is no file, but none is missing.
+        Directory.CreateDirectory(IdFile);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => Create().LoadOrCreateAsync(Token));
+
+        Assert.True(Directory.Exists(IdFile));
+        Assert.Equal(0, _secrets.Writes);
+        Assert.Empty(Directory.GetFiles(_directory, "*.tmp"));
+    }
+
+    [Fact]
     public async Task TwoCallersAtOnce_GetOneKey()
     {
         var reads = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
