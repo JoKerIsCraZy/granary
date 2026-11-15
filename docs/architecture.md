@@ -1556,9 +1556,11 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
 
 - **`LanAddressSource`** reads Windows' adapters (`NetworkInterface`) and chooses by `LanAddressRule`: of the adapters
   that are up and neither loopback nor a tunnel, a private IPv4 address (10/8, 172.16/12, 192.168/16) or a link-local one
-  (169.254/16), those on an adapter with an IPv4 default gateway first, then the first listed; the adapter's IPv4 index
-  goes along for the advertisement. A home network has a gateway, the virtual switches of Hyper-V and WSL usually have
-  none. While the receiver follows it, it reads the adapters off the UI thread, once at the start and again at
+  (169.254/16); first one on a wired or wireless adapter with an IPv4 default gateway (the home network), then one on
+  another kind of adapter with a gateway (a VPN's, which Windows may list first), then the same two without a gateway (a
+  static address; the virtual switches of Hyper-V and WSL, which Windows calls Ethernet, have none), and a link-local
+  address only when nothing else is there; within each, the first listed. The adapter's IPv4 index goes along for the
+  advertisement. Windows' interface metric would order them better still, but .NET does not read it. While the receiver follows it, it reads the adapters off the UI thread, once at the start and again at
   `NetworkChange.NetworkAddressChanged` (followed with the first handler and left with the last), and raises `Changed`
   only when the chosen address differs; `Current` answers what it read last, so the receiver's lifetime never waits on
   the adapters. The address is never logged.

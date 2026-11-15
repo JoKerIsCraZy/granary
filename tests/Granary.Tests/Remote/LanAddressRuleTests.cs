@@ -68,4 +68,41 @@ public sealed class LanAddressRuleTests
 
     [Fact]
     public void NoAdapter_IsNoAddress() => Assert.Null(LanAddressRule.Choose([]));
+
+    [Theory]
+    [InlineData(NetworkInterfaceType.Wireless80211)]
+    [InlineData(NetworkInterfaceType.Ethernet)]
+    [InlineData(NetworkInterfaceType.GigabitEthernet)]
+    public void AWiredOrWirelessAdapter_ComesBeforeAVpnListedFirst_BothWithAGateway(NetworkInterfaceType home)
+    {
+        // A VPN's adapter (Wintun, a dial-up kind) with a gateway of its own, listed before the home network.
+        var chosen = LanAddressRule.Choose(
+        [
+            Adapter("10.8.0.2", index: 30, type: NetworkInterfaceType.Unknown),
+            Adapter("10.9.0.2", index: 31, type: NetworkInterfaceType.Ppp),
+            Adapter("192.168.1.20", index: 7, type: home),
+        ]);
+
+        Assert.Equal(new Granary.Core.Remote.LanAddress(IPAddress.Parse("192.168.1.20"), 7), chosen);
+    }
+
+    [Fact]
+    public void WithoutAGateway_AWiredOrWirelessAdapter_ComesBeforeAnotherKind() =>
+        Assert.Equal(IPAddress.Parse("192.168.1.20"), LanAddressRule.Choose(
+        [
+            Adapter("10.8.0.2", type: NetworkInterfaceType.Unknown, gateway: false),
+            Adapter("192.168.1.20", type: NetworkInterfaceType.Wireless80211, gateway: false),
+        ])!.Address);
+
+    [Fact]
+    public void ALinkLocalAddress_IsTakenOnlyWhenNothingElseIs()
+    {
+        // An adapter that got no address from the network (APIPA) is listed first, even with a gateway left over.
+        Assert.Equal(IPAddress.Parse("172.20.0.1"), LanAddressRule.Choose(
+        [
+            Adapter("169.254.10.10", type: NetworkInterfaceType.Ethernet),
+            Adapter("172.20.0.1", type: NetworkInterfaceType.Unknown, gateway: false),
+        ])!.Address);
+        Assert.Equal(IPAddress.Parse("169.254.10.10"), LanAddressRule.Choose([Adapter("169.254.10.10", gateway: false)])!.Address);
+    }
 }
