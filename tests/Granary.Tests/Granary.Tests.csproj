@@ -30,9 +30,10 @@
     <Compile Include="..\..\src\Granary.App\Interop\CursorShield.cs" Link="Interop\CursorShield.cs" />
   </ItemGroup>
 
-  <!-- The phone remote's listener apart from its socket, the rule that picks the PC's LAN address, and the PC's lock apart from Windows: no test opens a socket, reads the adapters or asks Windows about the session. -->
+  <!-- The phone remote's listener apart from its socket, the rule that picks the PC's LAN address, the PC's lock and the advertisement's answers apart from Windows: no test opens a socket, reads the adapters, asks Windows about the session or registers a service. -->
   <ItemGroup>
     <Compile Include="..\..\src\Granary.App\Services\RemoteAcceptLoop.cs" Link="Remote\App\RemoteAcceptLoop.cs" />
+    <Compile Include="..\..\src\Granary.App\Services\DnssdAnswers.cs" Link="Remote\App\DnssdAnswers.cs" />
     <Compile Include="..\..\src\Granary.App\Services\AcceptedConnection.cs" Link="Remote\App\AcceptedConnection.cs" />
     <Compile Include="..\..\src\Granary.App\Services\LanAddressRule.cs" Link="Remote\App\LanAddressRule.cs" />
     <Compile Include="..\..\src\Granary.App\Services\SessionLockState.cs" Link="Remote\App\SessionLockState.cs" />

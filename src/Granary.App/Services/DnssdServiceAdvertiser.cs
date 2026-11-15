@@ -282,9 +282,7 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
     private sealed class Registration
     {
         private readonly List<nint> _blocks = [];
-        private readonly TaskCompletionSource<uint> _registered = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly TaskCompletionSource<uint> _removed = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private int _removing;
+        private readonly DnssdAnswers _answers = new();
         private bool _freed;
 
         private Registration(nint number) => Number = number;
@@ -300,9 +298,9 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
 
         public long EndedAt { get; set; }
 
-        public bool IsAnswered => _registered.Task.IsCompleted;
+        public bool IsAnswered => _answers.Registered.IsCompleted;
 
-        public bool WentThrough => _registered.Task.IsCompletedSuccessfully && _registered.Task.Result == DnsService.Success;
+        public bool WentThrough => _answers.Registered.IsCompletedSuccessfully && _answers.Registered.Result == DnsService.Success;
 
         /// <summary>The registration's blocks and Windows' instance, or null when Windows could not build the instance.</summary>
         public static Registration? Make(ServiceRegistration service)
@@ -341,34 +339,20 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         /// <summary>Asks Windows to remove the registration made with the same request.</summary>
         public uint Remove()
         {
-            Volatile.Write(ref _removing, 1);
+            _answers.RemovalAsked();
             uint status = DnsService.DnsServiceDeRegister(Request, 0);
-            if (status != DnsService.RequestPending)
-            {
-                // Not taken: no word on a removal comes, and a late word is the registration's own.
-                Volatile.Write(ref _removing, 0);
-            }
+            _answers.RemovalAnswered(taken: status == DnsService.RequestPending);
             return status;
         }
 
-        /// <summary>On Windows' thread: its word on the registration, or on its removal once that was asked.</summary>
-        public void Answer(uint status)
-        {
-            if (Volatile.Read(ref _removing) == 1)
-            {
-                _removed.TrySetResult(status);
-            }
-            else
-            {
-                _registered.TrySetResult(status);
-            }
-        }
+        /// <summary>On Windows' thread: its word on the registration, or on its removal.</summary>
+        public void Answer(uint status) => _answers.Answer(status);
 
         /// <summary>Windows' word on the registration, or null when none came within <paramref name="wait"/>.</summary>
-        public Task<uint?> AnsweredAsync(TimeSpan wait) => WaitAsync(_registered.Task, wait);
+        public Task<uint?> AnsweredAsync(TimeSpan wait) => WaitAsync(_answers.Registered, wait);
 
         /// <summary>Windows' word on the removal, or null when none came within <paramref name="wait"/>.</summary>
-        public Task<uint?> RemovedAsync(TimeSpan wait) => WaitAsync(_removed.Task, wait);
+        public Task<uint?> RemovedAsync(TimeSpan wait) => WaitAsync(_answers.Removed, wait);
 
         /// <summary>
         /// Frees Windows' instance and every block, once: only when Windows will not call back for it any more, or never
