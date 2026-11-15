@@ -1679,10 +1679,12 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
 - **The "Starting" notice, and the window left where it is.** The receiver raises `Launched` with the phone's name and
   the request just before it opens the player; the window keeps it and, when it makes the player for that very request
   (it may wait for the player before to unload), calls `PlayerViewModel.NoteStartedFromPhone`. A phone's title changes
-  nothing about where the window is: when the window is not in front (minimized or behind others), `PlayerPage.Start`
-  does not set the full-screen presenter, which would restore or raise it, and the page goes full screen at the window's
-  next `Activated` instead (`WindowCameToFront`), unless it became the bar or the mini view; a player left before that
-  saves no full screen choice. The player shows "Starting {title}" and "From {phone}" in its
+  nothing about where the window is: when the window is not in front (not the focused window: minimized, behind others,
+  or visible but unfocused), no presenter is set or left on its way, since that would restore or raise it. The player
+  before leaves without leaving the mini view, a trailer's own full screen becomes the title's, `PlayerPage.Start` does
+  not set full screen, and the page goes full screen at the window's next `Activated` instead (`WindowCameToFront`),
+  unless it became the bar or the mini view; a player left before that saves no full screen choice. `Expand` only lays
+  the player out inside the window. The player shows "Starting {title}" and "From {phone}" in its
   notice card for four seconds once the title's name is known, and only for that request.
 
 ## Windows App SDK

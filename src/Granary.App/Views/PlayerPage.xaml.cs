@@ -54,8 +54,10 @@ public sealed partial class PlayerPage : Page
     // Whether a title opens the player in full screen, as it was last left on this PC.
     private readonly PlayerFullScreen _fullScreen;
     private readonly IPlaybackDevicePreferences _devicePreferences;
-    // A title a phone started while the window was minimized or behind others: full screen waits until the viewer brings
-    // the window to the front, so the window is not raised or restored for them (design 5.9).
+    // A title a phone started while the window was not in front: nothing about the window changed for it, and full screen
+    // waits until the viewer brings the window to the front, so the window is not raised or restored for them (design
+    // 5.9). Until then the viewer has not seen the window as the player left it, so no full screen choice is kept.
+    private bool _waitsForFront;
     private bool _fullScreenWhenInFront;
 
     public PlayerPage()
@@ -122,6 +124,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public void Start(PlayRequest request, bool mayChangeWindow = true)
     {
+        _waitsForFront = !mayChangeWindow;
         if (_fullScreen.OpensInFullScreen)
         {
             if (mayChangeWindow)
@@ -143,12 +146,17 @@ public sealed partial class PlayerPage : Page
     /// change; the sound must not go on behind another page nor the server session stay open. The mini view ends with
     /// it; full screen is the window's and stays as the viewer set it, and the next title opens as the player is left.
     /// </summary>
-    public void Leave()
+    /// <param name="keepsWindow">A phone's title takes the player's place while the window is not in front: the mini view
+    /// stays, since leaving it would set another presenter and bring the window back.</param>
+    public void Leave(bool keepsWindow = false)
     {
-        SetMiniView(false);
-        // Saved as Granary goes on; closing it later waits for this PC's choices anyway. A title whose full screen still
-        // waited for the window was never seen as it was left: the choice stays.
-        if (!_fullScreenWhenInFront)
+        if (!keepsWindow)
+        {
+            SetMiniView(false);
+        }
+        // Saved as Granary goes on; closing it later waits for this PC's choices anyway. A title whose window still waited
+        // for the viewer was never seen as it was left: the choice stays.
+        if (!_waitsForFront)
         {
             _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
         }
@@ -161,6 +169,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public void WindowCameToFront()
     {
+        _waitsForFront = false;
         if (!_fullScreenWhenInFront)
         {
             return;
@@ -179,7 +188,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public Task LeaveWithWindow()
     {
-        var save = _fullScreenWhenInFront ? Task.CompletedTask : _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
+        var save = _waitsForFront ? Task.CompletedTask : _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
         ViewModel.Leave();
         return save;
     }

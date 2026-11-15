@@ -52,6 +52,9 @@ public sealed partial class MainWindow
         }
     }
 
+    // A phone started that very request.
+    private bool IsFromPhone(PlayRequest play) => _launched is { } launch && ReferenceEquals(launch.Request, play);
+
     // The phone's name when a phone started that very request, once; null for any other title.
     private string? TakeLaunch(PlayRequest play)
     {
