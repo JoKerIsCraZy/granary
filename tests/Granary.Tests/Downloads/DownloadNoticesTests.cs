@@ -189,6 +189,18 @@ public sealed class DownloadNoticesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AClickHeld_WhenGranaryClosesBeforeTheShellStarted_IsNotFollowed()
+    {
+        var notices = await NoticesBeforeTheShellAsync(("dl_1", DownloadState.Completed));
+        notices.Act(DownloadNotices.PlayAction, "dl_1");
+
+        notices.Dispose();
+        notices.ShellStarted();
+
+        Assert.Empty(_navigation.Navigations);
+    }
+
+    [Fact]
     public async Task WithoutAProfile_ANotificationOpensNothing()
     {
         var notices = await NoticesAsync(("dl_1", DownloadState.Completed));
