@@ -60,10 +60,10 @@ internal static class CalendarText
     public static string MonthDay(DateOnly day) => Date(day, DateText.LongMonthDay);
 
     /// <summary>"Thursday".</summary>
-    public static string Weekday(DateOnly day) => day.ToString("dddd", English);
+    public static string Weekday(DateOnly day) => Date(day, DateText.Weekday);
 
     /// <summary>"Nov 19".</summary>
-    public static string ShortMonthDay(DateOnly day) => day.ToString("MMM d", English);
+    public static string ShortMonthDay(DateOnly day) => Date(day, DateText.MonthDay);
 
     /// <summary>"S2 · E1 - Hello" or "Season 2 · Hello" for an episode, "Movie" for a movie.</summary>
     public static string Subtitle(CalendarEvent airing)
