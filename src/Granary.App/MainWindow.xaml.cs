@@ -214,14 +214,11 @@ public sealed partial class MainWindow : Window
     public AppUpdatesViewModel Updates { get; }
 
     // Instance methods because x:Bind function bindings call them on the window.
-    public string ProfileMenuName(string profileName, bool signingOut, string signOutError)
-    {
-        string menu = AppText.Get("web.shell.sidebar.profileMenu", ("name", profileName));
-        return signingOut ? "Signing out" : string.IsNullOrEmpty(signOutError) ? menu : $"{menu}. {signOutError}";
-    }
+    public string ProfileMenuName(string profileName, bool signingOut, string signOutError) =>
+        SidebarViewModel.ProfileMenuName(profileName, signingOut, signOutError);
 
     /// <summary>The profile's name, or "Signing out…" while a sign-out runs.</summary>
-    public string ProfileLabel(string profileName, bool signingOut) => signingOut ? "Signing out…" : profileName;
+    public string ProfileLabel(string profileName, bool signingOut) => SidebarViewModel.ProfileLabel(profileName, signingOut);
 
     public bool IsIdle(bool running) => !running;
 

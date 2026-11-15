@@ -20514,6 +20514,12 @@
       "value": "قد يستمر تشغيل فيديو قيد التشغيل حتى طلبه التالي. تُحفظ إعدادات الجهاز المحفوظة."
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "جارٍ تسجيل الخروج…"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

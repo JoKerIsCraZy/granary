@@ -15031,6 +15031,12 @@
       "value": "正在播放的视频可能会继续播放，直到下一次请求。已保存的设备设置会保留。"
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "正在退出登录……"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

@@ -17488,6 +17488,12 @@
       "value": "Une vidéo déjà en cours de lecture peut continuer jusqu’à sa prochaine demande. Les paramètres enregistrés de l’appareil sont conservés."
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Déconnexion…"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

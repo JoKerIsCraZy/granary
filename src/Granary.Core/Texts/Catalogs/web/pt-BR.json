@@ -17422,6 +17422,12 @@
       "value": "Um vídeo que já está sendo reproduzido pode continuar até a próxima solicitação. As configurações salvas do dispositivo são mantidas."
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Desconectando…"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

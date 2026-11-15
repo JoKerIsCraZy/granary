@@ -16247,6 +16247,12 @@
       "value": "A video already playing may continue until its next request. Saved device settings are kept."
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Signing out…"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

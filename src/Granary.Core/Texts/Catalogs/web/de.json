@@ -16267,6 +16267,12 @@
       "value": "Ein bereits laufendes Video kann bis zu seiner nächsten Anfrage weiterlaufen. Gespeicherte Geräteeinstellungen bleiben erhalten."
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "Wird abgemeldet …"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

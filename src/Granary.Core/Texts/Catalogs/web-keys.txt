@@ -2390,6 +2390,12 @@ web.settings.resetButton.label
 web.settings.sessions.confirm.clientDescription
 web.settings.sessions.confirm.deviceTitle
 web.settings.sessions.confirm.note
+
+# The shell's profile menu while it signs out (src/Granary.Core/ViewModels/SidebarViewModel.cs), in the words of the
+# web's own sign-out button (components/sessions/LoginSessionsPanel.tsx).
+web.settings.sessions.confirm.signingOut
+
+# More of Settings' words, as above under web.settings.cardOverlay.adjust.
 web.settings.sessions.confirm.thisBrowserDescription
 web.settings.sessions.current.description
 web.settings.sessions.description

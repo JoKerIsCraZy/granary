@@ -14935,6 +14935,12 @@
       "value": "再生中の動画は、次のリクエストまで再生が続く場合があります。保存されたデバイスの設定は保持されます。"
     }
   ],
+  "web.settings.sessions.confirm.signingOut": [
+    {
+      "type": 0,
+      "value": "サインアウト中…"
+    }
+  ],
   "web.settings.sessions.confirm.thisBrowserDescription": [
     {
       "type": 0,

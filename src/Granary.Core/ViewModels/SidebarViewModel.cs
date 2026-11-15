@@ -8,6 +8,7 @@ using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -30,7 +31,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
     /// <summary>What the profile menu says when Sign out failed.</summary>
-    public const string SignOutFailed = "Couldn't sign out. Try again.";
+    public static string SignOutFailed => AppText.Get("granary.shell.signOutFailed");
+
+    /// <summary>The profile's entry while a sign-out runs, as the web's own sign-out button says it.</summary>
+    public static string SigningOutText => AppText.Get("web.settings.sessions.confirm.signingOut");
 
     // How long Switch Profile and Logout wait for an audio delay changed a moment before to be saved.
     private static readonly TimeSpan AudioDelayWait = TimeSpan.FromSeconds(2);
@@ -219,6 +223,23 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         await SaveAudioDelayAsync();
         await _session.ClearProfileAsync();
     }
+
+    /// <summary>
+    /// What a screen reader says for the profile menu: "Elena menu", "Signing out…" while a sign-out runs, or the menu
+    /// with why the last sign-out failed.
+    /// </summary>
+    public static string ProfileMenuName(string profileName, bool signingOut, string signOutError)
+    {
+        if (signingOut)
+        {
+            return SigningOutText;
+        }
+        string menu = AppText.Get("web.shell.sidebar.profileMenu", ("name", profileName));
+        return string.IsNullOrEmpty(signOutError) ? menu : AppText.Get("granary.shell.profileMenuFailed", ("menu", menu), ("error", signOutError));
+    }
+
+    /// <summary>The profile's entry: its name, or "Signing out…" while a sign-out runs.</summary>
+    public static string ProfileLabel(string profileName, bool signingOut) => signingOut ? SigningOutText : profileName;
 
     /// <summary>
     /// Signs out of the active server; when its account has downloads on this PC, after asking, and they go first. Whatever
