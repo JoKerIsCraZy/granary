@@ -24,7 +24,8 @@ public static class AdminText
         ["ebook"] = "ebooks", ["podcast"] = "podcasts",
     };
 
-    public static string Count(long value) => value.ToString("N0", English);
+    /// <summary>"12,480", as the web's <c>toLocaleString(formatLocale())</c>.</summary>
+    public static string Count(long value) => NumberText.Grouped(value);
 
     /// <summary>"1 file", "12,480 files".</summary>
     public static string Files(int count) =>
@@ -93,7 +94,8 @@ public static class AdminText
         {
             return None;
         }
-        return mbps is > 0 and < 10 ? Round(mbps, 1).ToString("#,0.0", English) : Round(mbps, 0).ToString("#,0", English);
+        int decimals = mbps is > 0 and < 10 ? 1 : 0;
+        return NumberText.Grouped(mbps, decimals, decimals);
     }
 
     /// <summary>
@@ -117,8 +119,8 @@ public static class AdminText
                 unit++;
                 continue;
             }
-            string format = unit > 0 && rounded < 100 ? "#,0.0" : "#,0";
-            return $"{rounded.ToString(format, English)} {DataUnits[unit]}";
+            int shown = unit > 0 && rounded < 100 ? 1 : 0;
+            return $"{NumberText.Grouped(rounded, shown, shown)} {DataUnits[unit]}";
         }
     }
 
@@ -127,7 +129,7 @@ public static class AdminText
     {
         double gigabytes = Math.Max(0, bytes) / (1024d * 1024 * 1024);
         double terabytes = gigabytes / 1024;
-        return terabytes >= 1 ? $"{Round(terabytes, 1).ToString("0.0", English)} TB" : $"{Round(gigabytes, 0).ToString("0", English)} GB";
+        return terabytes >= 1 ? $"{NumberText.Decimal(terabytes, 1)} TB" : $"{NumberText.Decimal(gigabytes, 0)} GB";
     }
 
     /// <summary>Watch time: "52m" under an hour (at least "1m"), "3.1h" from an hour on, "0m" for none.</summary>
@@ -141,7 +143,7 @@ public static class AdminText
         {
             return $"{Math.Max(1, (long)Round(seconds / 60d, 0))}m";
         }
-        return $"{Round(seconds / 3600d, 1).ToString("#,0.#", English)}h";
+        return $"{NumberText.Grouped(seconds / 3600d, 0, 1)}h";
     }
 
     /// <summary>"45s", "12m 3s", "3h 5m" under a day; "3d 4h" from a day on.</summary>
@@ -164,7 +166,7 @@ public static class AdminText
         {
             return None;
         }
-        return ms < 10 ? $"{Round(ms, 2).ToString("#,0.##", English)} ms" : $"{Round(ms, 0).ToString("#,0", English)} ms";
+        return $"{NumberText.Grouped(ms, 0, ms < 10 ? 2 : 0)} ms";
     }
 
     /// <summary>

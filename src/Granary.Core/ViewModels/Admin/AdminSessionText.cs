@@ -114,7 +114,8 @@ public static class AdminSessionText
     public static string Bitrate(int? kbps) => kbps switch
     {
         null or <= 0 => "",
-        >= 1000 => $"{(kbps.Value / 1000d).ToString("0.0", CultureInfo.InvariantCulture)} Mbps",
+        // As the web's formatSessionBitrate: its unit in code, the decimal in the format locale.
+        >= 1000 => $"{NumberText.Decimal(kbps.Value / 1000d, 1)} Mbps",
         _ => $"{kbps.Value} kbps",
     };
 
@@ -159,9 +160,10 @@ public static class AdminSessionText
         long hours = total / 3600;
         long minutes = total % 3600 / 60;
         long rest = total % 60;
-        return hours > 0
+        // In the screen's digits, as the web's formatTime.
+        return NumberText.Digits(hours > 0
             ? string.Create(CultureInfo.InvariantCulture, $"{hours}:{minutes:00}:{rest:00}")
-            : string.Create(CultureInfo.InvariantCulture, $"{minutes}:{rest:00}");
+            : string.Create(CultureInfo.InvariantCulture, $"{minutes}:{rest:00}"));
     }
 
     /// <summary>"12:04 / 48:30", or the position alone when the file's length is unknown.</summary>

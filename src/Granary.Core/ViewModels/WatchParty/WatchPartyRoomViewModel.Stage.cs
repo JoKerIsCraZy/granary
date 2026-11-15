@@ -375,8 +375,8 @@ public sealed partial class WatchPartyRoomViewModel
     private static string Clock(double seconds)
     {
         var time = TimeSpan.FromSeconds(Math.Max(0, Math.Floor(seconds)));
-        return time.TotalHours >= 1
+        return NumberText.Digits(time.TotalHours >= 1
             ? time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture)
-            : time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+            : time.ToString(@"mm\:ss", CultureInfo.InvariantCulture));
     }
 }

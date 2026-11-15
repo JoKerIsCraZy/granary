@@ -148,9 +148,9 @@ internal static class SeasonGaps
         var day = Day(airing, zone);
         if (!HasAired(airing, now, today) && day is { } airs)
         {
-            // English until dates are worded in the language on screen: the sentences hold a date.
-            return new(new DetailEpisodePlaceholder(number, IsMissing: false, Code(season, number, airing), $"Airs {CalendarText.ShortDate(airs)}",
-                $"Episode {number}, airs {CalendarText.MonthDay(airs)}"), null);
+            return new(new DetailEpisodePlaceholder(number, IsMissing: false, Code(season, number, airing),
+                AppText.Get("granary.detail.upcomingAirs", ("date", CalendarText.ShortDate(airs))),
+                AppText.Get("granary.detail.upcomingEpisodeName", ("episode", number), ("date", CalendarText.MonthDay(airs)))), null);
         }
         string? date = day is { } aired ? MediaCardFactory.FormatDate(aired) : null;
         return new(new DetailEpisodePlaceholder(number, IsMissing: true, Code(season, number, airing), date, MissingName(number)), heldBy);

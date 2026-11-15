@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Texts;
 
 namespace Granary.Tests.Texts;
@@ -158,5 +159,28 @@ public sealed class AppLanguageTests
     {
         // Among the shipped languages; the web's interfaceDirection.
         Assert.Equal(expected, AppLanguage.IsRightToLeft(tag));
+    }
+
+    [Theory]
+    // Nothing chosen: Windows' regional format, whatever the language, as the web keeps the browser's own.
+    [InlineData("en", null, "de-CH", "de-CH")]
+    [InlineData("de", null, "en-US", "en-US")]
+    // Chosen in the language of Windows' format: that format, so German on a Swiss Windows writes 1’234.
+    [InlineData("de", "de", "de-CH", "de-CH")]
+    [InlineData("en", "en", "en-GB", "en-GB")]
+    // Chosen in another language: the chosen tag's own formats.
+    [InlineData("de", "de", "en-US", "de")]
+    [InlineData("en", "en-GB", "de-DE", "en-GB")]
+    [InlineData("pt-BR", "pt", "en-US", "pt")]
+    // A stored tag that did not pick the language (not enabled) leaves Windows' format.
+    [InlineData("en", "fr", "de-DE", "de-DE")]
+    public void DatesAndNumbers_FollowWindowsFormat_UnlessALanguageOfAnotherWasChosen(
+        string language, string? stored, string windows, string expected)
+    {
+        // The web's resolveAppLocale: formatLocale is the stored tag only when the chosen language differs from the
+        // runtime's, so nobody who did not choose sees a change.
+        var formats = AppLanguage.FormatCulture(language, stored, CultureInfo.GetCultureInfo(windows));
+
+        Assert.Equal(expected, formats.Name);
     }
 }

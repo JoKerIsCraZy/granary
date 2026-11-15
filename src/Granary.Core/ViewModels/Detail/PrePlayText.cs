@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
@@ -13,9 +12,6 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static partial class PrePlayText
 {
-    private const double Kilobyte = 1024d;
-    private const double Megabyte = Kilobyte * 1024;
-    private const double Gigabyte = Megabyte * 1024;
 
     /// <summary>How high a resolution ranks; -1 for one the web does not know (web: resolutionScore).</summary>
     public static int ResolutionScore(string? resolution) => resolution?.ToLowerInvariant() switch
@@ -78,14 +74,7 @@ public static partial class PrePlayText
     }
 
     /// <summary>"38.9 GB", "700.0 MB": 1024-based with one decimal; empty for none (web: formatFileSize).</summary>
-    public static string FileSize(long bytes) => bytes switch
-    {
-        <= 0 => "",
-        >= (long)Gigabyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Gigabyte:0.0} GB"),
-        >= (long)Megabyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Megabyte:0.0} MB"),
-        >= (long)Kilobyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Kilobyte:0.0} KB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes} B"),
-    };
+    public static string FileSize(long bytes) => MediaText.FileSize(bytes);
 
     /// <summary>The source a release name tells: "Remux", "WEB-DL", "BluRay", …; null when it tells none (web: extractSourceHint).</summary>
     public static string? SourceHint(string? fileName)

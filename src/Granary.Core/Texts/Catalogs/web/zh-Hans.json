@@ -833,6 +833,30 @@
       "value": "显示强制字幕"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "在“跳过片头”按钮上方显示来源的置信度。每个来源使用各自的评分标准，因此百分比只能在同一来源内比较；开启来源显示即可查看是哪个来源。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "显示标记置信度"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "在“跳过片头”按钮上方显示跳过标记的来源：Silo自身检测、人工标记，或提供该标记的提供商。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "显示标记来源"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -4058,6 +4082,24 @@
       "value": "所有媒体库"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": "日，"
+    },
+    {
+      "type": 1,
+      "value": "weekday"
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -4310,6 +4352,50 @@
     {
       "type": 0,
       "value": "这一周"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": "–"
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "year"
+    },
+    {
+      "type": 0,
+      "value": "年"
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": "日–"
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": "日"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -7389,6 +7475,12 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "刚刚"
+    }
+  ],
   "web.common.date.minutesAgo": [
     {
       "type": 6,
@@ -7441,6 +7533,54 @@
       "value": "其他"
     }
   ],
+  "web.common.format.bitrate.kbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.common.format.bitrate.mbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.common.format.channels.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": "声道"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.channels.stereo": [
+    {
+      "type": 0,
+      "value": "立体声"
+    }
+  ],
   "web.common.format.runtime.hoursMinutes": [
     {
       "type": 1,
@@ -7479,6 +7619,86 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.sampleRate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Hz"
+    }
+  ],
+  "web.common.format.size.bytes": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " B"
+    }
+  ],
+  "web.common.format.size.gb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GB"
+    }
+  ],
+  "web.common.format.size.gib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GiB"
+    }
+  ],
+  "web.common.format.size.kb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KB"
+    }
+  ],
+  "web.common.format.size.kib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KiB"
+    }
+  ],
+  "web.common.format.size.mb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MB"
+    }
+  ],
+  "web.common.format.size.mib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MiB"
     }
   ],
   "web.common.libraryType.audiobooks": [
@@ -9924,6 +10144,34 @@
       "value": "设为开始"
     }
   ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "已检测"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "已编辑"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "在线"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -11649,6 +11897,16 @@
       "value": "速度"
     }
   ],
+  "web.player.speed.rate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "×"
+    }
+  ],
   "web.player.tracks.resetAudioFailed": [
     {
       "type": 0,
@@ -12609,6 +12867,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "请求于"
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "请求于"
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · 更新于"
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [

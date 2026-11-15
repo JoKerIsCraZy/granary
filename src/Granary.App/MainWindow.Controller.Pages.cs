@@ -226,7 +226,7 @@ public sealed partial class MainWindow
             item = parent;
         }
         int index = row.GetElementIndex(item);
-        double shown = FindAncestorOrSelf<ScrollViewer>(row)?.ViewportWidth ?? row.ActualWidth;
+        double shown = ShownWidthOf(row);
         int cards = Math.Max(1, (int)(shown / Math.Max(1, card.ActualWidth + layout.Spacing)) - 1);
         int target = Math.Clamp(index + (by * cards), 0, items.Count - 1);
         if (index < 0 || target == index || CardWithin(row.GetOrCreateElement(target)) is not { } next)
@@ -236,6 +236,16 @@ public sealed partial class MainWindow
         next.StartBringIntoView();
         next.Focus(FocusState.Keyboard);
     }
+
+    // How wide a sideways row shows: its own scroller's view (a MediaRow's ScrollView), not the page's around it, which
+    // is wider by the page's margins.
+    private static double ShownWidthOf(ItemsRepeater row) =>
+        FindAncestorOrSelf<FrameworkElement>(row, element => element is ScrollView or ScrollViewer) switch
+        {
+            ScrollView view => view.ViewportWidth,
+            ScrollViewer viewer => viewer.ViewportWidth,
+            _ => row.ActualWidth,
+        };
 
     // A trigger pages: focus goes on, row by row, until most of what showed has gone by, and the page follows it. Where
     // nothing can take focus (a long text), and where nothing more lies that way (a long text under the page's last

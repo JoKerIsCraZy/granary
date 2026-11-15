@@ -273,6 +273,7 @@ public sealed partial class PlayerViewModel
     private static string Countdown(TimeSpan left)
     {
         int seconds = (int)Math.Ceiling(Math.Max(0, left.TotalSeconds));
-        return string.Create(CultureInfo.InvariantCulture, $"{seconds / 60}:{seconds % 60:00}");
+        // In the screen's digits, as the web's SleepTimerMenu (numberText).
+        return NumberText.Digits(string.Create(CultureInfo.InvariantCulture, $"{seconds / 60}:{seconds % 60:00}"));
     }
 }

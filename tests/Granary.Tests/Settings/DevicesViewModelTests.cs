@@ -112,10 +112,10 @@ public sealed class DevicesViewModelTests
         Assert.True(page.ShowsSessions);
         var current = Assert.IsType<SignedInSessionRow>(page.CurrentSession);
         Assert.Equal(("Granary", true, "Sign out this device"), (current.Name, current.IsCurrent, current.SignOutLabel));
-        Assert.Equal("Active now · Signed in Oct 1, 2026, 8:00 AM", current.StatusLine);
+        Assert.Equal("Active now · Signed in 10/1/2026, 8:00 AM", current.StatusLine);
         var other = Assert.Single(page.OtherSessions);
         Assert.Equal(("Chrome on Windows", SessionDeviceKind.Desktop, "Sign out"), (other.Name, other.Kind, other.SignOutLabel));
-        Assert.Equal("Last seen 3 hr ago · Signed in Oct 1, 2026, 8:00 AM", other.StatusLine);
+        Assert.Equal("Last seen 3 hr ago · Signed in 10/1/2026, 8:00 AM", other.StatusLine);
         Assert.Equal("203.0.113.7", other.IpAddress);
         Assert.False(page.HasNoOtherSessions);
     }

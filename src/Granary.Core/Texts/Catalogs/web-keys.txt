@@ -204,6 +204,10 @@ settingsManifest.playback.preferred_quality.option.480p
 settingsManifest.playback.preferred_quality.option.720p
 settingsManifest.playback.preferred_quality.option.auto
 settingsManifest.playback.show_forced_subtitles.label
+settingsManifest.playback.show_marker_confidence.description
+settingsManifest.playback.show_marker_confidence.label
+settingsManifest.playback.show_marker_source.description
+settingsManifest.playback.show_marker_source.label
 settingsManifest.playback.subtitle_language.unsetLabel
 settingsManifest.playback.subtitle_mode.option.always
 settingsManifest.playback.subtitle_mode.option.auto
@@ -632,10 +636,11 @@ web.auth.passwordRules.savePassword
 web.auth.signIn
 web.auth.username
 
-# Calendar, in the words of the web's Calendar page and its airings (lib/upcomingEventPresentation.ts):
-# src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and CalendarText.cs in src/Granary.Core/ViewModels.
-# The dates themselves stay in English for now.
+# Calendar, in the words of the web's Calendar page, its week and day headings (lib/calendarWeek.ts) and its airings
+# (lib/upcomingEventPresentation.ts): src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and
+# CalendarText.cs in src/Granary.Core/ViewModels.
 web.calendar.allLibraries
+web.calendar.dayHeading
 web.calendar.dayLabel
 web.calendar.dayLabelWithEvents
 web.calendar.emptyEverything
@@ -673,6 +678,8 @@ web.calendar.title
 web.calendar.today
 web.calendar.todayButton
 web.calendar.weekOf
+web.calendar.weekRange
+web.calendar.weekRangeSameMonth
 
 # A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
 # as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
@@ -1153,9 +1160,11 @@ web.common.activity.subtitle.series
 web.common.activity.title.file
 
 # More of Admin → Dashboard's words: a time ago, as the web's formatRelativeTime (lib/date.ts), as above under
-# web.admin.dashboard.chart.columnReading.
+# web.admin.dashboard.chart.columnReading. A request's last change takes them too (LastChange in
+# src/Granary.Core/ViewModels/RequestText.cs).
 web.common.date.daysAgo
 web.common.date.hoursAgo
+web.common.date.justNow
 web.common.date.minutesAgo
 
 # A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
@@ -1166,9 +1175,26 @@ web.common.devicePlatform.kind.tablet
 web.common.devicePlatform.kind.tv
 web.common.devicePlatform.kind.unknown
 
+# Sizes, rates and channels, as the web's lib/mediaFormat.ts words them for the item page, the playback info and the
+# pickers: src/Granary.Core/ViewModels/MediaText.cs.
+web.common.format.bitrate.kbps
+web.common.format.bitrate.mbps
+web.common.format.channels.count
+web.common.format.channels.stereo
+
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
+
+# More sizes and rates, as above under web.common.format.bitrate.kbps.
+web.common.format.sampleRate
+web.common.format.size.bytes
+web.common.format.size.gb
+web.common.format.size.gib
+web.common.format.size.kb
+web.common.format.size.kib
+web.common.format.size.mb
+web.common.format.size.mib
 
 # More of Admin → Dashboard's words: a library's kind, as the web's libraryTypeLabel
 # (components/admin/libraries/libraryTypes.ts), as above under web.admin.dashboard.chart.columnReading.
@@ -1590,6 +1616,13 @@ web.markers.panel.resetTitle
 web.markers.panel.setEnd
 web.markers.panel.setStart
 
+# The line above a skip pill, its marker's confidence and source, as the web's lib/markerProvenance.ts words them:
+# src/Granary.Core/Playback/MarkerProvenance.cs.
+web.markers.provenance.confidence
+web.markers.provenance.detected
+web.markers.provenance.edited
+web.markers.provenance.online
+
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
 
@@ -1845,6 +1878,10 @@ web.player.sleepTimer.trigger
 web.player.sleepTimer.turnOff
 web.player.speed.heading
 
+# A playback speed ("1.5×"), as the web's player/utils/playbackSpeed.ts writes it: PlaybackSpeeds in
+# src/Granary.Core/ViewModels/Player/PlayerSettingsOptions.cs.
+web.player.speed.rate
+
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.player.tracks.resetAudioFailed
 web.player.tracks.saveAudioFailed
@@ -2019,6 +2056,8 @@ web.requests.hub.onTheWay
 web.requests.hub.openInLibrary
 web.requests.hub.openInLibraryFor
 web.requests.hub.reason
+web.requests.hub.requested
+web.requests.hub.requestedUpdated
 web.requests.hub.statusApproved
 web.requests.hub.statusAvailable
 web.requests.hub.statusCancelled

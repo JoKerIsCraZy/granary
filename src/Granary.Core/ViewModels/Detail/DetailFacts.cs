@@ -145,9 +145,6 @@ public static class DetailFacts
     // How many genres the meta line names; the Info dialog lists them all.
     private const int MetaGenres = 3;
     private const int InfoCast = 25;
-    private const double Gigabyte = 1024d * 1024 * 1024;
-    private const double Megabyte = 1024d * 1024;
-    private const double Kilobyte = 1024d;
 
     /// <summary>
     /// The one line under the title: a movie's "2026 · 1h 58m · R · Mystery, Thriller", a
@@ -325,8 +322,8 @@ public static class DetailFacts
                     : Upper(version.CodecAudio)),
                 Row(AppText.Get("web.detail.mediaInfo.row.container"), Upper(version.Container)),
                 Row(AppText.Get("web.detail.mediaInfo.row.fileSize"), SizeText(version.FileSize)),
-                Row(AppText.Get("web.detail.mediaInfo.row.bitrate"),
-                    version.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{version.Bitrate / 1000d:0.#} Mb/s") : null),
+                // The file's overall bitrate in whole kbps, as the web's media info (mediaSpecSections.ts, formatBitrate).
+                Row(AppText.Get("web.detail.mediaInfo.row.bitrate"), version.Bitrate > 0 ? MediaText.Bitrate(version.Bitrate) : null),
                 Row(AppText.Get("web.detail.mediaInfo.row.duration"),
                     version.Duration > 0 ? DetailText.Runtime((int)Math.Round(version.Duration / 60d, MidpointRounding.AwayFromZero)) : null),
             ]);
@@ -360,32 +357,16 @@ public static class DetailFacts
 
     private static string? Upper(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToUpperInvariant();
 
-    // "9.3 GB", "700 MB", "12 KB": binary units under Windows' names, as Explorer shows them. The unit is picked after
-    // rounding, so a file a byte short of 1 GB reads "1.0 GB", not "1024 MB".
-    private static string? SizeText(long bytes)
-    {
-        if (bytes <= 0)
-        {
-            return null;
-        }
-        if (Math.Round(bytes / Megabyte) >= 1024)
-        {
-            return string.Create(CultureInfo.InvariantCulture, $"{bytes / Gigabyte:0.0} GB");
-        }
-        if (Math.Round(bytes / Kilobyte) >= 1024)
-        {
-            return string.Create(CultureInfo.InvariantCulture, $"{bytes / Megabyte:0} MB");
-        }
-        return string.Create(CultureInfo.InvariantCulture, $"{Math.Max(1, Math.Round(bytes / Kilobyte)):0} KB");
-    }
+    // "9.3 GB", "700.0 MB", as the web's media info writes a file's size (formatFileSize).
+    private static string? SizeText(long bytes) => bytes > 0 ? MediaText.FileSize(bytes) : null;
 
-    // "1:02:33", "12:05".
+    // "1:02:33", "12:05", in the screen's digits as the web's formatTime.
     internal static string Clock(double seconds)
     {
         var time = TimeSpan.FromSeconds(Math.Floor(seconds));
-        return time.TotalHours >= 1
+        return NumberText.Digits(time.TotalHours >= 1
             ? string.Create(CultureInfo.InvariantCulture, $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}")
-            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}");
+            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}"));
     }
 
     // The file the viewer played last, else the first one.

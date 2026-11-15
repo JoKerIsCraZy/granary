@@ -118,19 +118,45 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
         Assert.Equal([("b", "running")], Scans);
     }
 
-    [Fact]
-    public async Task WhatIsNoRun_ChangesNothing()
+    [Theory]
+    [InlineData("""{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""")]
+    [InlineData("""{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "y", "timestamp": "t", "data": { "id": 7 } }""")]
+    // Too large to take: cut to its head, it says nothing of its run.
+    [InlineData("""{"type":"event","channel":"scans","event":"scan.completed","event_id":"z","timestamp":"t","data":{"id":"a","library_id":1,"mode":"lib""")]
+    public async Task AScanEventThatCannotBeRead_LeavesTheScansUnknown_AsASnapshotThatCannotBeReadDoes(string frame)
     {
         var socket = await _harness.StartedAsync(EventsChannels.Scans);
         await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
 
-        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""");
-        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "y", "timestamp": "t", "data": { "id": 7 } }""");
-        // An event too large to take is cut to its head and says nothing of its run.
-        await _harness.PushedAsync(socket, """{"type":"event","channel":"scans","event":"scan.progress","event_id":"z","timestamp":"t","data":{"id":"a","library_id":1,"mode":"lib""");
+        await _harness.PushedAsync(socket, frame);
 
+        // Every scans event brings a run: one that cannot be read may have begun or ended a scan unheard.
+        Assert.Null(_harness.State.Scans);
+        Assert.True(_harness.State.ScansMayBeMore);
+
+        // The runs the stream tells of from then on are the least there is, until a snapshot that can be read.
+        await _harness.PushedAsync(socket, Event("scan.progress", Run("a", "running")));
         Assert.Equal([("a", "running")], Scans);
-        Assert.False(_harness.State.ScansMayBeMore);
+        Assert.True(_harness.State.ScansMayBeMore);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AScanEventThatCannotBeRead_BeforeTheSnapshot_StaysUnknown_WhenTheSnapshotDoesNotCome(bool aRunEndsAfterIt)
+    {
+        var socket = await _harness.StartedAsync(EventsChannels.Scans);
+        await _harness.PushedAsync(socket, """{ "type": "event", "channel": "scans", "event": "scan.progress", "event_id": "x", "timestamp": "t", "data": "soon" }""");
+        if (aRunEndsAfterIt)
+        {
+            await _harness.PushedAsync(socket, Event("scan.completed", Run("b", "completed")));
+        }
+
+        _harness.Library.Clock.Advance(ServerActivity.ScansSnapshotWait);
+
+        // A scan may have begun unheard: there may be some until a snapshot that can be read, also when none comes.
+        Assert.Empty(_harness.State.Scans ?? []);
+        Assert.True(_harness.State.ScansMayBeMore);
     }
 
     [Theory]
@@ -296,7 +322,7 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
         await _harness.PushedAsync(socket, Event("scan.started", Run("n", "running", library: 99)));
         await _harness.PushedAsync(socket, Event("scan.progress", Run("n", "running", library: 99)));
         _harness.Library.Clock.Advance(ServerActivity.RefreshWindow);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal(2, _harness.Library.Count(LibrariesPath));
     }
@@ -309,7 +335,7 @@ public sealed class ServerActivityScansTests : IAsyncDisposable
 
         await _harness.PushedAsync(socket, Snapshot(Run("a", "running")));
         await ServerPlaybackFixture.Until(() => _harness.Library.Count(LibrariesPath) == 1, "the read");
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         Assert.Equal([("a", "running")], Scans);
         Assert.Null(_harness.State.LibraryNames);

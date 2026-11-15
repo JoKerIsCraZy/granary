@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Granary.Core.Texts;
 
 /// <summary>
@@ -83,6 +85,30 @@ public static class AppLanguage
             return chosen!;
         }
         return preferred.Select(Match).FirstOrDefault(IsEnabled) ?? English;
+    }
+
+    /// <summary>
+    /// The culture dates and numbers are written in (the web's <c>formatLocale</c>, from <c>resolveAppLocale</c>): Windows'
+    /// regional format (<paramref name="windows"/>, the browser's own on the web), unless <paramref name="language"/> came
+    /// from a choice (<paramref name="stored"/>, the profile's <c>ui.app_language</c>) and Windows' format is in another
+    /// language, then the stored tag's own. So nobody who did not choose sees other formats than Windows', German chosen
+    /// on a Swiss Windows keeps its Swiss numbers, and German chosen on an English Windows writes German ones.
+    /// </summary>
+    public static CultureInfo FormatCulture(string language, string? stored, CultureInfo windows)
+    {
+        string? chosen = Canonical(stored);
+        if (chosen is null || Match(chosen) != language || Match(windows.Name) == language)
+        {
+            return windows;
+        }
+        try
+        {
+            return CultureInfo.GetCultureInfo(chosen.Replace('_', '-'));
+        }
+        catch (CultureNotFoundException)
+        {
+            return windows;
+        }
     }
 
     /// <summary>Whether a tag's language is written right to left, among the shipped ones (the web's <c>interfaceDirection</c>).</summary>

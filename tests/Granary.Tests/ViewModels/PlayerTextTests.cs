@@ -47,7 +47,7 @@ public sealed class PlayerTextTests
         Assert.Equal("Sync failed. Try again.", SubtitleSyncText.Failure("something_new"));
 
         using var german = AppText.Use(TextLanguage.Load("de"));
-        Assert.Equal("Synchronisiert: −3.0 Sek.", SubtitleSyncText.Status(Synced(-3000)));
+        Assert.Equal("Synchronisiert: −3,0 Sek.", SubtitleSyncText.Status(Synced(-3000)));
     }
 
     [Fact]

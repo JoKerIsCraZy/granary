@@ -116,8 +116,8 @@ internal sealed partial class PlaybackChart : Grid
             AppText.Get("web.admin.dashboard.widgets.playbackActivity.series.transcode"),
         ];
         ToolTipService.SetToolTip(hit, string.Join(Environment.NewLine,
-            [bucket, .. names.Select((name, s) => $"{name}  {values[s]}"),
-                $"{AppText.Get("web.admin.dashboard.widgets.playbackActivity.totalLabel")}  {column.Total}"]));
+            [bucket, .. names.Select((name, s) => $"{name}  {NumberText.Grouped(values[s])}"),
+                $"{AppText.Get("web.admin.dashboard.widgets.playbackActivity.totalLabel")}  {NumberText.Grouped(column.Total)}"]));
         Canvas.SetLeft(hit, left);
         _plot.Children.Add(hit);
     }
@@ -134,7 +134,8 @@ internal sealed partial class PlaybackChart : Grid
         _labels.Children.Add(label);
     }
 
-    // The hour in the viewer's own time ("3 PM"), or the day for daily buckets ("Oct 27").
+    // The hour in the viewer's own time ("3 PM"), or the day for daily buckets ("Oct 27"), as the web's
+    // PlaybackActivityWidget writes them (formatDayLabel, formatTime with the hour alone).
     private static string BucketLabel(DateTimeOffset start, bool daily) =>
-        start.ToLocalTime().ToString(daily ? "MMM d" : "h tt", CultureInfo.GetCultureInfo("en-US"));
+        DateText.Format(start.ToLocalTime().DateTime, daily ? DateText.MonthDay : DateText.Hour);
 }

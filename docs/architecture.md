@@ -345,7 +345,28 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   digits on, as CLDR and the web have it); `select`; `plural`
   with CLDR's cardinal rules for the eight languages, an exact value (`=0`) first and the offset applied; and rich-text
   tags, whose children show as plain text (`AppText.Runs` keeps the tags, for inlines). In Arabic, printed values are
-  wrapped in Unicode isolates as on the web, and numbers keep Latin digits and marks for now.
+  wrapped in Unicode isolates as on the web, and numbers take the digits of the format locale (below): Arabic-Indic
+  with Arabic marks where it writes them (`ar`, `ar-EG`), Latin with Latin marks where it does not (`ar-AE`), as the
+  web's `ar-u-nu-…` locale; an English fallback keeps Latin digits. Strings are never changed.
+- **Dates and numbers** (`FormatLocale`, `DateText`, `NumberText`) follow the web's format locale (`lib/appLocale.ts`,
+  `formatLocale`): Windows' regional format, unless a language was chosen whose language Windows' format is not in,
+  then the chosen tag's own (`AppLanguage.FormatCulture`, the web's `resolveAppLocale`), so nobody who did not choose
+  sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
+  - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
+    in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). The clock is Windows'
+    own, 12 or 24 hours as its time format says (a user's choice included), as the web's 12h/24h preference sets Intl's
+    hour cycle; Granary does not read the web's date and time preferences. Without ICU it writes .NET's nearest pattern.
+    A value is written as it reads; callers convert to the viewer's zone first.
+  - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
+    `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
+    `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.
+    The marks are .NET's for the culture; whether a four-digit number is grouped (Spanish and Polish write 1234,
+    Mexican Spanish 1,234) is ICU's number formatter's, as Intl's.
+  - Units and the words around numbers come from the web's catalog where it words them (`web.common.format.*`: sizes,
+    rates, runtimes); where the web writes a unit in code ("Mbps", "ms", "3d 4h"), Granary does too.
+  - What is sent, stored, compared, logged or handed to mpv stays invariant. WinUI's own controls (NumberBox, InfoBadge,
+    the media flyout's timeline) and Discord write their numbers with Windows' settings.
 - **Fallback** (`TextLanguage`): a message the language lacks comes in English with English rules. A key English lacks
   too shows as `[key]` in debug builds and as nothing in release, and each problem is logged once. A lookup never
   throws.
@@ -382,8 +403,9 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Granary does not read or write the profile's setting yet.
 - **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
-  before its first window (`App.ApplyLanguage`); the log says which. A debug build takes `--language <tag>` to show a
-  shipped language, enabled or not, for checking converted texts. WinUI's own control texts (a text box's menu, for
+  before its first window (`App.ApplyLanguage`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates
+  and numbers; the log says which. A debug build takes `--language <tag>` to show a shipped language, enabled or not,
+  for checking converted texts; it counts as a chosen language for the formats. WinUI's own control texts (a text box's menu, for
   example) still follow Windows' display language.
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
@@ -643,10 +665,26 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
   `MarkerPrompts` follows the position: with `playback.intro_skip_mode` `ask` the intro offers "Skip Intro" for 5 s
-  of playing time (a pause stops the clock, a stall only after 1.5 s), `always` skips it and offers "Watch Intro";
+  of playing time (a pause stops the clock, a stall only after 1.5 s), and after that, until playback leaves the
+  intro, without a timer while the controls show (`FollowControls`, fed by the page through
+  `PlayerViewModel.AreControlsShown`; the pill says `WithControls`, so the page gives it no focus and no keys from
+  elsewhere), `always` skips it and offers "Watch Intro";
   a picked, turned away (Esc) or settled intro is not offered again in that playback. Recap, credits and preview
   get a pill that stays, and skip themselves once where `playback.auto_skip_recap` or `auto_skip_credits` say so,
   as Apple's client does. The settings are read as their own batch; an unknown mode neither prompts nor skips.
+  Each part carries where its kind came from (`MarkerProvenance`, from the watch detail's or a save's singular range,
+  and part of the part's equality, so a read that names another source is news); where
+  `playback.show_marker_confidence` or `show_marker_source` say so, the pill has a line naming it, as the web's
+  `lib/markerProvenance.ts` words it. The two are read as a batch of their own, so a server from before them keeps the
+  line off and the rest. Both a read and a pick are judged by where playback is at that moment, which the player hands
+  in (`SkipOrigin`: a seek on its way, else the position), not by the last update's position: the engine reports a
+  seek only some time later. Another read keeps a showing pill, the recap's, credits' or preview's too, only while its
+  part as measured now holds that position and does not skip itself; the next update offers it again where it is. The
+  undo pill stays regardless, as its pick only goes back. A pick of Skip Intro or a part's pill seeks to the part's end
+  only from inside it, one of Watch Intro to the intro's start only from that start on; otherwise the pill goes without
+  a seek. Skip Intro pressed outside its intro leaves the intro unresolved, so playback entering it offers it again;
+  Watch Intro pressed before the intro settles it, so it plays when playback reaches it. Either way a pick never seeks
+  over what is not marked.
 - **Next episode** (10.7): the playback names its episode (series, season, number); `UpNextSource` reads the
   current season's episodes, and when none is later, those of the lowest later season that is not specials, and the
   smallest (season, episode) after this one plays next. `NextUpFlow` decides what shows: the card when playback
@@ -1154,7 +1192,9 @@ The administrator's activity indicator (docs/ui-design.md, "Activity indicator")
   and `access_changed` empties the state until the next one. The scans a new connection inherits are a guess until
   its snapshot confirms or replaces them: one that cannot be read, or has not come after 10 s while a scan of the
   last connection may still run, leaves them not known (`Scans` null and `ScansMayBeMore`), for that connection only;
-  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
+  with no scan known to run, a snapshot that does not come leaves `Scans` null without it. A `scan.*` event that cannot
+  be read (cut for its size, or no run) leaves them not known too: each of them brings a run, so a start or an end was
+  missed. A snapshot of the server's full 500 keeps `ScansMayBeMore` until a
   smaller one, so neither a stale list nor a count that scans ending made "exact" is shown. The lists are read over REST when the stream says they
   changed, paced as the web's scheduler paces its own: the first news reads at once, more news during a read or within
   5 s of it makes one more read when that window closes. A list the server does not offer (its channel turned down, or
@@ -1247,11 +1287,13 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   Triangle 3, L1 4, R1 5, Share 8, Options 9, L3 10, R3 11, the D-pad as the first switch). The order of the last three
   axes, both triggers and the right stick's Y, is written down nowhere, so `SonyPad` learns it from the first reading
   with both triggers out: a trigger at rest reads 0, a stick in the middle a half. Until then the right stick counts as
-  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself. These
+  at rest and a pressed trigger as pulled home, so a wrong guess can never scrub or change the volume by itself; a
+  reading short of those axes is read so too, also once the order is known. These
   pads report L2 and R2 as buttons too, down from the first bit of the way; the interpreter takes a trigger by its pull
   wherever a reading has one, and only a button without a pull as pulled home (`Pressure`), so a light pull scrubs
   slowly and a touch pages nothing. A pad that shows up twice, itself and as the Xbox pad a tool makes of it, still
-  presses each button once, since the readings are merged before anything is decided.
+  presses each button once, since the readings are merged before anything is decided. The merge takes each trigger as
+  its pad means it, so one a pad only reports as pressed stays pulled home beside another pad's slight pull.
   A pad on its way out can fail its last readings. Such a reading is no pad at
   rest, which would let go of what was held and so press a short A on the pages: it is `PadReading.Failed`, and the
   interpreter forgets what was held as after `Reset` and calls off a seek under way (`SeekCancel`). `IsAtRest` is false
@@ -1264,19 +1306,25 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
   that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
   `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
-  wakes for it; it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
+  wakes for it, and the interpreter's clock moves on (`Skip`): the first reading in use then stands for one poll, not for
+  the longest step a reading may stand for (`PadTuning.LongestStep`, a 220 px scroll or an 18 s scrub); it ends when the window is deactivated or the last pad goes. A pad that cannot be read is asked as
   often as one at rest. Windows documents that a UWP app gets no pad input out of focus and says nothing for desktop
   apps, so Granary does not ask: deactivated, it stops reading. The timer's tick goes through `WeakTick`.
 - **Carrying out.** Nothing is typed or clicked for the pad. Focus moves through `FocusManager.FindNextElement` and is
   set as the keyboard's (`PadControls.Move`), after the window's own handling of an arrow and before its handling of an
   arrow nobody took, the same two methods the arrow keys call (`TakesArrowFirst`, `TakesArrowLast` in
   MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
-  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer), B runs the remote's back ladder
+  Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer; a link in a text has no peer and
+  its Click cannot be raised, so its page says what A does on it, `PadControls.PressesWith`), B runs the remote's back ladder
   (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
-  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request.
+  `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request. Any other seek of the viewer's
+  (`PlayerViewModel.ViewerSought`: a key, the mouse, a skip, a chapter, the seek bar's own step for the D-pad) replaces
+  it: the page drops the preview and raises `PadSeekReplaced`, and the window calls `PadInterpreter.CancelSeek` and
+  leaves what that reading still says of the seek undone. A bumper's chapter jump ends a seek inside the interpreter,
+  which sends `SeekCancel` before the jump.
 - **Presence.** Windows counts keys and the mouse as the viewer being there, not a pad. While the pad is in use the
   window sets the display's and the system's idle timers back (`SetThreadExecutionState` without `ES_CONTINUOUS`, at
   most every 10 s); nothing is held, and a title that plays keeps the display on by itself (`PlayerKeepAwake`).

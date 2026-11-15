@@ -47,7 +47,7 @@ public static class PersonFacts
         DateOnly.TryParseExact(text?.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date : null;
 
     private static string Format(DateOnly? date, string raw) =>
-        date is { } day ? day.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) : raw.Trim();
+        date is { } day ? DateText.MediumDate(day.ToDateTime(TimeOnly.MinValue)) : raw.Trim();
 
     private static string? NonEmpty(string? text) => string.IsNullOrWhiteSpace(text) ? null : text;
 }

@@ -28,6 +28,7 @@
   <!-- Exercise the HWND boundary without loading the WinUI application. -->
   <ItemGroup>
     <Compile Include="..\..\src\Granary.App\Interop\CursorShield.cs" Link="Interop\CursorShield.cs" />
+    <Compile Include="..\..\src\Granary.App\Controls\PlayerTime.cs" Link="Controls\PlayerTime.cs" />
   </ItemGroup>
 
   <!-- libmpv integration tests skip themselves when the DLL has not been fetched. -->

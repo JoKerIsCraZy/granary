@@ -28,8 +28,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     private static readonly string[] Keys =
     [
         SettingKeys.PreferredQuality, SettingKeys.MaxBitrateKbps, SettingKeys.BufferingQualityMode, SettingKeys.IntroSkipMode,
-        SettingKeys.AutoSkipRecap, SettingKeys.AutoSkipCredits, SettingKeys.AutoPlayNextPreview, SettingKeys.AutoPlayNext,
-        SettingKeys.SkipBackSeconds, SettingKeys.SkipForwardSeconds,
+        SettingKeys.ShowMarkerConfidence, SettingKeys.ShowMarkerSource, SettingKeys.AutoSkipRecap, SettingKeys.AutoSkipCredits,
+        SettingKeys.AutoPlayNextPreview, SettingKeys.AutoPlayNext, SettingKeys.SkipBackSeconds, SettingKeys.SkipForwardSeconds,
     ];
 
     // The ladder of the web's bitrate select (lib/bitrateOptions.ts), within the setting's 100 to 200000 kbps.
@@ -178,6 +178,19 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     public partial SettingChoice? SelectedIntroSkip { get; set; }
+
+    /// <summary>
+    /// The server knows Show marker confidence and Show marker source (settings contract 24); they came together, so one
+    /// gate covers both, as on the web. A switch that cannot save is worse than none.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool ShowsMarkerProvenance { get; private set; }
+
+    [ObservableProperty]
+    public partial bool ShowMarkerConfidence { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowMarkerSource { get; set; }
 
     [ObservableProperty]
     public partial bool AutoSkipRecaps { get; set; }
@@ -358,6 +371,9 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             SelectedBuffering = Choice(BufferingChoices, SettingValues.Text(Get(SettingKeys.BufferingQualityMode)), "always");
             ShowsIntroSkip = values.ContainsKey(SettingKeys.IntroSkipMode);
             SelectedIntroSkip = Choice(IntroSkipChoices, SettingValues.Text(Get(SettingKeys.IntroSkipMode)), "ask");
+            ShowsMarkerProvenance = values.ContainsKey(SettingKeys.ShowMarkerConfidence) && values.ContainsKey(SettingKeys.ShowMarkerSource);
+            ShowMarkerConfidence = SettingValues.Bool(Get(SettingKeys.ShowMarkerConfidence)) ?? false;
+            ShowMarkerSource = SettingValues.Bool(Get(SettingKeys.ShowMarkerSource)) ?? false;
             AutoSkipRecaps = SettingValues.Bool(Get(SettingKeys.AutoSkipRecap)) ?? false;
             AutoSkipCredits = SettingValues.Bool(Get(SettingKeys.AutoSkipCredits)) ?? false;
             StartNextAtPreview = SettingValues.Bool(Get(SettingKeys.AutoPlayNextPreview)) ?? false;
@@ -368,6 +384,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             _confirmed[SettingKeys.MaxBitrateKbps] = SelectedBitrate;
             _confirmed[SettingKeys.BufferingQualityMode] = SelectedBuffering;
             _confirmed[SettingKeys.IntroSkipMode] = SelectedIntroSkip;
+            _confirmed[SettingKeys.ShowMarkerConfidence] = ShowMarkerConfidence;
+            _confirmed[SettingKeys.ShowMarkerSource] = ShowMarkerSource;
             _confirmed[SettingKeys.AutoSkipRecap] = AutoSkipRecaps;
             _confirmed[SettingKeys.AutoSkipCredits] = AutoSkipCredits;
             _confirmed[SettingKeys.AutoPlayNextPreview] = StartNextAtPreview;
@@ -400,11 +418,12 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         SelectedBitrate = choices.First(c => c.Value == (kbps is { } k2 ? SettingValues.Invariant(k2) : ""));
     }
 
-    // "8 Mbps", "1.5 Mbps", "800 kbps" (web: formatBitrateKbps).
+    // "8 Mbps", "1.5 Mbps", "800 kbps" (web: formatBitrateKbps, a whole number as JavaScript prints it, a fraction in
+    // the format locale).
     private static string Rate(int kbps) => kbps >= 1000
         ? (kbps % 1000 == 0
             ? string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000} Mbps")
-            : string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps"))
+            : $"{NumberText.Decimal(kbps / 1000.0, 1)} Mbps")
         : string.Create(CultureInfo.InvariantCulture, $"{kbps} kbps");
 
     private async Task LoadConnectionAsync(CancellationToken cancellationToken)
@@ -440,7 +459,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         LearnedLimitText = limit is null
             ? ""
             : AppText.Get("web.settings.playbackConnection.learnedLimit", ("rate", ConnectionRate(limit.Kbps)),
-                ("date", limit.ObservedAt.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture)));
+                ("date", DateText.Format(limit.ObservedAt.ToLocalTime().DateTime, DateText.MonthDay)));
         ConnectionSpeedText = _meteredNote ?? SpeedText(_connection);
         ShowsTestSpeed = _meteredNote is null;
         long? budget = ignoresLimit && limit is not null ? null : _connection?.AutoBudgetKbps;
@@ -499,7 +518,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     {
         long value = Math.Max(0, kbps);
         return value < 1000 ? string.Create(CultureInfo.InvariantCulture, $"{value} kbps")
-            : value < 10_000 ? string.Create(CultureInfo.InvariantCulture, $"{Math.Floor(value / 100.0) / 10:0.0} Mbps")
+            : value < 10_000 ? $"{NumberText.Decimal(Math.Floor(value / 100.0) / 10, 1)} Mbps"
             : string.Create(CultureInfo.InvariantCulture, $"{value / 1000} Mbps");
     }
 
@@ -543,6 +562,12 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             Save(SettingKeys.IntroSkipMode, value, () => SelectedIntroSkip, v => SelectedIntroSkip = v, SettingValues.Json(value.Value));
         }
     }
+
+    partial void OnShowMarkerConfidenceChanged(bool value) =>
+        Save(SettingKeys.ShowMarkerConfidence, value, () => ShowMarkerConfidence, v => ShowMarkerConfidence = v, SettingValues.Json(value));
+
+    partial void OnShowMarkerSourceChanged(bool value) =>
+        Save(SettingKeys.ShowMarkerSource, value, () => ShowMarkerSource, v => ShowMarkerSource = v, SettingValues.Json(value));
 
     partial void OnAutoSkipRecapsChanged(bool value) =>
         Save(SettingKeys.AutoSkipRecap, value, () => AutoSkipRecaps, v => AutoSkipRecaps = v, SettingValues.Json(value));

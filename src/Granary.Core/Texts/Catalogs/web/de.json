@@ -841,6 +841,30 @@
       "value": "Erzwungene Untertitel anzeigen"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "Zeigt über der Schaltfläche „Intro überspringen“ an, wie sicher sich die Quelle ist. Jede Quelle bewertet auf ihrer eigenen Skala, daher ist der Prozentwert nur innerhalb einer Quelle vergleichbar; schalte die Zeile zur Quelle ein, um zu sehen, welche es ist."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "Sicherheit der Markierung anzeigen"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "Zeigt über der Schaltfläche „Intro überspringen“ an, woher das Überspringen stammt: von Silos eigener Erkennung, von einer Person oder vom Anbieter, der die Markierung geliefert hat."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "Quelle der Markierung anzeigen"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -4453,6 +4477,28 @@
       "value": "Alle Mediatheken"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -4709,6 +4755,50 @@
     {
       "type": 1,
       "value": "range"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": ".–"
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": ". "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "year"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -7976,6 +8066,12 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "gerade eben"
+    }
+  ],
   "web.common.date.minutesAgo": [
     {
       "type": 6,
@@ -8048,6 +8144,66 @@
       "value": "Andere"
     }
   ],
+  "web.common.format.bitrate.kbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.common.format.bitrate.mbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.common.format.channels.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Kan."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Kan."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.channels.stereo": [
+    {
+      "type": 0,
+      "value": "Stereo"
+    }
+  ],
   "web.common.format.runtime.hoursMinutes": [
     {
       "type": 1,
@@ -8098,6 +8254,86 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.sampleRate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Hz"
+    }
+  ],
+  "web.common.format.size.bytes": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " B"
+    }
+  ],
+  "web.common.format.size.gb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GB"
+    }
+  ],
+  "web.common.format.size.gib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GiB"
+    }
+  ],
+  "web.common.format.size.kb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KB"
+    }
+  ],
+  "web.common.format.size.kib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KiB"
+    }
+  ],
+  "web.common.format.size.mb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MB"
+    }
+  ],
+  "web.common.format.size.mib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MiB"
     }
   ],
   "web.common.libraryType.audiobooks": [
@@ -10705,6 +10941,34 @@
       "value": "Beginn setzen"
     }
   ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "Erkannt"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "Bearbeitet"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "Online"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -12539,6 +12803,16 @@
       "value": "Geschwindigkeit"
     }
   ],
+  "web.player.speed.rate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "×"
+    }
+  ],
   "web.player.tracks.resetAudioFailed": [
     {
       "type": 0,
@@ -13581,6 +13855,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "Angefragt "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "Angefragt "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · Aktualisiert "
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [

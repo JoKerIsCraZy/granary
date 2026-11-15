@@ -833,6 +833,30 @@
       "value": "عرض الترجمة الإجبارية"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "عرض مدى ثقة المصدر فوق زر «تخطي المقدمة». يقيّم كل مصدر وفق مقياسه الخاص، لذا لا تصلح النسبة المئوية للمقارنة إلا ضمن مصدر واحد؛ فعّل سطر المصدر لمعرفة المصدر."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "عرض ثقة العلامة"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "عرض مصدر التخطي فوق زر «تخطي المقدمة»: اكتشاف Silo الخاص، أو شخص، أو المزود الذي قدّم العلامة."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "عرض مصدر العلامة"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -5929,6 +5953,28 @@
       "value": "كل المكتبات"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -6181,6 +6227,50 @@
     {
       "type": 1,
       "value": "range"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "year"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -10238,6 +10328,12 @@
       "pluralType": "cardinal"
     }
   ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "الآن"
+    }
+  ],
   "web.common.date.minutesAgo": [
     {
       "type": 6,
@@ -10374,6 +10470,110 @@
       "value": "أخرى"
     }
   ],
+  "web.common.format.bitrate.kbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.common.format.bitrate.mbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.common.format.channels.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "zero": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " قناة"
+            }
+          ]
+        },
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " قناة"
+            }
+          ]
+        },
+        "two": {
+          "value": [
+            {
+              "type": 0,
+              "value": "قناتان"
+            }
+          ]
+        },
+        "few": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " قنوات"
+            }
+          ]
+        },
+        "many": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " قناةً"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " قناة"
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.channels.stereo": [
+    {
+      "type": 0,
+      "value": "ستيريو"
+    }
+  ],
   "web.common.format.runtime.hoursMinutes": [
     {
       "type": 1,
@@ -10472,6 +10672,86 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.sampleRate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Hz"
+    }
+  ],
+  "web.common.format.size.bytes": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " B"
+    }
+  ],
+  "web.common.format.size.gb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GB"
+    }
+  ],
+  "web.common.format.size.gib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GiB"
+    }
+  ],
+  "web.common.format.size.kb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KB"
+    }
+  ],
+  "web.common.format.size.kib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KiB"
+    }
+  ],
+  "web.common.format.size.mb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MB"
+    }
+  ],
+  "web.common.format.size.mib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MiB"
     }
   ],
   "web.common.libraryType.audiobooks": [
@@ -13393,6 +13673,34 @@
       "value": "تحديد البداية"
     }
   ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "مكتشفة"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "معدّلة"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "عبر الإنترنت"
+    }
+  ],
   "web.markers.save": [
     {
       "type": 0,
@@ -15619,6 +15927,16 @@
       "value": "السرعة"
     }
   ],
+  "web.player.speed.rate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "×"
+    }
+  ],
   "web.player.tracks.resetAudioFailed": [
     {
       "type": 0,
@@ -16956,6 +17274,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "طُلب "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "طُلب "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · حُدّث "
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [

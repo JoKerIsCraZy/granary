@@ -39,10 +39,10 @@ public static class DetailText
         return last is not null && last != first ? $"{first}–{last}" : first;
     }
 
-    /// <summary>A server date (<c>2026-10-23</c>) as the web shows it: "23 Oct 2026".</summary>
+    /// <summary>A server date (<c>2026-10-23</c>) as the web shows an air date: "Oct 23, 2026" (formatDate, "medium").</summary>
     public static string? Date(string? isoDate) =>
         DateOnly.TryParseExact(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date.ToString("d MMM yyyy", CultureInfo.InvariantCulture)
+            ? DateText.MediumDate(date.ToDateTime(TimeOnly.MinValue))
             : null;
 
     /// <summary>"S03E01 · Chapter 1", or the code alone for an episode without a title.</summary>

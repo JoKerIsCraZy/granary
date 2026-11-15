@@ -50,17 +50,40 @@ public sealed class TextLanguageTests
     [InlineData("fr", 2, "2 secondes")]
     [InlineData("fr", 1000000, "1\u202F000\u202F000 de secondes")]
     [InlineData("ja", 1, "1秒")]
-    [InlineData("ar", 0, "0 ثانية")]
+    [InlineData("ar", 0, "٠ ثانية")]
     [InlineData("ar", 1, "ثانية واحدة")]
     [InlineData("ar", 2, "ثانيتان")]
-    [InlineData("ar", 5, "5 ثوانٍ")]
-    [InlineData("ar", 11, "11 ثانية")]
-    [InlineData("ar", 100, "100 ثانية")]
+    [InlineData("ar", 5, "٥ ثوانٍ")]
+    [InlineData("ar", 11, "١١ ثانية")]
+    [InlineData("ar", 100, "١٠٠ ثانية")]
     public void APlural_PicksTheLanguagesForm_AndPrintsTheCount(string tag, int seconds, string expected)
     {
         var language = TextFixtures.Language(tag);
 
         Assert.Equal(expected, language.Get("player.seekInterval.choice", [("seconds", seconds)]));
+    }
+
+    [Theory]
+    [InlineData("ar", "١١ ثانية")]
+    [InlineData("ar-EG", "١١ ثانية")]
+    [InlineData("ar-AE", "11 ثانية")]
+    [InlineData("en-US", "11 ثانية")]
+    public void ArabicNumbers_TakeTheDigitsOfTheirFormatLocale(string formats, string expected)
+    {
+        // The web's createAppIntl names Arabic's numbering system after its format locale: Arabic-Indic on ar and ar-EG,
+        // Latin on ar-AE and on a Latin region's format.
+        var arabic = TextFixtures.Language("ar", formats: formats);
+
+        Assert.Equal(expected, arabic.Get("player.seekInterval.choice", [("seconds", 11)]));
+    }
+
+    [Fact]
+    public void AnEnglishFallback_KeepsLatinDigits_InArabic()
+    {
+        // The web's prepareValues localizes only the language's own translation; English's # stays Latin.
+        var arabic = TextFixtures.Language("ar");
+
+        Assert.Equal("12 new", arabic.Get("web.collections.starterPacks.newCount", [("count", 12)]));
     }
 
     [Theory]
@@ -160,9 +183,10 @@ public sealed class TextLanguageTests
     [Fact]
     public void ANumberElement_IsGroupedInTheLanguagesCulture()
     {
-        // Upstream's one {day, number} (ar.json's web.collections.fields.dayOrdinal). Arabic numbers keep Latin digits
-        // and separators for now: .NET would pair Arabic separators with Latin digits.
-        Assert.Equal("1,234", TextFixtures.Language("ar").Get("web.collections.fields.dayOrdinal", [("day", 1234)]));
+        // Upstream's one {day, number} (ar.json's web.collections.fields.dayOrdinal): Arabic marks with Arabic-Indic digits,
+        // Latin ones with Latin digits, as Intl's ar-u-nu-arab and ar-u-nu-latn.
+        Assert.Equal("١٬٢٣٤", TextFixtures.Language("ar").Get("web.collections.fields.dayOrdinal", [("day", 1234)]));
+        Assert.Equal("1,234", TextFixtures.Language("ar", formats: "ar-AE").Get("web.collections.fields.dayOrdinal", [("day", 1234)]));
     }
 
     [Fact]
@@ -314,18 +338,20 @@ public sealed class TextLanguageTests
         var arabic = TextFixtures.Language("ar");
 
         Assert.Equal($"لأنك تحب {Fsi}Drama{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", "Drama")]));
-        Assert.Equal("لأنك تحب 42", arabic.Get("home.section.becauseYouEnjoy", [("genres", 42)]));
+        Assert.Equal("لأنك تحب ٤٢", arabic.Get("home.section.becauseYouEnjoy", [("genres", 42)]));
         Assert.Equal($"في {Fsi}3-4{Pdi} مجموعات", arabic.Get("web.collections.copy.inCollections", [("count", 3), ("count_text", "3-4")]));
     }
 
     [Theory]
-    [InlineData(-5, "-5")]
-    [InlineData(1.5, "1.5")]
-    public void InArabic_ANumberWithASignOrADecimalMark_IsIsolated_AsOnTheWeb(double number, string printed)
+    [InlineData("ar", -5, "؜-٥")]
+    [InlineData("ar", 1.5, "١٫٥")]
+    [InlineData("ar-AE", -5, "-5")]
+    [InlineData("ar-AE", 1.5, "1.5")]
+    public void InArabic_ANumberWithASignOrADecimalMark_IsIsolated_AsOnTheWeb(string formats, double number, string printed)
     {
         // The web prints a number value first and isolates what is not digits alone (format.ts, prepareValues: "A range
         // or a signed number keeps its isolate, or Arabic text would reorder it"), so the printed text decides, not the type.
-        var arabic = TextFixtures.Language("ar");
+        var arabic = TextFixtures.Language("ar", formats: formats);
 
         Assert.Equal($"لأنك تحب {Fsi}{printed}{Pdi}", arabic.Get("home.section.becauseYouEnjoy", [("genres", number)]));
     }

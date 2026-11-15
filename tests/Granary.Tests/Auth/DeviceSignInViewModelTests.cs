@@ -46,7 +46,7 @@ public sealed class DeviceSignInViewModelTests : IAsyncDisposable
         Assert.Equal("silo.example.org/activate", _viewModel.VerificationText);
         Assert.Equal("https://silo.example.org/activate?code=48217730", _viewModel.QrPayload);
         Assert.Equal("Waiting for approval on your phone...", _viewModel.StatusText);
-        string expiry = ManualTimeProvider.DefaultStart.AddSeconds(900).ToString("t", CultureInfo.CurrentCulture);
+        string expiry = DateText.Time(ManualTimeProvider.DefaultStart.AddSeconds(900).DateTime);
         Assert.Equal($"Valid until {expiry}", _viewModel.ExpiryText);
         Assert.False(_viewModel.CanRetry);
     }

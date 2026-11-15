@@ -30,17 +30,23 @@ public sealed class TextLanguage
     private readonly ConcurrentDictionary<string, bool> _reported = new(StringComparer.Ordinal);
     private readonly bool _marksProblems;
 
-    internal TextLanguage(TextCatalog own, TextCatalog english, ILogger? logger, bool marksProblems = MarksProblemsInThisBuild)
+    /// <param name="formats">Where dates and numbers come from (<see cref="Formats"/>); the language's own when null.</param>
+    internal TextLanguage(
+        TextCatalog own, TextCatalog english, ILogger? logger, bool marksProblems = MarksProblemsInThisBuild, FormatLocale? formats = null)
     {
         _own = own;
         _english = english;
         _marksProblems = marksProblems;
-        _formatter = new MessageFormatter(own.Tag, marksProblems);
-        _englishFormatter = ReferenceEquals(own, english) ? _formatter : new MessageFormatter(english.Tag, marksProblems);
         _logger = logger ?? NullLogger.Instance;
         Tag = own.Tag;
         IsRightToLeft = AppLanguage.IsRightToLeft(Tag);
         Culture = CultureOf(Tag);
+        Formats = formats ?? FormatLocale.For(Tag);
+        // As the web's createAppIntl: only Arabic names a numbering system, its format locale's.
+        MessageDigits = AppLanguage.Match(Tag) == "ar" ? Formats.Digits : null;
+        _formatter = new MessageFormatter(own.Tag, marksProblems, MessageDigits);
+        // An English fallback prints its numbers in Latin digits, its plural # too.
+        _englishFormatter = ReferenceEquals(own, english) ? _formatter : new MessageFormatter(english.Tag, marksProblems);
     }
 
     /// <summary>The shipped language's tag, such as <c>en</c> or <c>pt-BR</c>.</summary>
@@ -50,24 +56,35 @@ public sealed class TextLanguage
     public CultureInfo Culture { get; }
 
     /// <summary>
-    /// A number as the language writes it, grouped (1,234; 1.234 in German), as the web's <c>numberText</c>: for a message
-    /// that takes its number as a text (<c>count_text</c>) beside the count its plural goes by.
+    /// The locale dates and numbers outside messages are written in, the web's <c>formatLocale</c>: Windows' regional
+    /// format in the app (<see cref="AppLanguage.FormatCulture"/>), the language's own in tests.
     /// </summary>
-    public string Number(decimal number) => _formatter.Number(number);
+    public FormatLocale Formats { get; }
+
+    /// <summary>The digits numbers in this language's messages take: Arabic-Indic in Arabic where its format locale has them; null for Latin.</summary>
+    internal string? MessageDigits { get; }
+
+    /// <summary>
+    /// A number grouped in the format locale's way (1,234; 1.234 in German; 1’234 on a Swiss format), as the web passes
+    /// <c>count.toLocaleString(formatLocale())</c>: for a message that takes its number as a text (<c>count_text</c>)
+    /// beside the count its plural goes by.
+    /// </summary>
+    public string Number(decimal number) => NumberText.Grouped(number, Formats);
 
     /// <summary>Whether the language is written right to left: Arabic.</summary>
     public bool IsRightToLeft { get; }
 
     /// <summary>
     /// The texts Granary embeds for the shipped language a tag selects (<see cref="AppLanguage.Match"/>), English when it
-    /// selects none. Whatever its catalogs could not read goes to the log.
+    /// selects none, with dates and numbers from <paramref name="formats"/> (the language's own when null). Whatever its
+    /// catalogs could not read goes to the log.
     /// </summary>
-    public static TextLanguage Load(string tag, ILogger? logger = null)
+    public static TextLanguage Load(string tag, ILogger? logger = null, FormatLocale? formats = null)
     {
         var english = TextCatalog.Embedded(AppLanguage.English);
         string language = AppLanguage.Match(tag) ?? AppLanguage.English;
         var own = language == AppLanguage.English ? english : TextCatalog.Embedded(language);
-        var loaded = new TextLanguage(own, english, logger);
+        var loaded = new TextLanguage(own, english, logger, formats: formats);
         foreach (string problem in own.Problems.Concat(ReferenceEquals(own, english) ? [] : english.Problems))
         {
             loaded._logger.LogWarning("A text could not be read: {Problem}", problem);

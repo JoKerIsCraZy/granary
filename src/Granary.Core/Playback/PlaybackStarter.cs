@@ -310,7 +310,8 @@ public sealed class PlaybackStarter(
         ArgumentNullException.ThrowIfNull(detail);
         if (detail.Type != WatchItemTypes.Episode)
         {
-            return (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "");
+            // The year in the screen's digits, as the web player's numberText(year).
+            return (detail.Title, detail.Year is { } year ? NumberText.Digits(year) : "");
         }
         // The web player's line under the title (VideoPlayer.tsx): the code, and the episode's title after it.
         string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode

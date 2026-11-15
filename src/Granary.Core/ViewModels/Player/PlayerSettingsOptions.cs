@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Playback;
 using Granary.Core.Texts;
 
@@ -33,13 +32,12 @@ public sealed record QualityOption(string Preference, string Label, string Bitra
         ];
     }
 
-    // "6 Mbps", "4.5 Mbps", "300 kbps".
+    // "6 Mbps", "4.5 Mbps", "300 kbps", as the web's formatQualityBitrate (player/playback-info.ts).
     public static string FormatBitrate(int? kbps) => kbps switch
     {
         null or <= 0 => "",
-        >= 1000 when kbps % 1000 == 0 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", (kbps.Value / 1000).ToString(CultureInfo.InvariantCulture))),
-        >= 1000 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", (kbps.Value / 1000.0).ToString("0.0", CultureInfo.InvariantCulture))),
-        _ => AppText.Get("web.player.quality.bitrateKbps", ("kbps", kbps.Value.ToString(CultureInfo.InvariantCulture))),
+        >= 1000 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", NumberText.Decimal(kbps.Value / 1000.0, kbps % 1000 == 0 ? 0 : 1))),
+        _ => AppText.Get("web.player.quality.bitrateKbps", ("kbps", kbps.Value)),
     };
 }
 
@@ -78,8 +76,8 @@ public static class PlaybackSpeeds
 {
     public static IReadOnlyList<double> Stops { get; } = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
-    /// <summary>"1.5×".</summary>
-    public static string Format(double speed) => speed.ToString("0.##", CultureInfo.InvariantCulture) + "×";
+    /// <summary>"1.5×", as the web's formatPlaybackSpeed: up to two decimals in the format locale.</summary>
+    public static string Format(double speed) => AppText.Get("web.player.speed.rate", ("rate", NumberText.Decimal(speed, 2, 0)));
 
     /// <summary>The stop nearest <paramref name="speed"/>, for a speed saved by another client.</summary>
     public static int NearestStop(double speed) =>

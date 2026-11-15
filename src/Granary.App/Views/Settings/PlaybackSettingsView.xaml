@@ -284,6 +284,17 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.IntroSkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedIntroSkip, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowsIntroSkip, Mode=OneWay}" />
                 </controls:SettingsRow>
+                <!-- Settings contract 24, as the web's PlaybackSettings.tsx: left out on a server that does not know them. -->
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.show_marker_confidence.label')}"
+                                      Description="{x:Bind t:AppText.Get('settingsManifest.playback.show_marker_confidence.description')}"
+                                      Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerConfidence, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.show_marker_source.label')}"
+                                      Description="{x:Bind t:AppText.Get('settingsManifest.playback.show_marker_source.description')}"
+                                      Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerSource, Mode=TwoWay}" />
+                </controls:SettingsRow>
                 <controls:SettingsRow Label="{x:Bind t:AppText.Get('settingsManifest.playback.auto_skip_recap.label')}"
                                       Description="{x:Bind t:AppText.Get('web.settings.playback.skipping.recapDescription')}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipRecaps, Mode=TwoWay}" />

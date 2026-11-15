@@ -103,6 +103,8 @@
   "granary.detail.markWatchedFailed": "{reason, select, wait {{count, plural, other {視聴済みにできませんでした。サーバーへのリクエストが多すぎます。#分後にもう一度お試しください。}}} later {視聴済みにできませんでした。サーバーへのリクエストが多すぎます。数分後にもう一度お試しください。} busy {視聴済みにできませんでした。サーバーが混み合っています。もう一度お試しください。} gone {視聴済みにできませんでした。このタイトルは利用できなくなりました。} error {視聴済みにできませんでした（エラー{status}）。もう一度お試しください。} other {視聴済みにできませんでした。接続を確認して、もう一度お試しください。}}",
   "granary.detail.missing": "未所持",
   "granary.detail.missingEpisodeName": "エピソード{episode}、ライブラリにありません",
+  "granary.detail.upcomingAirs": "{date}放送",
+  "granary.detail.upcomingEpisodeName": "エピソード{episode}、{date}放送",
   "granary.detail.noServer": "サーバーが設定されていません。",
   "granary.detail.playTrailer": "予告編を再生",
   "granary.detail.quality": "画質",

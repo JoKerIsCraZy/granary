@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Texts;
 
@@ -15,7 +14,7 @@ public static class SubtitleSyncText
     public static string Offset(long offsetMs)
     {
         double seconds = Math.Abs(offsetMs) / 1000.0;
-        return AppText.Get("web.subtitles.sync.offsetSeconds", ("offset", (offsetMs < 0 ? "−" : "+") + seconds.ToString("0.0", CultureInfo.InvariantCulture)));
+        return AppText.Get("web.subtitles.sync.offsetSeconds", ("offset", (offsetMs < 0 ? "−" : "+") + NumberText.Decimal(seconds, 1)));
     }
 
     /// <summary>
@@ -35,11 +34,11 @@ public static class SubtitleSyncText
             {
                 if (from != to && Math.Abs(from / to - scale) <= FrameRateTolerance)
                 {
-                    return AppText.Get("web.subtitles.sync.frameRate", ("from", Number(from)), ("to", Number(to)));
+                    return AppText.Get("web.subtitles.sync.frameRate", ("from", NumberText.Decimal(from, 3, 0)), ("to", NumberText.Decimal(to, 3, 0)));
                 }
             }
         }
-        return AppText.Get("web.subtitles.sync.speed", ("factor", Number(Math.Round(scale, 4))));
+        return AppText.Get("web.subtitles.sync.speed", ("factor", NumberText.Decimal(scale, 4, 0)));
     }
 
     /// <summary>"+2.3 s · 25→23.976 fps": a correction in a few characters.</summary>
@@ -102,7 +101,5 @@ public static class SubtitleSyncText
         }
         return timing.IsIdentity ? null : AppText.Get("web.subtitles.sync.status.adjusted", ("timing", Timing(timing)));
     }
-
-    // As JavaScript writes a number: no trailing zeros, invariant digits.
-    private static string Number(double value) => value.ToString(CultureInfo.InvariantCulture);
 }
+

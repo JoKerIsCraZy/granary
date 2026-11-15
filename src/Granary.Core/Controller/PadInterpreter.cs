@@ -51,6 +51,8 @@ public sealed partial class PadInterpreter
     private TimeSpan _directionHeld;
     private TimeSpan _directionNext;
 
+    // The trigger that pages, and when it pages next.
+    private PadButtons _pageTrigger;
     private TimeSpan _pageNext;
 
     // The right stick as the volume's direction.
@@ -106,6 +108,27 @@ public sealed partial class PadInterpreter
         _volume = PadDirection.None;
         IsActive = false;
         DropSeek();
+    }
+
+    /// <summary>
+    /// A reading at rest the window did not hand over, the pad being idle (<see cref="IsIdle"/>, <see cref="IsAtRest"/>):
+    /// time goes on all the same, so the next reading stands for the time since this one, not since the pad last moved.
+    /// </summary>
+    public void Skip() => _last = _time.GetElapsedTime(_origin);
+
+    /// <summary>
+    /// A seek made elsewhere (a key, the mouse, the seek bar's own step) replaces the pad's: the seek under way is dropped
+    /// without being sent, and a trigger or a direction still held adds nothing to a new one until it is let go.
+    /// </summary>
+    public void CancelSeek()
+    {
+        DropSeek();
+        _spent |= _down & Triggers;
+        _live &= ~_spent;
+        if (_directionUse == DirectionUse.Seek)
+        {
+            _directionUse = DirectionUse.Spent;
+        }
     }
 
     /// <summary>
@@ -375,6 +398,7 @@ public sealed partial class PadInterpreter
         var page = _live & Triggers;
         if ((pressed & Triggers) != PadButtons.None)
         {
+            _pageTrigger = pressed & Triggers;
             _pageNext = _now + PadTuning.RepeatDelay;
         }
         else if (page == PadButtons.None || _now < _pageNext)
@@ -385,9 +409,13 @@ public sealed partial class PadInterpreter
         {
             _pageNext = _now + PadTuning.PageRepeat;
         }
-        // Both pulled: the one that came last.
-        var trigger = (pressed & Triggers) != PadButtons.None ? pressed & Triggers : page;
-        Add(trigger.HasFlag(PadButtons.RightTrigger) ? PadActionKind.PageDown : PadActionKind.PageUp);
+        // Both pulled: the one that came last, for as long as it is held; then the other.
+        _pageTrigger &= page;
+        if (_pageTrigger == PadButtons.None)
+        {
+            _pageTrigger = page;
+        }
+        Add(_pageTrigger.HasFlag(PadButtons.RightTrigger) ? PadActionKind.PageDown : PadActionKind.PageUp);
     }
 
     private void TakeScroll(double x, double y, TimeSpan step)
@@ -401,8 +429,15 @@ public sealed partial class PadInterpreter
         _actions.Add(new PadAction(PadActionKind.Scroll, X: pushX * distance, Y: pushY * distance));
     }
 
+    // A jump replaces a seek under way: it is called off first, so the seek bar shows the position again and no later
+    // commit lands over the jump.
     private void TakeChapters(PadButtons pressed)
     {
+        if (_hasSeek && (pressed & (PadButtons.LeftShoulder | PadButtons.RightShoulder)) != PadButtons.None)
+        {
+            Add(PadActionKind.SeekCancel);
+            CancelSeek();
+        }
         AddWhen(pressed, PadButtons.LeftShoulder, PadActionKind.PreviousChapter);
         AddWhen(pressed, PadButtons.RightShoulder, PadActionKind.NextChapter);
     }

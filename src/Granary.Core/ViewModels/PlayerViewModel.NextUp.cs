@@ -355,9 +355,9 @@ public sealed partial class PlayerViewModel
         _countdown = null;
     }
 
-    // "11 January 2024", as the web player's screen writes the air date.
+    // "January 11, 2024", as the web player's PlayingNextScreen writes the air date ({ year, month: "long", day }).
     private static string? LongDate(string? isoDate) =>
         DateOnly.TryParseExact(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)
+            ? DateText.Format(date.ToDateTime(TimeOnly.MinValue), DateText.LongDay)
             : null;
 }

@@ -37,8 +37,8 @@ public sealed class ItemDetailTextTests
         Assert.Equal(expected, DetailText.AirYears(first, last, year));
 
     [Theory]
-    [InlineData("2026-10-23", "23 Oct 2026")]
-    [InlineData("2026-10-23T20:00:00Z", "23 Oct 2026")]
+    [InlineData("2026-10-23", "Oct 23, 2026")]
+    [InlineData("2026-10-23T20:00:00Z", "Oct 23, 2026")]
     [InlineData("23.10.2026", null)]
     [InlineData(null, null)]
     public void Date_IsWordedLikeTheWeb(string? iso, string? expected) => Assert.Equal(expected, DetailText.Date(iso));
@@ -231,11 +231,13 @@ public sealed class ItemDetailTextTests
     }
 
     [Theory]
-    [InlineData(1_073_741_823L, "1.0 GB")]
-    [InlineData(1_048_575L, "1 MB")]
-    [InlineData(2_048L, "2 KB")]
-    [InlineData(500L, "1 KB")]
-    public void FileSizes_PickTheirUnitAfterRounding(long bytes, string expected) =>
+    [InlineData(1_073_741_824L, "1.0 GB")]
+    [InlineData(1_073_741_823L, "1024.0 MB")]
+    [InlineData(1_048_575L, "1024.0 KB")]
+    [InlineData(2_048L, "2.0 KB")]
+    [InlineData(500L, "500 B")]
+    public void FileSizes_AreWrittenAsTheWebsMediaInfoWritesThem(long bytes, string expected) =>
+        // formatFileSize: the unit by the size itself, one decimal, 1024-based (lib/mediaFormat.ts).
         Assert.Equal("Available version: " + expected, DetailFacts.AvailableVersionLine(Item(CatalogItemTypes.Movie) with
         {
             Versions = [new FileVersion { FileId = "1", FileSize = bytes }],
@@ -285,7 +287,7 @@ public sealed class ItemDetailTextTests
     {
         var episode = Item(CatalogItemTypes.Episode) with { SeasonNumber = 3, EpisodeNumber = 1, Runtime = 47, AirDate = "2021-01-08", ContentRating = "TV-MA" };
 
-        Assert.Equal("S3 E1 · 47m · 8 Jan 2021 · TV-MA", DetailFacts.MetaLine(episode));
+        Assert.Equal("S3 E1 · 47m · Jan 8, 2021 · TV-MA", DetailFacts.MetaLine(episode));
     }
 
     [Fact]
@@ -304,7 +306,7 @@ public sealed class ItemDetailTextTests
         };
 
         Assert.Equal("Available version: 720P · H264 · EAC3 · 9.3 GB", DetailFacts.AvailableVersionLine(movie));
-        Assert.Equal("Available version: 720P · 700 MB", DetailFacts.AvailableVersionLine(movie with
+        Assert.Equal("Available version: 720P · 700.0 MB", DetailFacts.AvailableVersionLine(movie with
         {
             Versions = [new FileVersion { FileId = "1", Resolution = "720p", FileSize = 734_003_200 }],
         }));
@@ -388,7 +390,7 @@ public sealed class ItemDetailTextTests
         Assert.Equal(("Director", "Ann Lee"), (sections[2].Rows[0].Label, sections[2].Rows[0].Value));
         var file = sections[3].Rows.ToDictionary(r => r.Label, r => r.Value);
         Assert.Equal("9.3 GB", file["File Size"]);
-        Assert.Equal("8 Mb/s", file["Bitrate"]);
+        Assert.Equal("8,000 kbps", file["Bitrate"]);
         Assert.DoesNotContain(sections.SelectMany(s => s.Rows), r => r.Value.Contains("secret", StringComparison.Ordinal));
     }
 
@@ -413,7 +415,7 @@ public sealed class ItemDetailTextTests
 
         var details = DetailFacts.InfoSections(season, listedEpisodes: 8)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
 
-        Assert.Equal(("Season 3", "8 Episodes", "23 Oct 2026"), (details["Season"], details["Episodes"], details["Released"]));
+        Assert.Equal(("Season 3", "8 Episodes", "Oct 23, 2026"), (details["Season"], details["Episodes"], details["Released"]));
     }
 
     [Fact]

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.UI;
@@ -57,7 +56,7 @@ public sealed partial class SubtitleAppearancePanel : UserControl
     public static double SwatchSize(bool isSelected) => isSelected ? 24 : 28;
 
     // Upper case on screen only; screen readers get the line as written.
-    public string Upper(string text) => text.ToUpper(CultureInfo.CurrentCulture);
+    public string Upper(string text) => AppText.Upper(text);
 
     // The web's PercentField writes its number at the right. NumberBox has no TextAlignment of its own, so its text box
     // gets it.

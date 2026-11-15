@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Texts;
 
@@ -62,7 +61,7 @@ internal static class NotificationText
         }
     }
 
-    /// <summary>"Just now", "5m ago", "3h ago", "2d ago", then "Oct 5" (a date, still in English).</summary>
+    /// <summary>"Just now", "5m ago", "3h ago", "2d ago", then "Oct 5", a month and day as the web's Notifications writes it.</summary>
     public static string When(DateTimeOffset createdAt, DateTimeOffset now)
     {
         int minutes = (int)Math.Round((now - createdAt).TotalMinutes, MidpointRounding.AwayFromZero);
@@ -80,7 +79,7 @@ internal static class NotificationText
             return AppText.Get("web.notifications.inbox.hoursAgo", ("hours", hours));
         }
         int days = (int)Math.Round(hours / 24.0, MidpointRounding.AwayFromZero);
-        return days < 7 ? AppText.Get("web.notifications.inbox.daysAgo", ("days", days)) : createdAt.ToString("MMM d", CultureInfo.InvariantCulture);
+        return days < 7 ? AppText.Get("web.notifications.inbox.daysAgo", ("days", days)) : DateText.Format(createdAt.DateTime, DateText.MonthDay);
     }
 
     public static IReadOnlyList<string> ReasonLabels(NotificationItem item) =>

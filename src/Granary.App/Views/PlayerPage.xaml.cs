@@ -143,6 +143,7 @@ public sealed partial class PlayerPage : Page
         _modes.Changed += OnWindowModeChanged;
         ShowWindowMode();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ViewModel.ViewerSought += OnViewerSought;
         _taskbarToolbar ??= new PlayerTaskbarToolbar(ViewModel, App.Services.GetRequiredService<ITaskbarToolbar>(),
             App.Services.GetRequiredService<IUiDispatcher>());
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
@@ -166,6 +167,7 @@ public sealed partial class PlayerPage : Page
     {
         _modes.Changed -= OnWindowModeChanged;
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        ViewModel.ViewerSought -= OnViewerSought;
         StopInput();
         StopAutoHide();
         StopNextUpStill();
@@ -216,6 +218,14 @@ public sealed partial class PlayerPage : Page
                 FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.IsNextUpCardShown) when ViewModel.IsNextUpCardShown:
+                FocusPromptSoon();
+                break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.IsSkipPromptWithControls:
+                ReleaseExpiredPrompt();
+                break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.HasSkipPrompt:
+                // The offer became another pill while one showed throughout: that one appears as any pill does.
+                AnnounceSkipCaption();
                 FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.Bar):

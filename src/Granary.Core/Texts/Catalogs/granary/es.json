@@ -103,6 +103,8 @@
   "granary.detail.markWatchedFailed": "{reason, select, wait {{count, plural, one {No se pudo marcar como visto. El servidor está recibiendo demasiadas solicitudes. Vuelve a intentarlo en # minuto.} many {No se pudo marcar como visto. El servidor está recibiendo demasiadas solicitudes. Vuelve a intentarlo en # de minutos.} other {No se pudo marcar como visto. El servidor está recibiendo demasiadas solicitudes. Vuelve a intentarlo en # minutos.}}} later {No se pudo marcar como visto. El servidor está recibiendo demasiadas solicitudes. Vuelve a intentarlo en unos minutos.} busy {No se pudo marcar como visto. El servidor está ocupado. Vuelve a intentarlo.} gone {No se pudo marcar como visto: este título ya no está disponible.} error {No se pudo marcar como visto (error {status}). Vuelve a intentarlo.} other {No se pudo marcar como visto. Comprueba la conexión y vuelve a intentarlo.}}",
   "granary.detail.missing": "Falta",
   "granary.detail.missingEpisodeName": "Episodio {episode}, falta",
+  "granary.detail.upcomingAirs": "Se emite el {date}",
+  "granary.detail.upcomingEpisodeName": "Episodio {episode}, se emite el {date}",
   "granary.detail.noServer": "No hay ningún servidor configurado.",
   "granary.detail.playTrailer": "Reproducir tráiler",
   "granary.detail.quality": "Calidad",

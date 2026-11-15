@@ -151,9 +151,39 @@ public sealed class PadBrowsingTests
     }
 
     [Fact]
+    public void WithBothTriggersHeld_TheOnePulledLast_PagesAgainWhileHeld()
+    {
+        _bench.Hold(new PadReading(PadButtons.None, RightTrigger: 1), TimeSpan.FromMilliseconds(100));
+
+        var both = _bench.Hold(new PadReading(PadButtons.None, LeftTrigger: 1, RightTrigger: 1), Second);
+        var rightAgain = _bench.Hold(new PadReading(PadButtons.None, RightTrigger: 1), Second);
+
+        Assert.True(both.Count >= 3);
+        Assert.All(both, action => Assert.Equal(PadActionKind.PageUp, action.Kind));
+        // The one pulled last let go: the one still held pages its own way.
+        Assert.NotEmpty(rightAgain);
+        Assert.All(rightAgain, action => Assert.Equal(PadActionKind.PageDown, action.Kind));
+    }
+
+    [Fact]
     public void ATriggerAPadReportsAsAButton_PagesToo()
     {
         Assert.Equal([new PadAction(PadActionKind.PageDown)], _bench.Read(PadButtons.RightTrigger));
+    }
+
+    [Fact]
+    public void ATriggerOnePadReportsOnlyAsPressed_PagesBesideAnotherPadsSlightPull()
+    {
+        // One pad says only that its trigger is down; another one's trigger rests a little pulled.
+        var pressed = new PadReading(PadButtons.RightTrigger);
+        var slight = new PadReading(PadButtons.None, RightTrigger: 0.2);
+
+        var first = _bench.Read(PadReading.Merge(pressed, slight));
+        _bench.Read(default);
+        var second = _bench.Read(PadReading.Merge(slight, pressed));
+
+        Assert.Equal([new PadAction(PadActionKind.PageDown)], first);
+        Assert.Equal([new PadAction(PadActionKind.PageDown)], second);
     }
 
     [Fact]
@@ -185,6 +215,22 @@ public sealed class PadBrowsingTests
         Assert.Equal(PadTuning.ScrollSpeed, full, PadTuning.ScrollSpeed * 0.05);
         Assert.True(half < 0);
         Assert.True(Math.Abs(half) < full / 2);
+    }
+
+    [Fact]
+    public void AfterRestingReadingsTheWindowDidNotHandOver_TheFirstScrollIsOneReadingsWorth()
+    {
+        // While the pad is idle the window reads it every 33 ms and hands over nothing at rest.
+        var poll = TimeSpan.FromMilliseconds(33);
+        Assert.True(_bench.Pad.IsIdle);
+        for (int skipped = 0; skipped < 30; skipped++)
+        {
+            _bench.Skip(poll);
+        }
+
+        var first = _bench.Read(new PadReading(PadButtons.None, RightY: 1), after: poll);
+
+        Assert.Equal(PadTuning.ScrollSpeed * poll.TotalSeconds, Assert.Single(first).Y, 0.001);
     }
 
     [Fact]

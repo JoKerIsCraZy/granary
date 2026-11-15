@@ -3,6 +3,7 @@ using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -92,11 +93,11 @@ public sealed class CalendarViewModelTests
         Assert.Equal("Severance", premiere.Title);
         Assert.Equal("S2 · E1 - HELLO, MS. COBEL", premiere.Subtitle);
         Assert.Equal("NEW SEASON", premiere.StatusBadge);
-        Assert.Equal(new TimeOnly(21, 0).ToString("t", CultureInfo.CurrentCulture), premiere.Caption);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 21, 0, 0)), premiere.Caption);
         Assert.Equal(CalendarViewModel.CardType, premiere.Type);
         var movie = aired[1].Cards[0];
         Assert.Equal("MOVIE", movie.Subtitle);
-        Assert.Equal(new TimeOnly(20, 15).ToString("t", CultureInfo.CurrentCulture), movie.Caption);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 15, 0)), movie.Caption);
         Assert.True(movie.IsWatched && movie.ShowsWatchedMark);
     }
 
@@ -340,7 +341,7 @@ public sealed class CalendarViewModelTests
 
         Assert.StartsWith("start=2026-10-26&end=2026-11-01&filter=following&timezone=Europe%2FBerlin", LastQuery, StringComparison.Ordinal);
         Assert.Equal("TODAY", page.Rows[0].Badge);
-        Assert.Equal(new TimeOnly(20, 0).ToString("t", CultureInfo.CurrentCulture), page.Rows[0].Cards[0].Caption);
+        Assert.Equal(DateText.Time(new DateTime(2026, 1, 1, 20, 0, 0)), page.Rows[0].Cards[0].Caption);
     }
 
     [Theory]

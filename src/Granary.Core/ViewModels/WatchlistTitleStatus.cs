@@ -42,7 +42,7 @@ internal sealed record WatchlistTitleStatus(string Badge, string Caption, bool A
         var request = title.Request;
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
         string? releaseDay = ReleaseDate(title) is { } release && release > today
-            ? release.ToString(release.Year == today.Year ? "MMM d" : "MMM d, yyyy", English)
+            ? DateText.Format(release.ToDateTime(TimeOnly.MinValue), release.Year == today.Year ? DateText.MonthDay : DateText.MediumDay)
             : null;
         string? releasing = releaseDay is null ? null : AppText.Get("web.library.watchlist.statusOut", ("date", releaseDay));
 
@@ -50,7 +50,7 @@ internal sealed record WatchlistTitleStatus(string Badge, string Caption, bool A
         {
             string caption = RequestText.Download(download, now);
             string badge = download.Phase == "downloading" && RequestText.DownloadPercent(download) is { } percent
-                ? AppText.Get("web.library.watchlist.statusDownloading", ("percent", percent.ToString("0.##", English)))
+                ? AppText.Get("web.library.watchlist.statusDownloading", ("percent", percent))
                 : caption.Split(" · ")[0];
             return new(badge, caption, false, false, WatchlistTitleRank.Downloading);
         }

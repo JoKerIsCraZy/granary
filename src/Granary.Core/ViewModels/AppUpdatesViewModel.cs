@@ -1,4 +1,3 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -52,7 +51,6 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>How long closing waits for the switch to be saved, when it was used just before.</summary>
     public static readonly TimeSpan SaveWaitAtExit = TimeSpan.FromSeconds(2);
 
-    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
 
     private readonly IAppUpdater _updater;
     private readonly IUpdatePreferences _preferences;
@@ -182,11 +180,11 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             }
             var local = TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone);
             var today = TimeZoneInfo.ConvertTime(_time.GetUtcNow(), _time.LocalTimeZone).Date;
-            // The date and time as before; their own formats follow the language once dates do.
-            string time = local.ToString("HH:mm", English);
+            // In the format locale, as the web writes a time (formatTime) and a month and day.
+            string time = DateText.Time(local.DateTime);
             return local.Date == today
                 ? AppText.Get("granary.update.lastCheckedToday", ("time", time))
-                : AppText.Get("granary.update.lastCheckedOn", ("date", local.ToString("MMM d", English)), ("time", time));
+                : AppText.Get("granary.update.lastCheckedOn", ("date", DateText.Format(local.DateTime, DateText.MonthDay)), ("time", time));
         }
     }
 
