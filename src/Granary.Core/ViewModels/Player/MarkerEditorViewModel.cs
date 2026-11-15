@@ -222,9 +222,10 @@ public sealed partial class MarkerEditorViewModel : ObservableObject
     public static string Time(double seconds)
     {
         var time = TimeSpan.FromSeconds(Math.Max(0, Math.Floor(seconds)));
-        return time.TotalHours >= 1
+        // In the screen's digits, as the web's formatTime.
+        return NumberText.Digits(time.TotalHours >= 1
             ? string.Create(CultureInfo.InvariantCulture, $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}")
-            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}");
+            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}"));
     }
 }
 

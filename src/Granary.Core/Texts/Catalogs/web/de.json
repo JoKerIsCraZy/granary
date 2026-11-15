@@ -8144,6 +8144,66 @@
       "value": "Andere"
     }
   ],
+  "web.common.format.bitrate.kbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " kbps"
+    }
+  ],
+  "web.common.format.bitrate.mbps": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Mbps"
+    }
+  ],
+  "web.common.format.channels.count": [
+    {
+      "type": 6,
+      "value": "count",
+      "options": {
+        "one": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Kan."
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "count_text"
+            },
+            {
+              "type": 0,
+              "value": " Kan."
+            }
+          ]
+        }
+      },
+      "offset": 0,
+      "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.channels.stereo": [
+    {
+      "type": 0,
+      "value": "Stereo"
+    }
+  ],
   "web.common.format.runtime.hoursMinutes": [
     {
       "type": 1,
@@ -8194,6 +8254,86 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.format.sampleRate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": " Hz"
+    }
+  ],
+  "web.common.format.size.bytes": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " B"
+    }
+  ],
+  "web.common.format.size.gb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GB"
+    }
+  ],
+  "web.common.format.size.gib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " GiB"
+    }
+  ],
+  "web.common.format.size.kb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KB"
+    }
+  ],
+  "web.common.format.size.kib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " KiB"
+    }
+  ],
+  "web.common.format.size.mb": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MB"
+    }
+  ],
+  "web.common.format.size.mib": [
+    {
+      "type": 1,
+      "value": "size"
+    },
+    {
+      "type": 0,
+      "value": " MiB"
     }
   ],
   "web.common.libraryType.audiobooks": [
@@ -12661,6 +12801,16 @@
     {
       "type": 0,
       "value": "Geschwindigkeit"
+    }
+  ],
+  "web.player.speed.rate": [
+    {
+      "type": 1,
+      "value": "rate"
+    },
+    {
+      "type": 0,
+      "value": "×"
     }
   ],
   "web.player.tracks.resetAudioFailed": [

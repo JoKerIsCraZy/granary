@@ -27,10 +27,10 @@ public static class ServerActivityText
         {
             return AppText.Get("web.admin.tasks.lib.taskProgress.percent", ("percent", clamped));
         }
-        double shown = Math.Round(clamped, 1, MidpointRounding.AwayFromZero);
-        // One decimal always, as the web's formatDecimal(shown, 1): 41.97 is "42.0%", not "42%", in the language's own way.
-        string written = (shown >= 100 ? 99.9 : shown).ToString("0.0", AppText.Language.Culture);
-        return AppText.Get("web.admin.tasks.lib.taskProgress.percent", ("percent", written));
+        // One decimal always, as the web's formatDecimal(shown, 1) in the format locale: 41.97 is "42.0%", not "42%". A
+        // task still running reports just under 100; rounded it must not read as a finished "100.0%".
+        double shown = Math.Round(clamped, 1, MidpointRounding.AwayFromZero) >= 100 ? 99.9 : clamped;
+        return AppText.Get("web.admin.tasks.lib.taskProgress.percent", ("percent", NumberText.Decimal(shown, 1)));
     }
 
     /// <summary>0 to 100; what is no number counts as 0.</summary>

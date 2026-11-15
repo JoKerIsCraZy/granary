@@ -418,11 +418,12 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         SelectedBitrate = choices.First(c => c.Value == (kbps is { } k2 ? SettingValues.Invariant(k2) : ""));
     }
 
-    // "8 Mbps", "1.5 Mbps", "800 kbps" (web: formatBitrateKbps).
+    // "8 Mbps", "1.5 Mbps", "800 kbps" (web: formatBitrateKbps, a whole number as JavaScript prints it, a fraction in
+    // the format locale).
     private static string Rate(int kbps) => kbps >= 1000
         ? (kbps % 1000 == 0
             ? string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000} Mbps")
-            : string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps"))
+            : $"{NumberText.Decimal(kbps / 1000.0, 1)} Mbps")
         : string.Create(CultureInfo.InvariantCulture, $"{kbps} kbps");
 
     private async Task LoadConnectionAsync(CancellationToken cancellationToken)
@@ -517,7 +518,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     {
         long value = Math.Max(0, kbps);
         return value < 1000 ? string.Create(CultureInfo.InvariantCulture, $"{value} kbps")
-            : value < 10_000 ? string.Create(CultureInfo.InvariantCulture, $"{Math.Floor(value / 100.0) / 10:0.0} Mbps")
+            : value < 10_000 ? $"{NumberText.Decimal(Math.Floor(value / 100.0) / 10, 1)} Mbps"
             : string.Create(CultureInfo.InvariantCulture, $"{value / 1000} Mbps");
     }
 

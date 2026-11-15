@@ -33,6 +33,25 @@ public static class NumberText
         double.IsFinite(value) ? Grouped((decimal)value, AppText.Language.Formats) : value.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
+    /// The web's <c>value.toLocaleString(formatLocale(), { minimumFractionDigits, maximumFractionDigits })</c>: grouped,
+    /// with <paramref name="minFractionDigits"/> to <paramref name="maxFractionDigits"/> decimals ("1,234.5", "0.70").
+    /// </summary>
+    public static string Grouped(double value, int minFractionDigits, int maxFractionDigits)
+    {
+        if (!double.IsFinite(value))
+        {
+            return value.ToString(CultureInfo.InvariantCulture);
+        }
+        var locale = AppText.Language.Formats;
+        decimal rounded = Math.Round((decimal)value, maxFractionDigits, MidpointRounding.AwayFromZero);
+        bool ungrouped = locale.GroupsFromFiveDigits && Math.Abs(decimal.Truncate(rounded)) < 10_000;
+        string fraction = maxFractionDigits > 0
+            ? "." + new string('0', minFractionDigits) + new string('#', maxFractionDigits - minFractionDigits)
+            : "";
+        return locale.Localize(rounded.ToString((ungrouped ? "0" : "#,0") + fraction, locale.Numbers));
+    }
+
+    /// <summary>
     /// The web's <c>numberText</c>: Latin digits in <paramref name="text"/> ("1:05:09", a year) in the digits messages use,
     /// which are Arabic-Indic only in Arabic on a format locale that writes them. Codes (S01E05) keep Latin digits.
     /// </summary>

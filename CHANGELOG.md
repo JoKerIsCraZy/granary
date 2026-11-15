@@ -11,7 +11,9 @@ release's section is what its update says it changes (docs/release.md).
 - **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
   on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
   as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
-  next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM".
+  next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM". Sizes, rates and speeds
+  follow the same format ("1,5 GB", "1,25×" on a German Windows), and a title's Info lists its size and bitrate as the
+  web's media info does ("700.0 MB", "8,000 kbps").
 
 ## [0.4.0] - 2026-11-14
 

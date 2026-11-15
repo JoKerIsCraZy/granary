@@ -15,13 +15,13 @@ public sealed record AudioTrackOption(int Ordinal, string Title, string Meta, st
         .Where(part => part.Length > 0));
 
     /// <summary>The menu for <paramref name="tracks"/>, with the row of <paramref name="selected"/> checked.</summary>
-    public static IReadOnlyList<AudioTrackOption> For(IReadOnlyList<WatchAudioTrack> tracks, int? selected, IFormatProvider? culture = null)
+    public static IReadOnlyList<AudioTrackOption> For(IReadOnlyList<WatchAudioTrack> tracks, int? selected)
     {
         ArgumentNullException.ThrowIfNull(tracks);
         return [.. tracks.Select((track, ordinal) =>
         {
             string title = TrackText.AudioTitle(track, ordinal + 1);
-            return new AudioTrackOption(ordinal, title, TrackText.AudioMeta(track, title, culture), TrackText.AudioCodec(track),
+            return new AudioTrackOption(ordinal, title, TrackText.AudioMeta(track, title), TrackText.AudioCodec(track),
                 TrackText.Channels(track.Channels), track.Default, ordinal == selected);
         })];
     }

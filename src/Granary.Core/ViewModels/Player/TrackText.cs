@@ -30,21 +30,24 @@ public static partial class TrackText
     }
 
     /// <summary>"German · 5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; the language only when the title does not say it already.</summary>
-    public static string AudioMeta(WatchAudioTrack track, string title, IFormatProvider? culture = null)
+    public static string AudioMeta(WatchAudioTrack track, string title)
     {
         ArgumentNullException.ThrowIfNull(track);
         string language = LanguageName(track.Language);
-        return Join(" · ", string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language, CompactAudioMeta(track, culture));
+        return Join(" · ", string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language, CompactAudioMeta(track));
     }
 
-    /// <summary>"5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; empty when the file says none of it (web: compactAudioMeta).</summary>
-    public static string CompactAudioMeta(WatchAudioTrack track, IFormatProvider? culture = null)
+    /// <summary>
+    /// "5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; empty when the file says none of it (web: compactAudioMeta, its rate
+    /// and sample rate as formatBitrate and formatSampleRate write them).
+    /// </summary>
+    public static string CompactAudioMeta(WatchAudioTrack track)
     {
         ArgumentNullException.ThrowIfNull(track);
         return Join(" · ",
             track.Layout?.Trim(),
-            track.Bitrate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} kbps", track.Bitrate) : null,
-            track.SampleRate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} Hz", track.SampleRate) : null,
+            MediaText.Bitrate(track.Bitrate),
+            MediaText.SampleRate(track.SampleRate),
             track.BitDepth > 0 ? string.Create(CultureInfo.InvariantCulture, $"{track.BitDepth}-bit") : null);
     }
 
@@ -132,14 +135,7 @@ public static partial class TrackText
         new((value ?? "").ToLowerInvariant().Where(char.IsAsciiLetterOrDigit).ToArray());
 
     /// <summary>"7.1", "5.1", "stereo", "3 ch"; empty when unknown (web: formatChannels).</summary>
-    public static string Channels(int channels) => channels switch
-    {
-        <= 0 => "",
-        8 => "7.1",
-        6 => "5.1",
-        2 => "stereo",
-        _ => string.Create(CultureInfo.InvariantCulture, $"{channels} ch"),
-    };
+    public static string Channels(int channels) => MediaText.Channels(channels);
 
     /// <summary>
     /// The English name of a track language: "German" for <c>de</c>, <c>ger</c> or <c>deu</c>, "Portuguese (Brazil)" for

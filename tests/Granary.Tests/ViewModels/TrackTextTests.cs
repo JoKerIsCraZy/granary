@@ -69,8 +69,8 @@ public sealed class TrackTextTests
     {
         var track = new WatchAudioTrack { Language = "de", Layout = "5.1(side)", Bitrate = 640, SampleRate = 48000, BitDepth = 24 };
 
-        Assert.Equal("German · 5.1(side) · 640 kbps · 48,000 Hz · 24-bit", TrackText.AudioMeta(track, "Deutsch", CultureInfo.InvariantCulture));
-        Assert.Equal("5.1(side) · 640 kbps · 48,000 Hz · 24-bit", TrackText.AudioMeta(track, "german", CultureInfo.InvariantCulture));
+        Assert.Equal("German · 5.1(side) · 640 kbps · 48,000 Hz · 24-bit", TrackText.AudioMeta(track, "Deutsch"));
+        Assert.Equal("5.1(side) · 640 kbps · 48,000 Hz · 24-bit", TrackText.AudioMeta(track, "german"));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class TrackTextTests
             new() { Language = "ger", Title = "Deutsch", Codec = "truehd", Profile = "Dolby TrueHD + Dolby Atmos", Channels = 8 },
         ];
 
-        var rows = AudioTrackOption.For(tracks, selected: 1, CultureInfo.InvariantCulture);
+        var rows = AudioTrackOption.For(tracks, selected: 1);
 
         Assert.Equal(
             [

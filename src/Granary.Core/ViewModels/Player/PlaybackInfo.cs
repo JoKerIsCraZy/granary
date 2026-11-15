@@ -113,18 +113,11 @@ public static class PlaybackInfo
         return dolbyVision ? (type.Length > 0 ? $"DV {type}" : "DV") : type.Length > 0 ? type : hdr ? "HDR" : "";
     }
 
-    /// <summary>"4.0 GiB", as the web's file sizes in binary units.</summary>
-    public static string FileSize(long bytes) => bytes switch
-    {
-        <= 0 => None,
-        >= 1L << 30 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (double)(1L << 30):0.0} GiB"),
-        >= 1L << 20 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (double)(1L << 20):0.0} MiB"),
-        >= 1L << 10 => string.Create(CultureInfo.InvariantCulture, $"{bytes / 1024.0:0.0} KiB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes} B"),
-    };
+    /// <summary>"4.0 GiB", as the web's playback info writes a file's size (formatFileSize in binary units).</summary>
+    public static string FileSize(long bytes) => MediaText.FileSize(bytes, iecUnits: true, fallback: None);
 
-    /// <summary>"12.0 Mbps" from kilobits per second.</summary>
-    public static string Mbps(long kbps) => kbps > 0 ? string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps") : None;
+    /// <summary>"12.0 Mbps" from kilobits per second (formatMbpsFromKbps).</summary>
+    public static string Mbps(long kbps) => MediaText.MbpsFromKbps(kbps, None);
 
     private static PlaybackInfoSection SourceFile(WatchFileVersion? version, int? audioOrdinal)
     {
@@ -148,9 +141,9 @@ public static class PlaybackInfo
                 _ => None,
             }),
             new(AppText.Get("web.player.info.audioCodec"), audio is null ? CodecLabel(version?.CodecAudio) : AudioCodec(version!, audio)),
-            new(AppText.Get("web.player.info.audioBitrate"), audio?.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{audio.Bitrate:N0} kbps") : None),
+            new(AppText.Get("web.player.info.audioBitrate"), MediaText.Bitrate(audio?.Bitrate ?? 0, None)),
             new(AppText.Get("web.player.info.audioChannels"), audio?.Channels > 0 ? audio.Channels.ToString(CultureInfo.InvariantCulture) : None),
-            new(AppText.Get("web.player.info.audioSampleRate"), audio?.SampleRate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{audio.SampleRate:N0} Hz") : None),
+            new(AppText.Get("web.player.info.audioSampleRate"), MediaText.SampleRate(audio?.SampleRate ?? 0, None)),
         ]);
     }
 

@@ -1175,9 +1175,26 @@ web.common.devicePlatform.kind.tablet
 web.common.devicePlatform.kind.tv
 web.common.devicePlatform.kind.unknown
 
+# Sizes, rates and channels, as the web's lib/mediaFormat.ts words them for the item page, the playback info and the
+# pickers: src/Granary.Core/ViewModels/MediaText.cs.
+web.common.format.bitrate.kbps
+web.common.format.bitrate.mbps
+web.common.format.channels.count
+web.common.format.channels.stereo
+
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.common.format.runtime.hoursMinutes
 web.common.format.runtime.minutes
+
+# More sizes and rates, as above under web.common.format.bitrate.kbps.
+web.common.format.sampleRate
+web.common.format.size.bytes
+web.common.format.size.gb
+web.common.format.size.gib
+web.common.format.size.kb
+web.common.format.size.kib
+web.common.format.size.mb
+web.common.format.size.mib
 
 # More of Admin → Dashboard's words: a library's kind, as the web's libraryTypeLabel
 # (components/admin/libraries/libraryTypes.ts), as above under web.admin.dashboard.chart.columnReading.
@@ -1860,6 +1877,10 @@ web.player.sleepTimer.trigger
 # More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.sleepTimer.turnOff
 web.player.speed.heading
+
+# A playback speed ("1.5×"), as the web's player/utils/playbackSpeed.ts writes it: PlaybackSpeeds in
+# src/Granary.Core/ViewModels/Player/PlayerSettingsOptions.cs.
+web.player.speed.rate
 
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.player.tracks.resetAudioFailed

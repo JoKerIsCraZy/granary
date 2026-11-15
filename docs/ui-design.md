@@ -1557,8 +1557,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   episode and End of movie, the still watching prompt, "Ends 22:41", mpv's decoding in the playback info, a time spoken
   with hours), every tooltip that names a key ("Exit (Esc)", "Subtitles (C)", "Back 10 seconds (Left arrow)"), Full
   screen as the title bar and Settings say it (the web says "Fullscreen"), the Subtitles button (the web's says
-  "Enable captions" or "Disable captions"), and the lines of the failure screen. Times, sizes, bitrates and the names
-  of languages stay as they were until dates and numbers are converted.
+  "Enable captions" or "Disable captions"), and the lines of the failure screen. Times, sizes, bitrates and speeds are
+  written as the web's player writes them, in the format locale (docs/architecture.md, "Texts"); the names of languages
+  stay as they were until they are converted.
 
 - **Window**: the player is not a page of the frame but lies over the whole window (`PlayerHost`, MainWindow.Player.cs,
   `IPlayerOverlay`), the title bar included: the caption buttons float over the video; the top 32 px stay the drag
