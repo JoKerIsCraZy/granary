@@ -120,7 +120,7 @@ public static class DownloadOffers
         ArgumentNullException.ThrowIfNull(seasons);
         ArgumentNullException.ThrowIfNull(isOnThisPc);
         var left = seasons
-            .OrderBy(s => IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber)
+            .OrderBy(s => DetailFacts.IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber)
             .Select(s => (s.Season.SeasonNumber, Episodes: s.Episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0
                 && !isOnThisPc(e.ContentId)).ToList()))
             .Where(s => s.Episodes.Count > 0)
@@ -135,9 +135,6 @@ public static class DownloadOffers
         // Each episode's first file, the one it asks for: what the dialog's size counts.
         return new SeriesDownloadOffer(request, left.SelectMany(s => s.Episodes).Sum(e => Math.Max(0, UsableFiles(e)[0].FileSize)));
     }
-
-    // Season 0 is the specials, also where the server does not say so.
-    private static bool IsSpecials(Season season) => season.IsSpecials == true || season.SeasonNumber == 0;
 
     /// <summary>An episode's files the server can read, as the player steps over the others (<c>NextEpisode</c>).</summary>
     public static IReadOnlyList<EpisodeFile> UsableFiles(Episode episode)
