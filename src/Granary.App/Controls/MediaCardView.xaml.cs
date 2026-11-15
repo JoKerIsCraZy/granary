@@ -1236,11 +1236,7 @@ public sealed partial class MediaCardView : UserControl
     }
 
     // A missing or expired artwork URL leaves the blur, or without one the title, in place; the card's next look tries again.
-    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e)
-    {
-        ArtImage.Source = null;
-        _artworkFailed = true;
-    }
+    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ShowArtworkFailed();
 
     // A download's picture that could not be read (a virus scan holding the new file a moment, a file deleted by hand) fails
     // the same way: a live card's next look, as a download's progress, reads it again. Only the picture shown now; one the
@@ -1249,8 +1245,16 @@ public sealed partial class MediaCardView : UserControl
     {
         if (ReferenceEquals(ArtImage.Source, bitmap))
         {
-            ArtImage.Source = null;
-            _artworkFailed = true;
+            ShowArtworkFailed();
         }
+    }
+
+    // Also after a reread at another size, whose first picture had put the title away: without the thumbhash's blur, the
+    // title stands in again rather than an empty box.
+    private void ShowArtworkFailed()
+    {
+        ArtImage.Source = null;
+        _artworkFailed = true;
+        Placeholder.Visibility = Visible(BlurImage.Source is null);
     }
 }
