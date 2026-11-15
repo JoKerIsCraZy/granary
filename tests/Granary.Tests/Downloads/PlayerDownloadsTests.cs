@@ -311,6 +311,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     [Fact]
     public async Task TheEngineStillPlayingTheTitleBefore_DoesNotCountAsTheDownload_WhileItsFolderIsRead()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
@@ -321,7 +322,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var start = player.StartAsync(PlayRequest.FromStart("ep_5"));
@@ -339,6 +340,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     [Fact]
     public async Task AStartThatWaitedForTheFolder_GivesWayToTheViewerLeaving()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
@@ -346,7 +348,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var start = player.StartAsync(PlayRequest.FromStart("ep_5"));
@@ -394,6 +396,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     [Fact]
     public async Task AFilePlayedDirectly_WhileADownloadsFolderIsStillRead_CountsAsPlaying()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
@@ -401,7 +404,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
         var first = player.StartAsync(PlayRequest.FromStart("ep_5"));
         Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
@@ -419,6 +422,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     [Fact]
     public async Task APlayerThatGoesWhileADownloadsFolderIsRead_StartsNothing()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
@@ -426,7 +430,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var start = player.StartAsync(PlayRequest.FromStart("ep_5"));
@@ -466,6 +470,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     [Fact]
     public async Task AStartThatWaitedForTheFolder_GivesWayToANewerStart()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
@@ -473,7 +478,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var first = player.StartAsync(PlayRequest.FromStart("ep_5"));

@@ -16,6 +16,9 @@ public sealed class DownloadQueueTests : IAsyncDisposable
 {
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
 
+    // How long a callback that holds the queue's work waits for the loop before the test counts it as hung.
+    private static readonly TimeSpan HangLimit = TimeSpan.FromSeconds(30);
+
     private readonly DownloadHarness _h = new();
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
@@ -903,8 +906,11 @@ public sealed class DownloadQueueTests : IAsyncDisposable
             await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
         }
         await IdleAsync(queue);
-        // The next recheck's folder work takes two minutes, on a drive slow to answer.
+        // The next recheck's folder work takes two minutes, on a drive slow to answer. While it runs, the queue looks once at
+        // the advanced clock and waits again (parked), instead of looking again and again; the result is checked after, not in
+        // the callback.
         long passesWhileRechecking = -1;
+        bool parkedWhileRechecking = false;
         int once = 0;
         _h.Store.IndexWritten = () =>
         {
@@ -912,14 +918,16 @@ public sealed class DownloadQueueTests : IAsyncDisposable
             {
                 long before = queue.Passes;
                 _h.Time.Advance(TimeSpan.FromMinutes(2));
-                Thread.Sleep(300);
+                queue.Wake();
+                parkedWhileRechecking = SpinWait.SpinUntil(() => queue.Passes > before && queue.Parked.IsCompleted, HangLimit);
                 passesWhileRechecking = queue.Passes - before;
             }
         };
 
         await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
 
-        Assert.InRange(passesWhileRechecking, 0, 1);
+        Assert.True(parkedWhileRechecking);
+        Assert.InRange(passesWhileRechecking, 1, 2);
         Assert.False(Directory.Exists(stored.Folder));
     }
 

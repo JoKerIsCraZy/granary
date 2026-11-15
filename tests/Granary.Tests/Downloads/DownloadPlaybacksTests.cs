@@ -12,6 +12,9 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
 
     private Task<IServerPlayback?> TryAsync(PlayRequest request) => _fixture.Playbacks.TryCreateAsync(request, LocalPlaybackFixture.Token);
 
+    // The manifest the server's new bytes for dl_1 come with (revision 2), as their transfer keeps it.
+    private static string NewRevisionManifest => DownloadPayloads.Manifest("dl_1", episodeId: "ep_5", title: "Chapter Five", revision: 2);
+
     [Theory]
     // No choice on the title page, or only tracks picked: the download plays.
     [InlineData(null, false, true)]
@@ -133,13 +136,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderThatDoesNotAnswer_HoldsThePlayThreeSecondsAtMost_ThenTheTitleStreams()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var answer = TryAsync(PlayRequest.Resume("ep_5"));
@@ -174,13 +178,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task PlayPressedAgainWhileAFolderDoesNotAnswer_WaitsForTheSameRead_NotOneMore()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         int reads = 0;
         _fixture.Playbacks.Reading = () =>
         {
             Interlocked.Increment(ref reads);
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         // Three presses on a share that does not answer: each gives up after the budget.
@@ -205,13 +210,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderReadThatFailsAfterItsPlayGaveUp_IsLogged_NotLeftUnobserved()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
             throw new InvalidOperationException("boom in a folder");
         };
 
@@ -243,13 +249,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderReadBegunBeforeTheDownloadsBytesWereFetchedAgain_DoesNotSayTheNewFileIsMissing()
     {
+        var token = LocalPlaybackFixture.Token;
         var download = await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
         var answer = TryAsync(PlayRequest.Resume("ep_5"));
         Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));
@@ -260,6 +267,7 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
         await File.WriteAllBytesAsync(Path.Combine(download.Folder, "media.mp4"), new byte[] { 1, 2, 3 }, LocalPlaybackFixture.Token);
         await _fixture.Harness.Store.UpdateAsync(download.Record.Scope, "dl_1", r => r with { Revision = r.Revision + 1, MediaFile = "media.mp4" },
             LocalPlaybackFixture.Token);
+        await File.WriteAllTextAsync(Path.Combine(download.Folder, DownloadPaths.Manifest), NewRevisionManifest, LocalPlaybackFixture.Token);
         held.Set();
 
         // That read found no file of the old name: its play streams, and the row of the new file is left alone.
@@ -269,6 +277,66 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
         var played = await TryAsync(PlayRequest.Resume("ep_5"));
         Assert.NotNull(played);
         await played.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task AFolderReadOfTheOldBytes_DoesNotPlayAgainstTheNewRevisionsRecord()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        var token = LocalPlaybackFixture.Token;
+        using var held = new ManualResetEventSlim();
+        using var reading = new ManualResetEventSlim();
+        _fixture.Playbacks.Reading = () =>
+        {
+            reading.Set();
+            held.Wait(TimeSpan.FromSeconds(10), token);
+        };
+        var answer = TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.True(reading.Wait(TimeSpan.FromSeconds(5), token));
+
+        // While the folder answers slowly, the server's new bytes for the download were fetched under the same name: the
+        // read describes the old file, its manifest and its tracks, and the record the new one.
+        await _fixture.Harness.Store.UpdateAsync(download.Record.Scope, "dl_1", r => r with { Revision = r.Revision + 1 }, token);
+        held.Set();
+
+        // Never the old manifest with the new record: the title streams, and the next play reads the folder as it is now,
+        // with the new bytes' manifest.
+        Assert.Null(await answer.WaitAsync(TimeSpan.FromSeconds(5), token));
+        Assert.Contains("was read for other bytes", _fixture.Harness.Logs.All, StringComparison.Ordinal);
+        await File.WriteAllTextAsync(Path.Combine(download.Folder, DownloadPaths.Manifest), NewRevisionManifest, token);
+        _fixture.Playbacks.Reading = null;
+        var played = await TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.NotNull(played);
+        await played.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task AWatchedDownloadReclaimedAsItsPlayIsMade_StaysForThePlay()
+    {
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { IsWatched = true });
+        var downloads = _fixture.Harness.NewManager();
+        Task<int>? reclaim = null;
+        // Deleting the watched downloads, as the Downloads page or a monitor does, right after the play looked the download up.
+        _fixture.Playbacks.Creating = () => reclaim = downloads.DeleteWatchedAsync(DownloadHarness.Scope7, ["dl_1"], LocalPlaybackFixture.Token);
+
+        var playback = await TryAsync(PlayRequest.Resume("ep_5"));
+
+        Assert.IsType<LocalPlayback>(playback);
+        Assert.Equal(0, await reclaim!);
+        Assert.NotNull(_fixture.Harness.Find("dl_1"));
+        await playback.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task AManifestOfAnotherRevisionThanTheDownload_Streams()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        // A manifest of other bytes beside the media, as an earlier build's day-old refresh could leave one.
+        await File.WriteAllTextAsync(Path.Combine(download.Folder, DownloadPaths.Manifest),
+            DownloadPayloads.Manifest("dl_1", episodeId: "ep_5", title: "Chapter Five", revision: 2), LocalPlaybackFixture.Token);
+
+        Assert.Null(await TryAsync(PlayRequest.Resume("ep_5")));
+        Assert.Contains("manifest of download dl_1 is of another revision", _fixture.Harness.Logs.All, StringComparison.Ordinal);
     }
 
     [Fact]

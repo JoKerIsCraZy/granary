@@ -174,6 +174,12 @@ public sealed partial class DownloadQueue
         }
         catch (Exception ex) when (!(ex is OperationCanceledException && run.Cancel.IsCancellationRequested))
         {
+            if (ex is ManifestRevisionException)
+            {
+                // The server has other bytes than the record names: the registry tells, and a larger revision there replaces
+                // the download before its next attempt, which then reads a manifest of its own revision.
+                RequestReconcile();
+            }
             var (result, retryAfter) = ResultOf(ex);
             _logger.LogInformation("The manifest of download {DownloadId} did not come ({Failure}): {Result}", key.Id,
                 ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : DownloadLog.Failure(ex), result);

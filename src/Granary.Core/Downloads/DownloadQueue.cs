@@ -79,6 +79,9 @@ public sealed partial class DownloadQueue : IDisposable
     // Downloads whose files a new revision replaces: nothing starts them meanwhile.
     private readonly HashSet<Key> _resetting = [];
 
+    // The day-old manifest refreshes under way, by download: a replacement stops its download's and waits for it.
+    private readonly Dictionary<Key, Refreshing> _refreshing = [];
+
     // Removed downloads' folders the server work found still there: their deletes wait for the next folder recheck.
     private readonly HashSet<string> _heldFolders = new(StringComparer.OrdinalIgnoreCase);
 
@@ -200,6 +203,12 @@ public sealed partial class DownloadQueue : IDisposable
 
     /// <summary>For tests: runs on the loop's thread in a pass that took its scope, right before it starts that scope's transfers.</summary>
     internal Action? StartingTransfers { get; set; }
+
+    /// <summary>For tests: runs with a download's id once a new revision stopped its transfer, right before it waits for that transfer to end.</summary>
+    internal Action<string>? AwaitingReplacedTransfer { get; set; }
+
+    /// <summary>For tests: runs with a download's id once a new revision stopped its manifest refresh and waits for it to end.</summary>
+    internal Action<string>? AwaitingReplacedRefresh { get; set; }
 
     /// <summary>Starts following the session, the network, the settings and the store, and the loop. Once.</summary>
     public void Start()
@@ -549,6 +558,9 @@ public sealed partial class DownloadQueue : IDisposable
     /// One transfer under way, for the revision of the download it started with, in the session's generation at its start: a
     /// sign-in it finds refused stops the profile only until the session changes from that one.
     /// </summary>
+    // A manifest refresh under way: what stops it, and done once it ended, however it ended.
+    private sealed record Refreshing(CancellationTokenSource Stop, Task Done);
+
     private sealed class Running(Key key, Uri server, long revision, long generation)
     {
         public Key Key { get; } = key;

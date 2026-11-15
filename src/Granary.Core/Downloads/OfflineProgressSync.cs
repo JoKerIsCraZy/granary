@@ -273,6 +273,9 @@ public sealed class OfflineProgressSync : IDisposable
         var (scope, server) = target;
         // The downloads are read once per run of the app; a run before that waits for them.
         await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+        // A queue file that could not be read yet (something had it open) is read again here: what an earlier run left goes
+        // once it can be read, without waiting for a new position.
+        await _queue.LoadAsync().ConfigureAwait(false);
         bool sent = false;
         var halving = new SplitBudget();
         while (IsStill(target))
@@ -300,7 +303,8 @@ public sealed class OfflineProgressSync : IDisposable
                 break;
             }
         }
-        if (_queue.Entries(scope).Any(e => e.State == OfflineProgressState.Pending))
+        // While the file stays unread, the retry looks at it again: nothing else may come to (no new position, no removal).
+        if (!_queue.IsRead || _queue.Entries(scope).Any(e => e.State == OfflineProgressState.Pending))
         {
             RetryLater();
         }

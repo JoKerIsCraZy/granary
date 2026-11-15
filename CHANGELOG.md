@@ -18,7 +18,8 @@ release's section is what its update says it changes (docs/release.md).
   ("Example Movie is ready to watch offline"): in its window while it is in front, else as a Windows notification with
   Play and Open Downloads; a season or a series that finishes together is one message. Settings → Downloads → Notify
   when downloads finish turns these messages off, and Download settings on the Downloads page leads there. Downloads
-  wait on a metered connection unless Settings → Downloads allows them, come two at a time unless Settings → Downloads →
+  wait on a metered connection unless Settings → Downloads allows them, and say so ("Paused · metered connection"), also
+  one that was downloading when Granary closed; they come two at a time unless Settings → Downloads →
   Simultaneous Downloads says from one to four, and carry on where they stopped when Granary starts again. X on a controller plays a
   downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
   and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
@@ -46,8 +47,8 @@ release's section is what its update says it changes (docs/release.md).
   Watched), also without your Silo server; it says Missing file for one whose file was deleted outside Granary, and
   Reclaim Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads →
   Keep watched downloads is on.
-- **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
-  with Retry.
+- **Offline start:** when Granary starts and can't reach your Silo server, also when a proxy or a network's sign-in page
+  answers in its place, it opens your downloads instead of an error, with Retry.
 - **Download from any card:** the ⋯ menu of a film's, an episode's, a season's or a series' card has Download wherever the
   card shows, on Home, in a library, in search, in a collection and on a title's page. Download series takes every
   season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need

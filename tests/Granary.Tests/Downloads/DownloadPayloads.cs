@@ -80,14 +80,14 @@ internal static class DownloadPayloads
     /// backdrop and series poster.
     /// </summary>
     public static string Manifest(string id, string container = "mkv", long expectedBytes = 3000, string subtitleRevision = "r1",
-        string episodeId = "ep_5", int season = 1, int episode = 5, string title = "Chapter Five")
+        string episodeId = "ep_5", int season = 1, int episode = 5, string title = "Chapter Five", long revision = 1)
     {
         string bytes = expectedBytes.ToString(CultureInfo.InvariantCulture);
         string seasonNumber = season.ToString(CultureInfo.InvariantCulture);
         string episodeNumber = episode.ToString(CultureInfo.InvariantCulture);
         return $$"""
             {
-              "download_id": "{{id}}", "content_id": "sr_1", "episode_id": "{{episodeId}}", "type": "episode", "revision": 1,
+              "download_id": "{{id}}", "content_id": "sr_1", "episode_id": "{{episodeId}}", "type": "episode", "revision": {{revision.ToString(CultureInfo.InvariantCulture)}},
               "quality": "original", "effective_quality": "original", "delivery_format": "original", "target_bitrate_kbps": 0,
               "media_file_id": "4567", "file_size": {{bytes}},
               "title": "{{title}}", "year": 2024, "overview": "Elena finds the map.", "runtime": 7200,
