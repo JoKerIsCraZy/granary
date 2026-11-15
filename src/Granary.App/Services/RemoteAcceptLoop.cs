@@ -112,7 +112,7 @@ internal sealed class RemoteAcceptLoop
     private async Task LoopAsync(CancellationToken stop)
     {
         int failures = 0;
-        // Since when accepts have failed for want of sockets or buffers, with none getting through; null while none has.
+        // Since when every accept has failed for want of sockets or buffers; null once one got through or failed otherwise.
         long? shortSince = null;
         while (!IsStopped)
         {
@@ -133,12 +133,9 @@ internal sealed class RemoteAcceptLoop
                 {
                     _logger.LogDebug("A connection ended while it was accepted ({Error})", RemoteLog.Failure(ex));
                 }
-                // Only a shortage on this PC can last: a peer's resets and broken connections never end the loop, however
-                // long they go on, so a phone that comes after them still gets in.
-                if (IsShortage(ex))
-                {
-                    shortSince ??= _time.GetTimestamp();
-                }
+                // Only a shortage on this PC can last, and only an unbroken run of them counts: a peer's resets and broken
+                // connections never end the loop, however long they go on, and one between two shortages starts the run anew.
+                shortSince = IsShortage(ex) ? shortSince ?? _time.GetTimestamp() : null;
                 if (shortSince is { } since && _time.GetElapsedTime(since) >= GiveUpAfter)
                 {
                     _logger.LogWarning("The phone remote's listener stopped taking connections: {Count} failed in a row, none got through ({Error})",
