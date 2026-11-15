@@ -15,8 +15,9 @@ namespace Granary.Core.ViewModels.Player;
 /// <remarks>
 /// The status leaves out the session id, the picture and the overview, as Silo's Roku app does: no signed address belongs
 /// on this channel, and the phones look artwork up themselves from the content id. A file played with <c>--play</c> shows
-/// as idle and takes no command: its name is nobody's business. A subtitle is named by its place in the list last sent,
-/// which is kept, so a number goes back to the track it was sent for; one whose track has gone since is ignored.
+/// as idle and takes no command: its name is nobody's business. A track is named by its place in the list last sent,
+/// which is kept, so a number goes back to the track it was sent for; one whose track has gone since, or has another in
+/// its place, is ignored.
 /// </remarks>
 public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
 {
@@ -42,8 +43,9 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
     private readonly PlayerViewModel _player;
     private readonly RemoteReceiver _receiver;
     private readonly IUiDispatcher _dispatcher;
-    // The tracks of the status built last, in the order sent: the audio tracks by their ordinal, the subtitles by their own ids.
-    private int _sentAudio;
+    // The tracks of the status built last, in the order sent: the audio tracks' rows by their ordinal (without their check;
+    // an audio track has no id of its own), the subtitles by their own ids.
+    private IReadOnlyList<AudioTrackOption> _sentAudio = [];
     private IReadOnlyList<string> _sentSubtitles = [];
     private bool _disposed;
 
@@ -74,7 +76,7 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         {
             if (_disposed || _player.HasLeft || _player.ContentId is null)
             {
-                _sentAudio = 0;
+                _sentAudio = [];
                 _sentSubtitles = [];
                 return SiloCastState.Idle;
             }
@@ -166,7 +168,7 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         var audio = player.AudioTracks;
         // Off is no track: the phone sends no number for it.
         var subtitles = player.SubtitleTracks.Where(row => row.TrackId is not null).ToList();
-        _sentAudio = audio.Count;
+        _sentAudio = [.. audio.Select(Unchecked)];
         _sentSubtitles = [.. subtitles.Select(row => row.TrackId!)];
         int shownSubtitle = subtitles.FindIndex(row => row.IsSelected);
         var info = player.MediaInfo;
@@ -270,16 +272,19 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         return RemoteCommandResult.Done;
     }
 
-    // An audio track's number is its ordinal, the one the player's menu passes on.
+    // An audio track's number is its ordinal, the one the player's menu passes on. It names the track it was sent for: when
+    // another track is in that place now (another version's list), the number is ignored.
     private RemoteCommandResult SelectAudio(long? trackId)
     {
+        var sent = _sentAudio;
         var tracks = _player.AudioTracks;
-        if (trackId is not { } id || id < 0 || id >= _sentAudio || id >= tracks.Count)
+        if (trackId is not { } id || id < 0 || id >= sent.Count || id >= tracks.Count)
         {
             return RemoteCommandResult.Ignored;
         }
         int ordinal = (int)id;
-        if (tracks[ordinal].IsSelected)
+        var track = tracks[ordinal];
+        if (Unchecked(track) != sent[ordinal] || track.IsSelected)
         {
             return RemoteCommandResult.Ignored;
         }
@@ -390,6 +395,9 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         _player.PlayNextEpisodeCommand.Execute(null);
         return RemoteCommandResult.Done;
     }
+
+    // A track's row as it names the track: whether it is the one playing is no part of that.
+    private static AudioTrackOption Unchecked(AudioTrackOption track) => track with { IsSelected = false };
 
     private static double Seconds(double seconds) => double.IsFinite(seconds) && seconds > 0 ? seconds : 0;
 

@@ -1495,8 +1495,11 @@ takes).
   own. `play_next` without a next episode gets `command_failed` too.
 - **Track numbers.** The wire's `trackId` is an integer the phone only sends back. An audio track's is its ordinal, the
   number the player's menu passes on. A subtitle's is its place in the list of the status that was sent, Off left out
-  (no number turns subtitles off); the control keeps the list it built last and maps a number back to the track's own
-  id, and a track no longer in the player's list is ignored, so a number from an older list never picks another track.
+  (no number turns subtitles off). The control keeps both lists it built last: a subtitle's number maps back to the
+  track's own id, and an audio number to the row it was sent for (an audio track has no id of its own, so its title,
+  details, codec, channels and default stand for it). A track no longer in the player's list, or another track in its
+  place (another version's list of the same length), is ignored, so a number from an older list never picks another
+  track.
 - **What the status leaves out.** The session id, the poster and the overview, as Silo's Roku app leaves them out: no
   signed address belongs on this channel, and the phones look artwork up themselves from the content id. A movie's
   year is not sent as the episode line. A file played with `--play` shows as idle and takes no command: its name is

@@ -358,6 +358,39 @@ public sealed class PlayerRemoteControlTests
     }
 
     [Fact]
+    public async Task AnAudioNumber_FromAnOlderList_IsIgnored_WhenAnotherTrackIsInItsPlace()
+    {
+        var (_, remote) = await PlayingAsync();
+        _ = remote.State;
+        // Another version of the title lists as many tracks, but other ones, before the phone was shown them.
+        Playback.RaiseTracks(
+        [
+            new() { Title = "Deutsch", Language = "de", Codec = "ac3", Channels = 6, Default = true },
+            new() { Title = "Audio Description", Language = "en", Codec = "aac", Channels = 2 },
+        ], 0);
+
+        Assert.Equal(RemoteCommandResult.Ignored, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
+        Assert.Empty(Playback.AudioPicks);
+
+        // Once the phone was shown the new list, its numbers name the new tracks.
+        _ = remote.State;
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
+        Assert.Equal([1], Playback.AudioPicks);
+    }
+
+    [Fact]
+    public async Task AnAudioNumber_StillNamesItsTrack_WhenTheListIsTheSame()
+    {
+        var (_, remote) = await PlayingAsync();
+        _ = remote.State;
+        // The same tracks again, as a new plan of the same file lists them.
+        Playback.RaiseTracks(Audio, 0);
+
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
+        Assert.Equal([1], Playback.AudioPicks);
+    }
+
+    [Fact]
     public async Task NoTrackId_TurnsSubtitlesOff()
     {
         var (_, remote) = await PlayingAsync(subtitle: Subtitles[1].TrackId);
