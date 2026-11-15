@@ -65,28 +65,48 @@ public sealed partial class DownloadManager
 
     /// <summary>
     /// A season's episodes one create each, in order, passing over the ones this PC has or is fetching. It stops, with what it
-    /// counted so far, when it is cancelled or the profile it started for is no longer the active one: the episodes after that
-    /// are in none of the counts.
+    /// counted so far, when it is cancelled, the profile it started for is no longer the active one or the server's limit of
+    /// downloads was reached (<see cref="DownloadStartResult.Limited"/>, counted as failed): the episodes after that are in
+    /// none of the counts.
     /// </summary>
-    public async Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, CancellationToken cancellationToken)
+    public Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Episodes.Select(e => (request.SeasonNumber, e)), cancellationToken);
+    }
+
+    /// <summary>
+    /// A whole series as its seasons one after the other, each as <see cref="StartSeasonAsync"/> starts one: one create per
+    /// episode, the same stops. Silo's apps ask the server for a series in batches; Granary asks per episode, as it does for a
+    /// season, so each episode gets the file the dialog's size counted and the create's guards (docs/api-contract.md, 14.2).
+    /// </summary>
+    public Task<SeasonStartResult> StartSeriesAsync(SeriesDownloadRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return StartEpisodesAsync(request.SeriesId, request.SeriesTitle, request.Quality,
+            request.Seasons.SelectMany(s => s.Episodes.Select(e => (s.SeasonNumber, e))), cancellationToken);
+    }
+
+    private async Task<SeasonStartResult> StartEpisodesAsync(string seriesId, string seriesTitle, string quality,
+        IEnumerable<(int Season, SeasonEpisode Episode)> episodes, CancellationToken cancellationToken)
+    {
         var scope = DownloadScope.Of(_session);
         int started = 0;
         int there = 0;
         int failed = 0;
-        foreach (var episode in request.Episodes)
+        foreach (var (season, episode) in episodes)
         {
             if (cancellationToken.IsCancellationRequested || scope is null || DownloadScope.Of(_session) != scope)
             {
-                _logger.LogInformation("A season's downloads stopped after {Count} episodes", started + there + failed);
+                _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed);
                 break;
             }
             DownloadStartResult result;
             try
             {
-                result = await StartAsync(new DownloadRequest(episode.EpisodeId, request.SeriesId, episode.MediaFileId, request.Quality, episode.Title,
-                    request.SeriesTitle, request.SeasonNumber, episode.EpisodeNumber), cancellationToken).ConfigureAwait(false);
+                result = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
+                    seriesTitle, season, episode.EpisodeNumber), cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -103,6 +123,12 @@ public sealed partial class DownloadManager
                 default:
                     failed++;
                     break;
+            }
+            if (result == DownloadStartResult.Limited)
+            {
+                _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes",
+                    started + there + failed);
+                break;
             }
         }
         return new SeasonStartResult(started, there, failed);
@@ -133,6 +159,12 @@ public sealed partial class DownloadManager
         {
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
             return (null, DownloadStartResult.Unavailable);
+        }
+        catch (SiloApiException ex) when (ex.Status == 429)
+        {
+            // Refused before anything was made: the account's limit of downloads, which holds for the next create too.
+            _logger.LogInformation("The server's download limit for the account was reached");
+            return (null, DownloadStartResult.Limited);
         }
         catch (Exception ex) when (IsUncertain(ex, cancellationToken))
         {

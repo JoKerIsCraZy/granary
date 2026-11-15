@@ -43,6 +43,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The title page's Download items; without them the page offers none.</summary>
     public DownloadActions? Downloads { get; set; }
 
+    /// <summary>What a series' Download series reads as its dialog opens; without it the page offers none.</summary>
+    public DownloadOfferReader? DownloadOffers { get; set; }
+
     public RecordingNavigation Navigation { get; } = new();
 
     public LogSink Logs { get; } = new();
@@ -158,7 +161,8 @@ internal sealed class ItemDetailFixture
         spans: Spans,
         boxSets: BoxSets,
         boxSetLibraries: BoxSetLibraries,
-        downloads: Downloads);
+        downloads: Downloads,
+        downloadOffers: DownloadOffers);
 
     /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)

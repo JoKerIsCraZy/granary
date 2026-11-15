@@ -24,6 +24,9 @@ public sealed class DownloadActions
 {
     public const string DownloadLabel = "Download";
     public const string DownloadSeasonLabel = "Download season";
+
+    /// <summary>A series' item, the Android app's words for its every episode (<c>detail_downloadSeries</c>).</summary>
+    public const string DownloadSeriesLabel = "Download series";
     public const string DeleteLabel = "Delete download";
     public const string DeleteTitle = "Delete download?";
     public const string DeleteMessage = "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.";

@@ -8,9 +8,10 @@ namespace Granary.Core.ViewModels;
 
 // The Download items of the ⋯ menu, the web's overflow item (ActionBar.tsx): a film's or an episode's "Download" opens the
 // download dialog with the version picked under the buttons, as the web offers it only for a title with files; a season's
-// "Download season" downloads its episodes one by one. A title on this PC reads its status instead, opens the Downloads page,
-// and has "Delete download" beside it, whatever the server says now. Its cards carry their own (CardDownloads), so the page
-// adds none to them.
+// "Download season" downloads its episodes one by one; a series' "Download series" (the Android app's item on a series page)
+// every season's, which the dialog reads as it opens, as a series' card does: the page lists one season's episodes at most. A
+// title on this PC reads its status instead, opens the Downloads page, and has "Delete download" beside it, whatever the
+// server says now. Its cards carry their own (CardDownloads), so the page adds none to them.
 public sealed partial class ItemDetailViewModel
 {
     private IDisposable? _followedDownloads;
@@ -23,7 +24,7 @@ public sealed partial class ItemDetailViewModel
     [NotifyPropertyChangedFor(nameof(ShowsMoreMenu))]
     public partial bool ShowsDownload { get; private set; }
 
-    /// <summary>"Download", "Download season", or the download's status: "Downloading · 42%", "Downloaded".</summary>
+    /// <summary>"Download", "Download season", "Download series", or the download's status: "Downloading · 42%", "Downloaded".</summary>
     [ObservableProperty]
     public partial string DownloadLabel { get; private set; } = DownloadActions.DownloadLabel;
 
@@ -69,6 +70,14 @@ public sealed partial class ItemDetailViewModel
             if (downloads.CanDownload && SeasonOffer(downloads, item) is { } season)
             {
                 await downloads.OfferSeasonAsync(season.Request, season.SeasonTitle, season.KnownBytes);
+            }
+        }
+        else if (item.Type == CatalogItemTypes.Series)
+        {
+            if (downloads.CanDownload && _downloadOffers is { } offers && _contentId.Length > 0)
+            {
+                string seriesId = _contentId;
+                await downloads.OfferReadAsync(cancellationToken => offers.ReadAsync(seriesId, CatalogItemTypes.Series, cancellationToken));
             }
         }
         else if (DownloadState() is { OpensDownloads: true })
@@ -124,6 +133,13 @@ public sealed partial class ItemDetailViewModel
         {
             return downloads.CanDownload && SeasonOffer(downloads, item) is not null
                 ? new TitleDownloadState(true, DownloadActions.DownloadSeasonLabel, OpensDownloads: false, CanDelete: false)
+                : TitleDownloadState.Hidden;
+        }
+        if (item.Type == CatalogItemTypes.Series)
+        {
+            // Shown whatever is on this PC: the page does not know every season's episodes; the dialog says when all are here.
+            return downloads.CanDownload && _downloadOffers is not null
+                ? new TitleDownloadState(true, DownloadActions.DownloadSeriesLabel, OpensDownloads: false, CanDelete: false)
                 : TitleDownloadState.Hidden;
         }
         if (TitleRequest(item) is null)

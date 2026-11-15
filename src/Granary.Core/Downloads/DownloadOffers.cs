@@ -14,12 +14,16 @@ public sealed record TitleDownloadOffer(DownloadRequest Request, IReadOnlyList<D
 /// <summary>A season's episodes that are not on this PC yet, one download each, and what their files take on the server.</summary>
 public sealed record SeasonDownloadOffer(SeasonDownloadRequest Request, string SeasonTitle, long KnownBytes) : DownloadOffer;
 
+/// <summary>A series' episodes that are not on this PC yet, season by season, one download each, and what their files take on the server.</summary>
+public sealed record SeriesDownloadOffer(SeriesDownloadRequest Request, long KnownBytes) : DownloadOffer;
+
 /// <summary>Nothing to download, and why, in the words the dialog says it with.</summary>
 public sealed record NoDownloadOffer(string Reason) : DownloadOffer;
 
 /// <summary>
-/// How a title page's Download offers a film, an episode and a season (<c>ItemDetailViewModel.Downloads.cs</c>), and a card's
-/// once its title has been read (<see cref="DownloadOfferReader"/>): the same request, versions, sizes and episodes either way.
+/// How a title page's Download offers a film, an episode, a season and a series (<c>ItemDetailViewModel.Downloads.cs</c>), and
+/// a card's once its title has been read (<see cref="DownloadOfferReader"/>): the same request, versions, sizes and episodes
+/// either way.
 /// </summary>
 public static class DownloadOffers
 {
@@ -28,6 +32,9 @@ public static class DownloadOffers
 
     /// <summary>A season whose episodes with a file are all downloaded already.</summary>
     public const string SeasonOnThisPc = "Every episode of this season is on this PC.";
+
+    /// <summary>A series whose episodes with a file are all downloaded already.</summary>
+    public const string SeriesOnThisPc = "Every episode of this series is on this PC.";
 
     /// <summary>
     /// A film, or an episode of its series, as a download of <paramref name="fileId"/> (null lets the server choose); the
@@ -99,6 +106,38 @@ public static class DownloadOffers
             [.. left.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))], DownloadQualities.Original);
         return new SeasonDownloadOffer(request, season.Title, left.Sum(e => Math.Max(0, UsableFiles(e)[0].FileSize)));
     }
+
+    /// <summary>
+    /// Every season's episodes that have a file the server can read and are not on this PC yet, as <see cref="ForSeason"/> offers
+    /// one season's: the seasons by number as a series' page lists them, the specials last, so the queue, which takes the oldest
+    /// first, brings the first episode first. Silo's apps offer a series' every season ("All Episodes"). Null when none is left.
+    /// </summary>
+    public static SeriesDownloadOffer? ForSeries(CatalogItemDetail series, string seriesId,
+        IReadOnlyList<(Season Season, IReadOnlyList<Episode> Episodes)> seasons, Func<string, bool> isOnThisPc)
+    {
+        ArgumentNullException.ThrowIfNull(series);
+        ArgumentException.ThrowIfNullOrEmpty(seriesId);
+        ArgumentNullException.ThrowIfNull(seasons);
+        ArgumentNullException.ThrowIfNull(isOnThisPc);
+        var left = seasons
+            .OrderBy(s => IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber)
+            .Select(s => (s.Season.SeasonNumber, Episodes: s.Episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0
+                && !isOnThisPc(e.ContentId)).ToList()))
+            .Where(s => s.Episodes.Count > 0)
+            .ToList();
+        if (left.Count == 0)
+        {
+            return null;
+        }
+        var request = new SeriesDownloadRequest(seriesId, series.Title, [.. left.Select(s => new SeriesSeason(s.SeasonNumber,
+            [.. s.Episodes.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))]))],
+            DownloadQualities.Original);
+        // Each episode's first file, the one it asks for: what the dialog's size counts.
+        return new SeriesDownloadOffer(request, left.SelectMany(s => s.Episodes).Sum(e => Math.Max(0, UsableFiles(e)[0].FileSize)));
+    }
+
+    // Season 0 is the specials, also where the server does not say so.
+    private static bool IsSpecials(Season season) => season.IsSpecials == true || season.SeasonNumber == 0;
 
     /// <summary>An episode's files the server can read, as the player steps over the others (<c>NextEpisode</c>).</summary>
     public static IReadOnlyList<EpisodeFile> UsableFiles(Episode episode)

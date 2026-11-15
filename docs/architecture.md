@@ -1476,9 +1476,16 @@ client guide.
   the disk, and the server's entry stays, as any entry of an account that signed out. While a sign-out of the account is
   under way (`IsClearPending`, checked after the generation is taken), a start creates nothing and is `Unavailable`: its
   download would be kept after the sign-out took the account's along, and stay behind as a row of a signed-out account.
-- **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
-  fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
-  the profile it started for is no longer the active one.
+- **Seasons and series.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has
+  or is fetching, and counts what started, what was there and what failed. `StartSeriesAsync` does the same for a whole
+  series, season after season in the order its offer lists them (`DownloadOffers.ForSeries`: by number, the specials last),
+  so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
+  cancelled, the profile they started for is no longer the active one, or the server refused a create for the account's
+  limit of downloads (429, `DownloadStartResult.Limited`, counted as failed): every create after it would be refused
+  alike. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
+  episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
+  above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
+  free space check holds back one that does not fit. However many there are, the queue runs two at a time.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1504,14 +1511,17 @@ client guide.
   `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
   `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
-  version rows with their sizes, the runtime, a season's episodes with a file that are not on this PC).
-- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's and season's card its entries, which
-  `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
+  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
+  series' page lists one season's episodes at most, so its Download series reads them as a card does
+  (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
+- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,
+  which `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
   Interested: from `DownloadActions.StateOf` and `CanDownload` alone, so a menu never waits for the server. The menu items run the entries' commands on Click rather
   than binding them, since a command of the app's would hold every item a menu ever made. A card carries no files, so its
   Download opens the dialog at once (`DownloadActions.OfferReadAsync`, `DownloadOptionsViewModel.ForReading`) and
   `DownloadOfferReader` reads the title as its page reads it (`GET /api/v2/catalog/items/{id}`; a season with
-  `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
+  `GET /api/v2/catalog/items/{id}/episodes` beside it; a series with its seasons beside it, then each season's episodes,
+  one list after another) on the thread pool, shown on the UI thread. A read that failed
   can be tried again; one the dialog closed on is cancelled and shows nothing; one that answers after another server,
   account or profile became the active one counts as failed (`ProfileChangedException`), so Try Again reads for the
   active one. Download from a card never throws at the menu: what fails is logged by its kind. No title page adds download

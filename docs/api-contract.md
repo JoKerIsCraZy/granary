@@ -2965,7 +2965,12 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
   episode in `skipped`, means the profile cannot download it.
   A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
-  PC does not have; Granary does not send `series`, `season_number`, `batch_id` or `expected_entries`.
+  PC does not have, and so is a whole series, season after season (the specials last), its episodes read through 7.7
+  (`/series/{id}/seasons`, then each season's `/episodes`). Silo's apps send a series as the server's batch (`series:
+  true` with a `batch_id`, followed by `page.next_cursor`); Granary does not send `series`, `season_number`, `batch_id` or
+  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429
+  (`rate_limited`: the account's limit of downloads at once or in a period) stops a season or a series there: the creates
+  after it would be refused alike.
 
 ### 14.3 Registry and status events
 

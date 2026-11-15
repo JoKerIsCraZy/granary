@@ -21,7 +21,7 @@ public sealed record DownloadVersionRow(string FileId, string Summary, long File
 public sealed record DownloadQualityRow(string Preset, string Label);
 
 /// <summary>
-/// The download dialog of a film, an episode or a season. Its title, texts and version rows are the web's
+/// The download dialog of a film, an episode, a season or a whole series. Its title, texts and version rows are the web's
 /// (<c>web/src/components/DownloadVersionPicker.tsx</c>); the qualities are the ones the server offers, as the apps list them
 /// (downloads-api.md, 10.3), and the free space line keeps a download that cannot fit from starting. The free space is read
 /// off the UI thread once per dialog (<see cref="SpaceRead"/>) and shown on it; a read that fails or takes longer than
@@ -45,6 +45,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // The dialog's title before it knows what it offers (web: web.downloads.versionPicker.title).
     private const string PlainTitle = "Download";
 
+    // A series' every episode, in the Apple app's words (downloads.seriesSheet.allEpisodes).
+    private const string AllEpisodes = "All Episodes";
+
     /// <summary>
     /// The longest the free space is waited for (<see cref="DiskSpaceReads.Timeout"/>): a share that does not answer would
     /// otherwise keep Download doing nothing for half a minute.
@@ -64,7 +67,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
 
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
-    private long _seasonBytes;
+    private SeriesDownloadRequest? _series;
+
+    // What a season's or a series' episodes take on the server, as their offer counted it.
+    private long _episodesBytes;
     private int _runtimeSeconds;
     private Dictionary<string, DownloadQualityOption> _options = new(StringComparer.Ordinal);
 
@@ -91,20 +97,20 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// "Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1"; "Download" while
-    /// a card's dialog does not know its title yet.
+    /// "Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1", "Download: Example
+    /// Series · All Episodes"; "Download" while a card's dialog does not know its title yet.
     /// </summary>
     [ObservableProperty]
     public partial string Title { get; private set; } = PlainTitle;
 
-    /// <summary>The title's files, the highest resolution first; none for a season.</summary>
+    /// <summary>The title's files, the highest resolution first; none for a season or a series.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsVersions), nameof(ShowsFooter))]
     public partial IReadOnlyList<DownloadVersionRow> Versions { get; private set; } = [];
 
     /// <summary>
-    /// There is something to download: a title with a file, or a season's episodes. A card's dialog has it once it read its
-    /// title, and only when there is.
+    /// There is something to download: a title with a file, or a season's or a series' episodes. A card's dialog has it once it
+    /// read its title, and only when there is.
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsVersions), nameof(ShowsFooter), nameof(ShowsQualities), nameof(CanStart))]
@@ -145,7 +151,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     [ObservableProperty]
     public partial DownloadQualityRow? SelectedQuality { get; set; }
 
-    /// <summary>"8.0 GB" for the original, "About 2.1 GB" for a preset, "10 episodes · 21.4 GB" for a season.</summary>
+    /// <summary>"8.0 GB" for the original, "About 2.1 GB" for a preset, "10 episodes · 21.4 GB" for a season or a series.</summary>
     [ObservableProperty]
     public partial string SizeText { get; private set; } = "";
 
@@ -197,7 +203,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// A card's film, episode or season, whose files the card does not carry: the dialog opens with "Download" and the web's
+    /// A card's film, episode, season or series, whose files the card does not carry: the dialog opens with "Download" and the web's
     /// loading words while <paramref name="read"/> reads what to offer, then shows it as <see cref="ForTitle"/> or
     /// <see cref="ForSeason"/> would, or why there is nothing to download, or that the read failed, with Try Again.
     /// </summary>
@@ -207,7 +213,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         _read = read;
         _title = null;
         _season = null;
-        _seasonBytes = 0;
+        _series = null;
+        _episodesBytes = 0;
         _runtimeSeconds = 0;
         Title = PlainTitle;
         Versions = [];
@@ -234,11 +241,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// <summary>
     /// Starts what the dialog shows in the selected version and quality, once the free space is known: true when it started
     /// (or was on this PC already) and the dialog closes, false when it does not fit or <see cref="ErrorText"/> says why. A
-    /// season whose episodes did not all start is false; pressing again sends only the ones still missing.
+    /// season or a series whose episodes did not all start is false; pressing again sends only the ones still missing.
     /// </summary>
     public async Task<bool> StartAsync()
     {
-        if (IsStarting || (_title is null && _season is null))
+        if (IsStarting || (_title is null && _season is null && _series is null))
         {
             return false;
         }
@@ -289,12 +296,18 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         ShowSize();
     }
 
-    // What the offer downloads, its title and files; answers the version to choose first, none for a season.
+    // What the offer downloads, its title and files; answers the version to choose first, none for a season or a series.
     private DownloadVersionRow? Take(DownloadOffer offer)
     {
         _title = (offer as TitleDownloadOffer)?.Request;
         _season = (offer as SeasonDownloadOffer)?.Request;
-        _seasonBytes = offer is SeasonDownloadOffer { KnownBytes: var bytes } ? Math.Max(0, bytes) : 0;
+        _series = (offer as SeriesDownloadOffer)?.Request;
+        _episodesBytes = offer switch
+        {
+            SeasonDownloadOffer season => Math.Max(0, season.KnownBytes),
+            SeriesDownloadOffer series => Math.Max(0, series.KnownBytes),
+            _ => 0,
+        };
         _runtimeSeconds = offer is TitleDownloadOffer { RuntimeSeconds: var seconds } ? Math.Max(0, seconds) : 0;
         switch (offer)
         {
@@ -308,6 +321,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                     ? "Season " + season.Request.SeasonNumber.ToString(CultureInfo.InvariantCulture)
                     : season.SeasonTitle.Trim();
                 Title = $"Download: {season.Request.SeriesTitle} · {name}";
+                Versions = [];
+                HasOffer = true;
+                return null;
+            case SeriesDownloadOffer series:
+                Title = $"Download: {series.Request.SeriesTitle} · {AllEpisodes}";
                 Versions = [];
                 HasOffer = true;
                 return null;
@@ -417,7 +435,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
 
     private void ShowSize()
     {
-        (SizeText, _needed) = _season is { } season ? SeasonSize(season) : TitleSize();
+        (SizeText, _needed) = _season is { } season ? EpisodesSize(season.Episodes.Count)
+            : _series is { } series ? EpisodesSize(series.EpisodeCount)
+            : TitleSize();
         ShowSpace();
     }
 
@@ -438,12 +458,12 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         return ("About " + PrePlayText.FileSize(estimate), estimate);
     }
 
-    // A season's episodes and, for the original, what their files take; a preset's files are not known before the server makes them.
-    private (string Text, long Bytes) SeasonSize(SeasonDownloadRequest season)
+    // A season's or a series' episodes and, for the original, what their files take; a preset's files are not known before the
+    // server makes them.
+    private (string Text, long Bytes) EpisodesSize(int count)
     {
-        int count = season.Episodes.Count;
         string episodes = count == 1 ? "1 episode" : count.ToString(CultureInfo.InvariantCulture) + " episodes";
-        return IsOriginal && _seasonBytes > 0 ? ($"{episodes} · {PrePlayText.FileSize(_seasonBytes)}", _seasonBytes) : (episodes, 0);
+        return IsOriginal && _episodesBytes > 0 ? ($"{episodes} · {PrePlayText.FileSize(_episodesBytes)}", _episodesBytes) : (episodes, 0);
     }
 
     private bool IsOriginal => SelectedQuality is null || SelectedQuality.Preset == DownloadQualities.Original;
@@ -505,6 +525,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
             // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
             return result.Failed == 0 && result.Started + result.AlreadyThere == season.Episodes.Count;
+        }
+        if (_series is { } series)
+        {
+            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
+            return result.Failed == 0 && result.Started + result.AlreadyThere == series.EpisodeCount;
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
         return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false)

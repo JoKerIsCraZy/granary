@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Tests.Profiles;
@@ -165,6 +166,51 @@ public sealed class DownloadManagerTests : IAsyncDisposable
             b.GetProperty("expected_revision").GetInt32())));
         var third = _h.Find("dl_3")!.Record;
         Assert.Equal(("Chapter Three", 3, 1, "Example Series"), (third.Title, third.EpisodeNumber, third.SeasonNumber, third.SeriesTitle));
+    }
+
+    [Fact]
+    public async Task ASeries_SendsItsSeasonsInTurn_OneCreatePerEpisodeNotYetDownloaded()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1");
+        Creates(Created(DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_2")), Created(DownloadPayloads.Entry("dl_21", "ready", episodeId: "ep_21")),
+            Created(DownloadPayloads.Entry("dl_s1", "ready", episodeId: "sp_1")));
+        var manager = _h.NewManager();
+        var series = new SeriesDownloadRequest("sr_1", "Example Series",
+        [
+            new(1, [new("ep_1", 1, "Pilot"), new("ep_2", 2, "Chapter Two")]),
+            new(2, [new("ep_21", 1, "Chapter Eleven", "4581")]),
+            new(0, [new("sp_1", 1, "Behind the Scenes")]),
+        ], "10mbps");
+
+        var result = await manager.StartSeriesAsync(series, Token);
+
+        Assert.Equal(new SeasonStartResult(Started: 3, AlreadyThere: 1, Failed: 0), result);
+        var bodies = CreatesSent.Select(r => JsonDocument.Parse(r.Body!).RootElement).ToList();
+        Assert.Equal(["ep_2", "ep_21", "sp_1"], bodies.Select(b => b.GetProperty("episode_id").GetString()));
+        Assert.All(bodies, b => Assert.Equal(("sr_1", "10mbps"), (b.GetProperty("content_id").GetString(), b.GetProperty("quality").GetString())));
+        Assert.Equal("4581", bodies[1].GetProperty("media_file_id").GetString());
+        var eleventh = _h.Find("dl_21")!.Record;
+        Assert.Equal(("Chapter Eleven", 2, 1, "Example Series"), (eleventh.Title, eleventh.SeasonNumber, eleventh.EpisodeNumber, eleventh.SeriesTitle));
+        Assert.Equal((0, 1), (_h.Find("dl_s1")!.Record.SeasonNumber, _h.Find("dl_s1")!.Record.EpisodeNumber));
+    }
+
+    // The server's limit of downloads for the account (429) refuses every create after it alike: the rest are not asked for.
+    [Fact]
+    public async Task ASeries_StopsAtTheServersDownloadLimit()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")), ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        var manager = _h.NewManager();
+        var series = new SeriesDownloadRequest("sr_1", "Example Series",
+        [
+            new(1, [new("ep_1", 1, "Pilot"), new("ep_2", 2, "Chapter Two")]),
+            new(2, [new("ep_21", 1, "Chapter Eleven")]),
+        ], "original");
+
+        var result = await manager.StartSeriesAsync(series, Token);
+
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 1), result);
+        Assert.Equal(2, CreatesSent.Count);
+        Assert.Equal(DownloadStartResult.Limited, await manager.StartAsync(Episode, Token));
     }
 
     [Fact]
