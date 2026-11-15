@@ -28,7 +28,9 @@ public static class DownloadText
 
     /// <summary>Granary's storage limit for downloads holds it; Granary's own words, as the limit is.</summary>
     public static string DownloadsLimitReached => AppText.Get("granary.downloads.status.downloadsLimit");
-    public static string Original => AppText.Get("granary.downloads.quality.original");
+
+    /// <summary>The download quality that keeps the original file, as the settings manifest names that choice.</summary>
+    public static string Original => AppText.Get("settingsManifest.downloads.default_quality.option.original");
 
     /// <summary>
     /// The status a row and the title page's menu show. Missing files come first (a folder that is gone, or a finished

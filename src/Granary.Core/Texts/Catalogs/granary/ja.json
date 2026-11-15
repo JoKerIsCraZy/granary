@@ -153,7 +153,6 @@
   "granary.downloads.options": "オプション",
   "granary.downloads.pause": "一時停止",
   "granary.downloads.progressTimeLeft": "{percent}% · {timeLeft}",
-  "granary.downloads.quality.original": "オリジナル",
   "granary.downloads.quality.upTo": "{quality} · 最大{resolution}",
   "granary.downloads.reclaim.confirm": "解放",
   "granary.downloads.reclaim.message": "{count, plural, other {視聴済みのダウンロード{count_text}件を削除して{size}を解放しますか？}}",

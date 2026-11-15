@@ -701,6 +701,12 @@
       "value": "عرض العمر الموصى به"
     }
   ],
+  "settingsManifest.downloads.default_quality.option.original": [
+    {
+      "type": 0,
+      "value": "الأصلية"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,

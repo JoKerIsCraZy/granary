@@ -153,7 +153,6 @@
   "granary.downloads.options": "选项",
   "granary.downloads.pause": "暂停",
   "granary.downloads.progressTimeLeft": "{percent}% · {timeLeft}",
-  "granary.downloads.quality.original": "原始",
   "granary.downloads.quality.upTo": "{quality} · 最高{resolution}",
   "granary.downloads.reclaim.confirm": "释放",
   "granary.downloads.reclaim.message": "{count, plural, other {删除{count_text}个已观看的下载并释放{size}？}}",

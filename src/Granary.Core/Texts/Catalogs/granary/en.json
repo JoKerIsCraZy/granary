@@ -307,8 +307,6 @@
   "@granary.downloads.pause": { "description": "Downloads page: a download card's ⋮ menu item that pauses it. Silo apps: downloads.action.pause." },
   "granary.downloads.progressTimeLeft": "{percent}% · {timeLeft}",
   "@granary.downloads.progressTimeLeft": { "description": "Downloads page: a card's line while its file comes, as narrow as a poster. {percent}: how much is here, a whole number; {timeLeft}: granary.downloads.timeLeft.*. Write the percent as granary.downloads.status.downloadingPercent does." },
-  "granary.downloads.quality.original": "Original",
-  "@granary.downloads.quality.original": { "description": "Download dialog and Settings → Downloads: the quality that keeps the original file. Silo apps: downloads.quality.original." },
   "granary.downloads.quality.upTo": "{quality} · up to {resolution}",
   "@granary.downloads.quality.upTo": { "description": "Download dialog and Settings → Downloads: a quality with the tallest picture the server makes for it. {quality}: a bitrate, such as 10 Mbps; {resolution}: such as 1080p. Silo apps: downloads.quality.upTo." },
   "granary.downloads.reclaim.confirm": "Reclaim",

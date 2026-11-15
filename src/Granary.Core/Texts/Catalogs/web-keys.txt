@@ -183,6 +183,7 @@ settingsManifest.catalog.hide_unwatched_episode_images.label
 settingsManifest.catalog.hide_unwatched_episode_overviews.description
 settingsManifest.catalog.hide_unwatched_episode_overviews.label
 settingsManifest.catalog.show_advisory_age.label
+settingsManifest.downloads.default_quality.option.original
 settingsManifest.playback.audio_language.unsetLabel
 settingsManifest.playback.auto_play_next.label
 settingsManifest.playback.auto_skip_credits.description

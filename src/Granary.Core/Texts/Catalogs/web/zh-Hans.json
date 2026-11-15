@@ -701,6 +701,12 @@
       "value": "显示建议年龄"
     }
   ],
+  "settingsManifest.downloads.default_quality.option.original": [
+    {
+      "type": 0,
+      "value": "原始"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,

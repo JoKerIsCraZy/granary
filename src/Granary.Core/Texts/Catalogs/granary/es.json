@@ -153,7 +153,6 @@
   "granary.downloads.options": "Opciones",
   "granary.downloads.pause": "Pausar",
   "granary.downloads.progressTimeLeft": "{percent} % · {timeLeft}",
-  "granary.downloads.quality.original": "Original",
   "granary.downloads.quality.upTo": "{quality} · hasta {resolution}",
   "granary.downloads.reclaim.confirm": "Liberar",
   "granary.downloads.reclaim.message": "{count, plural, one {¿Eliminar {count_text} descarga vista y liberar {size}?} many {¿Eliminar {count_text} de descargas vistas y liberar {size}?} other {¿Eliminar {count_text} descargas vistas y liberar {size}?}}",

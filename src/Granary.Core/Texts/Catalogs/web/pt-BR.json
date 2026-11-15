@@ -701,6 +701,12 @@
       "value": "Mostrar idade recomendada"
     }
   ],
+  "settingsManifest.downloads.default_quality.option.original": [
+    {
+      "type": 0,
+      "value": "Original"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,
