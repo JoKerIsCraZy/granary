@@ -137,6 +137,25 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ARun_SendsNothingAsItsProfile_OnceAnotherAccountIsSignedIn()
+    {
+        _h.Silo.On(HttpMethod.Get, MonitorsPath, () =>
+        {
+            // While the list is answered, another account signs in on the server; its profile is 7 too.
+            _h.Silo.ActingAccount = () => "2";
+            return ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor()))();
+        });
+        SyncAnswers(MonitorPayloads.Sync());
+
+        await Monitors.SyncAsync(Token);
+
+        var list = Assert.Single(_h.Silo.SentTo(HttpMethod.Get, MonitorsPath));
+        Assert.Equal(("1", "7"), (list.AsAccount, list.AsProfile));
+        // The monitor's sync would register episodes for the other account's profile: it is not sent.
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
+    }
+
+    [Fact]
     public async Task EpisodesThePcKeepsOrIsDeleting_AreNotTakenAgain()
     {
         ListMonitors(MonitorPayloads.Monitor());

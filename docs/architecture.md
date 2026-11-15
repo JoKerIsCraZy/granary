@@ -1722,7 +1722,11 @@ titles of their series as a download dialog or a download named them.
   dialog's Cancel ends that wait (nothing is sent) but never a write that began. The book counts a monitor as changed when
   its id or validator did, which changes with every change to it. Everything
   runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it
-  applies nothing more. The log names no series, title or profile.
+  applies nothing more. For a sign-in between that look and the send, the run's list, syncs and reads again are bound to
+  the account as well as the profile (`SiloRequestOptions.Account`; profile ids need not differ between accounts): the
+  authentication handler sends none for another account (`ProfileChangedException`), and the run ends as when the server
+  cannot be reached. `DownloadSubscriptionsApi` binds a create, a change and a stop the same way once `SeriesMonitors.Writes`
+  passes the account; until then they are bound to the profile alone. The log names no series, title or profile.
 
 ### Downloads in the shell
 

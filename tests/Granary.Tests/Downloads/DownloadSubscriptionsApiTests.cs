@@ -5,9 +5,10 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Downloads;
 
-/// <summary>The server's series monitors (downloads-api.md, 8), each call sent as the profile it was made for.</summary>
+/// <summary>The server's series monitors (downloads-api.md, 8), each call sent as the account and profile it was made for.</summary>
 public sealed class DownloadSubscriptionsApiTests
 {
+    private const string Account = "1";
     private const string Profile = "7";
     private const string ListPath = "api/v2/downloads/subscriptions";
     private const string SyncPath = "api/v2/downloads/subscriptions/sync";
@@ -43,12 +44,12 @@ public sealed class DownloadSubscriptionsApiTests
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page("c2", MonitorPayloads.Monitor("sub_1", "sr_1"))),
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor("sub_2", "sr_2", mode: "latest_season", targetSeason: 3))));
 
-        var monitors = await Api.ListAsync(ScriptedSilo.Base, Profile, Token);
+        var monitors = await Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token);
 
         Assert.Equal(["sub_1", "sub_2"], monitors.Select(m => m.Id));
         Assert.Equal(3, monitors[1].TargetSeason);
         Assert.Equal("\"m1\"", monitors[0].Etag);
-        Assert.All(_silo.Sent, sent => Assert.Equal(Profile, sent.AsProfile));
+        Assert.All(_silo.Sent, sent => Assert.Equal((Account, Profile), (sent.AsAccount, sent.AsProfile)));
         Assert.Equal("?limit=100", _silo.Sent[0].Uri.Query);
         Assert.Equal("?limit=100&cursor=c2", _silo.Sent[1].Uri.Query);
     }
@@ -60,12 +61,12 @@ public sealed class DownloadSubscriptionsApiTests
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page("c2", MonitorPayloads.Monitor("sub_1"))),
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page("c2", MonitorPayloads.Monitor("sub_2"))));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
 
         _silo.On(HttpMethod.Get, ListPath,
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor("sub_1"), MonitorPayloads.Monitor("sub_1"))));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
     }
 
     [Fact]
@@ -76,11 +77,11 @@ public sealed class DownloadSubscriptionsApiTests
             ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page("c2", MonitorPayloads.Monitor("sub_1"))),
             ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ """ + MonitorPayloads.Monitor("sub_2", "sr_2") + """ ] }"""));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
 
         _silo.On(HttpMethod.Get, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ """ + MonitorPayloads.Monitor() + """ ] }"""));
 
-        Assert.Single(await Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+        Assert.Single(await Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
     }
 
     [Fact]
@@ -88,7 +89,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Get, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor(etag: ""))));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
     }
 
     [Fact]
@@ -174,15 +175,51 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Sync(registered: 2, nextCursor: "n2")));
 
-        var page = await Api.SyncPageAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"", "n1", Token);
+        var page = await Api.SyncPageAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", "n1", Token);
 
         var sent = Assert.Single(_silo.Sent);
         // The validator's quotes go as JSON escapes; the server reads the same string.
         Assert.Equal("{\"subscription_id\":\"sub_1\",\"etag\":\"\\u0022m1\\u0022\"}", sent.Body);
         Assert.Equal("?limit=100&cursor=n1", sent.Uri.Query);
-        Assert.Equal(Profile, sent.AsProfile);
+        Assert.Equal((Account, Profile), (sent.AsAccount, sent.AsProfile));
         Assert.Equal(2, page.Registered);
         Assert.Equal("n2", page.Page?.NextCursor);
+    }
+
+    [Fact]
+    public async Task Writes_AreBoundToTheAccountAsWellAsTheProfile()
+    {
+        _silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor()))
+            .On(HttpMethod.Patch, EntryPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")))
+            .On(HttpMethod.Get, EntryPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")))
+            .On(HttpMethod.Delete, EntryPath, ScriptedSilo.NoContent());
+
+        await Api.CreateAsync(ScriptedSilo.Base, Account, Profile, new CreateSubscriptionBody { SeriesId = "sr_1", Mode = SubscriptionModes.Future }, Token);
+        await Api.UpdateAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", new UpdateSubscriptionBody { Active = true }, Token);
+        await Api.GetAsync(ScriptedSilo.Base, Account, Profile, "sub_1", Token);
+        await Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m2\"", Token);
+
+        Assert.Equal([HttpMethod.Post, HttpMethod.Patch, HttpMethod.Get, HttpMethod.Delete], _silo.Sent.Select(sent => sent.Method));
+        Assert.All(_silo.Sent, sent => Assert.Equal((Account, Profile), (sent.AsAccount, sent.AsProfile)));
+        Assert.Equal([null, "\"m1\"", null, "\"m2\""], _silo.Sent.Select(sent => sent.IfMatch));
+    }
+
+    [Fact]
+    public async Task ACallForAnAccountNoLongerSignedIn_IsNotSent()
+    {
+        // Another account signed in on the server since the call was made, and its profile has the same id.
+        _silo.ActingAccount = () => "2";
+        var create = new CreateSubscriptionBody { SeriesId = "sr_1", Mode = SubscriptionModes.Future };
+        var update = new UpdateSubscriptionBody { Active = true };
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.CreateAsync(ScriptedSilo.Base, Account, Profile, create, Token));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.UpdateAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", update, Token));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", Token));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.GetAsync(ScriptedSilo.Base, Account, Profile, "sub_1", Token));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.ListAsync(ScriptedSilo.Base, Account, Profile, Token));
+        await Assert.ThrowsAsync<ProfileChangedException>(() => Api.SyncPageAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", null, Token));
+
+        Assert.Empty(_silo.Sent);
     }
 
     [Fact]
@@ -190,6 +227,6 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Sync("sub_9")));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.SyncPageAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"", null, Token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.SyncPageAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", null, Token));
     }
 }
