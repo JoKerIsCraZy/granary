@@ -1335,8 +1335,8 @@ deleted here; every result but Completed keeps what was written.
 ### The queue
 
 `DownloadQueue` (a singleton the app starts in `App.Launch`, after the local route, and stops when the window closes,
-waiting `StopBudget` for it) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
-Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
+waiting `StopBudget` for it) runs the active profile's downloads, as many at once as Settings → Downloads' Simultaneous
+Downloads says (`IDownloadPreferences.SimultaneousDownloads`, 1 to 4, two by default as Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
 missing their folder.
 
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
@@ -1490,7 +1490,7 @@ client guide.
   on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
-  free space check holds back one that does not fit. However many there are, the queue runs two at a time.
+  free space check holds back one that does not fit. However many there are, the queue runs them as many at a time as Simultaneous Downloads says.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1562,7 +1562,8 @@ client guide.
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
-  downloads, Notify when downloads finish) and takes a folder only below a drive's or a share's root and once it
+  downloads, Notify when downloads finish) and each select as it is chosen (Simultaneous Downloads, which the queue reads
+  at every pass and whose change wakes it) and takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are

@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -18,8 +19,9 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// downloads go to, with Change and Open, and the PC's drives to choose from, which a controller can do where Windows' folder
 /// picker takes none; downloads on metered connections, off by default as both apps have it (Wi-Fi only); the quality the
 /// download dialog starts on, labelled as the apps label presets; Keep watched downloads, off by default as both apps have
-/// it, which only hides the Downloads page's suggestion to free up space; and whether Granary says when downloads finish or
-/// fail, on by default. A folder is taken only when Granary can write there,
+/// it, which only hides the Downloads page's suggestion to free up space; whether Granary says when downloads finish or
+/// fail, on by default; and how many downloads come at once, the Apple app's Simultaneous Downloads (1 to 4, two by
+/// default). A folder is taken only when Granary can write there,
 /// which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
 public sealed partial class DownloadSettingsViewModel : ObservableObject
@@ -61,6 +63,15 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         DownloadsOnMetered = preferences.DownloadsOnMetered;
         KeepWatched = preferences.KeepWatched;
         NotifyWhenFinished = preferences.NotifyWhenFinished;
+        _showing = true;
+        try
+        {
+            SelectedSimultaneous = SimultaneousChoices.FirstOrDefault(c => c.Value == Count(preferences.SimultaneousDownloads));
+        }
+        finally
+        {
+            _showing = false;
+        }
         ShowQualities();
     }
 
@@ -79,6 +90,14 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     /// <summary>Granary says when downloads finish or fail: in its window, or as a Windows notification while it is not in front.</summary>
     [ObservableProperty]
     public partial bool NotifyWhenFinished { get; set; }
+
+    /// <summary>The Apple app's Simultaneous Downloads: 1 to 4.</summary>
+    public IReadOnlyList<SettingChoice> SimultaneousChoices { get; } =
+        [.. Enumerable.Range(DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous - DownloadPreferenceLimits.MinSimultaneous + 1).Select(n => new SettingChoice(Count(n), Count(n)))];
+
+    /// <summary>How many downloads come at once.</summary>
+    [ObservableProperty]
+    public partial SettingChoice? SelectedSimultaneous { get; set; }
 
     /// <summary>Original and every preset, best first: "Original", "10 Mbps · up to 1080p".</summary>
     [ObservableProperty]
@@ -250,6 +269,14 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         }
     }
 
+    partial void OnSelectedSimultaneousChanged(SettingChoice? value)
+    {
+        if (!_showing && value is not null && int.TryParse(value.Value, CultureInfo.InvariantCulture, out int count) && count != _preferences.SimultaneousDownloads)
+        {
+            _ = _preferences.SetSimultaneousDownloadsAsync(count);
+        }
+    }
+
     partial void OnSelectedQualityChanged(SettingChoice? value)
     {
         if (!_showing && value is not null && value.Value != _preferences.DefaultQuality)
@@ -380,6 +407,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             _showing = false;
         }
     }
+
+    private static string Count(int count) => count.ToString(CultureInfo.InvariantCulture);
 
     // The folder can be made, and a file written and deleted in it.
     private static bool TakesDownloads(string folder)

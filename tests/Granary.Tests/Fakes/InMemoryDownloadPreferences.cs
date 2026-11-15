@@ -16,6 +16,17 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
 
     public bool NotifyWhenFinished { get; private set; } = true;
 
+    public int SimultaneousDownloads { get; private set; } = DownloadPreferenceLimits.DefaultSimultaneous;
+
+    public Task SetSimultaneousDownloadsAsync(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, DownloadPreferenceLimits.MinSimultaneous);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, DownloadPreferenceLimits.MaxSimultaneous);
+        SimultaneousDownloads = count;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
     public event EventHandler? Changed;
 
     public Task LatestSave => Task.CompletedTask;

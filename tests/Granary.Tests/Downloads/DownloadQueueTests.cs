@@ -48,6 +48,29 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AsManyRunAtOnceAsSimultaneousDownloadsSays_AndARaiseStartsTheNextAtOnce()
+    {
+        await _h.Preferences.SetSimultaneousDownloadsAsync(3);
+        foreach (string id in new[] { "dl_1", "dl_2", "dl_3", "dl_4" })
+        {
+            await _h.AddAsync(id);
+        }
+        _h.ServeGated("dl_1", Source);
+        _h.ServeGated("dl_2", Source);
+        _h.ServeGated("dl_3", Source);
+        _h.ServeGated("dl_4", Source).ReleaseAll();
+
+        var queue = _h.StartQueue();
+        await Until(() => new[] { "dl_1", "dl_2", "dl_3" }.All(id => _h.Find(id)!.Record.Validator is not null), "three transfers ran");
+        await SettleRunningAsync(queue);
+        Assert.Empty(_h.FileRequests("dl_4"));
+
+        await _h.Preferences.SetSimultaneousDownloadsAsync(4);
+
+        await CompletedAsync("dl_4");
+    }
+
+    [Fact]
     public async Task ConnectionTurningMetered_PausesTheTransfer_AndKeepsItsBytes()
     {
         await _h.AddAsync("dl_1");

@@ -53,6 +53,11 @@
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DownloadsOnMetered, Mode=TwoWay}"
                                   AutomationProperties.Name="Download on metered connections" />
                 </controls:SettingsRow>
+                <!-- The Apple app's Simultaneous Downloads, 1 to 4; two by default, as the Apple app runs them. -->
+                <controls:SettingsRow Label="Simultaneous Downloads" Description="How many downloads come at once.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SimultaneousChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSimultaneous, Mode=TwoWay}" AutomationProperties.Name="Simultaneous Downloads" />
+                </controls:SettingsRow>
                 <!-- The list is labelled again once the server said what it offers: the select takes its items before its pick. -->
                 <controls:SettingsRow Label="Default quality"
                                       Description="The quality a download starts on when your Silo server offers it, else Original.">

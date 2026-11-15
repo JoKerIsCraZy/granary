@@ -1531,7 +1531,8 @@ says why above the sections.
   or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
   above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
-  phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  phone's hotspot."). Simultaneous Downloads, the Apple app's select of 1 to 4, two by default ("How many downloads come
+  at once."): more start at once when it goes up, and the ones under way finish when it goes down. Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
   your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
   settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have

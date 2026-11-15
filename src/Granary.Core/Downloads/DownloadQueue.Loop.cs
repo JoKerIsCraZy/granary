@@ -286,7 +286,7 @@ public sealed partial class DownloadQueue
             var key = Key.Of(download.Record);
             lock (_gate)
             {
-                if (_stopping || _running.Count >= MaxConcurrent || _current.Scope != scope || _current.Server != server || IsClearedLocked(scope))
+                if (_stopping || _running.Count >= Concurrency || _current.Scope != scope || _current.Server != server || IsClearedLocked(scope))
                 {
                     return;
                 }
@@ -427,7 +427,7 @@ public sealed partial class DownloadQueue
         }
         lock (_gate)
         {
-            bool canStart = !metered && !_stopping && _running.Count < MaxConcurrent;
+            bool canStart = !metered && !_stopping && _running.Count < Concurrency;
             foreach (var download in downloads)
             {
                 var key = Key.Of(download.Record);

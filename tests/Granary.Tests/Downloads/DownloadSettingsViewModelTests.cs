@@ -28,6 +28,19 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher()) { DriveList = () => [] };
 
     [Fact]
+    public void SimultaneousDownloads_OffersOneToFour_AndSavesTheChoice()
+    {
+        var settings = Settings();
+
+        Assert.Equal(["1", "2", "3", "4"], settings.SimultaneousChoices.Select(c => c.Label));
+        Assert.Equal("2", settings.SelectedSimultaneous?.Value);
+
+        settings.SelectedSimultaneous = settings.SimultaneousChoices[2];
+
+        Assert.Equal(3, _h.Preferences.SimultaneousDownloads);
+    }
+
+    [Fact]
     public async Task ChangeFolder_TakesAWritableFolder()
     {
         string picked = Path.Combine(_h.Directory, "Elena's downloads");
@@ -393,6 +406,8 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
         public bool NotifyWhenFinished => true;
 
+        public int SimultaneousDownloads => 2;
+
         public event EventHandler? Changed
         {
             add { }
@@ -410,5 +425,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public Task SetKeepWatchedAsync(bool keep) => Task.CompletedTask;
 
         public Task SetNotifyWhenFinishedAsync(bool notify) => Task.CompletedTask;
+
+        public Task SetSimultaneousDownloadsAsync(int count) => Task.CompletedTask;
     }
 }

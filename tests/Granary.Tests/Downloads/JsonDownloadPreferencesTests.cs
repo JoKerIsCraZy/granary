@@ -56,6 +56,24 @@ public sealed class JsonDownloadPreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task SimultaneousDownloads_IsTwoByDefault_OneToFour_AndStays()
+    {
+        var preferences = Create();
+        Assert.Equal(2, preferences.SimultaneousDownloads);
+
+        await preferences.SetSimultaneousDownloadsAsync(4);
+
+        Assert.Contains("\"simultaneous_downloads\": 4", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.Equal(4, Create().SimultaneousDownloads);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => preferences.SetSimultaneousDownloadsAsync(5));
+        // A file someone wrote by hand is held to the choices, as the Apple app holds its setting.
+        await File.WriteAllTextAsync(FilePath, "{ \"simultaneous_downloads\": 9 }", Token);
+        Assert.Equal(4, Create().SimultaneousDownloads);
+        await File.WriteAllTextAsync(FilePath, "{ \"simultaneous_downloads\": 0 }", Token);
+        Assert.Equal(1, Create().SimultaneousDownloads);
+    }
+
+    [Fact]
     public async Task NotifyWhenFinished_IsOnByDefault_AlsoForAFileFromBefore_AndStays()
     {
         var preferences = Create();

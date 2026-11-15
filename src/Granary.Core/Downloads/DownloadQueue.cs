@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.Downloads;
 
 /// <summary>
-/// Runs the active profile's downloads (docs/architecture.md, "The queue"): at most <see cref="MaxConcurrent"/> transfers at
-/// once, oldest first. One loop decides what starts, on a wake: <see cref="Wake"/>, a session change, the network or this PC's
+/// Runs the active profile's downloads (docs/architecture.md, "The queue"): as many transfers at once as Settings → Downloads
+/// says (<see cref="IDownloadPreferences.SimultaneousDownloads"/>, two by default), oldest first. One loop decides what starts, on a wake: <see cref="Wake"/>, a session change, the network or this PC's
 /// settings changing, the store changing, a transfer ending, or the earliest time something waits for. Transfers stop at once
 /// when their download is deleted or paused, the connection turns metered without the setting, the profile changes, or the
 /// queue stops; each keeps its bytes and carries on with <c>Range</c> and <c>If-Range</c>. What the server is told and asked
@@ -20,9 +20,6 @@ namespace Granary.Core.Downloads;
 /// </remarks>
 public sealed partial class DownloadQueue : IDisposable
 {
-    /// <summary>Transfers at once, as Silo's Apple app runs them.</summary>
-    public const int MaxConcurrent = 2;
-
     /// <summary>
     /// What a transfer found interrupted at the start gives up of its part: at most this much was written but not yet on the
     /// disk when Granary or Windows stopped (the transfer flushes every 3 MiB of 1 MiB writes).
@@ -147,6 +144,12 @@ public sealed partial class DownloadQueue : IDisposable
         _logger = logger;
         _stopToken = _stop.Token;
     }
+
+    /// <summary>
+    /// How many transfers run at once now: Settings → Downloads' Simultaneous Downloads, held to 1 to 4. A lower number lets the
+    /// ones under way finish; a higher one starts more at the next pass, which the setting's change wakes.
+    /// </summary>
+    private int Concurrency => Math.Clamp(_preferences.SimultaneousDownloads, DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous);
 
     /// <summary>A download's bytes on disk changed; raised on a transfer's thread, at most every half second for each.</summary>
     public event EventHandler<string>? Progressed;
