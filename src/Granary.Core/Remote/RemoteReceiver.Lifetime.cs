@@ -192,15 +192,22 @@ public sealed partial class RemoteReceiver
     }
 
     // A listener's socket failed: when it is the one running, the receiver stops, so no port stays advertised that nobody
-    // answers. One stopped or replaced since makes it no news, whether that happened before the news came or after.
+    // answers. The failure is kept by the listener's number, in one step that only ever moves on to a later listener: one
+    // stopped or replaced meanwhile that tells late, before or after, neither counts (ListenerFailed) nor hides the failure
+    // of the one that runs.
     private void OnListenerFailed(int listener)
     {
-        if (listener != Volatile.Read(ref _runningListener))
+        int seen = Volatile.Read(ref _failedListener);
+        while (seen < listener)
         {
-            return;
+            int found = Interlocked.CompareExchange(ref _failedListener, listener, seen);
+            if (found == seen)
+            {
+                LookAgain();
+                return;
+            }
+            seen = found;
         }
-        Volatile.Write(ref _failedListener, listener);
-        LookAgain();
     }
 
     // The listener running said it failed, and nothing changed since.

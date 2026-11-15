@@ -229,6 +229,36 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
         Assert.NotNull(_harness.Advertiser.Current);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AFailureOfTheListenerThatRuns_IsNotHiddenByOneThatWasReplaced(bool replacedTellsFirst)
+    {
+        await _harness.StartListeningAsync();
+        _harness.Addresses.Set(new LanAddress(IPAddress.Parse("192.168.1.21"), 7));
+        await SettledAsync();
+
+        // The new listener fails, and the one it replaced tells of its own failure late, before or after it.
+        await _harness.Dispatcher.InvokeAsync(() =>
+        {
+            if (replacedTellsFirst)
+            {
+                _harness.Listener.FailLate(start: 1);
+            }
+            _harness.Listener.Fail();
+            if (!replacedTellsFirst)
+            {
+                _harness.Listener.FailLate(start: 1);
+            }
+            return true;
+        });
+        await SettledAsync();
+
+        Assert.Equal(RemoteReceiverState.Failed, Receiver.Status.State);
+        Assert.Null(_harness.Advertiser.Current);
+        Assert.Equal("listener.Stop", _harness.Calls.All[^1]);
+    }
+
     [Fact]
     public async Task AFailureOfAListenerThatWasStopped_DoesNotKeepTheNextStartFromListening()
     {
