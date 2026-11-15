@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Texts;
 
 namespace Granary.Tests.Texts;
@@ -106,6 +107,30 @@ public sealed class DateTextTests
 
         Assert.Equal("5.11.2026", DateText.Date(DateTime.SpecifyKind(new DateTime(2026, 11, 5, 23, 30, 0), DateTimeKind.Utc)));
         Assert.Equal("23:30", DateText.Time(DateTime.SpecifyKind(new DateTime(2026, 11, 5, 23, 30, 0), DateTimeKind.Local)));
+    }
+
+    [Fact]
+    public void WindowsOwnClock_IsKept_WhenTheUserChoseOneOfTheOtherHours()
+    {
+        // An American format set to a 24-hour clock in Windows, as the web's 24h preference turns Intl's hour cycle.
+        var american = (CultureInfo)CultureInfo.GetCultureInfo("en-US").Clone();
+        american.DateTimeFormat.ShortTimePattern = "HH:mm";
+        using var _ = AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For(american)));
+
+        Assert.Equal("15:04", DateText.Time(Thursday));
+        Assert.Equal("09:04", DateText.Time(Thursday.AddHours(-6)));
+        Assert.Equal("11/5/2026", DateText.Date(Thursday));
+    }
+
+    [Theory]
+    [InlineData("de", DateText.NumericDate, "05.11.2026")]
+    [InlineData("de", DateText.HourMinute, "15:04")]
+    [InlineData("en", DateText.Hour, "3 PM")]
+    [InlineData("ar", DateText.NumericDate, "٥‏‏/١١‏‏/٢٠٢٦")]
+    public void WithoutICU_DotNetsNearestPattern_Writes(string formats, string skeleton, string expected)
+    {
+        // .NET's patterns are near Intl's, not the same: German pads its day, Arabic doubles its marks.
+        Assert.Equal(expected, DateText.Fallback(Thursday, skeleton, FormatLocale.For(formats)));
     }
 
     private static IDisposable Formats(string tag) => AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For(tag)));

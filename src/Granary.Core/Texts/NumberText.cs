@@ -18,6 +18,10 @@ public static class NumberText
     public static string Decimal(double value, int maxFractionDigits, int minFractionDigits)
     {
         var locale = AppText.Language.Formats;
+        if (!Writable(value))
+        {
+            return Unwritable(value, locale);
+        }
         string format = "0" + (maxFractionDigits > 0 ? "." + new string('0', minFractionDigits) + new string('#', maxFractionDigits - minFractionDigits) : "");
         return locale.Localize(ToFixed(value, maxFractionDigits).ToString(format, locale.Numbers));
     }
@@ -30,7 +34,7 @@ public static class NumberText
     /// "1’234.5").
     /// </summary>
     public static string Grouped(double value) =>
-        double.IsFinite(value) ? Grouped((decimal)value, AppText.Language.Formats) : value.ToString(CultureInfo.InvariantCulture);
+        Writable(value) ? Grouped((decimal)value, AppText.Language.Formats) : Unwritable(value, AppText.Language.Formats);
 
     /// <summary>
     /// The web's <c>value.toLocaleString(formatLocale(), { minimumFractionDigits, maximumFractionDigits })</c>: grouped,
@@ -38,11 +42,11 @@ public static class NumberText
     /// </summary>
     public static string Grouped(double value, int minFractionDigits, int maxFractionDigits)
     {
-        if (!double.IsFinite(value))
-        {
-            return value.ToString(CultureInfo.InvariantCulture);
-        }
         var locale = AppText.Language.Formats;
+        if (!Writable(value))
+        {
+            return Unwritable(value, locale);
+        }
         decimal rounded = Math.Round((decimal)value, maxFractionDigits, MidpointRounding.AwayFromZero);
         bool ungrouped = locale.GroupsFromFiveDigits && Math.Abs(decimal.Truncate(rounded)) < 10_000;
         string fraction = maxFractionDigits > 0
@@ -70,6 +74,11 @@ public static class NumberText
         bool ungrouped = groupsFromFiveDigits && Math.Abs(decimal.Truncate(Math.Round(number, 3, MidpointRounding.AwayFromZero))) < 10_000;
         return number.ToString(ungrouped ? "0.###" : "#,0.###", numbers);
     }
+
+    // A number a decimal holds; a garbled server value beyond it must still show, never throw.
+    private static bool Writable(double value) => double.IsFinite(value) && Math.Abs(value) < 1e27;
+
+    private static string Unwritable(double value, FormatLocale locale) => locale.Localize(value.ToString("R", CultureInfo.InvariantCulture));
 
     // value.toFixed(digits): the exact binary value rounded, a true half away from zero. .NET's "F" rounds a half to
     // even and its custom formats round a shortened value, so the decision is made on the exact digits.

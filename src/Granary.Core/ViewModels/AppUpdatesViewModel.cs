@@ -1,4 +1,3 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -52,7 +51,6 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>How long closing waits for the switch to be saved, when it was used just before.</summary>
     public static readonly TimeSpan SaveWaitAtExit = TimeSpan.FromSeconds(2);
 
-    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
 
     private readonly IAppUpdater _updater;
     private readonly IUpdatePreferences _preferences;

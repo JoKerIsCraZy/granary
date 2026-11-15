@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Texts;
 
@@ -101,4 +100,6 @@ public static class SubtitleSyncText
                 return AppText.Get("web.subtitles.sync.status.synced", ("timing", Timing(timing)));
         }
         return timing.IsIdentity ? null : AppText.Get("web.subtitles.sync.status.adjusted", ("timing", Timing(timing)));
-    }}
+    }
+}
+

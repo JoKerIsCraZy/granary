@@ -125,8 +125,8 @@ public partial class App : Application
     }
 
     // The profile's own language is not read yet and only English is enabled, so this is English for everyone until the
-    // other languages are. Dates and numbers follow Windows' regional format (CurrentCulture, set from it at start), as
-    // the web's follow the browser's, unless a language of another was chosen.
+    // other languages are. Dates and numbers follow Windows' regional format (CurrentCulture, which .NET takes from it),
+    // as the web's follow the browser's, unless a language of another was chosen.
     private void ApplyLanguage()
     {
         string? chosen = null;

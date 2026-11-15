@@ -28,7 +28,7 @@ public sealed partial class PlayerViewModel
     private DateTimeOffset? _endsAtBasis;
     private DateTimeOffset? _endsAt;
 
-    // The zone and culture the end was written in: Windows' time settings changed, it is written again.
+    // The zone and the format locale the end was written in: another zone, or another language applied, writes it again.
     private TimeZoneInfo? _endsAtZone;
     private FormatLocale? _endsAtFormats;
 

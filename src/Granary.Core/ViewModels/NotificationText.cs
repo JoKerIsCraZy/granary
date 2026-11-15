@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Texts;
 

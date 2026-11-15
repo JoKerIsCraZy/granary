@@ -354,11 +354,15 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
   - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
     in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
-    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). Without ICU it writes
-    .NET's nearest pattern. A value is written as it reads; callers convert to the viewer's zone first.
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). The clock is Windows'
+    own, 12 or 24 hours as its time format says (a user's choice included), as the web's 12h/24h preference sets Intl's
+    hour cycle; Granary does not read the web's date and time preferences. Without ICU it writes .NET's nearest pattern.
+    A value is written as it reads; callers convert to the viewer's zone first.
   - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
     `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
     `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.
+    The marks are .NET's for the culture; whether a four-digit number is grouped (Spanish and Polish write 1234,
+    Mexican Spanish 1,234) is ICU's number formatter's, as Intl's.
   - Units and the words around numbers come from the web's catalog where it words them (`web.common.format.*`: sizes,
     rates, runtimes); where the web writes a unit in code ("Mbps", "ms", "3d 4h"), Granary does too.
   - What is sent, stored, compared, logged or handed to mpv stays invariant. WinUI's own controls (NumberBox, InfoBadge,

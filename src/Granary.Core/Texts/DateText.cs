@@ -74,11 +74,14 @@ public static class DateText
     public static string Format(DateTime value, string skeleton)
     {
         var locale = AppText.Language.Formats;
-        return IcuDates.Format(locale.IcuName, skeleton, value) ?? Fallback(value, skeleton, locale);
+        // An hour on Windows' own clock, 12 or 24 hours as its time format says, as the web's 12h and 24h preference
+        // turns the locale's clock (j) into h or H.
+        string fields = locale.HourCycle is { } hour ? skeleton.Replace('j', hour) : skeleton;
+        return IcuDates.Format(locale.IcuName, fields, value) ?? Fallback(value, skeleton, locale);
     }
 
-    // Without ICU, .NET's own pattern nearest the fields: the same parts, in places in another shape.
-    private static string Fallback(DateTime value, string skeleton, FormatLocale locale)
+    /// <summary>Without ICU, .NET's own pattern nearest the fields: the same parts, in places in another shape.</summary>
+    internal static string Fallback(DateTime value, string skeleton, FormatLocale locale)
     {
         string format = skeleton switch
         {
@@ -88,7 +91,7 @@ public static class DateText
             MonthDay or WeekdayMonthDay or LongMonthDay => "M",
             LongDay => "D",
             HourMinuteSecond => "T",
-            Hour => "%H",
+            Hour => locale.HourCycle == 'h' ? "h tt" : "%H",
             Weekday => "dddd",
             ShortWeekday => "ddd",
             Month => "MMMM",

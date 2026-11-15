@@ -1,4 +1,3 @@
-using System.Globalization;
 using Granary.Core.Api.Playback;
 using Granary.Core.Texts;
 

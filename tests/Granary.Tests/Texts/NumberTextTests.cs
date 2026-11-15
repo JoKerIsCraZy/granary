@@ -50,6 +50,8 @@ public sealed class NumberTextTests
     [InlineData("fr", 1234567, "1 234 567")]
     [InlineData("es", 1234, "1234")]
     [InlineData("es", 12345, "12.345")]
+    [InlineData("es-MX", 1234, "1,234")]
+    [InlineData("pl", 1234, "1234")]
     [InlineData("ja", 1234567, "1,234,567")]
     [InlineData("ar", 1234567, "١٬٢٣٤٬٥٦٧")]
     [InlineData("ar-AE", 1234567, "1,234,567")]
@@ -74,6 +76,15 @@ public sealed class NumberTextTests
         using var _ = AppText.Use(TextLanguage.Load(language, formats: FormatLocale.For(formats)));
 
         Assert.Equal(expected, NumberText.Digits("1:05:09"));
+    }
+
+    [Fact]
+    public void ANumberBeyondWhatADecimalHolds_StillShows()
+    {
+        // A garbled server value must not take its page down.
+        Assert.Equal("1E+30", NumberText.Grouped(1e30));
+        Assert.Equal("1E+30", NumberText.Decimal(1e30, 1));
+        Assert.Equal("NaN", NumberText.Grouped(double.NaN, 0, 1));
     }
 
     [Fact]
