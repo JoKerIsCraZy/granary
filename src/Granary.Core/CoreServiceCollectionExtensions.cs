@@ -236,8 +236,9 @@ public static class CoreServiceCollectionExtensions
         // One trailer at a time, over the whole window: the title's page opens it, the window shows it.
         services.AddSingleton<ViewModels.Detail.TrailerOverlayViewModel>();
         services.AddTransient<IProfileSettings, ProfileSettings>();
-        // Settings → Playback → This PC's phone remote row, one per page that shows it.
-        services.AddTransient<PhoneRemoteViewModel>();
+        // Settings → Playback → This PC's phone remote row, one per page that shows it, made and disposed by the page: a
+        // transient disposable resolved from the root provider would be kept until the app exits.
+        services.AddSingleton<Func<PhoneRemoteViewModel>>(sp => () => ActivatorUtilities.CreateInstance<PhoneRemoteViewModel>(sp));
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
         services.AddSingleton<AdminSidebarViewModel>();

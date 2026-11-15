@@ -13,10 +13,11 @@ namespace Granary.Core.ViewModels.Settings;
 /// and the Connect a Phone panel with the code a phone scans. Silo's web has no wording for this; the texts follow Silo's
 /// Roku app's Connect a Phone (silo-roku's <c>locale/en_US/strings.json</c>, <c>connect.*</c>) with "TV" as "PC", and the
 /// ones marked new have no Silo source. The code holds the pairing key: it is read only while the panel is open and let
-/// go when the panel closes. The row follows the receiver between <see cref="Attach"/> and <see cref="Detach"/> only, on
-/// the UI thread.
+/// go when the panel closes, or when the receiver stops listening. The row follows the receiver between
+/// <see cref="Attach"/> and <see cref="Detach"/> only, on the UI thread; <see cref="Dispose"/> detaches it too, as a second
+/// net behind the page's own Detach.
 /// </summary>
-public sealed partial class PhoneRemoteViewModel : ObservableObject
+public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
 {
     /// <summary>The switch: the Roku app's <c>connect.headline</c> "Control Silo from your phone", with Granary as what is controlled.</summary>
     public const string SwitchLabel = "Control Granary from your phone";
@@ -185,6 +186,9 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject
         ClosePanel();
     }
 
+    /// <summary>The page that showed the row is gone: as <see cref="Detach"/>. On the UI thread.</summary>
+    public void Dispose() => Detach();
+
     /// <summary>What a reset's outcome says; empty when it went as planned.</summary>
     internal static string ResetText(PairingResetOutcome outcome) => outcome switch
     {
@@ -293,9 +297,18 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject
             : "";
         ServerHint = status.ServerAddress is { Length: > 0 } server ? string.Format(CultureInfo.InvariantCulture, ServerHintFormat, server) : "";
         ShowsNotAdvertised = listening && !status.IsAdvertised;
-        if (IsPanelOpen)
+        if (!IsPanelOpen)
+        {
+            return;
+        }
+        // A receiver that stopped listening closes the panel: the code must not come back by itself when it listens again.
+        if (listening)
         {
             PairingLink = _receiver.PairingLink;
+        }
+        else
+        {
+            ClosePanel();
         }
     }
 }

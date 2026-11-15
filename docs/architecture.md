@@ -1439,15 +1439,18 @@ then on; `StopAsync` ends it for good when Granary closes.
 
 `PhoneRemoteViewModel` is Settings → Playback → This PC's "Control Granary from your phone" and its Connect a Phone
 panel; `PlaybackSettingsViewModel.PhoneRemote` hands it to the page, which attaches it while it shows. Between `Attach`
-and `Detach` it follows `StatusChanged` and `PhonesChanged`, on the UI thread; after `Detach` it follows nothing.
+and `Detach` it follows `StatusChanged` and `PhonesChanged`, on the UI thread; after `Detach` it follows nothing. The
+page's view model makes it through a `Func<PhoneRemoteViewModel>` and disposes it with itself, which detaches it as a
+second net: a disposable transient resolved from the root provider would be kept until Granary exits.
 
 - The switch is `IPlaybackDevicePreferences.PhoneRemote`; the receiver follows it.
 - The row's line names the phones that actively control (as silo-roku's `AppSceneControl.bs` lists them), says "No
   phone is connected.", or, when the receiver cannot run, "Remote control isn't available right now." with a second
   line that says why: no local network, no port, no profile, or a start that failed.
 - **The code is read only while the panel is open.** `PairingLink` is the receiver's link, read when the panel opens
-  and again at every change of the status or the code; closing the panel, switching off and `Detach` drop it. The view
-  draws the code from it and keeps it nowhere else.
+  and again at every change of the status or the code; closing the panel, switching off, `Detach` and a receiver that
+  stops listening drop it. The last also closes the panel, so the code never comes back by itself when the receiver
+  listens again. The view draws the code from it and keeps it nowhere else.
 - Reset Pairing Code asks first (`IConfirmation`), then resets through the receiver and says so when a phone could not
   be let go or the new key could not be saved (the old code then still works).
 - Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,

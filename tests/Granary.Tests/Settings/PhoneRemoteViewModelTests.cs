@@ -288,6 +288,40 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task WhenItStopsListening_ThePanelCloses_AndStaysClosedWhenItListensAgain()
+    {
+        await ShownAsync();
+        await SwitchOnAsync();
+        await OnUiAsync(() => _viewModel.OpenPanelCommand.Execute(null));
+        Assert.NotNull(Read(vm => vm.PairingLink));
+
+        _harness.Addresses.Set(null);
+        await SettleAsync();
+        Assert.Equal((false, (string?)null), Read(vm => (vm.IsPanelOpen, vm.PairingLink)));
+
+        // The code does not come back by itself: Connect a Phone opens it again.
+        _harness.Addresses.Set(RemoteHarness.Lan);
+        await SettleAsync();
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+        Assert.Equal((false, (string?)null, true), Read(vm => (vm.IsPanelOpen, vm.PairingLink, vm.CanConnectAPhone)));
+    }
+
+    [Fact]
+    public async Task Dispose_ClosesThePanel_AndFollowsNothingMore()
+    {
+        await ShownAsync();
+        await SwitchOnAsync();
+        await OnUiAsync(() => _viewModel.OpenPanelCommand.Execute(null));
+
+        await OnUiAsync(_viewModel.Dispose);
+        _harness.Addresses.Set(null);
+        await SettleAsync();
+
+        Assert.Equal((false, (string?)null), Read(vm => (vm.IsPanelOpen, vm.PairingLink)));
+        Assert.Equal(("No phone is connected.", true), Read(vm => (vm.StatusText, vm.CanConnectAPhone)));
+    }
+
+    [Fact]
     public async Task AttachingAgain_ShowsTheReceiverAsItIsNow()
     {
         await ShownAsync();
