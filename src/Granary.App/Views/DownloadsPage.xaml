@@ -16,26 +16,11 @@
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
-        <!-- History's outline button, for Reclaim Watched. -->
+        <!-- History's outline button, for Reclaim Watched and Download settings. -->
         <Style x:Key="DownloadStripButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="Padding" Value="12,4" />
             <Setter Property="FontSize" Value="13" />
-        </Style>
-        <!--
-            Download settings: Reclaim Watched's size and pill, quiet as Settings' ghost buttons, muted without fill or edge
-            until the pointer is on it.
-        -->
-        <Style x:Key="DownloadSettingsButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="Padding" Value="12,4" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
         </Style>
     </Page.Resources>
 
@@ -76,7 +61,7 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button x:Name="ReclaimButton" Visibility="{x:Bind ViewModel.ShowsReclaim, Mode=OneWay}" Content="Reclaim Watched"
                         Style="{StaticResource DownloadStripButtonStyle}" Command="{x:Bind ViewModel.ReclaimCommand}" />
-                <Button x:Name="SettingsButton" Style="{StaticResource DownloadSettingsButtonStyle}" Command="{x:Bind ViewModel.OpenSettingsCommand}"
+                <Button x:Name="SettingsButton" Style="{StaticResource DownloadStripButtonStyle}" Command="{x:Bind ViewModel.OpenSettingsCommand}"
                         AutomationProperties.Name="{x:Bind SettingsTitle}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE713;" FontSize="14" AutomationProperties.AccessibilityView="Raw" />
