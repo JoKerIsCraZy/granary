@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Remote;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -12,7 +13,8 @@ namespace Granary.Core.ViewModels.Settings;
 /// Settings → Playback → This PC → "Control Granary from your phone": the switch, kept on this PC, what the receiver does,
 /// and the Connect a Phone panel with the code a phone scans. Silo's web has no wording for this; the texts follow Silo's
 /// Roku app's Connect a Phone (silo-roku's <c>locale/en_US/strings.json</c>, <c>connect.*</c>) with "TV" as "PC", and the
-/// ones marked new have no Silo source. The code holds the pairing key: it is read only while the panel is open and let
+/// ones marked new have no Silo source. They are Granary's own keys (<c>granary.settings.phoneRemote.*</c>), translated in
+/// the terms of Silo's catalogs, with the names Silo's phone apps give Connect a Phone and Remote Control. The code holds the pairing key: it is read only while the panel is open and let
 /// go when the panel closes, or when the receiver stops listening. The row follows the receiver between
 /// <see cref="Attach"/> and <see cref="Detach"/> only, on the UI thread; <see cref="Dispose"/> detaches it too, as a second
 /// net behind the page's own Detach.
@@ -20,79 +22,67 @@ namespace Granary.Core.ViewModels.Settings;
 public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
 {
     /// <summary>The switch: the Roku app's <c>connect.headline</c> "Control Silo from your phone", with Granary as what is controlled.</summary>
-    public const string SwitchLabel = "Control Granary from your phone";
+    public static string SwitchLabel => AppText.Get("granary.settings.phoneRemote.label");
 
     /// <summary>Under the switch: what a phone can do here, and the firewall's question beforehand. New (design 5.8).</summary>
-    public const string DescriptionText = "Silo's phone app on this network can control what plays on this PC and start titles here. "
-        + "Windows may ask to let Granary through its firewall.";
+    public static string DescriptionText => AppText.Get("granary.settings.phoneRemote.description");
 
     /// <summary>Under the description: what the network sees while it is on. New.</summary>
-    public const string VisibilityText = "While this is on, devices on this network can see this PC's name and your server's address.";
+    public static string VisibilityText => AppText.Get("granary.settings.phoneRemote.visibility");
 
     /// <summary>The row's description: what a phone can do, then what the network sees, on a line of its own.</summary>
-    public const string RowDescription = DescriptionText + "\n" + VisibilityText;
+    public static string RowDescription => DescriptionText + "\n" + VisibilityText;
 
     /// <summary>The button and the panel's title: the Roku app's screen, which the phones' messages name.</summary>
-    public const string ConnectAPhoneText = "Connect a Phone";
+    public static string ConnectAPhoneText => AppText.Get("granary.settings.phoneRemote.connectAPhone");
 
-    /// <summary>The panel's close button. New.</summary>
-    public const string DoneText = "Done";
+    /// <summary>The panel's close button.</summary>
+    public static string DoneText => AppText.Get("common.done");
 
     /// <summary>The Roku app's <c>connect.none</c>.</summary>
-    public const string NoPhoneText = "No phone is connected.";
-
-    /// <summary>The Roku app's <c>connect.phones</c>, with the names of the phones that actively control.</summary>
-    public const string ConnectedFormat = "Connected: {0}";
+    public static string NoPhoneText => AppText.Get("granary.settings.phoneRemote.noPhone");
 
     /// <summary>The Roku app's <c>connect.notListening</c>; <see cref="ReasonText"/> says why.</summary>
-    public const string NotAvailableText = "Remote control isn't available right now.";
+    public static string NotAvailableText => AppText.Get("granary.settings.phoneRemote.notAvailable");
 
     /// <summary>Why: no private IPv4 address. New.</summary>
-    public const string NoLocalNetworkText = "This PC is not on a local network.";
+    public static string NoLocalNetworkText => AppText.Get("granary.settings.phoneRemote.noLocalNetwork");
 
     /// <summary>Why: no port could be bound. New.</summary>
-    public const string NoPortText = "Windows did not give Granary a port.";
+    public static string NoPortText => AppText.Get("granary.settings.phoneRemote.noPort");
 
     /// <summary>Why: no profile, a moment before the profile picker or after sign-out. New.</summary>
-    public const string NotSignedInText = "No profile is signed in on this PC.";
+    public static string NotSignedInText => AppText.Get("granary.settings.phoneRemote.notSignedIn");
 
     /// <summary>Why: a step of the start failed (the key could not be read, Windows' advertisement threw). New, worded as the player's mpv.conf lines are.</summary>
-    public const string FailedText = "Granary couldn't start it. The log has the details.";
+    public static string FailedText => AppText.Get("granary.settings.phoneRemote.failed");
 
-    /// <summary>The panel's instruction, with this PC's name. New: the Roku app's "Scan this code in the Silo app" would mislead, as the Android app has no scanner of its own.</summary>
-    public const string ScanFormat = "Scan this code with your phone's camera and open it in Silo. Then choose {0} under Remote Control.";
+    /// <summary>The Roku app's <c>connect.resetPairing</c>, in the web's sentence case.</summary>
+    public static string ResetPairingText => AppText.Get("granary.settings.phoneRemote.resetPairing");
 
-    /// <summary>The panel's hint, with the server's address as the viewer typed it. New.</summary>
-    public const string ServerHintFormat = "The phone has to be on this network and signed in to {0}.";
-
-    /// <summary>The Roku app's <c>connect.resetPairing</c>.</summary>
-    public const string ResetPairingText = "Reset Pairing Code";
-
-    /// <summary>Under Reset Pairing Code. New.</summary>
-    public const string ResetLineText = "Every phone has to scan the new code.";
+    /// <summary>Under Reset pairing code. New.</summary>
+    public static string ResetLineText => AppText.Get("granary.settings.phoneRemote.resetLine");
 
     /// <summary>The panel's firewall hint, always shown. New; the Roku app's <c>connect.fallback</c> starts the same way.</summary>
-    public const string FirewallText =
-        "Phone can't connect? Allow Granary under Windows Security → Firewall & network protection → Allow an app through firewall.";
+    public static string FirewallText => AppText.Get("granary.settings.phoneRemote.firewall");
 
     /// <summary>Shown when Windows did not take the advertisement. New.</summary>
-    public const string NotAdvertisedText = "Phones can connect through this code only: Windows did not advertise this PC.";
+    public static string NotAdvertisedText => AppText.Get("granary.settings.phoneRemote.notAdvertised");
 
     /// <summary>The question before a reset. New.</summary>
-    public const string ResetQuestionTitle = "Reset Pairing Code?";
+    public static string ResetQuestionTitle => AppText.Get("granary.settings.phoneRemote.resetQuestion");
 
     /// <summary>New.</summary>
-    public const string ResetQuestionText = "Every phone has to scan the new code. Phones that are connected now are disconnected.";
+    public static string ResetQuestionText => AppText.Get("granary.settings.phoneRemote.resetQuestionText");
 
-    /// <summary>New.</summary>
-    public const string ResetAction = "Reset";
+    /// <summary>The answer that resets: the web's Reset of its settings.</summary>
+    public static string ResetAction => AppText.Get("web.settings.resetButton.label");
 
     /// <summary>After a reset that could not let a phone go (<see cref="PairingResetOutcome.PhonesNotDropped"/>). New.</summary>
-    public const string PhonesNotDroppedText =
-        "The new code is in place, but a phone could not be disconnected. It can no longer control this PC.";
+    public static string PhonesNotDroppedText => AppText.Get("granary.settings.phoneRemote.phonesNotDropped");
 
     /// <summary>After a reset whose new key could not be saved (<see cref="PairingResetOutcome.Failed"/>). New.</summary>
-    public const string ResetFailedText = "Couldn't reset the pairing code. The old code still works.";
+    public static string ResetFailedText => AppText.Get("granary.settings.phoneRemote.resetFailed");
 
     private readonly RemoteReceiver _receiver;
     private readonly IPlaybackDevicePreferences _preferences;
@@ -108,7 +98,8 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
         _receiver = receiver;
         _preferences = preferences;
         _dispatcher = dispatcher;
-        ScanText = string.Format(CultureInfo.InvariantCulture, ScanFormat, client.DeviceName);
+        // New: the Roku app's "Scan this code in the Silo app" would mislead, as the Android app has no scanner of its own.
+        ScanText = AppText.Get("granary.settings.phoneRemote.scan", ("name", client.DeviceName));
         IsOn = preferences.PhoneRemote;
     }
 
@@ -151,7 +142,7 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial bool ShowsNotAdvertised { get; private set; }
 
-    /// <summary>How the last Reset Pairing Code went when it did not go as planned; empty otherwise.</summary>
+    /// <summary>How the last Reset pairing code went when it did not go as planned; empty otherwise.</summary>
     [ObservableProperty]
     public partial string ResetMessage { get; private set; } = "";
 
@@ -187,6 +178,14 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
 
     /// <summary>The page that showed the row is gone: as <see cref="Detach"/>. On the UI thread.</summary>
     public void Dispose() => Detach();
+
+    /// <summary>
+    /// The phones that actively control, as the Roku app's <c>connect.phones</c> lists them, in a list as the language
+    /// writes one ("Connected: Elena's phone and Elena's tablet"); its <c>connect.none</c> without one.
+    /// </summary>
+    internal static string PhonesLine(IReadOnlyList<string> names) => names.Count == 0
+        ? NoPhoneText
+        : AppText.Get("granary.settings.phoneRemote.connected", ("names", TextList.And(names)));
 
     /// <summary>What a reset's outcome says; empty when it went as planned.</summary>
     internal static string ResetText(PairingResetOutcome outcome) => outcome switch
@@ -275,7 +274,7 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
         bool listening = status.State == RemoteReceiverState.Listening;
         // As silo-roku's AppSceneControl.bs lists them: the phones that are authorized and not passive.
         var names = _receiver.Phones.Where(phone => phone.IsActive).Select(phone => phone.Name).ToList();
-        PhonesText = names.Count == 0 ? NoPhoneText : string.Format(CultureInfo.InvariantCulture, ConnectedFormat, string.Join(", ", names));
+        PhonesText = PhonesLine(names);
         StatusText = status.State switch
         {
             RemoteReceiverState.Off => "",
@@ -294,7 +293,9 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
         AddressText = listening && status.Address is { } address
             ? string.Create(CultureInfo.InvariantCulture, $"{address}:{status.Port}")
             : "";
-        ServerHint = status.ServerAddress is { Length: > 0 } server ? string.Format(CultureInfo.InvariantCulture, ServerHintFormat, server) : "";
+        ServerHint = status.ServerAddress is { Length: > 0 } server
+            ? AppText.Get("granary.settings.phoneRemote.serverHint", ("server", server))
+            : "";
         ShowsNotAdvertised = listening && !status.IsAdvertised;
         if (!IsPanelOpen)
         {

@@ -28,6 +28,7 @@ public sealed partial class GranaryCatalogFilesTests
         ["granary.requests.statusFailed"] = "Silo or the download automation: the server",
         ["granary.settings.about.lead"] = "a client for Silo; not an official Silo app",
         ["granary.settings.accessibility.unsupportedDescription"] = "a newer version of Silo: the server software",
+        ["granary.settings.phoneRemote.scan"] = "open it in Silo: the project's phone app, which opens the code's link",
         ["granary.settings.spoilers.unsupportedDescription"] = "a newer version of Silo: the server software",
     };
 

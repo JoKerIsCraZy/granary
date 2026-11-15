@@ -1,28 +1,25 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Remote;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// What the PC shows while Silo's phone app controls it (design 5.9): "{name} connected" for four seconds when a phone
 /// starts to control, as Silo's Roku app says it, and while one does a quiet indicator, "Remote control active", whose
-/// "Disconnect Remote" lets every such phone go (the TV apps' texts). A phone that only watches (passive) shows nothing.
-/// No standby screen: a PC is used for other things. The shell has one for the app; the player page makes its own for its
-/// bar's icon and disposes it as it goes. Made and used on the UI thread.
+/// "Disconnect remote" lets every such phone go (the TV apps' texts, Silo apps' <c>cast.standby.*</c>). A phone that only
+/// watches (passive) shows nothing. No standby screen: a PC is used for other things. The shell has one for the app; the
+/// player page makes its own for its bar's icon and disposes it as it goes. Made and used on the UI thread.
 /// </summary>
 public sealed partial class RemoteIndicatorViewModel : ObservableObject, IDisposable
 {
     /// <summary>The indicator's tooltip and name: the TV apps' "Remote control active".</summary>
-    public const string ActiveText = "Remote control active";
+    public static string ActiveText => AppText.Get("granary.phoneRemote.active");
 
-    /// <summary>The indicator's one action: the TV apps' "Disconnect Remote".</summary>
-    public const string DisconnectText = "Disconnect Remote";
-
-    /// <summary>The notice when a phone starts to control, with its name: Silo's Roku app's "{name} connected".</summary>
-    public const string ConnectedFormat = "{0} connected";
+    /// <summary>The indicator's one action: the TV apps' "Disconnect Remote", in the web's sentence case.</summary>
+    public static string DisconnectText => AppText.Get("granary.phoneRemote.disconnect");
 
     /// <summary>How long the notice shows, as on Silo's Roku app.</summary>
     public static readonly TimeSpan NoticeShowsFor = TimeSpan.FromSeconds(4);
@@ -94,6 +91,9 @@ public sealed partial class RemoteIndicatorViewModel : ObservableObject, IDispos
         }
     }
 
+    /// <summary>The notice when a phone starts to control, with its name: Silo's Roku app's "{name} connected".</summary>
+    internal static string ConnectedNotice(string phoneName) => AppText.Get("granary.phoneRemote.connected", ("name", phoneName));
+
     // The receiver raises on the UI thread.
     private void OnPhonesChanged(object? sender, EventArgs e) => ShowPhones();
 
@@ -103,7 +103,7 @@ public sealed partial class RemoteIndicatorViewModel : ObservableObject, IDispos
         {
             return;
         }
-        NoticeText = string.Format(CultureInfo.InvariantCulture, ConnectedFormat, phone.Name);
+        NoticeText = ConnectedNotice(phone.Name);
         int notice = ++_notices;
         _noticeTimer?.Dispose();
         _noticeTimer = _time.CreateTimer(_ => _dispatcher.Post(() =>

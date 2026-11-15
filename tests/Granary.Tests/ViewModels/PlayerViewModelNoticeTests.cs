@@ -1,4 +1,5 @@
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 
@@ -113,6 +114,19 @@ public sealed class PlayerViewModelNoticeTests
         viewModel.NoteStartedFromPhone(request, "Elena's phone");
 
         Assert.Equal("Starting Example Movie", viewModel.NoticeTitle);
+    }
+
+    [Fact]
+    public async Task ATitleAPhoneStarted_SaysSo_InTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var request = PlayRequest.Resume("movie-1");
+        var viewModel = await StartedAsync(request);
+        KnowTheTitle();
+
+        viewModel.NoteStartedFromPhone(request, "Elena's phone");
+
+        Assert.Equal(("Example Movie wird gestartet", "Von Elena's phone"), (viewModel.NoticeTitle, viewModel.NoticeMessage));
     }
 
     [Fact]
