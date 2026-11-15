@@ -1663,7 +1663,7 @@ titles of their series as a download dialog or a download named them.
   limit reached" (the Apple app's words) or "Storage limit for downloads reached", also one that was coming when Granary
   stopped, which then does not count as coming. Other downloads are never held: the
   download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
-  dialog opens, and what the choice needs), and says so.
+  dialog opens and again as Download is pressed, and what the choice needs), and says so.
 - **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that
   landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it, and the
   dialog's Cancel ends that wait (nothing is sent) but never a write that began. The book counts a monitor as changed when

@@ -86,7 +86,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private long _needed;
     private long? _free;
 
-    // What the downloads on this PC take, as the dialog opened: the storage limit for downloads counts it.
+    // What the downloads on this PC take, as the dialog opened and again as Download is pressed: the storage limit for downloads
+    // counts it, and downloads go on while the dialog shows.
     private long _taken;
     private int _reads;
 
@@ -296,6 +297,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 return true;
             }
+            // Downloads that came or grew while the dialog showed count against the limit too.
+            _taken = _downloads.BytesTaken();
+            ShowSpace();
             if (IsShortOfSpace)
             {
                 return false;
