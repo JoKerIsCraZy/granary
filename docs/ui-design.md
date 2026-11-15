@@ -1670,7 +1670,8 @@ says why above the sections.
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
 Activity (the web's "2 live" in red beside it while streams run), and BUILD at its foot ("1715 · 13ad7a74", "dev build",
-"load failed"). Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
+"load failed"); as in Settings, the head and BUILD stay and the pages between them scroll in a window too short for
+them. Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
 stream's commands on Activity.
