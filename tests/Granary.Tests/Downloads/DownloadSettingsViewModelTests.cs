@@ -288,6 +288,18 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public void NotifyWhenFinished_IsOnByDefault_AndSaves()
+    {
+        var settings = Settings();
+        Assert.True(settings.NotifyWhenFinished);
+
+        settings.NotifyWhenFinished = false;
+
+        Assert.False(_h.Preferences.NotifyWhenFinished);
+        Assert.False(Settings().NotifyWhenFinished);
+    }
+
+    [Fact]
     public void Metered_IsOffByDefault_AndSaves()
     {
         var settings = Settings();
@@ -379,6 +391,8 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
         public bool KeepWatched => false;
 
+        public bool NotifyWhenFinished => true;
+
         public event EventHandler? Changed
         {
             add { }
@@ -394,5 +408,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public Task SetDefaultQualityAsync(string quality) => Task.CompletedTask;
 
         public Task SetKeepWatchedAsync(bool keep) => Task.CompletedTask;
+
+        public Task SetNotifyWhenFinishedAsync(bool notify) => Task.CompletedTask;
     }
 }

@@ -17,8 +17,9 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// Settings → Downloads, this PC's own choices (<see cref="IDownloadPreferences"/>), each saved as it is made: the folder new
 /// downloads go to, with Change and Open, and the PC's drives to choose from, which a controller can do where Windows' folder
 /// picker takes none; downloads on metered connections, off by default as both apps have it (Wi-Fi only); the quality the
-/// download dialog starts on, labelled as the apps label presets; and Keep watched downloads, off by default as both apps have
-/// it, which only hides the Downloads page's suggestion to free up space. A folder is taken only when Granary can write there,
+/// download dialog starts on, labelled as the apps label presets; Keep watched downloads, off by default as both apps have
+/// it, which only hides the Downloads page's suggestion to free up space; and whether Granary says when downloads finish or
+/// fail, on by default. A folder is taken only when Granary can write there,
 /// which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
 public sealed partial class DownloadSettingsViewModel : ObservableObject
@@ -59,6 +60,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         Folder = preferences.Folder;
         DownloadsOnMetered = preferences.DownloadsOnMetered;
         KeepWatched = preferences.KeepWatched;
+        NotifyWhenFinished = preferences.NotifyWhenFinished;
         ShowQualities();
     }
 
@@ -73,6 +75,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     /// <summary>Watched downloads are not suggested for deletion on the Downloads page.</summary>
     [ObservableProperty]
     public partial bool KeepWatched { get; set; }
+
+    /// <summary>Granary says when downloads finish or fail: in its window, or as a Windows notification while it is not in front.</summary>
+    [ObservableProperty]
+    public partial bool NotifyWhenFinished { get; set; }
 
     /// <summary>Original and every preset, best first: "Original", "10 Mbps · up to 1080p".</summary>
     [ObservableProperty]
@@ -233,6 +239,14 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         if (value != _preferences.KeepWatched)
         {
             _ = _preferences.SetKeepWatchedAsync(value);
+        }
+    }
+
+    partial void OnNotifyWhenFinishedChanged(bool value)
+    {
+        if (value != _preferences.NotifyWhenFinished)
+        {
+            _ = _preferences.SetNotifyWhenFinishedAsync(value);
         }
     }
 

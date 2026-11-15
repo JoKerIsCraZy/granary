@@ -10,8 +10,9 @@ namespace Granary.Core.ViewModels.Downloads;
 /// shell"): while Granary's window is in front, a short notice in it (<see cref="NoticeText"/> for <see cref="NoticeShowsFor"/>,
 /// as the player's notice card; amber when something failed); while it is not, a Windows notification, with Play when
 /// something finished and Open Downloads, as the Apple app's download notifications lead to its Downloads screen. When Windows
-/// takes no notification from Granary, the notice shows in the window all the same. <see cref="Act"/> is what a notification's
-/// click does. The shell has one for the app; made and used on the UI thread.
+/// takes no notification from Granary, the notice shows in the window all the same. Settings → Downloads can turn both off
+/// (<see cref="IDownloadPreferences.NotifyWhenFinished"/>). <see cref="Act"/> is what a notification's click does. The shell has
+/// one for the app; made and used on the UI thread.
 /// </summary>
 public sealed partial class DownloadNotices : ObservableObject, IDisposable
 {
@@ -30,6 +31,7 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
 
     private readonly DownloadActivity _activity;
     private readonly IAppNotifications _notifications;
+    private readonly IDownloadPreferences _preferences;
     private readonly DownloadManager _downloads;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
@@ -38,13 +40,14 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     private int _notices;
     private bool _disposed;
 
-    public DownloadNotices(DownloadActivity activity, IAppNotifications notifications, DownloadManager downloads, INavigationService navigation,
-        IUiDispatcher dispatcher, TimeProvider time)
+    public DownloadNotices(DownloadActivity activity, IAppNotifications notifications, IDownloadPreferences preferences, DownloadManager downloads,
+        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time)
     {
         ArgumentNullException.ThrowIfNull(activity);
         ArgumentNullException.ThrowIfNull(notifications);
         _activity = activity;
         _notifications = notifications;
+        _preferences = preferences;
         _downloads = downloads;
         _navigation = navigation;
         _dispatcher = dispatcher;
@@ -97,7 +100,7 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     // On the UI thread.
     private void OnAnnounced(object? sender, DownloadAnnouncement announcement)
     {
-        if (_disposed || (!_notifications.IsAppInFront && _notifications.TryShow(announcement)))
+        if (_disposed || !_preferences.NotifyWhenFinished || (!_notifications.IsAppInFront && _notifications.TryShow(announcement)))
         {
             return;
         }

@@ -35,7 +35,7 @@ public sealed class DownloadNoticesTests : IAsyncDisposable
         }
         var manager = _h.NewManager();
         _activity = new DownloadActivity(manager, _h.Session, new ImmediateDispatcher());
-        _notices = new DownloadNotices(_activity, _windows, manager, _navigation, new ImmediateDispatcher(), _h.Time);
+        _notices = new DownloadNotices(_activity, _windows, _h.Preferences, manager, _navigation, new ImmediateDispatcher(), _h.Time);
         _activity.Start();
         return _notices;
     }
@@ -109,6 +109,25 @@ public sealed class DownloadNoticesTests : IAsyncDisposable
         Assert.True(notices.HasNotice);
         _h.Time.Advance(TimeSpan.FromSeconds(2));
         Assert.False(notices.HasNotice);
+    }
+
+    [Fact]
+    public async Task TurnedOffInSettings_NothingIsSaid_InTheWindowOrByWindows_UntilItIsOnAgain()
+    {
+        await _h.Preferences.SetNotifyWhenFinishedAsync(false);
+        var notices = await NoticesAsync(("dl_1", DownloadState.Downloading), ("dl_2", DownloadState.Downloading), ("dl_3", DownloadState.Downloading));
+
+        await FinishAsync("dl_1");
+        _windows.IsAppInFront = false;
+        await FailAsync("dl_2");
+
+        Assert.False(notices.HasNotice);
+        Assert.Empty(_windows.Shown);
+
+        await _h.Preferences.SetNotifyWhenFinishedAsync(true);
+        await FinishAsync("dl_3");
+
+        Assert.Equal(["Example Movie is ready to watch offline"], _windows.Shown.Select(a => a.Text));
     }
 
     [Fact]

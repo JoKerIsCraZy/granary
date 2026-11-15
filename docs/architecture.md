@@ -1561,7 +1561,8 @@ client guide.
   (`DownloadsViewModelTests`, `DownloadedSeriesViewModelTests`). The sidebar's entry follows `DownloadsFeature.IsOffered`,
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
-- **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
+- **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
+  downloads, Notify when downloads finish) and takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
@@ -1619,7 +1620,9 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   download"). `PlayDownloadId` is the first episode that finished by season and number, the specials last.
   `DownloadActivity.Announced` raises each on the UI thread.
 - **Where it is said.** `DownloadNotices` (a singleton, made with the window) shows an announcement in the window while
-  Granary is in front (`IAppNotifications.IsAppInFront`), `NoticeText` for `NoticeShowsFor` (5 s, a newer one taking the
+  Granary is in front (`IAppNotifications.IsAppInFront`), unless Settings → Downloads turned them off
+  (`IDownloadPreferences.NotifyWhenFinished`, on by default and for a `download-settings.json` from before it, saved as
+  `notify_when_finished`; off, nothing is said either way), `NoticeText` for `NoticeShowsFor` (5 s, a newer one taking the
   place with its own time, on the `TimeProvider`), bound to a `PlaybackNoticeView` at the top of the window over the pages
   and the player, amber for a failure. Behind another window or minimized it goes to `IAppNotifications.TryShow`; when that
   answers false (no registration, notifications off in Windows' settings, a failure), it shows in the window all the same.

@@ -368,7 +368,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Play (when something finished: it plays that download from this PC, a season's or a series' first episode, specials
   last) and Open Downloads (the Downloads page), and its body opens the Downloads page too; either brings Granary to the
   front, and starts it when it was closed. A download that is no longer here opens the Downloads page instead. With
-  notifications off for Granary in Windows' settings, the notice shows in the window instead.
+  notifications off for Granary in Windows' settings, the notice shows in the window instead. Settings → Downloads →
+  Notify when downloads finish turns both off.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -1529,7 +1530,10 @@ says why above the sections.
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
   your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
   settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
-  finished."): on, the Downloads page suggests nothing. Each saves on this PC at once (`download-settings.json`).
+  finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
+  own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
+  Granary is in the background."): off, neither the notice nor the notification comes (Downloads outside their page,
+  Layout above). Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

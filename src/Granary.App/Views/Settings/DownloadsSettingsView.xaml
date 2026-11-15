@@ -64,6 +64,12 @@
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.KeepWatched, Mode=TwoWay}"
                                   AutomationProperties.Name="Keep watched downloads" />
                 </controls:SettingsRow>
+                <!-- Granary's own: the notice in the window and the Windows notification when downloads finish or fail. -->
+                <controls:SettingsRow Label="Notify when downloads finish"
+                                      Description="A short message when a download finishes or fails: in Granary's window, or as a Windows notification while Granary is in the background.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.NotifyWhenFinished, Mode=TwoWay}"
+                                  AutomationProperties.Name="Notify when downloads finish" />
+                </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
     </StackPanel>
