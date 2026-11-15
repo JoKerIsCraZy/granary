@@ -305,6 +305,23 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AWatchedDownloadReclaimedAsItsPlayIsMade_StaysForThePlay()
+    {
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { IsWatched = true });
+        var downloads = _fixture.Harness.NewManager();
+        Task<int>? reclaim = null;
+        // Deleting the watched downloads, as the Downloads page or a monitor does, right after the play looked the download up.
+        _fixture.Playbacks.Creating = () => reclaim = downloads.DeleteWatchedAsync(DownloadHarness.Scope7, ["dl_1"], LocalPlaybackFixture.Token);
+
+        var playback = await TryAsync(PlayRequest.Resume("ep_5"));
+
+        Assert.IsType<LocalPlayback>(playback);
+        Assert.Equal(0, await reclaim!);
+        Assert.NotNull(_fixture.Harness.Find("dl_1"));
+        await playback.DisposeAsync();
+    }
+
+    [Fact]
     public async Task AMediaFileThatCannotBeOpened_Streams_ThoughItsFolderListsIt()
     {
         var download = await _fixture.Harness.AddPlayableAsync();

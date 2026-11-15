@@ -2075,7 +2075,10 @@ device.
   once it is answered. A download that plays is neither suggested nor deleted
   that way: `LocalPlayback` marks it in `PlayingDownloads` from the moment it is made until it is let go, since a title
   counts as watched while its credits still run and the player stays up, minimized, over the Downloads page (Silo's
-  Android app keeps the same mark, `ActivePlaybackFile`). The card's own Delete download still deletes it.
+  Android app keeps the same mark, `ActivePlaybackFile`). `DownloadPlaybacks` marks it already before it looks the
+  download up the last time, and `DeleteWatchedAsync` looks again in the store's change that removes it (`RemoveAsync`
+  with a condition), so a play that starts while the watched downloads go, on another thread, either keeps its download
+  or finds it gone and streams. The card's own Delete download still deletes it.
 - **The queue.** `offline-progress.json` in the data folder holds one entry for each title and profile
   (`DownloadScope`), the latest: a new position replaces the title's entry whatever its state. An entry is pending or on
   its way (`Sending`, claimed by a send); which, only the run knows, so after a Granary that closed during a send every

@@ -979,6 +979,22 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AWatchedDownloadAPlayMarksRightBeforeItsDelete_Stays()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        var downloads = _h.NewManager();
+        IDisposable? play = null;
+        // The player marks it between the look that found it reclaimable and its delete.
+        downloads.Reclaiming = id => play = _h.Playing.Enter(Scope7, id);
+
+        int deleted = await downloads.DeleteWatchedAsync(Scope7, ["dl_1"], Token);
+
+        Assert.Equal(0, deleted);
+        Assert.NotNull(_h.Find("dl_1"));
+        play?.Dispose();
+    }
+
+    [Fact]
     public async Task AProfileSwitchedToWhileTheWatchedDownloadsGo_DoesNotStopThem_NorLoseCount()
     {
         await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });

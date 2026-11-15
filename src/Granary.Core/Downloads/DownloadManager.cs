@@ -278,15 +278,31 @@ public sealed partial class DownloadManager
         {
             // Looked at right before each delete, not once for all: a delete takes a while (its folder, the index), and one
             // of the others can start playing meanwhile, or stop being watched as the server's progress is read.
-            if (_store.Find(scope, downloadId) is not { } download || !ItemOf(download, waitsForUnmetered: false).IsReclaimable)
+            if (_store.Find(scope, downloadId) is not { } download || !IsReclaimable(download))
             {
                 continue;
             }
-            await DeleteAsync(scope, downloadId, cancellationToken).ConfigureAwait(false);
+            Reclaiming?.Invoke(downloadId);
+            // Looked at once more in the change that removes it: a play marks its download before it looks it up the last time
+            // (DownloadPlaybacks), so a play that began since keeps it, and a play that looks after this finds it gone.
+            if (!await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, IsReclaimable, cancellationToken).ConfigureAwait(false))
+            {
+                continue;
+            }
+            _logger.LogInformation("Download {DownloadId} was deleted from this PC", downloadId);
+            _queue.Wake();
             deleted++;
         }
         return deleted;
     }
+
+    // Whole, watched, still on the server and not playing. Asked inside the store's change too, so it reads the record and the
+    // playing marks alone: never the queue, whose lock is taken before the store's.
+    private bool IsReclaimable(StoredDownload download) =>
+        download.Record.State == DownloadState.Completed && ItemOf(download, waitsForUnmetered: false, DownloadHold.None).IsReclaimable;
+
+    /// <summary>For tests: runs with a download's id once <see cref="DeleteWatchedAsync"/> found it reclaimable, right before it goes.</summary>
+    internal Action<string>? Reclaiming { get; set; }
 
     private async Task ChangeAsync(DownloadScope scope, string downloadId, Func<DownloadRecord, DownloadRecord> change)
     {

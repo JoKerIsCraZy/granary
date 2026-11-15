@@ -36,7 +36,7 @@ internal sealed class LocalPlaybackFixture : IAsyncDisposable
             Harness.Time, Harness.Logs.For<OfflineProgressSync>());
         AudioDelay = new AudioDelay(new SettingsApi(Harness.Silo.Http), Harness.Session, new ImmediateDispatcher(), Harness.Time,
             Harness.Logs.For<AudioDelay>());
-        Playbacks = new DownloadPlaybacks(Harness.Store, Harness.Session, Create, Harness.Time, Harness.Logs.For<DownloadPlaybacks>());
+        Playbacks = new DownloadPlaybacks(Harness.Store, Harness.Session, Create, Harness.Time, Harness.Logs.For<DownloadPlaybacks>(), Harness.Playing);
         KeptSettings = new KeptPlaybackSettings(Path.Combine(Harness.Directory, "data", "playback-settings.json"), Harness.Session, Harness.Time,
             Harness.Logs.For<KeptPlaybackSettings>());
     }
