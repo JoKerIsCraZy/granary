@@ -436,6 +436,43 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APlaybackLetGoWithoutAStop_DoesNotWaitLongerThanItsBudget_ForADriveThatDoesNotAnswer()
+    {
+        // The server names the title's subtitle preference, which the download keeps: a write to its folder.
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.WatchPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            LocalPlaybackFixture.Watch(preferences: """, "effective_subtitle_language": "en", "effective_subtitle_mode": "always" """)));
+        await _fixture.Harness.AddPlayableAsync();
+        using var entered = new ManualResetEventSlim();
+        using var drive = new ManualResetEventSlim();
+        _fixture.Harness.Store.WritingIndex = () =>
+        {
+            entered.Set();
+            drive.Wait();
+        };
+        var other = _fixture.Harness.AddAsync("dl_2");
+        try
+        {
+            await Until(() => entered.IsSet, "the other change's write began");
+            var playback = await _fixture.StartAsync();
+
+            // Let go before it ever played, as when a newer start takes the player's place: no stop comes first.
+            var letGo = playback!.DisposeAsync().AsTask();
+            Assert.False(letGo.IsCompleted);
+            _fixture.Harness.Time.Advance(LocalPlayback.StopWriteBudget);
+            await letGo.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+        }
+        finally
+        {
+            _fixture.Harness.Store.WritingIndex = null;
+            drive.Set();
+            await other;
+            await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", record => record, LocalPlaybackFixture.Token);
+        }
+        // Once the drive answers, the download has it.
+        Assert.Equal("en", Record.SubtitlePreference?.Language);
+    }
+
+    [Fact]
     public async Task TheStop_DoesNotWaitForSettingsSavesLongerThanItsBudget_SentOneAfterAnotherToAServerThatDoesNotAnswer()
     {
         // The server takes each save and never answers; each would wait its own ten seconds, one after another.
