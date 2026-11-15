@@ -30,11 +30,12 @@
     <Compile Include="..\..\src\Granary.App\Interop\CursorShield.cs" Link="Interop\CursorShield.cs" />
   </ItemGroup>
 
-  <!-- The phone remote's listener apart from its socket, and the rule that picks the PC's LAN address: no test opens a socket or reads the adapters. -->
+  <!-- The phone remote's listener apart from its socket, the rule that picks the PC's LAN address, and the PC's lock apart from Windows: no test opens a socket, reads the adapters or asks Windows about the session. -->
   <ItemGroup>
     <Compile Include="..\..\src\Granary.App\Services\RemoteAcceptLoop.cs" Link="Remote\App\RemoteAcceptLoop.cs" />
     <Compile Include="..\..\src\Granary.App\Services\AcceptedConnection.cs" Link="Remote\App\AcceptedConnection.cs" />
     <Compile Include="..\..\src\Granary.App\Services\LanAddressRule.cs" Link="Remote\App\LanAddressRule.cs" />
+    <Compile Include="..\..\src\Granary.App\Services\SessionLockState.cs" Link="Remote\App\SessionLockState.cs" />
   </ItemGroup>
 
   <!-- libmpv integration tests skip themselves when the DLL has not been fetched. -->

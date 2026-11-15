@@ -477,7 +477,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
   start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
   read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
-  position), the profile's
+  position; a position handed over from outside, `PlayRequest.At`, which only a title a paired phone starts gives (see
+  "Phone remote"), is taken as it is, unrewound, while it lies before the file's end, and past it the resume point
+  decides; such a title is bound to the sign-in it was started for, `PlayRequest.OnlyFor`, and starts nothing for
+  another), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -1384,8 +1387,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 - **What the PC sees.** `Phones` lists the phones that said `hello`, by their cleaned names (the cleaning of discovered
   server names, cut to 64 characters); `PhonesChanged` and `PhoneConnected` (once for each phone that actively controls)
   come on the UI thread. `DisconnectAsync` closes one phone with `tv_disconnected`, `CloseAllAsync` every one.
-- **Offers and launches** are refused until a phone can start titles here (Part 2): an offer with `handoff_cancel
-  handoff_failed`, a launch with `error handoff_required`. docs/api-contract.md 15.5 lists every answer.
+- **Offers and launches** start a title on the PC ("Starting a title" below). docs/api-contract.md 15.5 and 15.6 list
+  every answer.
 
 | Limit | Value |
 |---|---|
@@ -1469,8 +1472,8 @@ second net: a disposable transient resolved from the root provider would be kept
   `ResetPairingAnsweredAsync` resets through the receiver and says so when a phone could not be let go or the new key
   could not be saved (the old code then still works).
 - Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
-  with "TV" as "PC"; Silo's web has no wording for this. The description leaves out that a phone can start titles here
-  until it can.
+  with "TV" as "PC"; Silo's web has no wording for this. The description says, as design 5.8 has it, that a phone can
+  control what plays and start titles here.
 - **The App.** `PlaybackSettingsView` shows the row when the view model has one, attaches it on `Loaded` and detaches
   it on `Unloaded`. Connect a Phone is `Controls/ConnectPhonePanel` in a `ContentDialog`: it draws the code with QRCoder
   (error correction M) into a `BitmapImage` from memory, clears the PNG's bytes after, and drops the picture as the
@@ -1500,8 +1503,8 @@ The phone remote logs events by connection number and a reason, never a value fr
   resume tokens, frames or any part of one, server addresses and server ids (an id is an address), server names and
   identities, profile ids and names, a phone's id and name, content ids and titles.
 - `RemoteLoggingTests` guards it, under a logger that keeps every line at every level, with three runs on fake phones:
-  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer, a launch, a reset, a change
-  of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
+  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer made ready and one refused, a
+  launch and launches refused, a reset, a change of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
   of the reset, a player that fails a command or whose status cannot be read, Windows' advertisement throwing, a
   status that cannot be made, a message too large for a frame), each failure's message holding the key in every form,
   a pairing link, the server's address, a phone's name and a title; and every limit and every way a connection or the
@@ -1551,10 +1554,59 @@ takes).
 - **When it changes.** `StateChanged` follows the properties the status is read from; the position alone is not among
   them, since the receiver's 500 ms tick carries it.
 
+### Starting a title
+
+A phone offers its server and profile (`handoff_offer`) and then sends `launch` (`RemoteReceiver.Launch.cs`, after
+silo-roku's `AppSceneControl.bs` `controlOffer`, `controlReady` and `controlLaunch`, for the profile open on the
+receiver only). docs/api-contract.md 15.6 has every answer and its text.
+
+- **Only the PC's own profile.** An offer is ready at once when its profile is the one signed in on the PC, on the PC's
+  own sign-in: nothing is asked of the server or the session, and the PC never changes server, account or profile for a
+  phone (Stage C, borrowing the phone's sign-in, is not built). Another profile, another server, a Watch Party or a
+  phone before its `hello` get a `handoff_cancel` that says why. The offer's addresses and token are dropped by the
+  decoder, so nothing a phone names can be contacted; the profile id it names is its own claim, so the check is a
+  courtesy rule, not a second boundary: the pairing key is that.
+- **Readiness.** A ready offer is kept with its connection, with the profile it was for and the sign-in it was made
+  under: the receiver follows `ISessionManager.Changed` for as long as it lives, and another state, server or profile
+  (also the same one again later) voids every ready offer; a change that keeps all three (a token refreshed) does not.
+  Readiness is one connection's alone, as on silo-roku: a newer ready offer voids the one before; a connection on its
+  way out (replaced, closed to make room, let go) is asked about again first and readies nothing. The resume token is
+  random, made once per connection, kept in memory only, and never read back.
+- **The launch** runs on the UI thread, where the phone is asked about again (as for a command) and the checks go in
+  silo-roku's order: a ready offer under the sign-in that is still the PC's, the launch's server (by id, or by the
+  identity of the phone's `hello`), the PC's lock (`IPcLock`, the App's), a Watch Party (`WatchPartySession.IsInRoom`,
+  the room page's and the player's own source), and a launch still opening. Then `RemoteReceiverPolicy.RequestFor` makes
+  the `PlayRequest` (silo-roku's `launchIntent`: start over, `PlayRequest.At` the phone's position above 0, or resume; a
+  version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that is not one Silo
+  Server makes, 1 to 256 printable ASCII characters without the space and not `.` or `..`, refused), bound to the
+  server entry and profile of the ready offer (`PlayRequest.OnlyFor`). `Launched` is raised with the phone's cleaned
+  name and that request, and the player route opens it as a page's Play does, replacing what plays without asking. The
+  server decides, under the PC's profile, what may play.
+- **The sign-in, twice.** The receiver reads the session outside its gate and the playback reads it again as it starts,
+  so a profile switched between the launch's checks and the start would otherwise play the phone's title for the new
+  profile: `PlaybackStarter.PrepareAsync` refuses a bound request whose server or profile is no longer the session's,
+  before it asks the server anything, and again once its reads are back, right before the start goes out with the
+  profile read before them. The episode before or after that the player starts itself (its buttons, the
+  phone's `play_next`, the next episode after the credits) is bound the same (`PlayRequest.BoundAs`); an On Deck pick
+  is the viewer's own and is not. After a change of server the receiver still says the server before until its
+  lifetime has caught up; an offer or a launch then is refused as "not ready", so no phone of that server is readied
+  for the new one.
+- **The status at once.** A phone gives up 30 seconds after its launch without its title in the status, and the player
+  page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's
+  `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one
+  before may show the same title, failed or playing. The launch is opening until that player shows the title no longer
+  loading, or failed (the phone that launched it gets `launch_failed` with the player's message, as the status's `error`
+  carries it: only one of Granary's own failure texts goes out as it is, `RemoteTexts.PlayerError`; anything else, a
+  server's or an administrator's words among them, goes out as a fixed text), or closes after it
+  showed the title, or `LaunchWait` (30 seconds, silo-roku's `CONTROL_LAUNCH_WAIT_MS`) passes on the receiver's
+  `TimeProvider`; meanwhile another launch gets `launch_pending`.
+- **The log** says "an offer to start a title is ready", "was refused (another profile)", "a launch opens the player",
+  "a launch was refused (the PC is locked)" and the like, by connection number; never a profile, a title or a content id.
+
 ### Windows
 
-The App implements the three ports in `Services/` and registers them in `App.ConfigureServices` before
-`AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
+The App implements the four ports in `Services/` (the listener, the advertiser, the address and the PC's lock) and
+registers them in `App.ConfigureServices` before `AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
 connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 seconds) for its stop.
 
 - **`LanAddressSource`** reads Windows' adapters (`NetworkInterface`) and chooses by `LanAddressRule`: of the adapters
@@ -1613,9 +1665,32 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see
   the PC but cannot connect, which Granary cannot tell from its socket; the Connect a Phone panel always shows where to
   allow it.
-- None of these three has a test that touches the network: the accept loop, a connection's end and the address rule
+- None of the first three has a test that touches the network: the accept loop, a connection's end and the address rule
   are tested apart from the socket and the adapters (`RemoteAcceptLoopTests`, `LanAddressRuleTests`); binding, the
   adapters and the DNS-SD calls are read by hand.
+- **`WindowsPcLock`** (`IPcLock`) says whether Windows is locked, so a phone starts no title on a locked PC while it
+  still controls what plays. `App.Launch` has it ask Windows for the session's notices for the main window
+  (`WTSRegisterSessionNotification`, this session only) and takes them back as the window closes; their
+  `WM_WTSSESSION_CHANGE` comes through the window's message hook (`WindowMessageHook.SessionChanged`). A PC still locked
+  as Granary starts with Windows sends no notice, so the session's state is read once as the notices begin
+  (`WTSQuerySessionInformationW` with `WTSSessionInfoEx`: `SessionFlags` `WTS_SESSIONSTATE_LOCK`, freed with
+  `WTSFreeMemory`), and read again at a connect. A lock or a disconnect (console or remote: nobody sits at the session,
+  and whoever connects again signs in first) counts as locked, an unlock as unlocked (`SessionLockState`, tested apart
+  from Windows in `SessionLockStateTests`). It fails closed: should Windows not take the window for the notices, the
+  session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. The same
+  once the window has closed and the notices ended: what they said last is not trusted any more. It reads
+  only whether the session is locked and connected, and logs only "The PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
+  depends on the lock.
+- **The "Starting" notice, and the window left where it is.** The receiver raises `Launched` with the phone's name and
+  the request just before it opens the player; the window keeps it and, when it makes the player for that very request
+  (it may wait for the player before to unload), calls `PlayerViewModel.NoteStartedFromPhone`. A phone's title changes
+  nothing about where the window is: when the window is not in front (not the focused window: minimized, behind others,
+  or visible but unfocused), no presenter is set or left on its way, since that would restore or raise it. The player
+  before leaves without leaving the mini view, a trailer's own full screen becomes the title's, `PlayerPage.Start` does
+  not set full screen, and the page goes full screen at the window's next `Activated` instead (`WindowCameToFront`),
+  unless it became the bar or the mini view; a player left before that saves no full screen choice. `Expand` only lays
+  the player out inside the window. The player shows "Starting {title}" and "From {phone}" in its
+  notice card for four seconds once the title's name is known, and only for that request.
 
 ## Windows App SDK
 

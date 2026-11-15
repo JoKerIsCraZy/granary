@@ -274,6 +274,7 @@ public sealed partial class MainWindow
     }
 
     [LibraryImport("kernel32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial uint SetThreadExecutionState(uint flags);
 
 #if DEBUG

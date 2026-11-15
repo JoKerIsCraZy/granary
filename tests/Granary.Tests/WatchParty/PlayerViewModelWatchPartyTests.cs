@@ -677,9 +677,10 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     /// <summary>A series whose next episode is known, as the player would ask it outside a room.</summary>
     private sealed class NextEpisodeAround(NextEpisode next) : IUpNextSource
     {
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) => Task.FromResult<NextEpisode?>(next);
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, Granary.Core.Api.Images.ImageSizes? images, CancellationToken cancellationToken) =>
+            Task.FromResult<NextEpisode?>(next);
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, Granary.Core.Api.Images.ImageSizes? images, CancellationToken cancellationToken) =>
             Task.FromResult<NextEpisode?>(null);
 
         public Task<IReadOnlyList<Granary.Core.ViewModels.Cards.MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>

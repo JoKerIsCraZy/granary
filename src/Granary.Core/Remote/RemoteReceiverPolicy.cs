@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Granary.Core.Playback;
 
 namespace Granary.Core.Remote;
 
@@ -23,6 +24,9 @@ public static class RemoteReceiverPolicy
 
     /// <summary>Connections at a time from one address that have not said <c>hello</c>; a third closes that address's oldest.</summary>
     public const int MaxUnauthenticatedPerAddress = 2;
+
+    /// <summary>The longest content id a launch may name: Silo Server's own limit (silo-server's <c>userdata.go</c> <c>ValidContentID</c>).</summary>
+    public const int MaxContentIdLength = 256;
 
     /// <summary>
     /// Whether a peer may connect at all: a private (RFC 1918), link-local or loopback IPv4 address, also when written as
@@ -101,6 +105,44 @@ public static class RemoteReceiverPolicy
             ? HelloVerdict.Authorized
             : HelloVerdict.Unauthorized;
     }
+
+    /// <summary>
+    /// The player's request for a phone's <c>launch</c>, as silo-roku's <c>policy.bs</c> <c>launchIntent</c> reads it: from
+    /// the start when the phone says so; else at the phone's position when it gave one above 0, in the title's own seconds;
+    /// else from the profile's saved point. A version (<c>fileId</c>, pinned with <c>pinsVersion</c>) brings its track
+    /// picks along: the audio ordinal (a negative one picks none) and the combined subtitle ordinal, any negative one off.
+    /// Picks without a version are dropped, since a pick belongs to a file, and <c>libraryId</c> is not read. Null when the
+    /// content id is not one Silo Server makes (<see cref="IsContentId"/>).
+    /// </summary>
+    public static PlayRequest? RequestFor(LaunchPlayback playback)
+    {
+        ArgumentNullException.ThrowIfNull(playback);
+        string contentId = playback.ContentId;
+        if (!IsContentId(contentId))
+        {
+            return null;
+        }
+        var choice = string.IsNullOrEmpty(playback.FileId)
+            ? null
+            : new PrePlayChoice(playback.FileId, playback.PinsVersion,
+                playback.AudioTrackIndex is >= 0 ? playback.AudioTrackIndex : null,
+                playback.SubtitleTrackIndex is { } subtitle ? Math.Max(subtitle, -1) : null);
+        if (playback.StartFromBeginning)
+        {
+            return PlayRequest.FromStart(contentId, choice);
+        }
+        return playback.ResumePosition is { } position && double.IsFinite(position) && position > 0
+            ? PlayRequest.At(contentId, position, choice)
+            : PlayRequest.Resume(contentId, choice);
+    }
+
+    /// <summary>
+    /// An id as Silo Server makes them (silo-server's <c>userdata.go</c> <c>ValidContentID</c>): 1 to
+    /// <see cref="MaxContentIdLength"/> characters, each printable ASCII but the space, so no control, format or other
+    /// character reaches a request; and not "." or "..", which a path would read as another route.
+    /// </summary>
+    public static bool IsContentId(string? contentId) =>
+        contentId is { Length: > 0 and <= MaxContentIdLength } && contentId is not ("." or "..") && contentId.All(c => c is > ' ' and <= '~');
 }
 
 /// <summary>What the receiver does with a phone's <c>hello</c>.</summary>

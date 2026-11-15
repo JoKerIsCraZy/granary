@@ -22,12 +22,9 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
     /// <summary>The switch: the Roku app's <c>connect.headline</c> "Control Silo from your phone", with Granary as what is controlled.</summary>
     public const string SwitchLabel = "Control Granary from your phone";
 
-    /// <summary>
-    /// Under the switch. New. The design's sentence also says the phone can "start titles here", which comes with starting
-    /// a title from the phone; until then it says only what a phone can do now.
-    /// </summary>
-    public const string DescriptionText =
-        "Silo's phone app on this network can control what plays on this PC. Windows may ask to let Granary through its firewall.";
+    /// <summary>Under the switch: what a phone can do here, and the firewall's question beforehand. New (design 5.8).</summary>
+    public const string DescriptionText = "Silo's phone app on this network can control what plays on this PC and start titles here. "
+        + "Windows may ask to let Granary through its firewall.";
 
     /// <summary>Under the description: what the network sees while it is on. New.</summary>
     public const string VisibilityText = "While this is on, devices on this network can see this PC's name and your server's address.";

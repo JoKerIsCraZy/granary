@@ -12,7 +12,14 @@ release's section is what its update says it changes (docs/release.md).
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
   phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
-  another kind of device.
+  another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
+  left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
+  nothing.
+
+### Fixed
+
+- The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
+  screen draws it, as Silo's web does, where it came at a card's size and was stretched.
 
 ## [0.4.0] - 2026-11-14
 

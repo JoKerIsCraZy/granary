@@ -45,9 +45,12 @@ public sealed partial class MainWindow : IPlayerOverlay
         {
             return;
         }
+        // A phone's title while the window is not in front (minimized, behind others, unfocused) changes nothing about the
+        // window: no presenter is set or left, so it is neither restored nor raised (design 5.9).
+        bool keepsWindow = IsFromPhone(play) && !_isInFront;
         if (_player is { } playing)
         {
-            ClosePlayer();
+            ClosePlayer(keepsWindow);
             // The engine's picture goes to one panel at a time: the new player takes it once the old one let it go.
             if (playing.IsLoaded)
             {
@@ -62,7 +65,7 @@ public sealed partial class MainWindow : IPlayerOverlay
                     EndPlayerOpening();
                     try
                     {
-                        Open(play);
+                        Open(play, keepsWindow);
                     }
                     finally
                     {
@@ -71,11 +74,17 @@ public sealed partial class MainWindow : IPlayerOverlay
                 }
             }
         }
-        Open(play);
+        Open(play, keepsWindow);
     }
 
-    private void Open(PlayRequest play)
+    private void Open(PlayRequest play, bool keepsWindow)
     {
+        // A trailer in its own full screen would take the window out of full screen as it closes: the phone's title keeps
+        // that full screen instead.
+        if (keepsWindow && _modes.IsTrailerFullScreen)
+        {
+            _modes.SetFullScreen(true);
+        }
         // A title that plays (from a Watch Party's room too) takes the window from a trailer.
         Trailers.Close();
         var page = new PlayerPage();
@@ -88,11 +97,21 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowOtherMedia();
         PlayerHost.Child = page;
         PlayerHost.Visibility = Visibility.Visible;
+        // Inside the window only: the player fills it again if it was the bar; the window itself is not touched.
         Expand();
-        page.Start(play);
+        string? phone = TakeLaunch(play);
+        page.Start(play, mayChangeWindow: !keepsWindow);
+        if (phone is not null)
+        {
+            page.ViewModel.NoteStartedFromPhone(play, phone);
+        }
     }
 
-    public void ClosePlayer()
+    public void ClosePlayer() => ClosePlayer(keepsWindow: false);
+
+    // With keepsWindow (a phone's title takes its place while the window is not in front), a mini view stays: leaving it
+    // would set another presenter and bring the window back.
+    private void ClosePlayer(bool keepsWindow)
     {
         // A title still on its way counts as playing no longer: the player's own close is what the viewer asked for.
         EndPlayerOpening();
@@ -104,7 +123,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowOtherMedia();
         page.ViewModel.PropertyChanged -= OnPlayerChanged;
         StopDockSlide();
-        page.Leave();
+        page.Leave(keepsWindow);
         // Unloaded, the page lets go of its view model, its indicator and the engine's picture; one never loaded lets go of
         // the first two here.
         if (!page.IsLoaded)

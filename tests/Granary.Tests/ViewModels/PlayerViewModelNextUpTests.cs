@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
@@ -32,10 +33,11 @@ public sealed class PlayerViewModelNextUpTests
     private readonly PlaybackStops _stops = new();
     private EpisodeSpoilerSettings? _spoilers;
     private double _position;
+    private double _stillWidth;
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
-    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode, MarkerSettings? settings = null)
+    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode, MarkerSettings? settings = null, PlayRequest? request = null)
     {
         var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
         {
@@ -48,9 +50,10 @@ public sealed class PlayerViewModelNextUpTests
             _playbacks.Add(playback);
             return playback;
         }, _stops, _time, _source, _streak, spoilers: _spoilers);
+        viewModel.NextUpStillWidth = _stillWidth;
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
-        await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
+        await viewModel.StartAsync(request ?? PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
         Playback.RaiseMarkers([Credits]);
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         return viewModel;
@@ -67,6 +70,26 @@ public sealed class PlayerViewModelNextUpTests
     }
 
     [Fact]
+    public async Task TheEpisodesAround_AreAskedForWithStillsAsWideAsThePlayingNextScreenDrawsThem()
+    {
+        _stillWidth = 1066.7;
+
+        await PlayingAsync(Ted);
+
+        Assert.Equal(new ImageSizes(Still: 1067), _source.NextImages);
+        Assert.Equal(new ImageSizes(Still: 1067), _source.PreviousImages);
+    }
+
+    [Fact]
+    public async Task BeforeThePageSaysHowWide_TheEpisodesAroundComeAtTheServersSizes()
+    {
+        await PlayingAsync(Ted);
+
+        Assert.Null(_source.NextImages);
+        Assert.Null(_source.PreviousImages);
+    }
+
+    [Fact]
     public async Task AnEpisode_HasPreviousAndNextButtons_ThatStartThemFromWhereTheProfileLeftThem()
     {
         _source.Previous = Next with { ContentId = "episode-1-2", EpisodeNumber = 2 };
@@ -80,6 +103,35 @@ public sealed class PlayerViewModelNextUpTests
         // A change of episode is never rewound, as Android's (suppressResumeRewind).
         Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2"), Playback.Started);
         Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task TheEpisodesAroundATitleAPhoneStarted_PlayOnlyForItsSignInToo()
+    {
+        // A phone's launch plays only for the server entry and profile its offer was ready for; so do the episodes it leads to.
+        _source.Previous = Next with { ContentId = "episode-1-2", EpisodeNumber = 2 };
+        var phones = PlayRequest.At(Ted.ContentId, 120).OnlyFor("srv1", "7");
+        var viewModel = await PlayingAsync(Ted, request: phones);
+
+        await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2").OnlyFor("srv1", "7"), Playback.Started);
+        viewModel = await PlayingAsync(Ted, request: phones);
+        await viewModel.PlayNextEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-4").OnlyFor("srv1", "7"), Playback.Started);
+        viewModel = await PlayingAsync(Ted, request: phones);
+        PlayTo(2045);
+        viewModel.PlayNextNowCommand.Execute(null);
+        Assert.Equal(PlayRequest.FromStart("episode-1-4").OnlyFor("srv1", "7"), Playback.Started);
+    }
+
+    [Fact]
+    public async Task AnOnDeckPickAfterATitleAPhoneStarted_IsTheViewersOwn()
+    {
+        var viewModel = await PlayingAsync(Ted, request: PlayRequest.At(Ted.ContentId, 120).OnlyFor("srv1", "7"));
+
+        await viewModel.PlayOnDeckCommand.ExecuteAsync(new MediaCard("movie-9", CatalogItemTypes.Movie, "Alles Routine"));
+
+        Assert.Equal(PlayRequest.Resume("movie-9"), Playback.Started);
     }
 
     [Fact]
@@ -355,13 +407,23 @@ public sealed class PlayerViewModelNextUpTests
 
         public NextEpisode NextOne { get; set; } = Next;
 
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
-            Task.FromResult<NextEpisode?>(current == Ted ? NextOne : null);
+        public ImageSizes? NextImages { get; private set; }
+
+        public ImageSizes? PreviousImages { get; private set; }
+
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+        {
+            NextImages = images;
+            return Task.FromResult<NextEpisode?>(current == Ted ? NextOne : null);
+        }
 
         public NextEpisode? Previous { get; set; }
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
-            Task.FromResult(Previous);
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+        {
+            PreviousImages = images;
+            return Task.FromResult(Previous);
+        }
 
         public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken)
         {

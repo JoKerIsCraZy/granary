@@ -21,8 +21,6 @@ namespace Granary.Core.ViewModels.Player;
 /// </remarks>
 public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
 {
-    // The title of a status while the title is not known yet, as silo-roku's PlayerRemote.bs and state.bs loading() send it.
-    private const string LoadingTitle = "Loading";
     private const string AudioKind = "audio";
     private const string SubtitleKind = "subtitle";
     private const string Fit = "fit";
@@ -178,7 +176,8 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         return new SiloCastState
         {
             ContentId = player.ContentId,
-            Title = info.Title.Length > 0 ? info.Title : LoadingTitle,
+            // Until the title's details are in, as silo-roku's PlayerRemote.bs and state.bs loading() send it.
+            Title = info.Title.Length > 0 ? info.Title : SiloCastState.LoadingTitle,
             // The episode line; a movie's year is not one.
             Subtitle = info.Kind == PlaybackMediaKind.Episode && info.Subtitle.Length > 0 ? info.Subtitle : null,
             IsPlaying = player.IsPlaying && !player.IsPaused,

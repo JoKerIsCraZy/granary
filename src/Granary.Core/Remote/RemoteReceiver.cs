@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Remote;
@@ -26,6 +27,9 @@ public sealed partial class RemoteReceiver
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<RemoteReceiver> _logger;
+    private readonly INavigationService _navigation;
+    private readonly IPcLock _pcLock;
+    private readonly WatchPartySession? _watchParty;
     private readonly Lock _gate = new();
     private readonly List<Session> _sessions = [];
     private readonly Dictionary<IPAddress, Queue<long>> _recentByPeer = [];
@@ -42,9 +46,12 @@ public sealed partial class RemoteReceiver
     /// <param name="dispatcher">The UI thread: the player is only touched there, and events are raised there.</param>
     /// <param name="time">The clock every deadline runs on.</param>
     /// <param name="logger">Events by connection number and reason only.</param>
+    /// <param name="navigation">Opens the player on a title a phone starts, as a page's Play does.</param>
+    /// <param name="pcLock">Whether Windows is locked: a phone starts nothing then.</param>
+    /// <param name="watchParty">The Watch Party this profile is in, if the app has one: a phone starts nothing during one.</param>
     public RemoteReceiver(IRemoteListener listener, IServiceAdvertiser advertiser, ILanAddressSource addresses, RemotePairing pairing,
         IPlaybackDevicePreferences preferences, ISessionManager session, ClientIdentity client, IUiDispatcher dispatcher, TimeProvider time,
-        ILogger<RemoteReceiver> logger)
+        ILogger<RemoteReceiver> logger, INavigationService navigation, IPcLock pcLock, WatchPartySession? watchParty = null)
     {
         ArgumentNullException.ThrowIfNull(listener);
         ArgumentNullException.ThrowIfNull(advertiser);
@@ -56,6 +63,8 @@ public sealed partial class RemoteReceiver
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(navigation);
+        ArgumentNullException.ThrowIfNull(pcLock);
         _listener = listener;
         _advertiser = advertiser;
         _addresses = addresses;
@@ -66,9 +75,15 @@ public sealed partial class RemoteReceiver
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _navigation = navigation;
+        _pcLock = pcLock;
+        _watchParty = watchParty;
         _currentState = () => Volatile.Read(ref _stateFrame);
         Identity = () => Volatile.Read(ref _running)?.Identity;
         Pairing = () => _pairing.Current;
+        // For as long as the app runs, as the receiver does: a ready offer is void once the profile or the server changed.
+        _offersMadeFor = SignedInAs();
+        _session.Changed += OnSignInChanged;
     }
 
     /// <summary>The phones that said hello, in name order, with their names as Granary shows them.</summary>
@@ -353,7 +368,24 @@ public sealed partial class RemoteReceiver
 
         /// <summary>It is being closed to make room or as replaced, and no longer counts.</summary>
         public bool Leaving { get; set; }
+
+        /// <summary>The deployment identity the phone's hello named, against which its launch's server is checked too.</summary>
+        public string? ServerIdentity { get; set; }
+
+        /// <summary>The offer answered <c>handoff_ready</c> on this connection, for a profile and a sign-in; null without one.</summary>
+        public ReadyOffer? Ready { get; set; }
+
+        /// <summary>The token this connection's <c>handoff_ready</c> carries: made once, kept in memory only, never compared.</summary>
+        public string? ResumeToken { get; set; }
     }
+}
+
+/// <summary>A title a phone started on the PC, as the window learns of it just before the player opens it.</summary>
+/// <param name="PhoneName">The phone's name, cleaned, for the "From …" line.</param>
+/// <param name="Request">The request the player is opened with, so the notice goes to the player of this very title.</param>
+public sealed record RemoteLaunch(string PhoneName, PlayRequest Request)
+{
+    public override string ToString() => nameof(RemoteLaunch);
 }
 
 /// <summary>A phone connected to the receiver, as the PC shows it.</summary>

@@ -71,6 +71,8 @@ public sealed class CompositionRootTests
         Assert.IsType<NoRemoteListener>(provider.GetRequiredService<IRemoteListener>());
         Assert.IsType<NoServiceAdvertiser>(provider.GetRequiredService<IServiceAdvertiser>());
         Assert.IsType<NoLanAddressSource>(provider.GetRequiredService<ILanAddressSource>());
+        // Never locked, until the App puts in its own that follows Windows.
+        Assert.IsType<NoPcLock>(provider.GetRequiredService<IPcLock>());
         using var playback = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(provider);
         Assert.NotNull(playback.PhoneRemote);
         // The window's notice and indicator for the app; the player page makes its own.
@@ -85,15 +87,18 @@ public sealed class CompositionRootTests
         var listener = new FakeRemoteListener(new RemoteCalls());
         var advertiser = new FakeServiceAdvertiser(new RemoteCalls());
         var addresses = new FakeLanAddressSource();
+        var pcLock = new FakePcLock();
         services.AddSingleton<IRemoteListener>(listener);
         services.AddSingleton<IServiceAdvertiser>(advertiser);
         services.AddSingleton<ILanAddressSource>(addresses);
+        services.AddSingleton<IPcLock>(pcLock);
 
         services.AddGranaryCore();
 
         Assert.Same(listener, Single<IRemoteListener>(services));
         Assert.Same(advertiser, Single<IServiceAdvertiser>(services));
         Assert.Same(addresses, Single<ILanAddressSource>(services));
+        Assert.Same(pcLock, Single<IPcLock>(services));
     }
 
     private static object? Single<T>(ServiceCollection services) =>
