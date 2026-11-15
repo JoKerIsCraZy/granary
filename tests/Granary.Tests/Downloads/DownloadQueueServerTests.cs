@@ -476,6 +476,44 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Contains("\"revision\":2", _h.Reports("dl_1")[^1].Body, StringComparison.Ordinal);
     }
 
+    // A refresh that does not end when it is stopped (here a manifest request that does not observe its token, as a write on a
+    // disk that does not answer) holds a new revision for RefreshStopBudget at most: the download is replaced all the same.
+    [Fact]
+    public async Task ARefreshThatDoesNotStop_HoldsANewRevisionForItsBudgetAtMost()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with
+        {
+            MediaFile = "media.mkv",
+            ManifestReadAt = ManualTimeProvider.DefaultStart - DownloadQueue.ManifestRefresh,
+        });
+        await System.IO.File.WriteAllBytesAsync(File(stored, "media.mkv"), Source, Token);
+        _h.Network.SetMetered(true);
+        var manifest = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), () => manifest.Task);
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ManifestPath("dl_1")).Count == 1, "the refresh asks for the manifest");
+        using var waiting = new ManualResetEventSlim();
+        queue.AwaitingReplacedRefresh = _ => waiting.Set();
+        try
+        {
+            _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
+            var reconcile = queue.ReconcileAsync(Token);
+            Assert.True(waiting.Wait(TimeSpan.FromSeconds(5), Token));
+            Assert.False(reconcile.IsCompleted);
+            _h.Time.Advance(DownloadQueue.RefreshStopBudget);
+
+            await reconcile.WaitAsync(TimeSpan.FromSeconds(5), Token);
+            Assert.Equal((2L, DownloadState.Queued), (_h.Find("dl_1")!.Record.Revision, _h.Find("dl_1")!.Record.State));
+            Assert.Contains("did not stop in time", _h.Logs.All, StringComparison.Ordinal);
+        }
+        finally
+        {
+            // The request answers in the end, so the refresh ends and the queue can stop.
+            manifest.TrySetResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        }
+        await IdleAsync(queue);
+    }
+
     [Fact]
     public async Task ANewRevision_IsReportedBeforeItsFile_ThoughTheOldReportWaitsItsDelay()
     {

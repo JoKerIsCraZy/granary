@@ -1477,7 +1477,10 @@ client guide.
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
   which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). A
   replacement stops a refresh of its download that is under way and waits for it to end before the old files go, as it
-  waits for the old transfer: the refresh would write the old revision's artwork and subtitles after them. Before
+  waits for the old transfer: the refresh would write the old revision's artwork and subtitles after them. It waits
+  `RefreshStopBudget` (5 s) at most, logging when that ran out: a refresh stuck in a write that does not observe its
+  token (a file written whole on a disk that does not answer) can still finish that one file, an old manifest that no
+  play takes for the new bytes (it compares the revisions) or a subtitle that stays until its revision changes. Before
   the first transfer a manifest of another revision than the record's is not kept either: an older one does not describe
   the file fetched next, and a newer one would leave the record behind the bytes it fetches (the server would refuse its
   reports, and the registry replace the download once the file came, fetching it again). The attempt ends as one whose

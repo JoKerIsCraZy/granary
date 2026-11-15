@@ -18,6 +18,12 @@ public sealed partial class DownloadQueue
     /// <summary>How old a completed download's manifest gets before a scope activation reads it again.</summary>
     public static readonly TimeSpan ManifestRefresh = TimeSpan.FromHours(24);
 
+    /// <summary>
+    /// How long a replacement waits for a manifest refresh of its download it stopped: one stuck in a write that does not
+    /// observe its token (a file written whole on a disk that does not answer) holds the new revision this long at most.
+    /// </summary>
+    public static readonly TimeSpan RefreshStopBudget = TimeSpan.FromSeconds(5);
+
     // The most pages a reconcile reads; a registry that goes on is not judged.
     private const int MaxPages = 1000;
 
@@ -307,7 +313,17 @@ public sealed partial class DownloadQueue
                 {
                     // It ended meanwhile.
                 }
-                await refreshing.Done.ConfigureAwait(false);
+                // A refresh stuck in a write that does not observe its token holds the replacement for RefreshStopBudget at
+                // most. After that it can still finish the one file it was writing: an old manifest is not taken for the new
+                // bytes (the new transfer reads its own manifest before its file, and a play compares the revisions), and an
+                // old subtitle at most stays until its revision changes.
+                var stopped = refreshing.Done.WaitAsync(RefreshStopBudget, _time);
+                AwaitingReplacedRefresh?.Invoke(key.Id);
+                await stopped.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                if (!refreshing.Done.IsCompleted)
+                {
+                    _logger.LogWarning("The manifest refresh of download {DownloadId} did not stop in time; its files are replaced all the same", key.Id);
+                }
             }
             // The record as the old transfer left it: one that finished meanwhile named its file, which goes too.
             if (_store.Find(key.Scope, key.Id) is not { } current)

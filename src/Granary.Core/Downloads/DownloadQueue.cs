@@ -207,6 +207,9 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>For tests: runs with a download's id once a new revision stopped its transfer, right before it waits for that transfer to end.</summary>
     internal Action<string>? AwaitingReplacedTransfer { get; set; }
 
+    /// <summary>For tests: runs with a download's id once a new revision stopped its manifest refresh and waits for it to end.</summary>
+    internal Action<string>? AwaitingReplacedRefresh { get; set; }
+
     /// <summary>Starts following the session, the network, the settings and the store, and the loop. Once.</summary>
     public void Start()
     {
