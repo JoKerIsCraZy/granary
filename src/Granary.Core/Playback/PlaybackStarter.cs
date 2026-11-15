@@ -339,23 +339,27 @@ public sealed class PlaybackStarter(
     public static (string Title, string Subtitle) Titles(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
-        if (detail.Type != WatchItemTypes.Episode)
-        {
-            // The year in the screen's digits, as the web player's numberText(year).
-            return (detail.Title, detail.Year is { } year ? NumberText.Digits(year) : "");
-        }
+        // The year in the screen's digits, as the web player's numberText(year).
+        return detail.Type != WatchItemTypes.Episode
+            ? (detail.Title, detail.Year is { } year ? NumberText.Digits(year) : "")
+            : EpisodeTitles(detail.Title, detail.SeriesTitle, detail.SeasonNumber, detail.EpisodeNumber);
+    }
+
+    /// <summary>An episode's two lines: its series and "S1 · E5 — Episode"; without a series, its own title and "S1 · E5".</summary>
+    public static (string Title, string Subtitle) EpisodeTitles(string episodeTitle, string? seriesTitle, int? seasonNumber, int? episodeNumber)
+    {
         // The web player's line under the title (VideoPlayer.tsx): the code, and the episode's title after it.
-        string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode
+        string code = seasonNumber is { } season && episodeNumber is { } episode
             ? AppText.Get("web.player.hud.episode", ("season", season), ("episode", episode))
             : "";
-        if (string.IsNullOrWhiteSpace(detail.SeriesTitle))
+        if (string.IsNullOrWhiteSpace(seriesTitle))
         {
-            return (detail.Title, code);
+            return (episodeTitle, code);
         }
-        string line = code.Length > 0 && detail.Title.Length > 0
-            ? AppText.Get("web.player.hud.episodeWithTitle", ("season", detail.SeasonNumber), ("episode", detail.EpisodeNumber), ("title", detail.Title))
-            : code.Length > 0 ? code : detail.Title;
-        return (detail.SeriesTitle, line);
+        string line = code.Length > 0 && episodeTitle.Length > 0
+            ? AppText.Get("web.player.hud.episodeWithTitle", ("season", seasonNumber), ("episode", episodeNumber), ("title", episodeTitle))
+            : code.Length > 0 ? code : episodeTitle;
+        return (seriesTitle, line);
     }
 
     /// <summary>A failed call worded for the viewer, and whether trying again can help.</summary>

@@ -15,6 +15,7 @@ public static class SidebarGlyphs
         "WatchParty" => "\uE716",
         "Collections" => "\uE838",
         "List:history" => "\uE81C",
+        "Downloads" => "\uE896",
         _ => Library(kind),
     };
 

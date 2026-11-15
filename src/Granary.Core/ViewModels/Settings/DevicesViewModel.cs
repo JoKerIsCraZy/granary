@@ -6,6 +6,7 @@ using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +29,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<DevicesViewModel> _logger;
+    private readonly DownloadSignOut? _downloads;
     private string? _nextCursor;
     private bool _devicesRead;
     // The server entry and profile the lists were read for; null before the first read.
@@ -36,7 +38,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
     private int _load;
 
     public DevicesViewModel(ISessionManager session, DevicesApi devices, SettingsApi settings, ProfilesApi profiles, ClientIdentity identity,
-        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DevicesViewModel> logger)
+        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DevicesViewModel> logger, DownloadSignOut? downloads = null)
     {
         _session = session;
         _devices = devices;
@@ -47,6 +49,7 @@ public sealed partial class DevicesViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _downloads = downloads;
         OtherSessions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNoOtherSessions));
         DeviceGroups.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNoDevices));
         _session.Changed += OnSessionChanged;

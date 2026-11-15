@@ -12,7 +12,9 @@ public sealed record PlaybackInfoRow(string Label, string Value);
 
 /// <summary>
 /// The playback info overlay of Silo's web player (web/src/player/playback-info.ts), for mpv: what the server chose,
-/// what the player measures, and the file that plays. Values it does not know read "—".
+/// what the player measures, and the file that plays. Values it does not know read "—". A download played from this PC
+/// has no stream of the server's: the overlay says so ("Local file") and shows the file as its manifest describes it, in
+/// the rows of the web's source file section that the manifest can fill.
 /// </summary>
 public static class PlaybackInfo
 {
@@ -35,12 +37,22 @@ public static class PlaybackInfo
         ["truehd"] = "TrueHD",
     };
 
-    /// <param name="stream">The server's stream; null for a file played directly.</param>
+    /// <summary>The play method of a download played from this PC.</summary>
+    public const string LocalFile = "Local file";
+
+    /// <param name="stream">The server's stream; null for a download and for a file played directly.</param>
     /// <param name="playerWidth">The picture's area in pixels.</param>
-    public static IReadOnlyList<PlaybackInfoSection> Sections(PlaybackStreamInfo? stream, PlaybackStats stats, int playerWidth, int playerHeight)
+    /// <param name="local">The download that plays from this PC; null for a stream and for a file played directly.</param>
+    public static IReadOnlyList<PlaybackInfoSection> Sections(PlaybackStreamInfo? stream, PlaybackStats stats, int playerWidth, int playerHeight,
+        PlaybackLocalFile? local = null)
     {
         ArgumentNullException.ThrowIfNull(stats);
         List<PlaybackInfoRow> player = [new(AppText.Get("web.player.info.player"), "mpv")];
+        if (stream is null && local is not null)
+        {
+            player.Add(new(AppText.Get("web.player.info.playMethod"), LocalFile));
+            player.Add(new(AppText.Get("web.player.info.protocol"), "file"));
+        }
         if (stream is not null)
         {
             player.Add(new(AppText.Get("web.player.info.playMethod"), PlayMethod(stream.Plan)));
@@ -68,6 +80,10 @@ public static class PlaybackInfo
         ];
         if (stream is null)
         {
+            if (local is not null)
+            {
+                sections.Add(SourceFile(local));
+            }
             return sections;
         }
         sections.Add(new(AppText.Get("web.player.info.section.stream"),
@@ -118,6 +134,17 @@ public static class PlaybackInfo
 
     /// <summary>"12.0 Mbps" from kilobits per second (formatMbpsFromKbps).</summary>
     public static string Mbps(long kbps) => MediaText.MbpsFromKbps(kbps, None);
+
+    // The rows of the stream's source file section that a download's manifest can fill.
+    private static PlaybackInfoSection SourceFile(PlaybackLocalFile file) => new("Current Source File",
+    [
+        new("Container", file.Container?.Trim() is { Length: > 0 } container ? container : None),
+        new("Size", FileSize(file.FileSize)),
+        new("Video codec", CodecLabel(file.VideoCodec)),
+        new("Video range type", file.Hdr ? "HDR" : "SDR"),
+        new("Audio codec", CodecLabel(file.AudioCodec)),
+        new("Audio channels", file.AudioChannels > 0 ? file.AudioChannels.ToString(CultureInfo.InvariantCulture) : None),
+    ]);
 
     private static PlaybackInfoSection SourceFile(WatchFileVersion? version, int? audioOrdinal)
     {

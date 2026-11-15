@@ -25,9 +25,14 @@ public sealed class RemoteTextsTests
     [InlineData("Playback failed: Granary could not open the title")]
     [InlineData("Playback failed: No data within the stall timeout.")]
     [InlineData("This title was started for a profile that is no longer signed in.")]
-    [InlineData(ServerPlayback.AdminEndedText)]
-    [InlineData(ServerPlayback.AdminStoppedText)]
     public void GranarysOwnFailures_GoAsTheyAre(string message) => Assert.Equal(message, RemoteTexts.PlayerError(message));
+
+    [Fact]
+    public void AnAdministratorsEndOrStop_GoesAsGranaryWordsIt()
+    {
+        Assert.Equal(ServerPlayback.AdminEndedText, RemoteTexts.PlayerError(ServerPlayback.AdminEndedText));
+        Assert.Equal(ServerPlayback.AdminStoppedText, RemoteTexts.PlayerError(ServerPlayback.AdminStoppedText));
+    }
 
     [Theory]
     [InlineData("No such host is known (silo.home:443)")]

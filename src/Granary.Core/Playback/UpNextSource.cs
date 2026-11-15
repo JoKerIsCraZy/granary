@@ -28,6 +28,13 @@ public interface IUpNextSource
 }
 
 /// <summary>
+/// What the server's lists say of the episode beside the playing one. <paramref name="Answered"/> is false when the server
+/// could not be asked: no episode then says nothing about the series, where an answered "none" is its end or its start for
+/// this profile.
+/// </summary>
+public readonly record struct EpisodeAnswer(NextEpisode? Episode, bool Answered);
+
+/// <summary>
 /// Reads the next episode as Android and Apple resolve it (docs/api-contract.md, 10.7): the current season's episodes,
 /// and when it has none later, those of the lowest later season that is not specials. On Deck is the Home row
 /// Continue Watching, as both apps take it.
@@ -40,12 +47,19 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, Im
     // share it whatever thread each goes on on.
     private readonly Lock _gate = new();
     private (string Key, Task<SeasonRead> Read, CancellationToken Owner)? _seasonRead;
-    public async Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+    public async Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) =>
+        (await FindNextAsync(current, images, cancellationToken).ConfigureAwait(false)).Episode;
+
+    public async Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) =>
+        (await FindPreviousAsync(current, images, cancellationToken).ConfigureAwait(false)).Episode;
+
+    /// <summary>As <see cref="NextEpisodeAsync"/>, saying also whether the server answered.</summary>
+    public async Task<EpisodeAnswer> FindNextAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
         if (session.ActiveServer is not { } entry)
         {
-            return null;
+            return default;
         }
         var server = entry.BaseUri;
         try
@@ -63,45 +77,48 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, Im
                     next = NextEpisode.After(episodes.Items, current.SeasonNumber, current.EpisodeNumber);
                 }
             }
-            return next is null ? null : NextEpisode.Of(next, server);
+            return new EpisodeAnswer(next is null ? null : NextEpisode.Of(next, server), Answered: true);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             logger.LogInformation("The next episode could not be read: {Failure}", ApiFailureText.Describe(ex));
-            return null;
+            return default;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Nobody waits for this read: the player goes on without a next episode.
             logger.LogError(ex, "Reading the next episode failed unexpectedly");
-            return null;
+            return default;
         }
     }
 
-    // The web player's previous-episode button: the one before in the current season, none before its first.
-    public async Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+    /// <summary>
+    /// As <see cref="PreviousEpisodeAsync"/>, saying also whether the server answered. The web player's previous-episode
+    /// button: the one before in the current season, none before its first.
+    /// </summary>
+    public async Task<EpisodeAnswer> FindPreviousAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
         if (session.ActiveServer is not { } entry)
         {
-            return null;
+            return default;
         }
         var server = entry.BaseUri;
         try
         {
             var (season, _) = await ReadSeasonAsync(entry, current, images, cancellationToken).ConfigureAwait(false);
             var previous = NextEpisode.Before(season.Items, current.SeasonNumber, current.EpisodeNumber);
-            return previous is null ? null : NextEpisode.Of(previous, server);
+            return new EpisodeAnswer(previous is null ? null : NextEpisode.Of(previous, server), Answered: true);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             logger.LogInformation("The previous episode could not be read: {Failure}", ApiFailureText.Describe(ex));
-            return null;
+            return default;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogError(ex, "Reading the previous episode failed unexpectedly");
-            return null;
+            return default;
         }
     }
 

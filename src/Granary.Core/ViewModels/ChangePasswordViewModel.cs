@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Servers;
 using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
@@ -16,8 +17,10 @@ namespace Granary.Core.ViewModels;
 /// settings' password form. The limits come from the server's password capability; after the change
 /// the session refreshes its tokens to lift the restriction. Passwords are never logged. The commands take
 /// no cancellation token: a cancellable toolkit command would cancel its running call when executed again.
+/// With <paramref name="downloads"/>, Sign out takes the account's downloads along after asking.
 /// </summary>
-public sealed partial class ChangePasswordViewModel(AccountApi account, ISessionManager session, ILogger<ChangePasswordViewModel> logger)
+public sealed partial class ChangePasswordViewModel(AccountApi account, ISessionManager session, ILogger<ChangePasswordViewModel> logger,
+    DownloadSignOut? downloads = null)
     : ObservableObject
 {
     private const string AvailableState = "available";
@@ -139,7 +142,14 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     {
         try
         {
-            await session.SignOutAsync();
+            if (downloads is not null && session.ActiveServer is { } server)
+            {
+                await downloads.SignOutAsync(server, CancellationToken.None);
+            }
+            else
+            {
+                await session.SignOutAsync();
+            }
         }
         catch (Exception ex)
         {

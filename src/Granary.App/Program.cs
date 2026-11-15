@@ -15,8 +15,12 @@ public static class Program
     private static void Main(string[] args)
     {
         // Velopack would otherwise apply any newer package it finds in its packages folder at start. Only an update the
-        // VelopackUpdater verified as signed is applied, as Granary exits.
-        VelopackApp.Build().SetAutoApplyOnStartup(UpdateSafety.ApplyPackagesAtStart).Run();
+        // VelopackUpdater verified as signed is applied, as Granary exits. Uninstalling takes Granary's registration for
+        // Windows' notifications off the PC (docs/release.md); Velopack ends the process right after the hook.
+        VelopackApp.Build()
+            .SetAutoApplyOnStartup(UpdateSafety.ApplyPackagesAtStart)
+            .OnBeforeUninstallFastCallback(_ => Services.WindowsAppNotifications.RemoveRegistration())
+            .Run();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(start =>
         {

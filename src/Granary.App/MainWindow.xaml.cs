@@ -39,6 +39,7 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan RevealFade = TimeSpan.FromMilliseconds(160);
 
     private readonly NavigationService _navigation;
+    private readonly IUiDispatcher _dispatcher;
     private readonly PlaybackStops _stops;
     private readonly Granary.Core.WatchParty.WatchPartySession _room;
     private readonly ILogger<MainWindow> _logger;
@@ -61,6 +62,8 @@ public sealed partial class MainWindow : Window
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
         Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger,
         Granary.Core.Theme.ServerAccent brand, Granary.Core.ViewModels.Admin.ServerActivityViewModel activity,
+        Granary.Core.Downloads.DownloadsFeature downloads, Granary.Core.ViewModels.Downloads.DownloadActivity downloadActivity,
+        Granary.Core.ViewModels.Downloads.DownloadNotices downloadNotices, IUiDispatcher dispatcher,
         Granary.Core.ViewModels.RemoteIndicatorViewModel remote, Granary.Core.Remote.RemoteReceiver receiver)
     {
         Layout = layout;
@@ -71,6 +74,7 @@ public sealed partial class MainWindow : Window
         Trailers = trailers;
         Updates = updates;
         _navigation = navigation;
+        _dispatcher = dispatcher;
         _stops = stops;
         _room = room;
         _logger = logger;
@@ -81,6 +85,9 @@ public sealed partial class MainWindow : Window
         Notifications = notifications;
         Requests = requests;
         WatchParty = watchParty;
+        Downloads = downloads;
+        DownloadsActivity = downloadActivity;
+        DownloadNotices = downloadNotices;
         InitializeComponent();
         InitializeTrailers();
         InitializeThemeMusic();
@@ -109,6 +116,7 @@ public sealed partial class MainWindow : Window
         InitializeRemote();
         InitializeController();
         InitializeActivity();
+        InitializeDownloads();
         InitializePhoneRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
@@ -161,6 +169,14 @@ public sealed partial class MainWindow : Window
                 ShowSections();
             }
         };
+        // Its refresh can end on any thread.
+        Downloads.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Granary.Core.Downloads.DownloadsFeature.IsOffered))
+            {
+                _dispatcher.Post(ShowSections);
+            }
+        };
         ShowLibraries();
     }
 
@@ -191,11 +207,25 @@ public sealed partial class MainWindow : Window
     /// <summary>Whether the sidebar shows Watch Party.</summary>
     public Granary.Core.WatchParty.WatchPartyFeature WatchParty { get; }
 
+    /// <summary>Whether the sidebar shows Downloads.</summary>
+    public Granary.Core.Downloads.DownloadsFeature Downloads { get; }
+
     /// <summary>Granary's own updates: the notice of one that is ready (docs/release.md).</summary>
     public AppUpdatesViewModel Updates { get; }
 
-    // Instance method because x:Bind function bindings call it on the window.
-    public string ProfileMenuName(string profileName) => AppText.Get("web.shell.sidebar.profileMenu", ("name", profileName));
+    // Instance methods because x:Bind function bindings call them on the window.
+    public string ProfileMenuName(string profileName, bool signingOut, string signOutError)
+    {
+        string menu = AppText.Get("web.shell.sidebar.profileMenu", ("name", profileName));
+        return signingOut ? "Signing out" : string.IsNullOrEmpty(signOutError) ? menu : $"{menu}. {signOutError}";
+    }
+
+    /// <summary>The profile's name, or "Signing out…" while a sign-out runs.</summary>
+    public string ProfileLabel(string profileName, bool signingOut) => signingOut ? "Signing out…" : profileName;
+
+    public bool IsIdle(bool running) => !running;
+
+    public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     public string NotificationsName(int unread) => unread > 0
         ? AppText.Get("granary.shell.notificationsUnread", ("count", unread))
@@ -411,7 +441,8 @@ public sealed partial class MainWindow : Window
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
     // Notifications show only while the server offers them, and an entry the profile hid not at all but while it is the
-    // page shown; a section with nothing left to show loses its header too.
+    // page shown; a section with nothing left to show loses its header too. Downloads shows while the server offers them or the
+    // profile has some on this PC.
     private void ShowSections() => ShowSections(Navigation.IsPaneOpen);
 
     private void ShowSections(bool open)
@@ -498,6 +529,7 @@ public sealed partial class MainWindow : Window
         nameof(AppRoute.Requests) => Requests.IsEnabled,
         nameof(AppRoute.WatchParty) => WatchParty.IsAvailable,
         nameof(AppRoute.Notifications) => Notifications.IsAvailable,
+        nameof(AppRoute.Downloads) => Downloads.IsOffered,
         _ => true,
     };
 
@@ -530,17 +562,32 @@ public sealed partial class MainWindow : Window
     }
 
     // The unread count is read again on the way through the app, at most every half minute, as the web's sidebar does;
-    // whether the server takes requests once per profile.
+    // whether the server takes requests, offers rooms or lets the profile download once per profile. Downloads also shows
+    // again whether the profile has any on this PC.
     private async void RefreshNotifications()
     {
         try
         {
-            await Task.WhenAll(Notifications.RefreshAsync(), Requests.RefreshAsync(), WatchParty.RefreshAsync());
+            await Task.WhenAll(Notifications.RefreshAsync(), Requests.RefreshAsync(), WatchParty.RefreshAsync(), RefreshDownloadsAsync());
         }
         catch (Exception ex)
         {
             // async void: nothing may escape. Failed reads are already logged; this is anything else.
             _logger.LogError(ex, "The unread notification count could not be shown");
+        }
+    }
+
+    // The downloads on this PC are read from the disk once: a failure there is only named, since a file system error's
+    // message holds the full path, with the Windows user name.
+    private async Task RefreshDownloadsAsync()
+    {
+        try
+        {
+            await Downloads.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Whether to show Downloads could not be read ({Failure})", ex.GetType().Name);
         }
     }
 
@@ -564,7 +611,7 @@ public sealed partial class MainWindow : Window
         // is its way out.
         _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Admin or AppRoute.Home
             or AppRoute.Search or AppRoute.Library or AppRoute.List or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar
-            or AppRoute.Notifications or AppRoute.Requests or AppRoute.WatchParty or AppRoute.WatchPartyRoom);
+            or AppRoute.Notifications or AppRoute.Requests or AppRoute.WatchParty or AppRoute.WatchPartyRoom or AppRoute.Downloads);
         // Clear of the page's heading, which starts 48 px in: just right of the pane, a little further beside the rail, and
         // near the window's edge where there is no sidebar (signing in).
         bool paneShown = Shell.IsSignedIn && !hidesPane;
@@ -698,7 +745,7 @@ public sealed partial class MainWindow : Window
                 break;
             case string tag when Enum.TryParse<AppRoute>(tag, out var route)
                 && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar or AppRoute.Notifications
-                    or AppRoute.Requests or AppRoute.WatchParty:
+                    or AppRoute.Requests or AppRoute.WatchParty or AppRoute.Downloads:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Admin open over the page they were opened from, and go back to it.
@@ -721,6 +768,8 @@ public sealed partial class MainWindow : Window
             AppRoute.Title or AppRoute.RequestTitles => nameof(AppRoute.Requests),
             // The room opens from the Watch Party hub, which stays picked.
             AppRoute.WatchPartyRoom => nameof(AppRoute.WatchParty),
+            // A series' downloads open from the Downloads page, which stays picked.
+            AppRoute.DownloadedSeries => nameof(AppRoute.Downloads),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

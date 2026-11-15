@@ -43,6 +43,8 @@ public sealed class NavigationService : INavigationService
         [AppRoute.WatchParty] = typeof(WatchPartyPage),
         [AppRoute.WatchPartyRoom] = typeof(WatchPartyRoomPage),
         [AppRoute.BoxSet] = typeof(BoxSetPage),
+        [AppRoute.Downloads] = typeof(DownloadsPage),
+        [AppRoute.DownloadedSeries] = typeof(DownloadedSeriesPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);

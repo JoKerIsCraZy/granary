@@ -190,6 +190,11 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public int? SubtitleStreamOf(int ffmpegIndex) => EmbeddedSubtitles.TryGetValue(ffmpegIndex, out int stream) ? stream : null;
 
+    /// <summary>The subtitle tracks the loaded file lists, as the test sets them.</summary>
+    public List<EngineSubtitleTrack> SubtitleTracks { get; } = [];
+
+    public IReadOnlyList<EngineSubtitleTrack> ReadSubtitleTracks() => [.. SubtitleTracks];
+
     public bool SetSubtitleStream(int stream)
     {
         SubtitleStreams.Add(stream);

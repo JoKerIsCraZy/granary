@@ -28,6 +28,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>Poster cards: "2021 SERIES", an episode's "S04E01". Landscape cards: "Season 1 Episode 5 • Episode title".</summary>
     public string? Subtitle { get; init; }
 
+    /// <summary>
+    /// <see cref="Subtitle"/> in the caption's style on a poster too, as a wide card has it: a download's lines, which say more
+    /// than a poster's overline holds ("42% · 4 min left").
+    /// </summary>
+    public bool PlainSubtitle { get; init; }
+
     /// <summary>An episode's poster card: the episode's own title under the series', "Safe Harbor", as on the web.</summary>
     public string? EpisodeTitle { get; init; }
 
@@ -47,6 +53,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
     public string? CaptionBadgeName { get; init; }
 
     public Uri? ImageUrl { get; init; }
+
+    /// <summary>
+    /// Artwork kept on this PC with a download, by its file's path, in place of <see cref="ImageUrl"/>: read from the file
+    /// (never through a URI, which could misread a <c>#</c> in a folder's name), so the card shows without the server.
+    /// </summary>
+    public string? LocalImagePath { get; init; }
 
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
     public string? ImageThumbhash { get; init; }
@@ -119,13 +131,29 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? HeadingId { get; init; }
 
+    /// <summary>
+    /// What screen readers hear after the title in place of the card's lines, when those change as it shows: a download's
+    /// size and where it stands, "8.0 GB, Downloading", which keeps the name the same while its bar moves. Null on every other
+    /// card, whose name is its lines.
+    /// </summary>
+    public string? AccessibleLines { get; init; }
+
+    /// <summary>
+    /// The card's whole status where its lines show it in parts or cut it short, for the pointer: a download's "Downloading ·
+    /// 42% · 12.3 MB/s · 4 min left". Null on every other card.
+    /// </summary>
+    public string? ToolTip { get; init; }
+
     /// <summary>The name screen readers announce for the whole card: a box set's as the web's <c>BoxSetCard</c> words it.</summary>
     public string AccessibleName => string.Join(", ",
-        new[]
-        {
-            BoxSetFilms is { } films ? AppText.Get("web.detail.boxSet.cardLabel", ("title", Title), ("films", films)) : Title,
-            EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName,
-        }.Where(text => !string.IsNullOrEmpty(text)));
+        (AccessibleLines is { } lines
+            ? new[] { Title, lines }
+            : new[]
+            {
+                BoxSetFilms is { } films ? AppText.Get("web.detail.boxSet.cardLabel", ("title", Title), ("films", films)) : Title,
+                EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName,
+            })
+            .Where(text => !string.IsNullOrWhiteSpace(text)));
 
     private string? CurrentName => CurrentMark switch
     {

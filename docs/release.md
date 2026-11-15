@@ -30,7 +30,10 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
 - `Program.Main` runs `VelopackApp.Build().SetAutoApplyOnStartup(UpdateSafety.ApplyPackagesAtStart).Run()` (false)
   before WinUI starts: Velopack's setup, updater and uninstaller run Granary's exe with their own arguments, and it
   does its part and exits before a window opens. Velopack's own apply-on-start is off, so a package in its packages
-  folder is never applied unless it was verified.
+  folder is never applied unless it was verified. Its uninstall hook (`OnBeforeUninstallFastCallback`) takes Granary's
+  registration for Windows' notifications off the PC (`WindowsAppNotifications.RemoveRegistration`: the notification id
+  `velopack.GranaryApp`, its name, icon and COM activator under HKCU, which every start writes again; docs/architecture.md,
+  "Downloads in the shell"), and never fails the uninstall.
 - `VelopackUpdater` (App) is the app's `IAppUpdater`. It looks for releases on the GitHub repository the build names
   (`-p:GranaryUpdateRepository=https://github.com/owner/repo`, kept in the assembly's metadata). A build without
   one or without the update signing key, a development build, or a copy not installed by the setup never looks (the

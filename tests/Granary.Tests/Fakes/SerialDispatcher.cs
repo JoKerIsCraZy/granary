@@ -6,7 +6,8 @@ namespace Granary.Tests.Fakes;
 /// <summary>
 /// A UI thread of its own, as the app's DispatcherQueue is: posted work runs there one item at a time, in order. It sets
 /// no SynchronizationContext, so code that only relies on <c>await</c> coming back to the UI thread leaves it, which
-/// <see cref="HasThreadAccess"/> shows.
+/// <see cref="HasThreadAccess"/> shows. Once disposed it runs what was posted before and drops what is posted after, as
+/// the app's <c>TryEnqueue</c> does once its queue shut down: a page a test left attached can still be told of a change.
 /// </summary>
 internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 {
@@ -27,7 +28,15 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 
     public void Post(Action action)
     {
-        _work.Add(action);
+        try
+        {
+            _work.Add(action);
+        }
+        catch (InvalidOperationException) when (_work.IsAddingCompleted)
+        {
+            // Disposed meanwhile: checking first would leave a dispose between the check and the add.
+            return;
+        }
         Interlocked.Exchange(ref _posted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
     }
 

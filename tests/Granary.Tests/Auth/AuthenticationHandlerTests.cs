@@ -79,6 +79,31 @@ public sealed class AuthenticationHandlerTests
     }
 
     [Fact]
+    public async Task ARequestForAnAccountsProfile_IsSentAsThatAccountAndProfile()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7");
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/progress" ? FakeSiloServer.Json(200, """{ "items": [], "page": { "has_more": false } }""") : null;
+
+        await new Core.Api.Downloads.ProgressSyncApi(_pipeline.Http).ListAsync(server.BaseUri, "1", "7", null, TestContext.Current.CancellationToken);
+
+        Assert.Equal("7", Assert.Single(_pipeline.Server.Requests).Header("X-Profile-Id"));
+    }
+
+    [Fact]
+    public async Task ARequestForAnAccountsProfile_IsNotSentOnceAnotherAccountIsSignedIn_AlsoWithTheSameProfileId()
+    {
+        var server = await _pipeline.AddServerAsync();
+        // Account 2 signed in meanwhile; its profile carries id 9, the one the request was made for under account 1.
+        await _pipeline.SignInAsSomeoneElseAsync(server);
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new Core.Api.Downloads.ProgressSyncApi(_pipeline.Http)
+            .ListAsync(server.BaseUri, "1", "9", null, TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
     public async Task AnonymousRequest_CarriesIdentityButNoCredentials()
     {
         var server = await _pipeline.AddServerAsync();

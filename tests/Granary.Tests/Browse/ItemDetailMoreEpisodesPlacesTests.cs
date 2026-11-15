@@ -46,7 +46,7 @@ public sealed class ItemDetailMoreEpisodesPlacesTests
             Titles(detail));
         var places = detail.MoreEpisodesRow.OfType<DetailEpisodePlaceholder>().ToList();
         Assert.Equal([true, false], places.Select(p => p.IsMissing));
-        Assert.Equal(["15 Sep 2026", "Airs Tue, Oct 6"], places.Select(p => p.Detail));
+        Assert.Equal(["Sep 15, 2026", "Airs Tue, Oct 6"], places.Select(p => p.Detail));
         Assert.Equal(["Episode 3, missing", "Episode 6, airs October 6"], places.Select(p => p.AccessibleName));
         // The cards are the listed episodes alone, this one marked; a place is no card to open or play.
         Assert.Equal([EpisodeIdOf(1), EpisodeIdOf(2), EpisodeIdOf(4), EpisodeIdOf(5)], detail.MoreEpisodes.Select(c => c.Id));
