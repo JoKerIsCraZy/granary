@@ -204,7 +204,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
-  controls that show optional parts set them in code when their item changes (`MediaCardView`).
+  controls that show optional parts set them in code when their item changes (`MediaCardView`, and `MediaRow`'s Explore
+  all and title link when its command changes).
 - Artwork goes through `Artwork.Load`, which fills the bitmap from the app's artwork cache
   (docs/architecture.md, Artwork). `MediaRow` and `MediaGrid` prefetch their cards' artwork; a grid asks
   for the next page four rows ahead of its last realized card.
