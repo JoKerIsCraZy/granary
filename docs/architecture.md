@@ -1565,7 +1565,10 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   only when the chosen address differs; `Current` answers what it read last, so the receiver's lifetime never waits on
   the adapters. The address is never logged.
 - **`TcpRemoteListener`** is a `TcpListener` on that one address, IPv4 only and never `IPAddress.Any`, with a backlog of
-  4, on the first port of the receiver's list that binds. Its accept loop (`RemoteAcceptLoop`, apart from the socket so
+  4, on the first port of the receiver's list that binds. It does not set `ExclusiveAddressUse`: for a socket bound to
+  one address Windows answers a second bind the same with or without it (no process takes this address and port over),
+  and with it the port could not be bound again until the connections it accepted had fully ended, so a quick switch
+  off and on would move the remote off the port the phones were paired with. Its accept loop (`RemoteAcceptLoop`, apart from the socket so
   the tests run it without one) hands each connection over at once, with Nagle off, and never waits for it. A
   connection that fails as it is accepted is skipped, whatever a peer does, so no one on the network can stop the
   listener; failures back to back are waited out on the `TimeProvider`, from 50 ms doubling to at most a second, so

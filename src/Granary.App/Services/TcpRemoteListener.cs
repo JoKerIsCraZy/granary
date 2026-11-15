@@ -93,6 +93,10 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
     }
 
     // The first port that binds, or null. A port Windows refuses is tried no further.
+    // Not ExclusiveAddressUse: bound to one address, as here, Windows' tables give the same answer to a second bind with
+    // or without it (Microsoft's "Using SO_REUSEADDR and SO_EXCLUSIVEADDRUSE": no one, of this user or another, takes over
+    // this address and port), and with it the port cannot be bound again until the connections it accepted have fully
+    // ended, so a quick switch off and on would move the remote to another port than the phones were paired with.
     private TcpListener? Bind(IPAddress address, IReadOnlyList<int> ports)
     {
         foreach (int port in ports)
