@@ -213,6 +213,23 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFailureOfAListenerThatWasReplaced_DoesNotStopTheNewOne()
+    {
+        await _harness.StartListeningAsync();
+        _harness.Addresses.Set(new LanAddress(IPAddress.Parse("192.168.1.21"), 7));
+        await SettledAsync();
+
+        // The first listener's loop failed just as it was replaced, and says so only now.
+        _harness.Listener.FailLate(start: 1);
+        await SettledAsync();
+
+        Assert.Equal(2, _harness.Listener.Starts);
+        Assert.True(_harness.Listener.IsListening);
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+        Assert.NotNull(_harness.Advertiser.Current);
+    }
+
+    [Fact]
     public async Task SigningOut_StopsIt_AndSigningInAgain_StartsItWithTheSameKey()
     {
         await _harness.StartListeningAsync();

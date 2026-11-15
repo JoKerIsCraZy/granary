@@ -29,8 +29,16 @@ public interface IRemoteListener
     /// Binds the first port of <paramref name="ports"/> that is free on <paramref name="address"/> (0 for any port Windows
     /// gives) and hands each accepted connection to <paramref name="onAccepted"/>, without waiting for the task it returns:
     /// that task runs as long as the connection. Answers the port bound; throws <see cref="IOException"/> when none could be.
+    /// <para>
+    /// <paramref name="onFailed"/> is called, on any thread, when this listener stopped taking connections by itself, not
+    /// through <see cref="StopAsync"/> or a later start: its socket failed. It belongs to this start, so news that comes
+    /// late is never taken for the listener of a later one. The receiver then stops, takes its advertisement back and says
+    /// it failed, so no port stays advertised that nobody answers. Required: a connection that fails as it is accepted is
+    /// not this, whatever a peer does; the listener goes on with the next.
+    /// </para>
     /// </summary>
-    Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken);
+    Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, Action onFailed,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Stops accepting and closes the listener. Connections already handed over stay with their owner. Required: it never
@@ -38,30 +46,13 @@ public interface IRemoteListener
     /// nothing listens.
     /// </summary>
     Task StopAsync();
-
-    /// <summary>
-    /// Raised, on any thread, when the listener stopped taking connections by itself, not through <see cref="StopAsync"/>:
-    /// its socket failed. The receiver then stops, takes its advertisement back and says it failed, so no port stays
-    /// advertised that nobody answers. Required: a connection that fails as it is accepted is not this, whatever a peer
-    /// does; the listener goes on with the next.
-    /// </summary>
-    event EventHandler? Failed;
 }
 
 /// <summary>Core's stand-in where the App gives no listener: no port can be bound.</summary>
 public sealed class NoRemoteListener : IRemoteListener
 {
-    public event EventHandler? Failed
-    {
-        add
-        {
-        }
-        remove
-        {
-        }
-    }
-
-    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken) =>
+    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, Action onFailed,
+        CancellationToken cancellationToken) =>
         Task.FromException<int>(new IOException("This build cannot listen for phones."));
 
     public Task StopAsync() => Task.CompletedTask;

@@ -34,6 +34,7 @@ internal sealed class RemoteCalls
 /// </summary>
 internal sealed class FakeRemoteListener(RemoteCalls calls) : IRemoteListener
 {
+    private readonly List<Action> _onFailed = [];
     private Func<IRemoteConnection, Task>? _onAccepted;
 
     /// <summary>The port bound from the ports offered: the first, or 49152 for "any".</summary>
@@ -50,7 +51,8 @@ internal sealed class FakeRemoteListener(RemoteCalls calls) : IRemoteListener
 
     public int Starts { get; private set; }
 
-    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, CancellationToken cancellationToken)
+    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, Action onFailed,
+        CancellationToken cancellationToken)
     {
         calls.Add($"listener.Start({address})");
         LastPorts = [.. ports];
@@ -60,6 +62,10 @@ internal sealed class FakeRemoteListener(RemoteCalls calls) : IRemoteListener
             return Task.FromException<int>(new IOException("No port is free."));
         }
         Starts++;
+        lock (_onFailed)
+        {
+            _onFailed.Add(onFailed);
+        }
         Volatile.Write(ref _onAccepted, onAccepted);
         return Task.FromResult(Binds(ports));
     }
@@ -71,13 +77,25 @@ internal sealed class FakeRemoteListener(RemoteCalls calls) : IRemoteListener
         return Task.CompletedTask;
     }
 
-    public event EventHandler? Failed;
-
     /// <summary>The listener's socket failed: it takes no more connections, and says so.</summary>
     public void Fail()
     {
         Volatile.Write(ref _onAccepted, null);
-        Failed?.Invoke(this, EventArgs.Empty);
+        FailLate(Starts);
+    }
+
+    /// <summary>
+    /// The listener of start <paramref name="start"/> (1 for the first) says only now that it failed: its loop failed just as
+    /// it was stopped or replaced, and the news came late.
+    /// </summary>
+    public void FailLate(int start)
+    {
+        Action onFailed;
+        lock (_onFailed)
+        {
+            onFailed = _onFailed[start - 1];
+        }
+        onFailed();
     }
 
     /// <summary>A phone connected: the receiver serves <paramref name="connection"/>; the task ends with the connection.</summary>

@@ -1266,8 +1266,9 @@ What the receiver requires of the code behind its ports (their XML docs say the 
 - `IRemoteConnection.DisposeAsync` aborts every read and write in flight at once and never waits for the phone: a slow
   phone's end and the receiver's stop rely on it.
 - `IRemoteListener.StopAsync` never hangs and never waits for accepted connections; it is safe to call twice.
-- `IRemoteListener.Failed` is raised when the listener stopped taking connections by itself, and only then: a connection
-  that fails as it is accepted never stops a listener, whatever a peer does.
+- A start's `onFailed` (`IRemoteListener.StartAsync`) is called when that start's listener stopped taking connections
+  by itself, and only then: a connection that fails as it is accepted never stops a listener, whatever a peer does. It
+  belongs to its start, so a failure told late is never taken for a later listener's.
 
 ### Pairing
 
@@ -1440,8 +1441,10 @@ then on; `StopAsync` ends it for good when Granary closes.
     anew; phones on the old address end with their heartbeat. The code changes, the key does not.
   - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
     register once, and the status tick never does.
-  - The listener fails by itself (`IRemoteListener.Failed`): stop, and the status says `Failed`. Nothing starts again
-    until the switch, the session, the address or the key changes; a title that plays is no reason to.
+  - The listener fails by itself (its start's `onFailed`): stop, and the status says `Failed`. Nothing starts again
+    until the switch, the session, the address or the key changes; a title that plays is no reason to. Each listener
+    bound has a number, and only the last one bound counts: one stopped or replaced meanwhile (a new address) that
+    tells of its failure late, even after its replacement runs, changes nothing.
   - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
     not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
     The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved
@@ -1632,7 +1635,7 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   no connection getting through and at least 10 accepts in those 30 seconds failing for it (out of them for good); a
   peer's resets and broken connections never end it, however long they go on, nor start, keep or hide such a shortage,
   and a shortage now and then is none. It
-  raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed, the listener
+  tells the start's `onFailed`, and the receiver stops (every phone told, the advertisement removed, the listener
   closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by itself, only
   at the next change of the switch, the session, the PC's address or the key.
   `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection

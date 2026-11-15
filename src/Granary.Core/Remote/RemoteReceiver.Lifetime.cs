@@ -40,9 +40,12 @@ public sealed partial class RemoteReceiver
     private Running? _running;
     private CancellationTokenSource? _accepting;
     private RemoteReceiverState _failure = RemoteReceiverState.Listening;
-    // The listener stopped taking connections by itself: nothing starts again until the switch, the session, the address or
-    // the key changes.
-    private bool _listenerFailed;
+    // Each listener the receiver binds gets a number. The last one bound stopped taking connections by itself when it said
+    // so: nothing starts again until the switch, the session, the address or the key changes. One stopped or replaced
+    // meanwhile is no news, however late it tells.
+    private int _listenerNumbers;
+    private int _lastListener;
+    private int _failedListener;
     private RemoteReceiverStatus _status = RemoteReceiverStatus.Off;
     // The key the published status was made under; the lifetime loop's only.
     private PairingMaterial? _publishedMaterial;
@@ -104,7 +107,6 @@ public sealed partial class RemoteReceiver
         _session.Changed += OnLifetimeChanged;
         _addresses.Changed += OnLifetimeChanged;
         _pairing.KeyChanged += OnLifetimeChanged;
-        _listener.Failed += OnListenerFailed;
         LookAgain();
     }
 
@@ -126,7 +128,6 @@ public sealed partial class RemoteReceiver
         _session.Changed -= OnLifetimeChanged;
         _addresses.Changed -= OnLifetimeChanged;
         _pairing.KeyChanged -= OnLifetimeChanged;
-        _listener.Failed -= OnListenerFailed;
         Volatile.Read(ref _playingSettle)?.Dispose();
         try
         {
@@ -183,15 +184,30 @@ public sealed partial class RemoteReceiver
     // A change the viewer or Windows made: worth a try after a listener that failed, too.
     private void OnLifetimeChanged(object? sender, EventArgs e)
     {
-        Volatile.Write(ref _listenerFailed, false);
+        Volatile.Write(ref _failedListener, 0);
         LookAgain();
     }
 
-    // The listener's socket failed: the receiver stops, so no port stays advertised that nobody answers.
-    private void OnListenerFailed(object? sender, EventArgs e)
+    // A listener's socket failed: when it is the last one bound, the receiver stops, so no port stays advertised that
+    // nobody answers. A listener bound since makes it no news, whether that one was bound before the news came or after.
+    private void OnListenerFailed(int listener)
     {
-        Volatile.Write(ref _listenerFailed, true);
+        if (listener != Volatile.Read(ref _lastListener))
+        {
+            return;
+        }
+        Volatile.Write(ref _failedListener, listener);
         LookAgain();
+    }
+
+    // The last listener bound said it failed, and nothing changed since.
+    private bool ListenerFailed
+    {
+        get
+        {
+            int failed = Volatile.Read(ref _failedListener);
+            return failed != 0 && failed == Volatile.Read(ref _lastListener);
+        }
     }
 
     // Asks the loop to look again; starts it from the UI thread's queue, so changes made in one turn of it are looked at
@@ -264,7 +280,7 @@ public sealed partial class RemoteReceiver
             }
             if (running is null && want.State == RemoteReceiverState.Listening)
             {
-                if (Volatile.Read(ref _listenerFailed))
+                if (ListenerFailed)
                 {
                     _failure = RemoteReceiverState.Failed;
                 }
@@ -331,7 +347,7 @@ public sealed partial class RemoteReceiver
                 _ => RemoteLogReasons.NoLocalNetwork,
             };
         }
-        if (Volatile.Read(ref _listenerFailed))
+        if (ListenerFailed)
         {
             return RemoteLogReasons.ListenerFailed;
         }
@@ -461,13 +477,16 @@ public sealed partial class RemoteReceiver
         return null;
     }
 
-    // The port bound, or null with the reason kept for the status.
+    // The port bound, or null with the reason kept for the status. The listener is the last one bound before it starts, so
+    // it may fail as soon as it runs.
     private async Task<int?> BindAsync(LanAddress address, IReadOnlyList<int> ports, CancellationTokenSource stop)
     {
+        int listener = Interlocked.Increment(ref _listenerNumbers);
+        Volatile.Write(ref _lastListener, listener);
         try
         {
-            return await _listener.StartAsync(address.Address, ports, connection => AcceptAsync(connection, stop), CancellationToken.None)
-                .ConfigureAwait(false);
+            return await _listener.StartAsync(address.Address, ports, connection => AcceptAsync(connection, stop),
+                () => OnListenerFailed(listener), CancellationToken.None).ConfigureAwait(false);
         }
         catch (IOException ex)
         {

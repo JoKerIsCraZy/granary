@@ -12,8 +12,8 @@ namespace Granary.App.Services;
 /// (<see cref="RemoteAcceptLoop"/>) hands each connection over with Nagle off, since frames are small and a command should
 /// not wait for more. <see cref="StopAsync"/> never waits: it stops the loop and closes the listener, and connections
 /// handed over stay with the receiver. One listener at a time; a start stops the one before. A connection that fails as
-/// it is accepted never ends the loop; a failure of the listening socket itself does, and raises <see cref="Failed"/>, so
-/// the receiver stops and takes its advertisement back.
+/// it is accepted never ends the loop; a failure of the listening socket itself does, and is told to that start's
+/// <c>onFailed</c>, so the receiver stops and takes its advertisement back.
 /// </summary>
 public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListener> logger) : IRemoteListener
 {
@@ -22,14 +22,13 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
     private readonly Lock _gate = new();
     private Listening? _listening;
 
-    public event EventHandler? Failed;
-
-    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted,
+    public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted, Action onFailed,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(address);
         ArgumentNullException.ThrowIfNull(ports);
         ArgumentNullException.ThrowIfNull(onAccepted);
+        ArgumentNullException.ThrowIfNull(onFailed);
         if (address.AddressFamily != AddressFamily.InterNetwork || address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast))
         {
             throw new ArgumentException("The phone remote listens on one IPv4 address of this PC.", nameof(address));
@@ -40,7 +39,7 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
         var listener = Bind(address, ports) ?? throw new IOException("No port of the phone remote's list was free.");
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         RemoteAcceptLoop? loop = null;
-        loop = new RemoteAcceptLoop(token => AcceptAsync(listener, token), onAccepted, () => OnLoopFailed(loop!), time, logger);
+        loop = new RemoteAcceptLoop(token => AcceptAsync(listener, token), onAccepted, () => OnLoopFailed(loop!, onFailed), time, logger);
         lock (_gate)
         {
             _listening = new Listening(listener, loop);
@@ -49,8 +48,10 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
         return Task.FromResult(port);
     }
 
-    // The loop of the listener that runs now ended by itself: the receiver is told. One stopped or replaced meanwhile is not news.
-    private void OnLoopFailed(RemoteAcceptLoop loop)
+    // The loop of the listener that runs now ended by itself: its start is told. One stopped or replaced meanwhile is not
+    // news; should it be told all the same (it failed just as it was replaced), it is told as its own start, which the
+    // receiver no longer counts.
+    private void OnLoopFailed(RemoteAcceptLoop loop, Action onFailed)
     {
         lock (_gate)
         {
@@ -59,7 +60,7 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
                 return;
             }
         }
-        Failed?.Invoke(this, EventArgs.Empty);
+        onFailed();
     }
 
     public Task StopAsync()
