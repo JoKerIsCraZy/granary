@@ -7,8 +7,9 @@ namespace Granary.Core.Remote;
 public interface IServiceAdvertiser
 {
     /// <summary>
-    /// Registers <paramref name="registration"/>, replacing one made before. False when Windows refused it: the receiver
-    /// then runs on, and phones connect through the pairing code only.
+    /// Registers <paramref name="registration"/>, replacing one made before. False when Windows refused it, or kept one made
+    /// before that it would not take back yet: the receiver then runs on, phones connect through the pairing code only, and
+    /// the receiver asks again later (<see cref="RemoteReceiver.AdvertiseAgainAfter"/>).
     /// </summary>
     Task<bool> RegisterAsync(ServiceRegistration registration, CancellationToken cancellationToken);
 

@@ -133,6 +133,42 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAdvertisementWindowsDidNotTake_IsAskedForAgainLater_WithoutAnotherChange()
+    {
+        _harness.Advertiser.Accepts = false;
+        await _harness.StartListeningAsync();
+        Assert.False(Receiver.Status.IsAdvertised);
+        // Windows takes it now: a removal it refused before has been given up meanwhile, say.
+        _harness.Advertiser.Accepts = true;
+
+        Time.Advance(RemoteReceiver.AdvertiseAgainAfter);
+        await SettledAsync();
+
+        Assert.Equal(2, _harness.Advertiser.Registrations.Count);
+        Assert.True(Receiver.Status.IsAdvertised);
+        Assert.NotNull(_harness.Advertiser.Current);
+        Assert.Equal(1, _harness.Listener.Starts);
+    }
+
+    [Fact]
+    public async Task AnAdvertisementWindowsNeverTakes_IsAskedForAgainOnlyTwice()
+    {
+        _harness.Advertiser.Accepts = false;
+        await _harness.StartListeningAsync();
+
+        for (int i = 0; i < 4; i++)
+        {
+            Time.Advance(RemoteReceiver.AdvertiseAgainAfter);
+            await SettledAsync();
+        }
+
+        Assert.Equal(1 + RemoteReceiver.AdvertiseAgainTimes, _harness.Advertiser.Registrations.Count);
+        Assert.Equal(2, RemoteReceiver.AdvertiseAgainTimes);
+        Assert.False(Receiver.Status.IsAdvertised);
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+    }
+
+    [Fact]
     public async Task ALongAddressThatDoesNotFitTheTxtRecord_RunsWithoutAdvertising()
     {
         _harness.Addresses.Set(RemoteHarness.Lan);

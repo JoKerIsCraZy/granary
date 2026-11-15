@@ -21,6 +21,16 @@ public sealed partial class RemoteReceiver
     /// <summary>How long the advertisement waits for the last of quick changes of <c>playing</c> before it is registered anew.</summary>
     public static readonly TimeSpan PlayingSettles = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// How long after Windows did not take the advertisement it is asked for again, without waiting for another change: a
+    /// removal Windows refused is given up half a minute after its first refusal (the App's <c>DnssdRefusals</c>), and the
+    /// new registration is made then.
+    /// </summary>
+    public static readonly TimeSpan AdvertiseAgainAfter = TimeSpan.FromSeconds(30);
+
+    /// <summary>How often, at most, the advertisement is asked for again after a change.</summary>
+    public const int AdvertiseAgainTimes = 2;
+
     /// <summary>The ports tried in order: Silo's Roku app's 52817 to 52826, then any port Windows gives.</summary>
     public static readonly IReadOnlyList<int> Ports = [.. Enumerable.Range(52817, 10), 0];
 
@@ -56,6 +66,12 @@ public sealed partial class RemoteReceiver
 
     // Whether a title plays now (set on the UI thread) and what the advertisement says once it settled.
     private ITimer? _playingSettle;
+
+    // Asking again for an advertisement Windows did not take: the timer, how often since the last change (the lifetime
+    // loop's), and whether the wait has passed.
+    private ITimer? _advertiseAgain;
+    private int _advertisedAgain;
+    private int _advertiseDue;
     private bool _playingNow;
     private bool _playingSettled;
 
@@ -133,6 +149,7 @@ public sealed partial class RemoteReceiver
         _addresses.Changed -= OnLifetimeChanged;
         _pairing.KeyChanged -= OnLifetimeChanged;
         Volatile.Read(ref _playingSettle)?.Dispose();
+        Volatile.Read(ref _advertiseAgain)?.Dispose();
         try
         {
             await StopNowAsync().WaitAsync(StopBudget, _time).ConfigureAwait(false);
@@ -408,6 +425,7 @@ public sealed partial class RemoteReceiver
         }
         bool playing = Volatile.Read(ref _playingNow);
         Volatile.Write(ref _playingSettled, playing);
+        _advertisedAgain = 0;
         var running = new Running(want.Server!, want.Address!, port.Value, material, identity, stop, IsAdvertised: false, Playing: playing);
         try
         {
@@ -446,8 +464,15 @@ public sealed partial class RemoteReceiver
         }
         var identity = IdentityFor(running.Material, want.Server!);
         bool playing = Volatile.Read(ref _playingSettled);
-        if (rebound || identity != running.Identity || playing != running.Playing)
+        // Windows did not take it, and the wait to ask again has passed.
+        bool again = Interlocked.Exchange(ref _advertiseDue, 0) == 1 && !running.IsAdvertised;
+        bool changed = rebound || identity != running.Identity || playing != running.Playing;
+        if (changed || again)
         {
+            if (changed)
+            {
+                _advertisedAgain = 0;
+            }
             var renewed = running with { Identity = identity, Playing = playing };
             try
             {
@@ -472,6 +497,8 @@ public sealed partial class RemoteReceiver
     {
         Volatile.Write(ref _accepting, null);
         Volatile.Write(ref _running, null);
+        Volatile.Read(ref _advertiseAgain)?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        Volatile.Write(ref _advertiseDue, 0);
         try
         {
             await CloseAllAsync(SiloCastCloseReasons.TvDisconnected, logReason).WaitAsync(PhonesBudget, _time).ConfigureAwait(false);
@@ -553,8 +580,35 @@ public sealed partial class RemoteReceiver
         if (!taken)
         {
             _logger.LogWarning("Windows did not advertise the phone remote; phones connect through the pairing code only");
+            AdvertiseAgainLater();
         }
         return taken;
+    }
+
+    // Under the lifetime gate. Windows did not take the advertisement: it is asked for again after AdvertiseAgainAfter, at
+    // most AdvertiseAgainTimes times after a change, so the PC is advertised again without another change once Windows
+    // takes it, and the status says so.
+    private void AdvertiseAgainLater()
+    {
+        if (_advertisedAgain >= AdvertiseAgainTimes)
+        {
+            return;
+        }
+        _advertisedAgain++;
+        var timer = Volatile.Read(ref _advertiseAgain);
+        if (timer is null)
+        {
+            timer = _time.CreateTimer(static self => ((RemoteReceiver)self!).AdvertiseAgainDue(), this, Timeout.InfiniteTimeSpan,
+                Timeout.InfiniteTimeSpan);
+            Volatile.Write(ref _advertiseAgain, timer);
+        }
+        timer.Change(AdvertiseAgainAfter, Timeout.InfiniteTimeSpan);
+    }
+
+    private void AdvertiseAgainDue()
+    {
+        Volatile.Write(ref _advertiseDue, 1);
+        LookAgain();
     }
 
     // A connection the listener accepted: served while the run that bound it accepts, closed unread otherwise.

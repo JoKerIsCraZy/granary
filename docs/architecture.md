@@ -1441,6 +1441,10 @@ then on; `StopAsync` ends it for good when Granary closes.
     anew; phones on the old address end with their heartbeat. The code changes, the key does not.
   - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
     register once, and the status tick never does.
+  - Windows did not take the advertisement (`RegisterAsync` false): it runs on, and the advertisement is asked for
+    again after 30 seconds (`AdvertiseAgainAfter`), at most twice after a change, without waiting for another one. A
+    removal Windows refused is given up half a minute after its first refusal, so the first of these makes the new
+    registration, and the status says the PC is advertised once it is.
   - The listener fails by itself (its start's `onFailed`): stop, and the status says `Failed`. Nothing starts again
     until the switch, the session, the address or the key changes; a title that plays is no reason to. The changes are
     counted, and the stop is noted under the count it was decided at, so a change that comes as the loop decides or
@@ -1662,7 +1666,8 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   so for at most three refusals, or until a refusal half a minute after the first (`DnssdRefusals`): Windows may never
   take it (an adapter gone with a network change, a request it no longer knows, an answer that never comes), and kept
   for good it would leave the PC unadvertised while Granary runs. Then it is given up, its memory kept, and a new one is
-  made, so two of one name may overlap, until Granary closes at the latest. Microsoft's page for
+  made, so two of one name may overlap, until Granary closes at the latest. The receiver asks again 30 seconds after
+  a registration Windows did not take, so this happens without another change. Microsoft's page for
   `DnsServiceDeRegister` names no particular codes; `ERROR_NOT_FOUND` and `ERROR_INVALID_PARAMETER`, Windows' general
   words for a request it does not know or will not take, give it up at once. One not answered yet is watched for 30
   seconds more: a late success is removed then, while it is still the current one or was given up. Each

@@ -27,7 +27,9 @@ namespace Granary.App.Services;
 /// name do not overlap; which answers are still to come for it is not known then, so its memory is never freed. One whose
 /// removal Windows does not take stays the current one, as a registration that went through does, and nothing is made
 /// beside it, for a few tries or half a minute (<see cref="DnssdRefusals"/>); then it is given up, its memory kept, and a
-/// new one is made, so the PC is not left unadvertised while Granary runs.</item>
+/// new one is made. The receiver asks again half a minute after a registration that was not taken
+/// (<c>RemoteReceiver.AdvertiseAgainAfter</c>), so that happens without another change and the PC is not left
+/// unadvertised while Granary runs.</item>
 /// <item>The completion callback is a static <c>UnmanagedCallersOnly</c> function, not a delegate, so nothing of it can
 /// be collected while Windows holds its address. Its context is a registration's number, not a handle: a late call finds
 /// the number gone and does nothing.</item>
