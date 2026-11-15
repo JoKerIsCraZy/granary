@@ -880,9 +880,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One Time first, with its line
     under them ("Download now. Nothing else downloads later." / "Keep new episodes coming to this PC as they air."). One
     Time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
-    Series": the rules the server offers as rows in the version rows' style, a title and its line (All Episodes "Download
-    every episode now, then new ones as they air", Future Episodes "Only episodes that air from now on", the default, Last
-    Season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
+    Series": the rules the server offers as rows in the version rows' style, a title and its line (All episodes "Download
+    every episode now, then new ones as they air", Future episodes "Only episodes that air from now on", the default, Last
+    season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
     client's Custom, "Seasons 2 and 3", only for its own monitor); the qualities as pills when the server keeps a monitor's
     quality (else none, and monitors download originals); Delete after watching, a switch; Storage limit, a select of None,
     10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring Defaults fill both in for a new

@@ -1,6 +1,6 @@
-using System.Globalization;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Downloads;
@@ -54,25 +54,22 @@ public abstract record MonitorStatus
 }
 
 /// <summary>
-/// A monitor's rule and status in Silo's Apple app's words (<c>AutoDownloadStatus.swift</c>, <c>AutoDownloadRules</c>, and
-/// <c>SeriesDownloadSheet.swift</c>): the web has none. "This PC" stands where the Apple app names its device.
+/// A monitor's rule and status in Silo's Apple app's words and translations (<c>AutoDownloadStatus.swift</c>,
+/// <c>AutoDownloadRules</c>, and <c>SeriesDownloadSheet.swift</c>), as Granary's own <c>granary.monitor.*</c> texts: the web has
+/// none. "This PC" stands where the Apple app names its device. Numbers come in the language's digits, never grouped, as
+/// Apple's <c>LocaleFormat.integer</c>, and days in the format locale.
 /// </summary>
 public static class MonitorRules
 {
-    // The download dialog's rows (downloads.monitor.mode.*).
-    public const string AllEpisodes = "All Episodes";
-    public const string FutureEpisodes = "Future Episodes";
-    public const string LastSeason = "Last Season";
-    public const string Custom = "Custom";
+    /// <summary>The row of another client's specific seasons (<c>downloads.seriesSheet.custom</c>).</summary>
+    public static string Custom => AppText.Get("granary.monitor.mode.custom");
 
-    private static readonly CultureInfo English = CultureInfo.GetCultureInfo("en-US");
-
-    /// <summary>A mode's row in the download dialog: "All Episodes", "Future Episodes", "Last Season", "Custom".</summary>
+    /// <summary>A mode's row in the download dialog: "All episodes", "Future episodes", "Last season", "Custom".</summary>
     public static string ModeName(string mode) => mode switch
     {
-        SubscriptionModes.All => AllEpisodes,
-        SubscriptionModes.Future => FutureEpisodes,
-        SubscriptionModes.LatestSeason => LastSeason,
+        SubscriptionModes.All => AppText.Get("granary.monitor.mode.all"),
+        SubscriptionModes.Future => AppText.Get("granary.monitor.mode.future"),
+        SubscriptionModes.LatestSeason => AppText.Get("granary.monitor.mode.lastSeason"),
         _ => Custom,
     };
 
@@ -82,11 +79,11 @@ public static class MonitorRules
     /// </summary>
     public static string ModeDetail(string mode, int? latestSeason, IReadOnlyCollection<int> seasons) => mode switch
     {
-        SubscriptionModes.All => "Download every episode now, then new ones as they air",
-        SubscriptionModes.Future => "Only episodes that air from now on",
+        SubscriptionModes.All => AppText.Get("granary.monitor.ruleDetail.all"),
+        SubscriptionModes.Future => AppText.Get("granary.monitor.ruleDetail.future"),
         SubscriptionModes.LatestSeason => latestSeason is { } season
-            ? $"Season {Number(season)} and anything newer"
-            : "The latest season and anything newer",
+            ? AppText.Get("granary.monitor.ruleDetail.latestFrom", ("season", season))
+            : AppText.Get("granary.monitor.ruleDetail.latest"),
         _ => SeasonList(seasons),
     };
 
@@ -96,35 +93,36 @@ public static class MonitorRules
         ArgumentNullException.ThrowIfNull(monitor);
         string rule = monitor.Mode switch
         {
-            SubscriptionModes.All => "All episodes",
-            SubscriptionModes.Future => "Future episodes",
-            SubscriptionModes.LatestSeason => monitor.TargetSeason is { } season ? $"Last season · Season {Number(season)} on" : "Last season",
+            SubscriptionModes.All => AppText.Get("granary.monitor.rule.all"),
+            SubscriptionModes.Future => AppText.Get("granary.monitor.rule.future"),
+            SubscriptionModes.LatestSeason => monitor.TargetSeason is { } season
+                ? AppText.Get("granary.monitor.rule.lastSeasonFrom", ("season", season))
+                : AppText.Get("granary.monitor.rule.lastSeason"),
             SubscriptionModes.SpecificSeasons => SeasonList(monitor.SeasonNumbers),
-            _ => "Monitored",
+            _ => AppText.Get("granary.monitor.rule.unknown"),
         };
         return monitor.Quality is { Length: > 0 } quality && quality != DownloadQualities.Original
             ? $"{rule} · {DownloadText.QualityLabel(new DownloadQualityOption(quality, null, null))}"
             : rule;
     }
 
-    /// <summary>"Season 4", "Seasons 2 and 3", "Seasons 1, 2, and 4"; "No seasons".</summary>
+    /// <summary>"Season 4", "Seasons 2 and 3", "Seasons 1, 2 and 4", listed as the language lists names; "No seasons".</summary>
     public static string SeasonList(IReadOnlyCollection<int> seasons)
     {
         ArgumentNullException.ThrowIfNull(seasons);
-        var sorted = seasons.Distinct().Order().Select(Number).ToList();
+        var sorted = seasons.Distinct().Order().ToList();
         return sorted.Count switch
         {
-            0 => "No seasons",
-            1 => $"Season {sorted[0]}",
-            2 => $"Seasons {sorted[0]} and {sorted[1]}",
-            _ => $"Seasons {string.Join(", ", sorted.Take(sorted.Count - 1))}, and {sorted[^1]}",
+            0 => AppText.Get("granary.monitor.seasons.none"),
+            1 => AppText.Get("granary.monitor.seasons.single", ("season", sorted[0])),
+            _ => AppText.Get("granary.monitor.seasons.list", ("seasons", TextList.And([.. sorted.Select(season => NumberText.Digits(season))]))),
         };
     }
 
     /// <summary>"10 GB" for whole gigabytes, as the limits are chosen; another client's limit as its size, "1.5 GB".</summary>
     public static string LimitText(long maxBytes) =>
         maxBytes > 0 && maxBytes % DownloadPreferenceLimits.BytesPerGb == 0
-            ? $"{Number((int)(maxBytes / DownloadPreferenceLimits.BytesPerGb))} GB"
+            ? AppText.Get("web.common.format.size.gb", ("size", maxBytes / DownloadPreferenceLimits.BytesPerGb))
             : PrePlayText.FileSize(maxBytes);
 
     /// <summary>Whether the monitor's rule takes an episode of <paramref name="seasonNumber"/>; every mode takes what has not aired unless it names seasons.</summary>
@@ -183,14 +181,16 @@ public static class MonitorRules
         ArgumentNullException.ThrowIfNull(status);
         return status switch
         {
-            MonitorStatus.Paused => "Paused",
-            MonitorStatus.StorageLimit limit => $"Out of space · {LimitText(limit.MaxBytes)} limit",
-            MonitorStatus.Downloading { EpisodeNumber: { } episode } downloading => $"Downloading Episode {Number(episode)} · {Percent(downloading.Fraction)}%",
-            MonitorStatus.Downloading downloading => $"Downloading an episode · {Percent(downloading.Fraction)}%",
+            MonitorStatus.Paused => AppText.Get("granary.monitor.status.paused"),
+            MonitorStatus.StorageLimit limit => AppText.Get("granary.monitor.status.outOfSpace", ("limit", LimitText(limit.MaxBytes))),
+            MonitorStatus.Downloading { EpisodeNumber: { } episode } downloading =>
+                AppText.Get("granary.monitor.status.downloading", ("episode", episode), ("percent", Percent(downloading.Fraction))),
+            MonitorStatus.Downloading downloading =>
+                AppText.Get("granary.monitor.status.downloadingUnnamed", ("percent", Percent(downloading.Fraction))),
             MonitorStatus.Waiting waiting => WaitingLine(waiting.EpisodeNumber, waiting.Phase),
             MonitorStatus.Next { Episode: var next } => NextLine(next, now, zone),
-            MonitorStatus.UpToDate => "Up to date",
-            _ => "Monitoring",
+            MonitorStatus.UpToDate => AppText.Get("granary.monitor.status.upToDate"),
+            _ => AppText.Get("granary.monitor.status.monitoring"),
         };
     }
 
@@ -198,53 +198,59 @@ public static class MonitorRules
     public static string Headline(MonitorStatus status, DateTimeOffset now, TimeZoneInfo zone)
     {
         ArgumentNullException.ThrowIfNull(status);
-        switch (status)
+        if (status is MonitorStatus.Paused)
         {
-            case MonitorStatus.Paused:
-                return "Monitoring is paused";
-            case MonitorStatus.Next { Episode: var next }:
-                string what = next.EpisodeNumber == 1 ? $"Season {Number(next.SeasonNumber)}" : $"Episode {Number(next.EpisodeNumber)}";
-                return Day(next.AirDate, now, zone) switch
-                {
-                    RelativeDay.Today => $"{what} downloads today",
-                    RelativeDay.Tomorrow => $"{what} downloads tomorrow",
-                    var day => $"{what} downloads {DayText(next.AirDate, zone, day)}",
-                };
-            default:
-                return StatusLine(status, now, zone);
+            return AppText.Get("granary.monitor.headline.paused");
         }
-    }
-
-    private static string NextLine(UpcomingEpisode next, DateTimeOffset now, TimeZoneInfo zone)
-    {
-        bool premiere = next.EpisodeNumber == 1;
-        string season = Number(next.SeasonNumber);
-        string episode = Number(next.EpisodeNumber);
-        return Day(next.AirDate, now, zone) switch
+        if (status is not MonitorStatus.Next { Episode: var next })
         {
-            RelativeDay.Today => premiere ? $"Season {season} starts today" : $"Episode {episode} today",
-            RelativeDay.Tomorrow => premiere ? $"Season {season} starts tomorrow" : $"Episode {episode} tomorrow",
-            var day => premiere ? $"Season {season} starts on {DayText(next.AirDate, zone, day)}" : $"Episode {episode} on {DayText(next.AirDate, zone, day)}",
+            return StatusLine(status, now, zone);
+        }
+        // A season's first episode downloads the season.
+        int season = next.SeasonNumber, episode = next.EpisodeNumber;
+        return (Day(next.AirDate, now, zone), episode == 1) switch
+        {
+            (RelativeDay.Today, true) => AppText.Get("granary.monitor.headline.seasonToday", ("season", season)),
+            (RelativeDay.Today, false) => AppText.Get("granary.monitor.headline.episodeToday", ("episode", episode)),
+            (RelativeDay.Tomorrow, true) => AppText.Get("granary.monitor.headline.seasonTomorrow", ("season", season)),
+            (RelativeDay.Tomorrow, false) => AppText.Get("granary.monitor.headline.episodeTomorrow", ("episode", episode)),
+            (var day, true) => AppText.Get("granary.monitor.headline.seasonOn", ("season", season), ("date", DayText(next.AirDate, zone, day))),
+            (var day, false) => AppText.Get("granary.monitor.headline.episodeOn", ("episode", episode), ("date", DayText(next.AirDate, zone, day))),
         };
     }
 
+    // A season's first episode starts the season; any other is named by its number.
+    private static string NextLine(UpcomingEpisode next, DateTimeOffset now, TimeZoneInfo zone)
+    {
+        int season = next.SeasonNumber, episode = next.EpisodeNumber;
+        return (Day(next.AirDate, now, zone), episode == 1) switch
+        {
+            (RelativeDay.Today, true) => AppText.Get("granary.monitor.next.seasonStartsToday", ("season", season)),
+            (RelativeDay.Today, false) => AppText.Get("granary.monitor.next.episodeToday", ("episode", episode)),
+            (RelativeDay.Tomorrow, true) => AppText.Get("granary.monitor.next.seasonStartsTomorrow", ("season", season)),
+            (RelativeDay.Tomorrow, false) => AppText.Get("granary.monitor.next.episodeTomorrow", ("episode", episode)),
+            (var day, true) => AppText.Get("granary.monitor.next.seasonStartsOn", ("season", season), ("date", DayText(next.AirDate, zone, day))),
+            (var day, false) => AppText.Get("granary.monitor.next.episodeOn", ("episode", episode), ("date", DayText(next.AirDate, zone, day))),
+        };
+    }
+
+    // Where the Apple app waits for Wi-Fi, a PC waits for a connection Windows does not call metered: Granary's own words.
     private static string WaitingLine(int? episode, MonitorPhase phase)
     {
         if (episode is not { } number)
         {
             return phase switch
             {
-                MonitorPhase.WaitingForUnmetered => "An episode waits for an unmetered connection",
-                MonitorPhase.Preparing => "Preparing an episode",
-                _ => "An episode is next",
+                MonitorPhase.WaitingForUnmetered => AppText.Get("granary.monitor.waiting.unnamedUnmetered"),
+                MonitorPhase.Preparing => AppText.Get("granary.monitor.waiting.unnamedPreparing"),
+                _ => AppText.Get("granary.monitor.waiting.unnamedNext"),
             };
         }
-        string n = Number(number);
         return phase switch
         {
-            MonitorPhase.WaitingForUnmetered => $"Episode {n} waits for an unmetered connection",
-            MonitorPhase.Preparing => $"Preparing Episode {n}",
-            _ => $"Episode {n} is next",
+            MonitorPhase.WaitingForUnmetered => AppText.Get("granary.monitor.waiting.unmetered", ("episode", number)),
+            MonitorPhase.Preparing => AppText.Get("granary.monitor.waiting.preparing", ("episode", number)),
+            _ => AppText.Get("granary.monitor.waiting.next", ("episode", number)),
         };
     }
 
@@ -265,14 +271,12 @@ public static class MonitorRules
         return days <= 0 ? RelativeDay.Today : days == 1 ? RelativeDay.Tomorrow : days < 7 ? RelativeDay.ThisWeek : RelativeDay.Later;
     }
 
-    // "Thursday" within the week, else "Nov 30".
+    // "Thursday" within the week, else "Nov 30", in the format locale.
     private static string DayText(DateTimeOffset at, TimeZoneInfo zone, RelativeDay day)
     {
-        var local = TimeZoneInfo.ConvertTime(at, zone).DateTime;
-        return day == RelativeDay.ThisWeek ? local.ToString("dddd", English) : local.ToString("MMM d", English);
+        var local = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(at, zone).DateTime);
+        return day == RelativeDay.ThisWeek ? CalendarText.Weekday(local) : CalendarText.ShortMonthDay(local);
     }
 
-    private static string Percent(double fraction) => ((int)Math.Round(Math.Clamp(fraction, 0, 1) * 100)).ToString(CultureInfo.InvariantCulture);
-
-    private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
+    private static int Percent(double fraction) => (int)Math.Round(Math.Clamp(fraction, 0, 1) * 100);
 }

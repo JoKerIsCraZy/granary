@@ -92,7 +92,7 @@ public sealed class DownloadOptionsMonitorTests : IAsyncDisposable
 
         var options = await SeriesDialogAsync(MonitorPayloads.Capability(modes: ["future", "latest_season"]));
 
-        Assert.Equal([("Future Episodes", "Only episodes that air from now on"), ("Last Season", "Season 2 and anything newer")],
+        Assert.Equal([("Future episodes", "Only episodes that air from now on"), ("Last season", "Season 2 and anything newer")],
             options.MonitorRows.Select(r => (r.Title, r.Detail)));
         Assert.Equal(SubscriptionModes.Future, options.SelectedRule?.Mode);
         Assert.True(options.DeleteWatched);
