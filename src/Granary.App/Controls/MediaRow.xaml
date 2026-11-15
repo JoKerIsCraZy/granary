@@ -18,8 +18,22 @@
 
         <Grid>
             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Left">
-                <TextBlock x:Name="TitleText" Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
-                           AutomationProperties.HeadingLevel="Level2" />
+                <!--
+                    The title opens what Explore all opens, as the web's MediaCarousel links it (titleHref, the accent on hover):
+                    for the mouse only. Keys, a remote and a controller have Explore all, so the row's stops stay as they were,
+                    and a screen reader still reads the heading. Without Explore all it is the plain heading.
+                -->
+                <HyperlinkButton x:Name="TitleLink" Padding="0" MinHeight="0" VerticalAlignment="Center" IsTabStop="False"
+                                 Command="{x:Bind ExploreAllCommand, Mode=OneWay}" IsHitTestVisible="{x:Bind LinksTitle(ExploreAllCommand), Mode=OneWay}"
+                                 PointerEntered="OnTitlePointerEntered" PointerExited="OnTitlePointerExited" PointerCanceled="OnTitlePointerExited"
+                                 AutomationProperties.AccessibilityView="Raw">
+                    <HyperlinkButton.Resources>
+                        <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="Transparent" />
+                        <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />
+                    </HyperlinkButton.Resources>
+                    <TextBlock x:Name="TitleText" Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
+                               AutomationProperties.HeadingLevel="Level2" />
+                </HyperlinkButton>
                 <Border Padding="8,2,8,3" CornerRadius="9" Background="{StaticResource SiloPrimaryBrush}" VerticalAlignment="Center"
                         Visibility="{x:Bind HasText(TitleBadge), Mode=OneWay}">
                     <TextBlock Text="{x:Bind TitleBadge, Mode=OneWay}" FontSize="10" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"

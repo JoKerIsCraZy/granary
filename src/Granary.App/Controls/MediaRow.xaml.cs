@@ -149,6 +149,15 @@ public sealed partial class MediaRow : UserControl
     // Instance helpers because x:Bind function bindings call them.
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
+    // The title takes the mouse only while it opens something; a bool of its own, as one function must not feed two types.
+    public bool LinksTitle(ICommand? command) => command is not null;
+
+    // The accent under the pointer, as the web's title link (hover:text-primary); the style's colour again once it leaves.
+    private void OnTitlePointerEntered(object sender, PointerRoutedEventArgs e) =>
+        TitleText.Foreground = (Brush)Application.Current.Resources["SiloPrimaryBrush"];
+
+    private void OnTitlePointerExited(object sender, PointerRoutedEventArgs e) => TitleText.ClearValue(TextBlock.ForegroundProperty);
+
     public string ExploreAllName(string title) => $"Explore all: {title}";
 
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
