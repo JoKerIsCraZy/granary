@@ -39,7 +39,7 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, Im
     // together, and need the same list. It is taken when asked, before the server's image sizes are read, so the two
     // share it whatever thread each goes on on.
     private readonly Lock _gate = new();
-    private (string Key, Task<SeasonRead> Read)? _seasonRead;
+    private (string Key, Task<SeasonRead> Read, CancellationToken Owner)? _seasonRead;
     public async Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -116,12 +116,13 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, Im
         TaskCompletionSource<SeasonRead> read;
         lock (_gate)
         {
-            if (_seasonRead is { } pending && pending.Key == key && !pending.Read.IsCompleted)
+            // Not one whose asker gave up: it ends with that asker's cancellation, not with the episodes.
+            if (_seasonRead is { } pending && pending.Key == key && !pending.Read.IsCompleted && !pending.Owner.IsCancellationRequested)
             {
                 return pending.Read;
             }
             read = new TaskCompletionSource<SeasonRead>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _seasonRead = (key, read.Task);
+            _seasonRead = (key, read.Task, cancellationToken);
         }
         // The read itself outside the lock: the sizes the server understands, then the episodes at those sizes.
         _ = FillAsync();

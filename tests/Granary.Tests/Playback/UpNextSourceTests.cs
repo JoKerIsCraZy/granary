@@ -156,6 +156,29 @@ public sealed class UpNextSourceTests
     }
 
     [Fact]
+    public async Task ALookupAfterTheFirstWasCanceled_DoesNotJoinItsRead()
+    {
+        var answer = new TaskCompletionSource();
+        _silo.On(HttpMethod.Get, Season1, async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(1, [1, 2, 3]))();
+        });
+        var source = Create();
+        var current = LastOfSeason1 with { ContentId = "ted-1-2" };
+        using var first = CancellationTokenSource.CreateLinkedTokenSource(Token);
+
+        var canceled = source.NextEpisodeAsync(current, null, first.Token);
+        await first.CancelAsync();
+        var previous = source.PreviousEpisodeAsync(current, null, Token);
+        answer.SetResult();
+
+        Assert.Equal("ted-1-1", (await previous)?.ContentId);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceled);
+        Assert.Equal(2, _silo.Sent.Count(r => r.Uri.AbsolutePath.EndsWith("/seasons/1/episodes", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public async Task ALaterSeason_IsReadWithTheSameWidth()
     {
         _silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
