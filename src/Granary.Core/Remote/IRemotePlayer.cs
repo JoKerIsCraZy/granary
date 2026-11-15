@@ -15,8 +15,8 @@ public interface IRemotePlayer
     /// <summary>
     /// Carries out a phone's command through the player's own commands, so a Watch Party's rules hold. Required: every number
     /// a phone sends is range-checked and clamped before it reaches the player, as nothing before here checks it:
-    /// <c>seconds</c> into the title, <c>trackId</c> to a track of the list last sent (else <see cref="RemoteCommandResult.Ignored"/>),
-    /// <c>speed</c> to the player's speeds, <c>volume</c> to 0 to 1, <c>milliseconds</c> to the subtitle delay's limits; a
+    /// <c>seconds</c> into the title, <c>trackId</c> to a track it was sent for that the player still lists
+    /// (else <see cref="RemoteCommandResult.Ignored"/>), <c>speed</c> to the player's speeds, <c>volume</c> to 0 to 1, <c>milliseconds</c> to the subtitle delay's limits; a
     /// value that is not finite is ignored.
     /// </summary>
     RemoteCommandResult Apply(SiloCastMessage.Control command);

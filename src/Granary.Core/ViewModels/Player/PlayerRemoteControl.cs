@@ -43,10 +43,14 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
     private readonly PlayerViewModel _player;
     private readonly RemoteReceiver _receiver;
     private readonly IUiDispatcher _dispatcher;
-    // The tracks of the status built last, in the order sent: the audio tracks' rows by their ordinal (without their check;
-    // an audio track has no id of its own), the subtitles by their own ids.
+    // The audio tracks of the status built last, by their ordinal, without their check: an audio track has no id of its own.
     private IReadOnlyList<AudioTrackOption> _sentAudio = [];
-    private IReadOnlyList<string> _sentSubtitles = [];
+
+    // Each subtitle track keeps the number it was first sent with for as long as the player lives, and no number goes to
+    // another track: a number from a status the phone saw before a newer one still names its track, or none. silo-roku
+    // names a subtitle by its plan's combined index, which a change of the list does not move either.
+    private readonly Dictionary<string, int> _subtitleNumbers = new(StringComparer.Ordinal);
+    private readonly List<string> _subtitlesByNumber = [];
     private bool _disposed;
 
     /// <summary>Made on the UI thread by the player page, which disposes it where it disposes <see cref="PlayerSystemMedia"/>.</summary>
@@ -77,7 +81,6 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
             if (_disposed || _player.HasLeft || _player.ContentId is null)
             {
                 _sentAudio = [];
-                _sentSubtitles = [];
                 return SiloCastState.Idle;
             }
             return Read();
@@ -169,8 +172,7 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         // Off is no track: the phone sends no number for it.
         var subtitles = player.SubtitleTracks.Where(row => row.TrackId is not null).ToList();
         _sentAudio = [.. audio.Select(Unchecked)];
-        _sentSubtitles = [.. subtitles.Select(row => row.TrackId!)];
-        int shownSubtitle = subtitles.FindIndex(row => row.IsSelected);
+        var shownSubtitle = subtitles.FirstOrDefault(row => row.IsSelected);
         var info = player.MediaInfo;
         bool hasNext = HasNext;
         return new SiloCastState
@@ -185,9 +187,9 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
             CurrentTime = Seconds(player.PositionSeconds),
             Duration = Seconds(player.DurationSeconds),
             AudioTracks = [.. audio.Select(track => new SiloCastTrack(AudioKind, track.Ordinal, track.Title, OrNull(track.Meta)))],
-            SubtitleTracks = [.. subtitles.Select((row, index) => new SiloCastTrack(SubtitleKind, index, row.Title, SubtitleDetail(row)))],
+            SubtitleTracks = [.. subtitles.Select(row => new SiloCastTrack(SubtitleKind, SubtitleNumber(row.TrackId!), row.Title, SubtitleDetail(row)))],
             SelectedAudioTrackId = audio.FirstOrDefault(track => track.IsSelected)?.Ordinal,
-            SelectedSubtitleTrackId = shownSubtitle >= 0 ? shownSubtitle : null,
+            SelectedSubtitleTrackId = shownSubtitle is { TrackId: { } shown } ? SubtitleNumber(shown) : null,
             QualityOptions = [.. player.QualityOptions.Select(option => new SiloCastQuality(option.Preference, option.Label, OrNull(option.Bitrate)))],
             ActiveQualityId = player.QualityOptions.FirstOrDefault(option => option.IsSelected)?.Preference ?? QualityOption.Auto,
             IsQualitySwitching = player.IsChangingPlan,
@@ -292,7 +294,18 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         return RemoteCommandResult.Done;
     }
 
-    // No number turns subtitles off; a number goes back through the list last sent to the track's own id.
+    private int SubtitleNumber(string own)
+    {
+        if (!_subtitleNumbers.TryGetValue(own, out int number))
+        {
+            number = _subtitlesByNumber.Count;
+            _subtitlesByNumber.Add(own);
+            _subtitleNumbers.Add(own, number);
+        }
+        return number;
+    }
+
+    // No number turns subtitles off; a number goes back to the track it was given to, while the player still lists it.
     private RemoteCommandResult SelectSubtitle(long? trackId)
     {
         if (trackId is not { } id)
@@ -304,12 +317,11 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
             _player.SelectSubtitle(null);
             return RemoteCommandResult.Done;
         }
-        var sent = _sentSubtitles;
-        if (id < 0 || id >= sent.Count)
+        if (id < 0 || id >= _subtitlesByNumber.Count)
         {
             return RemoteCommandResult.Ignored;
         }
-        string own = sent[(int)id];
+        string own = _subtitlesByNumber[(int)id];
         var row = _player.SubtitleTracks.FirstOrDefault(option => option.TrackId == own);
         if (row is null || row.IsSelected)
         {

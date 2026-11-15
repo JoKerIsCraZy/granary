@@ -166,7 +166,7 @@ public sealed class PlayerRemoteControlTests
     }
 
     [Fact]
-    public async Task AudioTracks_CarryTheirOrdinal_AndSubtitlesTheirPositionInTheList()
+    public async Task AudioTracks_CarryTheirOrdinal_AndSubtitlesANumberOfTheirOwn()
     {
         var (player, remote) = await PlayingAsync(subtitle: Subtitles[1].TrackId);
 
@@ -353,6 +353,22 @@ public sealed class PlayerRemoteControlTests
         Assert.Empty(Playback.SubtitlePicks);
 
         // The number the phone was shown for a track that is still there still names that track.
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectSubtitleTrack, trackId: 2)));
+        Assert.Equal([Subtitles[2].TrackId], Playback.SubtitlePicks);
+    }
+
+    [Fact]
+    public async Task ASubtitleNumber_KeepsNamingItsTrack_AfterANewerListWasSent()
+    {
+        var (_, remote) = await PlayingAsync();
+        _ = remote.State;
+        // A new plan lists one track fewer, and a status with it went out before the phone's command for the old list came.
+        Playback.RaiseSubtitles([Subtitles[0], Subtitles[2]], null);
+        var newer = remote.State;
+
+        Assert.Equal([0L, 2L], newer.SubtitleTracks.Select(t => t.TrackId));
+        Assert.Equal(RemoteCommandResult.Ignored, remote.Apply(Command(SiloCastControls.SelectSubtitleTrack, trackId: 1)));
+        Assert.Empty(Playback.SubtitlePicks);
         Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectSubtitleTrack, trackId: 2)));
         Assert.Equal([Subtitles[2].TrackId], Playback.SubtitlePicks);
     }

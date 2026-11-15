@@ -1258,7 +1258,7 @@ not in a profile.
 What the receiver requires of the code behind its ports (their XML docs say the same):
 
 - `IRemotePlayer.Apply` range-checks and clamps every number a phone sends before it reaches the player: `seconds` into
-  the title, `trackId` to a track of the list last sent (else ignored), `speed` to the player's speeds, `volume` to 0 to
+  the title, `trackId` to a track it was sent for that the player still lists (else ignored), `speed` to the player's speeds, `volume` to 0 to
   1, `milliseconds` to the subtitle delay's limits; a value that is not finite is ignored. Nothing before it checks them.
 - `IRemoteConnection.DisposeAsync` aborts every read and write in flight at once and never waits for the phone: a slow
   phone's end and the receiver's stop rely on it.
@@ -1528,16 +1528,18 @@ takes).
   button, and `stop` the player's Exit, also while a title still loads. `set_subtitle_position` is not supported.
 - **Every number is checked here** (security review 2): a seek is brought into the title (and a title of unknown length
   is not sought); a volume into 0 to 1; a speed to the nearest of the player's speeds, none at or below zero; a subtitle
-  delay into ±10 seconds, the player's own limit; a track number has to be one of the list last sent. A value that is
+  delay into ±10 seconds, the player's own limit; a track number has to name a track it was sent for that the player still lists. A value that is
   not finite, a command without its argument and a name Granary does not know are ignored without an answer.
 - **When the player is not ready.** While a title loads or after it failed, only `stop`, the volume and mute are taken;
   the rest gets `player_not_ready`. In a Watch Party, play, pause and seek go to the room as the player's own buttons'
   requests do; a guest the room does not let gets `command_failed`, and so does a speed change, as the room plays at its
   own. `play_next` without a next episode gets `command_failed` too.
 - **Track numbers.** The wire's `trackId` is an integer the phone only sends back. An audio track's is its ordinal, the
-  number the player's menu passes on. A subtitle's is its place in the list of the status that was sent, Off left out
-  (no number turns subtitles off). The control keeps both lists it built last: a subtitle's number maps back to the
-  track's own id, and an audio number to the row it was sent for (an audio track has no id of its own, so its title,
+  number the player's menu passes on. A subtitle's is a number of its own, given in the order the control first lists
+  it and kept for as long as the player lives, never given to another track (as silo-roku names a subtitle by its plan's
+  combined index), Off left out (no number turns subtitles off): it maps back to the track's own id also after a newer
+  status went out. The control keeps the audio rows it built last: an audio number maps to the row it was sent for (an
+  audio track has no id of its own, so its title,
   details, codec, channels and default stand for it). A track no longer in the player's list, or another track in its
   place (another version's list of the same length), is ignored, so a number from an older list never picks another
   track.

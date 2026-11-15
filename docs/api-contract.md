@@ -3141,7 +3141,7 @@ newcomer gets no answer. An unknown type and an unknown control
 name get no answer; a known type with a malformed payload ends that connection with a bare `close`.
 
 A command that changes nothing (play while playing, the quality that is chosen), a command without its argument, a
-number that is not finite, a track number that is not in the list last sent, a speed at or below zero, a quality the
+number that is not finite, a track number that names no track the player still lists, a speed at or below zero, a quality the
 menu does not offer and `set_subtitle_position` get no answer either. Other numbers are brought into range first: a
 seek into the title, a volume into 0 to 1, a speed to the nearest of 0.5× to 3×, a subtitle delay into ±10 seconds.
 
