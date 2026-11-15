@@ -1598,7 +1598,8 @@ titles of their series as a download dialog or a download named them.
   reads the list but syncs nothing, so a monitor that is there can still be stopped.
 - **When.** At the start, when another server, account or profile becomes the active one, every `SyncInterval` (4 hours,
   the Apple app's background refresh) while Granary runs, after a monitor is made or changed (that monitor alone), and when
-  asked (`SyncSoon`). Wishes settle for `Settle` (2 s) into one run; a wish while a run is under way is one more run after
+  a new notification comes for the profile on the events connection (`RealtimeEvents.NotificationArrived`, on
+  `notification.created`), as a push wakes the Apple app's sync: a new episode's notification is one (`SyncSoon`). Wishes settle for `Settle` (2 s) into one run; a wish while a run is under way is one more run after
   it. Signed out there is nothing to run, and the monitors stay on the server: they are the profile's.
 - **Taking registered episodes.** After the syncs, the registry (14.3) is read whole and each entry of a monitored series
   (its `content_id` a monitor's series, an episode) that the PC neither keeps, by id or by episode, nor is deleting, whose

@@ -51,6 +51,7 @@ public sealed class RealtimeEvents : IDisposable
     public static readonly TimeSpan EchoWindow = TimeSpan.FromSeconds(5);
 
     private const string UserStateChanged = "user_state.changed";
+    private const string NotificationCreated = "notification.created";
     private const string ProgressChange = "progress";
 
     private static readonly string[] Channels = [EventsChannels.Catalog, EventsChannels.UserState, EventsChannels.Notifications];
@@ -116,6 +117,12 @@ public sealed class RealtimeEvents : IDisposable
         _progress = time.CreateTimer(_ => OnProgressWindowClosed(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _count = time.CreateTimer(_ => OnNotificationsSettled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
+
+    /// <summary>
+    /// A new notification came for the followed profile (<c>notification.created</c>), raised on the connection's thread. Silo's
+    /// Apple app syncs its monitored series when a push wakes it; series monitoring does the same here.
+    /// </summary>
+    public event EventHandler? NotificationArrived;
 
     /// <summary>Frames handled so far (for tests, which move the clock once one arrived).</summary>
     internal int Handled => Volatile.Read(ref _handled);
@@ -186,10 +193,12 @@ public sealed class RealtimeEvents : IDisposable
         try
         {
             bool recovered = false;
+            bool followed = false;
             lock (_gate)
             {
                 if (_following?.ProfileId == profileId && (from is null || ReferenceEquals(_lane, from)))
                 {
+                    followed = true;
                     recovered = HandleLocked(frame, profileId);
                 }
             }
@@ -197,6 +206,10 @@ public sealed class RealtimeEvents : IDisposable
             if (recovered)
             {
                 _recovery?.Report("the events connection");
+            }
+            if (followed && frame.Type == EventsFrameTypes.Event && frame.Channel == EventsChannels.Notifications && frame.Event == NotificationCreated)
+            {
+                NotificationArrived?.Invoke(this, EventArgs.Empty);
             }
         }
         finally

@@ -145,6 +145,8 @@ public partial class App : Application
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
+        // A new notification syncs the monitored series, as a push does in Silo's Apple app: it may be a new episode's.
+        realtime.NotificationArrived += (_, _) => monitors.SyncSoon();
         realtime.Start();
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
         // The Discord status goes with the app.

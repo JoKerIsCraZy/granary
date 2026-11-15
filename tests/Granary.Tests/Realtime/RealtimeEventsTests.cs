@@ -229,6 +229,19 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ANewNotification_SaysOneArrived_AReadOneDoesNot()
+    {
+        var socket = await StartedAsync();
+        int arrived = 0;
+        _events.NotificationArrived += (_, _) => Interlocked.Increment(ref arrived);
+
+        await PushedAsync(socket, """{ "type": "event", "channel": "notifications", "event": "notification.read", "event_id": "n0", "timestamp": "t", "data": { "id": "n0", "profile_id": "7" } }""");
+        await PushedAsync(socket, """{ "type": "event", "channel": "notifications", "event": "notification.created", "event_id": "n1", "timestamp": "t", "data": { "id": "n1", "profile_id": "7" } }""");
+
+        Assert.Equal(1, Volatile.Read(ref arrived));
+    }
+
+    [Fact]
     public async Task AnAccessChange_ReloadsToo()
     {
         var socket = await StartedAsync();
