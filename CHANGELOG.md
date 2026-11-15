@@ -17,8 +17,9 @@ release's section is what its update says it changes (docs/release.md).
   (yellow while they are all paused, and not while a title plays). When downloads finish or fail, Granary says so
   ("Example Movie is ready to watch offline"): in its window while it is in front, else as a Windows notification with
   Play and Open Downloads; a season or a series that finishes together is one message. Settings → Downloads → Notify
-  when downloads finish turns these messages off. Downloads wait on a metered connection unless
-  Settings → Downloads allows them, and carry on where they stopped when Granary starts again. X on a controller plays a
+  when downloads finish turns these messages off, and Download settings on the Downloads page leads there. Downloads
+  wait on a metered connection unless Settings → Downloads allows them, and carry on where they stopped when Granary
+  starts again. X on a controller plays a
   downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
   and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
   controller, which Windows' folder picker behind Change does not take. Signing out of a server or

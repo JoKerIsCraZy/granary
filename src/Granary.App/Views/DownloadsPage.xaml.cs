@@ -37,27 +37,29 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost,
 
     public string SeriesTitle => DownloadsViewModel.SeriesTitle;
 
+    public string SettingsTitle => DownloadsViewModel.SettingsTitle;
+
     /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus.</summary>
     public ICardMenuSource CardMenu => ViewModel.Actions;
 
     /// <summary>
     /// The last film went with the focus: the first series takes it; the last series: the last film; neither is left: Reclaim
-    /// Watched, when it shows. Whatever is left, a keyboard, a controller or a remote carries on from there.
+    /// Watched when it shows, else Download settings. Whatever is left, a keyboard, a controller or a remote carries on from there.
     /// </summary>
     public void FocusAfterLastCard(MediaGrid grid, FocusState state)
     {
         bool moved = ReferenceEquals(grid, FilmsGrid) ? SeriesGrid.FocusCardAt(0, state)
             : ReferenceEquals(grid, SeriesGrid) && FilmsGrid.FocusCardAt(int.MaxValue, state);
-        if (!moved && ReclaimButton.Visibility == Visibility.Visible)
+        if (!moved)
         {
-            ReclaimButton.Focus(state);
+            (ReclaimButton.Visibility == Visibility.Visible ? ReclaimButton : SettingsButton).Focus(state);
         }
     }
 
     /// <summary>
     /// A controller's bumpers: the page has no tabs, but two sections, Films and Series, so a bumper goes to the first card of
     /// the one before or after the section focus is in, as a bumper picks the tab beside the chosen one, and stops at the ends.
-    /// From above them (Retry, Reclaim Watched) or the sidebar, RB goes to the first section with cards. A section without
+    /// From above them (Retry, Reclaim Watched, Download settings) or the sidebar, RB goes to the first section with cards. A section without
     /// cards is stepped over.
     /// </summary>
     void IPadSections.StepSection(int by)

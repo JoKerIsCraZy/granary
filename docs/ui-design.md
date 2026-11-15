@@ -285,8 +285,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
-  hides the button. The space left is the downloads folder's: when Settings → Downloads names another folder
-  while the page is in memory, the line shows only the space used until the new folder's is read. Then "Films" and
+  hides the button. Beside it, or in its place when it does not show, a quiet "Download settings" with the settings gear
+  (Reclaim Watched's size and pill, muted, with no fill or edge until the pointer is on it) opens Settings → Downloads
+  over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
+  Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
+  download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
+  is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
+  only the space used until the new folder's is read. Then "Films" and
   "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
   gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
@@ -329,8 +334,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows. A controller's bumpers go between Films and Series, to the
-  first card of the other (Game controller, below). The sidebar's page has no Back disc.
+  film, and with neither left Reclaim Watched when it shows, else Download settings. A controller's bumpers go between
+  Films and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
