@@ -181,7 +181,13 @@ public sealed partial class DownloadQueue
                 {
                     entries.TryAdd(entry.Id, entry);
                 }
-                if (read.Page is not { HasMore: true })
+                // Whole only when a page says no more follow: one without its paging may hold back later entries, which
+                // would then count as gone (Silo always writes it).
+                if (read.Page is null)
+                {
+                    break;
+                }
+                if (!read.Page.HasMore)
                 {
                     return (entries, true);
                 }

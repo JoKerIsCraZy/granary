@@ -93,7 +93,6 @@ public sealed class OfflineProgressQueue
     /// <summary>For tests: runs on the write's thread before a write touches the disk, as a drive that does not answer holds it.</summary>
     internal Action? Writing { get; set; }
 
-    /// <summary>The write started most recently: done once the file is on the disk, or could not be written and was logged.</summary>
     /// <summary>The file was read, or there was none: until then, only this run's positions are known here.</summary>
     public bool IsRead
     {
@@ -106,6 +105,7 @@ public sealed class OfflineProgressQueue
         }
     }
 
+    /// <summary>The write started most recently: done once the file is on the disk, or could not be written and was logged.</summary>
     public Task LatestSave
     {
         get
