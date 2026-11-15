@@ -259,6 +259,99 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheTitlesStateOnTheServer_IsReadAsTheDownloadsAccountAndProfile()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+
+        await _fixture.StartAsync();
+
+        var read = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.WatchPath));
+        Assert.Equal(("1", "7"), (read.AsAccount, read.AsProfile));
+    }
+
+    [Theory]
+    [InlineData("8", "1")]
+    [InlineData("7", "2")]
+    public async Task AnotherProfileOrAccountActiveAsTheDownloadStarts_LeavesItsResumePointAndSubtitleOutOfTheDownload(string profile, string account)
+    {
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { ResumeMs = 600_000, ResumeAt = Fakes.ManualTimeProvider.DefaultStart });
+        var request = PlayRequest.Resume(LocalPlaybackFixture.EpisodeId);
+        var playback = Assert.IsType<LocalPlayback>(await _fixture.Playbacks.TryCreateAsync(request, LocalPlaybackFixture.Token));
+        // Before the title's state is read, the server acts for another profile, or another account whose profile has the same id;
+        // it left the title elsewhere and prefers subtitles of its own.
+        _fixture.Silo.ActingProfile = () => profile;
+        _fixture.Silo.ActingAccount = () => account;
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.WatchPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK,
+            LocalPlaybackFixture.Watch(preferences: """, "effective_subtitle_language": "de", "effective_subtitle_mode": "always" """)));
+
+        await playback.StartAsync(request, LocalPlaybackFixture.Token);
+
+        // The download plays on what this PC knows of it, and keeps nothing of the other one's.
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.WatchPath));
+        Assert.Equal(TimeSpan.FromSeconds(600), Assert.Single(_fixture.Engine.Loaded).Start);
+        await playback.StopAsync();
+        Assert.Null(_fixture.Harness.Find("dl_1")!.Record.SubtitlePreference);
+    }
+
+    // The other profile watches at 1.5x.
+    private const string FasterSettings = """{ "items": [ { "key": "player.playback_speed", "value": 1.5, "source": "profile_device" } ], "revision": 2 }""";
+
+    [Theory]
+    [InlineData("8", "1")]
+    [InlineData("7", "2")]
+    public async Task AnotherProfileOrAccountActiveBeforeTheStart_LendsTheDownloadNoneOfItsSettings(string profile, string account)
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK, FasterSettings));
+        var request = PlayRequest.Resume(LocalPlaybackFixture.EpisodeId);
+        var playback = Assert.IsType<LocalPlayback>(await _fixture.Playbacks.TryCreateAsync(request, LocalPlaybackFixture.Token));
+        // Before the start, another profile of the same server becomes the active one, or another account whose profile has the same id.
+        _fixture.Harness.Session.ProfileId = profile;
+        _fixture.Harness.Session.Account = _fixture.Harness.Session.Account! with { Id = account };
+
+        await playback.StartAsync(request, LocalPlaybackFixture.Token);
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.SettingsPath));
+        Assert.Equal((1d, 1d), (playback.Speed, _fixture.Engine.Speed));
+        Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    [Fact]
+    public async Task AnotherProfileActiveWhileTheSettingsAreRead_LendsTheDownloadNoneOfItsSettings()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        var faster = ScriptedSilo.Json(System.Net.HttpStatusCode.OK, FasterSettings);
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, () =>
+        {
+            // The viewer switches profile while the settings are on their way; they answer for the one active now.
+            _fixture.Harness.Session.ProfileId = "8";
+            return faster();
+        });
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(PlaybackPreferences.Default, playback!.Preferences);
+        Assert.Equal((1d, 1d), (playback.Speed, _fixture.Engine.Speed));
+    }
+
+    [Fact]
+    public async Task AnotherServerActiveAsTheDownloadStarts_IsAskedNothingForIt()
+    {
+        await _fixture.Harness.AddPlayableAsync(change: r => r with { ResumeMs = 600_000, ResumeAt = Fakes.ManualTimeProvider.DefaultStart });
+        var request = PlayRequest.Resume(LocalPlaybackFixture.EpisodeId);
+        var playback = Assert.IsType<LocalPlayback>(await _fixture.Playbacks.TryCreateAsync(request, LocalPlaybackFixture.Token));
+        // Before the start, another saved server becomes the active one; its accounts and profiles may carry the same ids.
+        _fixture.Harness.Session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example/silo"));
+
+        await playback.StartAsync(request, LocalPlaybackFixture.Token);
+        playback.SetSpeed(1.5);
+        await playback.StopAsync();
+
+        Assert.DoesNotContain(_fixture.Silo.Sent, r => r.Uri.Host == "other.example");
+        Assert.Equal(TimeSpan.FromSeconds(600), Assert.Single(_fixture.Engine.Loaded).Start);
+    }
+
+    [Fact]
     public async Task Resume_GoesBackByThisPCsRewindOnResume_ButNotForAChangeOfEpisode()
     {
         _fixture.Device.ResumeRewindSeconds = 7;

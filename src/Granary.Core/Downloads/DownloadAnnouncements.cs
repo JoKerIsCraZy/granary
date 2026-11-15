@@ -12,9 +12,10 @@ public sealed record DownloadAnnouncement(string Text, bool IsFailure, string? P
 /// <summary>
 /// Which of a profile's downloads finished or failed since the last look, and how that is said. A download is announced when it
 /// turns Completed or Failed between two looks; one that was so at the first look, or that shows up so (its folder came back),
-/// is old news. A film is announced at once. Episodes go by their series: one that ends while another of its series is still to
-/// come (<see cref="DownloadTally.IsPending"/>) waits for them, so a season or a series that finishes together is one message
-/// ("8 episodes of Example Series are ready to watch offline"), failures counted in it; an episode paused by the viewer or
+/// is old news, as is one whose files were missing at the look before (a folder that was away as Granary started came back). A
+/// film is announced at once. Episodes go by their series: one that ends while another of its series is still to come
+/// (<see cref="DownloadTally.IsPending"/>) waits for them, so a season or a series that finishes together is one message ("8
+/// episodes of Example Series are ready to watch offline"), failures counted in it; an episode paused by the viewer or
 /// deleted does not hold the others back. Another scope starts afresh, its downloads old news and nothing of the last one's
 /// said. Used from one thread at a time (the UI thread's <c>DownloadActivity</c>).
 /// </summary>
@@ -90,14 +91,19 @@ public sealed class DownloadAnnouncements
             else if (!items.Any(i => DownloadTally.IsPending(i) && GroupOf(i) == batch.Group))
             {
                 _batches.Remove(batch);
-                announced.Add(batch.Announcement());
+                if (batch.Announcement(_seen) is { } announcement)
+                {
+                    announced.Add(announcement);
+                }
             }
         }
         return announced;
     }
 
-    // Null while it goes on; false once it finished, true once it failed, since the last look.
-    private static bool? Ended(DownloadItem before, DownloadItem now) => now.State switch
+    // Null while it goes on; false once it finished, true once it failed, since the last look. Not one whose files were missing:
+    // a download whose folder was away as Granary started is a queued row of what the index knew, and the state its folder's
+    // record brings back once the folder is there again is old news.
+    private static bool? Ended(DownloadItem before, DownloadItem now) => before.FilesMissing ? null : now.State switch
     {
         DownloadState.Completed when before.State != DownloadState.Completed => false,
         DownloadState.Failed when before.State != DownloadState.Failed => true,
@@ -171,10 +177,21 @@ public sealed class DownloadAnnouncements
             return _ended.Count > 0;
         }
 
-        public DownloadAnnouncement Announcement()
+        /// <summary>
+        /// What to say of the batch as the downloads are <paramref name="now"/>: one that finished while the others came is said
+        /// ready, and played, only while it can still play (not once its drive went away or its file was deleted by hand), and
+        /// one that failed only while it still stands failed (not once Retry queued it again). Each is said as it is now: its
+        /// title, numbers and reason as the downloads have them then. Null when none is left to say.
+        /// </summary>
+        public DownloadAnnouncement? Announcement(IReadOnlyDictionary<string, DownloadItem> now)
         {
-            var finished = _ended.Where(e => !e.Failed).Select(e => e.Item).OrderBy(EpisodeOrder).ToList();
-            var failed = _ended.Where(e => e.Failed).Select(e => e.Item).ToList();
+            var current = _ended.Select(e => (Now: now.GetValueOrDefault(e.Item.DownloadId), e.Failed)).Where(e => e.Now is not null).ToList();
+            var finished = current.Where(e => !e.Failed && e.Now!.IsPlayable).Select(e => e.Now!).OrderBy(EpisodeOrder).ToList();
+            var failed = current.Where(e => e.Failed && e.Now!.State == DownloadState.Failed).Select(e => e.Now!).ToList();
+            if (finished.Count == 0 && failed.Count == 0)
+            {
+                return null;
+            }
             string text = (finished.Count, failed.Count) switch
             {
                 (> 0, 0) => Ready(finished),

@@ -1663,13 +1663,15 @@ titles of their series as a download dialog or a download named them.
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
   monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
   read again, as the Apple app does, also for a stop kept from before a restart: the server keeps a monitor per device, so
-  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer waits for
-  the next run, and the list does not bring the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
+  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer, or whose
+  monitor changed again before that second try (409 or 412 once more), waits for the next run (that one under the
+  validator it read, so each later try costs no refusal), and the list does not bring the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
   profile, monitor id and validator), as the Apple app keeps them, so one that never reached the server before Granary
   closed goes after it starts again, and its monitor does not come back meanwhile. The file keeps a create's choices still
   waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
   after watching delete what the viewer chose to keep. It is read before the first run or write, written one save after
-  another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it)
+  another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it,
+  or this user may not look at it, which `File.Exists` answers as no file, so the file is read without asking first)
   is read again with the next run or write, and never written over before; until then no run goes (as one that could not
   read the monitors) and a write fails, so nothing deletes on a monitor's old word, brings back a stopped one or is undone
   by what the file holds.
@@ -1761,9 +1763,13 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
 - **What finished or failed.** Each full refresh hands the downloads to `DownloadAnnouncements.Look` with the scope, read
   after them (a profile switched to in between then reads as a new scope). A download is news when it turned Completed or
   Failed since the look before; the first look, another scope's first look, and a download that shows up done (its
-  folder came back) are not. A film is said at once; an episode waits while another episode of its series is still to
+  folder came back) are not, nor one whose files were missing at the look before: a folder that was away as Granary
+  started gives a queued row of what the index knew, and the state its record brings back with the folder is old. A film is said at once; an episode waits while another episode of its series is still to
   come (`IsPending`), so a season or a series that finishes together is one `DownloadAnnouncement`, its failures counted
-  in it, and an episode paused or deleted does not hold the others back. The words are the Apple app's
+  in it, and an episode paused or deleted does not hold the others back. What is said is looked at as it is then: an
+  episode that finished while the others came is said ready, and played, only while it can still play (not once its drive
+  went away or its file was deleted), and one that failed only while it still stands failed (not once Retry queued it
+  again), each by its title, numbers and reason as they are then; with none left, nothing is said. The words are the Apple app's
   (`DownloadNotifications.swift`): "Example Movie is ready to watch offline", an episode "Example Series (S2E8)", "… didn't
   download: Not enough storage on this PC" with its reasons (storage, an incomplete file, no longer on the server), and
   none when Granary knows no reason; the Apple app says each episode alone, so a group's are Granary's after them ("8
@@ -1944,7 +1950,14 @@ while the server answers.
   (`PlaybackPreferencesReader`) and the title's watch detail side by side, within `LocalPlayback.PreferencesBudget`
   (3 s); what does not come in time is done without. Android reads the watch detail for a local play the same way. From
   the watch detail come the profile's subtitle preference, the tracks the title page's picks name, and where the profile
-  left the title.
+  left the title. Since the subtitle preference is kept in the download and the resume point is where it starts, the
+  watch detail is read as the download's account and profile only (`WatchApi.GetWatchAsAccountProfileAsync`, bound as the
+  settings saves are): once another profile, or another account whose profile has the same id, acts on the server, the
+  read is refused unsent and the download starts with what this PC knows. The settings' read is the active profile's, as
+  a stream's, and `DownloadPlaybacks` makes the playback only for the active scope; so when the download's own server,
+  account and profile are no longer the active ones as it starts (another became active between the two), nothing is
+  asked, since another server's ids may be the same too, and settings that answered for another profile that became
+  active during the read are not taken: the download plays with the defaults.
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
   `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
   `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys
@@ -1987,10 +2000,13 @@ while the server answers.
   shows none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
 - **Settings changed while it plays.** The speed, the subtitle delay, auto-play and the sleep timer's duration hold in
   the player at once and are saved to the server under a stream's keys, as the download's account and profile only
-  (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when a server was signed
-  in as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
+  (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when the download's own
+  server was the active one as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
   signed in on that server by the time one goes out, and its profile may carry the same id: such a save is refused
-  unsent. A save that does not arrive is logged and the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
+  unsent. A save that does not arrive is logged and the change holds for that title. The stop sends what was just changed
+  and waits for the saves within `StopSendBudget` (3 s), beside the last position's send and never ahead of it: one after
+  another behind a server that takes them and does not answer, they would hold the stop 10 s each. Past the budget they go
+  on by themselves. The audio delay is the device's shared `AudioDelay`, read with the settings and
   followed while the title plays, as a stream follows it.
 - **The next episode.** `DownloadUpNext` is the player's `IUpNextSource`, over the server's `UpNextSource`. The server's
   answer comes first, so a series goes on in its order; the episode it names starts through `PlayAsync` as any title, so
@@ -2044,7 +2060,9 @@ device.
   since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
   device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
   recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
-  before the first frame. A title's times never go backwards: a position is
+  before the first frame; after it, 0 is a position too, as the Apple app records it: a viewer who goes back to the start
+  and leaves there is left at 0, and the server takes a 0 (only a position above 0 and under its
+  `playback.min_resume_threshold` is passed over, `userstore.ResolveProgressState`). A title's times never go backwards: a position is
   stamped in a later whole second than the one it replaces in the queue, than the last one this play recorded, and
   than the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
   now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get
@@ -2160,7 +2178,11 @@ device.
   second does not, since it may be an older one. One the listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
   live.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
-  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
+  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). The writes are waited
+  for within `StopWriteBudget` (3 s): the record lies in the download's folder, and a drive or share that stops answering
+  in the middle of a write would otherwise hold the stop, and with it the player's "still playing", for good. The send is
+  tried all the same, from the queue, and the writes go on until the drive answers; the let-go after the stop
+  (`DisposeAsync`) does not wait for them a second time. A position that did
   not go by then is in the file, and the next start sends it.
 - **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
   and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and

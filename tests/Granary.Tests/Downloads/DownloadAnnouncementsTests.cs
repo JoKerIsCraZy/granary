@@ -13,13 +13,14 @@ public sealed class DownloadAnnouncementsTests
     private readonly DownloadAnnouncements _announcements = new();
 
     private static DownloadItem Film(string id, DownloadState state, string title = "Example Movie", DownloadFailure failure = DownloadFailure.None,
-        bool gone = false, bool paused = false) =>
-        new(id, "mv_" + id, title, null, null, null, null, state, failure, paused, gone, false, false, ExpectedBytes: 1000,
+        bool gone = false, bool paused = false, bool missing = false) =>
+        new(id, "mv_" + id, title, null, null, null, null, state, failure, paused, gone, missing, false, ExpectedBytes: 1000,
             BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private static DownloadItem Episode(string id, int season, int episode, DownloadState state, string seriesId = "sr_1",
-        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false) =>
-        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, false, false, false,
+        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false, bool missing = false,
+        bool gone = false) =>
+        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, gone, missing, false,
             ExpectedBytes: 1000, BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private IReadOnlyList<DownloadAnnouncement> Look(params DownloadItem[] items) => _announcements.Look(Scope7, items);
@@ -43,6 +44,16 @@ public sealed class DownloadAnnouncementsTests
         // A download that shows up done (its folder came back) did not finish now either.
         Assert.Empty(Look(Film("dl_1", DownloadState.Completed), Film("dl_2", DownloadState.Failed, failure: DownloadFailure.Server),
             Film("dl_3", DownloadState.Completed)));
+    }
+
+    [Fact]
+    public void ADownloadWhoseFolderComesBack_IsNotAnnounced()
+    {
+        // Granary started while the drive was away: each download is the row the index knew, queued, its files missing.
+        Look(Film("dl_1", DownloadState.Queued, missing: true), Film("dl_2", DownloadState.Queued, missing: true));
+
+        // The drive is back, and the folders' own records say how they ended, long ago.
+        Assert.Empty(Look(Film("dl_1", DownloadState.Completed), Film("dl_2", DownloadState.Failed, failure: DownloadFailure.Server)));
     }
 
     [Fact]
@@ -206,6 +217,59 @@ public sealed class DownloadAnnouncementsTests
         var announced = Assert.Single(Look(Episode("dl_2", 1, 2, DownloadState.Completed)));
 
         Assert.Equal(new DownloadAnnouncement("Example Series (S1E2) is ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"), announced);
+    }
+
+    [Fact]
+    public void AnEpisodeThatFinishedWhileItsSeasonWasHeldBack_IsNeitherCountedNorPlayed_OnceItCanNoLongerPlay()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading),
+            Episode("dl_3", 1, 3, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Downloading),
+            Episode("dl_3", 1, 3, DownloadState.Downloading)));
+        // Its file goes, as when it is deleted by hand, while the others still come.
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Completed),
+            Episode("dl_3", 1, 3, DownloadState.Downloading)));
+
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Completed),
+            Episode("dl_3", 1, 3, DownloadState.Completed)));
+
+        Assert.Equal(new DownloadAnnouncement("2 episodes of Example Series are ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"),
+            announced);
+    }
+
+    [Fact]
+    public void ASeasonHeldBack_WhoseDriveGoesAway_SaysNothing()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Neither can play now, and the other no longer comes: nothing is ready to watch.
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed, missing: true), Episode("dl_2", 1, 2, DownloadState.Downloading, missing: true)));
+    }
+
+    [Fact]
+    public void AnEpisodeThatFailedWhileItsSeasonWasHeldBack_AndWasTriedAgain_IsNotSaidToHaveFailed()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Integrity), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Retry, and the viewer pauses it; the other finishes.
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Queued, paused: true), Episode("dl_2", 1, 2, DownloadState.Completed)));
+
+        Assert.Equal(new DownloadAnnouncement("Example Series (S1E2) is ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"), announced);
+    }
+
+    [Fact]
+    public void AnEpisodeHeldBack_IsSaidAsItIsWhenTheMessageComes()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Server), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Meanwhile the server says it no longer has it; the other is paused.
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Server, gone: true),
+            Episode("dl_2", 1, 2, DownloadState.Queued, paused: true)));
+
+        Assert.Equal("Example Series (S1E1) didn't download: No longer available on the server", announced.Text);
     }
 
     [Fact]
