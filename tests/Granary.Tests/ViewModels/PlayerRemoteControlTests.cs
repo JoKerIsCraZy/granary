@@ -13,7 +13,8 @@ namespace Granary.Tests.ViewModels;
 
 /// <summary>
 /// The open player as Silo's phone remote sees it: the status a phone is shown, and a phone's commands as the player's own
-/// buttons, every number from the phone checked first.
+/// buttons, every number from the phone checked first. The commands in a Watch Party are tested beside the room they need,
+/// in <c>PlayerViewModelWatchPartyTests</c> (<c>InAWatchParty_…</c>).
 /// </summary>
 public sealed class PlayerRemoteControlTests
 {
