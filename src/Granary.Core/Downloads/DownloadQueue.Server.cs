@@ -383,7 +383,8 @@ public sealed partial class DownloadQueue
     }
 
     // A completed download's manifest a day old is read again at a scope activation, with the artwork it lacks and the
-    // subtitles whose revision changed. One that does not come is tried at the next activation.
+    // subtitles whose revision changed. One that does not come is tried at the next activation; one of another revision than
+    // the media is not kept, and the registry is read again, which replaces the download for the server's new bytes.
     private async Task RefreshManifestsAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         var now = _time.GetUtcNow();
@@ -401,6 +402,11 @@ public sealed partial class DownloadQueue
                     ArtworkFiles = fetched.ArtworkFiles,
                     SubtitleRevisions = fetched.SubtitleRevisions,
                 }).ConfigureAwait(false);
+            }
+            catch (ManifestRevisionException)
+            {
+                _logger.LogInformation("The manifest of download {DownloadId} is of another revision; the registry is read again", download.Record.DownloadId);
+                RequestReconcile();
             }
             catch (Exception ex) when (IsServerFailure(ex, stop) || ex is IOException or UnauthorizedAccessException)
             {

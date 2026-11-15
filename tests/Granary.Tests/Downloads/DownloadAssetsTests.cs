@@ -86,4 +86,53 @@ public sealed class DownloadAssetsTests : IAsyncDisposable
         Assert.DoesNotContain(DownloadPaths.Manifest, FilesIn(stored));
         Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")));
     }
+
+    // The server has new bytes for a download whose old ones are on this PC: their manifest, tracks and subtitles describe
+    // bytes this PC does not have, so the folder keeps the ones of its media.
+    [Fact]
+    public async Task AManifestOfAnotherRevision_IsNotKeptBesideTheMediaItDoesNotDescribe()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with { MediaFile = "media.mkv" });
+        await System.IO.File.WriteAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest("dl_1"), Token);
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4", revision: 2)));
+
+        await Assert.ThrowsAsync<ManifestRevisionException>(() => Assets().FetchAsync(ScriptedSilo.Base, stored, Token));
+
+        Assert.Equal(DownloadPayloads.Manifest("dl_1"), await System.IO.File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), Token));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")));
+    }
+
+    // Before its first transfer a download has no bytes the manifest could fail to describe: the file it fetches next is the
+    // server's current one, which that manifest names.
+    [Fact]
+    public async Task AManifestOfANewerRevision_IsKeptBeforeTheFirstTransfer()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", revision: 2)));
+
+        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+
+        Assert.Equal(2, fetched.Manifest.Revision);
+        Assert.Contains(DownloadPaths.Manifest, FilesIn(stored));
+    }
+
+    // The day-old read of a finished download's manifest finds another revision: the registry is read again, which replaces
+    // the download once it lists the new bytes, rather than the old media being shown with the new manifest.
+    [Fact]
+    public async Task ARefreshThatFindsAnotherRevision_ReadsTheRegistryAgain_AndKeepsTheOldManifest()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with { MediaFile = "media.mkv" });
+        await System.IO.File.WriteAllBytesAsync(Path.Combine(stored.Folder, "media.mkv"), DownloadPayloads.Source(3000), Token);
+        await System.IO.File.WriteAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest("dl_1"), Token);
+        _h.List(DownloadPayloads.Entry("dl_1", "completed"));
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4", revision: 2)));
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count >= 2, "the registry is read again");
+        await SettleAsync(queue);
+
+        Assert.Equal(DownloadPayloads.Manifest("dl_1"), await System.IO.File.ReadAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), Token));
+        var record = _h.Find("dl_1")!.Record;
+        Assert.Equal((DownloadState.Completed, (DateTimeOffset?)null), (record.State, record.ManifestReadAt));
+    }
 }

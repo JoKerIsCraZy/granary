@@ -1470,7 +1470,11 @@ client guide.
   profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
   is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
-  folder lacks and the subtitles whose revision changed. The finished file is named after the manifest's container.
+  folder lacks and the subtitles whose revision changed. A refresh that finds the manifest of another revision than the
+  finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
+  which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). Before
+  the first transfer a newer manifest is kept: the file fetched next is the server's current one. The finished file is
+  named after the manifest's container.
 - **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
   its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
   files go first. The server work looks at the folder when it is about to send, and remembers one still there until the
