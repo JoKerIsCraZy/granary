@@ -16279,6 +16279,12 @@
       "value": "为你推荐"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "前往首页"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

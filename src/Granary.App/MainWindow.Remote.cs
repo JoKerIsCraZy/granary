@@ -269,6 +269,9 @@ public sealed partial class MainWindow
                 _navigation.GoBack();
                 DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => FocusSidebarEntry());
                 return true;
+            case BackStep.AskToClose:
+                AskToClose();
+                return true;
             default:
                 return false;
         }

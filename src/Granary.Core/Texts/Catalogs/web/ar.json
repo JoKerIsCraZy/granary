@@ -22094,6 +22094,12 @@
       "value": "لك"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "الانتقال إلى الرئيسية"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

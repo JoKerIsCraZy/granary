@@ -418,6 +418,19 @@
             </controls:SettingsRow>
         </controls:SettingsGroup>
 
+        <!--
+            Granary's own: Silo's clients have no such switch. Off by default, for the whole PC rather than a profile
+            (ControllerSetting): off, Granary reads no controller at all.
+        -->
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.controller.title')}"
+                                Description="{x:Bind t:AppText.Get('granary.settings.controller.description')}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.controller.label')}"
+                                  Description="{x:Bind t:AppText.Get('granary.settings.controller.labelDescription')}">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Controller.IsEnabled, Mode=TwoWay}"
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.controller.label')}" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
             <Grid ColumnSpacing="48">

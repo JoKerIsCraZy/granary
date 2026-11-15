@@ -34,13 +34,18 @@ public enum BackStep
 
     /// <summary>Home shows, and the sidebar keeps focus, on Home's entry.</summary>
     GoHomeInSidebar,
+
+    /// <summary>The window asks whether Granary closes: Back came at the root, with nothing more to go back to.</summary>
+    AskToClose,
 }
 
 /// <summary>
 /// What Back does outside a menu or dialog (which close first, MainWindow.Remote.cs), as Silo's TV app
 /// (<c>TvShellFocusState</c>): a page opened within a section goes back to the page it came from. A section's own page
-/// first moves focus to its entry in the sidebar; from there Back goes Home, and on Home it does nothing: the app does
-/// not quit.
+/// first moves focus to its entry in the sidebar; from there Back goes Home, and from Home's entry it asks whether Granary
+/// closes. The TV apps leave there (<c>TvShellBackAction.MenuBack</c> on Home, the Roku app's <c>EXIT_APP</c>); closing
+/// a program on a PC is more than leaving a TV app, so Granary asks first. Focus outside the page and the sidebar (the title bar's buttons)
+/// asks nothing.
 /// </summary>
 public static class BackLadder
 {
@@ -49,6 +54,7 @@ public static class BackLadder
         { IsAtSection: false, CanGoBack: true } => BackStep.GoBack,
         { IsAtSection: false } => BackStep.Nothing,
         { Focus: FocusArea.Content } => BackStep.FocusSidebar,
+        { IsHome: true, Focus: FocusArea.Sidebar } => BackStep.AskToClose,
         { IsHome: true } => BackStep.Nothing,
         { CanGoBack: true } => BackStep.GoHomeInSidebar,
         _ => BackStep.Nothing,

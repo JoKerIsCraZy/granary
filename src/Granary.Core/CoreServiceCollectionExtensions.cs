@@ -21,6 +21,7 @@ using Granary.Core.Api.Theme;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Controller;
 using Granary.Core.Downloads;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
@@ -147,6 +148,8 @@ public static class CoreServiceCollectionExtensions
         // Granary's own title preview switch, kept on this PC by server and profile as the sidebar's layout is.
         services.AddSingleton(sp => new BrowseHeroSetting(BrowseHeroSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<BrowseHeroSetting>>()));
+        // Granary's own Game controller switch, off by default, for the whole PC: the window reads no pad while it is off.
+        services.AddSingleton(sp => new ControllerSetting(ControllerSetting.DefaultPath, sp.GetRequiredService<ILogger<ControllerSetting>>()));
         // The app brings its own updater (Velopack); without it nothing updates. It applies an update only once
         // SignedReleaseVerifier has verified its release as signed. Release files come on a client of their own, with
         // nothing of this device or of a server's sign-in, following GitHub's redirect to where downloads are served.

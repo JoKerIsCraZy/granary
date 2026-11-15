@@ -78,14 +78,28 @@
             PaneClosed="OnPaneSettled"
             ItemInvoked="OnItemInvoked">
             <NavigationView.PaneHeader>
-                <Grid Margin="20,4,12,12">
-                    <TextBlock x:Name="ServerNameText" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
-                               FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
-                               Foreground="{StaticResource SiloForegroundBrush}" />
-                    <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
-                    <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
-                           AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}" />
-                </Grid>
+                <!--
+                    The server's name or wordmark opens Home, as the web's sidebar logo links to it (components/AppSidebar.tsx,
+                    "Go home", a little faded under the pointer): for the mouse. Keys, a remote and a controller have Home's entry,
+                    so the sidebar's stops stay as they were.
+                -->
+                <HyperlinkButton x:Name="BrandLink" Margin="20,4,12,12" Padding="0" MinHeight="0" HorizontalAlignment="Stretch"
+                                 HorizontalContentAlignment="Left" IsTabStop="False" Click="OnBrandClick"
+                                 PointerEntered="OnBrandPointerEntered" PointerExited="OnBrandPointerExited" PointerCanceled="OnBrandPointerExited"
+                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.shell.sidebar.goHome')}">
+                    <HyperlinkButton.Resources>
+                        <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="Transparent" />
+                        <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />
+                    </HyperlinkButton.Resources>
+                    <Grid>
+                        <TextBlock x:Name="ServerNameText" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
+                                   FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
+                                   Foreground="{StaticResource SiloForegroundBrush}" />
+                        <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
+                        <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
+                               AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}" />
+                    </Grid>
+                </HyperlinkButton>
             </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>

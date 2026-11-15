@@ -17583,6 +17583,12 @@
       "value": "Für dich"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "Zur Startseite"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

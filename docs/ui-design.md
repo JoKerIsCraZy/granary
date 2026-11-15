@@ -224,7 +224,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
-- Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
+- Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name,
+  which opens Home on a click and fades a little under the mouse, as the web's sidebar logo links home (for the mouse only:
+  keys, a remote and a controller have Home's entry), Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
@@ -1173,8 +1175,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (`RowBleed`), so no ring is cut off.
   - Back (Esc, Backspace outside a text field, Browser Back): a page opened within a section goes back, focus on the card
     it was opened from (the same title wherever it moved, else the same place). On a section's own page Back first moves
-    focus to its sidebar entry, from there it goes Home, focus on Home's entry; on Home it does nothing, the app does
-    not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
+    focus to its sidebar entry, from there it goes Home, focus on Home's entry; from there, the root, it asks "Close
+    Granary?" with Close and Cancel, as Silo's TV apps leave at the root (`BackLadder`). Cancel is the default and has
+    focus, so a stray OK or Enter closes nothing; Esc, Backspace and Browser Back cancel. Close closes the window as the
+    title bar's Close does, the player's stop first. One question at a time, none while a menu or dialog is open (Back
+    closes that first) and none over the full player; Back with focus on the title bar's buttons asks nothing. A menu,
+    flyout or dialog closes on Browser Back and Backspace as on Esc.
   - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
     title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
     its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link). A page
@@ -1199,9 +1205,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Game controller
 
-An Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is
-decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face
-button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
+A game controller works once Settings → Navigation & Cards → Controller → Game controller is on. It is off by default and
+kept on this PC, not in a profile (`ControllerSetting`, `controller.json`); off, Granary reads no controller at all (see
+Always, below). Switched on, an Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`;
+what a reading means is decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A**
+is the bottom face button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
 Share or Create, **Menu** is Options, the bumpers are L1 and R1 and the triggers L2 and R2. The pad goes the way the
 remote's keys go, through the same code, so what the TV remote does at a page's edges, in the sidebar and on the way
 back holds for the pad too. Focus the pad moves shows its ring, as the keyboard's.
@@ -1212,7 +1220,7 @@ On the pages, and in the minimized player's bar:
 |---|---|
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
 | A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
-| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
+| B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar, and from there Home shows; on Home's entry it asks "Close Granary?". Cancel has focus, so A keeps Granary open, as B does; Close closes it as the title bar's Close does. |
 | X | Plays or resumes the focused card, as a remote's Play: on the Downloads pages a whole download from this PC, and a series' card its next episode there. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
@@ -1250,6 +1258,10 @@ when the page shows or was let go just before.
 
 Always:
 
+- Only while the Game controller switch is on. Off, no controller is read at all, so a pad, a wheel or a tool that
+  presents a pad to Windows does nothing in Granary; keys such a tool sends from a pad still arrive as keys. Turned off
+  while a button is held, what it was doing stops at once (a repeat, a scrub, a seek being made, dropped unsent); turned
+  on again, it reads at once, without a restart, and a button still held then is no press.
 - Only while Granary's window is in front. Behind another window the pad is not even read, so a game played with the same
   pad never moves Granary. Coming back, a button still held is not a press.
 - A stick inside its dead zone is at rest (24 % of the left stick's way, 26.5 % of the right one's, 12 % of a trigger's)
@@ -1529,8 +1541,9 @@ says why above the sections.
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
 - **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
-  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel` and `SidebarSettingsViewModel`, the web's
-  page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
+  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel`, `ControllerSettingsViewModel` and
+  `SidebarSettingsViewModel`, the web's page of that name): Posters first, with Reset beside the title while the desktop
+  apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
   and grid at once and saves for the desktop apps. While it loads the group says "Loading…"; a failed read or an older
@@ -1556,7 +1569,11 @@ says why above the sections.
   `ActivityIndicatorSetting`): "What your Silo server is doing, for its administrators. Kept for this profile on this
   PC.", with Activity indicator ("A button at the top right shows the streams, tasks, scans and downloads being
   prepared. Off, it never shows."), on by default; the indicator follows it at once (Activity indicator, under Admin).
-  The group comes and goes with the account's role while the page is open. Then Sidebar, with
+  The group comes and goes with the account's role while the page is open. Then Controller, Granary's own, as Silo's
+  clients have no such switch (`ControllerSettingsViewModel` on `ControllerSetting`): "Xbox and PlayStation
+  controllers. Kept on this PC.", with Game controller ("On, Granary takes a game controller's input. Off, it ignores
+  game controllers."), off by default, for the whole PC rather than a profile; the window starts or stops reading at
+  once (Game controller, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
