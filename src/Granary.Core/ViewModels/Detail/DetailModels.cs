@@ -70,7 +70,7 @@ public sealed record DetailEpisode(MediaCard Card, string? Overview) : DetailEpi
 /// after its last, or still to air. Nothing to open, play or mark; not a keyboard stop.
 /// </summary>
 /// <param name="Title">"S01E05 · Title" as the calendar names it, else "Episode 5".</param>
-/// <param name="Detail">Its air date where an episode card has its date and runtime: "23 Oct 2026", "Airs Thu, Nov 19".</param>
+/// <param name="Detail">Its air date where an episode card has its date and runtime: "Oct 23, 2026", "Airs Thu, Nov 19".</param>
 /// <param name="AccessibleName">"Episode 5, missing", "Episode 11, airs November 19".</param>
 public sealed record DetailEpisodePlaceholder(int EpisodeNumber, bool IsMissing, string Title, string? Detail, string AccessibleName)
     : DetailEpisodeEntry
