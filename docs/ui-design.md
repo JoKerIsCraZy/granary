@@ -145,7 +145,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   readers hear "Masterplan Box Set, box set of 3 films, 1 / 3 WATCHED". The sleeves and marks are made (`x:Load`) for the
   first box set card only.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
-  already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
+  already holds all of it; For You and Requests rows only when a page lists more), and with it the title opens the same
+  page on a click, in the accent under the mouse, as the web's `MediaCarousel` links its title (`titleHref`); for the mouse
+  only, so keys, a remote and a controller keep Explore all as the row's one stop. Horizontally scrolling cards 20 px apart
   as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
   1024 px; wide cards 260 px, 315 from 640), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
   people) are `ScrollView`s that ignore the mouse wheel (`WheelScrollsPage`): the wheel scrolls the page, Shift or a
