@@ -60,11 +60,19 @@ public sealed partial class AdminActivityView : UserControl
         ViewModel.Deactivate();
     }
 
-    /// <summary>Looks up an address, as the web's link from a stream's address does.</summary>
+    /// <summary>
+    /// Looks up an address, as the web's link from a stream's address does (runIPLookup in <c>pages/AdminActivity.tsx</c>):
+    /// the IP lookup opens and scrolls into view.
+    /// </summary>
     public Task LookUpAsync(string ip)
     {
-        ViewModel.IpQuery = ip;
-        return ViewModel.LookupCommand.ExecuteAsync(null);
+        var lookup = ViewModel.LookUpAddressAsync(ip);
+        if (ViewModel.IsIpLookupOpen)
+        {
+            // The web's scrollIntoView with block "nearest": the least scroll that shows the card.
+            IpLookupCard.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = true });
+        }
+        return lookup;
     }
 
     public static InfoBarSeverity NoticeSeverity(bool isError) => isError ? InfoBarSeverity.Error : InfoBarSeverity.Success;

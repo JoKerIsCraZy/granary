@@ -100,16 +100,19 @@
                    FontSize="13" HorizontalAlignment="Center" Margin="0,48" TextWrapping="Wrap" />
 
         <!-- Which accounts used an address over the last 30 days. -->
-        <Border Style="{StaticResource ActivityCardStyle}" Padding="0">
-            <Expander Header="IP Lookup" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0">
+        <Border x:Name="IpLookupCard" Style="{StaticResource ActivityCardStyle}" Padding="0">
+            <Expander Header="IP Lookup" IsExpanded="{x:Bind ViewModel.IsIpLookupOpen, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0">
                 <StackPanel Spacing="12">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MaxWidth="360" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+                        <!-- WinUI's template keeps the text at the top of a box taller than 32 px, so the field takes the sign-in fields'
+                             padding (SiloAuthTextBoxStyle), which centres the address at Lookup's 36 px. -->
                         <TextBox Text="{x:Bind ViewModel.IpQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="IP lookup (e.g. 203.0.113.50)"
-                                 AutomationProperties.Name="IP address" KeyDown="OnIpKeyDown" />
+                                 Padding="12,8,8,7" VerticalAlignment="Center" AutomationProperties.Name="IP address" KeyDown="OnIpKeyDown" />
                         <Button Grid.Column="1" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.LookupCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE721;" FontSize="12" />

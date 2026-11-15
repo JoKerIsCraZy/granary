@@ -32,20 +32,22 @@ public sealed class MonitorPendingFile(string path, ILogger<MonitorPendingFile> 
 
     /// <summary>
     /// What the file keeps; nothing without it, or for a file that is not one (damaged, logged). Null when it is there but cannot
-    /// be read now (another program holds it): it is read again later, and never written over meanwhile. Never throws.
+    /// be read now (another program holds it, or this user may not look at it): it is read again later, and never written over
+    /// meanwhile. Never throws.
     /// </summary>
     public MonitorPending? Load()
     {
         string json;
         try
         {
-            if (!File.Exists(_path))
-            {
-                return MonitorPending.None;
-            }
+            // Read straight away: File.Exists says false also for a file this user may not look at, which is not "none".
             json = File.ReadAllText(_path);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return MonitorPending.None;
+        }
+        catch (Exception ex) when (IsFileFailure(ex))
         {
             logger.LogWarning("The monitor writes still to send could not be read now ({Failure}); they are read again later", DownloadLog.Failure(ex));
             return null;
@@ -87,11 +89,16 @@ public sealed class MonitorPendingFile(string path, ILogger<MonitorPendingFile> 
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(data, MonitorPendingJsonContext.Default.MonitorPendingData);
             SafeFile.WriteWhole(_path, temp => File.WriteAllBytes(temp, json));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (IsFileFailure(ex))
         {
             logger.LogWarning("The monitor writes still to send could not be saved ({Failure}); they hold for this run", DownloadLog.Failure(ex));
         }
     }
+
+    // What reading or writing the file can meet on a path that is valid, beside I/O and access errors: a path form or a policy
+    // the system does not allow. Each is a file that cannot be used now, never a bug of the caller's.
+    private static bool IsFileFailure(Exception ex) =>
+        ex is IOException or UnauthorizedAccessException or NotSupportedException or System.Security.SecurityException;
 }
 
 internal sealed record MonitorPendingData(IReadOnlyList<MonitorStopData>? Stops, IReadOnlyList<MonitorChoiceData>? Choices);

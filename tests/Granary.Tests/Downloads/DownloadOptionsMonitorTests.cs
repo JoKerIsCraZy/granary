@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Downloads;
+using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -114,6 +115,29 @@ public sealed class DownloadOptionsMonitorTests : IAsyncDisposable
 
         var create = Assert.Single(_h.Silo.SentTo(HttpMethod.Post, MonitorsPath));
         Assert.Equal("""{"series_id":"sr_1","mode":"all","delete_watched":false,"max_storage_bytes":53687091200,"quality":"10mbps"}""", create.Body);
+        Assert.Equal("sub_1", Monitors.For("sr_1")?.Id);
+    }
+
+    // The dialog holds Cancel and Esc while IsStarting (DownloadOptionsDialog.HoldWhileStarting): a save under way counts as a
+    // start, so the dialog stays until it answered and shows that answer. Cancel then only stops a save still waiting.
+    [Fact]
+    public async Task AMonitorBeingSaved_CountsAsAStart_UntilItsAnswerCame()
+    {
+        var (held, gate) = ItemDetailFixture.Held();
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, held);
+        var options = await SeriesDialogAsync(MonitorPayloads.Capability());
+        ChooseMonitor(options);
+
+        var start = options.StartAsync();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Post, MonitorsPath).Count == 1, "the monitor's create was sent");
+
+        Assert.True(options.IsStarting);
+        Assert.False(options.CanStart);
+        options.StopStarting();
+        gate.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor())());
+
+        Assert.True(await start);
+        Assert.False(options.IsStarting);
         Assert.Equal("sub_1", Monitors.For("sr_1")?.Id);
     }
 

@@ -213,7 +213,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
-  controls that show optional parts set them in code when their item changes (`MediaCardView`).
+  controls that show optional parts set them in code when their item changes (`MediaCardView`, and `MediaRow`'s Explore
+  all and title link when its command changes).
 - Artwork goes through `Artwork.Load`, which fills the bitmap from the app's artwork cache
   (docs/architecture.md, Artwork). `MediaRow` and `MediaGrid` prefetch their cards' artwork; a grid asks
   for the next page four rows ahead of its last realized card.
@@ -1328,7 +1329,9 @@ off the mark stands still.
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
 the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
-mark in the accent. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
+mark in the accent. As on the web, the head stays and the groups scroll below it in a window too short for them all, so
+Downloads and About stay reachable; an arrow key or a controller's D-pad or bumper moves the focus from page to page
+across the groups and scrolls the one it reaches into view. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
 description 13 px muted, the control on the right, hairlines between rows). Selects are 220 px and 36 px high on the
@@ -1672,7 +1675,8 @@ says why above the sections.
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
 Activity (the web's "2 live" in red beside it while streams run), and BUILD at its foot ("1715 · 13ad7a74", "dev build",
-"load failed"). Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
+"load failed"); as in Settings, the head and BUILD stay and the pages between them scroll in a window too short for
+them. Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
 stream's commands on Activity.
@@ -1704,8 +1708,8 @@ stream's commands on Activity.
   account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
   Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Started 5m ago ·
   5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
-  route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
-  when nothing shows.
+  route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
+  the web's. "No active streams" or "No streams match your filters" when nothing shows.
 
 ### Activity indicator
 

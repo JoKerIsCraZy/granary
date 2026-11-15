@@ -270,6 +270,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     {
         if (!IsStarting && IsMonitorChosen)
         {
+            // The save sets IsStarting itself before it waits for anything, so the dialog holds Cancel until it answered.
             using var saving = new CancellationTokenSource();
             _stopping = saving;
             try
