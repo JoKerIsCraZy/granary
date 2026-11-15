@@ -40,14 +40,14 @@ public sealed partial class SeriesMonitors
         catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
         {
             _logger.LogInformation("Whether the server monitors series could not be read ({Failure})", Describe(ex));
-            // The episodes the queue holds until the monitors are known go: they will not be known before the server answers.
-            _book.NoteUnread(scope);
+            NoteUnreadRun(scope);
             return;
         }
         if (!capability.IsUsable || !IsStill(scope))
         {
             if (IsStill(scope))
             {
+                // No downloads, so no monitor's limit: the episodes the queue holds until the monitors are known go.
                 _book.NoteUnread(scope);
             }
             return;
@@ -93,7 +93,7 @@ public sealed partial class SeriesMonitors
             _logger.LogInformation("The monitored series could not be read ({Failure})", Describe(ex));
             if (IsStill(scope))
             {
-                _book.NoteUnread(scope);
+                NoteUnreadRun(scope);
             }
             return false;
         }
@@ -108,7 +108,40 @@ public sealed partial class SeriesMonitors
         ConfirmListed(scope, listed);
         var stopping = StopsOf(scope);
         _book.Replace(scope, [.. listed.Where(m => !stopping.ContainsKey(m.Id))]);
+        lock (_gate)
+        {
+            _unread.Remove(scope);
+        }
         return true;
+    }
+
+    // A run that could not read the scope's monitors (the server did not answer). Ones read before stand until the next run.
+    // Never read, the queue holds the scope's episodes for them, so a run comes again in a minute; after a few, the queue stops
+    // holding them, as no limit will be known before the server answers, and the next run comes with the others.
+    private void NoteUnreadRun(DownloadScope scope)
+    {
+        if (_book.IsKnown(scope))
+        {
+            return;
+        }
+        int runs;
+        lock (_gate)
+        {
+            runs = _unread[scope] = _unread.GetValueOrDefault(scope) + 1;
+            if (runs >= UnreadRuns)
+            {
+                _unread.Remove(scope);
+            }
+            else if (_started && !_disposed)
+            {
+                _retry?.Dispose();
+                _retry = _time.CreateTimer(static self => ((SeriesMonitors)self!).SyncSoon(), this, UnreadRetry, Timeout.InfiniteTimeSpan);
+            }
+        }
+        if (runs >= UnreadRuns)
+        {
+            _book.NoteUnread(scope);
+        }
     }
 
     private enum SyncEnd

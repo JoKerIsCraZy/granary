@@ -67,6 +67,12 @@ public sealed partial class SeriesMonitors : IDisposable
     /// <summary>How long a wish for a run waits, so what asks at once (a burst of notifications) is one run.</summary>
     public static readonly TimeSpan Settle = TimeSpan.FromSeconds(2);
 
+    /// <summary>When a run could not read monitors never read before, how soon the next run comes.</summary>
+    public static readonly TimeSpan UnreadRetry = TimeSpan.FromMinutes(1);
+
+    /// <summary>How many runs in a row may fail to read monitors never read before until the queue stops holding for them.</summary>
+    public const int UnreadRuns = 3;
+
     private readonly DownloadSubscriptionsApi _api;
     private readonly DownloadsApi _downloads;
     private readonly DownloadStore _store;
@@ -90,6 +96,10 @@ public sealed partial class SeriesMonitors : IDisposable
     private readonly Dictionary<DownloadScope, Dictionary<string, UnconfirmedChoice>> _unconfirmed = [];
     private ITimer? _settle;
     private ITimer? _interval;
+    private ITimer? _retry;
+
+    // The runs in a row that could not read a scope's monitors, which were never read.
+    private readonly Dictionary<DownloadScope, int> _unread = [];
     private DownloadScope? _following;
     private bool _started;
     private bool _disposed;
@@ -217,6 +227,7 @@ public sealed partial class SeriesMonitors : IDisposable
             _disposed = true;
             _settle?.Dispose();
             _interval?.Dispose();
+            _retry?.Dispose();
         }
         _session.Changed -= OnSessionChanged;
         _stop.Cancel();

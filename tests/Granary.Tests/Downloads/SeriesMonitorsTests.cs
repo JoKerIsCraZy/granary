@@ -201,16 +201,65 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ARunThatCouldNotReadTheMonitors_StillSaysThePolicyIsAsKnownAsItGets()
+    public async Task ARunThatCouldNotReadTheMonitors_TriesAgainAMinuteLater_AndOnlyAfterAFewSaysThePolicyIsAsKnownAsItGets()
     {
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Problem(503, "dependency_unavailable"));
-        Assert.False(_book.IsKnown(Scope7));
+        Monitors.Start();
+
+        for (int run = 1; run < SeriesMonitors.UnreadRuns; run++)
+        {
+            if (run > 1)
+            {
+                _h.Time.Advance(SeriesMonitors.UnreadRetry);
+            }
+            _h.Time.Advance(SeriesMonitors.Settle);
+            await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == run, "a run");
+            await Monitors.LatestRun;
+
+            // The queue still holds the episodes: a read that failed says nothing of the monitors.
+            Assert.False(_book.IsKnown(Scope7));
+        }
+
+        _h.Time.Advance(SeriesMonitors.UnreadRetry);
+        _h.Time.Advance(SeriesMonitors.Settle);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == SeriesMonitors.UnreadRuns, "the last try");
+        await Monitors.LatestRun;
+
+        // The episodes the queue held go: no limit is known, and none will be before the server answers.
+        Assert.True(_book.IsKnown(Scope7));
+        Assert.Empty(_book.In(Scope7));
+        // And no more tries come before the four hours' run.
+        _h.Time.Advance(SeriesMonitors.UnreadRetry);
+        _h.Time.Advance(SeriesMonitors.Settle);
+        await Monitors.LatestRun;
+        Assert.Equal(SeriesMonitors.UnreadRuns, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotOfferDownloads_SaysThePolicyIsKnownAtOnce()
+    {
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability(enabled: false)));
 
         await Monitors.SyncAsync(Token);
 
-        // The episodes the queue held for it go: no limit is known, and none will be before the server answers.
         Assert.True(_book.IsKnown(Scope7));
-        Assert.Empty(_book.In(Scope7));
+    }
+
+    [Fact]
+    public async Task AMonitorMadeBeforeARunReadTheList_LeavesThePolicyUnknownUntilOneDoes()
+    {
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor()));
+        SyncAnswers(MonitorPayloads.Sync(registered: 0));
+
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+
+        // The other monitors of the profile, and their limits, are not known from one.
+        Assert.False(_book.IsKnown(Scope7));
+
+        ListMonitors(MonitorPayloads.Monitor());
+        await Monitors.SyncAsync(Token);
+
+        Assert.True(_book.IsKnown(Scope7));
     }
 
     [Fact]
