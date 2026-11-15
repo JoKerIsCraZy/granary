@@ -41,7 +41,16 @@ public sealed partial class RemoteLoggingTests : IAsyncDisposable
     [Fact]
     public async Task NothingSecretOrPersonal_ReachesTheLog()
     {
-        AssertNothingSecret(await EverythingAsync());
+        var run = await EverythingAsync();
+
+        AssertNothingSecret(run);
+        string log = run.All;
+        // An offer made ready, a launch, and a refused offer and launch were met, so the check above covers them.
+        Assert.Contains("an offer to start a title is ready", log, StringComparison.Ordinal);
+        Assert.Contains("a launch opens the player", log, StringComparison.Ordinal);
+        Assert.Contains("an offer to start a title was refused (another profile)", log, StringComparison.Ordinal);
+        Assert.Contains("a launch was refused (no ready offer)", log, StringComparison.Ordinal);
+        Assert.Contains("a launch was refused (the PC is locked)", log, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -148,7 +157,8 @@ public sealed partial class RemoteLoggingTests : IAsyncDisposable
         var neverLogged = new List<string>
         {
             "silo.example", "other.example", RemoteHarness.ServerId, otherServerId, RemoteHarness.ServerIdentity, "deploy-2",
-            "Example Server", "Elena", "phone-1", "phone-2", "movie-1", "Example Movie", "resume-token-1", "request-1",
+            "Example Server", "Elena", "phone-1", "phone-2", "movie-1", "movie-2", "Example Movie", "resume-token-1", "request-1",
+            "request-2", "evil.example",
         };
         await harness.StartListeningAsync();
         var player = new FakeRemotePlayer(harness.Dispatcher)
@@ -179,10 +189,23 @@ public sealed partial class RemoteLoggingTests : IAsyncDisposable
         {
             await phone.SendAsync($$"""{"type":"control","control":{{control}},"v":2}""");
         }
-        await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-1","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7","profileName":"Elena Moreau","resumeToken":"resume-token-1"},"v":2}""");
+        await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-1","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://evil.example","profileId":"7","profileName":"Elena Moreau","resumeToken":"resume-token-1"},"v":2}""");
+        string ready = await phone.NextAsync("handoff_ready");
+        using (var answer = JsonDocument.Parse(ready))
+        {
+            neverLogged.Add(answer.RootElement.GetProperty("handoffReady").GetProperty("resumeToken").GetString()!);
+        }
         await phone.SendAsync($$$"""{"type":"launch","launch":{"serverId":"{{{RemoteHarness.ServerId}}}","playback":{"contentId":"movie-1","startFromBeginning":false,"resumePosition":4747.284}},"v":2}""");
+        // An offer for another profile is refused, and so is a launch while the PC is locked.
+        await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-2","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"8","profileName":"Elena Moreau"},"v":2}""");
+        await phone.NextAsync("handoff_cancel");
+        harness.Lock.IsLocked = true;
+        await phone.SendAsync($$$"""{"type":"launch","launch":{"serverId":"{{{RemoteHarness.ServerId}}}","playback":{"contentId":"movie-2","startFromBeginning":true}},"v":2}""");
+        await phone.NextAsync("error");
+        harness.Lock.IsLocked = false;
         await phone.SendAsync("""{"type":"ping","v":2}""");
         await phone.NextAsync("pong");
+        Assert.Single(harness.Navigation.Navigations);
 
         // Reset Pairing Code lets the phone go; a phone on the new code says hello again.
         Assert.Equal(PairingResetOutcome.Reset, await receiver.ResetPairingAsync());
@@ -194,6 +217,9 @@ public sealed partial class RemoteLoggingTests : IAsyncDisposable
         await again.NextAsync("hello");
         await again.HelloAsync(RemoteHarness.ServerId, RemoteHarness.ServerIdentity, deviceId: "phone-2");
         await again.NextAsync("state");
+        // Its readiness went with the old connection: a launch without an offer is refused.
+        await again.SendAsync($$$"""{"type":"launch","launch":{"serverId":"{{{RemoteHarness.ServerId}}}","playback":{"contentId":"movie-2","startFromBeginning":true}},"v":2}""");
+        Assert.Contains("handoff_required", await again.NextAsync("error"), StringComparison.Ordinal);
 
         // Another server: the receiver stops and starts for it; then Granary closes.
         harness.SignIn(RemoteHarness.Server("https://other.example", "entry-2", "deploy-2"));

@@ -1386,8 +1386,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 - **What the PC sees.** `Phones` lists the phones that said `hello`, by their cleaned names (the cleaning of discovered
   server names, cut to 64 characters); `PhonesChanged` and `PhoneConnected` (once for each phone that actively controls)
   come on the UI thread. `DisconnectAsync` closes one phone with `tv_disconnected`, `CloseAllAsync` every one.
-- **Offers and launches** are refused until a phone can start titles here (Part 2): an offer with `handoff_cancel
-  handoff_failed`, a launch with `error handoff_required`. docs/api-contract.md 15.5 lists every answer.
+- **Offers and launches** start a title on the PC ("Starting a title" below). docs/api-contract.md 15.5 and 15.6 list
+  every answer.
 
 | Limit | Value |
 |---|---|
@@ -1502,8 +1502,8 @@ The phone remote logs events by connection number and a reason, never a value fr
   resume tokens, frames or any part of one, server addresses and server ids (an id is an address), server names and
   identities, profile ids and names, a phone's id and name, content ids and titles.
 - `RemoteLoggingTests` guards it, under a logger that keeps every line at every level, with three runs on fake phones:
-  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer, a launch, a reset, a change
-  of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
+  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer made ready and one refused, a
+  launch and launches refused, a reset, a change of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
   of the reset, a player that fails a command or whose status cannot be read, Windows' advertisement throwing, a
   status that cannot be made, a message too large for a frame), each failure's message holding the key in every form,
   a pairing link, the server's address, a phone's name and a title; and every limit and every way a connection or the
@@ -1552,6 +1552,41 @@ takes).
   app's does, so a phone that started it sees it at once.
 - **When it changes.** `StateChanged` follows the properties the status is read from; the position alone is not among
   them, since the receiver's 500 ms tick carries it.
+
+### Starting a title
+
+A phone offers its server and profile (`handoff_offer`) and then sends `launch` (`RemoteReceiver.Launch.cs`, after
+silo-roku's `AppSceneControl.bs` `controlOffer`, `controlReady` and `controlLaunch`, for the profile open on the
+receiver only). docs/api-contract.md 15.6 has every answer and its text.
+
+- **Only the PC's own profile.** An offer is ready at once when its profile is the one signed in on the PC, on the PC's
+  own sign-in: nothing is asked of the server or the session, and the PC never changes server, account or profile for a
+  phone (Stage C, borrowing the phone's sign-in, is not built). Another profile, another server, a Watch Party or a
+  phone before its `hello` get a `handoff_cancel` that says why. The offer's addresses and token are dropped by the
+  decoder, so nothing a phone names can be contacted; the profile id it names is its own claim, so the check is a
+  courtesy rule, not a second boundary: the pairing key is that.
+- **Readiness.** A ready offer is kept with its connection, with the profile it was for and the sign-in it was made
+  under: the receiver follows `ISessionManager.Changed` for as long as it lives, and another state, server or profile
+  (also the same one again later) voids every ready offer; a change that keeps all three (a token refreshed) does not.
+  Readiness is one connection's alone, as on silo-roku: a newer ready offer voids the one before. The resume token is
+  random, made once per connection, kept in memory only, and never read back.
+- **The launch** runs on the UI thread, where the phone is asked about again (as for a command) and the checks go in
+  silo-roku's order: a ready offer under the sign-in that is still the PC's, the launch's server (by id, or by the
+  identity of the phone's `hello`), the PC's lock (`IPcLock`, the App's), a Watch Party (`WatchPartySession.IsInRoom`,
+  the room page's and the player's own source), and a launch still opening. Then `RemoteReceiverPolicy.RequestFor` makes
+  the `PlayRequest` (silo-roku's `launchIntent`: start over, `PlayRequest.At` the phone's position above 0, or resume; a
+  version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that can name no title
+  refused), `Launched` is raised with the phone's cleaned name and that request, and the player route opens it as a
+  page's Play does, replacing what plays without asking. The server decides, under the PC's profile, what may play.
+- **The status at once.** A phone gives up 30 seconds after its launch without its title in the status, and the player
+  page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's
+  `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one
+  before may show the same title, failed or playing. The launch is opening until that player shows the title no longer
+  loading, or failed (the phone that launched it gets `launch_failed` with the player's message), or closes after it
+  showed the title, or `LaunchWait` (30 seconds, silo-roku's `CONTROL_LAUNCH_WAIT_MS`) passes on the receiver's
+  `TimeProvider`; meanwhile another launch gets `launch_pending`.
+- **The log** says "an offer to start a title is ready", "was refused (another profile)", "a launch opens the player",
+  "a launch was refused (the PC is locked)" and the like, by connection number; never a profile, a title or a content id.
 
 ### Windows
 

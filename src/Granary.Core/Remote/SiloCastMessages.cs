@@ -226,9 +226,9 @@ public static class SiloCastMessages
 
     /// <summary>
     /// <c>handoff_ready</c> for a profile Granary is already signed in as: <c>reused</c>, with the session's end in UTC to
-    /// the second (required, though nothing reads it) and a resume token.
+    /// the second (required, though nothing reads it) and a resume token, left out when null.
     /// </summary>
-    public static byte[] HandoffReady(string requestId, string serverId, string profileId, DateTimeOffset sessionExpiresAt, string resumeToken)
+    public static byte[] HandoffReady(string requestId, string serverId, string profileId, DateTimeOffset sessionExpiresAt, string? resumeToken)
     {
         string expires = sessionExpiresAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         var ready = new WireReady(requestId, serverId, profileId, expires, Reused: true, resumeToken);

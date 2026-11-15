@@ -49,10 +49,19 @@ public static class RemoteTexts
     public const string NotAvailable = "Not available on this PC.";
 
     /// <summary>
-    /// <c>handoff_cancel handoff_failed</c> for an offer on Granary's server until a phone can start titles here (Part 2
-    /// of the phone remote replaces it). New: no Silo text says this.
+    /// <c>handoff_cancel handoff_failed</c> for an offer for another profile than the one signed in on the PC: Granary
+    /// plays only for its own (design 5.8). New: Silo's Roku app says "This Roku can play only for the profile open on it".
     /// </summary>
-    public const string StartingNotYetAvailable = "This PC can't start titles from a phone yet.";
+    public const string AnotherProfile = "Granary is signed in with another profile. Switch profiles on the PC to play from this phone.";
+
+    /// <summary><c>handoff_cancel</c> and <c>error</c> <c>watch_party_active</c>: the PC is in a Watch Party's room (design 5.8). New.</summary>
+    public const string LeaveWatchParty = "Leave the Watch Party on the PC first.";
+
+    /// <summary>
+    /// <c>error launch_failed</c> for a launch whose content id can name no title (blank, "." or ".."): the player's own words
+    /// for a title the server does not have (<c>PlaybackStarter.Describe</c>).
+    /// </summary>
+    public const string NoSuchTitle = "This title is no longer available.";
 
     /// <summary>A phone that gave no usable name. New.</summary>
     public const string UnnamedPhone = "A phone";

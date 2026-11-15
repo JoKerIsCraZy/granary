@@ -36,6 +36,7 @@ public sealed partial class RemoteReceiver
             previous.StateChanged -= OnPlayerChanged;
         }
         _player = player;
+        _attachments++;
         player.StateChanged += OnPlayerChanged;
         _tick ??= _time.CreateTimer(static self => ((RemoteReceiver)self!).OnTick(), this, StatusEvery, StatusEvery);
         PublishState();
@@ -87,7 +88,8 @@ public sealed partial class RemoteReceiver
                 await OnOfferAsync(session, offer).ConfigureAwait(false);
                 return;
             case SiloCastMessage.HandoffCancelled:
-                // No offer is ever pending yet.
+                // An offer is answered at once and nothing waits on it: the phone's cancel changes nothing (silo-roku drops
+                // only a handoff that awaits the server, which Granary never begins).
                 return;
         }
         var controller = session.Controller;
@@ -98,9 +100,8 @@ public sealed partial class RemoteReceiver
         }
         switch (message)
         {
-            case SiloCastMessage.Launch:
-                // A launch needs a ready offer on this connection, and none is given yet.
-                await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.HandoffRequired, RemoteTexts.HandoffRequired)).ConfigureAwait(false);
+            case SiloCastMessage.Launch launch:
+                await OnLaunchAsync(session, launch).ConfigureAwait(false);
                 return;
             case SiloCastMessage.Control control:
                 await OnControlAsync(session, control).ConfigureAwait(false);
@@ -160,6 +161,7 @@ public sealed partial class RemoteReceiver
                 controller.IsPassive = hello.Passive;
                 controller.IsAuthorized = verdict == HelloVerdict.Authorized;
                 controller.SaidHello = true;
+                session.ServerIdentity = hello.ServerIdentity;
                 session.Name = RemoteTexts.CleanName(hello.DeviceName);
             }
         }
@@ -204,34 +206,6 @@ public sealed partial class RemoteReceiver
             Announce(session);
         }
         RaisePhonesChanged();
-    }
-
-    // Every offer is refused until a phone can start titles here: a phone before its hello as one too old, one on another
-    // server with the name of the server this PC plays from.
-    private async Task OnOfferAsync(Session session, SiloCastMessage.HandoffOffer offer)
-    {
-        var controller = session.Controller;
-        string reason = SiloCastCancelReasons.HandoffFailed;
-        string message;
-        if (!controller.SaidHello)
-        {
-            reason = SiloCastCancelReasons.VersionUnsupported;
-            message = RemoteTexts.VersionUnsupported;
-        }
-        else if (Identity() is not { } identity)
-        {
-            message = RemoteTexts.StartingNotYetAvailable;
-        }
-        else if (!SiloCastServerId.ServersMatch(offer.ServerId, offer.ServerIdentity, identity.ServerId, identity.ServerIdentity))
-        {
-            message = RemoteTexts.PlaysFrom(identity.ServerName);
-        }
-        else
-        {
-            message = RemoteTexts.StartingNotYetAvailable;
-        }
-        _logger.LogInformation("Connection {Number}: an offer to start a title was refused", controller.Number);
-        await controller.SendAsync(SiloCastMessages.HandoffCancel(offer.RequestId, reason, message)).ConfigureAwait(false);
     }
 
     // A command (within the phone's budget, OnMessageAsync) goes to the player on the UI thread; after it is done every
@@ -315,11 +289,12 @@ public sealed partial class RemoteReceiver
         }
     }
 
-    // On the UI thread: the status as it is now, offered to every authorized phone. A phone that has not taken the last
-    // one yet gets this one instead. A title that plays also shows in the advertisement, once it settled.
+    // On the UI thread: the status as it is now (a title a phone launched shows loading until its player has it), offered
+    // to every authorized phone. A phone that has not taken the last one yet gets this one instead. A title that plays also
+    // shows in the advertisement, once it settled.
     private void PublishState()
     {
-        var state = _player?.State ?? SiloCastState.Idle;
+        var state = StateNow();
         NotePlaying(_player is not null && state.ContentId is not null);
         Volatile.Write(ref _stateFrame, SiloCastMessages.State(state));
         foreach (var session in AuthorizedSessions())

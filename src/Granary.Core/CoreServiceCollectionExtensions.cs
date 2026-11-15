@@ -175,10 +175,13 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<IRemoteListener, NoRemoteListener>();
         services.TryAddSingleton<IServiceAdvertiser, NoServiceAdvertiser>();
         services.TryAddSingleton<ILanAddressSource, NoLanAddressSource>();
+        // Whether Windows is locked, when a phone starts a title: the app's follows the session's notices.
+        services.TryAddSingleton<IPcLock, NoPcLock>();
         services.AddSingleton(sp => new RemoteReceiver(sp.GetRequiredService<IRemoteListener>(), sp.GetRequiredService<IServiceAdvertiser>(),
             sp.GetRequiredService<ILanAddressSource>(), sp.GetRequiredService<RemotePairing>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),
             sp.GetRequiredService<ISessionManager>(), sp.GetRequiredService<ClientIdentity>(), sp.GetRequiredService<IUiDispatcher>(),
-            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<RemoteReceiver>>()));
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<RemoteReceiver>>(), sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IPcLock>(), sp.GetRequiredService<WatchPartySession>()));
         // Whether a title opens the player in full screen, as it was last left on this PC.
         services.AddSingleton<PlayerFullScreen>();
         // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.

@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Auth;
 using Granary.Core.Remote;
 using Granary.Core.Servers;
+using Granary.Core.WatchParty;
 using Granary.Tests.Fakes;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -54,6 +55,15 @@ internal sealed class RemoteHarness : IAsyncDisposable
     public FakeSessionManager Session { get; } = new();
 
     public InMemorySecretStore Secrets { get; } = new();
+
+    /// <summary>What a phone's launch opened: the player route and its request.</summary>
+    public RecordingNavigation Navigation { get; } = new();
+
+    /// <summary>Whether Windows is locked; unlocked unless a test locks it.</summary>
+    public FakePcLock Lock { get; } = new();
+
+    /// <summary>The Watch Party this profile is in, when a test needs one; set before the receiver is first used.</summary>
+    public WatchPartySession? WatchParty { get; set; }
 
     /// <summary>The pairing key's store, which the receiver reads when it runs on its own.</summary>
     public RemotePairing PairingStore { get; }
@@ -172,7 +182,7 @@ internal sealed class RemoteHarness : IAsyncDisposable
     private RemoteReceiver MakeReceiver()
     {
         var receiver = new RemoteReceiver(Listener, Advertiser, Addresses, PairingStore, Preferences, Session, Client, Dispatcher, Time,
-            Logs.For<RemoteReceiver>());
+            Logs.For<RemoteReceiver>(), Navigation, Lock, WatchParty);
         if (!_lifetime)
         {
             receiver.Identity = () => Identity;
@@ -191,7 +201,8 @@ internal sealed class RemoteHarness : IAsyncDisposable
         string idFile = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"), "phone-remote.json");
         var pairing = new RemotePairing(new InMemorySecretStore(), idFile, NullLogger<RemotePairing>.Instance);
         return new RemoteReceiver(new FakeRemoteListener(calls), new FakeServiceAdvertiser(calls), new FakeLanAddressSource(), pairing,
-            new InMemoryPlaybackDevicePreferences(), new FakeSessionManager(), Client, dispatcher, time, NullLogger<RemoteReceiver>.Instance);
+            new InMemoryPlaybackDevicePreferences(), new FakeSessionManager(), Client, dispatcher, time, NullLogger<RemoteReceiver>.Instance,
+            new RecordingNavigation(), new FakePcLock());
     }
 
     /// <summary>A phone served by the receiver over a new pipe; paired unless <paramref name="pair"/> is false.</summary>

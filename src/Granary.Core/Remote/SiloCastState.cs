@@ -104,6 +104,15 @@ public sealed record SiloCastState
         HasNextEpisode = false,
     };
 
+    /// <summary>The title of a status whose title is not known yet, as silo-roku's <c>state.bs</c> <c>loading</c> sends it.</summary>
+    public const string LoadingTitle = "Loading";
+
+    /// <summary>
+    /// The status of <paramref name="contentId"/> while it opens and nothing of it is known yet (silo-roku's
+    /// <c>state.loading</c>): a phone that started it sees it at once.
+    /// </summary>
+    public static SiloCastState Loading(string contentId) => Idle with { ContentId = contentId, Title = LoadingTitle, IsLoading = true };
+
     public override string ToString() => nameof(SiloCastState);
 }
 

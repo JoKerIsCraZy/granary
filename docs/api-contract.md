@@ -3090,7 +3090,7 @@ silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
   | `hello` | `role: "tv"` (every Silo receiver says `tv`), `deviceName` (the PC's name), `deviceId` (the receiver id), `serverId`, `serverName`, `serverIdentity` when known, `supportedVersions: [2]`, `features`: `multi_controller`, `close_reason`, `resume_token`, `replace_confirmation`, `presence`. Not the Roku app's `volume_mute_only` and `no_playback_speed`: Granary sets a level and a speed |
   | `state` | below |
   | `error` | `code`, `message`; the phone shows the message as it is |
-  | `handoff_ready` | `requestId`, `serverId`, `profileId`, `sessionExpiresAt` (UTC to the second, `2026-11-14T19:17:36Z`; required, nothing reads it), `reused: true`, `resumeToken` |
+  | `handoff_ready` | `requestId`, the offer's own `serverId`, `profileId`, `sessionExpiresAt` (a day on, UTC to the second, `2026-11-14T19:17:36Z`; required, nothing reads it), `reused: true`, `resumeToken` to a phone that lists `resume_token` (15.6) |
   | `handoff_cancel` | `requestId`, `reason`, `message` |
   | `ping`, `pong` | none |
   | `close` | `reason`, only to a phone that lists `close_reason`; otherwise bare |
@@ -3130,10 +3130,8 @@ The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary
 | Any other command the player refuses (a speed in a Watch Party) | `error command_failed` | "Not available on this PC." |
 | More than 40 commands, offers and launches at once, or 20 a second after that; or more than 10 of `hello`, `presence` and `handoff_cancel` at once, or 5 a second after that (the message is dropped) | `error rate_limited`, at most once a second for each of the two budgets | "Too many commands. Slow down and try again." |
 | A fifth phone's `hello` while four phones control actively | `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
-| A launch (no offer is made ready yet) | `error handoff_required` | "Prepare the phone profile before playing." |
-| An offer before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
-| An offer from another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
-| An offer on Granary's server (until a phone can start titles here) | `handoff_cancel handoff_failed` | "This PC can't start titles from a phone yet." (*new*) |
+
+Offers and launches have their answers in 15.6.
 
 Closes: `replaced` for an older connection of a phone that said `hello` again, `too_many_controllers` for a connection
 closed to make room, `timeout` without a `hello` within 5 seconds, `tv_disconnected` when the PC lets phones go
@@ -3146,6 +3144,66 @@ A command that changes nothing (play while playing, the quality that is chosen),
 number that is not finite, a track number that names no track the player still lists, a speed at or below zero, a quality the
 menu does not offer and `set_subtitle_position` get no answer either. Other numbers are brought into range first: a
 seek into the title, a volume into 0 to 1, a speed to the nearest of 0.5× to 3×, a subtitle delay into ±10 seconds.
+
+### 15.6 Starting a title
+
+A phone starts a title on the PC in three steps, the same for every launch (`SiloCastController.launchOnConnectedTarget`,
+silo-roku's `AppSceneControl.bs` `controlOffer`, `controlReady`, `controlLaunch`): it connects and says `hello`, offers its
+server and profile (`handoff_offer`), and after `handoff_ready` sends `launch`. Granary builds only the case where the
+phone's profile is the one signed in on the PC (silo-roku's `silocontrol.md` section 8.1): it is ready at once, on the
+PC's own sign-in, makes no request to the server, never changes server, account or profile, and never sends
+`handoff_challenge` (stage C, a sign-in the phone approves, is not built). Code: `RemoteReceiver.Launch.cs`,
+`RemoteReceiverPolicy.RequestFor`.
+
+**The offer.** Granary reads `requestId`, `serverId`, `serverIdentity`, `profileId`, `replaceConfirmed` and
+`replacingContentId`; `serverURL`, `serverEndpoints`, `profileName`, `title` and `resumeToken` are dropped as the frame
+is read, so no address a phone names is ever contacted and a token sent back never stands in for the checks. Each offer
+is checked afresh, in this order:
+
+| When | Granary sends | `message` |
+|---|---|---|
+| Before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
+| The phone's `hello` or the offer names another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
+| This profile is in a Watch Party's room | `handoff_cancel watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
+| Another profile than the one signed in on the PC, or none | `handoff_cancel handoff_failed` | "Granary is signed in with another profile. Switch profiles on the PC to play from this phone." (*new*) |
+| The profile signed in on the PC | `handoff_ready`: the offer's `requestId` and its own `serverId` text, the `profileId`, `sessionExpiresAt` a day on, `reused: true`, and a `resumeToken` to a phone that lists `resume_token` | |
+
+- **The resume token** is 32 random bytes in hex, made once per connection, kept in memory only and never compared:
+  Granary takes no token back.
+- **Readiness** is one connection's alone, as on silo-roku and Silo's TV apps: a newer ready offer, on any connection,
+  voids the one before. It is void too once the PC's profile or server changes (also when the same one comes back),
+  and it ends with its connection. A phone's own `handoff_cancel` changes nothing, as nothing waits on an offer.
+- **Replacing a title.** The phone asks its own user before it offers another title while the PC's status shows one
+  playing, and sends `replaceConfirmed` with `replacingContentId`. Granary never answers `replace_confirmation_required`:
+  Silo's receivers do only when a title plays under another profile than the offered one, and Granary readies only its
+  own. So a launch replaces what plays at once, without a question on the PC (the owner's decision).
+
+**The launch**, in this order (silo-roku's `controlLaunch`, with the PC's lock where the Roku app checks its shell):
+
+| When | Granary sends | `message` |
+|---|---|---|
+| From a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
+| No ready offer on this connection, or one made before the profile or the server changed | `error handoff_required` | "Prepare the phone profile before playing." |
+| `serverId` names another server (by id, or by the identity the phone's `hello` named) | `error server_mismatch` | "This PC is connected to a different Silo server." |
+| Windows is locked | `error player_not_ready` | "The PC player is not ready yet." |
+| This profile is in a Watch Party's room | `error watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
+| A launched title is still opening (below) | `error launch_pending` | "A title is already starting on this PC." |
+| `contentId` can name no title (blank, `.` or `..`) | `error launch_failed` | "This title is no longer available." (the player's words for a title the server does not have) |
+| Otherwise | the player opens the title, as a detail page's Play does; then the status | |
+
+- **What plays.** `contentId` is the title. `startFromBeginning: true` starts over; else a `resumePosition` above 0
+  starts there, in the title's own seconds and without this PC's Rewind on resume (`PlayRequest.At`; one past the end
+  of the file resumes instead); else the profile's saved point. A `fileId` is the version (`PrePlayChoice`, pinned with
+  `pinsVersion: true`) with its picks: `audioTrackIndex` as the audio ordinal (a negative one picks none), and
+  `subtitleTrackIndex` as the combined ordinal the start takes, any negative one off; both phones send this receiver
+  type that ordinal. Picks without a `fileId` are dropped, and `libraryId` is not read. The server decides, under the
+  PC's profile, whether the title may play.
+- **The status at once.** The phone gives up 30 seconds after the launch without its `contentId` in the status. From
+  the launch on, the status shows the title loading (`title: "Loading"`, `isLoading: true`, its `contentId`), also while
+  the title before still plays, until a player that opened after the launch shows it.
+- **Opening** lasts until that player shows the title no longer loading, or shows it failed: the phone that launched
+  it then gets `error launch_failed` with the player's message. A player that showed it and closed before it loaded,
+  and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
 
 ## Appendix: where docs and code disagree
 

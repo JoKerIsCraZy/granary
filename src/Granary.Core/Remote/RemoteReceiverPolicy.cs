@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Granary.Core.Playback;
 
 namespace Granary.Core.Remote;
 
@@ -100,6 +101,36 @@ public static class RemoteReceiverPolicy
         return SiloCastServerId.ServersMatch(hello.ServerId, hello.ServerIdentity, receiver.ServerId, receiver.ServerIdentity)
             ? HelloVerdict.Authorized
             : HelloVerdict.Unauthorized;
+    }
+
+    /// <summary>
+    /// The player's request for a phone's <c>launch</c>, as silo-roku's <c>policy.bs</c> <c>launchIntent</c> reads it: from
+    /// the start when the phone says so; else at the phone's position when it gave one above 0, in the title's own seconds;
+    /// else from the profile's saved point. A version (<c>fileId</c>, pinned with <c>pinsVersion</c>) brings its track
+    /// picks along: the audio ordinal (a negative one picks none) and the combined subtitle ordinal, any negative one off.
+    /// Picks without a version are dropped, since a pick belongs to a file, and <c>libraryId</c> is not read. Null when the
+    /// content id can name no title: blank, "." or "..".
+    /// </summary>
+    public static PlayRequest? RequestFor(LaunchPlayback playback)
+    {
+        ArgumentNullException.ThrowIfNull(playback);
+        string contentId = playback.ContentId;
+        if (string.IsNullOrWhiteSpace(contentId) || contentId is "." or "..")
+        {
+            return null;
+        }
+        var choice = string.IsNullOrEmpty(playback.FileId)
+            ? null
+            : new PrePlayChoice(playback.FileId, playback.PinsVersion,
+                playback.AudioTrackIndex is >= 0 ? playback.AudioTrackIndex : null,
+                playback.SubtitleTrackIndex is { } subtitle ? Math.Max(subtitle, -1) : null);
+        if (playback.StartFromBeginning)
+        {
+            return PlayRequest.FromStart(contentId, choice);
+        }
+        return playback.ResumePosition is { } position && double.IsFinite(position) && position > 0
+            ? PlayRequest.At(contentId, position, choice)
+            : PlayRequest.Resume(contentId, choice);
     }
 }
 

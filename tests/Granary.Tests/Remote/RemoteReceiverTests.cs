@@ -779,15 +779,19 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AnOffer_IsRefusedForNow()
+    public async Task AnOffer_IsReady_ForTheProfileSignedInOnThePc_AndRefusedWithoutOne()
     {
+        // No profile is signed in on the PC: the offer is for another profile than the PC's.
         var (phone, _) = await _harness.HelloAsync();
+        string offer = $$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-1","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7","profileName":"Elena","replaceConfirmed":true},"v":2}""";
 
-        await phone.SendAsync($$"""{"type":"handoff_offer","handoffOffer":{"requestId":"request-1","serverId":"{{RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"7","profileName":"Elena","replaceConfirmed":true},"v":2}""");
-
+        await phone.SendAsync(offer);
         string cancel = await phone.NextAsync("handoff_cancel");
-        Assert.Contains("\"requestId\":\"request-1\"", cancel, StringComparison.Ordinal);
+        _harness.SignIn();
+        await phone.SendAsync(offer);
+
         Assert.Contains("\"reason\":\"handoff_failed\"", cancel, StringComparison.Ordinal);
+        Assert.Contains("\"requestId\":\"request-1\"", await phone.NextAsync("handoff_ready"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -814,7 +818,7 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ALaunch_IsRefusedWithHandoffRequired()
+    public async Task ALaunchWithoutAnOffer_IsRefusedWithHandoffRequired()
     {
         var (phone, _) = await _harness.HelloAsync();
 
