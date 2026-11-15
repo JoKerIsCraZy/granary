@@ -1677,8 +1677,11 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   word says nothing of whether it is about the registration or its removal, and may come before `DnsServiceDeRegister`
   returns, so one that comes while a removal is asked for is held (`DnssdAnswers`) until Windows says whether it took
   the removal: taken, it is the removal's; not taken, it is the registration's own, so a registration that went through
-  just then is known to have. Once a removal is taken, every word is the removal's, so a registration not answered
-  before may never be seen answered; nothing is freed on that alone. Only status numbers are logged.
+  just then is known to have. Taken for a registration answered before, every word is the removal's. Taken for one
+  not answered yet, a word is either, and Microsoft's pages do not say in which order the two come: one stays
+  undecided until a second comes (then the first is the registration's, the second the removal's), or counts as the
+  removal's once the 2 seconds' wait for it ends. Such a registration is never freed, so no memory is freed on a guess.
+  Only status numbers are logged.
 - **The firewall.** The first time the switch is on and Granary listens, Windows may ask to let Granary through its
   firewall; the switch's description says so beforehand. Granary installs per user without administrator rights, so
   it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see

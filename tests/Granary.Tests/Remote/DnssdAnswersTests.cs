@@ -91,6 +91,67 @@ public sealed class DnssdAnswersTests
         Assert.Equal(Success, Word(answers.Removed));
     }
 
+    [Fact]
+    public void AWordAsAnUnansweredRegistrationsRemovalIsTaken_WaitsForASecond_TheRegistrationsThenTheRemovals()
+    {
+        var answers = new DnssdAnswers();
+
+        // The registration's late word while its removal is asked; the removal's own after Windows took it.
+        answers.RemovalAsked();
+        answers.Answer(Success);
+        answers.RemovalAnswered(taken: true);
+        Assert.Null(Word(answers.Registered));
+        Assert.Null(Word(answers.Removed));
+        answers.Answer(NotFound);
+
+        Assert.Equal(Success, Word(answers.Registered));
+        Assert.Equal(NotFound, Word(answers.Removed));
+    }
+
+    [Fact]
+    public void ALoneWordAfterAnUnansweredRegistrationsRemovalWasTaken_IsTheRemovals_OnceItsWaitEnds()
+    {
+        var answers = new DnssdAnswers();
+
+        // Only the removal's word comes: the registration never answers.
+        answers.RemovalAsked();
+        answers.RemovalAnswered(taken: true);
+        answers.Answer(NotFound);
+        Assert.Null(Word(answers.Removed));
+
+        answers.RemovalWaitEnded();
+
+        Assert.Equal(NotFound, Word(answers.Removed));
+        Assert.Null(Word(answers.Registered));
+    }
+
+    [Fact]
+    public void ALoneWordAsAnUnansweredRegistrationsRemovalIsTaken_IsTheRemovals_OnceItsWaitEnds()
+    {
+        var answers = new DnssdAnswers();
+
+        answers.RemovalAsked();
+        answers.Answer(Success);
+        answers.RemovalAnswered(taken: true);
+        answers.RemovalWaitEnded();
+
+        Assert.Equal(Success, Word(answers.Removed));
+        Assert.Null(Word(answers.Registered));
+    }
+
+    [Fact]
+    public void AWaitThatEndsWithoutAWord_DecidesNothing()
+    {
+        var answers = new DnssdAnswers();
+
+        answers.RemovalAsked();
+        answers.RemovalAnswered(taken: true);
+        answers.RemovalWaitEnded();
+
+        Assert.Null(Word(answers.Removed));
+        Assert.Null(Word(answers.Registered));
+    }
+
     // The word, or null while none came; never waits.
     private static uint? Word(Task<uint> answer) => answer.IsCompletedSuccessfully ? answer.Result : null;
 }

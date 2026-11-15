@@ -196,8 +196,8 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         uint status = registration.Remove();
         if (status == DnsService.RequestPending)
         {
-            // Every word from now on counts as the removal's (DnssdAnswers), so the registration's own may never be seen:
-            // it is not freed, whatever comes, and is not asked about again.
+            // Whose the words from now on are is partly a guess (DnssdAnswers), and the registration's own may never be
+            // seen: it is not freed, whatever comes, and is not asked about again.
             if (await registration.RemovedAsync(RemoveWait).ConfigureAwait(false) is null)
             {
                 logger.LogWarning("Windows did not confirm the removal of an unanswered advertisement of the phone remote in time");
@@ -397,7 +397,16 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         public Task<uint?> AnsweredAsync(TimeSpan wait) => WaitAsync(_answers.Registered, wait);
 
         /// <summary>Windows' word on the removal, or null when none came within <paramref name="wait"/>.</summary>
-        public Task<uint?> RemovedAsync(TimeSpan wait) => WaitAsync(_answers.Removed, wait);
+        public async Task<uint?> RemovedAsync(TimeSpan wait)
+        {
+            if (await WaitAsync(_answers.Removed, wait).ConfigureAwait(false) is { } removed)
+            {
+                return removed;
+            }
+            // For a registration not answered before: a word alone, undecided until now, counts as the removal's.
+            _answers.RemovalWaitEnded();
+            return _answers.Removed.IsCompletedSuccessfully ? _answers.Removed.Result : null;
+        }
 
         /// <summary>
         /// Frees Windows' instance and every block, once: only when Windows will not call back for it any more, or never
