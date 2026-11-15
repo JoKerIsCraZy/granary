@@ -191,7 +191,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
         if (_schedule is not null)
         {
-            _schedule.Changed += OnMonitorsChanged;
+            _schedule.Changed += OnScheduleChanged;
         }
         ShowOffline();
         Show(readSpace: true);
@@ -297,14 +297,25 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
         if (_schedule is not null)
         {
-            _schedule.Changed -= OnMonitorsChanged;
+            _schedule.Changed -= OnScheduleChanged;
         }
     }
 
     public void Dispose() => Detach();
 
-    // Any thread: a monitor came, went or changed, or the calendar or a series' title was read.
-    private void OnMonitorsChanged(object? sender, EventArgs e) => _follow.Poke();
+    // Any thread: a monitor came, went or changed. A series monitored since the page showed (a run at the start, a new monitor)
+    // has its title, poster and airings read too; the calendar itself only when it is due.
+    private void OnMonitorsChanged(object? sender, EventArgs e)
+    {
+        _follow.Poke();
+        if (_follow.IsAttached)
+        {
+            ScheduleRead = ReadScheduleAsync();
+        }
+    }
+
+    // Any thread: the calendar or a series' title was read.
+    private void OnScheduleChanged(object? sender, EventArgs e) => _follow.Poke();
 
     // The calendar and the titles, as the Apple app's Monitored list reads them when it shows; never thrown at the page. What
     // was read shows through the schedule's Changed, on the UI thread.
@@ -317,15 +328,16 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         try
         {
             await _schedule.RefreshAsync(force: false, CancellationToken.None).ConfigureAwait(false);
+            await _dispatcher.ResumeOnUi();
+            if (_follow.IsAttached)
+            {
+                ShowCards();
+            }
         }
         catch (Exception ex)
         {
+            // Nobody waits for it: logged by its kind, and the cards stay as they were.
             _logger.LogWarning("The monitored series' calendar could not be read ({Failure})", ex.GetType().Name);
-        }
-        await _dispatcher.ResumeOnUi();
-        if (_follow.IsAttached)
-        {
-            ShowCards();
         }
     }
 

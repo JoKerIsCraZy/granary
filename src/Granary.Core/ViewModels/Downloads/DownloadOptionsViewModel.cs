@@ -269,7 +269,16 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     {
         if (!IsStarting && IsMonitorChosen)
         {
-            return await SaveMonitorAsync();
+            using var saving = new CancellationTokenSource();
+            _stopping = saving;
+            try
+            {
+                return await SaveMonitorAsync(saving.Token);
+            }
+            finally
+            {
+                _stopping = null;
+            }
         }
         if (IsStarting || (_title is null && _season is null && _series is null))
         {

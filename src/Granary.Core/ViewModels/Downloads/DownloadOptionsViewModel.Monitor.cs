@@ -280,7 +280,10 @@ public sealed partial class DownloadOptionsViewModel
     [RelayCommand]
     private void KeepMonitoring() => IsConfirmingStop = false;
 
-    /// <summary>Stop: the monitor stops (its downloads stay), and the dialog closes.</summary>
+    /// <summary>
+    /// Stop: the monitor stops (its downloads stay), and the dialog closes. Cancel while it waits for a run under way stops the
+    /// wait, and the dialog closes with the monitor as it was.
+    /// </summary>
     [RelayCommand]
     private async Task ConfirmStopAsync()
     {
@@ -290,12 +293,23 @@ public sealed partial class DownloadOptionsViewModel
             return;
         }
         IsStarting = true;
+        using var stopping = new CancellationTokenSource();
+        _stopping = stopping;
         try
         {
-            await _monitors.StopAsync(monitor.Id, CancellationToken.None);
+            await _monitors.StopAsync(monitor.Id, stopping.Token);
+        }
+        catch (Exception ex)
+        {
+            // A command's failure would end the app: the dialog closes either way, and the list says what holds.
+            if (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("A monitor could not be stopped ({Failure})", DownloadLog.Failure(ex));
+            }
         }
         finally
         {
+            _stopping = null;
             await _dispatcher.ResumeOnUi();
             IsStarting = false;
         }
@@ -303,8 +317,9 @@ public sealed partial class DownloadOptionsViewModel
     }
 
     // Saves Monitor's choices: a new monitor, or what changed in the series' own; one unchanged and running only closes. True
-    // once it was saved, false with why on the dialog.
-    private async Task<bool> SaveMonitorAsync()
+    // once it was saved, false with why on the dialog. The viewer's Cancel while it waits for a run under way
+    // (<paramref name="stopping"/>) ends it as stopped, true, with nothing sent; a save that began is never cut off.
+    private async Task<bool> SaveMonitorAsync(CancellationToken stopping)
     {
         if (_monitors is null || _monitorTarget is not { } target || SelectedRule is not { } rule || !CanSaveMonitor)
         {
@@ -326,9 +341,14 @@ public sealed partial class DownloadOptionsViewModel
         try
         {
             result = existing is null
-                ? await _monitors.CreateAsync(target.SeriesId, target.SeriesTitle, new MonitorChoice(rule.Mode, DeleteWatched, limit, quality), CancellationToken.None)
+                ? await _monitors.CreateAsync(target.SeriesId, target.SeriesTitle, new MonitorChoice(rule.Mode, DeleteWatched, limit, quality), stopping)
                 : await _monitors.UpdateAsync(existing.Id, new MonitorEdit(rule.Mode == existing.Mode ? null : rule.Mode, DeleteWatched, limit,
-                    quality == storedQuality ? null : quality), CancellationToken.None);
+                    quality == storedQuality ? null : quality), stopping);
+        }
+        catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+        {
+            // The viewer closed the dialog while it waited: nothing was sent.
+            return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -91,7 +91,13 @@ public sealed class MonitorSchedule
     /// </summary>
     public async Task RefreshAsync(bool force, CancellationToken cancellationToken)
     {
-        if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer?.BaseUri is not { } server || _monitors.Monitors.Count == 0)
+        if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer?.BaseUri is not { } server)
+        {
+            return;
+        }
+        // The series of the profile the read is for, taken with its scope: another profile's monitors are never asked about here.
+        string[] series = [.. _monitors.Monitors.Select(m => m.SeriesId).Distinct(StringComparer.Ordinal)];
+        if (series.Length == 0 || DownloadScope.Of(_session) != scope)
         {
             return;
         }
@@ -113,7 +119,7 @@ public sealed class MonitorSchedule
                 due = force || _loadedAt is not { } loaded || now - loaded >= RefreshInterval;
             }
             bool changed = due && await ReadCalendarAsync(scope, server, now, cancellationToken).ConfigureAwait(false);
-            changed |= await ReadInfoAsync(scope, server, now, cancellationToken).ConfigureAwait(false);
+            changed |= await ReadInfoAsync(scope, server, series, now, cancellationToken).ConfigureAwait(false);
             if (changed)
             {
                 Changed?.Invoke(this, EventArgs.Empty);
@@ -199,10 +205,11 @@ public sealed class MonitorSchedule
 
     // The titles and posters of monitored series not read yet, one after another; one that failed is not asked again before the
     // refresh interval passed.
-    private async Task<bool> ReadInfoAsync(DownloadScope scope, Uri server, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<bool> ReadInfoAsync(DownloadScope scope, Uri server, IReadOnlyList<string> series, DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         bool changed = false;
-        foreach (string seriesId in _monitors.Monitors.Select(m => m.SeriesId).Distinct(StringComparer.Ordinal))
+        foreach (string seriesId in series)
         {
             lock (_gate)
             {
