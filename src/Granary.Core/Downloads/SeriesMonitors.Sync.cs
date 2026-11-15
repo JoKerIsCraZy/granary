@@ -40,10 +40,16 @@ public sealed partial class SeriesMonitors
         catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
         {
             _logger.LogInformation("Whether the server monitors series could not be read ({Failure})", Describe(ex));
+            // The episodes the queue holds until the monitors are known go: they will not be known before the server answers.
+            _book.NoteUnread(scope);
             return;
         }
         if (!capability.IsUsable || !IsStill(scope))
         {
+            if (IsStill(scope))
+            {
+                _book.NoteUnread(scope);
+            }
             return;
         }
         await SendStopsAsync(scope, server, cancellationToken).ConfigureAwait(false);
@@ -85,6 +91,10 @@ public sealed partial class SeriesMonitors
         catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
         {
             _logger.LogInformation("The monitored series could not be read ({Failure})", Describe(ex));
+            if (IsStill(scope))
+            {
+                _book.NoteUnread(scope);
+            }
             return false;
         }
         if (!IsStill(scope))

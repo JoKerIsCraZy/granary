@@ -28,8 +28,8 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
 
     // As the server answers a change: with a validator of its own.
     private void Monitor(long maxStorageBytes) =>
-        _book.Put(Scope7, new DownloadSubscription { Id = "sub_1", SeriesId = "sr_1", Mode = SubscriptionModes.Future, MaxStorageBytes = maxStorageBytes, Active = true,
-            Etag = "\"m" + maxStorageBytes.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"" });
+        _book.Replace(Scope7, [new DownloadSubscription { Id = "sub_1", SeriesId = "sr_1", Mode = SubscriptionModes.Future, MaxStorageBytes = maxStorageBytes, Active = true,
+            Etag = "\"m" + maxStorageBytes.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"" }]);
 
     private Task<StoredDownload> AddEpisodeAsync(string id, string episodeId, DownloadState state = DownloadState.Queued, long size = 3000) =>
         _h.AddAsync(id, state, size, mediaItemId: episodeId, change: r => r with { SeriesId = "sr_1", SeriesTitle = "Example Series" });
@@ -71,6 +71,7 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
     [Fact]
     public async Task AnEpisodeOfASeriesNoMonitorHolds_IsNotHeld()
     {
+        _book.Replace(Scope7, []);
         await AddEpisodeAsync("dl_1", "ep_1", DownloadState.Completed, size: 10 * GB);
         await AddEpisodeAsync("dl_2", "ep_2");
         await _h.Preferences.SetStorageLimitGbAsync(1);
@@ -143,6 +144,24 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
         Assert.Equal("Series storage limit reached", DownloadText.Status(found));
         Assert.False(DownloadText.IsComing(found));
         Assert.Empty(_h.FileRequests("dl_2"));
+    }
+
+    [Fact]
+    public async Task AnEpisode_WaitsUntilTheMonitorsAreKnown_ThenComes()
+    {
+        await AddEpisodeAsync("dl_2", "ep_2");
+        _h.ServeFile("dl_2", Source);
+        var queue = StartQueue();
+        await SettleAsync(queue);
+
+        // At the start, before monitoring's first run: whether a limit holds it is not known yet.
+        Assert.Empty(_h.FileRequests("dl_2"));
+        Assert.Equal(DownloadHold.PolicyUnknown, queue.HoldOf(Scope7, "dl_2"));
+        Assert.Equal("Queued", DownloadText.Status(_h.NewManager(queue).Find("dl_2")!));
+
+        _book.Replace(Scope7, []);
+
+        await Until(() => _h.Find("dl_2")?.Record.State == DownloadState.Completed, "the episode came");
     }
 
     [Fact]

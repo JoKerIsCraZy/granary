@@ -10,6 +10,12 @@ public enum DownloadHold
 
     /// <summary>Granary's storage limit for downloads (Settings → Downloads): the downloads on this PC would take more.</summary>
     DownloadsLimit,
+
+    /// <summary>
+    /// Whether a limit holds it is not known yet: an episode, before monitoring's first run read its profile's monitors (as at
+    /// Granary's start, before which its series' limit, or that it is monitored at all, is not known).
+    /// </summary>
+    PolicyUnknown,
 }
 
 /// <summary>
@@ -82,8 +88,16 @@ public sealed partial class DownloadQueue
         var record = download.Record;
         var key = Key.Of(record);
         if (_monitors is null || record.SeriesId is not { } seriesId || _running.ContainsKey(key)
-            || record.State is not (DownloadState.Queued or DownloadState.Downloading)
-            || _monitors.ForSeries(record.Scope, seriesId) is not { } monitor)
+            || record.State is not (DownloadState.Queued or DownloadState.Downloading))
+        {
+            return DownloadHold.None;
+        }
+        if (!_monitors.IsKnown(record.Scope))
+        {
+            // Not "not monitored": it waits for the run that reads its profile's monitors, or finds it cannot.
+            return DownloadHold.PolicyUnknown;
+        }
+        if (_monitors.ForSeries(record.Scope, seriesId) is not { } monitor)
         {
             return DownloadHold.None;
         }

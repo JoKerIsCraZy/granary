@@ -1661,7 +1661,11 @@ titles of their series as a download dialog or a download named them.
   monitor's limit, or all downloads past Granary's (`DownloadQueue.HoldOf`, `DownloadHold`): whole files count their size,
   a transfer under way the size it comes to, the rest the bytes they have, and missing files nothing. It starts once
   there is room, as a delete, a raised limit (the book's `Changed` and the settings' wake the queue) or another monitor
-  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. What the downloads take is counted
+  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. Until a run read a profile's
+  monitors, or found it could not (`MonitorBook.IsKnown`: the server did not answer or does not monitor series), whether a
+  limit holds its episodes is not known, which is not "not monitored": the queue holds them (`DownloadHold.PolicyUnknown`,
+  shown as Queued), as at Granary's start, when the queue runs before monitoring's first run; the book becoming known wakes
+  the queue. What the downloads take is counted
   once for each pass and each list a page reads (`LimitTally`), and a pass adds each transfer it starts at the size it comes
   to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. A held
   download whose retry falls due gives the loop no time to look again (`NextWake`): only what lifts the hold wakes it. Its card says "Series storage

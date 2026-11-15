@@ -47,6 +47,8 @@ public static class DownloadText
             // Also one that was coming when Granary stopped: Downloading, and held now, it waits as a queued one does.
             { State: DownloadState.Queued or DownloadState.Downloading, Hold: DownloadHold.SeriesLimit } => SeriesLimitReached,
             { State: DownloadState.Queued or DownloadState.Downloading, Hold: DownloadHold.DownloadsLimit } => DownloadsLimitReached,
+            // Waiting for monitoring's first run to say whether a limit holds it: it waits its turn as any queued one.
+            { State: DownloadState.Downloading, Hold: DownloadHold.PolicyUnknown } => Queued,
             { State: DownloadState.Queued, WaitsForUnmetered: true } => PausedMetered,
             { State: DownloadState.Queued } => Queued,
             { State: DownloadState.Downloading } => $"{Downloading} · {PercentText(item)}",

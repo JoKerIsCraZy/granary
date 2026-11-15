@@ -5,13 +5,15 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// The series monitors of each server, account and profile as Granary last read or wrote them (<see cref="SeriesMonitors"/>),
 /// and the titles of their series as Granary knows them. The queue reads the storage limits here, the pages the monitors; it
-/// holds them for the run, not on disk: a run at the start reads them again. Safe from any thread; <see cref="Changed"/> comes
-/// on the thread that changed them.
+/// holds them for the run, not on disk: a run at the start reads them again. Until a run read a scope's list, or found it could
+/// not (<see cref="IsKnown"/>), whether a limit holds that scope's episodes is not known, which the queue tells apart from "not
+/// monitored". Safe from any thread; <see cref="Changed"/> comes on the thread that changed them.
 /// </summary>
 public sealed class MonitorBook
 {
     private readonly Lock _gate = new();
     private readonly Dictionary<DownloadScope, IReadOnlyList<DownloadSubscription>> _monitors = [];
+    private readonly HashSet<DownloadScope> _known = [];
     private readonly Dictionary<(DownloadScope Scope, string SeriesId), string> _titles = [];
 
     /// <summary>Raised after the monitors of any scope changed.</summary>
@@ -26,6 +28,21 @@ public sealed class MonitorBook
             return _monitors.GetValueOrDefault(scope) ?? [];
         }
     }
+
+    /// <summary>
+    /// A run read the scope's monitor list whole, or found this run that it could not (the server did not answer, or does not
+    /// monitor series): its monitors are as known as they get. False before, as at Granary's start.
+    /// </summary>
+    public bool IsKnown(DownloadScope scope)
+    {
+        lock (_gate)
+        {
+            return _known.Contains(scope);
+        }
+    }
+
+    /// <summary>A run could not read the scope's list: the monitors it had stand, and are as known as they get for now.</summary>
+    internal void NoteUnread(DownloadScope scope) => Change(scope, list => list);
 
     /// <summary>The scope's monitor of <paramref name="seriesId"/>, paused or not; null when the series is not monitored.</summary>
     public DownloadSubscription? ForSeries(DownloadScope scope, string seriesId) =>
@@ -65,6 +82,7 @@ public sealed class MonitorBook
 
     internal void Remove(DownloadScope scope, string subscriptionId) => Change(scope, list => [.. list.Where(m => m.Id != subscriptionId)]);
 
+    // Every change is of what a run or a write read or wrote, so it leaves the scope known.
     private void Change(DownloadScope scope, Func<IReadOnlyList<DownloadSubscription>, IReadOnlyList<DownloadSubscription>> change)
     {
         bool changed;
@@ -74,6 +92,7 @@ public sealed class MonitorBook
             var after = change(before);
             // A monitor's validator changes with every change to it: the same ids and validators in the same order are the same.
             changed = !before.Select(m => (m.Id, m.Etag)).SequenceEqual(after.Select(m => (m.Id, m.Etag)));
+            changed |= _known.Add(scope);
             _monitors[scope] = after;
         }
         if (changed)

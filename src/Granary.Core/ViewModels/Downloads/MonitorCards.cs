@@ -49,7 +49,8 @@ public static class MonitorCards
 
     private static MonitorPhase PhaseOf(DownloadItem item) => item switch
     {
-        { Hold: not DownloadHold.None } => MonitorPhase.StorageLimit,
+        { Hold: DownloadHold.SeriesLimit or DownloadHold.DownloadsLimit } => MonitorPhase.StorageLimit,
+        { Hold: DownloadHold.PolicyUnknown } => MonitorPhase.Queued,
         { State: DownloadState.Queued, WaitsForUnmetered: true } => MonitorPhase.WaitingForUnmetered,
         { State: DownloadState.Downloading } => MonitorPhase.Downloading,
         { State: DownloadState.Preparing } => MonitorPhase.Preparing,

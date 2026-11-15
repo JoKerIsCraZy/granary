@@ -195,6 +195,19 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ARunThatCouldNotReadTheMonitors_StillSaysThePolicyIsAsKnownAsItGets()
+    {
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Problem(503, "dependency_unavailable"));
+        Assert.False(_book.IsKnown(Scope7));
+
+        await Monitors.SyncAsync(Token);
+
+        // The episodes the queue held for it go: no limit is known, and none will be before the server answers.
+        Assert.True(_book.IsKnown(Scope7));
+        Assert.Empty(_book.In(Scope7));
+    }
+
+    [Fact]
     public async Task WhileTheServerDoesNotMonitorSeries_NothingIsSynced()
     {
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability(monitoring: false)));
