@@ -63,11 +63,27 @@ public static class RemoteTexts
     /// </summary>
     public const string NoSuchTitle = "This title is no longer available.";
 
+    /// <summary>
+    /// The player's failure as a phone is told it, in the status and with <c>launch_failed</c>, when the player's own words
+    /// would name an address: a server's or an administrator's message comes as they wrote it. New.
+    /// </summary>
+    public const string CouldNotPlay = "This title could not be played on this PC.";
+
     /// <summary>A phone that gave no usable name. New.</summary>
     public const string UnnamedPhone = "A phone";
 
     /// <summary><c>handoff_cancel handoff_failed</c> for an offer from another server: <c>AppSceneControl.bs</c> <c>controlOffer</c>.</summary>
     public static string PlaysFrom(string serverName) => string.Format(CultureInfo.InvariantCulture, "This PC plays from {0}.", serverName);
+
+    /// <summary>
+    /// The player's failure as a phone may read it: the player's message, unless it names an address (a scheme's
+    /// <c>://</c> or <c>www.</c>), which <see cref="CouldNotPlay"/> stands in for. Granary's own failure texts name none;
+    /// a terminal decision's message and an administrator's stop message are the server's words, and could.
+    /// </summary>
+    public static string? PlayerError(string? message) =>
+        message is not null && (message.Contains("://", StringComparison.Ordinal) || message.Contains("www.", StringComparison.OrdinalIgnoreCase))
+            ? CouldNotPlay
+            : message;
 
     /// <summary>
     /// A name a phone sent, as Granary shows it: cleaned as a discovered server's name is (no control, format or separator

@@ -271,6 +271,10 @@ public sealed partial class RemoteReceiver
     private SiloCastState StateNow()
     {
         var state = _player?.State ?? SiloCastState.Idle;
+        if (state.Error is { } error && RemoteTexts.PlayerError(error) is var told && !ReferenceEquals(told, error))
+        {
+            state = state with { Error = told };
+        }
         if (_opening is not { } opening)
         {
             return state;

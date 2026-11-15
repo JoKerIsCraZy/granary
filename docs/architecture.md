@@ -1583,7 +1583,8 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
   page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's
   `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one
   before may show the same title, failed or playing. The launch is opening until that player shows the title no longer
-  loading, or failed (the phone that launched it gets `launch_failed` with the player's message), or closes after it
+  loading, or failed (the phone that launched it gets `launch_failed` with the player's message, as the status's `error`
+  carries it: one that names an address, a server's or an administrator's words, goes out as a fixed text), or closes after it
   showed the title, or `LaunchWait` (30 seconds, silo-roku's `CONTROL_LAUNCH_WAIT_MS`) passes on the receiver's
   `TimeProvider`; meanwhile another launch gets `launch_pending`.
 - **The log** says "an offer to start a title is ready", "was refused (another profile)", "a launch opens the player",

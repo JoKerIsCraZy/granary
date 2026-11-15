@@ -446,6 +446,35 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         await LoadingAsync(phone, "movie-2");
     }
 
+    [Theory]
+    [InlineData("Transcoding is off. See https://silo.example/help?ticket=abc123 for more.")]
+    [InlineData("Ask your administrator at www.silo.example/admin.")]
+    [InlineData("Playback failed: rtsp://192.168.1.66/stream")]
+    public async Task APlayersMessageThatNamesAnAddress_GoesOutWithoutIt(string message)
+    {
+        // The player's own texts name nothing, but a server's or an administrator's words come as they wrote them.
+        var phone = await ReadyAsync();
+        await phone.SendAsync(Launch(AtThePhonesPosition));
+        await LoadingAsync(phone);
+        var player = new FakeRemotePlayer(_harness.Dispatcher) { State = SiloCastState.Loading("movie-1") };
+        await _harness.AttachAsync(player);
+
+        await PlayerChangedAsync(player, SiloCastState.Loading("movie-1") with { IsLoading = false, Error = message });
+
+        // The refusal and the status that shows the failure go out in either order.
+        const string Refused = """{"type":"error","v":2,"error":{"code":"launch_failed","message":"This title could not be played on this PC."}}""";
+        const string Shown = "\"error\":\"This title could not be played on this PC.\"";
+        bool refused = false, shown = false;
+        while (!(refused && shown))
+        {
+            string received = await phone.ReadAsync() ?? throw new InvalidOperationException("The connection ended.");
+            refused |= received == Refused;
+            shown |= FakePhone.TypeOf(received) == "state" && received.Contains(Shown, StringComparison.Ordinal);
+        }
+        Assert.DoesNotContain(phone.Received, received => received.Contains("silo.example/", StringComparison.Ordinal)
+            || received.Contains("192.168.1.66", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task ALaunchOfATitleThatFailedHere_WaitsForItsOwnPlayer()
     {
