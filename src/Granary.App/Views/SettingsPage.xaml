@@ -61,8 +61,8 @@
                     <StackPanel Padding="12,0,12,24" Spacing="4" XYFocusKeyboardNavigation="Enabled">
                         <TextBlock x:Name="PlaybackGroup" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                    CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                        <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                                  AutomationProperties.Name="Settings pages">
+                        <!-- Each list is named by its group's heading as the page is made (SettingsPage.NameGroup). -->
+                        <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
                             <ListViewItem Tag="playback" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.playback.title')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE768;" FontSize="14" />
@@ -79,8 +79,7 @@
                         <!-- How Granary looks: posters, badges and the sidebar; what a title's page shows; the language it speaks. -->
                         <TextBlock x:Name="AppearanceGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                    CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                        <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                                  AutomationProperties.Name="Appearance pages">
+                        <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
                             <ListViewItem Tag="interface" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.interface.title')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE8A1;" FontSize="14" />
@@ -103,8 +102,7 @@
                         <!-- The account's: where it is signed in, and the devices it watches on. -->
                         <TextBlock x:Name="AccountGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                    CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                        <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                                  AutomationProperties.Name="Account pages">
+                        <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
                             <ListViewItem Tag="devices" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.devices.title')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE8EA;" FontSize="14" />
@@ -115,18 +113,17 @@
                         <!-- The app's own: its servers, its downloads on this PC, and what it is. One page is open across all the lists. -->
                         <TextBlock x:Name="AppGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                                    CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                        <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                                  AutomationProperties.Name="App pages">
+                        <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
                             <ListViewItem Tag="servers" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.servers.title')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE968;" FontSize="14" />
                                     <TextBlock Text="{x:Bind t:AppText.Get('granary.servers.title')}" FontSize="14" />
                                 </StackPanel>
                             </ListViewItem>
-                            <ListViewItem Tag="downloads" AutomationProperties.Name="Downloads">
+                            <ListViewItem Tag="downloads" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.nav.downloads')}">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE896;" FontSize="14" />
-                                    <TextBlock Text="Downloads" FontSize="14" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('granary.settings.nav.downloads')}" FontSize="14" />
                                 </StackPanel>
                             </ListViewItem>
                             <ListViewItem Tag="about" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.nav.about')}">

@@ -2481,7 +2481,7 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. The Downloads page and a series' downloads have no tabs
-  but sections that all show at once (Films and Series; the seasons), so theirs move focus to the first card of the section
+  but sections that all show at once (Movies and Series; the seasons), so theirs move focus to the first card of the section
   before or after the one focus is in; a series' season comes into view first, since its repeater makes it only near the
   view. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
   `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request. Any other seek of the viewer's

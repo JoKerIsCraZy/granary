@@ -282,18 +282,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
   download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
   without your Silo server.". While the profile has watched downloads that are whole on this PC, an outline
-  button "Reclaim Watched" (History's outline button, at the left) stands above the list. The words are the Android
-  app's throughout: the button and the title of its question ("Reclaim Watched"), the question ("Delete 2 watched
-  downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its yes ("Reclaim"). The size is
+  button "Reclaim watched" (History's outline button, at the left) stands above the list. The words are the Android
+  app's throughout, in the web's sentence case: the button and the title of its question ("Reclaim watched"), the
+  question ("Delete 2 watched downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its
+  yes ("Reclaim"). The size is
   the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
   Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
   hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before
-  its label, in Reclaim Watched's outline pill, opens Settings → Downloads
+  its label, in Reclaim watched's outline pill, opens Settings → Downloads
   over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
-  Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
+  Retry and Reclaim watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
   download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
   is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
   only the space used until the new folder's is read. Then, while the profile monitors a series, "Monitored" (the Apple app's
@@ -306,10 +307,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber (the limit that holds its first
   held episode: the monitor's, or Settings → Downloads' for every download), "Paused", "Up to date", or "Monitoring"
   before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
-  has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
-  downloads shows no empty box. Then "Films" and
-  "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
-  gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
+  has the Apple app's Go to series (the series' page) and Options (that dialog). A page with monitored series and no
+  downloads shows no empty box. Then "Movies" and "Series" (the Apple app's names for them in its storage card,
+  `downloads.storage.movies` and `.series`; the row titles' 20 px semibold), each a library's grid of Granary's own
+  cards (`MediaGrid`, its columns and gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
   files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
   title stands in, as on any card. Every card has three lines, the two under the title in the caption's style (12 px,
@@ -345,17 +346,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
   too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
-  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete All
-  Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
-  from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
+  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
+  episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
+  from your Silo server." with "Delete 3 downloads" ("Delete download" for one). Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows, else Download settings. A controller's bumpers go between
-  Films and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
+  film, and with neither left Reclaim watched when it shows, else Download settings. A controller's bumpers go between
+  Movies and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
-  the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
+  the header, above Reclaim watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
   your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
   button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
   ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
@@ -1216,7 +1217,7 @@ On the pages, and in the minimized player's bar:
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Films and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Movies and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |

@@ -1,8 +1,8 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Downloads;
@@ -14,29 +14,32 @@ namespace Granary.Core.ViewModels.Downloads;
 /// Its menu holds what the list's buttons did: Play, Pause, Resume or Retry, and Delete download, which asks first, and More
 /// Info, its page, as the web's hero names it; and Play from Beginning once it was started or watched, as the web's card
 /// menu offers it. A series' card opens its downloads
-/// (<see cref="AppRoute.DownloadedSeries"/>); its menu has the Apple app's Delete All Episodes, which asks first, and More
+/// (<see cref="AppRoute.DownloadedSeries"/>); its menu has the Apple app's Delete all episodes, which asks first, and More
 /// Info. A monitored series' card opens its download dialog on Monitor (<see cref="OpenMonitor"/>); its menu has the Apple
-/// app's Go to Series and Options. Each acts on the download as it is when it is picked.
+/// app's Go to series and Options. Each acts on the download as it is when it is picked.
 /// </summary>
 public sealed partial class DownloadCardActions : ICardMenuSource
 {
-    public const string PlayLabel = "Play";
-    public const string PlayFromBeginningLabel = "Play from Beginning";
-    public const string PauseLabel = "Pause";
-    public const string ResumeLabel = "Resume";
-    public const string RetryLabel = "Retry";
-    public const string MoreInfoLabel = "More Info";
+    /// <summary>Play and More Info as the web's hero names them, Play from Beginning as its card menu does.</summary>
+    public static string PlayLabel => AppText.Get("web.home.hero.play");
+    public static string PlayFromBeginningLabel => AppText.Get("web.item.menu.playFromBeginning");
+    public static string MoreInfoLabel => AppText.Get("web.home.hero.moreInfo");
+
+    /// <summary>The Apple app's Pause and Resume of a download (<c>downloads.action.*</c>), and the web's Retry.</summary>
+    public static string PauseLabel => AppText.Get("granary.downloads.pause");
+    public static string ResumeLabel => AppText.Get("granary.downloads.resume");
+    public static string RetryLabel => AppText.Get("common.retry");
 
     /// <summary>A monitored series' card's entries (the Apple app's <c>downloads.monitorList.goToSeries</c> and <c>.options</c>).</summary>
-    public const string GoToSeriesLabel = "Go to Series";
-    public const string OptionsLabel = "Options";
+    public static string GoToSeriesLabel => AppText.Get("granary.downloads.goToSeries");
+    public static string OptionsLabel => AppText.Get("granary.downloads.options");
 
-    /// <summary>A series' card's entry (the Apple app's <c>Delete All Episodes</c>).</summary>
-    public const string DeleteSeriesLabel = "Delete All Episodes";
+    /// <summary>A series' card's entry (the Apple app's <c>downloads.manager.deleteAllEpisodes</c>).</summary>
+    public static string DeleteSeriesLabel => AppText.Get("granary.downloads.deleteAllEpisodes");
 
     /// <summary>The Apple app's question before a series' downloads go, the Android app's words for what goes (adapted to this PC).</summary>
-    public const string DeleteSeriesTitle = "Delete downloaded files?";
-    public const string DeleteSeriesMessage = "This removes the downloaded copies from this PC. Nothing is deleted from your Silo server.";
+    public static string DeleteSeriesTitle => AppText.Get("granary.downloads.deleteFilesTitle");
+    public static string DeleteSeriesMessage => AppText.Get("granary.downloads.deleteFilesMessage");
 
     private readonly DownloadManager _downloads;
     private readonly INavigationService _navigation;
@@ -115,17 +118,25 @@ public sealed partial class DownloadCardActions : ICardMenuSource
     /// What the transfer entry does now: Pause while it runs or waits its turn, Resume once the viewer paused it, Retry once it
     /// failed; none when it is whole, or can only be deleted (its files are gone, or the server no longer has it).
     /// </summary>
-    public static string? TransferLabel(DownloadItem download)
+    public static string? TransferLabel(DownloadItem download) => TransferOf(download) switch
+    {
+        Transfer.Pause => PauseLabel,
+        Transfer.Resume => ResumeLabel,
+        Transfer.Retry => RetryLabel,
+        _ => null,
+    };
+
+    private static Transfer TransferOf(DownloadItem download)
     {
         ArgumentNullException.ThrowIfNull(download);
         if (download.FilesMissing || download.IsNoLongerAvailable)
         {
-            return null;
+            return Transfer.None;
         }
-        return download.IsPausedByViewer ? ResumeLabel
-            : download.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading ? PauseLabel
-            : download.State == DownloadState.Failed ? RetryLabel
-            : null;
+        return download.IsPausedByViewer ? Transfer.Resume
+            : download.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading ? Transfer.Pause
+            : download.State == DownloadState.Failed ? Transfer.Retry
+            : Transfer.None;
     }
 
     /// <summary>Plays the download from this PC, from where the profile left it; the player finds the download itself.</summary>
@@ -156,10 +167,10 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return Task.CompletedTask;
         }
-        return TransferLabel(download) switch
+        return TransferOf(download) switch
         {
-            PauseLabel => _downloads.PauseAsync(download.DownloadId),
-            ResumeLabel or RetryLabel => _downloads.ResumeAsync(download.DownloadId),
+            Transfer.Pause => _downloads.PauseAsync(download.DownloadId),
+            Transfer.Resume or Transfer.Retry => _downloads.ResumeAsync(download.DownloadId),
             _ => Task.CompletedTask,
         };
     }
@@ -215,14 +226,21 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        string action = episodes.Count == 1
-            ? "Delete Download"
-            : $"Delete {episodes.Count.ToString(CultureInfo.InvariantCulture)} Downloads";
+        string action = AppText.Get("granary.downloads.deleteFilesConfirm", ("count", episodes.Count), ("count_text", AppText.Number(episodes.Count)));
         if (!await _confirmation.AskAsync(DeleteSeriesTitle, DeleteSeriesMessage, action))
         {
             return;
         }
         await _downloads.DeleteAllAsync(scope, [.. episodes.Select(e => e.DownloadId)], CancellationToken.None);
+    }
+
+    // What the transfer entry does, whatever its words.
+    private enum Transfer
+    {
+        None,
+        Pause,
+        Resume,
+        Retry,
     }
 
     private DownloadItem? DownloadOf(MediaCard card) => card.Type == DownloadCards.DownloadType ? _downloads.Find(card.Id) : null;

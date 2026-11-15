@@ -190,7 +190,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Downloads" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('granary.downloads.title')}" VerticalAlignment="Center" />
                         <Ellipse x:Name="DownloadsPulse" Grid.Column="1" Width="6" Height="6" Margin="0,0,4,0" VerticalAlignment="Center"
                                  Fill="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind DownloadsActivity.IsTransferring, Mode=OneWay}"
                                  AutomationProperties.AccessibilityView="Raw" />

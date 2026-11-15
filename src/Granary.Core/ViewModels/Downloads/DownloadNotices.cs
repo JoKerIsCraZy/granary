@@ -20,7 +20,7 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     public static readonly TimeSpan NoticeShowsFor = TimeSpan.FromSeconds(5);
 
     /// <summary>A notification's button that plays what finished: the Downloads page's own word.</summary>
-    public const string PlayLabel = DownloadCardActions.PlayLabel;
+    public static string PlayLabel => DownloadCardActions.PlayLabel;
 
     /// <summary>A notification's button, and what its click does, that opens the Downloads page.</summary>
     public const string OpenDownloadsLabel = "Open Downloads";

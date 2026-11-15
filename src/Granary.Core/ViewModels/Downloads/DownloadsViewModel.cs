@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -22,7 +22,7 @@ namespace Granary.Core.ViewModels.Downloads;
 /// space is read off the UI thread, when the page shows and when a download comes, goes or finishes; a read that fails or
 /// takes longer than <see cref="DiskSpaceReads.Timeout"/> leaves it unknown, and the top then says only the space used. Above
 /// the cards it offers to delete the watched downloads to free up space, as both apps do, in the Android app's words
-/// throughout (its Reclaim Watched button, the dialog of that name, its question and its Reclaim), unless Settings →
+/// throughout (its Reclaim watched button, the dialog of that name, its question and its Reclaim), unless Settings →
 /// Downloads keeps watched downloads; nothing is deleted without the question. After a start that could not reach the server
 /// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>). Beside Reclaim
 /// Watched, Download settings opens Settings → Downloads. Above the films, the Apple app's Monitored: each monitored series as a
@@ -31,25 +31,28 @@ namespace Granary.Core.ViewModels.Downloads;
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
-    public const string EmptyTitle = "No downloads yet";
-    public const string EmptyText = "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it without your Silo server.";
-    public const string FilmsTitle = "Films";
-    public const string SeriesTitle = "Series";
+    /// <summary>The Android app's words for a page without downloads (<c>downloads_empty_title</c>), and how to get some.</summary>
+    public static string EmptyTitle => AppText.Get("granary.downloads.empty.title");
+    public static string EmptyText => AppText.Get("granary.downloads.empty.text");
+
+    /// <summary>The films' and the series' headings, the Apple app's names for them (<c>downloads.storage.movies</c>, <c>.series</c>).</summary>
+    public static string FilmsTitle => AppText.Get("granary.downloads.movies");
+    public static string SeriesTitle => AppText.Get("granary.downloads.series");
 
     /// <summary>The Apple app's title for the monitored series (<c>downloads.monitored.title</c>).</summary>
-    public const string MonitoredTitle = "Monitored";
+    public static string MonitoredTitle => AppText.Get("granary.downloads.monitored");
 
     /// <summary>The button on the page and the title of its question (Android's <c>downloads_reclaim_watched</c>).</summary>
-    public const string ReclaimTitle = "Reclaim Watched";
+    public static string ReclaimTitle => AppText.Get("granary.downloads.reclaim.title");
 
     /// <summary>The question's yes (Android's <c>downloads_reclaim_confirm</c>).</summary>
-    public const string ReclaimAction = "Reclaim";
+    public static string ReclaimAction => AppText.Get("granary.downloads.reclaim.confirm");
 
     /// <summary>What the page says after a start without the server, beside its Retry.</summary>
-    public const string OfflineNote = "Can't reach your Silo server. Downloads on this PC still play.";
+    public static string OfflineNote => AppText.Get("granary.downloads.offlineNote");
 
     /// <summary>The page's way to Settings → Downloads (<see cref="OpenSettingsCommand"/>).</summary>
-    public const string SettingsTitle = "Download settings";
+    public static string SettingsTitle => AppText.Get("granary.downloads.settings");
 
     private static readonly StringComparer TitleOrder = StringComparer.CurrentCultureIgnoreCase;
 
@@ -230,10 +233,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         {
             return;
         }
-        string count = asked.Count.ToString(CultureInfo.InvariantCulture);
-        string message = asked.Count == 1
-            ? $"Delete 1 watched download and free {Size(asked.Sum(i => i.ExpectedBytes))}?"
-            : $"Delete {count} watched downloads and free {Size(asked.Sum(i => i.ExpectedBytes))}?";
+        string message = AppText.Get("granary.downloads.reclaim.message", ("count", asked.Count), ("count_text", AppText.Number(asked.Count)),
+            ("size", Size(asked.Sum(i => i.ExpectedBytes))));
         if (await _confirmation.AskAsync(ReclaimTitle, message, ReclaimAction))
         {
             await _downloads.DeleteWatchedAsync(scope, [.. asked.Select(i => i.DownloadId)], CancellationToken.None);
@@ -491,9 +492,10 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 
     private void ShowSpace()
     {
-        string used = Size(_used) + " used";
-        SpaceText = _free is { } free ? $"{used} · {Size(free)} free" : used;
+        SpaceText = _free is { } free
+            ? AppText.Get("granary.downloads.space.usedFree", ("used", Size(_used)), ("free", Size(free)))
+            : AppText.Get("granary.downloads.space.used", ("size", Size(_used)));
     }
 
-    private static string Size(long bytes) => bytes > 0 ? PrePlayText.FileSize(bytes) : "0 B";
+    private static string Size(long bytes) => bytes > 0 ? PrePlayText.FileSize(bytes) : AppText.Get("web.common.format.size.bytes", ("size", 0));
 }
