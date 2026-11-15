@@ -49,7 +49,10 @@ public sealed partial class AdminActivityViewModel
     [ObservableProperty]
     public partial bool IsIpLookupOpen { get; set; }
 
-    /// <summary>Looks up a stream's address and opens the IP lookup on it, as the web's runIPLookup. A blank address does nothing.</summary>
+    /// <summary>
+    /// Looks up a stream's address and opens the IP lookup on it, as the web's runIPLookup (<c>pages/AdminActivity.tsx</c>).
+    /// A blank address does nothing. A second address while the first loads runs too; the first one's answer is dropped.
+    /// </summary>
     public Task LookUpAddressAsync(string ip)
     {
         string address = ip.Trim();

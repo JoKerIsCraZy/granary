@@ -60,7 +60,10 @@ public sealed partial class AdminActivityView : UserControl
         ViewModel.Deactivate();
     }
 
-    /// <summary>Looks up an address, as the web's link from a stream's address does: the IP lookup opens and scrolls into view.</summary>
+    /// <summary>
+    /// Looks up an address, as the web's link from a stream's address does (runIPLookup in <c>pages/AdminActivity.tsx</c>):
+    /// the IP lookup opens and scrolls into view.
+    /// </summary>
     public Task LookUpAsync(string ip)
     {
         var lookup = ViewModel.LookUpAddressAsync(ip);
