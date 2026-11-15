@@ -216,6 +216,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     public partial string MetaLine { get; private set; } = "";
 
     /// <summary>
+    /// The scores under the facts, "IMDb 8.3", "TMDB 8.5", as the web's ScoreRow shows them on its movie, series and episode
+    /// pages; a season's page has none.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRatings))]
+    public partial IReadOnlyList<DetailRating> Ratings { get; private set; } = [];
+
+    public bool HasRatings => Ratings.Count > 0;
+
+    /// <summary>
     /// "Available version: 720P · H264 · EAC3 · 9.3 GB" under the buttons; empty for a series or season, and for several
     /// files, which the Version picker names instead.
     /// </summary>
@@ -492,6 +502,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropUrl = null;
         BackdropThumbhash = "";
         AvailableVersionLine = "";
+        Ratings = [];
         ResetPrePlay();
         ResetRating();
         InfoSections = [];
@@ -533,6 +544,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
         Overview = item.Overview?.Trim() ?? "";
         ShowMetaLine();
+        Ratings = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series or CatalogItemTypes.Episode ? DetailFacts.Ratings(item) : [];
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
