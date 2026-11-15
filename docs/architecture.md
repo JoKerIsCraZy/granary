@@ -1577,9 +1577,10 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   listener; failures back to back are waited out on the `TimeProvider`, from 50 ms doubling to at most a second, so
   none can make it spin either, and a run of them is logged once. Only a failure of the listening socket itself ends
   the loop: an error of its own, or 30 seconds of accepts failing for want of sockets or buffers without one getting
-  through (out of them for good); a peer's resets and broken connections never end it, however long they go on. It raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed,
-  the listener closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by
-  itself, only at the next change of the switch, the session, the PC's address or the key.
+  through (out of them for good); a peer's resets and broken connections never end it, however long they go on. It
+  raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed, the listener
+  closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by itself, only
+  at the next change of the switch, the session, the PC's address or the key.
   `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
   handed over. A connection (`AcceptedConnection`) ends its sending first when it is disposed (`shutdown` with
   `SD_SEND`), then closes its socket itself, not only its stream, so a read or write in flight ends at once. Closed with
@@ -1595,7 +1596,10 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   server) is a removal and a new registration, and replacing one waits up to 2 seconds for Windows to confirm the
   removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and the next
   registration or removal first asks Windows to take it back and waits its 2 seconds, so two of one name do not overlap
-  (should Windows not take that request, a late success is still removed, for up to 30 seconds after). Each registration owns its native memory (the names,
+  (should Windows not take that request, a late success is still removed, for up to 30 seconds after). A registration
+  whose removal Windows does not take stays the current one and is asked again at the next removal or registration; a
+  new one is not made beside it, so the receiver counts as not advertised and stops. Each registration owns its native
+  memory (the names,
   the TXT pairs, the address, the instance Windows built and the request); the request stays at one address until
   Windows confirmed the registration's end, since removing takes the same request, and all of it is freed a moment
   after that. Memory Windows might still read is never freed. The completion callback is a static

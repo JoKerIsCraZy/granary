@@ -73,7 +73,13 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             if (_current is { } previous)
             {
                 _current = null;
-                await RemoveAsync(previous).ConfigureAwait(false);
+                if (!await RemoveAsync(previous).ConfigureAwait(false))
+                {
+                    // The old one stays, to be taken back at the next try: a new one beside it would advertise the name
+                    // twice. Not advertised, the receiver stops and says so.
+                    _current = previous;
+                    return false;
+                }
             }
             return await AddAsync(registration).ConfigureAwait(false);
         }
@@ -92,7 +98,11 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             if (_current is { } current)
             {
                 _current = null;
-                await RemoveAsync(current).ConfigureAwait(false);
+                if (!await RemoveAsync(current).ConfigureAwait(false))
+                {
+                    // Kept, so the next unregistration or registration asks Windows again.
+                    _current = current;
+                }
             }
         }
         finally
@@ -137,36 +147,39 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         return true;
     }
 
-    // Under the gate. Removes a registration and waits up to RemoveWait for Windows' word.
-    private async Task RemoveAsync(Registration registration)
+    // Under the gate. Removes a registration and waits up to RemoveWait for Windows' word. False when Windows did not take
+    // the removal of a registration that went through: it is still advertised, and the caller keeps it to ask again.
+    private async Task<bool> RemoveAsync(Registration registration)
     {
         if (!registration.IsAnswered)
         {
             await RemoveUnansweredAsync(registration).ConfigureAwait(false);
-            return;
+            return true;
         }
         if (!registration.WentThrough)
         {
             Ended(registration);
-            return;
+            return true;
         }
         uint status = registration.Remove();
         if (status != DnsService.RequestPending)
         {
-            // Windows may still hold the request: its memory is kept, and the advertisement ends with Granary.
+            // Windows did not take it, so it never calls back for it: the registration stays, its memory with it.
             logger.LogWarning("Windows did not take the removal of the phone remote's advertisement (status {Status})", status);
-            return;
+            return false;
         }
         if (await registration.RemovedAsync(RemoveWait).ConfigureAwait(false) is not { } removed)
         {
+            // Windows holds the removal and may still answer it: not asked again, its memory kept.
             logger.LogWarning("Windows did not confirm the removal of the phone remote's advertisement in time");
-            return;
+            return true;
         }
         if (removed != DnsService.Success)
         {
             logger.LogWarning("Windows removed the phone remote's advertisement with status {Status}", removed);
         }
         Ended(registration);
+        return true;
     }
 
     // Under the gate. Windows has not answered for it yet: it is asked to take it back now, before anything registers
@@ -200,7 +213,11 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                await RemoveAsync(registration).ConfigureAwait(false);
+                if (!await RemoveAsync(registration).ConfigureAwait(false))
+                {
+                    // Asked again at the next unregistration or registration; with another one current, it ends with Granary.
+                    _current ??= registration;
+                }
             }
             finally
             {
