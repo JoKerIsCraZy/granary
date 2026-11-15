@@ -108,6 +108,25 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AHeldEpisodeWhoseRetryFellDue_DoesNotKeepTheQueueLooking()
+    {
+        Monitor(maxStorageBytes: 5000);
+        await AddEpisodeAsync("dl_2", "ep_2");
+        _h.ServeFile("dl_2", Profiles.ScriptedSilo.NetworkError());
+        var queue = StartQueue();
+        await Until(() => _h.FileRequests("dl_2").Count == 1, "the first try");
+        await SettleAsync(queue);
+
+        // Its retry is due while its series' limit holds it: the loop waits for a change, not for nothing.
+        await AddEpisodeAsync("dl_1", "ep_1", DownloadState.Completed);
+        _h.Time.Advance(TimeSpan.FromMinutes(1));
+        await SettleAsync(queue);
+
+        Assert.Single(_h.FileRequests("dl_2"));
+        Assert.Equal(DownloadHold.SeriesLimit, queue.HoldOf(Scope7, "dl_2"));
+    }
+
+    [Fact]
     public async Task AHeldEpisode_SaysWhatHoldsIt()
     {
         Monitor(maxStorageBytes: 5000);

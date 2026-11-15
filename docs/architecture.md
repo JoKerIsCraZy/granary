@@ -1654,7 +1654,8 @@ titles of their series as a download dialog or a download named them.
   there is room, as a delete, a raised limit (the book's `Changed` and the settings' wake the queue) or another monitor
   makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. What the downloads take is counted
   once for each pass and each list a page reads (`LimitTally`), and a pass adds each transfer it starts at the size it comes
-  to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. Its card says "Series storage
+  to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. A held
+  download whose retry falls due gives the loop no time to look again (`NextWake`): only what lifts the hold wakes it. Its card says "Series storage
   limit reached" (the Apple app's words) or "Storage limit for downloads reached". Other downloads are never held: the
   download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
   dialog opens, and what the choice needs), and says so.

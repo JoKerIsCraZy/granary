@@ -432,13 +432,18 @@ public sealed partial class DownloadQueue
         {
             next = Earliest(next, activation.At);
         }
+        var all = runnable ? _store.All : [];
         lock (_gate)
         {
             bool canStart = !metered && !_stopping && _running.Count < Concurrency;
+            LimitTally? tally = null;
             foreach (var download in downloads)
             {
                 var key = Key.Of(download.Record);
-                if (canStart && IsWanted(download) && !_running.ContainsKey(key) && !_resetting.Contains(key) && _retries.TryGetValue(key, out var retry))
+                // A download a storage limit holds does not start when its retry falls due: its time is no time to look again.
+                // What lifts the hold (a delete, a limit raised, a monitor changed) wakes the loop itself.
+                if (canStart && IsWanted(download) && !_running.ContainsKey(key) && !_resetting.Contains(key) && _retries.TryGetValue(key, out var retry)
+                    && HoldLocked(download, tally ??= TallyLocked(all)) == DownloadHold.None)
                 {
                     next = Earliest(next, retry.At);
                 }
