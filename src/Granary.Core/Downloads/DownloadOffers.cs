@@ -96,7 +96,9 @@ public static class DownloadOffers
         {
             return null;
         }
-        var left = episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0 && !isOnThisPc(e.ContentId)).ToList();
+        // By number, whatever order the server lists them in: the queue takes the oldest first, so the first comes first.
+        var left = episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0 && !isOnThisPc(e.ContentId))
+            .OrderBy(e => e.EpisodeNumber).ToList();
         if (left.Count == 0)
         {
             return null;
@@ -122,7 +124,7 @@ public static class DownloadOffers
         var left = seasons
             .OrderBy(s => DetailFacts.IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber)
             .Select(s => (s.Season.SeasonNumber, Episodes: s.Episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0
-                && !isOnThisPc(e.ContentId)).ToList()))
+                && !isOnThisPc(e.ContentId)).OrderBy(e => e.EpisodeNumber).ToList()))
             .Where(s => s.Episodes.Count > 0)
             .ToList();
         if (left.Count == 0)
