@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Images;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -271,9 +272,9 @@ public sealed class PlayerSystemMediaTests
 
         public NextEpisode? Next { get; set; }
 
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) => Task.FromResult(Next);
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) => Task.FromResult(Next);
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) => Task.FromResult(Previous);
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) => Task.FromResult(Previous);
 
         public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<MediaCard>>([]);

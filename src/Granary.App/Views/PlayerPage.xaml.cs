@@ -120,6 +120,8 @@ public sealed partial class PlayerPage : Page
         {
             _modes.SetFullScreen(true);
         }
+        // The page may not be in the window yet: the window's own scale then, so the first episode's read has it.
+        TellNextUpStillWidth(XamlRoot ?? App.Services.GetRequiredService<MainWindow>().Content?.XamlRoot);
         _ = ViewModel.StartAsync(request);
     }
 
@@ -166,6 +168,7 @@ public sealed partial class PlayerPage : Page
         _remoteControl ??= new PlayerRemoteControl(ViewModel, App.Services.GetRequiredService<RemoteReceiver>(),
             App.Services.GetRequiredService<IUiDispatcher>());
         ShowSkipIntervals();
+        FollowNextUpStillWidth();
         QueueNextUpStill();
         Focus(FocusState.Programmatic);
         StartAutoHide();
@@ -180,6 +183,7 @@ public sealed partial class PlayerPage : Page
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         _modes.Changed -= OnWindowModeChanged;
+        StopNextUpStillWidth();
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         ViewModel.ViewerSought -= OnViewerSought;
         StopInput();

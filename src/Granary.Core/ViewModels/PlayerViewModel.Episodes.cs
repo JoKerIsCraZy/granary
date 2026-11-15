@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Api.Images;
 using Granary.Core.Playback;
 
 namespace Granary.Core.ViewModels;
@@ -39,12 +40,13 @@ public sealed partial class PlayerViewModel
         HasPreviousEpisode = false;
     }
 
-    private async Task ResolvePreviousAsync(IUpNextSource source, PlayingEpisode episode, CancellationToken cancellationToken)
+    // With the next episode's stills, so both share one read of the season.
+    private async Task ResolvePreviousAsync(IUpNextSource source, PlayingEpisode episode, ImageSizes? stills, CancellationToken cancellationToken)
     {
         NextEpisode? previous;
         try
         {
-            previous = await source.PreviousEpisodeAsync(episode, cancellationToken);
+            previous = await source.PreviousEpisodeAsync(episode, stills, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

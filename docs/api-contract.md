@@ -2348,7 +2348,9 @@ same way:
    `.../seasons/{current}/episodes`; add the episodes of the lowest-numbered later season that is
    not specials (`is_specials`). The next episode is the smallest (season, episode) strictly after
    the current one (`silo-android/shared/src/commonMain/kotlin/org/siloserver/silo/playback/NextEpisodeResolver.kt:24-34`).
-   A multi-part item plays its next part before moving on.
+   A multi-part item plays its next part before moving on. Granary reads these episodes with `still_width` set to the
+   widest the Playing Next screen draws the still (400 px high in 16:9, at the display's scale), as the web reads them for
+   that screen (`web/src/lib/artworkWidths.ts`, `upNext`); without it the server sends a card's still (7.10).
 2. **Prompt**: when playback crosses `credits.start` of the playing version going forward, or
    `duration − playback.next_up_prompt_seconds` (default 30; 0 = only at the end) without a credits
    marker. Resuming inside the credits does not trigger it.
