@@ -27,7 +27,8 @@ release's section is what its update says it changes (docs/release.md).
 - **Monitored series:** a series' Download, from its page or its ⋯ menu, has One Time and Monitor: Monitor keeps new
   episodes coming to this PC as they air, from all episodes, future ones or the last season on, in the quality you pick
   when your Silo server allows it, with Delete after watching and a storage limit; for a monitored series it saves what
-  you change or stops monitoring, after asking. A monitored series brings its new episodes by itself: Granary asks the
+  you change or stops monitoring, after asking. The Downloads page lists your monitored series with what each takes and
+  what comes next ("Episode 6 on Thursday"). A monitored series brings its new episodes by itself: Granary asks the
   server for them when it starts, when you switch profiles and every four hours, and downloads what the server registered
   like any other download, in episode order. A monitor with Delete after watching deletes the episodes you finished at
   the end of each of these runs, never the one that plays. A monitor's storage limit holds back the episodes that would pass it, and so

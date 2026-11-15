@@ -13,7 +13,7 @@ namespace Granary.App.Views;
 /// The active profile's downloads on this PC (docs/ui-design.md, "Downloads"). The page is cached; it follows the downloads
 /// only while it shows: attached as it is shown, detached as it is left, and as it unloads, so the downloads, which live as
 /// long as the app, never hold it (<c>DownloadsViewModelTests</c>). Its cards' ⋮ menus get their entries from it. A
-/// controller's bumpers step through its sections, Films and Series (<see cref="IPadSections"/>).
+/// controller's bumpers step through its sections, Monitored, Films and Series (<see cref="IPadSections"/>).
 /// </summary>
 public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost, IPadSections
 {
@@ -33,23 +33,29 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost,
 
     public string OfflineNote => DownloadsViewModel.OfflineNote;
 
+    public string MonitoredTitle => DownloadsViewModel.MonitoredTitle;
+
     public string FilmsTitle => DownloadsViewModel.FilmsTitle;
 
     public string SeriesTitle => DownloadsViewModel.SeriesTitle;
 
     public string SettingsTitle => DownloadsViewModel.SettingsTitle;
 
-    /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus.</summary>
+    /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus; Go to Series and Options on a monitor's.</summary>
     public ICardMenuSource CardMenu => ViewModel.Actions;
 
     /// <summary>
-    /// The last film went with the focus: the first series takes it; the last series: the last film; neither is left: Reclaim
-    /// Watched when it shows, else Download settings. Whatever is left, a keyboard, a controller or a remote carries on from there.
+    /// The last card of a section went with the focus: the next section's first takes it, or the last section's before it's
+    /// last; none is left: Reclaim Watched when it shows, else Download settings. Whatever is left, a keyboard, a controller or a
+    /// remote carries on from there.
     /// </summary>
     public void FocusAfterLastCard(MediaGrid grid, FocusState state)
     {
-        bool moved = ReferenceEquals(grid, FilmsGrid) ? SeriesGrid.FocusCardAt(0, state)
-            : ReferenceEquals(grid, SeriesGrid) && FilmsGrid.FocusCardAt(int.MaxValue, state);
+        MediaGrid[] sections = [MonitoredGrid, FilmsGrid, SeriesGrid];
+        int at = Array.IndexOf(sections, grid);
+        bool moved = at >= 0
+            && (sections.Skip(at + 1).Any(next => next.FocusCardAt(0, state))
+                || sections.Take(at).Reverse().Any(before => before.FocusCardAt(int.MaxValue, state)));
         if (!moved)
         {
             (ReclaimButton.Visibility == Visibility.Visible ? ReclaimButton : SettingsButton).Focus(state);
@@ -57,14 +63,14 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost,
     }
 
     /// <summary>
-    /// A controller's bumpers: the page has no tabs, but two sections, Films and Series, so a bumper goes to the first card of
+    /// A controller's bumpers: the page has no tabs, but sections, Monitored, Films and Series, so a bumper goes to the first card of
     /// the one before or after the section focus is in, as a bumper picks the tab beside the chosen one, and stops at the ends.
     /// From above them (Retry, Reclaim Watched, Download settings) or the sidebar, RB goes to the first section with cards. A section without
     /// cards is stepped over.
     /// </summary>
     void IPadSections.StepSection(int by)
     {
-        MediaGrid[] sections = [FilmsGrid, SeriesGrid];
+        MediaGrid[] sections = [MonitoredGrid, FilmsGrid, SeriesGrid];
         var focused = XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
         int at = focused is null ? -1 : Array.FindIndex(sections, grid => MediaGrid.IsWithin(focused, grid));
         if (at < 0 && by < 0)

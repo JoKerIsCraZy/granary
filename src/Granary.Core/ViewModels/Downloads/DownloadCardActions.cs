@@ -15,7 +15,8 @@ namespace Granary.Core.ViewModels.Downloads;
 /// Info, its page, as the web's hero names it; and Play from Beginning once it was started or watched, as the web's card
 /// menu offers it. A series' card opens its downloads
 /// (<see cref="AppRoute.DownloadedSeries"/>); its menu has the Apple app's Delete All Episodes, which asks first, and More
-/// Info. Each acts on the download as it is when it is picked.
+/// Info. A monitored series' card opens its download dialog on Monitor (<see cref="OpenMonitor"/>); its menu has the Apple
+/// app's Go to Series and Options. Each acts on the download as it is when it is picked.
 /// </summary>
 public sealed partial class DownloadCardActions : ICardMenuSource
 {
@@ -25,6 +26,10 @@ public sealed partial class DownloadCardActions : ICardMenuSource
     public const string ResumeLabel = "Resume";
     public const string RetryLabel = "Retry";
     public const string MoreInfoLabel = "More Info";
+
+    /// <summary>A monitored series' card's entries (the Apple app's <c>downloads.monitorList.goToSeries</c> and <c>.options</c>).</summary>
+    public const string GoToSeriesLabel = "Go to Series";
+    public const string OptionsLabel = "Options";
 
     /// <summary>A series' card's entry (the Apple app's <c>Delete All Episodes</c>).</summary>
     public const string DeleteSeriesLabel = "Delete All Episodes";
@@ -44,11 +49,18 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         _confirmation = confirmation;
     }
 
+    /// <summary>What a monitored series' card opens: its download dialog on Monitor. None leaves those cards without a click.</summary>
+    public Func<MediaCard, Task>? OpenMonitor { get; set; }
+
     /// <summary>A card's click: a whole download plays, any other opens its page; a series' card opens its downloads.</summary>
     public void Invoke(MediaCard card)
     {
         ArgumentNullException.ThrowIfNull(card);
-        if (card.Type == DownloadCards.SeriesType)
+        if (card.Type == DownloadCards.MonitorType)
+        {
+            MonitorOptionsCommand.Execute(card);
+        }
+        else if (card.Type == DownloadCards.SeriesType)
         {
             _navigation.NavigateTo(AppRoute.DownloadedSeries, card.Id);
         }
@@ -68,6 +80,10 @@ public sealed partial class DownloadCardActions : ICardMenuSource
     public IReadOnlyList<CardMenuEntry> EntriesFor(MediaCard card)
     {
         ArgumentNullException.ThrowIfNull(card);
+        if (card.Type == DownloadCards.MonitorType)
+        {
+            return OpenMonitor is null ? [new(GoToSeriesLabel, MoreInfoCommand)] : [new(GoToSeriesLabel, MoreInfoCommand), new(OptionsLabel, MonitorOptionsCommand)];
+        }
         if (card.Type == DownloadCards.SeriesType)
         {
             return EpisodesOf(card.Id).Count == 0 ? [] : [new(MoreInfoLabel, MoreInfoCommand), new(DeleteSeriesLabel, DeleteSeriesCommand)];
@@ -156,7 +172,7 @@ public sealed partial class DownloadCardActions : ICardMenuSource
         {
             return;
         }
-        if (card.Type == DownloadCards.SeriesType)
+        if (card.Type is DownloadCards.SeriesType or DownloadCards.MonitorType)
         {
             _navigation.NavigateTo(AppRoute.Item, card.Id);
         }
@@ -165,6 +181,11 @@ public sealed partial class DownloadCardActions : ICardMenuSource
             _navigation.NavigateTo(AppRoute.Item, download.MediaItemId);
         }
     }
+
+    /// <summary>A monitored series' download dialog, on Monitor, where its choices change and it stops.</summary>
+    [RelayCommand]
+    private Task MonitorOptionsAsync(MediaCard? card) =>
+        card is { Type: DownloadCards.MonitorType } && OpenMonitor is { } open ? open(card) : Task.CompletedTask;
 
     /// <summary>
     /// Deletes the download from this PC after the title page's question; the server hears it once the files are gone. Each

@@ -25,7 +25,9 @@ namespace Granary.Core.ViewModels.Downloads;
 /// throughout (its Reclaim Watched button, the dialog of that name, its question and its Reclaim), unless Settings →
 /// Downloads keeps watched downloads; nothing is deleted without the question. After a start that could not reach the server
 /// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>). Beside Reclaim
-/// Watched, Download settings opens Settings → Downloads.
+/// Watched, Download settings opens Settings → Downloads. Above the films, the Apple app's Monitored: each monitored series as a
+/// card (<see cref="MonitorCards"/>), running ones first, then by title, with what it takes and does next from the airing
+/// calendar (<see cref="MonitorSchedule"/>, read as the page shows), which opens its download dialog on Monitor.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -33,6 +35,9 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public const string EmptyText = "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it without your Silo server.";
     public const string FilmsTitle = "Films";
     public const string SeriesTitle = "Series";
+
+    /// <summary>The Apple app's title for the monitored series (<c>downloads.monitored.title</c>).</summary>
+    public const string MonitoredTitle = "Monitored";
 
     /// <summary>The button on the page and the title of its question (Android's <c>downloads_reclaim_watched</c>).</summary>
     public const string ReclaimTitle = "Reclaim Watched";
@@ -57,6 +62,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadsViewModel> _logger;
     private readonly OfflineStart? _offline;
+    private readonly SeriesMonitors? _monitors;
+    private readonly MonitorSchedule? _schedule;
     private readonly DownloadsFollower _follow;
 
     // How often the page was shown: a Retry's answer moves only the showing it was pressed in.
@@ -67,6 +74,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly Dictionary<string, DownloadItem> _items = new(StringComparer.Ordinal);
     private readonly ObservableCollection<LiveCard> _films = [];
     private readonly ObservableCollection<LiveCard> _series = [];
+    private readonly ObservableCollection<LiveCard> _monitored = [];
     private HashSet<string> _shownIds = new(StringComparer.Ordinal);
     private int _completed;
     private IReadOnlyList<DownloadItem> _reclaimable = [];
@@ -78,7 +86,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private string? _spaceFolder;
 
     public DownloadsViewModel(DownloadManager downloads, IDiskSpace disk, IDownloadPreferences preferences, INavigationService navigation,
-        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger, OfflineStart? offline = null)
+        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger, OfflineStart? offline = null,
+        SeriesMonitors? monitors = null, MonitorSchedule? schedule = null, DownloadActions? downloadActions = null, DownloadOfferReader? offers = null)
     {
         _downloads = downloads;
         _disk = disk;
@@ -89,10 +98,20 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _time = time;
         _logger = logger;
         _offline = offline;
+        _monitors = monitors;
+        _schedule = schedule;
         _follow = new DownloadsFollower(downloads, dispatcher, time, Refresh);
         Actions = new DownloadCardActions(downloads, navigation, confirmation);
+        if (downloadActions is not null && offers is not null)
+        {
+            // A monitored series' dialog reads the series as its card's Download does, and opens on Monitor.
+            Actions.OpenMonitor = card => downloadActions.OfferReadAsync(
+                cancellationToken => offers.ReadAsync(card.Id, Api.Catalog.CatalogItemTypes.Series, cancellationToken),
+                new SeriesMonitorTarget(card.Id, card.Title), startsOnMonitor: true);
+        }
         Films = new ReadOnlyObservableCollection<LiveCard>(_films);
         Series = new ReadOnlyObservableCollection<LiveCard>(_series);
+        Monitored = new ReadOnlyObservableCollection<LiveCard>(_monitored);
     }
 
     /// <summary>"12.0 GB used · 200.0 GB free"; only the space used while the free space is not known.</summary>
@@ -104,6 +123,15 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 
     /// <summary>A card for each series with downloads, by title.</summary>
     public ReadOnlyObservableCollection<LiveCard> Series { get; }
+
+    /// <summary>A card for each monitored series, running ones first, then by title.</summary>
+    public ReadOnlyObservableCollection<LiveCard> Monitored { get; }
+
+    [ObservableProperty]
+    public partial bool HasMonitored { get; private set; }
+
+    /// <summary>The last read of the airing calendar and the monitored series' titles; done once the cards show it.</summary>
+    public Task ScheduleRead { get; private set; } = Task.CompletedTask;
 
     [ObservableProperty]
     public partial bool HasFilms { get; private set; }
@@ -157,8 +185,17 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         {
             _offline.PropertyChanged += OnOfflineChanged;
         }
+        if (_monitors is not null)
+        {
+            _monitors.Changed += OnMonitorsChanged;
+        }
+        if (_schedule is not null)
+        {
+            _schedule.Changed += OnMonitorsChanged;
+        }
         ShowOffline();
         Show(readSpace: true);
+        ScheduleRead = ReadScheduleAsync();
         // A media file deleted by hand since the last look: its card says "Missing file" once the disk was read.
         _downloads.LookAtFiles();
     }
@@ -254,9 +291,43 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         {
             _offline.PropertyChanged -= OnOfflineChanged;
         }
+        if (_monitors is not null)
+        {
+            _monitors.Changed -= OnMonitorsChanged;
+        }
+        if (_schedule is not null)
+        {
+            _schedule.Changed -= OnMonitorsChanged;
+        }
     }
 
     public void Dispose() => Detach();
+
+    // Any thread: a monitor came, went or changed, or the calendar or a series' title was read.
+    private void OnMonitorsChanged(object? sender, EventArgs e) => _follow.Poke();
+
+    // The calendar and the titles, as the Apple app's Monitored list reads them when it shows; never thrown at the page. What
+    // was read shows through the schedule's Changed, on the UI thread.
+    private async Task ReadScheduleAsync()
+    {
+        if (_schedule is null)
+        {
+            return;
+        }
+        try
+        {
+            await _schedule.RefreshAsync(force: false, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("The monitored series' calendar could not be read ({Failure})", ex.GetType().Name);
+        }
+        await _dispatcher.ResumeOnUi();
+        if (_follow.IsAttached)
+        {
+            ShowCards();
+        }
+    }
 
     private void OnPreferencesChanged(object? sender, EventArgs e) => _follow.Poke();
 
@@ -337,10 +408,38 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             .OrderBy(c => c.Title, TitleOrder).ThenBy(c => c.Id, StringComparer.Ordinal).ToList();
         LiveCard.Sync(_films, films);
         LiveCard.Sync(_series, series);
+        LiveCard.Sync(_monitored, MonitorCardsNow());
         _follow.Track(_items.Values);
         HasFilms = _films.Count > 0;
         HasSeries = _series.Count > 0;
-        IsEmpty = !HasFilms && !HasSeries;
+        HasMonitored = _monitored.Count > 0;
+        IsEmpty = !HasFilms && !HasSeries && !HasMonitored;
+    }
+
+    // Each monitored series as the Apple app's Monitored list has it: running ones first, then by title.
+    private List<MediaCard> MonitorCardsNow()
+    {
+        if (_monitors is null)
+        {
+            return [];
+        }
+        var now = _time.GetUtcNow();
+        var zone = _time.LocalTimeZone;
+        long downloadsLimit = _preferences.StorageLimitGb * DownloadPreferenceLimits.BytesPerGb;
+        return [.. _monitors.Monitors
+            .Select(monitor =>
+            {
+                var info = _schedule?.Info(monitor.SeriesId);
+                string title = info?.Title is { Length: > 0 } read ? read
+                    : _monitors.TitleOf(monitor.SeriesId)
+                    ?? _items.Values.Where(i => i.SeriesId == monitor.SeriesId).Select(DownloadCards.SeriesTitleOf).FirstOrDefault()
+                    ?? SeriesTitle;
+                var status = MonitorRules.StatusOf(monitor, MonitorCards.ActivityOf(_items.Values, monitor.SeriesId), _schedule?.Upcoming(monitor.SeriesId) ?? [],
+                    MonitorCards.KnownEpisodes(_items.Values, monitor.SeriesId), _schedule?.IsKnown == true, now, downloadsLimit);
+                return (monitor.Active, Card: MonitorCards.Card(monitor, title, info, status, now, zone));
+            })
+            .OrderBy(m => m.Active ? 0 : 1).ThenBy(m => m.Card.Title, TitleOrder).ThenBy(m => m.Card.Id, StringComparer.Ordinal)
+            .Select(m => m.Card)];
     }
 
     // What the question counts: the watched downloads that are whole on this PC, unless the viewer keeps them. Their size is

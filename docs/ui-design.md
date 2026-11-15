@@ -291,7 +291,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
   download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
   is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
-  only the space used until the new folder's is read. Then "Films" and
+  only the space used until the new folder's is read. Then, while the profile monitors a series, "Monitored" (the Apple app's
+  title for its list, `downloads.monitored.title`): a poster card for each monitored series in the same grid, running ones
+  first, then by title; its poster and title are the series' page's (read as the page shows, and every 15 minutes at most),
+  else the title a download dialog or a download named. Under the title, in the caption's style: what it takes, the Apple
+  app's rule line ("Future episodes", "All episodes", "Last season · Season 3 on", "Seasons 2 and 3", with " · 10 Mbps" for
+  a quality that is not original), and what it does next, the Apple app's status line ("Episode 6 on Thursday", "Season 2
+  starts tomorrow", "Downloading Episode 6 · 42%", "Episode 7 is next", "Preparing Episode 7", "Episode 7 waits for an
+  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber, "Paused", "Up to date", or
+  "Monitoring" before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
+  has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
+  downloads shows no empty box. Then "Films" and
   "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
   gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the

@@ -1625,6 +1625,12 @@ titles of their series as a download dialog or a download named them.
   the server has it now. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
   calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
   minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
+- **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards
+  (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
+  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode; one under way; one waiting; the next airing the rule
+  takes that this PC does not have; up to date once the calendar was read), from the page's downloads and
+  `MonitorSchedule`, which the page asks to read as it shows; the monitors' and the schedule's `Changed` refresh it
+  through the page's follower. A card's click and Options open `DownloadActions.OfferReadAsync` for the series, on Monitor.
 - **Delete after watching.** A monitor's `delete_watched` is the client's to carry out, as the Apple app does it
   (`retentionDeletions`): at the end of each run, once the server heard what was watched on this PC and its progress was
   read back (`OfflineProgressSync.FlushAsync`), the whole episodes of such a series that the profile watched for sure

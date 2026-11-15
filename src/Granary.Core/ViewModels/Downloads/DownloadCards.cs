@@ -22,6 +22,9 @@ public static class DownloadCards
     /// <summary>The <see cref="MediaCard.Type"/> of a series' card, which stands for its downloads; its id is the series'.</summary>
     public const string SeriesType = "download_series";
 
+    /// <summary>The <see cref="MediaCard.Type"/> of a monitored series' card (<see cref="MonitorCards"/>); its id is the series'.</summary>
+    public const string MonitorType = "download_monitor";
+
     // A line kept free while a size is not known: the card keeps its three lines.
     private const string EmptyLine = "\u00A0";
 
