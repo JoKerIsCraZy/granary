@@ -12,9 +12,10 @@ namespace Granary.App.Services;
 /// A connection that fails as it is accepted is skipped, whatever a peer does: a peer could make every accept fail, and
 /// it must neither stop the loop nor make it spin, so failures that come back to back are waited out, a little longer each
 /// time, up to <see cref="LongestBackoff"/>. Only a failure of the listener itself ends the loop: an error of its own, or
-/// no connection getting through for <see cref="GiveUpAfter"/> while <see cref="ShortagesToGiveUp"/> accepts or more in
-/// that time failed for want of sockets or buffers (out of them for good). A peer's resets and broken connections never
-/// end it, however long they go on, nor hide such a shortage; a shortage now and then is none.
+/// a shortage of sockets or buffers lasting <see cref="GiveUpAfter"/> from its own start, no connection getting through and
+/// <see cref="ShortagesToGiveUp"/> accepts or more in that time failing for it (out of them for good). A peer's resets and
+/// broken connections never end the loop, however long they go on, nor start, keep or hide such a shortage; a shortage
+/// now and then is none.
 /// The owner is told (<c>onFailed</c>), so no port stays open and advertised that nobody answers.
 /// </para>
 /// It logs by fixed phrases and an exception's type and code only (<see cref="RemoteLog"/>): a socket's message can name
@@ -120,11 +121,11 @@ internal sealed class RemoteAcceptLoop
     private async Task LoopAsync(CancellationToken stop)
     {
         int failures = 0;
-        // Since when no connection has got through, and when accepts failed for want of sockets or buffers within the last
-        // GiveUpAfter: a lasting shortage fills that window, a few far apart never do, and a peer's resets among them change
-        // neither. Both start anew when a connection gets through.
-        long? failingSince = null;
+        // When accepts failed for want of sockets or buffers within the last GiveUpAfter, and since when they have without a
+        // gap that long: a lasting shortage fills that window from its own start, a few far apart never do, and a peer's
+        // resets neither start nor keep its clock. Both start anew when a connection gets through.
         var shortages = new Queue<long>();
+        long shortSince = 0;
         while (!IsStopped)
         {
             IRemoteConnection connection;
@@ -148,17 +149,20 @@ internal sealed class RemoteAcceptLoop
                 // long they go on. Nothing got through for the half minute, and its accepts kept failing for want of
                 // sockets or buffers: that does.
                 long now = _time.GetTimestamp();
-                failingSince ??= now;
-                if (IsShortage(ex))
-                {
-                    shortages.Enqueue(now);
-                }
                 while (shortages.TryPeek(out long oldest) && _time.GetElapsedTime(oldest, now) > GiveUpAfter)
                 {
                     shortages.Dequeue();
                 }
+                if (IsShortage(ex))
+                {
+                    if (shortages.Count == 0)
+                    {
+                        shortSince = now;
+                    }
+                    shortages.Enqueue(now);
+                }
                 if (IsShortage(ex) && shortages.Count >= ShortagesToGiveUp
-                    && _time.GetElapsedTime(failingSince.Value, now) >= GiveUpAfter)
+                    && _time.GetElapsedTime(shortSince, now) >= GiveUpAfter)
                 {
                     _logger.LogWarning("The phone remote's listener stopped taking connections: {Count} failed in a row, none got through ({Error})",
                         failures, RemoteLog.Failure(ex));
@@ -182,7 +186,6 @@ internal sealed class RemoteAcceptLoop
                 _logger.LogDebug("{Count} connections in a row ended while they were accepted", failures);
             }
             failures = 0;
-            failingSince = null;
             shortages.Clear();
             if (IsStopped)
             {

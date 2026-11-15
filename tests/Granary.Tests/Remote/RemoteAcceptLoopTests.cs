@@ -296,6 +296,35 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
+    public async Task APeersResets_DoNotStartTheHalfMinute_OfAShortageThatComesAfterThem()
+    {
+        // Half a minute and more of a peer's resets, then a short shortage: only the shortage's own time counts.
+        var source = Source();
+        var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, connection =>
+        {
+            handed.TrySetResult(connection);
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        for (int i = 0; i < 45; i++)
+        {
+            source.Fail(new SocketException((int)SocketError.ConnectionReset));
+        }
+        for (int i = 0; i < RemoteAcceptLoop.ShortagesToGiveUp + 2; i++)
+        {
+            source.Fail(new SocketException((int)SocketError.TooManyOpenSockets));
+        }
+        var good = NewConnection();
+        source.Give(good);
+
+        await FireTimersUntilAsync(handed.Task);
+
+        Assert.Same(good, await handed.Task);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+    }
+
+    [Fact]
     public async Task AGoodConnection_StartsTheHalfMinuteAnew()
     {
         var source = Source();
