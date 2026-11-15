@@ -175,7 +175,8 @@ public sealed partial class SeriesMonitors
     {
         if (monitor.Active)
         {
-            await SyncOneAsync(scope, server, monitor, cancellationToken).ConfigureAwait(false);
+            // Nothing is deleted after a write's sync: what it could not be sure of stays for the next run to read.
+            await SyncOneAsync(scope, server, monitor, new HashSet<string>(StringComparer.Ordinal), cancellationToken).ConfigureAwait(false);
         }
         if (IsStill(scope))
         {

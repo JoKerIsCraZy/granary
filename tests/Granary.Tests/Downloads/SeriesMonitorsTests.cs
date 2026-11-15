@@ -167,6 +167,34 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AMonitorThatChangedUnderItsSync_AndCouldNotBeReadAgain_DeletesNothing()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(409, "conflict"));
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+
+        await Monitors.SyncAsync(Token);
+
+        // What changed may be Delete after watching itself: nothing goes on the word of the monitor as it was.
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
+    public async Task AMonitorThatKeptChangingUnderItsSync_DeletesNothing()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(409, "conflict"));
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"", deleteWatched: true)));
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+
+        await Monitors.SyncAsync(Token);
+
+        Assert.Equal(3, _h.Silo.SentTo(HttpMethod.Post, SyncPath).Count);
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
     public async Task WhileTheServerDoesNotMonitorSeries_NothingIsSynced()
     {
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability(monitoring: false)));

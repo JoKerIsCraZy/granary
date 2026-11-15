@@ -1644,7 +1644,9 @@ titles of their series as a download dialog or a download named them.
   (`DownloadRecord.IsWatched`: the server says so, or a play here went to the end) are deleted as Delete deletes one
   (`DownloadManager.DeleteWatchedAsync`: looked at right before each, not one that plays now, and the server hears it). The
   server's sync, for its part, registers no episode the profile finished and none this PC deleted while the monitor was
-  there, so a deleted episode does not come back. Nothing else deletes for a monitor.
+  there, so a deleted episode does not come back. A monitor that changed under its sync (409) and could not be read
+  again, or kept changing past the restarts, deletes nothing that run: what changed may be Delete after watching itself.
+  Nothing else deletes for a monitor.
 - **Storage limits.** A monitor's `max_storage_bytes` is the client's to keep (the server only roughly holds registration
   back), as the Apple app keeps it (`exceedsStorageCap`), and Settings → Downloads has Granary's own limit for every
   download on this PC (`IDownloadPreferences.StorageLimitGb`, in GiB, none by default). The queue starts no episode of a

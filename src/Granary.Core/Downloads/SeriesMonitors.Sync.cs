@@ -50,11 +50,14 @@ public sealed partial class SeriesMonitors
         // A list that could not be read leaves the monitors as last read, which are synced as the Apple app syncs its stored
         // ones; but nothing is taken or deleted on their word: another client may have stopped one or changed its rules.
         bool listed = await ReadListAsync(scope, server, cancellationToken).ConfigureAwait(false);
+        // The monitors that changed under their sync and could not be read as they are now: what changed may be Delete after
+        // watching itself, so nothing is deleted on their word until a later run reads them.
+        var unsure = new HashSet<string>(StringComparer.Ordinal);
         if (capability.CanMonitorSeries)
         {
             foreach (var monitor in _book.In(scope).Where(m => m.Active))
             {
-                if (!IsStill(scope) || await SyncOneAsync(scope, server, monitor, cancellationToken).ConfigureAwait(false) == SyncEnd.StopRun)
+                if (!IsStill(scope) || await SyncOneAsync(scope, server, monitor, unsure, cancellationToken).ConfigureAwait(false) == SyncEnd.StopRun)
                 {
                     break;
                 }
@@ -63,7 +66,7 @@ public sealed partial class SeriesMonitors
         if (listed && _book.In(scope).Count > 0 && IsStill(scope))
         {
             await TakeRegisteredAsync(scope, server, cancellationToken).ConfigureAwait(false);
-            await DeleteWatchedAsync(scope, cancellationToken).ConfigureAwait(false);
+            await DeleteWatchedAsync(scope, unsure, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -97,8 +100,11 @@ public sealed partial class SeriesMonitors
         StopRun,
     }
 
-    // One monitor page by page under the validator read before its first page, as the Apple app's syncDownloadSubscription.
-    private async Task<SyncEnd> SyncOneAsync(DownloadScope scope, Uri server, DownloadSubscription monitor, CancellationToken cancellationToken)
+    // One monitor page by page under the validator read before its first page, as the Apple app's syncDownloadSubscription. A
+    // monitor that changed under it (409) and could not be read again, or kept changing past the restarts, goes in
+    // <paramref name="unsure"/>: the book holds it as it was, not as it is.
+    private async Task<SyncEnd> SyncOneAsync(DownloadScope scope, Uri server, DownloadSubscription monitor, ISet<string> unsure,
+        CancellationToken cancellationToken)
     {
         string etag = monitor.Etag;
         string? cursor = null;
@@ -127,13 +133,21 @@ public sealed partial class SeriesMonitors
             catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
             {
                 // The monitor is gone, or its series is no longer the profile's: only a read tells which.
-                await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false);
+                if (await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false) is null && _book.Find(scope, monitor.Id) is not null)
+                {
+                    unsure.Add(monitor.Id);
+                }
                 return SyncEnd.Done;
             }
             catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.Conflict && restarts < SyncRestarts)
             {
                 restarts++;
-                if (await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false) is not { Active: true } reread)
+                var reread = await ReadAgainAsync(scope, server, monitor.Id, cancellationToken).ConfigureAwait(false);
+                if (reread is null && _book.Find(scope, monitor.Id) is not null)
+                {
+                    unsure.Add(monitor.Id);
+                }
+                if (reread is not { Active: true })
                 {
                     return SyncEnd.Done;
                 }
@@ -151,6 +165,11 @@ public sealed partial class SeriesMonitors
             catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
             {
                 _logger.LogInformation("A monitored series could not be synced ({Failure})", Describe(ex));
+                if (ex is SiloApiException { Status: (int)HttpStatusCode.Conflict })
+                {
+                    // It kept changing: the last read may already be behind.
+                    unsure.Add(monitor.Id);
+                }
                 return IsNotReached(ex) ? SyncEnd.StopRun : SyncEnd.Done;
             }
             if (!IsStill(scope))
