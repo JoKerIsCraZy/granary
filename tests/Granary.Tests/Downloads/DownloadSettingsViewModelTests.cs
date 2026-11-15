@@ -183,6 +183,90 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         Assert.Equal((@"D:\Media\Downloads", @"D:\"), (_h.Preferences.Folder, settings.SelectedDrive?.Value));
     }
 
+    // A drive slow to take the check (a network drive) loses to the viewer's next choice, made meanwhile: the last one holds.
+    [Fact]
+    public async Task ADrivesCheckThatEndsAfterANewerChoice_ChangesNothing()
+    {
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        using var slow = new ManualResetEventSlim();
+        var settings = WithDrives(check: folder =>
+        {
+            if (folder.StartsWith(@"E:\", StringComparison.Ordinal))
+            {
+                slow.Wait(Token);
+            }
+            return true;
+        });
+        await settings.LoadAsync(Token);
+
+        settings.SelectedDrive = settings.Drives[2];
+        var first = settings.DriveChoice;
+        settings.SelectedDrive = settings.Drives[0];
+        await settings.DriveChoice;
+        slow.Set();
+        await first;
+
+        Assert.Equal((DefaultFolder, DefaultFolder, @"C:\"), (settings.Folder, _h.Preferences.Folder, settings.SelectedDrive?.Value));
+
+        // Back to the folder's own drive while another one is checked: that one ends it too.
+        slow.Reset();
+        settings.SelectedDrive = settings.Drives[2];
+        first = settings.DriveChoice;
+        settings.SelectedDrive = settings.Drives[0];
+        slow.Set();
+        await first;
+
+        Assert.Equal((DefaultFolder, @"C:\", ""), (_h.Preferences.Folder, settings.SelectedDrive?.Value, settings.Status));
+    }
+
+    [Fact]
+    public async Task DrivesThatDoNotAnswerInTime_LeaveTheChoiceOut_AndHoldNoQualityBack()
+    {
+        using var stuck = new ManualResetEventSlim();
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            DownloadPayloads.Capability(true, true, "original", "20mbps").Replace("\"max_height\": 2160", "\"max_height\": 1080", StringComparison.Ordinal)));
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            _h.Logs.For<DownloadSettingsViewModel>())
+        {
+            DriveList = () =>
+            {
+                stuck.Wait(Token);
+                return [new(@"C:\", GB), new(@"D:\", GB)];
+            },
+        };
+        try
+        {
+            var load = settings.LoadAsync(Token);
+            await Until(() => settings.Qualities[1].Label == "20 Mbps · up to 1080p", "the qualities showed while the drives were read");
+            Assert.False(load.IsCompleted);
+
+            _h.Time.Advance(DiskSpaceReads.Timeout);
+            await load;
+
+            Assert.False(settings.ShowsDrives);
+            Assert.Contains(_h.Logs.Lines, line => line.Contains("could not be listed (TimeoutException)", StringComparison.Ordinal));
+        }
+        finally
+        {
+            stuck.Set();
+        }
+    }
+
+    [Fact]
+    public async Task DrivesThatCannotBeListed_LeaveTheChoiceOut()
+    {
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            _h.Logs.For<DownloadSettingsViewModel>())
+        {
+            DriveList = () => throw new InvalidOperationException("Windows said no."),
+        };
+
+        await settings.LoadAsync(Token);
+
+        Assert.False(settings.ShowsDrives);
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("could not be listed (InvalidOperationException)", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task OneDrive_OffersNoChoice_AndAFolderChangedElsewhereMovesTheChoice()
     {

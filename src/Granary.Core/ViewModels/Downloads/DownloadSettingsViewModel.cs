@@ -5,6 +5,8 @@ using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
 using Granary.Core.ViewModels.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -35,12 +37,17 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private readonly IFileLauncher _launcher;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
+    private readonly ILogger<DownloadSettingsViewModel> _logger;
 
     // Set while a select shows the saved quality or the folder's drive, so showing it saves nothing.
     private bool _showing;
 
+    // Counts the viewer's folder choices (Change, a drive), on the UI thread: a choice whose check ends after a newer one was
+    // made changes nothing, so the last choice is the one that holds.
+    private int _folderChoices;
+
     public DownloadSettingsViewModel(IDownloadPreferences preferences, DownloadsFeature feature, IFolderPicker picker, IFileLauncher launcher,
-        IUiDispatcher dispatcher, TimeProvider? time = null)
+        IUiDispatcher dispatcher, TimeProvider? time = null, ILogger<DownloadSettingsViewModel>? logger = null)
     {
         _preferences = preferences;
         _feature = feature;
@@ -48,6 +55,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         _launcher = launcher;
         _dispatcher = dispatcher;
         _time = time ?? TimeProvider.System;
+        _logger = logger ?? NullLogger<DownloadSettingsViewModel>.Instance;
         Folder = preferences.Folder;
         DownloadsOnMetered = preferences.DownloadsOnMetered;
         KeepWatched = preferences.KeepWatched;
@@ -108,15 +116,17 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
 
     /// <summary>
     /// Reads what the server offers this profile, for the labels: a preset's tallest output is the server's own; and the PC's
-    /// drives, for <see cref="DiskSpaceReads.Timeout"/> at most, since a network drive can take its time to answer.
+    /// drives, for <see cref="DiskSpaceReads.Timeout"/> at most, shown once they come, so a drive slow to answer never holds the
+    /// qualities back.
     /// </summary>
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
         var drives = ReadDrivesAsync(cancellationToken);
         await _feature.RefreshAsync(cancellationToken);
-        var listed = await drives;
         await _dispatcher.ResumeOnUi();
         ShowQualities();
+        var listed = await drives;
+        await _dispatcher.ResumeOnUi();
         ShowDrives(listed);
     }
 
@@ -129,32 +139,57 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         {
             return;
         }
-        await TakeFolderAsync(picked);
-        ShowDrive();
+        int choice = ++_folderChoices;
+        if (await TakeFolderAsync(picked, choice))
+        {
+            ShowDrive();
+        }
     }
 
     // A drive the viewer chose: the default folder on its own drive, else a Granary folder there, once Granary can write there.
-    // When it cannot, the choice goes back to the folder's drive.
-    private async Task TakeDriveAsync(string root)
+    // When it cannot, the choice goes back to the folder's drive. Whatever goes wrong, the select goes back and says so: the
+    // task is the select's, which nobody awaits.
+    private async Task TakeDriveAsync(string root, int choice)
     {
         Status = "";
-        string folder = SameRoot(DefaultFolder, root) ? DefaultFolder : Path.Combine(root, DriveFolder);
-        await TakeFolderAsync(folder);
+        try
+        {
+            string folder = SameRoot(DefaultFolder, root) ? DefaultFolder : Path.Combine(root, DriveFolder);
+            if (!await TakeFolderAsync(folder, choice))
+            {
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            await _dispatcher.ResumeOnUi();
+            _logger.LogWarning("A drive for new downloads could not be taken ({Failure})", ex.GetType().Name);
+            if (choice != _folderChoices)
+            {
+                return;
+            }
+            Status = FolderRefused;
+        }
         ShowDrive();
     }
 
     // The folder holds new downloads once Granary could write there, which is tried on the thread pool; else the status says it
-    // was refused. A drive's root is refused before anything is written there.
-    private async Task TakeFolderAsync(string picked)
+    // was refused. A drive's root is refused before anything is written there. False when a newer choice came while it was
+    // checked (<paramref name="choice"/>): that one says what holds.
+    private async Task<bool> TakeFolderAsync(string picked, int choice)
     {
         string? folder = JsonDownloadPreferences.FullFolder(picked);
         var check = FolderCheck;
         bool takes = folder is not null && await Task.Run(() => check(folder));
         await _dispatcher.ResumeOnUi();
+        if (choice != _folderChoices)
+        {
+            return false;
+        }
         if (!takes)
         {
             Status = FolderRefused;
-            return;
+            return true;
         }
         try
         {
@@ -164,9 +199,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         catch (ArgumentException)
         {
             Status = FolderRefused;
-            return;
+            return true;
         }
         Folder = _preferences.Folder;
+        return true;
     }
 
     /// <summary>Shows the folder in File Explorer, made first when no download has gone there yet.</summary>
@@ -208,11 +244,18 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         }
     }
 
+    // The viewer's pick. One that came back to the folder's drive while another drive was being checked is a choice too: it
+    // ends that one, whose check then changes nothing.
     partial void OnSelectedDriveChanged(SettingChoice? value)
     {
-        if (!_showing && value is not null && !SameRoot(Folder, value.Value))
+        if (_showing || value is null)
         {
-            DriveChoice = TakeDriveAsync(value.Value);
+            return;
+        }
+        int choice = ++_folderChoices;
+        if (!SameRoot(Folder, value.Value))
+        {
+            DriveChoice = TakeDriveAsync(value.Value, choice);
         }
     }
 
@@ -257,7 +300,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private static bool SameRoot(string folder, string root) =>
         Path.GetPathRoot(folder) is { Length: > 0 } own && string.Equals(own.TrimEnd('\\', '/'), root.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
 
-    // The drives on the thread pool, for as long as the free space is waited for elsewhere; none when they do not answer in time.
+    // The drives on the thread pool, for as long as the free space is waited for elsewhere; none when they do not answer in time
+    // or cannot be listed, which the log says by its kind.
     private async Task<IReadOnlyList<DownloadDrive>> ReadDrivesAsync(CancellationToken cancellationToken)
     {
         var list = DriveList;
@@ -265,13 +309,16 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         {
             return await Task.Run(list, CancellationToken.None).WaitAsync(DiskSpaceReads.Timeout, _time, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            _logger.LogWarning("The drives for new downloads could not be listed ({Failure})", ex.GetType().Name);
             return [];
         }
     }
 
-    // The drives Windows has ready that hold folders: a disk, a removable drive, a mapped network drive; not a disc drive.
+    // The drives that hold folders: a disk and a removable drive Windows has ready, with their free space, and a mapped network
+    // drive as it is, since asking a share that went away whether it is there can keep Windows waiting for long; not a disc
+    // drive. A network drive Granary cannot write to is refused once chosen, as any folder is.
     private static IReadOnlyList<DownloadDrive> ReadDrives()
     {
         var drives = new List<DownloadDrive>();
@@ -279,7 +326,11 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         {
             try
             {
-                if ((drive.DriveType is DriveType.Fixed or DriveType.Removable or DriveType.Network) && drive.IsReady)
+                if (drive.DriveType == DriveType.Network)
+                {
+                    drives.Add(new DownloadDrive(drive.Name, null));
+                }
+                else if ((drive.DriveType is DriveType.Fixed or DriveType.Removable) && drive.IsReady)
                 {
                     drives.Add(new DownloadDrive(drive.Name, drive.AvailableFreeSpace));
                 }

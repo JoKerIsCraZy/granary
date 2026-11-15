@@ -1558,9 +1558,13 @@ client guide.
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
-  read with `LoadAsync` on the thread pool (`DriveInfo`: ready disks, removable and network drives, with their available
-  free space), for `DiskSpaceReads.Timeout` at most, and a drive's choice takes `<drive>\Granary\Downloads`, or the
-  default folder on its own drive, through the same check as Change. The
+  read with `LoadAsync` on the thread pool (`DriveInfo`: ready disks and removable drives with their available free
+  space, network drives without asking them anything, since a share that went away keeps `IsReady` waiting), for
+  `DiskSpaceReads.Timeout` at most and shown after the qualities, so a slow drive holds nothing back; a list that fails is
+  logged by its kind and leaves the select away. A drive's choice takes `<drive>\Granary\Downloads`, or the default folder
+  on its own drive, through the same check as Change. Each choice (Change, a drive) is counted, and a check that ends
+  after a newer choice changes nothing, so the last choice holds; a drive's choice that fails unexpectedly is logged, said
+  as refused, and the select goes back. The
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
 

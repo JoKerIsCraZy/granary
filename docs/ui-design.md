@@ -1492,9 +1492,10 @@ says why above the sections.
   drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
   error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Drive, while the
   PC has more than one ("New downloads go to a Granary folder on the drive you choose. Change picks any folder."), a
-  select of its disks, removable and mapped network drives with their free space ("D: · 200.0 GB free", the letter alone
-  when Windows gives none; the list is read for 5 s at most, and without it the row stays away), the folder's own drive
-  chosen (none for a share): another one takes
+  select of its disks and removable drives with their free space ("D: · 200.0 GB free") and its mapped network drives by
+  letter alone ("Z:": asking a share that went away keeps Windows waiting), read for 5 s at most once the qualities show,
+  and without them the row stays away; the folder's own drive chosen (none for a share), and a drive chosen while
+  another is still being checked wins over it: another one takes
   `Granary\Downloads` on it, or the default folder on the default folder's drive, refused as Change refuses. It is how a
   controller chooses where downloads go: Windows' folder picker is a window of its own, which takes a mouse, a keyboard
   or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
