@@ -4,6 +4,7 @@ using Granary.Core.ViewModels.Downloads;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
@@ -11,9 +12,10 @@ namespace Granary.App.Views;
 /// <summary>
 /// The active profile's downloads on this PC (docs/ui-design.md, "Downloads"). The page is cached; it follows the downloads
 /// only while it shows: attached as it is shown, detached as it is left, and as it unloads, so the downloads, which live as
-/// long as the app, never hold it (<c>DownloadsViewModelTests</c>). Its cards' ⋮ menus get their entries from it.
+/// long as the app, never hold it (<c>DownloadsViewModelTests</c>). Its cards' ⋮ menus get their entries from it. A
+/// controller's bumpers step through its sections, Films and Series (<see cref="IPadSections"/>).
 /// </summary>
-public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost
+public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost, IPadSections
 {
     public DownloadsPage()
     {
@@ -49,6 +51,30 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost
         if (!moved && ReclaimButton.Visibility == Visibility.Visible)
         {
             ReclaimButton.Focus(state);
+        }
+    }
+
+    /// <summary>
+    /// A controller's bumpers: the page has no tabs, but two sections, Films and Series, so a bumper goes to the first card of
+    /// the one before or after the section focus is in, as a bumper picks the tab beside the chosen one, and stops at the ends.
+    /// From above them (Retry, Reclaim Watched) or the sidebar, RB goes to the first section with cards. A section without
+    /// cards is stepped over.
+    /// </summary>
+    void IPadSections.StepSection(int by)
+    {
+        MediaGrid[] sections = [FilmsGrid, SeriesGrid];
+        var focused = XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
+        int at = focused is null ? -1 : Array.FindIndex(sections, grid => MediaGrid.IsWithin(focused, grid));
+        if (at < 0 && by < 0)
+        {
+            return;
+        }
+        for (int next = at + by; next >= 0 && next < sections.Length; next += by)
+        {
+            if (sections[next].FocusCardAt(0, FocusState.Keyboard))
+            {
+                return;
+            }
         }
     }
 

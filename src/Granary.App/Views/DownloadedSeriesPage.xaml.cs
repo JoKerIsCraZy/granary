@@ -14,9 +14,9 @@ namespace Granary.App.Views;
 /// <summary>
 /// A series' downloads on this PC (docs/ui-design.md, "Downloads"); the parameter is the series' id. Cached, and following the
 /// downloads only while it shows, as the Downloads page does (<c>DownloadedSeriesViewModelTests</c>). Its cards' ⋮ menus get
-/// their entries from it.
+/// their entries from it. A controller's bumpers step through its seasons (<see cref="IPadSections"/>).
 /// </summary>
-public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost
+public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost, IPadSections
 {
     public DownloadedSeriesPage()
     {
@@ -94,6 +94,30 @@ public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost
         if (FindGrid(SeasonsRepeater.GetOrCreateElement(Math.Clamp(place, 0, count - 1))) is { } grid)
         {
             grid.FocusCardAt(0, state);
+        }
+    }
+
+    /// <summary>
+    /// A controller's bumpers: the page's sections are its seasons ("Season 1", Specials last), so a bumper goes to the first
+    /// card of the season before or after the one focus is in, as a bumper picks the tab beside the chosen one, and stops at
+    /// the ends; from outside them (the Back disc, the sidebar) RB goes to the first season. The season comes into view first:
+    /// the page makes a season's grid only once it nears the view.
+    /// </summary>
+    void IPadSections.StepSection(int by)
+    {
+        var focused = XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
+        int at = focused is not null && MediaGrid.IsWithin(focused, SeasonsRepeater) ? _focusedSeason : -1;
+        int next = at + by;
+        if ((at < 0 && by < 0) || next < 0 || next >= ViewModel.Seasons.Count)
+        {
+            return;
+        }
+        var season = SeasonsRepeater.GetOrCreateElement(next);
+        season.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+        if (FindGrid(season) is { } grid && !grid.FocusCardAt(0, FocusState.Keyboard))
+        {
+            // Not laid out yet: once it is.
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => grid.FocusCardAt(0, FocusState.Keyboard));
         }
     }
 

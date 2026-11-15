@@ -326,7 +326,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows. The sidebar's page has no Back disc.
+  film, and with neither left Reclaim Watched when it shows. A controller's bumpers go between Films and Series, to the
+  first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
@@ -344,7 +345,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
   status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
   to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
-  focus, the next season's first card takes it (the one before, after the last season). Once the series has no downloads
+  focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
+  season to season, to its first card. Once the series has no downloads
   left on this PC (its last episode deleted), the page goes back by itself.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
@@ -1110,7 +1112,7 @@ On the pages, and in the minimized player's bar:
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Films and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
