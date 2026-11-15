@@ -12097,6 +12097,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Deine Anmeldesitzung ist abgelaufen. Melde dich erneut an, um die Wiedergabe fortzusetzen."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "Keine abspielbare Version gefunden"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,

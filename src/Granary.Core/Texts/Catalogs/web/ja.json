@@ -11185,6 +11185,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "サインインのセッションの有効期限が切れました。再生を続けるには、もう一度サインインしてください。"
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "再生できるバージョンがありません"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,

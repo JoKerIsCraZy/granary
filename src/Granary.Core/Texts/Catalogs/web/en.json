@@ -12129,6 +12129,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Your sign-in session has expired. Sign in again to continue playback."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "No playable version found"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,

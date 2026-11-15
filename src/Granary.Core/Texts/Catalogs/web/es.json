@@ -12888,6 +12888,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "Tu sesión ha caducado. Vuelve a iniciar sesión para continuar la reproducción."
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "No se encontró ninguna versión reproducible"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,

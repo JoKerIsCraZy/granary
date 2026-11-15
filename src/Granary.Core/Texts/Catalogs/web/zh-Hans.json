@@ -11245,6 +11245,18 @@
       "value": "episode"
     }
   ],
+  "web.player.error.authenticationRequired.message": [
+    {
+      "type": 0,
+      "value": "你的登录会话已过期。请重新登录以继续播放。"
+    }
+  ],
+  "web.player.error.noPlayableVersion.title": [
+    {
+      "type": 0,
+      "value": "没有可播放的版本"
+    }
+  ],
   "web.player.error.playbackError": [
     {
       "type": 0,

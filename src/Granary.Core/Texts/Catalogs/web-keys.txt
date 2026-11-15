@@ -9,7 +9,8 @@
 # AddSubtitlesPanel, MarkerEditPanel, SubtitleAppearancePanel, SeekBar*, SpeedTrack, PlayerMenus, PlayerTime and
 # SubtitlePreview in src/Granary.App/Controls, the taskbar buttons (src/Granary.App/Services/WindowsTaskbarToolbar.cs),
 # src/Granary.Core/ViewModels/PlayerViewModel*.cs and ViewModels/Player, and the playback texts of
-# src/Granary.Core/Playback (MarkerPrompts, PlaybackStarter, ServerPlayback.Control, SubtitleSyncTracker).
+# src/Granary.Core/Playback (MarkerPrompts, MediaAuthorization, PlaybackStarter, ServerPlayback.Control,
+# SubtitleSyncTracker).
 bufferingQuality.autoLimited
 
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
@@ -1793,6 +1794,8 @@ web.player.controls.volume
 
 # More of the player's words, as above under bufferingQuality.autoLimited.
 web.player.episode.code
+web.player.error.authenticationRequired.message
+web.player.error.noPlayableVersion.title
 web.player.error.playbackError
 web.player.exit
 web.player.hud.episode
