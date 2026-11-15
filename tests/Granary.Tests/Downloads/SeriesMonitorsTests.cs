@@ -558,13 +558,17 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     {
         ListMonitors(MonitorPayloads.Monitor());
         SyncAnswers(MonitorPayloads.Sync());
+        _monitors = NewMonitors(PendingFile());
         await Monitors.SyncAsync(Token);
         _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.Problem(412, "precondition_failed"), ScriptedSilo.Problem(status, code),
             ScriptedSilo.NetworkError(), ScriptedSilo.NoContent());
         _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")));
 
         await Monitors.StopAsync("sub_1", Token);
-        // The server still has it, and the next run cannot reach it for the stop.
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+        // Granary starts again; the server still has the monitor, and the next run cannot reach it for the stop.
+        _monitors = NewMonitors(PendingFile());
         await Monitors.SyncAsync(Token);
 
         Assert.Empty(Monitors.Monitors);
@@ -573,7 +577,8 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         ListMonitors();
         await Monitors.SyncAsync(Token);
 
-        Assert.Equal(["\"m1\"", "\"m2\"", "\"m1\"", "\"m1\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
+        // From then on it goes under the validator read last, which spares the server a refusal each time.
+        Assert.Equal(["\"m1\"", "\"m2\"", "\"m2\"", "\"m2\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
         Assert.Empty(Monitors.Monitors);
     }
 
