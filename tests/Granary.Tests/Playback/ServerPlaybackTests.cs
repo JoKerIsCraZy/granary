@@ -331,6 +331,69 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task ATitleStartedAtAPosition_StartsThere_NotAtTheSavedPoint()
+    {
+        // The profile left off at 1325.5; another device hands over 4747.284.
+        await _fixture.StartAsync(PlayRequest.At(MovieId, 4747.284));
+
+        Assert.Equal(4747.284, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
+    public async Task ItIsNotRewound_ByThisPcsRewindOnResume()
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = 10;
+
+        await _fixture.StartAsync(PlayRequest.At(MovieId, 4747.284));
+
+        Assert.Equal(4747.284, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Theory]
+    [InlineData(10200)]
+    [InlineData(31_536_001)]
+    public async Task APositionPastTheEnd_StartsAsAResumeWould(double seconds)
+    {
+        // The file is 10200 seconds long: past its end, the saved point and this PC's Rewind on resume decide.
+        _fixture.DevicePreferences.ResumeRewindSeconds = 7;
+
+        await _fixture.StartAsync(PlayRequest.At(MovieId, seconds));
+
+        Assert.Equal(1318.5, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
+    public async Task TheSameRequestRetried_StartsAtThatPositionAgain()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TerminalDecision), Created(PlaybackPayloads.StartOpaqueIds));
+        var request = PlayRequest.At(MovieId, 4747.284);
+        var failed = await _fixture.StartAsync(request);
+        Assert.True(failed.Status.CanRetry);
+
+        // Retry starts the same request again, as the player's Retry does.
+        await _fixture.StartAsync(request);
+
+        Assert.Equal([4747.284, 4747.284], Enumerable.Range(0, 2)
+            .Select(i => _fixture.Body(HttpMethod.Post, StartPath, i).GetProperty("start_position").GetDouble()));
+    }
+
+    [Fact]
+    public async Task EveryOtherRequest_StartsAsBefore()
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = 7;
+        PlayRequest[] requests = [PlayRequest.Resume(MovieId), PlayRequest.FromStart(MovieId), PlayRequest.ResumeWithoutRewind(MovieId)];
+
+        foreach (var request in requests)
+        {
+            await _fixture.StartAsync(request);
+        }
+
+        Assert.All(requests, request => Assert.Null(request.StartSeconds));
+        Assert.Equal([1318.5, 0, 1325.5], Enumerable.Range(0, 3)
+            .Select(i => _fixture.Body(HttpMethod.Post, StartPath, i).GetProperty("start_position").GetDouble()));
+    }
+
+    [Fact]
     public async Task AWatchParty_IsNotRewound_TheRoomSaysWhereItPlays()
     {
         _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;

@@ -279,18 +279,24 @@ public sealed class PlaybackStarter(
     }
 
     /// <summary>
-    /// The start's <c>start_position</c> for <paramref name="request"/>: 0 to start over, the resume point to resume,
+    /// The start's <c>start_position</c> for <paramref name="request"/>: 0 to start over, the position another device
+    /// handed over (<see cref="PlayRequest.At"/>) while it lies before the title's end, the resume point to resume,
     /// rewound by this PC's Rewind on resume as it is now (<see cref="ResumeRewind"/>) unless the request suppresses it,
     /// null without one. It is sent explicitly because the server starts a watched title at 0 even during a rewatch
     /// (docs/api-contract.md, 10.5).
     /// </summary>
-    public double? StartPosition(WatchDetail detail, PlayRequest request)
+    /// <param name="fileSeconds">The length of the file that starts; 0 when it is not known.</param>
+    public double? StartPosition(WatchDetail detail, PlayRequest request, double fileSeconds = 0)
     {
         ArgumentNullException.ThrowIfNull(detail);
         ArgumentNullException.ThrowIfNull(request);
         if (request.FromBeginning)
         {
             return 0;
+        }
+        if (request.StartSeconds is { } given && IsWithinTitle(given, fileSeconds > 0 ? fileSeconds : detail.UserData?.DurationSeconds ?? 0))
+        {
+            return given;
         }
         double position = detail.UserData?.PositionSeconds ?? 0;
         if (position <= 0 || !double.IsFinite(position))
@@ -299,6 +305,12 @@ public sealed class PlaybackStarter(
         }
         return request.SuppressesResumeRewind ? position : ResumeRewind.Apply(position, devicePreferences.ResumeRewindSeconds);
     }
+
+    // Before the end of a title of known length; without one, within what the server takes as a start.
+    private static bool IsWithinTitle(double seconds, double lengthSeconds) =>
+        double.IsFinite(seconds) && seconds >= 0 && (lengthSeconds > 0 && double.IsFinite(lengthSeconds)
+            ? seconds < lengthSeconds
+            : seconds <= PlaybackApi.MaxRequestedPosition);
 
     /// <summary>
     /// The player's title line and the line under it, as Silo's web player writes them: the movie and its year, or

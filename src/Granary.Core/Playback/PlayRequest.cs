@@ -32,6 +32,12 @@ public sealed record PlayRequest
     /// <summary>A resume lands on the resume point itself, whatever this PC's Rewind on resume (Android's <c>suppressResumeRewind</c>).</summary>
     public bool SuppressesResumeRewind { get; private init; }
 
+    /// <summary>
+    /// Where another device left the title, in its own seconds (<see cref="At"/>): the start goes there instead of the
+    /// profile's saved point, unrewound. Null for every other way in.
+    /// </summary>
+    public double? StartSeconds { get; private init; }
+
     /// <summary>A local path or URL played without the server (developer shortcut <c>--play</c>).</summary>
     public string? DirectSource { get; private init; }
 
@@ -68,6 +74,22 @@ public sealed record PlayRequest
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
         return new PlayRequest { ContentId = contentId, FromBeginning = true, Choice = choice };
+    }
+
+    /// <summary>
+    /// Plays <paramref name="contentId"/> from <paramref name="startSeconds"/> of its own time, where another device (Silo's
+    /// phone app) left it: whatever the profile's saved point and this PC's Rewind on resume. A position past the title's
+    /// end starts as a resume would.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="startSeconds"/> is not a finite number of at least 0.</exception>
+    public static PlayRequest At(string contentId, double startSeconds, PrePlayChoice? choice = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
+        if (!double.IsFinite(startSeconds) || startSeconds < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(startSeconds), "A start position is a finite number of seconds of at least 0.");
+        }
+        return new PlayRequest { ContentId = contentId, StartSeconds = startSeconds, Choice = choice };
     }
 
     /// <summary>
