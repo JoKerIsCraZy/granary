@@ -1450,8 +1450,8 @@ stream's commands on Activity.
   account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
   Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Started 5m ago ·
   5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
-  route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
-  when nothing shows.
+  route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
+  the web's. "No active streams" or "No streams match your filters" when nothing shows.
 
 ### Activity indicator
 
