@@ -113,6 +113,8 @@ internal static unsafe partial class WindowMessageHook
         return DefSubclassProc(hwnd, message, wParam, lParam);
     }
 
+    // comctl32 is not held to System32 as the other imports are: Windows loads it side by side (version 5 in System32,
+    // version 6 in WinSxS for an activation context that asks for it), and which copy answers is Windows' to decide.
     [LibraryImport("comctl32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetWindowSubclass(
@@ -122,9 +124,11 @@ internal static unsafe partial class WindowMessageHook
     private static partial nint DefSubclassProc(nint hwnd, uint message, nint wParam, nint lParam);
 
     [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial uint RegisterWindowMessageW(string name);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool ChangeWindowMessageFilterEx(nint hwnd, uint message, uint action, nint changeInfo);
 }

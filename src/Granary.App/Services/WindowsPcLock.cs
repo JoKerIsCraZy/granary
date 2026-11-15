@@ -122,17 +122,21 @@ internal sealed partial class WindowsPcLock : IPcLock, IDisposable
     }
 
     [LibraryImport("wtsapi32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool WTSRegisterSessionNotification(nint hwnd, uint flags);
 
     [LibraryImport("wtsapi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool WTSUnRegisterSessionNotification(nint hwnd);
 
     [LibraryImport("wtsapi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool WTSQuerySessionInformationW(nint server, int sessionId, int infoClass, out nint buffer, out uint bytes);
 
     [LibraryImport("wtsapi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial void WTSFreeMemory(nint memory);
 }
