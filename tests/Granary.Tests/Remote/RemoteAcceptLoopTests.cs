@@ -325,6 +325,34 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
+    public async Task AShortageExactlyHalfAMinuteAfterTheLast_StartsTheClockAnew()
+    {
+        // The waits between failures (50 ms doubling to a second) put the 7th and the 37th failure exactly 30 s apart: a
+        // shortage at each, and nine more after the second, are a shortage of ten seconds, not one that lasted.
+        var source = Source();
+        var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, connection =>
+        {
+            handed.TrySetResult(connection);
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        for (int failure = 1; failure <= 36 + RemoteAcceptLoop.ShortagesToGiveUp; failure++)
+        {
+            source.Fail(failure == 7 || failure >= 37
+                ? new SocketException((int)SocketError.TooManyOpenSockets)
+                : new SocketException((int)SocketError.ConnectionReset));
+        }
+        var good = NewConnection();
+        source.Give(good);
+
+        await FireTimersUntilAsync(handed.Task);
+
+        Assert.Same(good, await handed.Task);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+    }
+
+    [Fact]
     public async Task AGoodConnection_StartsTheHalfMinuteAnew()
     {
         var source = Source();

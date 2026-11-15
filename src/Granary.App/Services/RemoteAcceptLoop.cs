@@ -149,7 +149,8 @@ internal sealed class RemoteAcceptLoop
                 // long they go on. Nothing got through for the half minute, and its accepts kept failing for want of
                 // sockets or buffers: that does.
                 long now = _time.GetTimestamp();
-                while (shortages.TryPeek(out long oldest) && _time.GetElapsedTime(oldest, now) > GiveUpAfter)
+                // Half a minute old is out: a shortage that comes that long after the last starts a clock of its own.
+                while (shortages.TryPeek(out long oldest) && _time.GetElapsedTime(oldest, now) >= GiveUpAfter)
                 {
                     shortages.Dequeue();
                 }
