@@ -912,7 +912,7 @@ device-specific audio/subtitle preferences). Accepts movie, series, season and e
 
 `CatalogItemDetail` = `CatalogItem` plus: `original_title`, `tagline`, `overview`, `studios`,
 `networks`, `countries`, `first_air_date`, `last_air_date`, `season_count`, `episode_count`,
-`ratings[{ source, name, score, display }]` (every one rendered as given, in order: the server chose the sources), `cast[{ name, character, order, person_id?, photo_url? }]`,
+`ratings[{ source, name, score, display }]` (every one with a `display` and a `name` or `source` rendered as given, in order: the server chose the sources; one without is left out), `cast[{ name, character, order, person_id?, photo_url? }]`,
 `crew[{ name, job, person_id?, photo_url? }]`, `user_state`, `user_rating?` (the profile's own stars, 1 to 5, absent
 when unrated; 7.11), `user_data` (`played`,
 `watched_count`, `unplayed_count`, `in_progress_count`, `is_in_progress?`, `position_seconds?`,
