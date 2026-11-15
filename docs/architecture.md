@@ -2012,7 +2012,8 @@ while the server answers.
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
   name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
   of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
-  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau").
+  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau"). An extension counts only where the
+  name ends (the line's end, a space, a quote or the line's punctuation), so "elena.js.backup" goes whole as well.
 - **Diagnosis of a player that stops following.** A tester saw the player's time stand and its buttons do nothing while
   the picture played on and Space still paused it, after a download played right after a streamed episode. It could not
   be reproduced, so the log now says more: at each press on the player and each pause, `PlayerViewModel.CheckFollowsEngine`

@@ -33,8 +33,10 @@ public static partial class MpvLogClassifier
     [GeneratedRegex(@"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\|file://(?=[^/\s])|(?<![:/])//(?=[^/\s]))[^""\r\n]*", RegexOptions.CultureInvariant)]
     private static partial Regex LocalPath();
 
-    // A dot and a short extension (the group), wherever a path's last part has one.
-    [GeneratedRegex(@"\.([A-Za-z0-9]{1,8})(?![A-Za-z0-9])", RegexOptions.CultureInvariant)]
+    // A dot and a short extension (the group) that ends a name: what follows is the line's end, a space, a quote, the
+    // punctuation of the line around it or a sentence's full stop. One the name goes on after ("elena.js.backup",
+    // "elena.js-old") is no ending.
+    [GeneratedRegex(@"\.([A-Za-z0-9]{1,8})(?=$|[\s',:;)\]]|\.(?:\s|$))", RegexOptions.CultureInvariant)]
     private static partial Regex Extension();
 
     // What mpv plays and reads: media, subtitles, fonts, and its own configuration and scripts. A last part that ends in

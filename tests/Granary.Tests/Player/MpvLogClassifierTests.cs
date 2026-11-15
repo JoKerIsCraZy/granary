@@ -32,6 +32,12 @@ public sealed class MpvLogClassifierTests
     [InlineData("Watching directory C:\\Users\\elena.moreau", "Watching directory …")]
     [InlineData("Watching directory \\\\nas\\home\\e.moreau", "Watching directory …")]
     [InlineData("Reading config file C:\\Users\\elena.moreau\\AppData\\Local\\Granary\\mpv\\mpv.conf", "Reading config file …\\mpv.conf")]
+    // A file's ending inside a folder's name does not make it a file: the name goes on after it.
+    [InlineData("Watching directory C:\\Users\\elena.js.backup", "Watching directory …")]
+    [InlineData("Watching directory C:\\Users\\elena.js-old", "Watching directory …")]
+    [InlineData("Watching directory C:\\Users\\elena.mkv_files", "Watching directory …")]
+    // A file's last ending counts: a part of a download keeps its name.
+    [InlineData("Playing: C:\\Users\\elena\\dl_1\\media.mkv.part", "Playing: …\\media.mkv.part")]
     // What follows a folder on the line can end like a file: the folder's name is not taken for the start of one.
     [InlineData("Cannot open C:\\Users\\elena fail a.mkv", "Cannot open … a.mkv")]
     [InlineData("Cannot open C:\\Users\\elena.moreau, fallback x.mkv", "Cannot open … x.mkv")]
