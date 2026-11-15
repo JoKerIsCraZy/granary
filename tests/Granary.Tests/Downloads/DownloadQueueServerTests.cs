@@ -476,6 +476,53 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Contains("\"revision\":2", _h.Reports("dl_1")[^1].Body, StringComparison.Ordinal);
     }
 
+    // The day-old refresh comes to a download while a new revision replaces it: it leaves that one alone, whose next transfer
+    // reads the new bytes' manifest.
+    [Fact]
+    public async Task ARefresh_PassesOverADownloadANewRevisionReplacesMeanwhile()
+    {
+        foreach (string id in new[] { "dl_1", "dl_2" })
+        {
+            var stored = await _h.AddAsync(id, DownloadState.Completed, change: r => r with
+            {
+                MediaFile = "media.mkv",
+                ManifestReadAt = ManualTimeProvider.DefaultStart - DownloadQueue.ManifestRefresh,
+            });
+            await System.IO.File.WriteAllBytesAsync(File(stored, "media.mkv"), Source, Token);
+        }
+        _h.Network.SetMetered(true);
+        // dl_1's refresh waits for its poster while dl_2 is replaced.
+        var poster = new GatedMediaStream(DownloadHarness.PosterBytes);
+        _h.Silo.On(HttpMethod.Get, ArtworkPath("dl_1", "poster"), () =>
+        {
+            var content = new StreamContent(poster);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")).Count == 1, "dl_1's refresh asks for its poster");
+        // While dl_2's replacement is under way (its record says revision 2), dl_1's refresh ends and the refresh comes to
+        // dl_2; the queue then waits again. The result is checked after the call, not in the handler.
+        int held = 0;
+        bool refreshedMeanwhile = false;
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Find("dl_2")?.Record.Revision == 2 && Interlocked.Exchange(ref held, 1) == 0)
+            {
+                poster.ReleaseAll();
+                refreshedMeanwhile = SpinWait.SpinUntil(() => _h.Find("dl_1")!.Record.ManifestReadAt > ManualTimeProvider.DefaultStart - DownloadQueue.ManifestRefresh
+                    && queue.Idle.IsCompleted, HangLimit);
+            }
+        };
+
+        _h.List(DownloadPayloads.Entry("dl_1", "completed"), DownloadPayloads.Entry("dl_2", "ready", revision: 2));
+        await queue.ReconcileAsync(Token);
+
+        Assert.True(refreshedMeanwhile);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, ManifestPath("dl_1")));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, ManifestPath("dl_2")));
+    }
+
     // A refresh that does not end when it is stopped (here a manifest request that does not observe its token, as a write on a
     // disk that does not answer) holds a new revision for RefreshStopBudget at most: the download is replaced all the same.
     [Fact]
