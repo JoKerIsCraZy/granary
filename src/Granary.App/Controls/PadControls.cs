@@ -1,9 +1,11 @@
+using System.Runtime.CompilerServices;
 using Granary.Core.Controller;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 
 namespace Granary.App.Controls;
@@ -15,6 +17,15 @@ namespace Granary.App.Controls;
 /// </summary>
 internal static class PadControls
 {
+    // What A does on a link in a text: it has no automation peer to press through, and its Click cannot be raised.
+    private static readonly ConditionalWeakTable<Hyperlink, Action> LinkPresses = new();
+
+    /// <summary>
+    /// What A does on <paramref name="link"/>, a link in a text that focus can reach: what its Click does, as Enter does
+    /// it for the keyboard.
+    /// </summary>
+    public static void PressesWith(Hyperlink link, Action press) => LinkPresses.AddOrUpdate(link, press);
+
     public static FocusNavigationDirection WayOf(PadDirection direction) => direction switch
     {
         PadDirection.Up => FocusNavigationDirection.Up,
@@ -73,7 +84,8 @@ internal static class PadControls
 
     /// <summary>
     /// A on the focused control: a button is clicked, a switch or check box flipped, a tab or pill chosen, a drop-down
-    /// opened and its row picked. A text field does nothing yet: typing with a pad needs a keyboard on screen.
+    /// opened and its row picked, a link in a text followed (<see cref="PressesWith"/>). A text field does nothing yet:
+    /// typing with a pad needs a keyboard on screen.
     /// </summary>
     public static bool Press(DependencyObject focused)
     {
@@ -100,6 +112,13 @@ internal static class PadControls
             case ComboBoxItem item when ItemsControl.ItemsControlFromItemContainer(item) is ComboBox owner:
                 owner.SelectedIndex = owner.IndexFromContainer(item);
                 owner.IsDropDownOpen = false;
+                return true;
+            case Hyperlink link:
+                if (!LinkPresses.TryGetValue(link, out var press))
+                {
+                    return false;
+                }
+                press();
                 return true;
         }
         if (focused is not UIElement element || PeerOf(element) is not { } peer || !peer.IsEnabled())

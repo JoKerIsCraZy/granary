@@ -74,7 +74,7 @@ public sealed class ServerActivityTasksTests : IAsyncDisposable
             await _harness.PushedAsync(socket, Updated(42 + tick));
         }
         await ServerPlaybackFixture.Until(() => Reads == 3, "the read after the window");
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _harness.ReadsDoneAsync();
 
         // One more when the window closed, whatever came meanwhile; the frame's own task is never shown.
         Assert.Equal(3, Reads);

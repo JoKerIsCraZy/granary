@@ -377,8 +377,21 @@ public sealed record WatchChapter
     public string? ThumbnailThumbhash { get; init; }
 }
 
-/// <summary>A skippable span in source seconds.</summary>
-public sealed record WatchMarker(double StartSeconds, double EndSeconds);
+/// <summary>
+/// A skippable span in source seconds, with where it came from as the server recorded it for the file and kind
+/// (docs/api-contract.md, 11.1); a server from before that leaves the three out.
+/// </summary>
+public sealed record WatchMarker(double StartSeconds, double EndSeconds)
+{
+    /// <summary><c>scanner</c> (Silo's own detection), <c>plugin</c> or <c>online</c> (a provider), <c>manual</c> (a person); open set.</summary>
+    public string? Source { get; init; }
+
+    /// <summary>The provider that supplied the range, such as <c>introdb</c>, <c>built_in</c> or <c>plugin:4:introdb</c>.</summary>
+    public string? Provider { get; init; }
+
+    /// <summary>The source's own rating, 0 to 1, on a scale of its own; null when nobody rated the range (a rated 0 is sent).</summary>
+    public double? Confidence { get; init; }
+}
 
 /// <summary>One marker occurrence of a file (<see cref="WatchMarkerKinds"/>), in source seconds.</summary>
 public sealed record WatchMarkerSegment

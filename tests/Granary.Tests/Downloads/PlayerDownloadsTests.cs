@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
@@ -261,7 +262,9 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         await _fixture.Harness.AddPlayableAsync();
         var next = await _fixture.Harness.AddPlayableAsync("dl_7", "ep_7", episode: 7, change: r => r with { Title = "Chapter Seven" });
         var upNext = new DownloadUpNext(
-            new UpNextSource(new CatalogApi(_fixture.Silo.Http), _fixture.Harness.Session, _fixture.Harness.Logs.For<UpNextSource>()),
+            new UpNextSource(new CatalogApi(_fixture.Silo.Http), _fixture.Harness.Session,
+                new ImageParameterCache(new ImagesApi(_fixture.Silo.Http), _fixture.Harness.Logs.For<ImageParameterCache>()),
+                _fixture.Harness.Logs.For<UpNextSource>()),
             _fixture.Harness.Store, _fixture.Harness.Session, _fixture.Harness.Time);
         using var player = NewPlayer(upNext);
         await player.StartAsync(PlayRequest.FromStart("ep_5"));

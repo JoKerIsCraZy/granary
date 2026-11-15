@@ -211,6 +211,22 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
+    public void EachSeekOfTheViewers_IsSaid_SoThatAGameControllersSeekGivesWay()
+    {
+        var viewModel = CreateViewModel();
+        _engine.RaiseState(Loaded());
+        int sought = 0;
+        viewModel.ViewerSought += (_, _) => sought++;
+
+        viewModel.SeekTo(20);
+        viewModel.SkipBackCommand.Execute(null);
+        viewModel.SkipForwardCommand.Execute(null);
+        viewModel.SeekToChapter(5);
+
+        Assert.Equal(4, sought);
+    }
+
+    [Fact]
     public void Volume_IsSetOnTheEngine_AndKeptInRange()
     {
         var viewModel = CreateViewModel();

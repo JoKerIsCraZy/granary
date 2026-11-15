@@ -62,6 +62,8 @@ public readonly record struct PadReading(
     /// <summary>
     /// Two pads as one: any pad in the room works, and a pad that shows up twice (itself and as the Xbox pad a tool makes
     /// of it) still presses each button once. With one of them not read there is no reading: what that one holds is not known.
+    /// Each trigger counts as its own pad means it: one a pad says is down without saying how far is pulled home, also
+    /// beside another pad's trigger that rests a little pulled.
     /// </summary>
     public static PadReading Merge(PadReading first, PadReading second) => new(
         first.Buttons | second.Buttons,
@@ -69,9 +71,13 @@ public readonly record struct PadReading(
         Further(first.LeftY, second.LeftY),
         Further(first.RightX, second.RightX),
         Further(first.RightY, second.RightY),
-        Math.Max(first.LeftTrigger, second.LeftTrigger),
-        Math.Max(first.RightTrigger, second.RightTrigger),
+        Math.Max(Pull(first.LeftTrigger, first.Buttons, PadButtons.LeftTrigger), Pull(second.LeftTrigger, second.Buttons, PadButtons.LeftTrigger)),
+        Math.Max(Pull(first.RightTrigger, first.Buttons, PadButtons.RightTrigger), Pull(second.RightTrigger, second.Buttons, PadButtons.RightTrigger)),
         first.HasFailed || second.HasFailed);
 
     private static double Further(double first, double second) => Math.Abs(second) > Math.Abs(first) ? second : first;
+
+    // A pull a pad reports stays; a trigger it only says is down is pulled home.
+    private static double Pull(double pull, PadButtons buttons, PadButtons trigger) =>
+        pull > 0 ? pull : buttons.HasFlag(trigger) ? 1 : 0;
 }

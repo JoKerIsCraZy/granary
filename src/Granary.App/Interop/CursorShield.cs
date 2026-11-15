@@ -21,6 +21,12 @@ internal interface ICursorShieldOwner
     /// </summary>
     void MouseSeen();
 
+    /// <summary>
+    /// A finger that went down on the shield moved further than a tap may: a drag, which shows the cursor and the controls
+    /// as a finger's move over WinUI does.
+    /// </summary>
+    void TouchMoved();
+
     /// <summary>The left button, a finger or a pen went down on the shield.</summary>
     void Pressed(ShieldPointer pointer);
 
@@ -276,10 +282,15 @@ internal sealed unsafe partial class CursorShield : IDisposable
             case WmEraseBackground:
                 return 1;
             case WmMouseMove:
-                // A finger's is none: Windows moves its pointer to where the finger goes down, before the press.
+                // A finger's is none, as Windows moves its pointer to where the finger goes down before the press, or
+                // as it moves a little in a tap; once it went further it drags.
                 if (PointerOf(GetMessageExtraInfo()) != ShieldPointer.Touch)
                 {
                     _owner.MouseSeen();
+                }
+                else if (IsTouchDrag(lParam))
+                {
+                    _owner.TouchMoved();
                 }
                 return 0;
             case WmLeftDown:
@@ -359,15 +370,37 @@ internal sealed unsafe partial class CursorShield : IDisposable
         _isLettingGo = false;
     }
 
+    // A finger down on the shield that went further than a tap may: from then on each of its moves is the drag's.
+    private bool IsTouchDrag(nint lParam)
+    {
+        if (_press is not { Pointer: ShieldPointer.Touch } press)
+        {
+            return false;
+        }
+        if (!press.Drags && IsWithinReach(press, lParam))
+        {
+            return false;
+        }
+        _press = press with { Drags = true };
+        return true;
+    }
+
+    // Close enough to the press for its release to be a click: a hand that clicks moves the mouse.
+    private bool IsWithinReach(Press press, nint lParam)
+    {
+        int dpi = GetDpiForWindow(Window);
+        int reach = ClickReach * (dpi > 0 ? dpi : DefaultDpi) / DefaultDpi;
+        return Math.Abs(XOf(lParam) - press.X) <= reach && Math.Abs(YOf(lParam) - press.Y) <= reach;
+    }
+
     private void Released(nint wParam, nint lParam)
     {
         if (_press is not { Clicks: true } press)
         {
             return;
         }
-        int dpi = GetDpiForWindow(Window);
-        int reach = ClickReach * (dpi > 0 ? dpi : DefaultDpi) / DefaultDpi;
-        bool isClick = Math.Abs(XOf(lParam) - press.X) <= reach && Math.Abs(YOf(lParam) - press.Y) <= reach;
+        // A finger's drag is no tap, wherever it ends.
+        bool isClick = !press.Drags && IsWithinReach(press, lParam);
         if (IsAnyButtonDown(wParam))
         {
             // Another button is still down: the shield stays for its release, and this one's click is told meanwhile.
@@ -451,8 +484,9 @@ internal sealed unsafe partial class CursorShield : IDisposable
         return DefWindowProcW(window, message, wParam, lParam);
     }
 
-    // A button held on the shield: the left one, whose release is a click, or another one, whose release is none.
-    private readonly record struct Press(ShieldPointer Pointer, bool IsSecond, int X, int Y, bool Clicks);
+    // A button held on the shield: the left one, whose release is a click, or another one, whose release is none. Drags:
+    // a finger that went further than a tap may.
+    private readonly record struct Press(ShieldPointer Pointer, bool IsSecond, int X, int Y, bool Clicks, bool Drags = false);
 
     [LibraryImport("user32.dll")]
     private static partial ushort RegisterClassExW(ref WindowClassEx windowClass);
