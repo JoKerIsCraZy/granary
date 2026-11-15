@@ -85,7 +85,7 @@ public sealed partial class ItemDetailViewModel
         UserRating = _ratingKept;
         if (settled.Failure is { } failure)
         {
-            ActionError = DescribeWriteFailure("Failed to update rating", failure);
+            ActionError = DescribeWriteFailure(DetailWrite.Rating, failure);
         }
     }
 

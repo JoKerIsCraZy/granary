@@ -4,6 +4,7 @@ using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -15,21 +16,34 @@ namespace Granary.Core.ViewModels.Collections;
 /// </summary>
 public sealed partial class SmartRulesViewModel : ObservableObject
 {
-    public static IReadOnlyList<SettingChoice> Matches { get; } = [new(SmartMatch.All, "all"), new(SmartMatch.Any, "any")];
-
-    public static IReadOnlyList<SettingChoice> Joins { get; } = [new(SmartMatch.All, "and"), new(SmartMatch.Any, "or")];
-
     private bool _showing;
     private JsonElement _sortConfig = SmartSortConfig.Empty;
     private CatalogFilters? _values;
 
     public SmartRulesViewModel()
     {
-        Scope = CollectionRuleFields.Scopes[0];
+        // The lists the boxes pick from, built once in the language on screen: a pick is found in its own list.
+        Matches = [new(SmartMatch.All, AppText.Get("web.home.addRow.rules.matchAll")), new(SmartMatch.Any, AppText.Get("web.home.addRow.rules.matchAny"))];
+        Joins = [new(SmartMatch.All, AppText.Get("web.home.addRow.rules.joinAnd")), new(SmartMatch.Any, AppText.Get("web.home.addRow.rules.joinOr"))];
+        Scopes = CollectionRuleFields.Scopes;
+        InLastUnits = CollectionRuleFields.InLastUnits;
+        Scope = Scopes[0];
         Join = Joins[0];
-        SortField = new SettingChoice("added_at", "Date Added");
-        Direction = new SettingChoice("desc", "Newest first");
+        SortField = new SettingChoice("added_at", CollectionRuleFields.SortName("added_at"));
+        Direction = new SettingChoice("desc", CollectionRuleFields.Directions("added_at").Desc);
     }
+
+    /// <summary>How a group's rules combine: "all" or "any".</summary>
+    public IReadOnlyList<SettingChoice> Matches { get; }
+
+    /// <summary>How the groups combine: "and" or "or".</summary>
+    public IReadOnlyList<SettingChoice> Joins { get; }
+
+    /// <summary>The kinds of title the sentence offers.</summary>
+    public IReadOnlyList<SettingChoice> Scopes { get; }
+
+    /// <summary>Days, weeks, months and years, for "is in the last".</summary>
+    public IReadOnlyList<SettingChoice> InLastUnits { get; }
 
     /// <summary>Raised after every change the viewer makes.</summary>
     public event EventHandler? Changed;
@@ -41,21 +55,37 @@ public sealed partial class SmartRulesViewModel : ObservableObject
     /// <summary>The profile's libraries to pick from; none picked is all of them.</summary>
     public ObservableCollection<LibraryPick> Libraries { get; } = [];
 
-    /// <summary>"from" before all my libraries, "from the" before named ones.</summary>
-    public string FromText => Libraries.Any(l => l.IsPicked) ? "from the" : "from";
+    /// <summary>
+    /// "Show [kind] from [libraries] library": the sentence's words and the places of its boxes (<c>scope</c> and
+    /// <c>libraries</c>), as the web's RuleBuilder words it for the libraries picked.
+    /// </summary>
+    public IReadOnlyList<TextRun> SentenceRuns => SentenceParts().Head;
 
-    /// <summary>"all my libraries", or the picked libraries' names.</summary>
-    public string LibrariesText => Libraries.Where(l => l.IsPicked).Select(l => l.Name).ToList() is { Count: > 0 } names
-        ? CollectionEditorText.JoinNames(names)
-        : "all my libraries";
+    /// <summary>"that match [all] of these:", which the first group's line reads, with the place of its box (<c>match</c>).</summary>
+    public IReadOnlyList<TextRun> MatchRuns => SentenceParts().Tail;
 
-    /// <summary>"library" or "libraries" after named ones.</summary>
-    public string LibraryWord => Libraries.Count(l => l.IsPicked) switch
+    /// <summary>
+    /// The libraries' box: "all my libraries", one name, two, or the first and how many more, as the web's library
+    /// picker sums them up.
+    /// </summary>
+    public string LibrariesText
     {
-        0 => "",
-        1 => "library",
-        _ => "libraries",
-    };
+        get
+        {
+            var picked = Libraries.Where(l => l.IsPicked).ToList();
+            var names = picked.Where(l => l.IsKnown).Select(l => l.Name).ToList();
+            string fallback = AppText.Get("web.profiles.librarySelect.libraryFallback");
+            return (picked.Count, names.Count) switch
+            {
+                (0, _) => AppText.Get("web.collections.copy.allMyLibrariesInSentence"),
+                (1, 1) => names[0],
+                (_, 0) => AppText.Get("web.profiles.libraries.count", ("count", picked.Count), ("count_text", AppText.Number(picked.Count))),
+                (2, 2) => AppText.Get("web.profiles.librarySelect.pair", ("first", names[0]), ("second", names[1])),
+                _ => AppText.Get("web.profiles.librarySelect.more", ("count", picked.Count - 1), ("count_text", AppText.Number(picked.Count - 1)),
+                    ("name", names.Count > 0 ? names[0] : fallback)),
+            };
+        }
+    }
 
     /// <summary>How the groups combine: "and" or "or".</summary>
     [ObservableProperty]
@@ -67,8 +97,10 @@ public sealed partial class SmartRulesViewModel : ObservableObject
 
     public bool HasNoRules => Groups.Count == 0;
 
-    /// <summary>"Add an “or” group".</summary>
-    public string AddGroupText => $"Add an “{(Groups.Count > 1 ? Joins.FirstOrDefault(j => j.Value == Join?.Value)?.Label ?? "and" : "or")}” group";
+    /// <summary>"Add an “or” group"; "and" while several groups join with "and".</summary>
+    public string AddGroupText => Groups.Count > 1 && Join?.Value == SmartMatch.All
+        ? AppText.Get("web.home.addRow.rules.addAndGroup")
+        : AppText.Get("web.home.addRow.rules.addOrGroup");
 
     [ObservableProperty]
     public partial IReadOnlyList<SettingChoice> Sorts { get; private set; } = [];
@@ -126,8 +158,8 @@ public sealed partial class SmartRulesViewModel : ObservableObject
         try
         {
             ShowLibraries(libraries, query.LibraryIds);
-            Scope = CollectionRuleFields.Scopes.FirstOrDefault(s => s.Value == (query.MediaScope ?? "all")) ?? CollectionRuleFields.Scopes[0];
-            Join = Joins.First(j => j.Value == query.Match);
+            Scope = Scopes.FirstOrDefault(s => s.Value == (query.MediaScope ?? "all")) ?? Scopes[0];
+            Join = Joins.FirstOrDefault(j => j.Value == query.Match) ?? Joins[0];
             Groups.Clear();
             foreach (var group in query.Groups)
             {
@@ -166,8 +198,7 @@ public sealed partial class SmartRulesViewModel : ObservableObject
             _showing = false;
         }
         OnPropertyChanged(nameof(LibrariesText));
-        OnPropertyChanged(nameof(LibraryWord));
-        OnPropertyChanged(nameof(FromText));
+        OnPropertyChanged(nameof(SentenceRuns));
     }
 
     /// <summary>The facet and language values of the profile's titles, for the rules' pickers.</summary>
@@ -354,16 +385,18 @@ public sealed partial class SmartRulesViewModel : ObservableObject
                 Libraries.Add(new LibraryPick(id, library.Name, picked.Contains(id), LibraryPicked));
             }
         }
-        // A picked library this profile no longer sees stays picked, by its number.
+        // A picked library this profile no longer sees stays picked, by its number, as the web's catalog filters name one
+        // (components/catalog/CatalogFiltersPanel.tsx).
         foreach (long id in picked.Where(id => Libraries.All(l => l.Id != id)))
         {
-            Libraries.Add(new LibraryPick(id, $"Library {id.ToString(CultureInfo.InvariantCulture)}", true, LibraryPicked));
+            Libraries.Add(new LibraryPick(id, AppText.Get("web.catalog.filters.libraryFallback", "id", id.ToString(CultureInfo.InvariantCulture)),
+                true, LibraryPicked) { IsKnown = false });
         }
     }
 
     private void AddGroupView(SmartRuleGroup group)
     {
-        var view = new SmartGroupViewModel(this, Matches.First(m => m.Value == group.Match), AddRuleCommand, RemoveGroupCommand);
+        var view = new SmartGroupViewModel(this, Matches.FirstOrDefault(m => m.Value == group.Match) ?? Matches[0], AddRuleCommand, RemoveGroupCommand);
         foreach (var rule in group.Rules)
         {
             view.Rules.Add(new SmartRuleViewModel(rule, this, RemoveRuleCommand));
@@ -406,11 +439,12 @@ public sealed partial class SmartRulesViewModel : ObservableObject
             Groups[i].Number = i + 1;
         }
         StoredSortLine = SmartSortConfig.DefaultSort(_sortConfig) is { } stored
-            ? $"A saved default sort, {CollectionRuleFields.SortLabel(stored.Field, stored.Order)}, wins over this Order."
+            ? AppText.Get("web.collections.copy.storedSortLine", ("sort", CollectionRuleFields.SortLabel(stored.Field, stored.Order)))
             : "";
-        OnPropertyChanged(nameof(FromText));
+        OnPropertyChanged(nameof(StoredSortName));
+        OnPropertyChanged(nameof(SentenceRuns));
+        OnPropertyChanged(nameof(MatchRuns));
         OnPropertyChanged(nameof(LibrariesText));
-        OnPropertyChanged(nameof(LibraryWord));
         OnPropertyChanged(nameof(HasRules));
         OnPropertyChanged(nameof(HasNoRules));
         OnPropertyChanged(nameof(AddGroupText));
@@ -418,6 +452,26 @@ public sealed partial class SmartRulesViewModel : ObservableObject
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    /// <summary>"Clear the saved default sort, Title A–Z", for the Clear button.</summary>
+    public string StoredSortName => SmartSortConfig.DefaultSort(_sortConfig) is { } stored
+        ? AppText.Get("web.collections.fields.clearStoredSort", ("sort", CollectionRuleFields.SortLabel(stored.Field, stored.Order)))
+        : "";
+
+    // The web's sentence for the libraries picked, cut where its matching clause starts its own line: the head before
+    // the break, the clause after it. The clause is the one with rules, which the first group shows.
+    private (IReadOnlyList<TextRun> Head, IReadOnlyList<TextRun> Tail) SentenceParts()
+    {
+        var picked = Libraries.Where(l => l.IsPicked).ToList();
+        int count = picked.Count;
+        var runs = picked.Any(l => l.IsKnown)
+            ? AppText.Runs("web.home.addRow.rules.sentenceNamed", ("count", count), ("rules", "yes"))
+            : count > 0
+                ? AppText.Runs("web.home.addRow.rules.sentencePicked", ("rules", "yes"))
+                : AppText.Runs("web.home.addRow.rules.sentenceAll", ("rules", "yes"));
+        int split = runs.ToList().FindIndex(run => run.Tags.Contains("break"));
+        return split < 0 ? (runs, []) : ([.. runs.Take(split)], [.. runs.Skip(split + 1)]);
     }
 
     private static SmartRule NewRule() => new() { Field = "genre", Op = "is", Value = CollectionRuleFields.DefaultValue("genre", "is") };
@@ -451,7 +505,7 @@ public sealed partial class SmartGroupViewModel : ObservableObject
     public partial SettingChoice Match { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsFirst), nameof(IsLater), nameof(RemoveName), nameof(MatchName))]
+    [NotifyPropertyChangedFor(nameof(IsFirst), nameof(IsLater), nameof(RemoveName), nameof(MatchName), nameof(SentenceRuns))]
     public partial int Number { get; internal set; }
 
     public bool IsFirst => Number == 1;
@@ -466,9 +520,23 @@ public sealed partial class SmartGroupViewModel : ObservableObject
         set => _owner.Join = value;
     }
 
-    public string RemoveName => $"Remove group {Number}";
+    public string RemoveName => AppText.Get("web.home.addRow.rules.removeGroup", ("number", Number));
 
-    public string MatchName => IsFirst ? "How the rules combine" : $"How group {Number}'s rules combine";
+    public string MatchName => IsFirst
+        ? AppText.Get("web.home.addRow.rules.howRulesCombine")
+        : AppText.Get("web.home.addRow.rules.groupMatchLabel", ("number", Number));
+
+    /// <summary>"all" or "any", for the group's box.</summary>
+    public IReadOnlyList<SettingChoice> Matches => _owner.Matches;
+
+    /// <summary>"and" or "or", for a later group's box.</summary>
+    public IReadOnlyList<SettingChoice> Joins => _owner.Joins;
+
+    /// <summary>
+    /// The group's line: the first reads "that match [all] of these:" from the rules' sentence, a later one
+    /// "[or] titles that match [all] of these:", each with the places of its boxes.
+    /// </summary>
+    public IReadOnlyList<TextRun> SentenceRuns => IsFirst ? _owner.MatchRuns : AppText.Runs("web.home.addRow.rules.groupSentence");
 
     /// <summary>Takes this group.</summary>
     public System.Windows.Input.ICommand AddRuleCommand { get; }
@@ -503,6 +571,9 @@ public sealed partial class LibraryPick : ObservableObject
     public long Id { get; }
 
     public string Name { get; }
+
+    /// <summary>A library this profile sees, named; false for a picked one it no longer sees, known by its number.</summary>
+    public bool IsKnown { get; init; } = true;
 
     [ObservableProperty]
     public partial bool IsPicked { get; set; }

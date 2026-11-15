@@ -105,7 +105,7 @@ public sealed class SectionViewModelTests
         await section.OpenAsync(HomeRow);
 
         Assert.True(section.HasError);
-        Assert.Equal("The server is busy. Try again in a moment.", section.StatusText);
+        Assert.Equal("The server isn't responding. Try again in a moment.", section.StatusText);
 
         Pages((null, Page(null, Item("m1"))));
         await section.RetryCommand.ExecuteAsync(null);
@@ -146,7 +146,7 @@ public sealed class SectionViewModelTests
 
         await section.LoadMoreCommand.ExecuteAsync(null);
         Assert.True(section.HasError);
-        Assert.Equal("This row could not be loaded right now.", section.StatusText);
+        Assert.Equal("Could not load catalog results.", section.StatusText);
         await section.LoadMoreCommand.ExecuteAsync(null);
         Assert.Equal(1, laterPages);
 
@@ -177,7 +177,7 @@ public sealed class SectionViewModelTests
         await section.OpenAsync(HomeRow);
 
         Assert.True(section.IsEmpty);
-        Assert.Equal("Nothing here yet", section.StatusText);
+        Assert.Equal("No items found.", section.StatusText);
     }
 
     [Fact]

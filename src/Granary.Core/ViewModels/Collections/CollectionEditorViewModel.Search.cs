@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -84,7 +85,7 @@ public sealed partial class CollectionEditorViewModel
             {
                 return;
             }
-            SearchState = "Searching…";
+            SearchState = AppText.Get("web.collections.manual.searching");
             SearchFailed = false;
             var images = await _images.GetAsync(server, ImageSizes.Default, token);
             var found = await _catalog.BrowseAsync(server.BaseUri, new CatalogQuery { Q = text, Limit = ResultLimit, Images = images }, token);
@@ -95,7 +96,7 @@ public sealed partial class CollectionEditorViewModel
             ShowResults([.. found.Items.Where(i => i.ContentId.Length > 0).DistinctBy(i => i.ContentId).Select(item => new CollectionSearchResult(
                 item.ContentId, item.Title, CollectionEditorText.TitleMeta(item.Year, item.Type), ArtworkUrl.Resolve(server.BaseUri, item.PosterUrl),
                 Titles.Any(t => t.Id == item.ContentId), AddTitleCommand))]);
-            SearchState = Results.Count == 0 ? "No titles match." : "";
+            SearchState = Results.Count == 0 ? AppText.Get("web.collections.manual.noMatches") : "";
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -108,7 +109,7 @@ public sealed partial class CollectionEditorViewModel
                 _logger.LogWarning(ex, "Could not search titles for a collection");
                 ShowResults([]);
                 SearchFailed = true;
-                SearchState = "The search didn't work.";
+                SearchState = AppText.Get("web.collections.manual.searchFailed");
             }
         }
     }

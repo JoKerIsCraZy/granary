@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.WatchParty;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.WatchParty;
@@ -69,9 +70,14 @@ public enum RoomTransportResult
 /// <remarks>Used on the UI thread; its timers post there.</remarks>
 public sealed class WatchPartyPlaybackBinding : IDisposable
 {
-    public const string HostSeeksText = "Only the host can seek the room.";
-    public const string HostControlsText = "Only the host can control playback.";
-    public const string ReconnectingText = "Reconnecting to room. Controls are temporarily unavailable.";
+    /// <summary>A guest's seek, refused: the web player's notice.</summary>
+    public static string HostSeeksText => AppText.Get("web.player.room.onlyHostCanSeek");
+
+    /// <summary>A guest's play or pause while the host controls playback, refused.</summary>
+    public static string HostControlsText => AppText.Get("web.player.room.onlyHostCanControl");
+
+    /// <summary>A play, pause or seek while the room's connection comes back.</summary>
+    public static string ReconnectingText => AppText.Get("web.player.room.reconnecting");
 
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ReportInterval = TimeSpan.FromMilliseconds(1500);

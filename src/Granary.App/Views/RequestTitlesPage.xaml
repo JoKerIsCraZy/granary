@@ -10,6 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
@@ -48,18 +49,18 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom"
                             Visibility="{x:Bind ViewModel.HasChoices, Mode=OneWay}">
                     <controls:PillChoices ItemsSource="{x:Bind ViewModel.MediaChoices}" SelectedItem="{x:Bind ViewModel.SelectedMedia, Mode=TwoWay}"
-                                          Visibility="{x:Bind ViewModel.IsGenre, Mode=OneWay}" VerticalAlignment="Center" AutomationProperties.Name="Media type" />
+                                          Visibility="{x:Bind ViewModel.IsGenre, Mode=OneWay}" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.home.addRow.params.mediaType')}" />
                     <ComboBox Width="160" ItemsSource="{x:Bind ViewModel.SortChoices}" SelectedItem="{x:Bind ViewModel.SelectedSort, Mode=TwoWay}"
-                              DisplayMemberPath="Label" VerticalAlignment="Center" AutomationProperties.Name="Sort by" />
+                              DisplayMemberPath="Label" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.browse.sortBy')}" />
                 </StackPanel>
             </Grid>
 
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.lists.loadingTitles')}" />
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            TextAlignment="Center" TextWrapping="Wrap" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand}" />
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand}" />
             </StackPanel>
             <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                        Visibility="{x:Bind views:RequestTitlesPage.ShowsMessage(ViewModel.IsEmpty, ViewModel.IsNotFound, ViewModel.Message), Mode=OneWay}"
@@ -71,14 +72,14 @@
             <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                 LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}" />
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}"
-                          Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles" />
+                          Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="{x:Bind t:AppText.Get('web.common.ui.loadMore.loading')}" />
             <!-- Scrolling to the end presses it; it stays for the keyboard. -->
-            <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+            <Button Content="{x:Bind t:AppText.Get('web.common.ui.loadMore.button')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                     Command="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.ShowsLoadMore, Mode=OneWay}" />
             <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.HasMoreError, Mode=OneWay}">
-                <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                <TextBlock Text="{x:Bind t:AppText.Get('web.requests.results.loadMoreFailed')}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            HorizontalAlignment="Center" />
-                <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.TryAgainCommand}" />
             </StackPanel>
         </StackPanel>

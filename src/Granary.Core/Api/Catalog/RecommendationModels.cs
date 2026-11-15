@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace Granary.Core.Api.Catalog;
 
 /// <summary><c>GET /api/v2/recommendations/discover</c>: the For You page's rows with their cards.</summary>
@@ -15,6 +17,19 @@ public sealed record RecommendationRow
     public string Type { get; init => field = value ?? ""; } = "";
 
     public string Title { get; init => field = value ?? ""; } = "";
+
+    /// <summary>
+    /// The shared translation catalog's key for <see cref="Title"/> while it is the server's own wording, such as
+    /// <c>home.section.popularOnServer</c>, as a Home row's <see cref="Section.TitleKey"/>; null otherwise.
+    /// </summary>
+    public string? TitleKey { get; init => field = string.IsNullOrEmpty(value) ? null : value; }
+
+    /// <summary>The values of <see cref="TitleKey"/>'s placeholders by name, such as <c>genre</c>; empty when it has none.</summary>
+    public IReadOnlyDictionary<string, string> TitleArgs
+    {
+        get;
+        init => field = value ?? ReadOnlyDictionary<string, string>.Empty;
+    } = ReadOnlyDictionary<string, string>.Empty;
 
     /// <summary>The section that lists the row in full (see <see cref="RecommendationSectionKinds"/>); absent when none does.</summary>
     public string? Kind { get; init; }

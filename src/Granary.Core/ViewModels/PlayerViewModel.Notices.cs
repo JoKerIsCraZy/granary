@@ -1,7 +1,7 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -19,11 +19,6 @@ public sealed partial class PlayerViewModel
 
     private ITimer? _noticeTimer;
     private bool _noticesHeld;
-
-    // Silo's cast_standby_starting and cast_standby_from (silo-android's strings_catalog.xml), which its TV apps show over
-    // the player when a phone started a title.
-    private const string StartingText = "Starting {0}";
-    private const string FromText = "From {0}";
 
     // The request a phone started and the phone's name, until the title's details are in and the notice shows.
     private (PlayRequest Request, string Phone)? _startedFromPhone;
@@ -91,8 +86,10 @@ public sealed partial class PlayerViewModel
             return;
         }
         _startedFromPhone = null;
-        ShowNotice(new PlaybackNotice(string.Format(CultureInfo.CurrentCulture, StartingText, MediaInfo.Title),
-            string.Format(CultureInfo.CurrentCulture, FromText, phone)) { ShowsFor = StartedFromPhoneShowsFor });
+        // Silo's cast_standby_starting and cast_standby_from, which its TV apps show over the player when a phone started
+        // a title.
+        ShowNotice(new PlaybackNotice(AppText.Get("granary.phoneRemote.starting", ("title", MediaInfo.Title)),
+            AppText.Get("granary.phoneRemote.from", ("phone", phone))) { ShowsFor = StartedFromPhoneShowsFor });
     }
 
     [RelayCommand]

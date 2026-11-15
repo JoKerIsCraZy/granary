@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -24,6 +26,8 @@ public sealed partial class HomePage : Page, IStartupContent
     {
         ViewModel = App.Services.GetRequiredService<HomeViewModel>();
         InitializeComponent();
+        // The page's name for screen readers, as the web's hidden heading (pages/Home.tsx).
+        AutomationProperties.SetName(this, AppText.Get("web.home.page.title"));
         Loaded += (_, _) => Hero.FollowScroll(Scroller);
         Scroller.ViewChanged += (_, _) => FollowScroll();
         // The hero's backdrop reaches down behind the first row: only its strip above the scroller is the banner's.

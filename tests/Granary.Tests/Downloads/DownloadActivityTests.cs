@@ -1,4 +1,5 @@
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -55,6 +56,18 @@ public sealed class DownloadActivityTests : IAsyncDisposable
         await ChangeAsync("dl_3", r => r with { State = DownloadState.Failed, Failure = DownloadFailure.Server });
         Assert.Equal((0, false), (activity.PendingCount, activity.HasPending));
         Assert.Equal("Downloads", activity.EntryName);
+    }
+
+    [Fact]
+    public async Task InGerman_TheEntrysName_IsTheApps()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        await _h.AddAsync("dl_1", DownloadState.Queued);
+        await _h.AddAsync("dl_2", DownloadState.Queued);
+
+        var activity = Started();
+
+        Assert.Equal("Downloads, 2 Downloads laufen", activity.EntryName);
     }
 
     [Fact]

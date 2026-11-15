@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Playback;
 
@@ -414,7 +415,9 @@ public sealed class MarkerPrompts
         if (_intro is { } intro)
         {
             double progress = Math.Clamp(_shown / PromptTime, 0, 1);
-            var prompt = _undo ? new SkipPrompt("Watch Intro", "Intro skipped", progress) : new SkipPrompt("Skip Intro", null, progress);
+            var prompt = _undo
+                ? new SkipPrompt(AppText.Get("introSkip.pill.undo"), AppText.Get("introSkip.pill.undoCaption"), progress)
+                : new SkipPrompt(AppText.Get("introSkip.pill.skip"), null, progress);
             Prompt = prompt with { Provenance = LineOf(intro) };
             return;
         }
@@ -424,7 +427,7 @@ public sealed class MarkerPrompts
             return;
         }
         // The same pill without its fill.
-        Prompt = Offer is { } expired ? new SkipPrompt("Skip Intro", null, null) { Provenance = LineOf(expired), WithControls = true } : null;
+        Prompt = Offer is { } expired ? new SkipPrompt(AppText.Get("introSkip.pill.skip"), null, null) { Provenance = LineOf(expired), WithControls = true } : null;
     }
 
     // The ask prompt whose time ran out, back while the controls show; null when none is.
@@ -435,9 +438,9 @@ public sealed class MarkerPrompts
 
     private static string? PartLabel(string kind) => kind switch
     {
-        WatchMarkerKinds.Recap => "Skip Recap",
-        WatchMarkerKinds.Credits => "Skip Credits",
-        WatchMarkerKinds.Preview => "Skip Preview",
+        WatchMarkerKinds.Recap => AppText.Get("marker.skipRecap"),
+        WatchMarkerKinds.Credits => AppText.Get("marker.skipCredits"),
+        WatchMarkerKinds.Preview => AppText.Get("web.player.skip.preview"),
         _ => null,
     };
 

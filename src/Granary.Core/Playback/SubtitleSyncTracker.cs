@@ -1,6 +1,7 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Subtitles;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -258,7 +259,7 @@ public sealed class SubtitleSyncTracker : IDisposable
         }
         if (failure is not null)
         {
-            Refused(key, failure, "Sync failed");
+            Refused(key, failure, AppText.Get("web.subtitles.sync.error.syncFailed"));
             return;
         }
         Observe(state!, watch: state!.Sync?.Id, sentAt: sentAt);
@@ -285,7 +286,7 @@ public sealed class SubtitleSyncTracker : IDisposable
         }
         if (readFailure is not null)
         {
-            Refused(key, readFailure, "Couldn't reset timing");
+            Refused(key, readFailure, AppText.Get("web.subtitles.sync.error.resetFailed"));
             return;
         }
         long sentAt = _observation;
@@ -298,7 +299,7 @@ public sealed class SubtitleSyncTracker : IDisposable
         }
         if (failure is not null)
         {
-            Refused(key, failure, "Couldn't reset timing");
+            Refused(key, failure, AppText.Get("web.subtitles.sync.error.resetFailed"));
             return;
         }
         Observe(state!, sentAt: sentAt);
@@ -346,8 +347,8 @@ public sealed class SubtitleSyncTracker : IDisposable
         Patch(key, e => ex is SiloApiException api ? api.Status switch
         {
             403 => e with { IsBusy = false, IsForbidden = true, Error = null },
-            422 => e with { IsBusy = false, IsUnsupported = true, Error = "This format can't be synced." },
-            412 => e with { IsBusy = false, Error = "The subtitle changed. Try again." },
+            422 => e with { IsBusy = false, IsUnsupported = true, Error = AppText.Get("web.subtitles.sync.error.unsupportedFormat") },
+            412 => e with { IsBusy = false, Error = AppText.Get("web.subtitles.sync.error.changed") },
             _ => e with { IsBusy = false, Error = fallback },
         } : e with { IsBusy = false, Error = fallback });
     }

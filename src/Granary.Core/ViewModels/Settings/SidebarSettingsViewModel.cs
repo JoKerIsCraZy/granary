@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -12,7 +13,7 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class SidebarSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string ServerOfferNote = "Shows while your server offers it.";
+    public static string ServerOfferNote => AppText.Get("granary.settings.sidebar.serverOfferNote");
 
     private readonly SidebarLayout _layout;
     private readonly SidebarViewModel _sidebar;
@@ -24,9 +25,9 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject, IDispos
         _sidebar = sidebar;
         Groups =
         [
-            new SidebarGroupViewModel("Libraries", SidebarSection.Libraries),
-            new SidebarGroupViewModel("Discover", SidebarSection.Discover),
-            new SidebarGroupViewModel("Your Stuff", SidebarSection.YourStuff),
+            new SidebarGroupViewModel(AppText.Get("web.shell.sidebar.libraries"), SidebarSection.Libraries),
+            new SidebarGroupViewModel(AppText.Get("web.shell.sidebar.discover"), SidebarSection.Discover),
+            new SidebarGroupViewModel(AppText.Get("web.shell.sidebar.yourStuff"), SidebarSection.YourStuff),
         ];
         _layout.PropertyChanged += OnLayoutChanged;
         _sidebar.Libraries.CollectionChanged += OnLibrariesChanged;

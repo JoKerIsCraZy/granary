@@ -156,7 +156,7 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
         Assert.Equal(RoomTransportResult.Sent, _binding.RequestSeek(90));
 
         Assert.Null(_binding.PendingSeekSeconds);
-        Assert.Equal([WatchPartyPlaybackBinding.ReconnectingText], _notices);
+        Assert.Equal(["Reconnecting to room. Controls are temporarily unavailable."], _notices);
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
         _room.Room = Room(role: "guest");
         Assert.Equal(RoomTransportResult.Denied, _binding.RequestSeek(10));
         Assert.Equal(RoomTransportResult.Denied, _binding.RequestPlayPause(pause: true));
-        Assert.Equal([WatchPartyPlaybackBinding.HostSeeksText, WatchPartyPlaybackBinding.HostControlsText], _notices);
+        Assert.Equal(["Only the host can seek the room.", "Only the host can control playback."], _notices);
 
         _room.Room = Room(role: "guest", policy: WatchPartyPolicies.GuestPlayPause);
         Assert.Equal(RoomTransportResult.Sent, _binding.RequestPlayPause(pause: true));

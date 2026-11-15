@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Artwork;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -95,7 +96,7 @@ public sealed partial class FeaturedBannerViewModel : ObservableObject
 
     public bool CanPlay => Current?.PlayContentId is not null;
 
-    public string PauseLabel => IsPausedByButton ? "Play slideshow" : "Pause slideshow";
+    public string PauseLabel => IsPausedByButton ? AppText.Get("web.home.hero.playSlideshow") : AppText.Get("web.home.hero.pauseSlideshow");
 
     /// <summary>Whether the banner is on screen: Home scrolled down past it folds it away, and it holds still meanwhile.</summary>
     public bool IsInView

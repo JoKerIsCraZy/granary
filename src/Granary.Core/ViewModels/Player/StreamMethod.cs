@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -60,9 +61,9 @@ public static class StreamMethods
     /// <summary>The method in the playback info's words (its "Play method"); empty for <see cref="StreamMethod.None"/>.</summary>
     public static string Label(StreamMethod method) => method switch
     {
-        StreamMethod.DirectPlay => "Direct Play",
-        StreamMethod.DirectStream => "Direct Streaming",
-        StreamMethod.Transcode => "Transcode",
+        StreamMethod.DirectPlay => AppText.Get("web.player.info.delivery.directPlay"),
+        StreamMethod.DirectStream => AppText.Get("web.player.info.delivery.directStream"),
+        StreamMethod.Transcode => AppText.Get("web.player.info.delivery.transcode"),
         _ => "",
     };
 

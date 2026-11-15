@@ -11,6 +11,7 @@
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     Background="{StaticResource SiloBackgroundBrush}">
 
     <Page.Resources>
@@ -137,10 +138,10 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource SiloSecondaryButtonStyle}" Click="OnCancelClick" Visibility="{x:Bind ViewModel.CanCancel, Mode=OneWay}"
-                                        AutomationProperties.Name="Cancel request">
+                                        AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.request.cancelRequest')}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE711;" FontSize="14" />
-                                        <TextBlock Text="Cancel request" />
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.detail.request.cancelRequest')}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleFollowCommand}"
@@ -151,17 +152,17 @@
                                     </StackPanel>
                                 </Button>
                                 <HyperlinkButton Content="IMDb" NavigateUri="{x:Bind ViewModel.ImdbUrl, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}"
-                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.ImdbUrl), Mode=OneWay}" ToolTipService.ToolTip="Opens IMDb in the browser" />
+                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.ImdbUrl), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind views:TitlePage.ImdbTooltip}" />
                                 <HyperlinkButton Content="TMDB" NavigateUri="{x:Bind ViewModel.TmdbUrl, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}"
-                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.TmdbUrl), Mode=OneWay}" ToolTipService.ToolTip="Opens TMDB in the browser" />
+                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.TmdbUrl), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind views:TitlePage.TmdbTooltip}" />
                             </StackPanel>
 
-                            <TextBlock Margin="0,10,0,0" Text="Adding it to your watchlist also requests it." Style="{StaticResource SiloCaptionTextStyle}"
+                            <TextBlock Margin="0,10,0,0" Text="{x:Bind t:AppText.Get('granary.title.watchlistAlsoRequests')}" Style="{StaticResource SiloCaptionTextStyle}"
                                        Visibility="{x:Bind ViewModel.AddAlsoRequests, Mode=OneWay}" />
                             <StackPanel Margin="0,12,0,0" MaxWidth="320" HorizontalAlignment="Left" Spacing="4" Visibility="{x:Bind ViewModel.HasDownload, Mode=OneWay}">
                                 <ProgressBar Value="{x:Bind views:TitlePage.Percent(ViewModel.DownloadPercent), Mode=OneWay}" Maximum="100"
                                              Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind ViewModel.HasDownloadBar, Mode=OneWay}"
-                                             AutomationProperties.Name="Download progress" />
+                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.download.progress')}" />
                                 <TextBlock Text="{x:Bind ViewModel.DownloadText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" />
                             </StackPanel>
                             <InfoBar Margin="0,16,0,0" MaxWidth="560" HorizontalAlignment="Left" IsClosable="True"
@@ -169,7 +170,7 @@
                                      IsOpen="{x:Bind ViewModel.HasNotice, Mode=OneWay}" Message="{x:Bind ViewModel.Notice, Mode=OneWay}">
                                 <!-- After an action the page could not read the title again: Reload shows where it stands. -->
                                 <InfoBar.ActionButton>
-                                    <Button Content="Reload" Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.IsStale, Mode=OneWay}" />
+                                    <Button Content="{x:Bind t:AppText.Get('granary.title.reload')}" Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.IsStale, Mode=OneWay}" />
                                 </InfoBar.ActionButton>
                             </InfoBar>
                         </StackPanel>
@@ -177,7 +178,7 @@
                 </Grid>
 
                 <StackPanel Padding="48,8,48,56" Spacing="40">
-                    <controls:DetailShelf Title="Seasons" Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
+                    <controls:DetailShelf Title="{x:Bind t:AppText.Get('web.detail.seasons.heading')}" Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Seasons, Mode=OneWay}">
                                 <ItemsRepeater.Layout>
@@ -201,7 +202,7 @@
                         </controls:DetailShelf.ShelfContent>
                     </controls:DetailShelf>
 
-                    <controls:DetailShelf Title="Cast" IsScrollerTabStop="True" Visibility="{x:Bind ViewModel.HasCast, Mode=OneWay}">
+                    <controls:DetailShelf Title="{x:Bind t:AppText.Get('web.detail.sections.cast')}" IsScrollerTabStop="True" Visibility="{x:Bind ViewModel.HasCast, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
                             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cast, Mode=OneWay}">
                                 <ItemsRepeater.Layout>
@@ -223,7 +224,7 @@
                     <TextBlock Text="{x:Bind ViewModel.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloDestructiveBrush}" Visibility="{x:Bind ViewModel.RequestNotice.HasText, Mode=OneWay}"
                                AutomationProperties.LiveSetting="Assertive" />
-                    <controls:MediaRow Title="More Like This" ItemsSource="{x:Bind ViewModel.Recommendations, Mode=OneWay}"
+                    <controls:MediaRow Title="{x:Bind t:AppText.Get('web.recommendations.moreLikeThis')}" ItemsSource="{x:Bind ViewModel.Recommendations, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasRecommendations, Mode=OneWay}" />
                 </StackPanel>
@@ -231,29 +232,29 @@
         </ScrollViewer>
 
         <ProgressRing Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the title" />
+                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.detail.page.loadingDetails')}" />
 
         <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}">
-            <TextBlock Text="Couldn't load this title" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.titleLoadFailed')}" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
                        AutomationProperties.HeadingLevel="Level1" />
-            <TextBlock Text="Something went wrong while loading it. Try again in a moment." Style="{StaticResource SiloBodyTextStyle}"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.loadFailedBody')}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
-            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+            <Button HorizontalAlignment="Center" Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
         </StackPanel>
 
         <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.IsNotFound, Mode=OneWay}">
-            <TextBlock Text="This item isn't available" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.unavailableTitle')}" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
                        AutomationProperties.HeadingLevel="Level1" />
-            <TextBlock Text="It may have been removed, or you may not have access to it." Style="{StaticResource SiloBodyTextStyle}"
+            <TextBlock Text="{x:Bind t:AppText.Get('web.detail.page.unavailableBody')}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
         </StackPanel>
 
         <!-- Request seasons: a switch per season; seasons in the library or already asked for are shown but cannot be picked. -->
-        <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="Request seasons"
+        <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="{x:Bind t:AppText.Get('web.requests.seasons.title')}"
                        PrimaryButtonText="{x:Bind Picker.SubmitLabel, Mode=OneWay}" IsPrimaryButtonEnabled="{x:Bind Picker.CanSubmit, Mode=OneWay}"
-                       CloseButtonText="Cancel" DefaultButton="Primary">
+                       CloseButtonText="{x:Bind t:AppText.Get('common.cancel')}" DefaultButton="Primary">
             <StackPanel Width="440" Spacing="12">
                 <TextBlock Text="{x:Bind Picker.Description, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                            TextWrapping="Wrap" />
@@ -262,17 +263,17 @@
                 <TextBlock Text="{x:Bind Picker.Hint, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap"
                            Visibility="{x:Bind Show(Picker.HasHint), Mode=OneWay}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Latest season" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickLatestCommand, Mode=OneWay}"
+                    <Button Content="{x:Bind t:AppText.Get('web.requests.seasons.latest')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickLatestCommand, Mode=OneWay}"
                             Visibility="{x:Bind Show(Picker.CanPickLatest), Mode=OneWay}" />
-                    <Button Content="Upcoming seasons" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickUpcomingCommand, Mode=OneWay}"
+                    <Button Content="{x:Bind t:AppText.Get('web.requests.seasons.upcoming')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickUpcomingCommand, Mode=OneWay}"
                             Visibility="{x:Bind Show(Picker.CanPickUpcoming), Mode=OneWay}" />
                 </StackPanel>
                 <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="8" Visibility="{x:Bind Show(Picker.HasSeasons), Mode=OneWay}">
                     <ScrollViewer MaxHeight="420">
                         <StackPanel>
                             <Grid Padding="12,8" Background="#0AFFFFFF" Visibility="{x:Bind Show(Picker.ShowsAll), Mode=OneWay}">
-                                <ToggleSwitch MinWidth="0" OnContent="All seasons" OffContent="All seasons"
-                                              IsOn="{x:Bind Picker.AllPicked, Mode=TwoWay}" AutomationProperties.Name="All seasons" />
+                                <ToggleSwitch MinWidth="0" OnContent="{x:Bind t:AppText.Get('web.requests.seasons.all')}" OffContent="{x:Bind t:AppText.Get('web.requests.seasons.all')}"
+                                              IsOn="{x:Bind Picker.AllPicked, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.requests.seasons.all')}" />
                             </Grid>
                             <ItemsRepeater ItemsSource="{x:Bind Picker.Seasons, Mode=OneWay}">
                                 <ItemsRepeater.ItemTemplate>

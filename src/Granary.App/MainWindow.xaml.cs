@@ -3,6 +3,7 @@ using Granary.App.Services;
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -214,16 +215,18 @@ public sealed partial class MainWindow : Window
 
     // Instance methods because x:Bind function bindings call them on the window.
     public string ProfileMenuName(string profileName, bool signingOut, string signOutError) =>
-        signingOut ? "Signing out" : string.IsNullOrEmpty(signOutError) ? $"Profile menu: {profileName}" : $"Profile menu: {profileName}. {signOutError}";
+        SidebarViewModel.ProfileMenuName(profileName, signingOut, signOutError);
 
     /// <summary>The profile's name, or "Signing out…" while a sign-out runs.</summary>
-    public string ProfileLabel(string profileName, bool signingOut) => signingOut ? "Signing out…" : profileName;
+    public string ProfileLabel(string profileName, bool signingOut) => SidebarViewModel.ProfileLabel(profileName, signingOut);
 
     public bool IsIdle(bool running) => !running;
 
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
-    public string NotificationsName(int unread) => unread > 0 ? $"Notifications, {unread} unread" : "Notifications";
+    public string NotificationsName(int unread) => unread > 0
+        ? AppText.Get("granary.shell.notificationsUnread", ("count", unread))
+        : AppText.Get("web.shell.sidebar.notifications");
 
     // The library entries follow the header; NavigationView has no item template for mixed static and bound items.
     private void ShowLibraries()

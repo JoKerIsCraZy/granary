@@ -1,0 +1,3007 @@
+# The keys of Silo's web catalog that Granary uses: one per line, in ordinal order. Blank lines and lines starting
+# with # are left out. scripts/sync-web-texts.ps1 keeps these keys of the catalogs texts.lock.json pins, in web/
+# (docs/release.md, "Translations").
+
+# The player, in the words of the web's player (web/src/player/components: PlayerControls, VideoPlayer, SeekBar,
+# VolumeControl, the audio, subtitle, chapters, quality and sleep timer menus, the playback info, NextEpisodeOverlay,
+# PlayingNextScreen, the skip pills, WatchTogetherPanel, MarkerEditPanel, the Add Subtitles dialog and
+# SubtitleAppearancePanel; player/utils/subtitleSync.ts; lib/languageNames.ts): src/Granary.App/Views/PlayerPage*,
+# AddSubtitlesPanel, MarkerEditPanel, SubtitleAppearancePanel, SeekBar*, SpeedTrack, PlayerMenus, PlayerTime and
+# SubtitlePreview in src/Granary.App/Controls, the taskbar buttons (src/Granary.App/Services/WindowsTaskbarToolbar.cs),
+# src/Granary.Core/ViewModels/PlayerViewModel*.cs and ViewModels/Player, and the playback texts of
+# src/Granary.Core/Playback (MarkerPrompts, MediaAuthorization, PlaybackStarter, ServerPlayback.Control,
+# SubtitleSyncTracker).
+bufferingQuality.autoLimited
+
+# Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
+# src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
+# list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
+# had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
+# A library's page, in the words of the web's LibraryPage, its header, LibraryBrowse, LibraryCollections, the catalog
+# filter bar (components/catalog/CatalogFilterBar.tsx), its badges (catalogFilterBadges.ts, ActiveFilterBadges.tsx), its
+# letter bar (LetterBar.tsx), the sorts (lib/querySortOptions.ts) and the shuffle (hooks/queries/shuffles.ts):
+# src/Granary.App/Views/LibraryPage.xaml(.cs), src/Granary.App/Controls/AlphabetJumpBar.xaml.cs and
+# src/Granary.Core/ViewModels/Library*.cs. The filter flyout takes the web's guided filter words
+# (components/collections/CollectionGuidedRulesEditor.tsx, and the rule builder's for the audio and subtitle languages):
+# src/Granary.App/Controls/CatalogFiltersButton.xaml(.cs).
+catalog.sort.added
+
+# A profile's own collection made or changed, in the words of the web's editor (components/collections/editor,
+# fields/ArtworkFields.tsx, fields/OrderBlock.tsx, lib/collections/copy.ts and copyEditor.ts), its smart rules
+# (homeRows/addRow/RuleBuilder.tsx, catalog/FilterRuleRow.tsx, collectionBuilderFields.ts, LibraryMultiSelect.tsx), the
+# save bar and the question before leaving (SaveBar.tsx, UnsavedChangesGuard.tsx), and the image checks of the title
+# images dialog: src/Granary.App/Views/CollectionEditorPage*, src/Granary.Core/ViewModels/Collections/*.
+catalog.sort.author
+
+# More of a library page's words, as above under catalog.sort.added.
+catalog.sort.imdbRating
+
+# More of the collection editor's words, as above under catalog.sort.author.
+catalog.sort.narrator
+
+# More of a library page's words, as above under catalog.sort.added.
+catalog.sort.released
+catalog.sort.resolution
+
+# More of the collection editor's words, as above under catalog.sort.author.
+catalog.sort.series
+
+# More of a library page's words, as above under catalog.sort.added.
+catalog.sort.title
+catalog.sort.year
+
+# Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
+# src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs). Sign out is a saved server's, in the server
+# list (src/Granary.App/Views/ServersPage.xaml); Change server is the apps' link on the sign-in screen, where Granary
+# had "Use another server" (src/Granary.App/Views/SignInPage.xaml).
+common.back
+common.cancel
+common.changeServer
+common.done
+common.retry
+common.save
+common.signOut
+common.tryAgain
+
+# The download dialog, in the words of the web's DownloadVersionPicker.tsx, the loading and failure of its card menu's
+# dialogs (components/MediaItemMenu.tsx, MetadataActionStatusDialog), the web's words for a request refused for the
+# account's limit (error.rate_limited) and its title page's Download: src/Granary.Core/ViewModels/Downloads/
+# DownloadOptionsViewModel*.cs, src/Granary.App/Controls/DownloadOptionsPanel.xaml(.cs) and
+# src/Granary.App/Services/DownloadOptionsDialog.cs.
+error.rate_limited
+
+# The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
+# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs. For You's rows and Requests'
+# Discover rows (discover…) carry them too: RecommendationRow in RecommendationModels.cs and DiscoverSection in
+# src/Granary.Core/Api/Requests/RequestModels.cs, all shown through src/Granary.Core/ViewModels/SectionTitle.cs.
+home.section.becauseYouEnjoy
+home.section.becauseYouWatched
+home.section.becauseYouWatchedTitle
+home.section.continueListening
+home.section.continueReading
+home.section.continueWatching
+home.section.discoverGenres
+home.section.discoverNetworks
+home.section.discoverOnAirSeries
+home.section.discoverPopularMovies
+home.section.discoverPopularSeries
+home.section.discoverStudios
+home.section.discoverTrendingMovies
+home.section.discoverTrendingSeries
+home.section.discoverUpcomingMovies
+home.section.forYou
+home.section.hiddenGems
+home.section.highlyRatedInLibrary
+home.section.nextInYourSeries
+home.section.nextUp
+home.section.pickedFromYourHistory
+home.section.popularOnServer
+home.section.profilesLikeYouEnjoyed
+home.section.randomPicks
+home.section.recentlyAdded
+home.section.recentlyAddedAudiobooks
+home.section.recentlyAddedEbooks
+home.section.recentlyAddedIn
+home.section.recentlyAddedManga
+home.section.recentlyAddedMovies
+home.section.recentlyAddedTv
+home.section.recentlyReleased
+home.section.recentlyReleasedAudiobooks
+home.section.recentlyReleasedEbooks
+home.section.recentlyReleasedEpisodes
+home.section.recentlyReleasedEpisodesIn
+home.section.recentlyReleasedIn
+home.section.recentlyReleasedManga
+home.section.recentlyReleasedMovies
+home.section.recommendedForYou
+home.section.returningShows
+home.section.seasonal.christmas.classics
+home.section.seasonal.christmas.comedies
+home.section.seasonal.christmas.family
+home.section.seasonal.christmas.favorites
+home.section.seasonal.christmas.hallmark
+home.section.seasonal.christmas.romcoms
+home.section.seasonal.easter.faith
+home.section.seasonal.easter.family
+home.section.seasonal.familyMovieNight.favorites
+home.section.seasonal.familyMovieNight.liveAction
+home.section.seasonal.familyMovieNight.new
+home.section.seasonal.halloween.animated
+home.section.seasonal.halloween.family
+home.section.seasonal.halloween.favorites
+home.section.seasonal.halloween.horror
+home.section.seasonal.halloween.tv
+home.section.seasonal.newYear.favorites
+home.section.seasonal.saturdayMorning.cartoons
+home.section.seasonal.saturdayMorning.modern
+home.section.seasonal.saturdayMorning.nineties
+home.section.seasonal.stPatricks.irishFilm
+home.section.seasonal.stPatricks.irishTv
+home.section.seasonal.summer.blockbusters
+home.section.seasonal.summer.classicSummer
+home.section.seasonal.summer.nostalgia
+home.section.seasonal.summerBlockbuster.blockbusters
+home.section.seasonal.summerBlockbuster.classicSummer
+home.section.seasonal.summerBlockbuster.nostalgia
+home.section.seasonal.thanksgiving.favorites
+home.section.seasonal.thanksgiving.feelGood
+home.section.seasonal.valentines.favorites
+home.section.seasonal.valentines.loveStories
+home.section.seasonal.valentines.romanticDramas
+home.section.seasonal.valentines.romcoms
+home.section.seasonalPicks
+home.section.topGenre
+home.section.topPicksToday
+home.section.topRated
+home.section.topRatedMovies
+home.section.topRatedTv
+home.section.trendingOnServer
+home.section.trendingThisWeek
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+introSkip.pill.skip
+introSkip.pill.undo
+introSkip.pill.undoCaption
+marker.skipCredits
+marker.skipRecap
+
+# Requests, in the words of the web's hub (pages/Requests.tsx), its browse and Discover row pages
+# (pages/RequestBrowse.tsx, RequestDiscoverSection.tsx), the brand rows (components/BrandCarousel.tsx), the request
+# poster card and its toasts (components/RequestPosterCard.tsx, hooks/queries/useRequests.ts), the seasons dialog
+# (RequestSeasonsDialog.tsx) and lib/mediaRequests.ts and lib/requestDownload.ts (a time left in the audiobooks'
+# duration words): src/Granary.App/Views/RequestsPage.xaml(.cs), RequestTitlesPage.xaml,
+# src/Granary.App/Controls/BrandRow.xaml(.cs), src/Granary.Core/ViewModels/Request*.cs, MediaCardActions.cs and
+# BrowseHeroTitle.cs.
+# A title known only from TMDB, in the words of the web's TitleDetail and ExternalTitleContent pages, its request bar
+# (RequestActionBar.tsx), its cancel dialog (CancelRequestDialog.tsx), the request and watchlist toasts
+# (hooks/queries/useRequests.ts, watchlistTitles.ts) and the seasons' words of RequestSeasonsDialog.tsx and
+# lib/mediaRequests.ts: src/Granary.App/Views/TitlePage.xaml(.cs), and TitleViewModel.cs and TitleText.cs in
+# src/Granary.Core/ViewModels.
+requests.error.create
+requests.error.follow
+
+# A setting's name, description and choices as Silo's settings manifest words them for every client
+# (settingsManifest.<key>.label, .description, .option.<value>), where the web's settings pages show them for the same
+# setting: src/Granary.App/Views/Settings and src/Granary.Core/ViewModels/Settings.
+settingsManifest.catalog.hide_unwatched_episode_images.description
+settingsManifest.catalog.hide_unwatched_episode_images.label
+settingsManifest.catalog.hide_unwatched_episode_overviews.description
+settingsManifest.catalog.hide_unwatched_episode_overviews.label
+settingsManifest.catalog.show_advisory_age.label
+
+# Settings → Downloads' Download quality and its Original, and Keep watched downloads, as the settings manifest words
+# these settings for every client; the web keeps no downloads and its pages do not show them:
+# src/Granary.App/Views/Settings/DownloadsSettingsView.xaml and the download quality labels (DownloadText.QualityLabel).
+settingsManifest.downloads.default_quality.label
+settingsManifest.downloads.default_quality.option.original
+settingsManifest.downloads.keep_watched.description
+settingsManifest.downloads.keep_watched.label
+
+# More of the settings manifest's words, as above under
+# settingsManifest.catalog.hide_unwatched_episode_images.description.
+settingsManifest.playback.audio_language.unsetLabel
+settingsManifest.playback.auto_play_next.label
+settingsManifest.playback.auto_skip_credits.description
+settingsManifest.playback.auto_skip_credits.label
+settingsManifest.playback.auto_skip_recap.label
+settingsManifest.playback.buffering_quality_mode.description
+settingsManifest.playback.buffering_quality_mode.label
+settingsManifest.playback.buffering_quality_mode.option.always
+settingsManifest.playback.buffering_quality_mode.option.ask
+settingsManifest.playback.buffering_quality_mode.option.never
+settingsManifest.playback.intro_skip_mode.label
+settingsManifest.playback.intro_skip_mode.option.always
+settingsManifest.playback.intro_skip_mode.option.ask
+settingsManifest.playback.intro_skip_mode.option.never
+settingsManifest.playback.max_bitrate_kbps.label
+settingsManifest.playback.preferred_quality.label
+settingsManifest.playback.preferred_quality.option.1080p
+settingsManifest.playback.preferred_quality.option.2160p
+settingsManifest.playback.preferred_quality.option.480p
+settingsManifest.playback.preferred_quality.option.720p
+settingsManifest.playback.preferred_quality.option.auto
+settingsManifest.playback.show_forced_subtitles.label
+settingsManifest.playback.show_marker_confidence.description
+settingsManifest.playback.show_marker_confidence.label
+settingsManifest.playback.show_marker_source.description
+settingsManifest.playback.show_marker_source.label
+settingsManifest.playback.subtitle_language.unsetLabel
+settingsManifest.playback.subtitle_mode.option.always
+settingsManifest.playback.subtitle_mode.option.auto
+settingsManifest.playback.subtitle_mode.option.off
+settingsManifest.player.audio_sync_ms.description
+settingsManifest.player.audio_sync_ms.label
+settingsManifest.player.passout_threshold.label
+settingsManifest.player.resume_rewind_seconds.description
+settingsManifest.player.resume_rewind_seconds.label
+settingsManifest.ui.app_language.description
+settingsManifest.ui.theme_music_enabled.description
+settingsManifest.ui.theme_music_enabled.label
+settingsManifest.ui.theme_music_loop.description
+settingsManifest.ui.theme_music_loop.label
+settingsManifest.ui.title_art.label
+
+# More of a library page's words, as above under catalog.sort.added.
+shuffle.nothingToPlay
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+subtitleSearch.hearingImpaired
+upNext.endOfPlayback
+upNext.headingFinished
+upNext.onDeck
+upNext.playNow
+
+# Watch Together, in the words of the web's hub, room and start sheet (pages/watchtogether, components/watchtogether)
+# and its player's Watch Party panel and notices (player/components/WatchTogetherPanel.tsx, VideoPlayer.tsx):
+# src/Granary.App/Views/WatchPartyPage.xaml(.cs), WatchPartyRoomPage.xaml(.cs), src/Granary.App/Controls/StartPartyPanel.xaml(.cs),
+# src/Granary.Core/ViewModels/WatchParty, and the room's notices in src/Granary.Core/WatchParty/WatchPartyPlaybackBinding.cs.
+watchParty.button.imReady
+watchParty.button.suggest
+watchParty.connection.disconnected
+watchParty.end.confirm
+watchParty.options.everyoneVotes
+watchParty.page.start
+watchParty.seat.host
+watchParty.strip.guest
+watchParty.strip.manager
+watchParty.theHost
+watchParty.title
+watchParty.whoSeen.inProgress
+watchParty.whoSeen.title
+watchParty.whoSeen.watched
+
+# Admin → Activity, in the words of the web's AdminActivity page (pages/AdminActivity.tsx, pages/adminActivityPresentation.ts):
+# src/Granary.App/Views/Admin/AdminActivityView.xaml(.cs) and AdminActivityViewModel*.cs, AdminSessionRow.cs and
+# AdminSessionText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.activity.client.heading
+web.admin.activity.column.route
+web.admin.activity.detail.transcoding
+web.admin.activity.empty.noMatches
+web.admin.activity.filter.clear
+web.admin.activity.filter.movies
+web.admin.activity.filter.placeholder
+web.admin.activity.filter.series
+web.admin.activity.filter.showing
+web.admin.activity.ipLookup.column.firstSeen
+web.admin.activity.ipLookup.column.lastSeen
+web.admin.activity.ipLookup.column.requests
+web.admin.activity.ipLookup.column.user
+web.admin.activity.ipLookup.empty
+web.admin.activity.ipLookup.heading
+web.admin.activity.ipLookup.loadError
+web.admin.activity.ipLookup.loadMore
+web.admin.activity.ipLookup.loadMoreError
+web.admin.activity.ipLookup.placeholder
+web.admin.activity.ipLookup.searching
+web.admin.activity.ipLookup.submit
+web.admin.activity.page.noStreams
+web.admin.activity.page.refresh
+web.admin.activity.page.refreshing
+web.admin.activity.page.subtitle
+web.admin.activity.page.title
+web.admin.activity.route.localServer
+web.admin.activity.route.node
+web.admin.activity.route.proxy
+web.admin.activity.route.server
+web.admin.activity.route.transcode
+web.admin.activity.route.unknownProxyNode
+web.admin.activity.route.unknownTranscodeNode
+web.admin.activity.row.audio
+web.admin.activity.row.container
+web.admin.activity.row.details
+web.admin.activity.row.sessionActive
+web.admin.activity.row.video
+web.admin.activity.summary.byNode
+web.admin.activity.summary.hlsOutput
+web.admin.activity.summary.methodDistribution
+web.admin.activity.summary.methodFilter
+web.admin.activity.summary.methodHeading
+web.admin.activity.summary.methodSegment
+web.admin.activity.summary.unknownOutputContainer
+web.admin.activity.summary.unknownSource
+web.admin.activity.transcodeMode.audioTranscode
+web.admin.activity.transcodeMode.hardware
+web.admin.activity.transcodeMode.pending
+web.admin.activity.transcodeMode.software
+web.admin.activity.transcodeMode.unknown
+web.admin.activity.userFallback
+
+# Settings → Accessibility → Language's note that a chosen language shows from the next start, in the words of the
+# web's backup restore for a setting that applies after a restart (pages/admin-backups/restoreModel.ts):
+# src/Granary.Core/ViewModels/Settings/AccessibilitySettingsViewModel.cs.
+web.admin.backups.restore.caveat.restart
+
+# An administrator's role on Admin → Dashboard's Users, as the web's accountRoleLabel (lib/accountOwner.ts): Role in
+# src/Granary.Core/ViewModels/Admin/AdminText.cs.
+web.admin.common.accounts.role
+
+# The activity indicator at the top right of every page an administrator sees, in the words of the web's ServerActivity
+# (components/ServerActivity.tsx): src/Granary.App/Controls/ServerActivityButton.xaml(.cs) and ServerActivityViewModel.cs,
+# ServerActivityRows.cs and ServerActivityText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.common.serverActivity.connecting
+web.admin.common.serverActivity.disconnected
+web.admin.common.serverActivity.empty
+web.admin.common.serverActivity.failedRecent
+web.admin.common.serverActivity.libraryFallback
+web.admin.common.serverActivity.moreRunning
+web.admin.common.serverActivity.moreScans
+web.admin.common.serverActivity.moreScansAtLeast
+web.admin.common.serverActivity.noPreparations
+web.admin.common.serverActivity.noScans
+web.admin.common.serverActivity.noStreams
+web.admin.common.serverActivity.noTasks
+web.admin.common.serverActivity.paused
+web.admin.common.serverActivity.percent
+web.admin.common.serverActivity.preparing
+web.admin.common.serverActivity.processingFiles
+web.admin.common.serverActivity.progressLabel
+web.admin.common.serverActivity.queued
+web.admin.common.serverActivity.retrying
+web.admin.common.serverActivity.running
+web.admin.common.serverActivity.scanMode.file
+web.admin.common.serverActivity.scanMode.library
+web.admin.common.serverActivity.scanMode.subtree
+web.admin.common.serverActivity.scanProgress
+web.admin.common.serverActivity.scanQueued
+web.admin.common.serverActivity.scanning
+web.admin.common.serverActivity.scans
+web.admin.common.serverActivity.streamCount
+web.admin.common.serverActivity.streams
+web.admin.common.serverActivity.tasks
+web.admin.common.serverActivity.title
+web.admin.common.serverActivity.trigger.active
+web.admin.common.serverActivity.trigger.atLeast
+web.admin.common.serverActivity.trigger.idle
+web.admin.common.serverActivity.viewAll
+
+# Admin → Dashboard, in the words of the web's dashboard (pages/AdminDashboard.tsx, components/admin/dashboard: its widgets,
+# charts, format.ts and range.ts): src/Granary.App/Views/Admin/AdminDashboardView.xaml(.cs), AdminStatTileView.xaml.cs,
+# src/Granary.App/Controls/PlaybackChart.cs and RateChart.cs, and AdminDashboardViewModel*.cs, AdminDashboardRows.cs and
+# AdminText.cs in src/Granary.Core/ViewModels/Admin.
+web.admin.dashboard.chart.columnReading
+web.admin.dashboard.format.fileCount
+web.admin.dashboard.page.refresh
+web.admin.dashboard.page.refreshing
+web.admin.dashboard.page.subtitle
+web.admin.dashboard.page.title
+web.admin.dashboard.page.updatedJustNow
+web.admin.dashboard.page.updatedMinutesAgo
+web.admin.dashboard.range.edgeEnd
+web.admin.dashboard.range.edgeStart.day
+web.admin.dashboard.range.phrase.day
+web.admin.dashboard.range.phrase.week
+web.admin.dashboard.range.title.day
+web.admin.dashboard.range.title.week
+web.admin.dashboard.widgetCatalog.healthStrip.title
+web.admin.dashboard.widgetCatalog.nowPlaying.title
+web.admin.dashboard.widgetCatalog.recentActivity.title
+web.admin.dashboard.widgets.activeStreams.label
+web.admin.dashboard.widgets.activeStreams.sessions
+web.admin.dashboard.widgets.egress.chartLabel
+web.admin.dashboard.widgets.egress.empty
+web.admin.dashboard.widgets.egress.loadFailed
+web.admin.dashboard.widgets.egress.peak
+web.admin.dashboard.widgets.egress.title
+web.admin.dashboard.widgets.egress.total
+web.admin.dashboard.widgets.egressNow.label
+web.admin.dashboard.widgets.egressNow.source
+web.admin.dashboard.widgets.egressNow.waiting
+web.admin.dashboard.widgets.healthStrip.dirtyBuild
+web.admin.dashboard.widgets.healthStrip.errors24h
+web.admin.dashboard.widgets.healthStrip.loadFailed
+web.admin.dashboard.widgets.healthStrip.nodes
+web.admin.dashboard.widgets.healthStrip.nodesHealthy
+web.admin.dashboard.widgets.healthStrip.nodesLocal
+web.admin.dashboard.widgets.healthStrip.nodesNone
+web.admin.dashboard.widgets.healthStrip.nodesUnavailable
+web.admin.dashboard.widgets.healthStrip.notConfigured
+web.admin.dashboard.widgets.healthStrip.ok
+web.admin.dashboard.widgets.healthStrip.optional
+web.admin.dashboard.widgets.healthStrip.restartRequired
+web.admin.dashboard.widgets.healthStrip.unreachable
+web.admin.dashboard.widgets.healthStrip.uptime
+web.admin.dashboard.widgets.healthStrip.version
+web.admin.dashboard.widgets.healthStrip.versionUnknown
+web.admin.dashboard.widgets.healthStrip.warnings
+web.admin.dashboard.widgets.libraries.disabled
+web.admin.dashboard.widgets.libraries.empty
+web.admin.dashboard.widgets.libraries.enabled
+web.admin.dashboard.widgets.libraries.loadFailed
+web.admin.dashboard.widgets.libraries.title
+web.admin.dashboard.widgets.libraries.typeAndPaths
+web.admin.dashboard.widgets.movies.label
+web.admin.dashboard.widgets.nowPlaying.episodeFallback
+web.admin.dashboard.widgets.nowPlaying.episodeLineWithSeries
+web.admin.dashboard.widgets.nowPlaying.fileFallback
+web.admin.dashboard.widgets.nowPlaying.idle
+web.admin.dashboard.widgets.nowPlaying.justNow
+web.admin.dashboard.widgets.nowPlaying.loadFailed
+web.admin.dashboard.widgets.nowPlaying.moreStreams
+web.admin.dashboard.widgets.nowPlaying.movie
+web.admin.dashboard.widgets.nowPlaying.paused
+web.admin.dashboard.widgets.nowPlaying.series
+web.admin.dashboard.widgets.nowPlaying.title
+web.admin.dashboard.widgets.nowPlaying.userFallback
+web.admin.dashboard.widgets.nowPlaying.viewActivity
+web.admin.dashboard.widgets.nowPlaying.viewAll
+web.admin.dashboard.widgets.playbackActivity.chartLabelHourly
+web.admin.dashboard.widgets.playbackActivity.empty
+web.admin.dashboard.widgets.playbackActivity.emptyDetail
+web.admin.dashboard.widgets.playbackActivity.loadFailed
+web.admin.dashboard.widgets.playbackActivity.series.directPlay
+web.admin.dashboard.widgets.playbackActivity.series.directStream
+web.admin.dashboard.widgets.playbackActivity.series.transcode
+web.admin.dashboard.widgets.playbackActivity.sessionCount
+web.admin.dashboard.widgets.playbackActivity.title
+web.admin.dashboard.widgets.playbackActivity.totalLabel
+web.admin.dashboard.widgets.profilesActive.detail
+web.admin.dashboard.widgets.profilesActive.label
+web.admin.dashboard.widgets.recentActivity.empty
+web.admin.dashboard.widgets.recentActivity.justNow
+web.admin.dashboard.widgets.recentActivity.loadFailed
+web.admin.dashboard.widgets.recentActivity.startedWatching
+web.admin.dashboard.widgets.recentActivity.startedWatchingWithProfile
+web.admin.dashboard.widgets.recentActivity.title
+web.admin.dashboard.widgets.recentActivity.viewAll
+web.admin.dashboard.widgets.shows.label
+web.admin.dashboard.widgets.statTile.unavailable
+web.admin.dashboard.widgets.storage.label
+web.admin.dashboard.widgets.topProfiles.empty
+web.admin.dashboard.widgets.topProfiles.loadFailed
+web.admin.dashboard.widgets.topProfiles.playCount
+web.admin.dashboard.widgets.topProfiles.title
+web.admin.dashboard.widgets.topProfiles.userFallback
+web.admin.dashboard.widgets.topTitles.empty
+web.admin.dashboard.widgets.topTitles.loadFailed
+web.admin.dashboard.widgets.topTitles.playCount
+web.admin.dashboard.widgets.topTitles.title
+web.admin.dashboard.widgets.users.active
+web.admin.dashboard.widgets.users.disabled
+web.admin.dashboard.widgets.users.empty
+web.admin.dashboard.widgets.users.justNow
+web.admin.dashboard.widgets.users.lastActive
+web.admin.dashboard.widgets.users.loadFailed
+web.admin.dashboard.widgets.users.status
+web.admin.dashboard.widgets.users.title
+web.admin.dashboard.widgets.users.user
+
+# More of the activity indicator's words: a download being prepared, as the web's
+# pages/adminDownloadPreparationPresentation.ts words it, as above under web.admin.common.serverActivity.connecting.
+web.admin.downloads.preparation.compactEpisodeTitle
+web.admin.downloads.preparation.episodeCode
+web.admin.downloads.preparation.fileFallback
+web.admin.downloads.preparation.kind.remux
+web.admin.downloads.preparation.kind.transcode
+web.admin.downloads.preparation.kind.transcodeTarget
+web.admin.downloads.preparation.remaining.hours
+web.admin.downloads.preparation.remaining.hoursMinutes
+web.admin.downloads.preparation.remaining.minutes
+web.admin.downloads.preparation.remaining.underOneMinute
+web.admin.downloads.preparation.running.encoding
+web.admin.downloads.preparation.running.remuxing
+web.admin.downloads.preparation.worker.localServer
+web.admin.downloads.preparation.worker.node
+web.admin.downloads.preparation.worker.nodeWithId
+
+# More of Admin → Activity's words: a stream's commands and their answers, as the web's AdminSessionActions
+# (components/AdminSessionActions.tsx), as above under web.admin.activity.client.heading.
+web.admin.sessions.playback.action.message
+web.admin.sessions.playback.action.pause
+web.admin.sessions.playback.action.resume
+web.admin.sessions.playback.action.stop
+web.admin.sessions.playback.action.terminate
+web.admin.sessions.playback.failure.conflictReason
+web.admin.sessions.playback.failure.ended
+web.admin.sessions.playback.failure.generic
+web.admin.sessions.playback.failure.notApplied
+web.admin.sessions.playback.failure.unavailable
+web.admin.sessions.playback.menu.ariaLabel
+web.admin.sessions.playback.messageDialog.description
+web.admin.sessions.playback.messageDialog.placeholder
+web.admin.sessions.playback.messageDialog.send
+web.admin.sessions.playback.messageDialog.title
+web.admin.sessions.playback.toast.messageRequired
+web.admin.sessions.playback.toast.messageSent
+web.admin.sessions.playback.toast.pauseFallback
+web.admin.sessions.playback.toast.pauseSent
+web.admin.sessions.playback.toast.resumeFallback
+web.admin.sessions.playback.toast.resumeSent
+web.admin.sessions.playback.toast.stopFallback
+web.admin.sessions.playback.toast.stopSent
+web.admin.sessions.playback.toast.terminateReceipt
+web.admin.sessions.playback.unsupportedControl
+
+# The admin area's own sidebar, in the words of the web's AdminSidebar and admin navigation (components/AdminSidebar.tsx,
+# lib/adminNavigation.ts): src/Granary.App/Views/AdminPage.xaml and AdminSidebarViewModel.cs.
+web.admin.shell.mobileHeader.eyebrow
+web.admin.shell.nav.page.activity.label
+web.admin.shell.nav.page.dashboard.label
+web.admin.shell.nav.section.monitor
+web.admin.shell.sidebar.backToApp
+web.admin.shell.sidebar.build.dev
+web.admin.shell.sidebar.build.heading
+web.admin.shell.sidebar.build.loadFailed
+web.admin.shell.sidebar.build.loading
+web.admin.shell.sidebar.liveSessions
+web.admin.shell.sidebar.navigation
+
+# More of the activity indicator's words: a running task's progress (lib/taskProgress.ts) and the names of Silo's own
+# tasks, as the web's taskText (lib/taskText.ts) shows them by key, as above under
+# web.admin.common.serverActivity.connecting.
+web.admin.tasks.lib.taskProgress.percent
+web.admin.tasks.task.autoscan_poll.name
+web.admin.tasks.task.autoscan_webhook_retry.name
+web.admin.tasks.task.backfill_ebook_metadata.name
+web.admin.tasks.task.backfill_hdr10_plus.name
+web.admin.tasks.task.backfill_matroska_track_numbers.name
+web.admin.tasks.task.backfill_media_item_aliases.name
+web.admin.tasks.task.backfill_metadata_images.name
+web.admin.tasks.task.backup.name
+web.admin.tasks.task.bulk_metadata_enrichment.name
+web.admin.tasks.task.cache_metadata_images.name
+web.admin.tasks.task.chapter_thumbnail_backfill.name
+web.admin.tasks.task.check_plugin_updates.name
+web.admin.tasks.task.cleanup_activity_log.name
+web.admin.tasks.task.cleanup_artwork_revisions.name
+web.admin.tasks.task.cleanup_auth_sessions.name
+web.admin.tasks.task.cleanup_autoscan_events.name
+web.admin.tasks.task.cleanup_catalog_search_index_events.name
+web.admin.tasks.task.cleanup_chapter_thumbnail_originals.name
+web.admin.tasks.task.cleanup_client_diagnostics.name
+web.admin.tasks.task.cleanup_device_logins.name
+web.admin.tasks.task.cleanup_oauth_flows.name
+web.admin.tasks.task.cleanup_operational_log.name
+web.admin.tasks.task.cleanup_orphaned_media_items.name
+web.admin.tasks.task.cleanup_policy_decision_log.name
+web.admin.tasks.task.cleanup_removed_media_images.name
+web.admin.tasks.task.cleanup_task_history.name
+web.admin.tasks.task.contribute_markers.name
+web.admin.tasks.task.database_maintenance.name
+web.admin.tasks.task.detect_intro_markers.name
+web.admin.tasks.task.encode_download_artifacts.name
+web.admin.tasks.task.generate_extra_stills.name
+web.admin.tasks.task.match_media.name
+web.admin.tasks.task.notifications_retention.name
+web.admin.tasks.task.queue_seek_previews.name
+web.admin.tasks.task.rebuild_catalog_search_index.name
+web.admin.tasks.task.rebuild_release_interest.name
+web.admin.tasks.task.recheck_external_identities.name
+web.admin.tasks.task.reconcile_artwork_cache.name
+web.admin.tasks.task.reconcile_requests.name
+web.admin.tasks.task.reconcile_watch_history.name
+web.admin.tasks.task.refresh_all_library_metadata.name
+web.admin.tasks.task.refresh_anime_ids.name
+web.admin.tasks.task.refresh_metadata.name
+web.admin.tasks.task.refresh_request_discover_lists.name
+web.admin.tasks.task.refresh_request_downloads.name
+web.admin.tasks.task.refresh_seasonal_lists.name
+web.admin.tasks.task.refresh_series_air_dates.name
+web.admin.tasks.task.refresh_trending_discover.name
+web.admin.tasks.task.release_stored_artwork.name
+web.admin.tasks.task.repair_provider_id_integrity.name
+web.admin.tasks.task.scan_libraries.name
+web.admin.tasks.task.seed_content_availability.name
+web.admin.tasks.task.setting_mutations_retention.name
+web.admin.tasks.task.summarize_api_usage.name
+web.admin.tasks.task.sweep_artwork_storage.name
+web.admin.tasks.task.sweep_orphaned_media_images.name
+web.admin.tasks.task.sync_audiobook_metadata.name
+web.admin.tasks.task.sync_catalog_search_index.name
+web.admin.tasks.task.sync_collections.name
+web.admin.tasks.task.sync_ebook_metadata.name
+web.admin.tasks.task.sync_manga_metadata.name
+web.admin.tasks.task.sync_markers.name
+web.admin.tasks.task.sync_movie_box_sets.name
+web.admin.tasks.task.sync_podcast_feeds.name
+web.admin.tasks.task.sync_user_collections.name
+web.admin.tasks.task.sync_watch_providers.name
+
+# More of the collection editor's words, as above under catalog.sort.author.
+# More of the Requests words, as above under requests.error.create.
+web.audiobooks.duration.hours
+web.audiobooks.duration.hoursMinutes
+web.audiobooks.duration.minutes
+
+# The password change after sign-in, as the web's ChoosePassword page (pages/ChoosePassword.tsx) and, for the server's
+# limits and refusals, its account settings' password form: src/Granary.App/Views/ChangePasswordPage.xaml and
+# src/Granary.Core/ViewModels/ChangePasswordViewModel.cs.
+web.auth.choosePassword.description
+web.auth.choosePassword.settleFailed
+web.auth.choosePassword.temporaryPassword
+
+# Signing in, in the words of the web's Login page: src/Granary.App/Views/SignInPage.xaml(.cs). A disabled account is
+# the web's oauthFailure text, as its sign-in words permission_denied (lib/externalSignIn.ts): Describe in
+# src/Granary.Core/ViewModels/SignInViewModel.cs. The device steps are the web's phone sign-in lines: Describe in
+# src/Granary.Core/ViewModels/DeviceSignInViewModel.cs, and the address line in
+# src/Granary.App/Controls/DeviceSignInPanel.xaml.cs.
+web.auth.login.device.continueOnPhone
+web.auth.login.device.denied
+web.auth.login.device.description
+web.auth.login.device.failed
+web.auth.login.device.generatingCode
+web.auth.login.device.goToAndEnter
+web.auth.login.device.showQrCode
+web.auth.login.device.signedIn
+web.auth.login.device.title
+web.auth.login.device.waiting
+web.auth.login.heading
+web.auth.login.signingIn
+web.auth.loginSubtitle.default
+web.auth.oauthFailure.accountDisabled
+web.auth.password
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.auth.passwordRules.chooseNewPassword
+web.auth.passwordRules.confirmNewPassword
+web.auth.passwordRules.newPassword
+web.auth.passwordRules.passwordChanged
+web.auth.passwordRules.savePassword
+web.auth.signIn
+web.auth.username
+
+# Calendar, in the words of the web's Calendar page, its week and day headings (lib/calendarWeek.ts) and its airings
+# (lib/upcomingEventPresentation.ts): src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and
+# CalendarText.cs in src/Granary.Core/ViewModels.
+web.calendar.allLibraries
+web.calendar.dayHeading
+web.calendar.dayLabel
+web.calendar.dayLabelWithEvents
+web.calendar.emptyEverything
+web.calendar.emptyFollowing
+web.calendar.emptyTrending
+web.calendar.event.badge.digital
+web.calendar.event.badge.finale
+web.calendar.event.badge.physical
+
+# A card's words, as the web's ItemCard, ContinueWatchingCard, SectionItemCard, BoxSetCard, CardWatchedBadge,
+# CardPlayOverlay, MediaItemMenu and a Requests card's watchlist toggle (components/requests): src/Granary.App/Controls/
+# MediaCardView.xaml(.cs) and src/Granary.Core/ViewModels/Cards/MediaCard.cs and MediaCardFactory.cs. The episode
+# and season cards and the runtime in the web's EpisodeCarousel words (lib/episodeCardLabels.ts, lib/mediaFormat.ts),
+# a box set's in lib/boxSets.ts (src/Granary.Core/ViewModels/BoxSetText.cs), the watched action as the web's
+# pages/ItemDetail/watchedState.ts (DetailFacts.WatchedLabel).
+web.calendar.event.badge.seasonPremiere
+
+# More of the calendar's words, as above.
+web.calendar.event.badge.seriesPremiere
+web.calendar.event.episode
+web.calendar.event.episodeTitled
+web.calendar.event.movie
+web.calendar.event.season
+web.calendar.event.seasonTitled
+web.calendar.loading
+web.calendar.nextWeek
+web.calendar.nothingScheduledFor
+web.calendar.presetAll
+web.calendar.presetFollowing
+web.calendar.presetLabel
+web.calendar.presetTrending
+web.calendar.previousWeek
+web.calendar.showEverything
+web.calendar.title
+web.calendar.today
+web.calendar.todayButton
+web.calendar.weekOf
+web.calendar.weekRange
+web.calendar.weekRangeSameMonth
+
+# A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
+# as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
+# src/Granary.App/Views/SectionPage.xaml and src/Granary.Core/ViewModels/SectionViewModel.cs.
+web.catalog.carousel.exploreAll
+web.catalog.carousel.exploreAllLabel
+web.catalog.carousel.scrollLeft
+web.catalog.carousel.scrollRight
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.badgeContentRating
+web.catalog.filters.badgeGenre
+web.catalog.filters.badgeLanguage
+web.catalog.filters.badgeWatch
+web.catalog.filters.badgeYearFrom
+web.catalog.filters.badgeYearRange
+web.catalog.filters.badgeYearTo
+web.catalog.filters.clearAll
+web.catalog.filters.heading
+
+# More of the collection editor's words, as above under catalog.sort.author: a picked library known only by its number,
+# as the web's catalog filters name one (components/catalog/CatalogFiltersPanel.tsx).
+web.catalog.filters.libraryFallback
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.filters.locked
+web.catalog.filters.open
+web.catalog.filters.removeBadge
+web.catalog.grid.noItems
+
+# Favorites, Watchlist, History and a collection's page, in the words of the web's catalog page for them (pages/Catalog.tsx,
+# components/catalog/CatalogFiltersPanel.tsx, History's removal dialog), its watchlist tabs and titles
+# (components/watchlist/WatchlistTabs.tsx, lib/watchlistTitles.ts) and its collection page actions
+# (components/collections/CollectionPageActions.tsx): src/Granary.App/Views/PersonalListPage.xaml(.cs),
+# src/Granary.Core/ViewModels/PersonalListViewModel*.cs and WatchlistTitleStatus.cs.
+web.catalog.history.dialogBody
+web.catalog.history.dialogBodySelected
+web.catalog.history.dialogBodyShow
+web.catalog.history.dialogTitle
+web.catalog.history.dialogTitleSelected
+web.catalog.history.dialogTitleShow
+web.catalog.history.removed
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.letters.letterNoTitles
+web.catalog.letters.letterTitles
+web.catalog.letters.numbersAndSymbols
+web.catalog.letters.showing
+web.catalog.letters.toolbar
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.mediaType.allMedia
+web.catalog.mediaType.episodes
+
+# Search, in the words of the web's catalog page for a search (pages/Catalog.tsx), its search scope (components/catalog/
+# SearchScopeChips.tsx), the global search's headings (components/GlobalSearch.tsx, boxsets/BoxSetSearchResults.tsx) and
+# Request to add (components/RequestToAddSection.tsx, RequestResultsGrid.tsx, LoadMoreOnScroll.tsx):
+# src/Granary.App/Views/SearchPage.xaml and src/Granary.Core/ViewModels/SearchViewModel.cs.
+web.catalog.mediaType.movies
+web.catalog.mediaType.moviesAndSeries
+web.catalog.mediaType.series
+web.catalog.page.catalogFailed
+web.catalog.page.catalogSubtitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.clearSelection
+
+# Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
+web.catalog.page.doneSelecting
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.favorites
+web.catalog.page.favoritesSubtitle
+web.catalog.page.history
+web.catalog.page.historyBody
+web.catalog.page.historyHeading
+web.catalog.page.historySubtitle
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.catalog.page.people
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.removeConfirm
+web.catalog.page.removeSelected
+web.catalog.page.resultCount
+web.catalog.page.resultNoun
+web.catalog.page.resultsFor
+web.catalog.page.searchFailed
+web.catalog.page.searchTitle
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.select
+web.catalog.page.selectLoaded
+web.catalog.page.selectedCount
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.page.titleCount
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.page.watchlist
+web.catalog.page.watchlistSubtitle
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.catalog.rules.amount
+web.catalog.rules.condition
+web.catalog.rules.field
+web.catalog.rules.fieldEpisodeTitle
+web.catalog.rules.fieldLastRead
+web.catalog.rules.fieldRead
+web.catalog.rules.no
+web.catalog.rules.notEditable
+web.catalog.rules.notEditableLabel
+web.catalog.rules.pickOne
+web.catalog.rules.pickValue
+web.catalog.rules.rangeFrom
+web.catalog.rules.rangeTo
+web.catalog.rules.remove
+web.catalog.rules.removeRule
+web.catalog.rules.unit
+web.catalog.rules.unitDays
+web.catalog.rules.unitMonths
+web.catalog.rules.unitWeeks
+web.catalog.rules.unitYears
+web.catalog.rules.value
+web.catalog.rules.yes
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.search.scopeLabel
+
+# More of a library page's words, as above under catalog.sort.added.
+web.catalog.sort.ascending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.collectionOrder
+web.catalog.sort.descending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.catalog.sort.listOrder
+web.catalog.sort.watchHistory
+web.collections.actions.delete
+web.collections.actions.moreActions
+
+# Add to a collection, as the web's dialog (components/AddToCollectionDialog.tsx):
+# src/Granary.App/Controls/AddToCollectionPanel.xaml and
+# src/Granary.Core/ViewModels/Collections/AddToCollectionViewModel.cs, and its title where a title's page opens it
+# (src/Granary.App/Controls/DetailHero.xaml.cs).
+web.collections.addToCollection.added
+web.collections.addToCollection.createAndAdd
+web.collections.addToCollection.createFailed
+web.collections.addToCollection.find
+web.collections.addToCollection.firstHelp
+web.collections.addToCollection.firstTitle
+web.collections.addToCollection.loadFailed
+web.collections.addToCollection.loading
+web.collections.addToCollection.namePlaceholder
+web.collections.addToCollection.newManual
+web.collections.addToCollection.noMatches
+web.collections.addToCollection.removed
+web.collections.addToCollection.title
+
+# The Collections page, as the web shows it (pages/Collections.tsx and Collections.cards.tsx, the collections ⋯ menu
+# (components/collections/CollectionActionsMenu.tsx), the poster card (CollectionPosterCard.tsx), its meta line
+# (editor/CollectionMetaLine.tsx), the New collection picker (NewCollectionPicker.tsx) and lib/collections/copy.ts):
+# src/Granary.App/Views/CollectionsPage.xaml(.cs), src/Granary.App/Controls/NewCollectionPicker.xaml(.cs),
+# src/Granary.Core/ViewModels/CollectionsViewModel*.cs, CollectionCards.cs and ServerCollectionsViewModel.cs.
+web.collections.admin.editCollection
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.facetPlaceholder
+web.collections.builder.fieldActor
+web.collections.builder.fieldAdded
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.builder.fieldAudioLanguage
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.fieldBitrate
+web.collections.builder.fieldContentRating
+web.collections.builder.fieldCountry
+web.collections.builder.fieldDecade
+web.collections.builder.fieldDirector
+web.collections.builder.fieldDolbyVision
+web.collections.builder.fieldFavorited
+web.collections.builder.fieldGenre
+web.collections.builder.fieldHdr
+web.collections.builder.fieldInProgress
+web.collections.builder.fieldInWatchlist
+web.collections.builder.fieldLastAirDate
+web.collections.builder.fieldLastWatched
+web.collections.builder.fieldLatestEpisodeAdded
+web.collections.builder.fieldNetwork
+web.collections.builder.fieldOriginalLanguage
+web.collections.builder.fieldProducer
+web.collections.builder.fieldRatingImdb
+web.collections.builder.fieldRatingRtAudience
+web.collections.builder.fieldRatingRtCritic
+web.collections.builder.fieldRatingTmdb
+web.collections.builder.fieldReleaseDate
+web.collections.builder.fieldResolution
+web.collections.builder.fieldRuntime
+web.collections.builder.fieldShowTitle
+web.collections.builder.fieldStatus
+web.collections.builder.fieldStudio
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.builder.fieldSubtitleLanguage
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.builder.fieldTitle
+web.collections.builder.fieldType
+web.collections.builder.fieldWatched
+web.collections.builder.fieldWriter
+web.collections.builder.fieldYear
+web.collections.builder.groupFile
+web.collections.builder.groupLibrary
+web.collections.builder.groupPeople
+web.collections.builder.groupTitle
+web.collections.builder.groupYou
+web.collections.builder.opAbove
+web.collections.builder.opAfter
+web.collections.builder.opAtLeast
+web.collections.builder.opAtMost
+web.collections.builder.opBefore
+web.collections.builder.opBeginsWith
+web.collections.builder.opBelow
+web.collections.builder.opBetween
+web.collections.builder.opContains
+web.collections.builder.opEndsWith
+web.collections.builder.opInLast
+web.collections.builder.opIs
+web.collections.builder.opIsNot
+web.collections.builder.opNotContains
+web.collections.builder.opNotInLast
+web.collections.builder.statusMatched
+web.collections.builder.statusPending
+web.collections.builder.statusUnmatched
+web.collections.builder.typeMovies
+web.collections.builder.typeShows
+web.collections.builder.unitKbps
+web.collections.builder.unitMinutes
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.addToCollectionFootnote
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.allMyLibraries
+web.collections.copy.allMyLibrariesInSentence
+web.collections.copy.allYourLibraries
+web.collections.copy.cantBeUndone
+web.collections.copy.conflictTitle
+web.collections.copy.createdButNotAdded
+web.collections.copy.fieldDescription
+web.collections.copy.fieldLibraries
+web.collections.copy.fieldLimit
+web.collections.copy.fieldName
+web.collections.copy.fieldOrder
+web.collections.copy.fieldRules
+web.collections.copy.fieldShowOnly
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.goodForManualPersonal
+web.collections.copy.goodForSmart
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.inCollections
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.inThisCollection
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.kindSentenceManual
+web.collections.copy.kindSentenceSmart
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.lookPoster
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.copy.madeButNotAdded
+web.collections.copy.manualTitleCount
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.nameItThenCreate
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.copy.newCollection
+web.collections.copy.newCollectionHelpPersonal
+web.collections.copy.newCollectionNext
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.copy.noLimit
+web.collections.copy.noPoster
+web.collections.copy.notCreatedYet
+web.collections.copy.notSaved
+web.collections.copy.orderHelp
+web.collections.copy.personalDeleteDescriptionShared
+web.collections.copy.personalRulesNote
+web.collections.copy.personalTabHelp
+web.collections.copy.posterAwaitsCollage
+web.collections.copy.posterIsCollage
+web.collections.copy.previewEmpty
+web.collections.copy.previewEmptyHelp
+web.collections.copy.previewFailed
+web.collections.copy.previewLive
+web.collections.copy.previewMatches
+web.collections.copy.removedTitle
+web.collections.copy.rulesCaption
+web.collections.copy.saveFailedWithError
+web.collections.copy.showOnTabLabel
+web.collections.copy.showToOtherProfilesHelp
+web.collections.copy.showToOtherProfilesLabel
+web.collections.copy.slotPoster
+web.collections.copy.smartCreateHint
+web.collections.copy.smartCreateHintNone
+web.collections.copy.smartUpdatesItself
+web.collections.copy.storedSortLine
+web.collections.copy.titlesAlreadySaved
+web.collections.copy.titlesCaptionCreate
+web.collections.copy.titlesCaptionPersonal
+web.collections.copy.titlesEmpty
+web.collections.copy.titlesReadyToAdd
+web.collections.copy.titlesSaved
+web.collections.copy.unshareConsequence
+web.collections.copy.unshareConsequenceOthers
+web.collections.copy.unshareWarning
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.deleteDialog.delete
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.details.content
+web.collections.details.descriptionLabel
+web.collections.details.label
+web.collections.details.showOnlyHelp
+web.collections.details.watchState
+web.collections.displayFilters.media.all
+web.collections.displayFilters.media.movie
+web.collections.displayFilters.media.series
+web.collections.displayFilters.watch.all
+web.collections.displayFilters.watch.unwatched
+web.collections.displayFilters.watch.watched
+web.collections.editor.backToCollections
+web.collections.editor.conflictFields
+web.collections.editor.conflictSaveAgain
+web.collections.editor.createCollection
+web.collections.editor.keepMine
+web.collections.editor.rowLinkLabel
+web.collections.editor.rulesHeading
+web.collections.editor.useTheirs
+web.collections.editorHeader.open
+web.collections.editorPage.allCollections
+web.collections.editorPage.loadFailedTitle
+web.collections.editorPage.loading
+web.collections.editorPage.notFoundPersonal
+web.collections.editorPage.notFoundPersonalHelp
+web.collections.fields.artworkPreview
+web.collections.fields.artworkRemovedOnSave
+web.collections.fields.artworkSaveFailed
+web.collections.fields.artworkSavesOnSave
+web.collections.fields.changeArtwork
+web.collections.fields.clear
+web.collections.fields.clearStoredSort
+web.collections.fields.collage
+web.collections.fields.direction
+web.collections.fields.directionLabel
+web.collections.fields.imageLink
+web.collections.fields.maxTitlesSuffix
+web.collections.fields.order
+web.collections.fields.pasteALink
+web.collections.fields.removeArtwork
+web.collections.fields.sortAlphabetical
+web.collections.fields.sortBy
+web.collections.fields.sortWithDirection
+web.collections.fields.uploadImage
+web.collections.fields.useLink
+web.collections.fields.useTheCollage
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.guidedRules.any
+web.collections.guidedRules.contentRating
+web.collections.guidedRules.decade
+web.collections.guidedRules.decadeOption
+web.collections.guidedRules.genres
+web.collections.guidedRules.inProgress
+web.collections.guidedRules.originalLanguage
+web.collections.guidedRules.unwatched
+web.collections.guidedRules.videoQuality
+web.collections.guidedRules.watchStatus
+web.collections.guidedRules.watched
+web.collections.guidedRules.yearFrom
+web.collections.guidedRules.yearFromPlaceholder
+web.collections.guidedRules.yearTo
+web.collections.guidedRules.yearToPlaceholder
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.list.syncFailed
+web.collections.list.syncingNow
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.look.change
+web.collections.look.heading
+web.collections.manual.add
+web.collections.manual.addFailed
+web.collections.manual.addTitle
+web.collections.manual.heading
+web.collections.manual.loadFailed
+web.collections.manual.moveTitle
+web.collections.manual.noMatches
+web.collections.manual.pagedNote
+web.collections.manual.reloadFromStart
+web.collections.manual.removeFailed
+web.collections.manual.removeTitle
+web.collections.manual.restoreFailed
+web.collections.manual.saving
+web.collections.manual.searchFailed
+web.collections.manual.searching
+web.collections.manual.showAll
+web.collections.manual.showFewer
+web.collections.manual.tryAgainSentence
+web.collections.manual.typeLabel
+web.collections.manual.undo
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.metaLine.titleCount
+web.collections.newPicker.goodFor
+web.collections.page.filterAll
+web.collections.page.filterLabel
+web.collections.page.loadMore
+web.collections.page.stopSharing
+web.collections.page.stopSharingTitle
+web.collections.page.subtitle
+web.collections.page.subtitleShared
+web.collections.page.title
+web.collections.page.wallMine
+web.collections.page.wallServer
+web.collections.page.wallShared
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.collections.pageActions.deleteTitle
+web.collections.pageActions.edit
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.personalOwnership.anotherProfile
+web.collections.posterCard.byOwner
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.preview.matchingTitles
+web.collections.preview.showing
+web.collections.scope.changedWhileEditing
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.tags.shared
+web.collections.toast.addFailed
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.toast.notShared
+
+# More of Add to a collection's words, as above under web.collections.addToCollection.added.
+web.collections.toast.removeItemFailed
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.collections.toast.sharedWithProfiles
+web.collections.toast.sharingFailed
+web.collections.types.kindManual
+web.collections.types.kindSmart
+web.collections.types.kindSynced
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.collections.whereItShows.heading
+
+# More of Admin's words: a play method, and a session's title and kind on Activity, as the web's
+# pages/adminActivityPresentation.ts, as above under web.admin.activity.client.heading.
+web.common.activity.method.direct.label
+web.common.activity.method.directStream.label
+web.common.activity.method.remux.label
+web.common.activity.method.transcode.label
+web.common.activity.method.unknown.label
+web.common.activity.subtitle.movie
+web.common.activity.subtitle.series
+web.common.activity.title.file
+
+# More of Admin → Dashboard's words: a time ago, as the web's formatRelativeTime (lib/date.ts), as above under
+# web.admin.dashboard.chart.columnReading. A request's last change takes them too (LastChange in
+# src/Granary.Core/ViewModels/RequestText.cs).
+web.common.date.daysAgo
+web.common.date.hoursAgo
+web.common.date.justNow
+web.common.date.minutesAgo
+
+# A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
+# src/Granary.Core/ViewModels/Settings/DeviceText.cs, for Settings → Devices.
+web.common.devicePlatform.kind.desktop
+web.common.devicePlatform.kind.mobile
+web.common.devicePlatform.kind.tablet
+web.common.devicePlatform.kind.tv
+web.common.devicePlatform.kind.unknown
+
+# Sizes, rates and channels, as the web's lib/mediaFormat.ts words them for the item page, the playback info and the
+# pickers: src/Granary.Core/ViewModels/MediaText.cs.
+web.common.format.bitrate.kbps
+web.common.format.bitrate.mbps
+web.common.format.channels.count
+web.common.format.channels.stereo
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.common.format.runtime.hoursMinutes
+web.common.format.runtime.minutes
+
+# More sizes and rates, as above under web.common.format.bitrate.kbps.
+web.common.format.sampleRate
+web.common.format.size.bytes
+web.common.format.size.gb
+web.common.format.size.gib
+web.common.format.size.kb
+web.common.format.size.kib
+web.common.format.size.mb
+web.common.format.size.mib
+
+# More of Admin → Dashboard's words: a library's kind, as the web's libraryTypeLabel
+# (components/admin/libraries/libraryTypes.ts), as above under web.admin.dashboard.chart.columnReading.
+web.common.libraryType.audiobooks
+web.common.libraryType.ebooks
+web.common.libraryType.manga
+web.common.libraryType.mixed
+web.common.libraryType.movies
+web.common.libraryType.podcasts
+web.common.libraryType.series
+
+# More of the Requests words, as above under requests.error.create.
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.common.requests.toast.cancelFailed
+web.common.requests.toast.submitted
+
+# More of a library page's words, as above under catalog.sort.added.
+web.common.sort.bitrate
+web.common.sort.contentRating
+web.common.sort.dateViewed
+web.common.sort.duration
+web.common.sort.latestEpisodeAdded
+web.common.sort.latestEpisodeAirDate
+web.common.sort.plays
+web.common.sort.progress
+web.common.sort.rtAudienceRating
+web.common.sort.rtCriticRating
+web.common.sort.tmdbRating
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.common.toast.collections.deleteFailed
+
+# More of the Collections page's words, as above under web.collections.admin.editCollection.
+web.common.toast.collections.deleted
+
+# A title's page, in the words of the web's detail pages (pages/ItemDetail: the content pages, DetailHero, ActionBar,
+# MetadataBadges, the season and episode rows, ExtrasSection, TrailersSection, TrailerModal, the Version, Audio and Subs
+# pickers and prePlaySelection.ts), its cast row (components/CastCarousel.tsx, castCrewGroups.ts), its stars
+# (components/StarRating.tsx), More Like This (components/RecommendationGrid.tsx), the start sheet's line for a series
+# (StartPartySheet.tsx), the track preference toasts, and for the Info dialog the field names of the web's metadata
+# editor and Media Info: src/Granary.App/Views/ItemDetailPage.xaml(.cs), src/Granary.App/Controls/DetailHero.xaml(.cs),
+# DetailInfoPanel, DetailShelf, DetailExtrasSection, StarRating and TrailerOverlay, and ItemDetailViewModel*.cs and
+# Detail/ (DetailFacts, DetailText, DetailCredits, ExtraKinds, PrePlayText, PrePlayPickers, PrePlayOptions) in
+# src/Granary.Core/ViewModels.
+web.common.toast.subtitles.resetPreferenceFailed
+web.common.toast.subtitles.savePreferenceFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.common.toast.watchlist.added
+web.common.toast.watchlist.addedAndRequested
+web.common.toast.watchlist.availableNotice
+web.common.toast.watchlist.notRequestedReason
+web.common.toast.watchlist.removed
+web.common.toast.watchlist.requestedNotice
+web.common.toast.watchlist.updateFailed
+
+# More of the Requests words, as above under requests.error.create.
+web.common.ui.carousel.loadFailed
+web.common.ui.carousel.scrollLeft
+web.common.ui.carousel.scrollRight
+
+# What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
+# in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
+# src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
+web.common.ui.loadError.generic
+web.common.ui.loadError.timeout
+
+# A grid that loads more, as the web's LoadMoreOnScroll: its button (Search's Request to add,
+# src/Granary.App/Views/SearchPage.xaml) and its spinner (src/Granary.App/Views/SectionPage.xaml).
+web.common.ui.loadMore.button
+web.common.ui.loadMore.loading
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.actions.addToCollection
+web.detail.actions.addToFavorites
+web.detail.actions.addToWatchlist
+web.detail.actions.browseSeries
+
+# A title's Download item, as the web's ActionBar.tsx names it: the title page's and the cards' (src/Granary.Core/Downloads/
+# DownloadActions.cs and CardDownloads.cs), and the reason the download dialog gives for a title without a file
+# (DownloadOffers.cs), as the web's MediaInfoDialog.tsx says it.
+# More of the download dialog's words, as above under error.rate_limited.
+web.detail.actions.download
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.detail.actions.markSeasonUnwatched
+web.detail.actions.markSeasonWatched
+web.detail.actions.markSeriesUnwatched
+web.detail.actions.markSeriesWatched
+web.detail.actions.markUnwatched
+web.detail.actions.markWatched
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.actions.moreActions
+web.detail.actions.play
+web.detail.actions.playEpisode
+web.detail.actions.playFirstEpisode
+web.detail.actions.playFromBeginning
+web.detail.actions.playNext
+web.detail.actions.removeFromFavorites
+web.detail.actions.removeFromWatchlist
+web.detail.actions.resume
+web.detail.actions.resumeAt
+web.detail.actions.startFromFirstEpisode
+web.detail.actions.startWatchParty
+web.detail.audio.button
+web.detail.audio.unknown
+web.detail.badges.advisory
+web.detail.badges.advisorySource
+web.detail.badges.episodes
+web.detail.badges.seasons
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.detail.boxSet.cardLabel
+web.detail.boxSet.continueTitle
+web.detail.boxSet.filmCount
+web.detail.boxSet.label
+
+# A box set's page and a person's page, in the words of the web's BoxSetPage and PersonDetail:
+# src/Granary.App/Views/BoxSetPage.xaml, PersonPage.xaml, and BoxSetViewModel.cs, PersonViewModel.cs and PersonFacts.cs
+# in src/Granary.Core/ViewModels.
+web.detail.boxSet.loadFailedBody
+web.detail.boxSet.loadFailedTitle
+web.detail.boxSet.movies
+web.detail.boxSet.playTitle
+web.detail.boxSet.thisFilm
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.boxSet.unavailableBody
+web.detail.boxSet.unavailableTitle
+web.detail.boxSet.watchedFraction
+web.detail.boxSet.watchedOf
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.breadcrumb.label
+web.detail.carousel.scrollLeft
+web.detail.carousel.scrollRight
+web.detail.castCrew.cast
+web.detail.castCrew.creator
+web.detail.castCrew.crew
+web.detail.castCrew.director
+web.detail.castCrew.writer
+web.detail.castCrew.writers
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.episodeCode
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.episodes.heading
+web.detail.episodes.moreEpisodes
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.episodes.nowViewing
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.episodes.numbered
+web.detail.extras.heading
+web.detail.extras.kind.behindTheScenes
+web.detail.extras.kind.bloopers
+web.detail.extras.kind.clip
+web.detail.extras.kind.deletedScene
+web.detail.extras.kind.featurette
+web.detail.extras.kind.otherKind
+web.detail.extras.kind.teaser
+web.detail.extras.kind.trailer
+web.detail.extras.kindGroup.behindTheScenes
+web.detail.extras.kindGroup.bloopers
+web.detail.extras.kindGroup.clip
+web.detail.extras.kindGroup.deletedScene
+web.detail.extras.kindGroup.featurette
+web.detail.extras.kindGroup.otherKind
+web.detail.extras.kindGroup.teaser
+web.detail.extras.kindGroup.trailer
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.hero.typeMovie
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.hero.typeSeries
+web.detail.mediaInfo.audio
+web.detail.mediaInfo.defaultBadge
+web.detail.mediaInfo.embedded
+web.detail.mediaInfo.external
+web.detail.mediaInfo.forced
+web.detail.mediaInfo.hearingImpairedShort
+
+# More of a title's Download words, as above under web.detail.actions.download.
+web.detail.mediaInfo.noFiles
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.mediaInfo.row.bitrate
+web.detail.mediaInfo.row.container
+web.detail.mediaInfo.row.duration
+web.detail.mediaInfo.row.edition
+web.detail.mediaInfo.row.fileSize
+web.detail.mediaInfo.row.hearingImpaired
+web.detail.mediaInfo.row.resolution
+web.detail.mediaInfo.video
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.overview.createdBy
+web.detail.overview.directedBy
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.overview.revealHidden
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.overview.tmdbVotes
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.page.itemLoadFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.page.loadFailedBody
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.page.loadingDetails
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.page.titleLoadFailed
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.page.unavailableBody
+web.detail.page.unavailableTitle
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.detail.request.cancelRequest
+web.detail.request.inLibrary
+web.detail.request.notifyWhenAvailable
+web.detail.request.onWatchlist
+web.detail.request.openInLibrary
+web.detail.request.requestMovie
+web.detail.request.requestSeries
+web.detail.request.requested
+web.detail.request.stopNotifying
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.seasons.episodeCount
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.seasons.heading
+web.detail.seasons.noEpisodes
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.seasons.numbered
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.seasons.specials
+web.detail.seasons.totalCount
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.detail.seasons.watchedProgress
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.detail.sections.cast
+web.detail.sections.castAndCrew
+web.detail.subtitles.button
+web.detail.subtitles.forcedMarker
+web.detail.subtitles.off
+web.detail.subtitles.resetToDefaults
+web.detail.subtitles.sdhMarker
+web.detail.subtitles.unknown
+web.detail.tracks.auto
+web.detail.tracks.autoSummary
+web.detail.trailers.heading
+web.detail.trailers.official
+web.detail.trailers.playerDescription
+web.detail.versions.fileIdFallback
+web.detail.versions.numbered
+web.detail.versions.versionButton
+
+# More of the download dialog's words, as above under error.rate_limited.
+web.downloads.versionPicker.description
+web.downloads.versionPicker.sizeNote
+web.downloads.versionPicker.startFailed
+web.downloads.versionPicker.title
+web.downloads.versionPicker.titleWithName
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.home.addRow.libraries
+
+# More of the Requests words, as above under requests.error.create.
+web.home.addRow.params.mediaType
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.home.addRow.rules.addAndGroup
+web.home.addRow.rules.addOrGroup
+web.home.addRow.rules.addRule
+web.home.addRow.rules.groupMatchLabel
+web.home.addRow.rules.groupSentence
+web.home.addRow.rules.howGroupsCombine
+web.home.addRow.rules.howRulesCombine
+web.home.addRow.rules.joinAnd
+web.home.addRow.rules.joinOr
+web.home.addRow.rules.kindOfTitles
+web.home.addRow.rules.matchAll
+web.home.addRow.rules.matchAny
+web.home.addRow.rules.noRulesCollectionYet
+web.home.addRow.rules.removeGroup
+web.home.addRow.rules.scopeAll
+web.home.addRow.rules.scopeAudiobook
+web.home.addRow.rules.scopeEbook
+web.home.addRow.rules.scopeEpisode
+web.home.addRow.rules.scopeManga
+web.home.addRow.rules.scopeMovie
+web.home.addRow.rules.scopeSeries
+web.home.addRow.rules.scopeVideo
+web.home.addRow.rules.sentenceAll
+web.home.addRow.rules.sentenceNamed
+web.home.addRow.rules.sentencePicked
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.home.continueWatching.episodeLabelWithTitle
+web.home.continueWatching.minutesLeft
+web.home.continueWatching.nextEpisode
+
+# Home, in the words of the web's Home page (pages/Home.tsx), its banner (components/HeroBanner.tsx, heroMetadata.ts)
+# and its card menu (components/MediaItemMenu.tsx, hooks/queries/homeDismissals.ts):
+# src/Granary.App/Views/HomePage.xaml(.cs), src/Granary.App/Controls/BrowseHero.xaml.cs and FeaturedBannerControls.xaml,
+# src/Granary.Core/ViewModels/HomeViewModel.cs, HomeRowViewModel.cs, FeaturedBannerViewModel.cs and BrowseHeroTitle.cs.
+web.home.dismiss.removeFailed
+web.home.hero.episodeIdentity
+web.home.hero.eyebrow
+web.home.hero.moreInfo
+web.home.hero.nextSlide
+web.home.hero.pauseSlideshow
+web.home.hero.play
+web.home.hero.playSlideshow
+web.home.hero.previousSlide
+web.home.hero.runtimeHours
+web.home.hero.runtimeHoursMinutes
+web.home.hero.runtimeMinutes
+web.home.hero.slideNumber
+web.home.page.loadFailedBody
+web.home.page.loadFailedTitle
+web.home.page.title
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
+# Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
+web.home.sectionRow.seriesType
+web.item.card.play
+web.item.card.watched
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.item.dialog.fieldTitle
+web.item.editMetadata.contentRating
+web.item.editMetadata.countries
+web.item.editMetadata.genres
+web.item.editMetadata.networks
+web.item.editMetadata.originalTitle
+web.item.editMetadata.overview
+web.item.editMetadata.ratings
+web.item.editMetadata.studios
+web.item.editMetadata.tagline
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.item.images.tooLarge
+web.item.images.wrongType
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
+# Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
+web.item.menu.addToFavorites
+web.item.menu.addToWatchlist
+
+# More of the download dialog's words, as above under error.rate_limited.
+web.item.menu.detailsFailed
+web.item.menu.loading
+web.item.menu.loadingDetails
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.item.menu.moreActions
+web.item.menu.notInterested
+web.item.menu.playFromBeginning
+
+# More of the download dialog's words, as above under error.rate_limited.
+web.item.menu.pleaseTryAgain
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
+# Next Up are Home's (src/Granary.Core/ViewModels/HomeRowViewModel.cs).
+web.item.menu.removeFromContinueWatching
+web.item.menu.removeFromFavorites
+web.item.menu.removeFromNextUp
+web.item.menu.removeFromWatchlist
+web.item.menu.showInRecommendations
+
+# More of the download dialog's words, as above under error.rate_limited.
+web.item.menu.tryAgain
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.item.rating.label
+web.item.rating.stars
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.languageName.unknown
+web.languageName.unknownTag
+
+# More of a library page's words, as above under catalog.sort.added.
+web.library.browse.clearFilters
+web.library.browse.noMatches
+web.library.browse.someItemsFailed
+web.library.collections.emptyBody
+web.library.collections.emptyTitle
+web.library.empty.body
+web.library.header.collectionsTab
+web.library.header.eyebrow
+web.library.header.libraryTab
+web.library.header.recommendedTab
+web.library.header.shuffle
+web.library.header.tabsLabel
+web.library.page.titleFallback
+web.library.page.unavailable
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.library.watchlist.browseDiscover
+web.library.watchlist.emptyBody
+web.library.watchlist.emptyTitle
+web.library.watchlist.findMore
+web.library.watchlist.inLibraryTab
+web.library.watchlist.loadFailed
+web.library.watchlist.notInLibraryTab
+web.library.watchlist.statusApprovedWaiting
+web.library.watchlist.statusAwaitingApproval
+web.library.watchlist.statusDownloading
+web.library.watchlist.statusListedTwice
+web.library.watchlist.statusNeedsAttention
+web.library.watchlist.statusNoLongerListed
+web.library.watchlist.statusNotOnTmdb
+web.library.watchlist.statusNotRequested
+web.library.watchlist.statusNotRequestedOut
+web.library.watchlist.statusNotRequestedReason
+web.library.watchlist.statusOut
+web.library.watchlist.statusOutApproved
+web.library.watchlist.statusOutAwaitingApproval
+web.library.watchlist.titlesHint
+web.library.watchlist.titlesHintRequested
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.markers.editTitle
+web.markers.kind.credits
+web.markers.kind.intro
+web.markers.kind.preview
+web.markers.kind.recap
+web.markers.panel.clearLabel
+web.markers.panel.clearTitle
+web.markers.panel.closeLabel
+web.markers.panel.hint
+web.markers.panel.notSet
+web.markers.panel.range
+web.markers.panel.resetAll
+web.markers.panel.resetAllTitle
+web.markers.panel.resetLabel
+web.markers.panel.resetTitle
+web.markers.panel.setEnd
+web.markers.panel.setStart
+
+# The line above a skip pill, its marker's confidence and source, as the web's lib/markerProvenance.ts words them:
+# src/Granary.Core/Playback/MarkerProvenance.cs.
+web.markers.provenance.confidence
+web.markers.provenance.detected
+web.markers.provenance.edited
+web.markers.provenance.online
+
+# Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
+web.markers.save
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.markers.saveFailed
+
+# Notifications, in the words of the web's inbox (pages/Notifications.tsx), its preferences and series list
+# (components/notifications, hooks/queries/notifications.ts): src/Granary.App/Views/NotificationsPage.xaml(.cs) and the
+# Notification* and NotifiedSeries* view models and texts in src/Granary.Core/ViewModels.
+web.notifications.inbox.daysAgo
+web.notifications.inbox.emptyAll
+web.notifications.inbox.emptyHint
+web.notifications.inbox.emptyUnread
+web.notifications.inbox.episodeLine
+web.notifications.inbox.filterAll
+web.notifications.inbox.filterSeries
+web.notifications.inbox.filterUnread
+web.notifications.inbox.filterUnreadCount
+web.notifications.inbox.followedMovieAvailable
+web.notifications.inbox.followedSeriesAvailable
+web.notifications.inbox.followedTitleAvailable
+web.notifications.inbox.genericTitle
+web.notifications.inbox.hoursAgo
+web.notifications.inbox.justNow
+web.notifications.inbox.loadFailed
+web.notifications.inbox.loadMore
+web.notifications.inbox.markAllFailed
+web.notifications.inbox.markAllRead
+web.notifications.inbox.markRead
+web.notifications.inbox.mediaRequest
+web.notifications.inbox.minutesAgo
+web.notifications.inbox.newEpisode
+web.notifications.inbox.requestApproved
+web.notifications.inbox.requestAvailable
+web.notifications.inbox.requestAvailableBody
+web.notifications.inbox.requestDeclined
+web.notifications.inbox.requestDeclinedReason
+web.notifications.inbox.requestedMovieAvailable
+web.notifications.inbox.requestedSeriesAvailable
+web.notifications.inbox.seeSeriesCanNotify
+web.notifications.inbox.title
+web.notifications.preferences.continueWatching
+web.notifications.preferences.continueWatchingDescription
+web.notifications.preferences.enabled
+web.notifications.preferences.enabledDescription
+web.notifications.preferences.favorites
+web.notifications.preferences.favoritesDescription
+web.notifications.preferences.loadFailed
+web.notifications.preferences.nextUp
+web.notifications.preferences.nextUpDescription
+web.notifications.preferences.open
+web.notifications.preferences.seeSeries
+web.notifications.preferences.watchlist
+web.notifications.preferences.watchlistDescription
+web.notifications.queries.episodeCode
+web.notifications.queries.markReadFailed
+web.notifications.queries.muteFailed
+web.notifications.queries.muted
+web.notifications.queries.savePreferencesFailed
+web.notifications.queries.undo
+web.notifications.queries.unmuteFailed
+web.notifications.reason.continueWatching
+web.notifications.reason.favorite
+web.notifications.reason.nextUp
+web.notifications.reason.watchlist
+web.notifications.series.allReasons
+web.notifications.series.anyEpisodeAfter
+web.notifications.series.anyNewEpisode
+web.notifications.series.empty
+web.notifications.series.emptyHint
+web.notifications.series.filterByReason
+web.notifications.series.intro
+web.notifications.series.introMute
+web.notifications.series.loadFailed
+web.notifications.series.loadMoreFailed
+web.notifications.series.mute
+web.notifications.series.muteHint
+web.notifications.series.muteSeries
+web.notifications.series.muted
+web.notifications.series.nameList
+web.notifications.series.noMatch
+web.notifications.series.notificationsOff
+web.notifications.series.reasonOff
+web.notifications.series.reasonsOff
+web.notifications.series.search
+web.notifications.series.sort
+web.notifications.series.sortLatestEpisode
+web.notifications.series.sortRecentlyAdded
+web.notifications.series.sortReleaseYear
+web.notifications.series.sortTitleAsc
+web.notifications.series.sortTitleDesc
+web.notifications.series.unmute
+web.notifications.series.unmuteHint
+web.notifications.series.unmuteSeries
+web.notifications.series.wontNotify
+web.notifications.series.wontNotifyNow
+
+# More of the box set's and person's pages' words, as above under web.detail.boxSet.loadFailedBody.
+web.person.age
+web.person.born
+web.person.died
+web.person.filmography
+web.person.filterAll
+web.person.filterMovies
+web.person.filterSeries
+web.person.loadFailedBody
+web.person.loadFailedTitle
+web.person.queueing
+web.person.refreshMetadata
+web.person.refreshNow
+web.person.refreshing
+web.person.toast.refreshQueued
+web.person.toast.refreshed
+web.person.unavailableBody
+web.person.unavailableTitle
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.audioMenu.defaultBadge
+web.player.audioMenu.heading
+web.player.audioMenu.trackFallback
+
+# The player's buttons, as the web's player names them (components/player): Label in
+# src/Granary.Core/ViewModels/Settings/PlayerButtonsSettingsViewModel.cs, for Settings → Playback → Player buttons.
+web.player.audioMenu.trigger
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.bar.pause
+web.player.bar.play
+
+# More of Admin → Activity's words: a stream's position bar, as above under web.admin.activity.client.heading.
+web.player.bar.positionLabel
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.bar.returnTitle
+web.player.bar.skipBackTitle
+web.player.bar.skipForwardTitle
+web.player.bar.stopTitle
+web.player.bufferingStatus
+web.player.chaptersMenu.heading
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
+web.player.chaptersMenu.trigger
+web.player.controls.editMarkers
+web.player.controls.fillScreen
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.controls.nextEpisode
+web.player.controls.pause
+web.player.controls.play
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
+web.player.controls.playbackInfo
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.controls.previousEpisode
+web.player.controls.skipBack
+web.player.controls.skipForward
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
+web.player.controls.volume
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.episode.code
+web.player.error.authenticationRequired.message
+web.player.error.noPlayableVersion.title
+web.player.error.playbackError
+web.player.exit
+web.player.hud.episode
+web.player.hud.episodeWithTitle
+web.player.info.audioBitrate
+web.player.info.audioChannels
+web.player.info.audioCodec
+web.player.info.audioSampleRate
+web.player.info.autoSwitchedFrom
+web.player.info.bitrate
+web.player.info.close
+web.player.info.codec.copy
+web.player.info.codec.direct
+web.player.info.codec.transcoded
+web.player.info.colorRange
+web.player.info.colorRangeFull
+web.player.info.colorRangeLimited
+web.player.info.colorRangeUnknown
+web.player.info.container
+web.player.info.delivery.directPlay
+web.player.info.delivery.directStream
+web.player.info.delivery.transcode
+web.player.info.droppedFrames
+web.player.info.playMethod
+web.player.info.player
+web.player.info.playerDimensions
+web.player.info.protocol
+web.player.info.section.player
+web.player.info.section.source
+web.player.info.section.stream
+web.player.info.section.video
+web.player.info.size
+web.player.info.streamType
+web.player.info.streamTypeProgressive
+web.player.info.title
+web.player.info.videoBitrate
+web.player.info.videoCodec
+web.player.info.videoRangeType
+web.player.info.videoResolution
+web.player.loadingVideo
+web.player.minimize
+web.player.nextEpisode.countdown
+web.player.nextEpisode.episodeLine
+web.player.quality.auto
+web.player.quality.bitrateKbps
+web.player.quality.bitrateMbps
+web.player.quality.playbackSettings
+web.player.quality.selected
+web.player.quality.title
+web.player.quality.version
+web.player.quality.versionPlaying
+web.player.quality.versionRequested
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.room.inviteNotReady
+web.player.room.noticeTitle
+web.player.room.onlyHostCanControl
+web.player.room.onlyHostCanSeek
+web.player.room.reconnecting
+
+# More of Admin → Activity's words: where a stream's viewer is, as the web's route badge (components/PlaybackRouteBadges.tsx),
+# as above under web.admin.activity.client.heading.
+web.player.routeBadge.local
+web.player.routeBadge.remote
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.seekBar.dragMarkerEnd
+web.player.seekBar.dragMarkerStart
+web.player.seekBar.label
+web.player.seekBar.markerEdge
+web.player.seekBar.positionMinutes
+web.player.seekBar.positionMinutesSeconds
+web.player.seekBar.positionSeconds
+web.player.serverMessage.fallback
+web.player.serverMessage.restarting
+web.player.serverMessage.restartingTitle
+web.player.serverMessage.shuttingDown
+web.player.serverMessage.shuttingDownTitle
+web.player.serverMessage.title
+web.player.session.endedByAdmin
+web.player.skip.preview
+web.player.sleepTimer.countdown
+web.player.sleepTimer.minutes
+web.player.sleepTimer.short
+
+# More of the player's buttons, as above under web.player.audioMenu.trigger.
+web.player.sleepTimer.trigger
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.sleepTimer.turnOff
+web.player.speed.heading
+
+# A playback speed ("1.5×"), as the web's player/utils/playbackSpeed.ts writes it: PlaybackSpeeds in
+# src/Granary.Core/ViewModels/Player/PlayerSettingsOptions.cs.
+web.player.speed.rate
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.player.tracks.resetAudioFailed
+web.player.tracks.saveAudioFailed
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.upNext.autoplayOff
+web.player.upNext.autoplayOn
+web.player.upNext.closeTitle
+web.player.upNext.countdownSeconds
+web.player.upNext.finishedSeries
+web.player.upNext.noMoreEpisodes
+web.player.upNext.playingNext
+web.player.volume.mute
+web.player.volume.muteShortcut
+web.player.volume.unmute
+web.player.volume.unmuteShortcut
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.watchTogether.allowPause
+web.player.watchTogether.codePending
+web.player.watchTogether.connectionReplaced
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.copyInviteLabel
+web.player.watchTogether.end
+web.player.watchTogether.invite
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.watchTogether.member.buffering
+web.player.watchTogether.member.connected
+web.player.watchTogether.member.ready
+web.player.watchTogether.member.syncing
+web.player.watchTogether.policy.guestsCanPause
+web.player.watchTogether.policy.hostControls
+web.player.watchTogether.policy.hostOnly
+web.player.watchTogether.policy.youCanPause
+web.player.watchTogether.selfName
+web.player.watchTogether.setHostOnly
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.stop
+web.player.watchTogether.stopTitle
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.watchTogether.syncingRoom
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.title
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.player.watchTogether.viewerCount
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.player.watchTogether.viewersLabel
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.profiles.libraries.count
+web.profiles.librarySelect.libraryFallback
+web.profiles.librarySelect.more
+web.profiles.librarySelect.pair
+
+# The profile picker and its PIN prompt, in the words of the web's Profiles page and ProfilePinDialog (a lockout as
+# components/profiles/pinLockout.ts): src/Granary.App/Views/ProfilePickerPage.xaml, PinPromptTitle, WrongPin and
+# PinLockout in src/Granary.Core/ViewModels/ProfilePickerViewModel.cs, and AccessibleName in
+# src/Granary.Core/ViewModels/ProfileItemViewModel.cs.
+web.profiles.picker.documentTitle
+web.profiles.picker.pinProtected
+web.profiles.picker.title
+web.profiles.pin.incorrect
+web.profiles.pin.label
+web.profiles.pin.lockedLater
+web.profiles.pin.lockedMinutes
+web.profiles.pin.title
+web.profiles.pin.verifying
+
+# For You and a row of it in full, as the web's Recommendations and RecommendationsSection pages:
+# src/Granary.App/Views/ForYouPage.xaml(.cs), RecommendationSectionPage.xaml, and ForYouViewModel.cs and
+# RecommendationSectionViewModel.cs in src/Granary.Core/ViewModels.
+web.recommendations.emptyBody
+web.recommendations.emptyTitle
+web.recommendations.fallbackCluster
+web.recommendations.fallbackClusterKey
+web.recommendations.fallbackDefault
+web.recommendations.fallbackGenre
+web.recommendations.fallbackGenrePicks
+web.recommendations.fallbackPopular
+web.recommendations.fallbackRecentlyAdded
+web.recommendations.fallbackSimilarUsers
+web.recommendations.fallbackTopRated
+web.recommendations.favoriteDirectors
+web.recommendations.loadFailed
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.recommendations.moreLikeThis
+
+# More of For You's words, as above under web.recommendations.emptyBody.
+web.recommendations.sectionCount
+web.recommendations.sectionEmptyBody
+web.recommendations.sectionEmptyTitle
+web.recommendations.sectionLoadFailed
+web.recommendations.subtitleDefault
+web.recommendations.subtitlePersonal
+web.recommendations.tasteProfile
+web.recommendations.title
+web.recommendations.topGenres
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.browse.empty
+web.requests.browse.genre
+web.requests.browse.genreNotFound
+web.requests.browse.loadFailed
+web.requests.browse.loading
+web.requests.browse.movies
+web.requests.browse.network
+web.requests.browse.networkNotFound
+web.requests.browse.series
+web.requests.browse.sortBy
+web.requests.browse.sortPopularity
+web.requests.browse.sortRating
+web.requests.browse.sortReleaseDate
+web.requests.browse.studio
+web.requests.browse.studioNotFound
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.cancel.action
+web.requests.cancel.actionFor
+web.requests.cancel.description
+web.requests.cancel.keep
+web.requests.cancel.title
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.requests.card.addToWatchlist
+web.requests.card.addToWatchlistFor
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.label
+
+# More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
+web.requests.card.onWatchlist
+web.requests.card.removeFromWatchlist
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.card.requestTitle
+web.requests.card.sending
+web.requests.card.sendingFor
+web.requests.discoverSection.empty
+web.requests.discoverSection.fallbackTitle
+web.requests.discoverSection.notFound
+web.requests.discoverSection.unknown
+web.requests.discoverSection.unreachable
+web.requests.download.downloading
+web.requests.download.importing
+web.requests.download.paused
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.download.progress
+web.requests.download.stalled
+web.requests.download.timeLeft
+web.requests.download.waiting
+web.requests.download.waitingForImport
+web.requests.hub.browseDiscover
+web.requests.hub.cancelled
+web.requests.hub.discover
+web.requests.hub.discoverFailed
+web.requests.hub.empty
+web.requests.hub.emptyHint
+web.requests.hub.inLibrary
+web.requests.hub.intro
+web.requests.hub.loadFailed
+web.requests.hub.needsAttention
+web.requests.hub.onTheWay
+web.requests.hub.openInLibrary
+web.requests.hub.openInLibraryFor
+web.requests.hub.reason
+web.requests.hub.requested
+web.requests.hub.requestedUpdated
+web.requests.hub.statusApproved
+web.requests.hub.statusAvailable
+web.requests.hub.statusCancelled
+web.requests.hub.statusDeclined
+web.requests.hub.statusHelp
+web.requests.hub.statusPartial
+web.requests.hub.statusPending
+web.requests.hub.statusProcessing
+web.requests.hub.statuses
+web.requests.hub.yours
+web.requests.hub.yoursIntro
+web.requests.request
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.requests.results.loadMoreFailed
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.seasons.all
+web.requests.seasons.allAvailable
+web.requests.seasons.alreadyRequested
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.seasons.choose
+web.requests.seasons.inLibrary
+web.requests.seasons.latest
+web.requests.seasons.noSeasons
+web.requests.seasons.noneAired
+web.requests.seasons.notAired
+web.requests.seasons.notAnnounced
+web.requests.seasons.partlyInLibrary
+web.requests.seasons.pickUpcoming
+web.requests.seasons.reason
+web.requests.seasons.requestSeasons
+web.requests.seasons.requestSeries
+web.requests.seasons.requested
+web.requests.seasons.season
+web.requests.seasons.seasonNamed
+web.requests.seasons.title
+web.requests.seasons.upcoming
+web.requests.status.active
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.requests.status.approved
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.available
+web.requests.status.cancelled
+web.requests.status.declined
+web.requests.status.failed
+web.requests.status.partiallyAvailable
+web.requests.status.pending
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.requests.status.processing
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.status.reason.alreadyAvailable
+web.requests.status.reason.alreadyRequested
+web.requests.status.reason.blocked
+web.requests.status.reason.quotaExceeded
+web.requests.status.reason.requestsDisabled
+web.requests.status.reason.unavailable
+
+# More of a TMDB title's page's words, as above under requests.error.create.
+web.requests.status.seasonEpisodes
+web.requests.status.seasonList
+web.requests.status.seasonProgress
+web.requests.title
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.requests.toAdd.heading
+
+# More of the Requests words, as above under requests.error.create.
+web.requests.toAdd.movie
+web.requests.toAdd.noLibraryMatch
+web.requests.toAdd.series
+
+# More of the personal lists' words, as above under web.catalog.history.dialogBody.
+web.search.boxSets
+
+# The search box's hint and name, as the web's search page (components/SearchBar.tsx, prominent) and search box:
+# src/Granary.App/Views/SearchPage.xaml.
+web.search.label
+web.search.placeholderProminent
+
+# More of Search's words, as above under web.catalog.mediaType.movies.
+web.search.searching
+web.search.titles
+
+# Settings → Accessibility, in the words of the web's AccessibilitySettings.tsx, its Language group and the sidebar's
+# entry for it: src/Granary.App/Views/Settings/AccessibilitySettingsView.xaml, src/Granary.App/Views/SettingsPage.xaml
+# and src/Granary.Core/ViewModels/Settings/AccessibilitySettingsViewModel.cs.
+web.settings.accessibility.appLanguage
+web.settings.accessibility.appLanguageSaveFailed
+web.settings.accessibility.languageTitle
+web.settings.accessibility.matchDevice
+web.settings.accessibility.title
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.settings.account.password.current
+web.settings.account.password.error.mismatch
+web.settings.account.password.error.tooLong
+web.settings.account.password.error.tooShort
+web.settings.account.password.error.unavailable
+web.settings.account.password.requirements
+
+# Settings, in the words of the web's settings pages (pages/settings) for the same settings: the sidebar of
+# src/Granary.App/Views/SettingsPage.xaml(.cs), as the web's UserSettingsSidebar and lib/userSettingsNav.ts, with its group
+# names upper-cased at display as its CSS does; Navigation & Cards (src/Granary.App/Views/Settings/InterfaceSettingsView.xaml,
+# src/Granary.App/Controls/BadgeSettingsLook.cs, and in src/Granary.Core/ViewModels/Settings PosterSettingsViewModel.cs,
+# BadgeSettingsViewModel.cs and BadgeSettingsText.cs, the badges, styles and colours as the web's lib/overlays names them);
+# Title Pages (TitlePagesSettingsView.xaml and TitlePagesSettingsViewModel.cs), as TitlePagesSettings.tsx and
+# TitleArtSettingsGroup.tsx, its Spoilers panel in the words of the Navigation & Cards one; Language & Subtitles
+# (LanguageSettingsView.xaml, LanguageSettingsViewModel.cs, SubtitleAppearanceEditor.cs, which the player's Appearance
+# panel shares, and src/Granary.App/Controls/SubtitlePreview.cs), as SubtitleAppearanceSettings.tsx and
+# lib/subtitleAppearance.ts; Devices (DevicesSettingsView.xaml, DevicesViewModel.cs and .Actions.cs, DeviceRows.cs and
+# DeviceText.cs), as the web's SignedInSessions.tsx, lib/loginSessionDevice.ts, DeviceSettings.tsx and DeviceList.tsx;
+# Playback (PlaybackSettingsView.xaml, PlaybackSettingsViewModel.cs and .Device.cs, AudioDelaySettingsViewModel.cs), as
+# PlaybackSettings.tsx, PlaybackConnection.tsx, the Sound group of DeviceSettingGroups.tsx and lib/settingsDisplay.ts.
+web.settings.cardOverlay.adjust
+web.settings.cardOverlay.adjustLabel
+web.settings.cardOverlay.badgesDescription
+web.settings.cardOverlay.badgesTitle
+web.settings.cardOverlay.color
+web.settings.cardOverlay.colorDefault
+web.settings.cardOverlay.noneOn
+web.settings.cardOverlay.position
+web.settings.cardOverlay.resetBadges
+web.settings.cardOverlay.resetBadgesConfirmDescription
+web.settings.cardOverlay.resetBadgesConfirmTitle
+web.settings.cardOverlay.showBadges
+web.settings.cardOverlay.showIcon
+web.settings.cardOverlay.someOn
+web.settings.cardOverlay.style
+web.settings.cardOverlay.suppressedHint
+web.settings.currentProfileLink.caption
+web.settings.device.changedCount
+web.settings.device.empty
+web.settings.device.forget
+web.settings.device.forgetFailed
+web.settings.device.forgotten
+web.settings.device.nameLabel
+web.settings.device.nameReset
+web.settings.device.nothingChanged
+web.settings.device.rename
+web.settings.device.renameFailed
+web.settings.device.renamed
+web.settings.device.reportsItselfAs
+web.settings.device.resetDone
+web.settings.device.resetFailed
+web.settings.device.title
+web.settings.device.useProfileSettings
+web.settings.device.usingNow
+web.settings.deviceGroups.sound.description
+web.settings.deviceGroups.sound.title
+web.settings.deviceList.group.current
+web.settings.deviceList.group.earlier
+web.settings.deviceList.group.week
+web.settings.deviceList.lastSeen.days
+web.settings.deviceList.lastSeen.hours
+web.settings.deviceList.lastSeen.months
+web.settings.deviceList.lastSeen.never
+web.settings.deviceList.lastSeen.underAnHour
+web.settings.deviceList.lastSeen.years
+web.settings.deviceList.lastSeen.yesterday
+web.settings.interface.loadFailedDescription
+web.settings.interface.loading
+web.settings.interface.moveDown
+web.settings.interface.moveUp
+web.settings.interface.posterCompact
+web.settings.interface.posterLarge
+web.settings.interface.posterReset
+web.settings.interface.posterSize
+web.settings.interface.posterStandard
+web.settings.interface.postersTitle
+web.settings.interface.title
+web.settings.interface.unsupportedTitle
+web.settings.limitField.unlimited
+web.settings.nav.group.account
+web.settings.nav.group.appearance
+web.settings.nav.group.playback
+web.settings.overlays.accent.amber
+web.settings.overlays.accent.blue
+web.settings.overlays.accent.cyan
+web.settings.overlays.accent.emerald
+web.settings.overlays.accent.gold
+web.settings.overlays.accent.indigo
+web.settings.overlays.accent.orange
+web.settings.overlays.accent.pink
+web.settings.overlays.accent.slate
+web.settings.overlays.accent.tomato
+web.settings.overlays.accent.violet
+web.settings.overlays.accent.white
+web.settings.overlays.badge.advisoryAge.description
+web.settings.overlays.badge.advisoryAge.label
+web.settings.overlays.badge.aspectRatio.description
+web.settings.overlays.badge.aspectRatio.label
+web.settings.overlays.badge.audio.description
+web.settings.overlays.badge.audio.label
+web.settings.overlays.badge.audioChannels.description
+web.settings.overlays.badge.audioChannels.label
+web.settings.overlays.badge.container.description
+web.settings.overlays.badge.container.label
+web.settings.overlays.badge.contentRating.description
+web.settings.overlays.badge.contentRating.label
+web.settings.overlays.badge.edition.description
+web.settings.overlays.badge.edition.label
+web.settings.overlays.badge.hdr.description
+web.settings.overlays.badge.hdr.label
+web.settings.overlays.badge.multiAudio.description
+web.settings.overlays.badge.multiAudio.label
+web.settings.overlays.badge.multiSub.description
+web.settings.overlays.badge.multiSub.label
+web.settings.overlays.badge.network.description
+web.settings.overlays.badge.network.label
+web.settings.overlays.badge.originalLanguage.description
+web.settings.overlays.badge.originalLanguage.label
+web.settings.overlays.badge.ratingImdb.description
+web.settings.overlays.badge.ratingImdb.label
+web.settings.overlays.badge.ratingRt.description
+web.settings.overlays.badge.ratingRt.label
+web.settings.overlays.badge.ratingRtAudience.description
+web.settings.overlays.badge.ratingRtAudience.label
+web.settings.overlays.badge.ratingTmdb.description
+web.settings.overlays.badge.ratingTmdb.label
+web.settings.overlays.badge.releaseType.description
+web.settings.overlays.badge.releaseType.label
+web.settings.overlays.badge.requestStatus.description
+web.settings.overlays.badge.requestStatus.label
+web.settings.overlays.badge.resolution.description
+web.settings.overlays.badge.resolution.label
+web.settings.overlays.badge.resolutionHdr.label
+web.settings.overlays.badge.resolutionHdr.shortLabel
+web.settings.overlays.badge.runtime.description
+web.settings.overlays.badge.runtime.label
+web.settings.overlays.badge.showStatus.availabilityNote
+web.settings.overlays.badge.showStatus.description
+web.settings.overlays.badge.showStatus.label
+web.settings.overlays.badge.studio.description
+web.settings.overlays.badge.studio.label
+web.settings.overlays.badge.videoCodec.description
+web.settings.overlays.badge.videoCodec.label
+web.settings.overlays.badge.year.description
+web.settings.overlays.badge.year.label
+web.settings.overlays.category.metadata.description
+web.settings.overlays.category.metadata.title
+web.settings.overlays.category.ratings.description
+web.settings.overlays.category.ratings.title
+web.settings.overlays.category.ribbons.description
+web.settings.overlays.category.ribbons.title
+web.settings.overlays.category.tech.description
+web.settings.overlays.category.tech.title
+web.settings.overlays.look.style
+web.settings.overlays.position.bottomLeft
+web.settings.overlays.position.bottomRight
+web.settings.overlays.position.topLeft
+web.settings.overlays.preset.classic.description
+web.settings.overlays.preset.classic.label
+web.settings.overlays.preset.minimal.description
+web.settings.overlays.preset.minimal.label
+web.settings.overlays.preset.pill.description
+web.settings.overlays.preset.pill.label
+web.settings.overlays.preset.square.label
+web.settings.overlays.preset.vibrant.description
+web.settings.overlays.preset.vibrant.label
+web.settings.playback.autoPlayNext.description
+web.settings.playback.maxBitrate.description
+web.settings.playback.maxBitrate.saveFailed
+web.settings.playback.nextEpisode.previewDescription
+web.settings.playback.nextEpisode.previewLabel
+web.settings.playback.nextEpisode.title
+web.settings.playback.quality.autoDescription
+web.settings.playback.quality.description
+web.settings.playback.quality.groupDescription
+web.settings.playback.quality.saveFailed
+web.settings.playback.quality.title
+web.settings.playback.saveFailed
+web.settings.playback.seek.description
+web.settings.playback.seek.forwardInterval
+web.settings.playback.seek.rewindInterval
+web.settings.playback.seek.seconds
+web.settings.playback.seek.title
+web.settings.playback.seek.video.forwardDescription
+web.settings.playback.seek.video.forwardSaveFailed
+web.settings.playback.seek.video.rewindDescription
+web.settings.playback.seek.video.rewindSaveFailed
+web.settings.playback.seek.videoDescription
+web.settings.playback.seek.videoTitle
+web.settings.playback.skipping.introModeDescription
+web.settings.playback.skipping.recapDescription
+web.settings.playback.skipping.title
+web.settings.playback.subtitle
+web.settings.playback.title
+web.settings.playbackConnection.ago.days
+web.settings.playbackConnection.ago.hours
+web.settings.playbackConnection.ago.justNow
+web.settings.playbackConnection.ago.minutes
+web.settings.playbackConnection.autoBudget
+web.settings.playbackConnection.fasterThan
+web.settings.playbackConnection.learnedLimit
+web.settings.playbackConnection.measured
+web.settings.playbackConnection.notMeasured
+web.settings.playbackConnection.notSaved
+web.settings.playbackConnection.rateLimited
+web.settings.playbackConnection.reset
+web.settings.playbackConnection.resetFailed
+web.settings.playbackConnection.seenDuringPlayback
+web.settings.playbackConnection.skippedCellular
+web.settings.playbackConnection.skippedMetered
+web.settings.playbackConnection.speed
+web.settings.playbackConnection.test
+web.settings.playbackConnection.testFailed
+web.settings.playbackConnection.testing
+web.settings.playbackConnection.title
+web.settings.playbackConnection.transport.cellular
+web.settings.playbackConnection.transport.ethernet
+web.settings.playbackConnection.transport.unknown
+web.settings.playbackConnection.transport.wifi
+web.settings.resetButton.label
+web.settings.sessions.confirm.clientDescription
+web.settings.sessions.confirm.deviceTitle
+web.settings.sessions.confirm.note
+
+# The shell's profile menu while it signs out (src/Granary.Core/ViewModels/SidebarViewModel.cs), in the words of the
+# web's own sign-out button (components/sessions/LoginSessionsPanel.tsx).
+web.settings.sessions.confirm.signingOut
+
+# More of Settings' words, as above under web.settings.cardOverlay.adjust.
+web.settings.sessions.confirm.thisBrowserDescription
+web.settings.sessions.current.description
+web.settings.sessions.description
+web.settings.sessions.device.unknown
+web.settings.sessions.lastSeen.active
+web.settings.sessions.lastSeen.days
+web.settings.sessions.lastSeen.hours
+web.settings.sessions.lastSeen.minutes
+web.settings.sessions.lastSeen.never
+web.settings.sessions.loadFailed
+web.settings.sessions.loadMore
+web.settings.sessions.loading
+web.settings.sessions.others.description
+web.settings.sessions.others.empty
+web.settings.sessions.others.title
+web.settings.sessions.refresh
+web.settings.sessions.refreshLabel
+web.settings.sessions.row.details
+web.settings.sessions.row.detailsFor
+web.settings.sessions.row.expires
+web.settings.sessions.row.ipAddress
+web.settings.sessions.row.lastSeen
+web.settings.sessions.row.notRecorded
+web.settings.sessions.row.notSent
+web.settings.sessions.row.signOutDevice
+web.settings.sessions.row.signedIn
+web.settings.sessions.row.summary
+web.settings.sessions.row.unknown
+web.settings.sessions.row.userAgent
+web.settings.sessions.signOutFailed
+web.settings.sessions.signedOut
+web.settings.sessions.title
+web.settings.sidebar.backToApp
+web.settings.sidebar.title
+web.settings.signedInSessions.unavailable
+web.settings.subtitleAppearance.background.color
+web.settings.subtitleAppearance.background.description
+web.settings.subtitleAppearance.background.opacity
+web.settings.subtitleAppearance.background.opacityDescription
+web.settings.subtitleAppearance.background.position
+web.settings.subtitleAppearance.background.style
+web.settings.subtitleAppearance.background.title
+web.settings.subtitleAppearance.language.spokenDescription
+web.settings.subtitleAppearance.language.spokenLabel
+web.settings.subtitleAppearance.language.title
+web.settings.subtitleAppearance.languageSaveFailed
+web.settings.subtitleAppearance.percentSign
+web.settings.subtitleAppearance.preview.description
+web.settings.subtitleAppearance.preview.discard
+web.settings.subtitleAppearance.preview.reset
+web.settings.subtitleAppearance.preview.sampleLine1
+web.settings.subtitleAppearance.preview.sampleLine2
+web.settings.subtitleAppearance.preview.save
+web.settings.subtitleAppearance.preview.title
+web.settings.subtitleAppearance.resetFailed
+web.settings.subtitleAppearance.saveFailed
+web.settings.subtitleAppearance.subtitle
+web.settings.subtitleAppearance.subtitleSettingSaveFailed
+web.settings.subtitleAppearance.subtitles.behaviorDescription
+web.settings.subtitleAppearance.subtitles.behaviorLabel
+web.settings.subtitleAppearance.subtitles.description
+web.settings.subtitleAppearance.subtitles.forcedDescription
+web.settings.subtitleAppearance.subtitles.languageDescription
+web.settings.subtitleAppearance.subtitles.languageLabel
+web.settings.subtitleAppearance.subtitles.title
+web.settings.subtitleAppearance.text.description
+web.settings.subtitleAppearance.text.fontColor
+web.settings.subtitleAppearance.text.fontFamily
+web.settings.subtitleAppearance.text.fontSize
+web.settings.subtitleAppearance.text.opacity
+web.settings.subtitleAppearance.text.opacityDescription
+web.settings.subtitleAppearance.text.outline
+web.settings.subtitleAppearance.text.outlineColor
+web.settings.subtitleAppearance.text.outlineColorDescription
+web.settings.subtitleAppearance.text.title
+web.settings.subtitleAppearance.timing.description
+web.settings.subtitleAppearance.timing.earlier
+web.settings.subtitleAppearance.timing.later
+web.settings.subtitleAppearance.timing.offset
+web.settings.subtitleAppearance.timing.offsetDescription
+web.settings.subtitleAppearance.timing.offsetValue
+web.settings.subtitleAppearance.timing.reset
+web.settings.subtitleAppearance.timing.saveFailed
+web.settings.subtitleAppearance.timing.title
+web.settings.subtitleAppearance.title
+web.settings.subtitleOptions.backgroundColor.black
+web.settings.subtitleOptions.backgroundColor.darkGray
+web.settings.subtitleOptions.backgroundColor.darkGreen
+web.settings.subtitleOptions.backgroundColor.darkRed
+web.settings.subtitleOptions.backgroundColor.navy
+web.settings.subtitleOptions.backgroundStyle.box
+web.settings.subtitleOptions.backgroundStyle.dropShadow
+web.settings.subtitleOptions.backgroundStyle.none
+web.settings.subtitleOptions.backgroundStyle.outline
+web.settings.subtitleOptions.fontColor.black
+web.settings.subtitleOptions.fontColor.blue
+web.settings.subtitleOptions.fontColor.cyan
+web.settings.subtitleOptions.fontColor.gray
+web.settings.subtitleOptions.fontColor.green
+web.settings.subtitleOptions.fontColor.magenta
+web.settings.subtitleOptions.fontColor.red
+web.settings.subtitleOptions.fontColor.white
+web.settings.subtitleOptions.fontColor.yellow
+web.settings.subtitleOptions.fontFamily.monospace
+web.settings.subtitleOptions.fontFamily.sansSerif
+web.settings.subtitleOptions.fontFamily.serif
+web.settings.subtitleOptions.fontSize.large
+web.settings.subtitleOptions.fontSize.medium
+web.settings.subtitleOptions.fontSize.small
+web.settings.subtitleOptions.fontSize.xLarge
+web.settings.subtitleOptions.fontSize.xxLarge
+web.settings.subtitleOptions.position.bottom
+web.settings.subtitleOptions.position.lowerThird
+web.settings.subtitleOptions.position.top
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.settings.subtitlePanel.background
+web.settings.subtitlePanel.backgroundOpacity
+web.settings.subtitlePanel.close
+web.settings.subtitlePanel.color
+web.settings.subtitlePanel.eyebrowDefault
+web.settings.subtitlePanel.font
+web.settings.subtitlePanel.opacity
+web.settings.subtitlePanel.outline
+web.settings.subtitlePanel.position
+web.settings.subtitlePanel.previewLine1
+web.settings.subtitlePanel.previewLine2
+web.settings.subtitlePanel.resetDefault
+web.settings.subtitlePanel.size
+web.settings.subtitlePanel.statusDefault
+web.settings.subtitlePanel.style
+web.settings.subtitlePanel.text
+web.settings.subtitlePanel.textOpacity
+web.settings.subtitlePanel.textOutline
+web.settings.subtitlePanel.title
+web.settings.subtitlePanel.vertical
+
+# More of Settings' words, as above under web.settings.cardOverlay.adjust.
+web.settings.titleArt.allDevices
+web.settings.titleArt.allDevicesDescription
+web.settings.titleArt.allDevicesOffNote
+web.settings.titleArt.allDevicesOnNote
+web.settings.titleArt.description
+web.settings.titleArt.saveFailed
+web.settings.titleArt.title
+web.settings.titleArt.titleArtDescription
+web.settings.titleArt.useServerDefault
+web.settings.titlePages.advisoryAgeDescription
+web.settings.titlePages.ageGuidanceTitle
+web.settings.titlePages.saveFailed
+web.settings.titlePages.soundDescription
+web.settings.titlePages.soundTitle
+web.settings.titlePages.spoilersDescription
+web.settings.titlePages.spoilersTitle
+web.settings.titlePages.subtitle
+web.settings.titlePages.title
+web.settings.value.custom
+web.settings.value.episodes
+web.settings.value.milliseconds
+web.settings.value.noLimit
+
+# The shell, in the words of the web's sidebar (components/AppSidebar.tsx), with its section names upper-cased at
+# display as its CSS does, and its page back button (PageBack): src/Granary.App/MainWindow.xaml(.cs),
+# src/Granary.App/Controls/SidebarSectionHeader.xaml.cs, and the entries' names in
+# src/Granary.Core/ViewModels/SidebarLayout.cs, which Settings' sidebar editor shows too.
+web.shell.pageBack.goBack
+web.shell.sidebar.admin
+web.shell.sidebar.calendar
+web.shell.sidebar.collapse
+web.shell.sidebar.collections
+web.shell.sidebar.discover
+web.shell.sidebar.expand
+web.shell.sidebar.favorites
+web.shell.sidebar.forYou
+web.shell.sidebar.goHome
+web.shell.sidebar.history
+web.shell.sidebar.home
+web.shell.sidebar.libraries
+web.shell.sidebar.logout
+web.shell.sidebar.notifications
+web.shell.sidebar.profileMenu
+web.shell.sidebar.requests
+web.shell.sidebar.search
+web.shell.sidebar.settings
+web.shell.sidebar.switchProfile
+web.shell.sidebar.watchParty
+web.shell.sidebar.watchlist
+web.shell.sidebar.yourStuff
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.shell.unsavedChanges.description
+
+# The question before unsaved edits are thrown away, as the web's (components/UnsavedChangesGuard.tsx): the mpv.conf
+# editor in src/Granary.Core/ViewModels/Settings/MpvConfigEditorViewModel.cs.
+web.shell.unsavedChanges.discard
+web.shell.unsavedChanges.title
+
+# More of a library page's words, as above under catalog.sort.added.
+web.shuffle.startFailed
+
+# More of the player's words, as above under bufferingQuality.autoLimited.
+web.subtitles.closeDialog
+web.subtitles.menu.addSubtitles
+web.subtitles.menu.alreadyMatches
+web.subtitles.menu.appearance
+web.subtitles.menu.delay
+web.subtitles.menu.delayEarlier
+web.subtitles.menu.delayLater
+web.subtitles.menu.delayValue
+web.subtitles.menu.noMatch
+web.subtitles.menu.off
+web.subtitles.menu.resetDelay
+web.subtitles.menu.resetDelayLabel
+web.subtitles.menu.resetTiming
+web.subtitles.menu.source.downloaded
+web.subtitles.menu.source.embedded
+web.subtitles.menu.source.external
+web.subtitles.menu.syncHint
+web.subtitles.menu.syncHintExternal
+web.subtitles.menu.syncToAudio
+web.subtitles.menu.syncedResult
+web.subtitles.menu.syncing
+web.subtitles.menu.timing
+web.subtitles.menu.timingForbidden
+web.subtitles.search.downloadFailed
+web.subtitles.search.downloading
+web.subtitles.search.downloads
+web.subtitles.search.language
+web.subtitles.search.prompt
+web.subtitles.search.search
+web.subtitles.search.searchFailed
+web.subtitles.search.searchOnline
+web.subtitles.search.searching
+web.subtitles.search.title
+web.subtitles.sync.error.changed
+web.subtitles.sync.error.resetFailed
+web.subtitles.sync.error.syncFailed
+web.subtitles.sync.error.unsupportedFormat
+web.subtitles.sync.failure.generic
+web.subtitles.sync.failure.noAudio
+web.subtitles.sync.failure.subtitleChanged
+web.subtitles.sync.failure.unavailable
+web.subtitles.sync.frameRate
+web.subtitles.sync.offsetSeconds
+web.subtitles.sync.percent
+web.subtitles.sync.phase.analyzing
+web.subtitles.sync.phase.matching
+web.subtitles.sync.phase.waiting
+web.subtitles.sync.progressLabel
+web.subtitles.sync.speed
+web.subtitles.sync.status.adjusted
+web.subtitles.sync.status.alreadyInSync
+web.subtitles.sync.status.failed
+web.subtitles.sync.status.noMatch
+web.subtitles.sync.status.originalTiming
+web.subtitles.sync.status.synced
+web.subtitles.sync.status.syncing
+web.subtitles.sync.status.syncingPercent
+web.subtitles.syncNotice.applying
+web.subtitles.syncNotice.dismiss
+web.subtitles.syncNotice.fallbackName
+web.subtitles.syncNotice.noMatchDetail
+web.subtitles.syncNotice.synced
+web.subtitles.syncNotice.timingUpdated
+web.subtitles.syncNotice.trackAlreadyMatches
+web.subtitles.syncNotice.trackFailed
+web.subtitles.syncNotice.trackNoMatch
+web.subtitles.syncNotice.trackSynced
+web.subtitles.syncNotice.trackSyncing
+web.subtitles.upload.detectFailed
+web.subtitles.upload.detected
+web.subtitles.upload.detecting
+web.subtitles.upload.dragFile
+web.subtitles.upload.dropFile
+web.subtitles.upload.dropZoneLabel
+web.subtitles.upload.heading
+web.subtitles.upload.hearingImpaired
+web.subtitles.upload.help
+web.subtitles.upload.languageLabel
+web.subtitles.upload.orBrowse
+web.subtitles.upload.selected
+web.subtitles.upload.unsupportedType
+web.subtitles.upload.upload
+web.subtitles.upload.uploadFailed
+web.subtitles.upload.uploading
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.ui.close
+
+# More of the collection editor's words, as above under catalog.sort.author.
+web.ui.personSearch.placeholder
+
+# More of the password change's words, as above under web.auth.choosePassword.description.
+web.ui.saving
+
+# More of Watch Together's words, as above under watchParty.button.imReady.
+web.watchTogether.actions.endRoomFailed
+web.watchTogether.actions.guestControlOff
+web.watchTogether.actions.guestControlOn
+web.watchTogether.actions.inviteCopied
+web.watchTogether.actions.inviteCopiedWithCode
+web.watchTogether.actions.inviteCopyFailed
+web.watchTogether.actions.modeFailed
+web.watchTogether.actions.notConnected
+web.watchTogether.actions.promoteFailed
+web.watchTogether.actions.stageFailed
+web.watchTogether.actions.startFailed
+web.watchTogether.actions.stopFailed
+web.watchTogether.actions.updateRoomFailed
+web.watchTogether.activity.episodeTitle
+web.watchTogether.activity.joined
+web.watchTogether.activity.left
+web.watchTogether.activity.mode
+web.watchTogether.activity.modeHostPick
+web.watchTogether.activity.modeVote
+web.watchTogether.activity.playbackPaused
+web.watchTogether.activity.playbackResumed
+web.watchTogether.activity.policy
+web.watchTogether.activity.ready
+web.watchTogether.activity.staged
+web.watchTogether.activity.started
+web.watchTogether.activity.stopped
+web.watchTogether.activity.suggested
+web.watchTogether.activity.timeHours
+web.watchTogether.activity.timeMinutes
+web.watchTogether.activity.timeNow
+web.watchTogether.activity.titleLoading
+web.watchTogether.activity.unready
+web.watchTogether.activity.unstaged
+web.watchTogether.activity.unsuggested
+web.watchTogether.browse.chipAll
+web.watchTogether.browse.chipMovies
+web.watchTogether.browse.chipRecent
+web.watchTogether.browse.chipSeries
+web.watchTogether.browse.chipTogether
+web.watchTogether.browse.chipWatchlists
+web.watchTogether.browse.collapsed
+web.watchTogether.browse.collapsedHintPick
+web.watchTogether.browse.collapsedHintSuggest
+web.watchTogether.browse.emptyAll
+web.watchTogether.browse.emptyMovies
+web.watchTogether.browse.emptyRecent
+web.watchTogether.browse.emptySeries
+web.watchTogether.browse.emptyTogether
+web.watchTogether.browse.emptyWatchlists
+web.watchTogether.browse.filterLabel
+web.watchTogether.browse.hide
+web.watchTogether.browse.noMatches
+web.watchTogether.browse.recentMovies
+web.watchTogether.browse.recentSeries
+web.watchTogether.browse.resultCount
+web.watchTogether.browse.searchFailed
+web.watchTogether.browse.searchLabel
+web.watchTogether.browse.searchPlaceholder
+web.watchTogether.browse.searchResults
+web.watchTogether.browse.sectionPick
+web.watchTogether.browse.sectionSuggest
+web.watchTogether.browse.togetherHint
+web.watchTogether.browse.togetherTitle
+web.watchTogether.browse.watchlistsHint
+web.watchTogether.browse.watchlistsTitle
+web.watchTogether.candidate.stageForRoom
+web.watchTogether.candidate.stageIt
+web.watchTogether.candidate.suggestThis
+web.watchTogether.common.change
+web.watchTogether.common.codeCopied
+web.watchTogether.common.episodeCode
+web.watchTogether.common.episodeNumber
+web.watchTogether.common.hostPicks
+web.watchTogether.common.movie
+web.watchTogether.common.policyGuestPlayPause
+web.watchTogether.common.policyHostOnly
+web.watchTogether.common.replaces
+web.watchTogether.common.roomInactive
+web.watchTogether.common.roomNotFound
+web.watchTogether.common.season
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
+web.watchTogether.common.series
+web.watchTogether.common.someone
+web.watchTogether.common.specials
+web.watchTogether.common.suggestFailed
+web.watchTogether.connection.connected
+web.watchTogether.connection.connecting
+web.watchTogether.endDialog.description
+web.watchTogether.endDialog.title
+web.watchTogether.hero.episode
+web.watchTogether.hero.episodeTitled
+web.watchTogether.hero.movieYear
+web.watchTogether.hero.unavailable
+web.watchTogether.hub.codeLabel
+web.watchTogether.hub.codePlaceholder
+web.watchTogether.hub.create
+web.watchTogether.hub.createFailed
+web.watchTogether.hub.creating
+web.watchTogether.hub.fromTitleHint
+web.watchTogether.hub.headline
+web.watchTogether.hub.hostPickCaption
+web.watchTogether.hub.howItWorks
+web.watchTogether.hub.intro
+web.watchTogether.hub.join
+web.watchTogether.hub.joinFailed
+web.watchTogether.hub.joinTitle
+web.watchTogether.hub.joining
+web.watchTogether.hub.modeGroup
+web.watchTogether.hub.paste
+web.watchTogether.hub.pasteLabel
+web.watchTogether.hub.recentChecking
+web.watchTogether.hub.recentEnded
+web.watchTogether.hub.recentHosted
+web.watchTogether.hub.recentJoined
+web.watchTogether.hub.recentLive
+web.watchTogether.hub.recentTitle
+web.watchTogether.hub.recentUnknown
+web.watchTogether.hub.rejoin
+web.watchTogether.hub.startBody
+web.watchTogether.hub.stepOpenCaption
+web.watchTogether.hub.stepOpenTitle
+web.watchTogether.hub.stepShareCaption
+web.watchTogether.hub.stepShareTitle
+web.watchTogether.hub.stepSyncCaption
+web.watchTogether.hub.stepSyncTitle
+web.watchTogether.hub.voteCaption
+web.watchTogether.inviteBar.code
+web.watchTogether.inviteBar.guestsCanPause
+web.watchTogether.inviteBar.hostControls
+web.watchTogether.inviteBar.label
+web.watchTogether.inviteBar.link
+web.watchTogether.inviteBar.shareCode
+web.watchTogether.lobby.guestBody
+web.watchTogether.lobby.guestCaption
+web.watchTogether.lobby.hostBody
+web.watchTogether.lobby.nothingOn
+web.watchTogether.lobby.openVoting
+web.watchTogether.lobby.queueThis
+web.watchTogether.lobby.readyDone
+web.watchTogether.lobby.roomOpen
+web.watchTogether.lobby.startAlone
+web.watchTogether.lobby.startEveryone
+web.watchTogether.lobby.suggestionsCount
+web.watchTogether.lobby.upNext
+web.watchTogether.lobby.upNextGuest
+web.watchTogether.lobby.waitingGuest
+web.watchTogether.movie.close
+web.watchTogether.movie.newForEveryone
+web.watchTogether.movie.notSeen
+web.watchTogether.movie.onWatchlist
+web.watchTogether.movie.percentIn
+web.watchTogether.movie.rewatchForEveryone
+web.watchTogether.movie.seenOf
+web.watchTogether.movie.startedOf
+web.watchTogether.picker.moreMembers
+web.watchTogether.picker.rowHint
+web.watchTogether.playing.afterTitle
+web.watchTogether.playing.caption
+web.watchTogether.playing.empty
+web.watchTogether.playing.eyebrow
+web.watchTogether.playing.guestNote
+web.watchTogether.playing.hostNote
+web.watchTogether.playing.paused
+web.watchTogether.playing.playing
+web.watchTogether.playing.rejoin
+web.watchTogether.playing.stop
+web.watchTogether.playing.waiting
+web.watchTogether.presence.ready
+web.watchTogether.rail.activity
+web.watchTogether.rail.activityEmpty
+web.watchTogether.rail.people
+web.watchTogether.rail.peopleEmpty
+web.watchTogether.rail.stateBuffering
+web.watchTogether.rail.stateConnected
+web.watchTogether.rail.statePaused
+web.watchTogether.rail.stateReady
+web.watchTogether.rail.stateWatching
+web.watchTogether.rail.you
+web.watchTogether.room.backToHub
+web.watchTogether.room.changeUpNext
+web.watchTogether.room.closed
+web.watchTogether.room.closedBody
+web.watchTogether.room.ended
+web.watchTogether.room.firstSuggestionFailed
+web.watchTogether.room.forbidden
+web.watchTogether.room.guestFooter
+web.watchTogether.room.hostFooter
+web.watchTogether.room.inviteNotReady
+web.watchTogether.room.rejoin
+web.watchTogether.room.removeFailed
+web.watchTogether.room.replacedTitle
+web.watchTogether.room.suggestAfter
+web.watchTogether.room.suggested
+web.watchTogether.room.unavailable
+web.watchTogether.room.unknownHost
+web.watchTogether.room.voteFailed
+web.watchTogether.series.close
+web.watchTogether.series.episodes
+web.watchTogether.series.pickedEpisode
+web.watchTogether.series.runtime
+web.watchTogether.series.seasons
+web.watchTogether.startSheet.allowPause
+web.watchTogether.startSheet.allowPauseHint
+web.watchTogether.startSheet.choose
+web.watchTogether.startSheet.chooseEpisode
+web.watchTogether.startSheet.create
+web.watchTogether.startSheet.createFailed
+web.watchTogether.startSheet.creating
+web.watchTogether.startSheet.episode
+web.watchTogether.startSheet.episodeTitle
+web.watchTogether.startSheet.episodeWithCode
+web.watchTogether.startSheet.eyebrow
+web.watchTogether.startSheet.footnote
+web.watchTogether.startSheet.hostPickCaptionEmpty
+web.watchTogether.startSheet.hostPickCaptionTarget
+web.watchTogether.startSheet.howToPick
+web.watchTogether.startSheet.keepPick
+web.watchTogether.startSheet.noEpisodes
+web.watchTogether.startSheet.policyFailed
+web.watchTogether.startSheet.policyGuestsCanPause
+web.watchTogether.startSheet.policyHostOnly
+web.watchTogether.startSheet.policyHostOnlyFailed
+web.watchTogether.startSheet.seriesSeasons
+web.watchTogether.startSheet.stageFailed
+web.watchTogether.startSheet.title
+web.watchTogether.startSheet.voteCaptionEmpty
+web.watchTogether.startSheet.voteCaptionTarget
+web.watchTogether.startSheet.watched
+web.watchTogether.strip.changeMode
+web.watchTogether.strip.copyCode
+web.watchTogether.strip.copyInvite
+web.watchTogether.strip.endRoom
+web.watchTogether.strip.inviteLink
+web.watchTogether.strip.leave
+web.watchTogether.strip.leaveLabel
+web.watchTogether.strip.live
+web.watchTogether.strip.modeYou
+web.watchTogether.strip.playing
+web.watchTogether.strip.voting
+web.watchTogether.suggestions.leading
+web.watchTogether.suggestions.note
+web.watchTogether.suggestions.playThis
+web.watchTogether.suggestions.remove
+web.watchTogether.suggestions.unvote
+web.watchTogether.suggestions.vote
+web.watchTogether.suggestions.voteMark
+web.watchTogether.suggestions.votes
+web.watchTogether.voting.empty
+web.watchTogether.voting.emptyGuest
+web.watchTogether.voting.emptyHost
+web.watchTogether.voting.firstSuggestion
+web.watchTogether.voting.guestCaption
+web.watchTogether.voting.hostCaption
+web.watchTogether.voting.leading
+web.watchTogether.voting.noSuggestions
+web.watchTogether.voting.oneVote
+web.watchTogether.voting.open
+web.watchTogether.voting.playForEveryone
+web.watchTogether.voting.ranked
+web.watchTogether.voting.theHost

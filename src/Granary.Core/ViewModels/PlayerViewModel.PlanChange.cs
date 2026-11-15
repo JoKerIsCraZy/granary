@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -29,13 +30,16 @@ public sealed partial class PlayerViewModel
     /// <summary>What the change does, for screen readers: "Switching quality"; empty while none is in flight.</summary>
     public string PlanChangeText => PlanChange switch
     {
-        PlanChange.Quality => "Switching quality",
-        PlanChange.Version => "Switching version",
-        PlanChange.Audio => "Switching audio",
-        PlanChange.Subtitles => "Switching subtitles",
-        PlanChange.Seek => "Seeking",
-        PlanChange.Restart => "Restarting playback",
-        _ => "",
+        PlanChange.None => "",
+        var change => AppText.Get("granary.player.planChange", ("change", change switch
+        {
+            PlanChange.Quality => "quality",
+            PlanChange.Version => "version",
+            PlanChange.Audio => "audio",
+            PlanChange.Subtitles => "subtitles",
+            PlanChange.Seek => "seek",
+            _ => "restart",
+        })),
     };
 
     /// <summary>

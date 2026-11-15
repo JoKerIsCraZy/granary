@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Granary.Core.ViewModels.WatchParty;
 
@@ -60,13 +61,13 @@ public sealed partial class ItemDetailViewModel
 
     partial void OnShowsNoEpisodesChanged(bool value) => OnPropertyChanged(nameof(OffersWatchParty));
 
-    // The web's line under the sheet's title: a series' "Series · 3 seasons", a season's name, else the year. The web says
-    // "seasons" for one too; here one is "1 season".
+    // The web's line under the sheet's title (StartPartySheet.tsx): a series' "Series · 3 seasons", a season's name, else the
+    // year.
     private static string PartyCaption(CatalogItemDetail item) => item.Type switch
     {
         CatalogItemTypes.Series => item.SeasonCount is > 0 and var count
-            ? "Series · " + DetailText.Count(count, "season", "seasons")
-            : "Series",
+            ? AppText.Get("web.watchTogether.startSheet.seriesSeasons", ("count", count), ("count_text", AppText.Number(count)))
+            : AppText.Get("web.watchTogether.common.series"),
         CatalogItemTypes.Season => item.Title,
         _ => item.Year?.ToString(CultureInfo.InvariantCulture) ?? "",
     };

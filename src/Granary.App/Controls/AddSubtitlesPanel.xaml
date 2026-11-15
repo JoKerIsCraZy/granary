@@ -8,6 +8,7 @@
     x:Class="Granary.App.Controls.AddSubtitlesPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:t="using:Granary.Core.Texts"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:player="using:Granary.Core.ViewModels.Player"
     RequestedTheme="Dark">
@@ -68,7 +69,7 @@
 
     <Grid x:Name="Backdrop" Background="#CC000000" Tapped="OnBackdropTapped" KeyDown="OnPanelKeyDown">
         <Border x:Name="Card" MaxWidth="480" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Center" CornerRadius="8"
-                Background="#FF171717" Tapped="OnCardTapped" TabFocusNavigation="Cycle" AutomationProperties.Name="Add Subtitles">
+                Background="#FF171717" Tapped="OnCardTapped" TabFocusNavigation="Cycle" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.search.title')}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -78,11 +79,11 @@
 
                 <!-- Header. -->
                 <Grid Padding="16,10,10,10" BorderBrush="#1AFFFFFF" BorderThickness="0,0,0,1">
-                    <TextBlock Text="Add Subtitles" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.search.title')}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                FontSize="14" AutomationProperties.HeadingLevel="Level1" />
                     <Button x:Name="CloseButton" Width="28" Height="28" HorizontalAlignment="Right" Style="{StaticResource SiloPlayerIconButtonStyle}"
                             CornerRadius="4" controls:Pill.IsEnabled="False" Foreground="#99FFFFFF" Command="{x:Bind ViewModel.CloseCommand, Mode=OneWay}"
-                            AutomationProperties.Name="Close" ToolTipService.ToolTip="Close (Esc)">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.closeDialog')}" ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.player.closeTooltip')}">
                         <FontIcon Glyph="&#xE711;" FontSize="12" />
                     </Button>
                 </Grid>
@@ -90,8 +91,8 @@
                 <!-- Upload. -->
                 <StackPanel Grid.Row="1" Padding="16,12" Spacing="12" BorderBrush="#1AFFFFFF" BorderThickness="0,0,0,1">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Upload subtitle" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" />
-                        <TextBlock Text="Drag and drop or browse for SRT, VTT, ASS, SSA, or SUB files up to 5 MB. Language is detected automatically when possible."
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.upload.heading')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" />
+                        <TextBlock Text="{x:Bind UploadHelp}"
                                    FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap" />
                     </StackPanel>
 
@@ -99,15 +100,15 @@
                             Style="{StaticResource SiloPlayerMenuItemStyle}" CornerRadius="8" Background="#0DFFFFFF"
                             AllowDrop="True" DragEnter="OnDropZoneDragEnter" DragOver="OnDropZoneDragOver" DragLeave="OnDropZoneDragLeave" Drop="OnDropZoneDrop"
                             Click="OnBrowseClick" PointerEntered="OnDropZonePointerEntered" PointerExited="OnDropZonePointerExited"
-                            AutomationProperties.Name="Drop subtitle file here or browse">
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.upload.dropZoneLabel')}">
                         <Grid>
                             <Rectangle x:Name="DropZoneEdge" RadiusX="8" RadiusY="8" Stroke="#33FFFFFF" StrokeThickness="1" StrokeDashArray="4,3" />
                             <StackPanel Padding="16,24" Spacing="8" HorizontalAlignment="Center">
                                 <FontIcon Glyph="&#xE898;" FontSize="20" Foreground="#B3FFFFFF" />
                                 <StackPanel Spacing="4">
-                                    <TextBlock x:Name="DropZoneTitle" Text="Drag and drop a subtitle file" HorizontalAlignment="Center"
+                                    <TextBlock x:Name="DropZoneTitle" Text="{x:Bind t:AppText.Get('web.subtitles.upload.dragFile')}" HorizontalAlignment="Center"
                                                FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" Foreground="White" />
-                                    <TextBlock Text="or click to browse" HorizontalAlignment="Center" FontSize="12" Foreground="#80FFFFFF" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.subtitles.upload.orBrowse')}" HorizontalAlignment="Center" FontSize="12" Foreground="#80FFFFFF" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -117,11 +118,11 @@
                         <StackPanel Spacing="4">
                             <ComboBox Style="{StaticResource PanelComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UploadLanguages, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.UploadLanguage, Mode=TwoWay}" IsEnabled="{x:Bind Not(ViewModel.IsDetecting), Mode=OneWay}"
-                                      AutomationProperties.Name="Upload language" />
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.upload.languageLabel')}" />
                             <TextBlock Text="{x:Bind ViewModel.DetectionText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF"
                                        Visibility="{x:Bind Shows(ViewModel.DetectionText), Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
                         </StackPanel>
-                        <CheckBox Content="Hearing impaired (HI)" FontSize="12" Foreground="#B3FFFFFF" MinHeight="24" Padding="8,0,0,0"
+                        <CheckBox Content="{x:Bind t:AppText.Get('web.subtitles.upload.hearingImpaired')}" FontSize="12" Foreground="#B3FFFFFF" MinHeight="24" Padding="8,0,0,0"
                                   CornerRadius="3" VerticalContentAlignment="Center" IsChecked="{x:Bind ViewModel.HearingImpaired, Mode=TwoWay}" />
                         <Button x:Name="UploadButton" Style="{StaticResource PanelButtonStyle}" HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.UploadCommand, Mode=OneWay}"
                                 IsEnabled="{x:Bind ViewModel.CanUpload, Mode=OneWay}" AutomationProperties.Name="{x:Bind ViewModel.UploadText, Mode=OneWay}">
@@ -152,7 +153,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Padding="16,8" Text="Search online" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12"
+                    <TextBlock Padding="16,8" Text="{x:Bind t:AppText.Get('web.subtitles.search.searchOnline')}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12"
                                Foreground="#99FFFFFF" AutomationProperties.HeadingLevel="Level2" />
                     <Border Height="1" VerticalAlignment="Bottom" Background="#1AFFFFFF" />
                     <Grid Grid.Row="1" Padding="16,12" ColumnSpacing="8">
@@ -161,7 +162,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ComboBox x:Name="SearchLanguageBox" Style="{StaticResource PanelComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SearchLanguages, Mode=OneWay}"
-                                  SelectedItem="{x:Bind ViewModel.SearchLanguage, Mode=TwoWay}" AutomationProperties.Name="Language" />
+                                  SelectedItem="{x:Bind ViewModel.SearchLanguage, Mode=TwoWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.search.language')}" />
                         <Button x:Name="SearchButton" Grid.Column="1" Style="{StaticResource PanelButtonStyle}" Command="{x:Bind ViewModel.SearchCommand, Mode=OneWay}"
                                 IsEnabled="{x:Bind Not(ViewModel.IsSearching), Mode=OneWay}">
                             <TextBlock Text="{x:Bind ViewModel.SearchText, Mode=OneWay}" />
@@ -184,7 +185,7 @@
                     <ScrollViewer x:Name="ResultsScroller" Grid.Row="4" Padding="16,0,16,16" HorizontalScrollMode="Disabled"
                                   HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <TextBlock Padding="0,24" Text="Select a language and press Search." HorizontalAlignment="Center" FontSize="12" Foreground="#66FFFFFF"
+                            <TextBlock Padding="0,24" Text="{x:Bind t:AppText.Get('web.subtitles.search.prompt')}" HorizontalAlignment="Center" FontSize="12" Foreground="#66FFFFFF"
                                        Visibility="{x:Bind ViewModel.ShowsSearchHint, Mode=OneWay}" />
                             <ItemsControl x:Name="ResultRows" ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}" IsTabStop="False">
                                 <ItemsControl.ItemTemplate>
@@ -210,7 +211,7 @@
                                                            TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind ReleaseName}" />
                                                 <Border Grid.Column="2" Padding="4,1,4,2" CornerRadius="4" Background="#1AFFFFFF" VerticalAlignment="Center"
                                                         Visibility="{x:Bind IsHearingImpaired}">
-                                                    <TextBlock Text="HI" FontSize="10" Foreground="#99FFFFFF" />
+                                                    <TextBlock Text="{x:Bind t:AppText.Get('subtitleSearch.hearingImpaired')}" FontSize="10" Foreground="#99FFFFFF" />
                                                 </Border>
                                                 <TextBlock Grid.Column="3" Text="{x:Bind DownloadsText}" FontSize="10" Foreground="#66FFFFFF" VerticalAlignment="Center"
                                                            Typography.NumeralAlignment="Tabular" />
@@ -221,7 +222,7 @@
                                                                Foreground="{x:Bind controls:AddSubtitlesPanel.Solid(ProviderColor)}" />
                                                 </Border>
                                                 <ProgressRing Grid.Column="5" Width="12" Height="12" Foreground="#99FFFFFF" IsActive="{x:Bind IsDownloading, Mode=OneWay}"
-                                                              AutomationProperties.Name="Downloading" />
+                                                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.subtitles.search.downloading')}" />
                                             </Grid>
                                         </Button>
                                     </DataTemplate>

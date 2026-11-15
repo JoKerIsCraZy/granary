@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -24,7 +25,7 @@ public sealed record SubtitleTrackOption(string? TrackId, string Title, string F
         Func<SubtitleInventoryItem, string?>? syncStatus = null)
     {
         ArgumentNullException.ThrowIfNull(tracks);
-        var rows = new List<SubtitleTrackOption>(tracks.Count + 1) { new(null, "Off", "", "", "", selected is null) };
+        var rows = new List<SubtitleTrackOption>(tracks.Count + 1) { new(null, AppText.Get("web.subtitles.menu.off"), "", "", "", selected is null) };
         rows.AddRange(tracks
             .OrderBy(track => track.Source switch { SubtitleSources.External => 1, SubtitleSources.Downloaded => 2, _ => 0 })
             .Select(track =>

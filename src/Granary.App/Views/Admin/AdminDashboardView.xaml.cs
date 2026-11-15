@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.UI;
@@ -38,6 +40,23 @@ public sealed partial class AdminDashboardView : UserControl
     }
 
     public AdminDashboardViewModel ViewModel { get; }
+
+    // The cards' titles and messages over their windows, as the web's range titles and phrases put them together.
+    public string PlaybackTitle => AdminText.LastDay(AppText.Get("web.admin.dashboard.widgets.playbackActivity.title"));
+
+    public string PlaybackChartName => AppText.Get("web.admin.dashboard.widgets.playbackActivity.chartLabelHourly", ("range", AdminText.LastDayPhrase));
+
+    public string PlaybackEmpty => AppText.Get("web.admin.dashboard.widgets.playbackActivity.empty", ("range", AdminText.LastDayPhrase));
+
+    public string EgressTitle => AdminText.LastDay(AppText.Get("web.admin.dashboard.widgets.egress.title"));
+
+    public string TopTitlesTitle => AdminText.LastWeek(AppText.Get("web.admin.dashboard.widgets.topTitles.title"));
+
+    public string TopTitlesEmpty => AppText.Get("web.admin.dashboard.widgets.topTitles.empty", ("range", AdminText.LastWeekPhrase));
+
+    public string TopProfilesTitle => AdminText.LastWeek(AppText.Get("web.admin.dashboard.widgets.topProfiles.title"));
+
+    public string TopProfilesEmpty => AppText.Get("web.admin.dashboard.widgets.topProfiles.empty", ("range", AdminText.LastWeekPhrase));
 
     /// <summary>Shows the dashboard and starts its clock.</summary>
     public async Task ActivateAsync()
@@ -93,13 +112,13 @@ public sealed partial class AdminDashboardView : UserControl
     // A paused stream's poster dims, as on the web.
     public static double PosterOpacity(bool isPaused) => isPaused ? 0.45 : 1;
 
-    public static string HealthGlyph(string label) => label switch
+    public static string HealthGlyph(AdminHealthKind kind) => kind switch
     {
-        "Version" => "\uE8EC",
-        "Uptime" => "\uE823",
-        "Postgres" => "\uE8F1",
-        "Redis" => "\uE945",
-        "Nodes" => "\uE968",
+        AdminHealthKind.Version => "\uE8EC",
+        AdminHealthKind.Uptime => "\uE823",
+        AdminHealthKind.Postgres => "\uE8F1",
+        AdminHealthKind.Redis => "\uE945",
+        AdminHealthKind.Nodes => "\uE968",
         _ => "\uE7BA",
     };
 
@@ -119,7 +138,9 @@ public sealed partial class AdminDashboardView : UserControl
 
     public static Brush MethodBorder(string method) => new SolidColorBrush(MethodColor(method)) { Opacity = 0.15 };
 
-    public static string EgressName(string peak) => $"Egress over the last 24 hours, in megabits per second. {peak}";
+    // The web's name for the chart, then its peak as a sentence of its own.
+    public static string EgressName(string peak) =>
+        $"{AppText.Get("web.admin.dashboard.widgets.egress.chartLabel", ("range", AdminText.LastDayPhrase))}. {peak}";
 
     public static GridLength Share(double fraction) => new(Math.Clamp(fraction, 0, 1), GridUnitType.Star);
 
@@ -132,17 +153,33 @@ public sealed partial class AdminDashboardView : UserControl
     public static Brush LibraryDot(bool isEnabled) =>
         isEnabled ? new SolidColorBrush(Color.FromArgb(0xFF, 0x22, 0xC5, 0x5E)) : new SolidColorBrush(Microsoft.UI.Colors.White) { Opacity = 0.3 };
 
-    public static string UserName(string username, string role, string lastActive, string status) =>
-        role.Length > 0 ? $"{username} ({role}), last active {lastActive}, {status}" : $"{username}, last active {lastActive}, {status}";
-
     // The web's outline badge for an active account, a red one for a disabled account.
     public static Brush StatusBorder(bool isEnabled) => isEnabled ? Resource("SiloBorderBrush") : new SolidColorBrush(Destructive);
 
     public static Brush StatusBackground(bool isEnabled) =>
         isEnabled ? new SolidColorBrush(Microsoft.UI.Colors.Transparent) : new SolidColorBrush(Destructive) { Opacity = 0.2 };
 
-    /// <summary>" (Kids) started watching ", between the account and the title.</summary>
-    public static string StartedWatching(string profileNote) => $"{profileNote} started watching ";
+    // "elena (Kids) started watching Dark" in the order the language has it: the account and the title in bold, the profile
+    // (the web's pill) in brackets.
+    private void OnRecentContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+    {
+        if (sender is not TextBlock text || args.NewValue is not AdminActivityRow row)
+        {
+            return;
+        }
+        text.Inlines.Clear();
+        foreach (var part in row.Runs)
+        {
+            var run = new Run { Text = part.Tags.Contains("pill") ? $"({part.Text})" : part.Text };
+            if (part.Tags.Contains("user") || part.Tags.Contains("link"))
+            {
+                run.FontFamily = (FontFamily)Application.Current.Resources["SiloFontSemiBold"];
+                run.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+                run.Foreground = Resource("SiloForegroundBrush");
+            }
+            text.Inlines.Add(run);
+        }
+    }
 
     private static Color MethodColor(string method) => method switch
     {

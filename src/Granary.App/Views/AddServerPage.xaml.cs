@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -33,7 +34,8 @@ public sealed partial class AddServerPage : Page, IOwnFocus
     public AddServerViewModel ViewModel { get; }
 
     // Instance methods because x:Bind function bindings call them on the page.
-    public string ConnectLabel(bool isRunning) => isRunning ? "Connecting…" : "Connect";
+    public string ConnectLabel(bool isRunning) =>
+        isRunning ? AppText.Get("granary.addServer.connecting") : AppText.Get("granary.addServer.connect");
 
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 

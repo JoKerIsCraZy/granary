@@ -1,16 +1,19 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.WatchParty;
 
 /// <summary>What a party started from a title's page puts up first: a movie, or one episode (the web's <c>StartPartyTarget</c>).</summary>
 /// <param name="ContentType"><c>movie</c> or <c>episode</c>.</param>
-/// <param name="Subtitle">A movie's year, an episode's "S3 E1".</param>
+/// <param name="Subtitle">A movie's year, an episode's "S3 E1": data the room stores and sends as the web does, not worded.</param>
 /// <param name="SeriesTitle">An episode's series, which its suggestion names.</param>
 public sealed record StartPartyTarget(string ContentId, string ContentType, string Title, string Subtitle, string? SeriesTitle = null)
 {
     /// <summary>The sheet's Episode row: <c>S3 E1 "Chapter 1"</c>.</summary>
-    public string EpisodeText => Subtitle.Length > 0 ? $"{Subtitle} \"{Title}\"" : $"\"{Title}\"";
+    public string EpisodeText => Subtitle.Length > 0
+        ? AppText.Get("web.watchTogether.startSheet.episodeWithCode", ("code", Subtitle), ("title", Title))
+        : AppText.Get("web.watchTogether.startSheet.episodeTitle", ("title", Title));
 
     /// <summary>The room's name among the recent parties: "Chapter 1 · S3 E1".</summary>
     public string RoomTitle => WatchPartyText.Join(Title, Subtitle);
@@ -70,11 +73,11 @@ public sealed partial class StartPartySeason(int number, string label) : Observa
 public sealed record StartPartyEpisode(string ContentId, int SeasonNumber, int EpisodeNumber, string Title, bool IsWatched)
 {
     /// <summary>"E1".</summary>
-    public string Number => string.Create(CultureInfo.InvariantCulture, $"E{EpisodeNumber}");
+    public string Number => AppText.Get("web.watchTogether.common.episodeNumber", ("number", EpisodeNumber.ToString(CultureInfo.InvariantCulture)));
 
     /// <summary>"Episode 1, Chapter 1, watched".</summary>
-    public string AccessibleName => string.Create(CultureInfo.InvariantCulture,
-        $"Episode {EpisodeNumber}, {Title}{(IsWatched ? ", watched" : "")}");
+    public string AccessibleName => AppText.Get("granary.watchParty.episodeName", ("number", EpisodeNumber.ToString(CultureInfo.InvariantCulture)),
+        ("title", Title), ("watched", IsWatched ? "yes" : "no"));
 }
 
 /// <summary>

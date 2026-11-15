@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -10,7 +11,7 @@ using static Granary.Tests.Downloads.DownloadHarness;
 namespace Granary.Tests.Downloads;
 
 /// <summary>
-/// The series download dialog's One Time | Monitor, as Silo's Apple app's series sheet (<c>SeriesDownloadSheet.swift</c>): Monitor
+/// The series download dialog's One time | Monitor, as Silo's Apple app's series sheet (<c>SeriesDownloadSheet.swift</c>): Monitor
 /// shows while the server monitors series, starts with the Monitoring Defaults, saves a new monitor or what changed in one, and
 /// stops one after asking.
 /// </summary>
@@ -68,20 +69,38 @@ public sealed class DownloadOptionsMonitorTests : IAsyncDisposable
         var options = await SeriesDialogAsync(MonitorPayloads.Capability());
 
         Assert.True(options.ShowsKinds);
-        Assert.Equal(["One Time", "Monitor"], options.Kinds.Select(k => k.Label));
-        Assert.Equal("One Time", options.SelectedKind?.Label);
+        Assert.Equal(["One time", "Monitor"], options.Kinds.Select(k => k.Label));
+        Assert.Equal("One time", options.SelectedKind?.Label);
         Assert.Equal("Download now. Nothing else downloads later.", options.KindHint);
         Assert.Equal("Download", options.PrimaryText);
 
         ChooseMonitor(options);
 
         Assert.Equal("Keep new episodes coming to this PC as they air.", options.KindHint);
-        Assert.Equal("Start Monitoring", options.PrimaryText);
+        Assert.Equal("Start monitoring", options.PrimaryText);
         Assert.Equal("Download: Example Series", options.DialogTitle);
         Assert.True(options.CanStart);
 
         var without = await SeriesDialogAsync(MonitorPayloads.Capability(monitoring: false));
         Assert.False(without.ShowsKinds);
+    }
+
+    [Fact]
+    public async Task InGerman_MonitorSpeaksTheAppleAppsWords_WithThisPC()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var options = await SeriesDialogAsync(MonitorPayloads.Capability());
+
+        Assert.Equal(("Download: Example Series · Alle Folgen", "Herunterladen"), (options.DialogTitle, options.PrimaryText));
+        Assert.Equal(["Einmalig", "Überwachen"], options.Kinds.Select(k => k.Label));
+
+        ChooseMonitor(options);
+
+        Assert.Equal("Neue Folgen kommen nach der Ausstrahlung automatisch auf diesen PC.", options.KindHint);
+        Assert.Equal(("Download: Example Series", "Überwachung starten"), (options.DialogTitle, options.PrimaryText));
+        Assert.Equal(["Keins", "10 GB", "25 GB", "50 GB", "100 GB"], options.StorageLimits.Select(l => l.Label));
+        Assert.Equal("Überwachte Folgen werden in Originalqualität heruntergeladen.", options.MonitorSummary);
+        Assert.Equal("Überwachung von Example Series beenden?", options.StopTitle);
     }
 
     [Fact]
@@ -92,7 +111,7 @@ public sealed class DownloadOptionsMonitorTests : IAsyncDisposable
 
         var options = await SeriesDialogAsync(MonitorPayloads.Capability(modes: ["future", "latest_season"]));
 
-        Assert.Equal([("Future Episodes", "Only episodes that air from now on"), ("Last Season", "Season 2 and anything newer")],
+        Assert.Equal([("Future episodes", "Only episodes that air from now on"), ("Last season", "Season 2 and anything newer")],
             options.MonitorRows.Select(r => (r.Title, r.Detail)));
         Assert.Equal(SubscriptionModes.Future, options.SelectedRule?.Mode);
         Assert.True(options.DeleteWatched);

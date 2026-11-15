@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Collections;
 using Microsoft.Extensions.Logging;
 
@@ -58,7 +59,8 @@ public sealed partial class PersonalListViewModel
             var read = await _collections.GetAsync(server.BaseUri, collection.CollectionId);
             _collectionVersion = read.Version;
             _collectionShared = read.Value.IsShared;
-            if (!await _confirmation.AskAsync($"Delete “{read.Value.Name}”?", CollectionEditorText.DeleteDescription(_collectionShared), "Delete"))
+            if (!await _confirmation.AskAsync(AppText.Get("web.collections.pageActions.deleteTitle", ("name", read.Value.Name)),
+                CollectionEditorText.DeleteDescription(_collectionShared), AppText.Get("web.collections.deleteDialog.delete")))
             {
                 return;
             }
@@ -70,7 +72,7 @@ public sealed partial class PersonalListViewModel
             _logger.LogWarning(ex, "Could not delete a collection from its page");
             // A version changed meanwhile is read again for the next try.
             _collectionVersion = null;
-            CollectionNotice = ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Failed to delete";
+            CollectionNotice = ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : AppText.Get("web.common.toast.collections.deleteFailed");
         }
     }
 

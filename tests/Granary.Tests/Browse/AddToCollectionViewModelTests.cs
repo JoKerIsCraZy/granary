@@ -90,7 +90,7 @@ public sealed class AddToCollectionViewModelTests
 
         dialog.Search = "zz";
         Assert.True(dialog.HasNoMatch);
-        Assert.Equal("No collections match \u201Czz\u201D.", dialog.NoMatchText);
+        Assert.Equal("No collections match \"zz\".", dialog.NoMatchText);
     }
 
     [Fact]

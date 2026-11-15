@@ -443,7 +443,7 @@ public sealed class CollectionsViewModelTests
 
         await page.DeleteCollectionCommand.ExecuteAsync(page.Own[0]);
 
-        Assert.Equal("Delete “Rainy days”?", _confirmation.Asked[0].Title);
+        Assert.Equal("Delete \"Rainy days\"?", _confirmation.Asked[0].Title);
         Assert.Equal("It's removed for you and every profile you share it with. This can't be undone.", _confirmation.Asked[0].Message);
         Assert.Equal("\"r1\"", Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, "api/v2/collections/u1")).IfMatch);
         Assert.Equal(["Top Picks"], Titles(page.Own));

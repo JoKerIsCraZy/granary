@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Granary.Core.Api.Admin;
 using Granary.Core.Realtime;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -73,6 +74,21 @@ public sealed class ServerActivityViewModelTests : IDisposable
         Assert.False(_indicator.HasActivity);
         Assert.True(_indicator.IsEmpty);
         Assert.Equal("Server activity", _indicator.Name);
+    }
+
+    [Fact]
+    public void TheButtonAndItsRows_AreWordedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        _indicator.Show(Live(Session("s1", AdminPlayMethod.Direct), Session("s2", AdminPlayMethod.Direct)) with
+        {
+            Connection = EventsConnection.Disconnected,
+        });
+
+        Assert.Equal("Serveraktivität: 2 aktiv", _indicator.Name);
+        Assert.Equal("2 Direktwiedergabe", Assert.Single(_indicator.Streams).Text);
+        Assert.Equal("Getrennt", _indicator.ConnectionText);
     }
 
     [Fact]
@@ -211,6 +227,8 @@ public sealed class ServerActivityViewModelTests : IDisposable
     [InlineData(0.4, "0.4%")]
     [InlineData(42, "42%")]
     [InlineData(12.34, "12.3%")]
+    [InlineData(12.04, "12.0%")]
+    [InlineData(41.97, "42.0%")]
     [InlineData(99.96, "99.9%")]
     [InlineData(100, "100%")]
     [InlineData(250, "100%")]
@@ -411,12 +429,11 @@ public sealed class ServerActivityViewModelTests : IDisposable
     }
 
     [Fact]
-    public void OnAGermanWindows_TheNumbersStayAsTheWebWritesThemInEnglish()
+    public void OnAGermanFormat_TheNumbersAreWrittenAsTheWebWritesThemThere()
     {
-        var before = (System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CultureInfo.CurrentUICulture);
-        try
+        // English on a German Windows: the web writes counts and decimals in the browser's format, the words in English.
+        using (AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For("de-DE"))))
         {
-            System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.CurrentUICulture = new("de-DE");
 
             _indicator.Show(Live() with
             {
@@ -436,17 +453,13 @@ public sealed class ServerActivityViewModelTests : IDisposable
                 },
             });
 
-            Assert.Equal("41.5%", _indicator.Tasks[0].StatusText);
-            Assert.Equal(("Library #1234", "Processing files · 1,200 / 4,800 (25%)"), (_indicator.Scans[0].LibraryName, _indicator.Scans[0].ProgressText));
-            Assert.Equal("1,275 more scans queued", _indicator.MoreScansText);
+            Assert.Equal("41,5%", _indicator.Tasks[0].StatusText);
+            Assert.Equal(("Library #1234", "Processing files · 1.200 / 4.800 (25%)"), (_indicator.Scans[0].LibraryName, _indicator.Scans[0].ProgressText));
+            Assert.Equal("1.275 more scans queued", _indicator.MoreScansText);
             Assert.Equal(("42%", "Transcode · about 19 min left"), (_indicator.Preparations[0].StatusText, _indicator.Preparations[0].DetailText));
-            Assert.Equal(("1,200 queued", "2,500 paused", "1,100 failed in the last 24 hours"),
+            Assert.Equal(("1.200 queued", "2.500 paused", "1.100 failed in the last 24 hours"),
                 (_indicator.WaitingPreparationsText, _indicator.PausedPreparationsText, _indicator.FailedPreparationsText));
             Assert.Equal("Server activity: 2502 active", _indicator.Name);
-        }
-        finally
-        {
-            (System.Globalization.CultureInfo.CurrentCulture, System.Globalization.CultureInfo.CurrentUICulture) = before;
         }
     }
 

@@ -179,7 +179,7 @@ public sealed class AppUpdatesViewModelTests
         Assert.True(updates.IsAvailable);
         Assert.Equal("0.3.0", updates.AvailableVersion);
         Assert.Equal("Granary 0.3.0 is available.", updates.StatusText);
-        Assert.Equal("Last checked today at 12:00", updates.LastCheckedText);
+        Assert.Equal("Last checked today at 12:00 PM", updates.LastCheckedText);
         Assert.Equal("", updates.ReleaseNotes);
         Assert.Null(updates.ReadyVersion);
         Assert.False(updates.IsNoticeShown);
@@ -515,7 +515,7 @@ public sealed class AppUpdatesViewModelTests
         Assert.Equal(1, _updater.Checks);
         Assert.Equal(AppUpdateState.UpToDate, updates.State);
         Assert.Equal("Granary is up to date.", updates.StatusText);
-        Assert.Equal("Last checked today at 12:00", updates.LastCheckedText);
+        Assert.Equal("Last checked today at 12:00 PM", updates.LastCheckedText);
         Assert.True(updates.CheckNowCommand.CanExecute(null));
     }
 

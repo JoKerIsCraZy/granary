@@ -68,12 +68,12 @@ public sealed class ItemDetailWatchStateTests
         _fixture.Episode().Get(ItemPath(EpisodeId), Ok(EpisodeAt(600)));
         var detail = await _fixture.LoadAsync(EpisodeId);
         detail.Activate();
-        Assert.Equal("Resume from 10:00", detail.PlayButtonText);
+        Assert.Equal("Resume at 10:00", detail.PlayButtonText);
         _fixture.Get(ItemPath(EpisodeId), Ok(EpisodeAt(1500)));
 
         await StopPlaybackAsync(detail);
 
-        Assert.Equal("Resume from 25:00", detail.PlayButtonText);
+        Assert.Equal("Resume at 25:00", detail.PlayButtonText);
         Assert.Equal(EpisodeId, detail.PlayTargetId);
         Assert.True(detail.CanStartOver);
     }
@@ -84,12 +84,12 @@ public sealed class ItemDetailWatchStateTests
         _fixture.Movie();
         var detail = await _fixture.LoadAsync(MovieId);
         detail.Activate();
-        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        Assert.Equal("Resume at 21:52", detail.PlayButtonText);
         _fixture.Get(ItemPath(MovieId), Ok(MovieOn));
 
         await StopPlaybackAsync(detail);
 
-        Assert.Equal("Resume from 40:00", detail.PlayButtonText);
+        Assert.Equal("Resume at 40:00", detail.PlayButtonText);
     }
 
     [Fact]
@@ -205,13 +205,13 @@ public sealed class ItemDetailWatchStateTests
             await detail.Refreshing;
         }
         Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, ItemPath(MovieId)));
-        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        Assert.Equal("Resume at 21:52", detail.PlayButtonText);
 
         playing.Dispose();
         await StopPlaybackAsync(detail);
 
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(MovieId)).Count);
-        Assert.Equal("Resume from 40:00", detail.PlayButtonText);
+        Assert.Equal("Resume at 40:00", detail.PlayButtonText);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public sealed class ItemDetailWatchStateTests
         await detail.Refreshing;
 
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(EpisodeId)).Count);
-        Assert.Equal("Resume from 25:00", detail.PlayButtonText);
+        Assert.Equal("Resume at 25:00", detail.PlayButtonText);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public sealed class ItemDetailWatchStateTests
 
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(MovieId)).Count);
         Assert.True(detail.IsReady);
-        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        Assert.Equal("Resume at 21:52", detail.PlayButtonText);
         Assert.False(detail.HasActionError);
     }
 }

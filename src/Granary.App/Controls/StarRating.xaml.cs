@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
@@ -43,6 +44,7 @@ public sealed partial class StarRating : UserControl
     public StarRating()
     {
         InitializeComponent();
+        AutomationProperties.SetName(this, AppText.Get("web.item.rating.label"));
         _filledBrush = (Brush)Resources["StarFilledBrush"];
         _emptyBrush = (Brush)Resources["StarEmptyBrush"];
         var style = (Style)Resources["StarButtonStyle"];
@@ -82,7 +84,7 @@ public sealed partial class StarRating : UserControl
     private void AddStar(int number, Style style)
     {
         var star = new RatingStar(number) { Style = style, Content = new FontIcon { Glyph = EmptyGlyph } };
-        AutomationProperties.SetName(star, number == 1 ? "1 star" : $"{number} stars");
+        AutomationProperties.SetName(star, AppText.Get("web.item.rating.stars", ("count", number)));
         // "3 of 5".
         AutomationProperties.SetPositionInSet(star, number);
         AutomationProperties.SetSizeOfSet(star, RatingSet.Max);

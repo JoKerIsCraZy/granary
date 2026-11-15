@@ -4,6 +4,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
 using Granary.Core.Artwork;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 
@@ -15,8 +16,8 @@ namespace Granary.Core.ViewModels;
 /// </summary>
 /// <param name="Key">The title's content id: the same title loaded again is the same hero.</param>
 /// <param name="Meta">
-/// "2008 · 2h 32m · IMDb 9.0 · Action · Crime · PG-13", an episode's "S1 E1 · Kein Zufall · 25m · TV-14"; empty when nothing
-/// is known.
+/// "2008 · 2h 32m · IMDb 9.0 · Action · Crime · PG-13", an episode's "S1 · E1 · Kein Zufall · 25 min · TV-14"; empty when
+/// nothing is known.
 /// </param>
 /// <param name="Overview">Null when there is none, or for an unwatched episode while the profile hides descriptions.</param>
 public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, string? Overview, Uri? LogoUrl, Uri? BackdropUrl, string? BackdropThumbhash)
@@ -88,7 +89,7 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
         string?[] parts =
         [
             result.Year is int year and > 0 ? year.ToString(CultureInfo.InvariantCulture) : null,
-            result.MediaType == "series" ? "Series" : "Movie",
+            RequestText.MediaTypeLabel(result.MediaType),
             state,
         ];
         return new BrowseHeroTitle(
@@ -110,15 +111,15 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
     // In the order of the web's formatHeroMetadata (components/heroMetadata.ts). A movie its year, length, rating (IMDb's, or
     // TMDB's without one), two genres and certificate; a series the same without a length, which is an episode's; an episode
     // where it sits in its series, its own title, its length and certificate, and neither rating nor genres, as on the web.
-    // The certificate is in capitals in every line, as the web's.
+    // Where it sits and the length are in the web hero's words; the certificate is in capitals in every line, as the web's.
     private static (string Meta, BrowseHeroRating? Rating) DetailsOf(CatalogItemBase item)
     {
         string? certificate = item.ContentRating?.ToUpperInvariant();
         if (item.Type == CatalogItemTypes.Episode)
         {
-            return (Joined([EpisodeCode(item.SeasonNumber, item.EpisodeNumber), item.Title, DetailText.Runtime(item.Runtime), certificate]), null);
+            return (Joined([EpisodeCode(item.SeasonNumber, item.EpisodeNumber), item.Title, Runtime(item.Runtime), certificate]), null);
         }
-        string before = Joined([DetailText.Year(item.Year), item.Type == CatalogItemTypes.Movie ? DetailText.Runtime(item.Runtime) : null]);
+        string before = Joined([DetailText.Year(item.Year), item.Type == CatalogItemTypes.Movie ? Runtime(item.Runtime) : null]);
         string after = Joined([.. Genres(item), certificate]);
         if (CardRating.Primary(item) is not { } rating)
         {
@@ -135,8 +136,21 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
     private static string Joined(IEnumerable<string?> parts) =>
         string.Join(Separator, parts.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
 
+    // The numbers of a code stay in Latin digits in every language, as the web's codeNumber.
     private static string? EpisodeCode(int? season, int? episode) =>
-        season is int s && episode is int e ? string.Create(CultureInfo.InvariantCulture, $"S{s} E{e}") : null;
+        season is int s && episode is int e
+            ? AppText.Get("web.home.hero.episodeIdentity",
+                ("season", s.ToString(CultureInfo.InvariantCulture)), ("episode", e.ToString(CultureInfo.InvariantCulture)))
+            : null;
+
+    // "2h 32m", "2h", "45 min".
+    private static string? Runtime(int? minutes) => minutes switch
+    {
+        null or <= 0 => null,
+        < 60 => AppText.Get("web.home.hero.runtimeMinutes", ("minutes", minutes.Value)),
+        _ when minutes.Value % 60 == 0 => AppText.Get("web.home.hero.runtimeHours", ("hours", minutes.Value / 60)),
+        _ => AppText.Get("web.home.hero.runtimeHoursMinutes", ("hours", minutes.Value / 60), ("minutes", minutes.Value % 60)),
+    };
 }
 
 /// <summary>The rating in a hero's line of details: its source's mark and its score, "IMDb" and "8.4".</summary>

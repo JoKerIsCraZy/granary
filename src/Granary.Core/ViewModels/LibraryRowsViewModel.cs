@@ -60,7 +60,7 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
             var empty = new List<LibraryRowViewModel>();
             foreach (var section in sections.Sections.Where(s => s.TotalCount > 0))
             {
-                var row = new LibraryRowViewModel(section.Id, section.Title, OpenCardCommand, ExploreAllCommandFor(section, libraryId));
+                var row = new LibraryRowViewModel(section.Id, SectionTitle.Shown(section), OpenCardCommand, ExploreAllCommandFor(section, libraryId));
                 Fill(row, section, server);
                 Rows.Add(row);
                 if (!row.HasCards)
@@ -131,7 +131,7 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
     }
 
     private RelayCommand ExploreAllCommandFor(Section section, string libraryId) =>
-        new(() => navigation.NavigateTo(AppRoute.Section, new SectionRouteParameter(section.Id, section.Title, libraryId)));
+        new(() => navigation.NavigateTo(AppRoute.Section, new SectionRouteParameter(section.Id, SectionTitle.Shown(section), libraryId)));
 
     private CancellationToken Restart()
     {

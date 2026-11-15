@@ -74,6 +74,18 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Joining_WithNeitherACodeNorThisServersLink_SaysSo_AndSendsNothing()
+    {
+        var hub = Hub();
+        hub.Code = "https://elsewhere.example/rooms/join?token=invite-secret";
+
+        await hub.JoinCommand.ExecuteAsync(null);
+
+        Assert.Equal("Enter the 8-character party code or paste an invitation link.", hub.Error);
+        Assert.Empty(_silo.SentTo(HttpMethod.Post, "api/v2/watch-together/join"));
+    }
+
+    [Fact]
     public async Task Joining_FromTheHub_OpensTheRoom_AndAMissingOneSaysSo()
     {
         var hub = Hub();

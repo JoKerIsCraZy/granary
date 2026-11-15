@@ -8,7 +8,8 @@
     x:Class="Granary.App.Views.Settings.ServersSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -29,15 +30,15 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="8">
-                <TextBlock Text="Servers" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind t:AppText.Get('granary.servers.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                           Text="The Silo servers Granary knows. It uses one at a time; the others keep their sign-in." />
+                           Text="{x:Bind t:AppText.Get('granary.settings.servers.lead')}" />
             </StackPanel>
             <Button Grid.Column="1" VerticalAlignment="Top" Margin="0,4,0,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                    Command="{x:Bind ViewModel.AddServerCommand}" AutomationProperties.Name="Add server">
+                    Command="{x:Bind ViewModel.AddServerCommand}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.servers.add')}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE710;" FontSize="12" />
-                    <TextBlock Text="Add server" />
+                    <TextBlock Text="{x:Bind t:AppText.Get('granary.servers.add')}" />
                 </StackPanel>
             </Button>
         </Grid>
@@ -64,19 +65,19 @@
                             </StackPanel>
                             <Border Grid.Column="2" Visibility="{x:Bind IsActive}" VerticalAlignment="Center" Padding="10,3" CornerRadius="10"
                                     Background="{StaticResource SiloPrimaryBrush}">
-                                <TextBlock Text="Active" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                <TextBlock Text="{x:Bind t:AppText.Get('granary.servers.active')}" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                                            Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
                             </Border>
-                            <Button Grid.Column="2" Content="Switch" VerticalAlignment="Center" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            <Button Grid.Column="2" Content="{x:Bind t:AppText.Get('granary.servers.switch')}" VerticalAlignment="Center" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                     Visibility="{x:Bind CanSwitch}" Tag="{x:Bind}" Click="OnSwitchClick" AutomationProperties.Name="{x:Bind SwitchLabel}" />
                             <Button Grid.Column="3" VerticalAlignment="Center" Padding="10,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                                    ToolTipService.ToolTip="More options" AutomationProperties.Name="{x:Bind MoreOptionsLabel}">
+                                    ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.servers.moreOptions')}" AutomationProperties.Name="{x:Bind MoreOptionsLabel}">
                                 <FontIcon Glyph="&#xE712;" FontSize="14" />
                                 <Button.Flyout>
                                     <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                        <MenuFlyoutItem Text="Sign out" Tag="{x:Bind}" Click="OnSignOutClick" />
+                                        <MenuFlyoutItem Text="{x:Bind t:AppText.Get('common.signOut')}" Tag="{x:Bind}" Click="OnSignOutClick" />
                                         <MenuFlyoutSeparator />
-                                        <MenuFlyoutItem Text="Remove…" Tag="{x:Bind}" Click="OnRemoveClick">
+                                        <MenuFlyoutItem Text="{x:Bind t:AppText.Get('granary.servers.remove')}" Tag="{x:Bind}" Click="OnRemoveClick">
                                             <MenuFlyoutItem.Icon>
                                                 <SymbolIcon Symbol="Delete" />
                                             </MenuFlyoutItem.Icon>
@@ -91,7 +92,7 @@
         </Border>
 
         <TextBlock Grid.Row="2" Margin="4,18,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Visibility="{x:Bind ViewModel.HasNoServers, Mode=OneWay}" Text="No servers yet. Add a Silo server to get started." />
+                   Visibility="{x:Bind ViewModel.HasNoServers, Mode=OneWay}" Text="{x:Bind t:AppText.Get('granary.servers.empty')}" />
 
         <Grid Grid.Row="3" Margin="4,16,0,0" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
@@ -99,7 +100,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <ProgressRing IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
-                          Width="16" Height="16" AutomationProperties.Name="Working" />
+                          Width="16" Height="16" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.servers.working')}" />
             <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                        VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
         </Grid>

@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
@@ -19,13 +20,16 @@ public static class PlayerMenus
     public static Brush RowForeground(bool isSelected) =>
         (Brush)Application.Current.Resources[isSelected ? "SiloPlayerMenuChosenBrush" : "SiloPlayerMenuRowBrush"];
 
-    public static string Status(bool isSelected) => isSelected ? "Selected" : "";
+    /// <summary>"DEFAULT" on the audio track the file plays by default; the web shows its "Default" in capitals.</summary>
+    public static string DefaultBadge => AppText.Upper(AppText.Get("web.player.audioMenu.defaultBadge"));
+
+    public static string Status(bool isSelected) => isSelected ? AppText.Get("web.player.quality.selected") : "";
 
     // "Subtitle delay +300 ms", read when it changes.
-    public static string DelayName(string delay) => "Subtitle delay " + delay;
+    public static string DelayName(string delay) => AppText.Get("granary.player.subtitleDelayName", ("delay", delay));
 
     // "Audio delay −200 ms", read when it changes.
-    public static string AudioDelayName(string delay) => "Audio delay " + delay;
+    public static string AudioDelayName(string delay) => AppText.Get("granary.player.audioDelayName", ("delay", delay));
 
     // The subtitle menu marks its chosen row as the web does: a faint light behind it and white text, the others dimmed.
     public static Brush SubtitleRowBackground(bool isSelected) =>
@@ -35,11 +39,12 @@ public static class PlayerMenus
         new SolidColorBrush(isSelected ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF));
 
     // A chapter row: "Opening, 4 minutes 5 seconds", and where it starts as the web writes it ("4:05").
-    public static string ChapterName(string title, double startSeconds) => $"{title}, {PlayerTime.Spoken(startSeconds)}";
+    public static string ChapterName(string title, double startSeconds) =>
+        AppText.Get("granary.player.chapterName", ("title", title), ("start", PlayerTime.Spoken(startSeconds)));
 
     public static string ChapterStart(double startSeconds) => PlayerTime.Format(startSeconds);
 
-    public static string ChapterStatus(bool isCurrent) => isCurrent ? "Playing" : "";
+    public static string ChapterStatus(bool isCurrent) => isCurrent ? AppText.Get("granary.player.chapterPlaying") : "";
 
     // 80 by 48 on the row; a chapter without a picture keeps the placeholder.
     public static ImageSource? ChapterThumbnail(Uri? url) => Artwork.Load(url, 80);

@@ -12,6 +12,7 @@ using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -41,10 +42,6 @@ public enum ItemDetailState
 /// </remarks>
 public sealed partial class ItemDetailViewModel : ObservableObject
 {
-    public const string NotFoundTitle = "This title is no longer available";
-    public const string NotFoundHint = "It may have been removed, or you may not have access to it. Use Back to return.";
-    public const string NoEpisodesText = "No episodes are available for this season yet.";
-
     private const int SimilarLimit = 12;
 
     // Twenty seasons or so of a long-running show; any further season loads its stills when it is opened.
@@ -248,13 +245,19 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     // Actions
 
-    /// <summary>The primary button's words: "Resume from 1:02:33" for a movie or episode, else <see cref="PlayLabel"/>.</summary>
+    /// <summary>The primary button's words: "Resume at 1:02:33" for a movie or episode, else <see cref="PlayLabel"/>.</summary>
     [ObservableProperty]
-    public partial string PlayButtonText { get; private set; } = "Play";
+    public partial string PlayButtonText { get; private set; } = "";
 
+    /// <summary>The primary action's own words: "Play", "Resume", "Play Next", …; empty until the title is read.</summary>
     [ObservableProperty]
+    public partial string PlayLabel { get; private set; } = "";
+
+    /// <summary>Play goes on from where the viewer stopped.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StartOverCommand))]
     [NotifyPropertyChangedFor(nameof(CanStartOver))]
-    public partial string PlayLabel { get; private set; } = "Play";
+    public partial bool PlayResumes { get; private set; }
 
     /// <summary>What Play starts: the item itself, or for a series or season the episode to resume or play next.</summary>
     [ObservableProperty]
@@ -262,8 +265,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanStartOver))]
     public partial string? PlayTargetId { get; private set; }
 
-    /// <summary>Play resumes a title in progress; "Start over" plays it from the beginning instead.</summary>
-    public bool CanStartOver => PlayTargetId is not null && PlayLabel == DetailFacts.ResumeLabel;
+    /// <summary>Play resumes a title in progress; "Play from Beginning" plays it from the start instead.</summary>
+    public bool CanStartOver => PlayTargetId is not null && PlayResumes;
 
     [ObservableProperty]
     public partial bool ShowsWatchedAction { get; private set; }
@@ -286,13 +289,17 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(FavoriteLabel))]
     public partial bool IsFavorite { get; private set; }
 
-    public string FavoriteLabel => IsFavorite ? "Remove from favorites" : "Add to favorites";
+    public string FavoriteLabel => IsFavorite
+        ? AppText.Get("web.detail.actions.removeFromFavorites")
+        : AppText.Get("web.detail.actions.addToFavorites");
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WatchlistLabel))]
     public partial bool IsInWatchlist { get; private set; }
 
-    public string WatchlistLabel => IsInWatchlist ? "Remove from Watchlist" : "Add to Watchlist";
+    public string WatchlistLabel => IsInWatchlist
+        ? AppText.Get("web.detail.actions.removeFromWatchlist")
+        : AppText.Get("web.detail.actions.addToWatchlist");
 
     /// <summary>Why the last watched, favourite, watchlist or rating change did not stick; empty when it did.</summary>
     [ObservableProperty]
@@ -364,8 +371,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     // A separator stands only before cards: a row with entries has people.
     public bool HasPeople => Credits.Count > 0;
 
+    /// <summary>"Cast &amp; Crew", or "Cast" when the row has no crew cards.</summary>
     [ObservableProperty]
-    public partial string PeopleTitle { get; private set; } = "Cast";
+    public partial string PeopleTitle { get; private set; } = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSimilar))]
@@ -396,7 +404,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         if (_session.ActiveServer is not { } server)
         {
-            LoadErrorText = "No server is selected.";
+            LoadErrorText = AppText.Get("granary.detail.noServer");
             State = ItemDetailState.Failed;
             return;
         }
@@ -719,7 +727,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _episodes = episodes;
         _listsEpisodes = true;
         ShowEpisodeCards();
-        EpisodesTotalText = $"{total ?? episodes.Count} total";
+        EpisodesTotalText = AppText.Get("web.detail.seasons.totalCount", ("count", total ?? episodes.Count));
         ShowsNoEpisodes = episodes.Count == 0;
         ShowDownloads();
     }
@@ -750,7 +758,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         Seasons = [.. _seasons.Select(s => MediaCardFactory.Season(s, server))];
-        SeasonsTotalText = $"{_seasons.Count} total";
+        SeasonsTotalText = AppText.Get("web.detail.seasons.totalCount", ("count", _seasons.Count));
     }
 
     private void ShowWatchState()
@@ -776,6 +784,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         var action = DetailFacts.PlayAction(item, _watch, item.Type == CatalogItemTypes.Season ? _episodes.FirstOrDefault()?.ContentId : null);
         PlayLabel = action.Label;
+        PlayResumes = action.Resumes;
         PlayTargetId = action.TargetId;
         PlayButtonText = DetailFacts.PlayButtonText(item, _watch, action);
     }
@@ -786,9 +795,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     private static string DescribeLoadFailure(Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => "The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
+        SiloApiException { Status: 429 } api => ApiFailureText.TooManyRequests(api.RetryAfter),
         SiloApiException { Status: 503 } => ApiFailureText.Busy,
-        SiloApiException api => $"The server could not load this title (error {api.Status}).",
+        SiloApiException api => AppText.Get("granary.detail.loadFailed", ("status", api.Status)),
         _ => ApiFailureText.ForTransport(ex),
     };
 }

@@ -4,6 +4,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
@@ -178,6 +179,20 @@ public sealed class PlayerViewModelNextUpTests
     }
 
     [Fact]
+    public async Task TheCardsWords_FollowTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var viewModel = await PlayingAsync(Ted);
+
+        PlayTo(2045);
+
+        // The web's "Als Nächstes in 55 Sek.", in capitals as the card shows it.
+        Assert.Equal("ALS NÄCHSTES IN 55 SEK.", viewModel.NextUpCardHeading);
+        Assert.Equal("S1:F4 — Schrei der Verlorenen", viewModel.NextUpEpisodeText);
+        Assert.Equal("ALS NÄCHSTES", viewModel.NextUpScreenLabel);
+    }
+
+    [Fact]
     public async Task TheCredits_BringTheCard_AndPlayNowStartsTheNextEpisodeFromItsStart()
     {
         var viewModel = await PlayingAsync(Ted);
@@ -209,7 +224,7 @@ public sealed class PlayerViewModelNextUpTests
         Assert.False(viewModel.IsNextUpCardShown);
         Assert.Equal("ted", viewModel.NextUpSeriesTitle);
         Assert.Equal("S1:E4", viewModel.NextUpCode);
-        Assert.Equal("11 January 2024 • 37m", viewModel.NextUpMeta);
+        Assert.Equal("January 11, 2024 • 37m", viewModel.NextUpMeta);
         Assert.Equal("series-ted", _source.OnDeckExcept);
         Assert.Equal("Alles Routine", Assert.Single(viewModel.OnDeck).Title);
         Assert.False(viewModel.IsNextUpCountingDown);

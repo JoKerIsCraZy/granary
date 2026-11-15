@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels;
@@ -22,7 +23,7 @@ internal static class RequestCards
         return new MediaCard(IdOf(result), RequestsViewModel.CardType, result.Title)
         {
             Shape = MediaCardShape.Poster,
-            Subtitle = result.MediaType == "series" ? $"{year} SERIES".Trim() : year,
+            Subtitle = result.MediaType == "series" ? $"{year} {AppText.Upper(RequestText.MediaTypeLabel(result.MediaType))}".Trim() : year,
             // The web's RequestPosterCard links the title and the line under it; a title with no page to open has none.
             Links = Destination(result) is null ? CardLines.None : CardLinks.TitleAndSubtitle,
             ImageUrl = TmdbImages.Poster(result.PosterPath),
@@ -33,7 +34,7 @@ internal static class RequestCards
     }
 
     /// <summary>"PENDING", "APPROVED", … for a request just made; null when the server named no state.</summary>
-    public static string? Badge(MediaRequest request) => StateText(request)?.ToUpperInvariant();
+    public static string? Badge(MediaRequest request) => StateText(request) is { } text ? AppText.Upper(text) : null;
 
     /// <summary>The badge's words as written: "Pending", "Approved", …; null when the server named no state.</summary>
     public static string? StateText(MediaRequest request) =>
@@ -55,7 +56,7 @@ internal static class RequestCards
             : null;
 
     /// <summary>"APPROVED", "AVAILABLE" for a title in the library, or why it cannot be requested; null for none.</summary>
-    public static string? Badge(RequestMediaState request, string? availability) => StateText(request, availability)?.ToUpperInvariant();
+    public static string? Badge(RequestMediaState request, string? availability) => StateText(request, availability) is { } text ? AppText.Upper(text) : null;
 
     /// <summary>The badge's words as written: "Approved", "Available" for a title in the library, or why it cannot be requested.</summary>
     public static string? StateText(RequestMediaState request, string? availability)
@@ -75,7 +76,7 @@ internal static class RequestCards
     /// </summary>
     public static MediaCard Of(WatchlistTitle title, WatchlistTitleStatus status)
     {
-        string type = title.MediaType == "series" ? "SERIES" : "MOVIE";
+        string type = AppText.Upper(RequestText.MediaTypeLabel(title.MediaType));
         return new MediaCard(IdOf(title.MediaType, title.TmdbId), RequestsViewModel.CardType, title.Title)
         {
             Shape = MediaCardShape.Poster,

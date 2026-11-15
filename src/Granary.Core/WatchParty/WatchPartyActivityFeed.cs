@@ -175,8 +175,9 @@ public sealed class WatchPartyActivityFeed
         }
     }
 
-    private static string Suggester(WatchPartyRoom room, WatchPartySuggestion suggestion) =>
-        room.Members.FirstOrDefault(m => m.Key == suggestion.SuggesterKey)?.DisplayName ?? "Someone";
+    // Null for a member no longer in the room: the page names them "Someone" in the language on screen.
+    private static string? Suggester(WatchPartyRoom room, WatchPartySuggestion suggestion) =>
+        room.Members.FirstOrDefault(m => m.Key == suggestion.SuggesterKey)?.DisplayName;
 
     private WatchPartyActivityEntry Entry(DateTimeOffset at, string kind, string? who = null, string? detail = null, string? contentId = null) =>
         new(++_nextId, at, kind, who, detail, contentId);

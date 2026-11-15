@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.App.Services;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Collections;
 using Granary.Core.ViewModels.Detail;
@@ -110,6 +111,13 @@ public sealed partial class DetailHero : UserControl
     public static string HeartGlyph(bool isFavorite) => isFavorite ? "" : "";
 
     public static string WatchlistGlyph(bool inWatchlist) => inWatchlist ? "" : "";
+
+    // The pickers' chips, in the web's words and in capitals as its CSS shows them.
+    public static string DefaultChip => AppText.Upper(AppText.Get("web.detail.mediaInfo.defaultBadge"));
+
+    public static string ForcedChip => AppText.Upper(AppText.Get("web.detail.mediaInfo.forced"));
+
+    public static string HearingImpairedChip => AppText.Get("web.detail.mediaInfo.hearingImpairedShort");
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
@@ -227,7 +235,7 @@ public sealed partial class DetailHero : UserControl
                 XamlRoot = root,
                 Title = item.DisplayTitle,
                 Content = panel,
-                CloseButtonText = "Close",
+                CloseButtonText = AppText.Get("web.ui.close"),
                 DefaultButton = ContentDialogButton.Close,
             };
             dialog.Resources["ContentDialogMaxWidth"] = InfoWidth;
@@ -274,10 +282,10 @@ public sealed partial class DetailHero : UserControl
             {
                 XamlRoot = root,
                 Content = panel,
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.None,
             };
-            AutomationProperties.SetName(dialog, "Start a party with this");
+            AutomationProperties.SetName(dialog, AppText.Get("web.watchTogether.startSheet.title"));
             await dialog.ShowAsync();
             if (!Party.IsDone && IsLoaded)
             {
@@ -310,9 +318,9 @@ public sealed partial class DetailHero : UserControl
             var dialog = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "Add to a collection",
+                Title = AppText.Get("web.collections.addToCollection.title"),
                 Content = new AddToCollectionPanel(collections),
-                CloseButtonText = "Done",
+                CloseButtonText = AppText.Get("common.done"),
                 DefaultButton = ContentDialogButton.Close,
             };
             var shown = dialog.ShowAsync();

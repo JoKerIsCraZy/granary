@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -13,8 +14,8 @@ public sealed record ProfileItemViewModel(string Id, string Name, Uri? AvatarUrl
     /// <summary>The first letters of the first two words of the name, upper-case.</summary>
     public string Initials => InitialsOf(Name);
 
-    /// <summary>What a screen reader announces for the tile.</summary>
-    public string AccessibleName => HasPin ? $"{Name}, protected by a PIN" : Name;
+    /// <summary>What a screen reader announces for the tile: the name, and that it is PIN protected, as the web's picker.</summary>
+    public string AccessibleName => HasPin ? AppText.Get("web.profiles.picker.pinProtected", ("name", Name)) : Name;
 
     public static ProfileItemViewModel From(Profile profile, Uri serverBase) =>
         new(profile.Id, profile.Name, ResolveAvatarUrl(profile.AvatarUrl, serverBase), profile.HasPin, profile.IsPrimary, profile.IsChild);

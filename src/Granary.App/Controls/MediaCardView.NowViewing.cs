@@ -68,10 +68,12 @@ public sealed partial class MediaCardView
             if (mark == CurrentMark.NowViewing && NowViewing is null)
             {
                 FindName(nameof(NowViewing));
+                NowViewingLabel.Text = NowViewingText;
             }
             if (mark == CurrentMark.ThisFilm && ThisFilm is null)
             {
                 FindName(nameof(ThisFilm));
+                ThisFilmLabel.Text = ThisFilmText;
                 // The bottom badges' height is known only once they are laid out.
                 BottomBadges.SizeChanged += (_, _) => PlaceThisFilm();
             }

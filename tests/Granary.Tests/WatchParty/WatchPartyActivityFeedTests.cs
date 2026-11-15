@@ -82,7 +82,8 @@ public sealed class WatchPartyActivityFeedTests
         _feed.Observe(room, [Suggestion("s1", "Heat")], connected: true, At);
         _feed.Observe(room, [Suggestion("s2", "Alien", user: "9")], connected: true, At);
 
-        Assert.Equal([("unsuggested", "Maya", "Heat"), ("suggested", "Someone", "Alien"), ("suggested", "Maya", "Heat")],
+        // A suggester no longer in the room is named by the page, in the language on screen.
+        Assert.Equal([("unsuggested", "Maya", "Heat"), ("suggested", null, "Alien"), ("suggested", "Maya", "Heat")],
             _feed.Entries.Select(e => (e.Kind, e.Who, e.Detail)));
     }
 

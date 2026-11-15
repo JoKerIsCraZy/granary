@@ -1,10 +1,12 @@
 using Granary.App.Controls;
 using Granary.App.Views.Settings;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -13,8 +15,8 @@ namespace Granary.App.Views;
 /// <summary>
 /// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers, downloads and
 /// About. The parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>title-pages</c>,
-/// <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's place; leaving with
-/// unsaved edits in it asks first.
+/// <c>accessibility</c>, <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's
+/// place; leaving with unsaved edits in it asks first.
 /// </summary>
 public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSections
 {
@@ -32,6 +34,20 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
     {
         Sidebar = App.Services.GetRequiredService<SidebarViewModel>();
         InitializeComponent();
+        AutomationProperties.SetName(this, AppText.Get("web.settings.sidebar.title"));
+        NameGroup(PlaybackGroup, Pages, AppText.Get("web.settings.nav.group.playback"));
+        NameGroup(AppearanceGroup, AppearancePages, AppText.Get("web.settings.nav.group.appearance"));
+        NameGroup(AccountGroup, AccountPages, AppText.Get("web.settings.nav.group.account"));
+        NameGroup(AppGroup, AppPages, AppText.Get("granary.settings.nav.group.app"));
+    }
+
+    // A group's heading in capitals, as the web's CSS shows it, and its name as written for screen readers, which name its
+    // list by it too.
+    private static void NameGroup(TextBlock heading, ListView pages, string name)
+    {
+        heading.Text = AppText.Upper(name);
+        AutomationProperties.SetName(heading, name);
+        AutomationProperties.SetName(pages, name);
     }
 
     /// <summary>The profile the settings belong to, as the app's sidebar names it.</summary>
@@ -125,6 +141,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard, IPadSe
                 "subtitles" => new LanguageSettingsView(),
                 "interface" => new InterfaceSettingsView(),
                 "title-pages" => new TitlePagesSettingsView(),
+                "accessibility" => new AccessibilitySettingsView(),
                 "devices" => new DevicesSettingsView(),
                 "servers" => new ServersSettingsView(),
                 "downloads" => new DownloadsSettingsView(),

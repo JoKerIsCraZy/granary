@@ -13,6 +13,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:admin="using:Granary.Core.ViewModels.Admin"
     xmlns:adminViews="using:Granary.App.Views.Admin"
+    xmlns:t="using:Granary.Core.Texts"
     IsTabStop="False">
 
     <UserControl.Resources>
@@ -238,7 +239,7 @@
 
     <Grid>
         <Button x:Name="Trigger" Style="{StaticResource SiloPageBackButtonStyle}" AutomationProperties.Name="{x:Bind ViewModel.Name, Mode=OneWay}"
-                ToolTipService.ToolTip="Server activity">
+                ToolTipService.ToolTip="{x:Bind t:AppText.Get('web.admin.common.serverActivity.trigger.idle')}">
             <Viewbox Width="18" Height="18" Stretch="Uniform">
                 <Canvas Width="24" Height="24">
                     <Path x:Name="Pulse" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
@@ -255,7 +256,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid Padding="16,12">
-                            <TextBlock Text="Server Activity" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="13"
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.title')}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="13"
                                        Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
                             <!-- Only while the events stream is not live. -->
                             <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasConnectionText, Mode=OneWay}"
@@ -267,8 +268,8 @@
                             <StackPanel>
                                 <Border Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" BorderBrush="{StaticResource SiloBorderBrush}"
                                         BorderThickness="0,1,0,0">
-                                    <controls:ReadingRow Padding="16,32" AutomationProperties.Name="No active server activity">
-                                        <TextBlock Text="No active server activity" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                                    <controls:ReadingRow Padding="16,32" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.empty')}">
+                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.empty')}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
                                                    HorizontalAlignment="Center" />
                                     </controls:ReadingRow>
                                 </Border>
@@ -278,16 +279,16 @@
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsStreams, Mode=OneWay}">
                                         <Grid Margin="0,0,0,8">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <TextBlock Text="STREAMS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                           AutomationProperties.Name="{x:Bind SectionName('Streams', ViewModel.StreamCountText, ViewModel.HasStreams), Mode=OneWay}" />
+                                                <TextBlock Text="{x:Bind Upper(StreamsTitle)}" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                           AutomationProperties.Name="{x:Bind SectionName(StreamsTitle, ViewModel.StreamCountText, ViewModel.HasStreams), Mode=OneWay}" />
                                                 <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasStreams, Mode=OneWay}">
                                                     <TextBlock Text="{x:Bind ViewModel.StreamCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                                 </Border>
                                             </StackPanel>
                                             <HyperlinkButton x:Name="ViewStreamsLink" Style="{StaticResource ActivityLinkStyle}" Click="OnViewStreamsClick"
-                                                             AutomationProperties.Name="View all streams">
+                                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.viewAll')}">
                                                 <StackPanel Orientation="Horizontal" Spacing="2">
-                                                    <TextBlock Text="View all" />
+                                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.viewAll')}" />
                                                     <FontIcon Glyph="&#xE76C;" FontSize="8" VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </HyperlinkButton>
@@ -295,16 +296,16 @@
                                         <ItemsControl ItemsSource="{x:Bind ViewModel.Streams}" ItemTemplate="{StaticResource ActivityStreamRowTemplate}"
                                                       IsTabStop="False" />
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoStreams, Mode=OneWay}"
-                                                             AutomationProperties.Name="No active streams">
-                                            <TextBlock Text="No active streams" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noStreams')}">
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noStreams')}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
 
                                     <!-- Tasks: the scheduled tasks running now. -->
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsTasks, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                                            <TextBlock Text="TASKS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                       AutomationProperties.Name="{x:Bind SectionName('Tasks', ViewModel.TaskCountText, ViewModel.HasTasks), Mode=OneWay}" />
+                                            <TextBlock Text="{x:Bind Upper(TasksTitle)}" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                       AutomationProperties.Name="{x:Bind SectionName(TasksTitle, ViewModel.TaskCountText, ViewModel.HasTasks), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasTasks, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.TaskCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                             </Border>
@@ -312,16 +313,16 @@
                                         <ItemsControl ItemsSource="{x:Bind ViewModel.Tasks}" ItemTemplate="{StaticResource ActivityTaskRowTemplate}"
                                                       IsTabStop="False" />
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoTasks, Mode=OneWay}"
-                                                             AutomationProperties.Name="No running tasks">
-                                            <TextBlock Text="No running tasks" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noTasks')}">
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noTasks')}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
 
                                     <!-- Scans: the library scans queued or running, 25 of them at most and a line for the rest. -->
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsScans, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                                            <TextBlock Text="SCANS" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
-                                                       AutomationProperties.Name="{x:Bind SectionName('Scans', ViewModel.ScanCountText, ViewModel.HasScans), Mode=OneWay}" />
+                                            <TextBlock Text="{x:Bind Upper(ScansTitle)}" Style="{StaticResource ActivitySectionTitleStyle}" AutomationProperties.HeadingLevel="Level3"
+                                                       AutomationProperties.Name="{x:Bind SectionName(ScansTitle, ViewModel.ScanCountText, ViewModel.HasScans), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasScans, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.ScanCountText, Mode=OneWay}" Style="{StaticResource ActivityCountChipTextStyle}" />
                                             </Border>
@@ -344,9 +345,9 @@
                                     -->
                                     <StackPanel Style="{StaticResource ActivitySectionStyle}" Visibility="{x:Bind ViewModel.ShowsPreparations, Mode=OneWay}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                                            <TextBlock Text="PREPARING DOWNLOADS" Style="{StaticResource ActivitySectionTitleStyle}"
+                                            <TextBlock Text="{x:Bind Upper(PreparingTitle)}" Style="{StaticResource ActivitySectionTitleStyle}"
                                                        AutomationProperties.HeadingLevel="Level3"
-                                                       AutomationProperties.Name="{x:Bind SectionName('Preparing downloads', ViewModel.PreparationCountText, ViewModel.HasPreparations), Mode=OneWay}" />
+                                                       AutomationProperties.Name="{x:Bind SectionName(PreparingTitle, ViewModel.PreparationCountText, ViewModel.HasPreparations), Mode=OneWay}" />
                                             <Border Style="{StaticResource ActivityCountChipStyle}" Visibility="{x:Bind ViewModel.HasPreparations, Mode=OneWay}">
                                                 <TextBlock Text="{x:Bind ViewModel.PreparationCountText, Mode=OneWay}"
                                                            Style="{StaticResource ActivityCountChipTextStyle}" />
@@ -384,8 +385,8 @@
                                             </StackPanel>
                                         </controls:ReadingRow>
                                         <controls:ReadingRow Style="{StaticResource ActivityRowStyle}" Visibility="{x:Bind ViewModel.HasNoPreparations, Mode=OneWay}"
-                                                             AutomationProperties.Name="No downloads being prepared">
-                                            <TextBlock Text="No downloads being prepared" Style="{StaticResource ActivityEmptyRowTextStyle}" />
+                                                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noPreparations')}">
+                                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.common.serverActivity.noPreparations')}" Style="{StaticResource ActivityEmptyRowTextStyle}" />
                                         </controls:ReadingRow>
                                     </StackPanel>
                                 </StackPanel>

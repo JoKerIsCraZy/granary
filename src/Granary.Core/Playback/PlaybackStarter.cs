@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 
 namespace Granary.Core.Playback;
@@ -11,7 +12,22 @@ namespace Granary.Core.Playback;
 public sealed class PlaybackUnavailableException(string message, bool canRetry) : Exception(message)
 {
     /// <summary>A title a phone started for a sign-in the PC no longer has (<see cref="PlayRequest.OnlyFor"/>). New.</summary>
-    public const string StartedForAnotherProfile = "This title was started for a profile that is no longer signed in.";
+    public static string StartedForAnotherProfile => AppText.Get("granary.player.error.startedForAnotherProfile");
+
+    /// <summary>No server is chosen.</summary>
+    public static string NoServerText => AppText.Get("granary.player.error.chooseServer");
+
+    /// <summary>No profile is chosen on the server.</summary>
+    public static string NoProfileText => AppText.Get("granary.player.error.chooseProfile");
+
+    /// <summary>The title has no file to play, as the web's player says when it finds none to start.</summary>
+    public static string NoFileText => AppText.Get("web.player.error.noPlayableVersion.title");
+
+    /// <summary>A Watch Party's file is not among the title's files here.</summary>
+    public static string RoomFileUnavailableText => AppText.Get("granary.player.error.roomFileUnavailable");
+
+    /// <summary>The server's playback capabilities rule this app out.</summary>
+    public static string NotOfferedText => AppText.Get("granary.player.error.notOffered");
 
     public bool CanRetry { get; } = canRetry;
 }
@@ -78,8 +94,8 @@ public sealed class PlaybackStarter(
         string? pinnedFileId = request.PinnedFileId;
         // A room plays the room's file, or with none named yet the client's choice, never a page's picks.
         var choice = request.IsWatchParty ? null : request.Choice;
-        var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
-        string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
+        var server = session.ActiveServer ?? throw new PlaybackUnavailableException(PlaybackUnavailableException.NoServerText, canRetry: false);
+        string profileId = session.ProfileId ?? throw new PlaybackUnavailableException(PlaybackUnavailableException.NoProfileText, canRetry: false);
         RequireSignIn(request, server.Id, profileId);
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
         // Read alongside the watch detail; when that fails first, nobody waits for the settings any more.
@@ -103,8 +119,9 @@ public sealed class PlaybackStarter(
         }
         var picked = pinnedFileId is null ? Picked(detail, choice) : null;
         var version = (pinnedFileId is not null ? detail.Versions.FirstOrDefault(v => v.FileId == pinnedFileId) : picked?.Version ?? ChooseVersion(detail))
-            ?? throw new PlaybackUnavailableException(pinnedFileId is null ? "This title has no file to play." : "The room's file is not available here.",
-                canRetry: false);
+            ?? throw new PlaybackUnavailableException(pinnedFileId is null
+                ? PlaybackUnavailableException.NoFileText
+                : PlaybackUnavailableException.RoomFileUnavailableText, canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
         bool pinned = pinnedFileId is not null;
         bool versionPicked = picked?.IsVersionPicked == true;
@@ -338,32 +355,37 @@ public sealed class PlaybackStarter(
     public static (string Title, string Subtitle) Titles(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
+        // The year in the screen's digits, as the web player's numberText(year).
         return detail.Type != WatchItemTypes.Episode
-            ? (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "")
+            ? (detail.Title, detail.Year is { } year ? NumberText.Digits(year) : "")
             : EpisodeTitles(detail.Title, detail.SeriesTitle, detail.SeasonNumber, detail.EpisodeNumber);
     }
 
     /// <summary>An episode's two lines: its series and "S1 · E5 — Episode"; without a series, its own title and "S1 · E5".</summary>
     public static (string Title, string Subtitle) EpisodeTitles(string episodeTitle, string? seriesTitle, int? seasonNumber, int? episodeNumber)
     {
+        // The web player's line under the title (VideoPlayer.tsx): the code, and the episode's title after it.
         string code = seasonNumber is { } season && episodeNumber is { } episode
-            ? string.Create(CultureInfo.InvariantCulture, $"S{season} · E{episode}")
+            ? AppText.Get("web.player.hud.episode", ("season", season), ("episode", episode))
             : "";
         if (string.IsNullOrWhiteSpace(seriesTitle))
         {
             return (episodeTitle, code);
         }
-        return (seriesTitle, string.Join(" — ", new[] { code, episodeTitle }.Where(p => p.Length > 0)));
+        string line = code.Length > 0 && episodeTitle.Length > 0
+            ? AppText.Get("web.player.hud.episodeWithTitle", ("season", seasonNumber), ("episode", episodeNumber), ("title", episodeTitle))
+            : code.Length > 0 ? code : episodeTitle;
+        return (seriesTitle, line);
     }
 
     /// <summary>A failed call worded for the viewer, and whether trying again can help.</summary>
     public static PlaybackUnavailableException Describe(Exception ex) => ex switch
     {
         PlaybackUnavailableException unavailable => unavailable,
-        SiloApiException { Status: 404 } => new("This title is no longer available.", canRetry: false),
-        SiloApiException { Status: 429 } api => new("The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter), canRetry: true),
+        SiloApiException { Status: 404 } => new(AppText.Get("granary.player.error.titleUnavailable"), canRetry: false),
+        SiloApiException { Status: 429 } api => new(ApiFailureText.TooManyRequests(api.RetryAfter), canRetry: true),
         SiloApiException { Status: 503 } => new(ApiFailureText.Busy, canRetry: true),
-        SiloApiException api => new($"The server could not start playback (error {api.Status}).", canRetry: true),
+        SiloApiException api => new(AppText.Get("granary.player.error.startFailed", ("status", api.Status)), canRetry: true),
         _ => new(ApiFailureText.ForTransport(ex), canRetry: true),
     };
 
@@ -380,6 +402,6 @@ public sealed class PlaybackStarter(
         }
         return capabilities.IsUsable
             ? capabilities
-            : throw new PlaybackUnavailableException("This server does not offer playback to this app.", canRetry: false);
+            : throw new PlaybackUnavailableException(PlaybackUnavailableException.NotOfferedText, canRetry: false);
     }
 }

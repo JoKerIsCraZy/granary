@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -26,7 +27,7 @@ public sealed partial class PlayerViewModel
     public partial bool ShowsAudioDelay { get; private set; } = true;
 
     /// <summary>"0 ms", "+150 ms", "−200 ms", as Android's formatDelayMs writes it.</summary>
-    public string AudioDelayText => DelayText(AudioDelayMs);
+    public string AudioDelayText => AppText.Get("granary.player.audioDelayValue", ("delay", DelayNumber(AudioDelayMs)));
 
     public bool CanDelayAudioEarlier => AudioDelayMs > -AudioDelay.MaxMs;
 
@@ -77,7 +78,8 @@ public sealed partial class PlayerViewModel
         }
     }
 
-    private static string DelayText(int milliseconds) => milliseconds == 0
-        ? "0 ms"
-        : (milliseconds > 0 ? "+" : "−") + Math.Abs(milliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+    // "0", "+300", "−200" with a true minus sign, as the web's formatDelay; its unit comes with the message.
+    private static string DelayNumber(int milliseconds) => milliseconds == 0
+        ? "0"
+        : (milliseconds > 0 ? "+" : "−") + Math.Abs(milliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
 }

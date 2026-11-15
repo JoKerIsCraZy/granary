@@ -7,6 +7,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +36,7 @@ public sealed partial class SearchViewModel : ObservableObject
     public const int PageSize = 60;
     public const int PeopleLimit = 20;
 
-    internal const string BusyText = "Search is busy, try again in a moment";
+    internal static string BusyText => AppText.Get("granary.search.busy");
 
     /// <summary>How long the titles wait for the box sets, as Android's search: box sets only add to them.</summary>
     public static readonly TimeSpan BoxSetGrace = TimeSpan.FromMilliseconds(1500);
@@ -135,8 +136,8 @@ public sealed partial class SearchViewModel : ObservableObject
     public partial IReadOnlyList<SearchPerson> People { get; private set; } = [];
 
     /// <summary>
-    /// The library found nothing, and "Request to add" is searching or shows titles: it says so instead of "No titles
-    /// found", as the web hides its empty grid then.
+    /// The library found nothing, and "Request to add" is searching or shows titles: it says so instead of "No items
+    /// found.", as the web hides its empty grid then.
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsTitlesHeading))]
@@ -150,12 +151,14 @@ public sealed partial class SearchViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasError { get; private set; }
 
-    /// <summary>"No titles found", the error, or what is loading; also for screen readers.</summary>
+    /// <summary>"No items found.", the error, or what is loading; also for screen readers.</summary>
     [ObservableProperty]
     public partial string StatusText { get; private set; } = "";
 
-    /// <summary>"Search", or "Results for "heat"".</summary>
-    public string Heading => ResultsQuery.Length > 0 ? $"Results for \"{ResultsQuery}\"" : "Search";
+    /// <summary>"Search", or "Results for "heat"", as the web's catalog page.</summary>
+    public string Heading => ResultsQuery.Length > 0
+        ? AppText.Get("web.catalog.page.resultsFor", ("query", ResultsQuery))
+        : AppText.Get("web.catalog.page.searchTitle");
 
     public bool ShowsPeople => People.Count > 0;
 
@@ -493,11 +496,12 @@ public sealed partial class SearchViewModel : ObservableObject
         if (failure is not null || titles is null)
         {
             _logger.LogWarning("Searching titles failed: {Failure}", failure is null ? "no answer" : ApiFailureText.Describe(failure));
-            _resultsState = (failure is null ? "Search failed. Try again." : Describe(failure), true);
+            _resultsState = (failure is null ? AppText.Get("web.catalog.page.searchFailed") : Describe(failure), true);
         }
         else
         {
-            _resultsState = (titles.Cards.Count == 0 ? $"No titles found for \"{text}\"" : "", false);
+            // The web's words for its empty results grid (components/ItemGrid.tsx).
+            _resultsState = (titles.Cards.Count == 0 ? AppText.Get("web.catalog.grid.noItems") : "", false);
         }
         _libraryEmpty = failure is null && titles is { Cards.Count: 0 };
         Requests.LibraryFoundNothing = _libraryEmpty;
@@ -526,7 +530,7 @@ public sealed partial class SearchViewModel : ObservableObject
 
     /// <summary>
     /// The results' busy ring, word and error. While the library found nothing, "Request to add" may still find titles:
-    /// the ring turns until it knows, and "No titles found" waits until it found none.
+    /// the ring turns until it knows, and "No items found." waits until it found none.
     /// </summary>
     private void ShowResultsState()
     {
@@ -609,7 +613,7 @@ public sealed partial class SearchViewModel : ObservableObject
     // The search deadline (3 s) answers 503 with Retry-After.
     private static string Describe(Exception ex) => ex is SiloApiException { Status: 503 }
         ? BusyText
-        : BrowseFailureText.Describe(ex, "Search failed. Try again.");
+        : BrowseFailureText.Describe(ex, AppText.Get("web.catalog.page.searchFailed"));
 
     private static string TypeOf(SearchScope scope) => scope switch
     {

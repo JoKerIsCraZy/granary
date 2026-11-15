@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -28,10 +29,12 @@ public sealed partial class AdminStatTileView : UserControl
         set => SetValue(GlyphProperty, value);
     }
 
-    // One name for the reader: "Total Movies: 1,990, 2,048 files".
+    // One name for the reader: "Total Movies: 1,990, 2,048 files", or "Total Movies: Unavailable".
     private static void OnTileChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var tile = (AdminStatTile)e.NewValue;
-        AutomationProperties.SetName(d, tile.IsUnavailable ? $"{tile.Label}: unavailable" : $"{tile.Label}: {tile.Value}, {tile.Sub}");
+        AutomationProperties.SetName(d, tile.IsUnavailable
+            ? $"{tile.Label}: {AppText.Get("web.admin.dashboard.widgets.statTile.unavailable")}"
+            : $"{tile.Label}: {tile.Value}, {tile.Sub}");
     }
 }

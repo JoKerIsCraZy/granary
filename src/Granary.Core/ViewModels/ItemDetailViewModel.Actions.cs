@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -79,7 +80,7 @@ public sealed partial class ItemDetailViewModel
                 _episodes = ReferenceEquals(_episodes, marked.Episodes) ? before.Episodes : _episodes;
                 _siblings = ReferenceEquals(_siblings, marked.Siblings) ? before.Siblings : _siblings;
                 ShowWatchState();
-                ActionError = DescribeActionFailure(watched ? "mark this as watched" : "mark this as unwatched", ex);
+                ActionError = DescribeWriteFailure(watched ? DetailWrite.MarkWatched : DetailWrite.MarkUnwatched, ex);
             }
         }
         finally
@@ -112,7 +113,7 @@ public sealed partial class ItemDetailViewModel
             if (generation == _generation)
             {
                 IsFavorite = !favorite;
-                ActionError = DescribeActionFailure(favorite ? "add this to your favorites" : "remove this from your favorites", ex);
+                ActionError = DescribeWriteFailure(favorite ? DetailWrite.AddFavorite : DetailWrite.RemoveFavorite, ex);
             }
         }
         finally
@@ -144,7 +145,7 @@ public sealed partial class ItemDetailViewModel
             if (generation == _generation)
             {
                 IsInWatchlist = !add;
-                ActionError = DescribeActionFailure(add ? "add this to your watchlist" : "remove this from your watchlist", ex);
+                ActionError = DescribeWriteFailure(add ? DetailWrite.AddWatchlist : DetailWrite.RemoveWatchlist, ex);
             }
         }
         finally
@@ -203,16 +204,40 @@ public sealed partial class ItemDetailViewModel
         },
     };
 
-    private static string DescribeActionFailure(string action, Exception ex) => DescribeWriteFailure("Could not " + action, ex);
+    /// <summary>The writes of the page whose failure it words.</summary>
+    private enum DetailWrite
+    {
+        MarkWatched,
+        MarkUnwatched,
+        AddFavorite,
+        RemoveFavorite,
+        AddWatchlist,
+        RemoveWatchlist,
+        Rating,
+    }
 
     // Why a write of the page did not stick, after what failed ("Could not add this to your favorites", the web's "Failed to
-    // update rating"): the toggles' words for every write.
-    private static string DescribeWriteFailure(string what, Exception ex) => ex switch
+    // update rating"): one whole sentence for each write and reason, the wait the server asks for inside it.
+    private static string DescribeWriteFailure(DetailWrite write, Exception ex)
     {
-        SiloApiException { Status: 429 } api => $"{what}. The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
-        SiloApiException { Status: 503 } => $"{what}. " + ApiFailureText.Busy,
-        SiloApiException { Status: 404 } => $"{what}: this title is no longer available.",
-        SiloApiException api => $"{what} (error {api.Status}). Try again.",
-        _ => $"{what}. Check the connection and try again.",
-    };
+        var (reason, count, status) = ex switch
+        {
+            SiloApiException { Status: 429, RetryAfter: { } wait } => ("wait", ApiFailureText.WholeMinutes(wait), 0),
+            SiloApiException { Status: 429 } => ("later", 0, 0),
+            SiloApiException { Status: 503 } => ("busy", 0, 0),
+            SiloApiException { Status: 404 } => ("gone", 0, 0),
+            SiloApiException api => ("error", 0, api.Status),
+            _ => ("connection", 0, 0),
+        };
+        return write switch
+        {
+            DetailWrite.MarkWatched => AppText.Get("granary.detail.markWatchedFailed", ("reason", reason), ("count", count), ("status", status)),
+            DetailWrite.MarkUnwatched => AppText.Get("granary.detail.markUnwatchedFailed", ("reason", reason), ("count", count), ("status", status)),
+            DetailWrite.AddFavorite => AppText.Get("granary.detail.addFavoriteFailed", ("reason", reason), ("count", count), ("status", status)),
+            DetailWrite.RemoveFavorite => AppText.Get("granary.detail.removeFavoriteFailed", ("reason", reason), ("count", count), ("status", status)),
+            DetailWrite.AddWatchlist => AppText.Get("granary.detail.addWatchlistFailed", ("reason", reason), ("count", count), ("status", status)),
+            DetailWrite.RemoveWatchlist => AppText.Get("granary.detail.removeWatchlistFailed", ("reason", reason), ("count", count), ("status", status)),
+            _ => AppText.Get("granary.detail.ratingFailed", ("reason", reason), ("count", count), ("status", status)),
+        };
+    }
 }

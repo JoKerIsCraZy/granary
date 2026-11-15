@@ -78,7 +78,7 @@ public sealed class HeroDetailsTests
 
         var title = Of(episode);
 
-        Assert.Equal("S1 E1 · Kein Zufall · 25m · TV-14", title.Meta);
+        Assert.Equal("S1 · E1 · Kein Zufall · 25 min · TV-14", title.Meta);
         Assert.Null(title.Rating);
     }
 

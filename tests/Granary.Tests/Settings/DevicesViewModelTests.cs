@@ -115,10 +115,10 @@ public sealed class DevicesViewModelTests
         Assert.True(page.ShowsSessions);
         var current = Assert.IsType<SignedInSessionRow>(page.CurrentSession);
         Assert.Equal(("Granary", true, "Sign out this device"), (current.Name, current.IsCurrent, current.SignOutLabel));
-        Assert.Equal("Active now · Signed in Oct 1, 2026, 8:00 AM", current.StatusLine);
+        Assert.Equal("Active now · Signed in 10/1/2026, 8:00 AM", current.StatusLine);
         var other = Assert.Single(page.OtherSessions);
         Assert.Equal(("Chrome on Windows", SessionDeviceKind.Desktop, "Sign out"), (other.Name, other.Kind, other.SignOutLabel));
-        Assert.Equal("Last seen 3 hr ago · Signed in Oct 1, 2026, 8:00 AM", other.StatusLine);
+        Assert.Equal("Last seen 3 hr ago · Signed in 10/1/2026, 8:00 AM", other.StatusLine);
         Assert.Equal("203.0.113.7", other.IpAddress);
         Assert.False(page.HasNoOtherSessions);
     }
@@ -276,7 +276,7 @@ public sealed class DevicesViewModelTests
         await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
         await downloads.Store.FolderWork;
 
-        Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
+        Assert.Equal("You’ll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
             + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"
             + "1 download (1.5 MB) on this PC is deleted with it.", Assert.Single(_confirm.Asked).Message);
         Assert.Equal(0, callsAtDelete);
@@ -302,7 +302,7 @@ public sealed class DevicesViewModelTests
         await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
         await downloads.Store.FolderWork;
 
-        Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
+        Assert.Equal("You’ll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
             + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"
             + "Downloads on this PC are kept.", Assert.Single(_confirm.Asked).Message);
         Assert.Single(downloads.Store.All);
@@ -401,7 +401,7 @@ public sealed class DevicesViewModelTests
 
         Assert.Null(page.CurrentSession);
         Assert.Empty(page.OtherSessions);
-        Assert.Equal("Couldn't load sessions. Try again.", page.SessionsMessage);
+        Assert.Equal("Couldn’t load sessions. Try again.", page.SessionsMessage);
         Assert.True(page.CanRetrySessions);
     }
 
@@ -415,7 +415,7 @@ public sealed class DevicesViewModelTests
         await page.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(page.ShowsSessions);
-        Assert.Equal("Couldn't load sessions. Try again.", page.SessionsMessage);
+        Assert.Equal("Couldn’t load sessions. Try again.", page.SessionsMessage);
         Assert.True(page.CanRetrySessions);
         Assert.Empty(_silo.SentTo(HttpMethod.Get, Sessions));
     }

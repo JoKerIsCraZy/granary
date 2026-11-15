@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,6 +59,11 @@ public sealed partial class TitlePage : Page, IArrivalFocus
     public static string BellGlyph(bool isFollowing) => isFollowing ? "" : "";
 
     public static Visibility HasLink(Uri? url) => url is null ? Visibility.Collapsed : Visibility.Visible;
+
+    // The links' tooltips; the sites' names are names.
+    public static string ImdbTooltip => AppText.Get("granary.title.opensInBrowser", ("site", "IMDb"));
+
+    public static string TmdbTooltip => AppText.Get("granary.title.opensInBrowser", ("site", "TMDB"));
 
     public static Visibility Any(IReadOnlyList<DetailRating> ratings) => ratings.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -129,10 +135,10 @@ public sealed partial class TitlePage : Page, IArrivalFocus
             {
                 XamlRoot = XamlRoot,
                 Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-                Title = "Cancel this request?",
-                Content = $"Your request for \"{ViewModel.Title}\" will be withdrawn before it is sent to the download automation.",
-                PrimaryButtonText = "Cancel request",
-                CloseButtonText = "Keep request",
+                Title = AppText.Get("web.requests.cancel.title"),
+                Content = AppText.Get("web.requests.cancel.description", ("title", ViewModel.Title)),
+                PrimaryButtonText = AppText.Get("web.requests.cancel.action"),
+                CloseButtonText = AppText.Get("web.requests.cancel.keep"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)

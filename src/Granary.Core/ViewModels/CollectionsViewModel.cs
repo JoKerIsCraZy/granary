@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +16,7 @@ namespace Granary.Core.ViewModels;
 /// <param name="OpenCommand">Takes the collection's <see cref="MediaCard"/>.</param>
 public sealed record SharedCollectionShelf(string OwnerName, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand)
 {
-    public string Heading => $"by {OwnerName}";
+    public string Heading => AppText.Get("web.collections.posterCard.byOwner", ("owner", OwnerName));
 
     public string Initial => OwnerName.Length > 0 ? OwnerName[..1].ToUpperInvariant() : "";
 }
@@ -29,8 +29,6 @@ public sealed record SharedCollectionShelf(string OwnerName, IReadOnlyList<Media
 /// </summary>
 public sealed partial class CollectionsViewModel : ObservableObject
 {
-    private const string AnotherProfile = "Another profile";
-
     private readonly ISessionManager _session;
     private readonly CollectionsApi _collections;
     private readonly ProfilesApi _profiles;
@@ -50,6 +48,7 @@ public sealed partial class CollectionsViewModel : ObservableObject
         _confirmation = confirmation;
         _logger = logger;
         Server = new ServerCollectionsViewModel(pages, navigation, logger);
+        Subtitle = AppText.Get("web.collections.page.subtitle");
     }
 
     /// <summary>The profile's own collections, in its order.</summary>
@@ -79,7 +78,7 @@ public sealed partial class CollectionsViewModel : ObservableObject
 
     /// <summary>"Yours and the server's.", naming the shared ones too on a login with other profiles.</summary>
     [ObservableProperty]
-    public partial string Subtitle { get; private set; } = "Yours and the server's.";
+    public partial string Subtitle { get; private set; } = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OwnCountText), nameof(IsOwnEmpty), nameof(HasOwn))]
@@ -89,9 +88,9 @@ public sealed partial class CollectionsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(SharedCountText), nameof(HasShared))]
     public partial int SharedCount { get; private set; }
 
-    public string OwnCountText => OwnCount.ToString(CultureInfo.InvariantCulture);
+    public string OwnCountText => AppText.Number(OwnCount);
 
-    public string SharedCountText => SharedCount.ToString(CultureInfo.InvariantCulture);
+    public string SharedCountText => AppText.Number(SharedCount);
 
     public bool HasOwn => OwnCount > 0;
 
@@ -172,8 +171,8 @@ public sealed partial class CollectionsViewModel : ObservableObject
         }
         // A one-profile login has nobody to share with.
         Subtitle = others.Count > 0 || SharedCount > 0
-            ? "Yours, the ones other profiles share with you, and the server's."
-            : "Yours and the server's.";
+            ? AppText.Get("web.collections.page.subtitleShared")
+            : AppText.Get("web.collections.page.subtitle");
         if (serverList is not null)
         {
             Server.Show(server.BaseUri, serverList);
@@ -237,7 +236,7 @@ public sealed partial class CollectionsViewModel : ObservableObject
             .OrderBy(g => Position(g.Key));
         foreach (var owned in byOwner)
         {
-            string name = profiles.FirstOrDefault(p => p.Id == owned.Key)?.Name ?? AnotherProfile;
+            string name = profiles.FirstOrDefault(p => p.Id == owned.Key)?.Name ?? AppText.Get("web.collections.personalOwnership.anotherProfile");
             Shared.Add(new SharedCollectionShelf(name, [.. owned.Select(c => CollectionCards.Of(c, server, isOwn: false))], OpenCommand));
         }
         OwnCount = Own.Count;

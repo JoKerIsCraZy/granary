@@ -1,5 +1,6 @@
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -20,7 +21,7 @@ public sealed record SubtitleTimingPanel
     public bool ShowsSync { get; init; }
 
     /// <summary>"Sync to audio", or "Syncing…" while it runs.</summary>
-    public string SyncLabel { get; init; } = "Sync to audio";
+    public string SyncLabel { get; init; } = "";
 
     /// <summary>Its timing was changed: Reset puts the original back.</summary>
     public bool ShowsReset { get; init; }
@@ -33,7 +34,7 @@ public sealed record SubtitleTimingPanel
 
     public int Percent { get; init; }
 
-    public string PercentText => $"{Percent}%";
+    public string PercentText => AppText.Get("web.subtitles.sync.percent", ("percent", Percent));
 
     public string PhaseText { get; init; } = "";
 
@@ -84,7 +85,7 @@ public sealed record SubtitleTimingPanel
             IsVisible = true,
             ShowsActions = !entry.IsForbidden,
             ShowsSync = canSync,
-            SyncLabel = running ? "Syncing…" : "Sync to audio",
+            SyncLabel = running ? AppText.Get("web.subtitles.menu.syncing") : AppText.Get("web.subtitles.menu.syncToAudio"),
             ShowsReset = canReset,
             AreActionsEnabled = !entry.IsBusy && !running,
             IsRunning = running,
@@ -94,8 +95,8 @@ public sealed record SubtitleTimingPanel
             IsResultWarning = warning,
             HintText = !entry.IsForbidden && canSync && !running && result.Length == 0
                 ? entry.State.IsExternal
-                    ? "Matches the timing to the audio for everyone. The file itself isn't changed."
-                    : "Matches the timing to the audio for everyone watching."
+                    ? AppText.Get("web.subtitles.menu.syncHintExternal")
+                    : AppText.Get("web.subtitles.menu.syncHint")
                 : "",
             IsForbidden = entry.IsForbidden,
             ErrorText = entry.Error ?? "",
@@ -104,9 +105,9 @@ public sealed record SubtitleTimingPanel
 
     private static (string Text, bool Warning) Result(SubtitleSyncState state) => state.Sync?.Status switch
     {
-        SubtitleSyncStatuses.Synced when !state.Timing.IsIdentity => ("Synced to the audio: " + SubtitleSyncText.Timing(state.Timing), false),
-        SubtitleSyncStatuses.AlreadySynced => ("Already matches the audio.", false),
-        SubtitleSyncStatuses.NoMatch => ("Doesn't match this video's audio; probably for another release.", true),
+        SubtitleSyncStatuses.Synced when !state.Timing.IsIdentity => (AppText.Get("web.subtitles.menu.syncedResult", ("timing", SubtitleSyncText.Timing(state.Timing))), false),
+        SubtitleSyncStatuses.AlreadySynced => (AppText.Get("web.subtitles.menu.alreadyMatches"), false),
+        SubtitleSyncStatuses.NoMatch => (AppText.Get("web.subtitles.menu.noMatch"), true),
         SubtitleSyncStatuses.Failed => (SubtitleSyncText.Failure(state.Sync.Failure), true),
         _ => ("", false),
     };

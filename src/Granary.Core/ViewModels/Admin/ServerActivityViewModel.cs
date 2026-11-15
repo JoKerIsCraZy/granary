@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Admin;
 using Granary.Core.Realtime;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
@@ -104,9 +105,9 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
     public string BadgeText => ServerActivityText.Count(Total, IsCountLowerBound);
 
     /// <summary>What a screen reader calls the button.</summary>
-    public string Name => Total == 0 ? "Server activity"
-        : IsCountLowerBound ? $"Server activity: at least {Total} active"
-        : $"Server activity: {Total} active";
+    public string Name => Total == 0 ? AppText.Get("web.admin.common.serverActivity.trigger.idle")
+        : AppText.Get(IsCountLowerBound ? "web.admin.common.serverActivity.trigger.atLeast" : "web.admin.common.serverActivity.trigger.active",
+            ("count", Total), ("count_text", Total));
 
     /// <summary>The stream has had no connection for <see cref="ConnectionProblemDelay"/>: a red dot on the button.</summary>
     [ObservableProperty]
@@ -300,11 +301,11 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         // waits or runs.
         int more = active.Count - Scans.Count;
         MoreScansText = more > 0 ? ServerActivityText.MoreScans(more, IsCountLowerBound) : "";
-        ScanEmptyText = state.Connection == EventsConnection.Disconnected ? "Disconnected"
-            : state.Connection != EventsConnection.Live ? "Connecting…"
-            : IsCountLowerBound ? "Scans may be running"
-            : state.Scans is not null ? "No active scans"
-            : "Connecting…";
+        ScanEmptyText = state.Connection == EventsConnection.Disconnected ? AppText.Get("web.admin.common.serverActivity.disconnected")
+            : state.Connection != EventsConnection.Live ? AppText.Get("web.admin.common.serverActivity.connecting")
+            : IsCountLowerBound ? AppText.Get("granary.serverActivity.scansMayBeRunning")
+            : state.Scans is not null ? AppText.Get("web.admin.common.serverActivity.noScans")
+            : AppText.Get("web.admin.common.serverActivity.connecting");
         return active.Count;
     }
 
@@ -321,8 +322,8 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         // the queue's own count of them: the list is one page of at most 200 jobs (the web counts the page's).
         int moreRunning = Math.Max(counts.Running, running.Count) - Preparations.Count;
         WaitingPreparationsText = ServerActivityText.WaitingPreparations(moreRunning, counts.Queued, counts.Retrying);
-        PausedPreparationsText = counts.Paused > 0 ? $"{ServerActivityText.Number(counts.Paused)} paused" : "";
-        FailedPreparationsText = counts.FailedRecent > 0 ? $"{ServerActivityText.Number(counts.FailedRecent)} failed in the last 24 hours" : "";
+        PausedPreparationsText = ServerActivityText.PausedPreparations(counts.Paused);
+        FailedPreparationsText = ServerActivityText.FailedPreparations(counts.FailedRecent);
         HasNoPreparations = list is not null && Preparations.Count == 0 && !HasWaitingPreparations && !HasPausedPreparations
             && !HasFailedPreparations;
         return counts.Active;
@@ -382,8 +383,8 @@ public sealed partial class ServerActivityViewModel : ObservableObject, IDisposa
         ConnectionText = !state.IsAvailable ? "" : state.Connection switch
         {
             EventsConnection.Live => "",
-            EventsConnection.Connecting => "Connecting…",
-            _ => "Disconnected",
+            EventsConnection.Connecting => AppText.Get("web.admin.common.serverActivity.connecting"),
+            _ => AppText.Get("web.admin.common.serverActivity.disconnected"),
         };
         bool isOffline = state.IsAvailable && state.Connection != EventsConnection.Live;
         if (isOffline == _isOffline)

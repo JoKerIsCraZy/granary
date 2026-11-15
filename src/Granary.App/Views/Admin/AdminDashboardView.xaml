@@ -11,7 +11,8 @@
     xmlns:local="using:Granary.App.Views.Admin"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:admin="using:Granary.Core.ViewModels.Admin"
-    AutomationProperties.Name="Dashboard">
+    xmlns:t="using:Granary.Core.Texts"
+    AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.page.title')}">
 
     <!-- Its own copy of the settings' styles: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -112,8 +113,9 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="6">
-                <TextBlock Text="Dashboard" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock Text="Live sessions, content health, and server activity in one view." Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.page.title')}" Style="{StaticResource SiloSettingsPageTitleStyle}"
+                           AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.page.subtitle')}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                 <TextBlock Text="{x:Bind ViewModel.UpdatedText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
@@ -147,9 +149,10 @@
             <!-- The deployment's health in one strip. -->
             <Border Style="{StaticResource AdminCardStyle}" Padding="12">
                 <Grid>
-                    <TextBlock Text="Failed to load server health." Style="{StaticResource AdminErrorStyle}" Margin="0,8"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.healthStrip.loadFailed')}" Style="{StaticResource AdminErrorStyle}" Margin="0,8"
                                Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.HealthState), Mode=OneWay}" />
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.Health, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Server health">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Health, Mode=OneWay}" IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgetCatalog.healthStrip.title')}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <controls:ColumnsPanel MinColumnWidth="130" MaxColumns="6" EvenRows="True" Spacing="12" />
@@ -161,7 +164,7 @@
                                         BorderThickness="1" AutomationProperties.Name="{x:Bind local:AdminDashboardView.HealthName(Label, Value, Detail)}">
                                     <StackPanel Spacing="4">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <FontIcon Glyph="{x:Bind local:AdminDashboardView.HealthGlyph(Label)}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                                            <FontIcon Glyph="{x:Bind local:AdminDashboardView.HealthGlyph(Kind)}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
                                             <TextBlock Text="{x:Bind Label}" FontFamily="{StaticResource SiloFontMedium}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" />
                                         </StackPanel>
                                         <TextBlock Text="{x:Bind Value}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15"
@@ -180,15 +183,17 @@
             <Border Style="{StaticResource AdminCardStyle}">
                 <StackPanel Spacing="12">
                     <Grid>
-                        <TextBlock Text="Now Playing" Style="{StaticResource AdminCardTitleStyle}" FontSize="16" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.nowPlaying.title')}" Style="{StaticResource AdminCardTitleStyle}"
+                                   FontSize="16" AutomationProperties.HeadingLevel="Level2" />
                         <HyperlinkButton Content="{x:Bind ViewModel.StreamsLinkText, Mode=OneWay}" Style="{StaticResource AdminLinkStyle}"
                                          HorizontalAlignment="Right" Command="{x:Bind ViewModel.OpenActivityCommand}" />
                     </Grid>
-                    <TextBlock Text="Nothing playing right now" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.nowPlaying.idle')}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
                                Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.SessionsState), Mode=OneWay}" />
-                    <TextBlock Text="Failed to load streams." Style="{StaticResource AdminErrorStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.nowPlaying.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.SessionsState), Mode=OneWay}" />
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.Streams, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Now playing">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Streams, Mode=OneWay}" IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgetCatalog.nowPlaying.title')}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <controls:ColumnsPanel MinColumnWidth="340" MaxColumns="2" Spacing="14" />
@@ -211,7 +216,8 @@
                                                         Background="#E6141417" BorderBrush="#66FFFFFF" BorderThickness="1">
                                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                                         <FontIcon Glyph="&#xE769;" FontSize="10" />
-                                                        <TextBlock Text="Paused" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" />
+                                                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.nowPlaying.paused')}"
+                                                                   FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" />
                                                     </StackPanel>
                                                 </Border>
                                             </Border>
@@ -288,33 +294,33 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Playback activity · last 24 h" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind PlaybackTitle}" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.PlaybackTotalText, Mode=OneWay}" Style="{StaticResource AdminSmallMutedStyle}" />
                         </Grid>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="14" Visibility="{x:Bind local:AdminDashboardView.Ready(ViewModel.PlaybackState), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" Fill="#FF5F74EE" VerticalAlignment="Center" />
-                                <TextBlock Text="Direct play" Style="{StaticResource AdminSmallMutedStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.playbackActivity.series.directPlay')}" Style="{StaticResource AdminSmallMutedStyle}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" Fill="#FF169E88" VerticalAlignment="Center" />
-                                <TextBlock Text="Direct stream" Style="{StaticResource AdminSmallMutedStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.playbackActivity.series.directStream')}" Style="{StaticResource AdminSmallMutedStyle}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" Fill="#FFBF7F22" VerticalAlignment="Center" />
-                                <TextBlock Text="Transcode" Style="{StaticResource AdminSmallMutedStyle}" />
+                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.playbackActivity.series.transcode')}" Style="{StaticResource AdminSmallMutedStyle}" />
                             </StackPanel>
                         </StackPanel>
                         <controls:PlaybackChart Grid.Row="2" Columns="{x:Bind ViewModel.PlaybackColumns, Mode=OneWay}"
                                                 Visibility="{x:Bind local:AdminDashboardView.Ready(ViewModel.PlaybackState), Mode=OneWay}"
-                                                AutomationProperties.Name="Playback sessions per hour over the last 24 hours, by play method" />
+                                                AutomationProperties.Name="{x:Bind PlaybackChartName}" />
                         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="4"
                                     Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.PlaybackState), Mode=OneWay}">
-                            <TextBlock Text="No playback in the last 24 hours" Style="{StaticResource AdminMessageStyle}" Margin="0" />
-                            <TextBlock Text="Sessions appear here as soon as someone starts watching." Style="{StaticResource AdminMessageStyle}"
+                            <TextBlock Text="{x:Bind PlaybackEmpty}" Style="{StaticResource AdminMessageStyle}" Margin="0" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.playbackActivity.emptyDetail')}" Style="{StaticResource AdminMessageStyle}"
                                        FontSize="11" Margin="0" />
                         </StackPanel>
-                        <TextBlock Grid.Row="2" Text="Failed to load playback activity." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Grid.Row="2" Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.playbackActivity.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.PlaybackState), Mode=OneWay}" />
                     </Grid>
                 </Border>
@@ -330,16 +336,17 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Egress · last 24 h" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind EgressTitle}" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                             <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.EgressTotalText, Mode=OneWay}" Style="{StaticResource AdminSmallMutedStyle}" />
                             <TextBlock Grid.Column="2" Text="{x:Bind ViewModel.EgressPeakText, Mode=OneWay}" Style="{StaticResource AdminSmallMutedStyle}" />
                         </Grid>
-                        <controls:RateChart Grid.Row="1" Series="{x:Bind ViewModel.Egress, Mode=OneWay}" StartLabel="24h ago"
+                        <controls:RateChart Grid.Row="1" Series="{x:Bind ViewModel.Egress, Mode=OneWay}"
+                                            StartLabel="{x:Bind t:AppText.Get('web.admin.dashboard.range.edgeStart.day')}"
                                             Visibility="{x:Bind local:AdminDashboardView.Ready(ViewModel.EgressState), Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind local:AdminDashboardView.EgressName(ViewModel.EgressPeakText), Mode=OneWay}" />
-                        <TextBlock Grid.Row="1" Text="No egress samples yet" Style="{StaticResource AdminMessageStyle}"
+                        <TextBlock Grid.Row="1" Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.egress.empty')}" Style="{StaticResource AdminMessageStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.EgressState), Mode=OneWay}" />
-                        <TextBlock Grid.Row="1" Text="Failed to load egress history." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Grid.Row="1" Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.egress.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.EgressState), Mode=OneWay}" />
                     </Grid>
                 </Border>
@@ -349,23 +356,23 @@
             <controls:ColumnsPanel MinColumnWidth="420" MaxColumns="2">
                 <Border Style="{StaticResource AdminCardStyle}">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Top titles · last 7 d" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind TopTitlesTitle}" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                         <ItemsControl ItemsSource="{x:Bind ViewModel.TopTitles, Mode=OneWay}" ItemTemplate="{StaticResource AdminBarRowTemplate}"
-                                      IsTabStop="False" AutomationProperties.Name="Top titles" />
-                        <TextBlock Text="No plays in the last 7 days" Style="{StaticResource AdminMessageStyle}"
+                                      IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.topTitles.title')}" />
+                        <TextBlock Text="{x:Bind TopTitlesEmpty}" Style="{StaticResource AdminMessageStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.TopTitlesState), Mode=OneWay}" />
-                        <TextBlock Text="Failed to load top titles." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.topTitles.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.TopTitlesState), Mode=OneWay}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource AdminCardStyle}">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Most active profiles · last 7 d" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind TopProfilesTitle}" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
                         <ItemsControl ItemsSource="{x:Bind ViewModel.TopProfiles, Mode=OneWay}" ItemTemplate="{StaticResource AdminBarRowTemplate}"
-                                      IsTabStop="False" AutomationProperties.Name="Most active profiles" />
-                        <TextBlock Text="No profile activity in the last 7 days" Style="{StaticResource AdminMessageStyle}"
+                                      IsTabStop="False" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.topProfiles.title')}" />
+                        <TextBlock Text="{x:Bind TopProfilesEmpty}" Style="{StaticResource AdminMessageStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.TopProfilesState), Mode=OneWay}" />
-                        <TextBlock Text="Failed to load profile activity." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.topProfiles.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.TopProfilesState), Mode=OneWay}" />
                     </StackPanel>
                 </Border>
@@ -375,8 +382,10 @@
             <controls:ColumnsPanel MinColumnWidth="420" MaxColumns="2">
                 <Border Style="{StaticResource AdminCardStyle}">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Libraries" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.Libraries, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Libraries">
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.libraries.title')}" Style="{StaticResource AdminCardTitleStyle}"
+                                   AutomationProperties.HeadingLevel="Level2" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Libraries, Mode=OneWay}" IsTabStop="False"
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.libraries.title')}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Spacing="8" />
@@ -407,15 +416,16 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Text="No libraries configured." Style="{StaticResource AdminMessageStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.libraries.empty')}" Style="{StaticResource AdminMessageStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.LibrariesState), Mode=OneWay}" />
-                        <TextBlock Text="Failed to load libraries." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.libraries.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.LibrariesState), Mode=OneWay}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource AdminCardStyle}">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Users" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.title')}" Style="{StaticResource AdminCardTitleStyle}"
+                                   AutomationProperties.HeadingLevel="Level2" />
                         <Grid ColumnSpacing="12" Padding="0,0,0,6" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1"
                               Visibility="{x:Bind local:AdminDashboardView.Ready(ViewModel.UsersState), Mode=OneWay}">
                             <Grid.ColumnDefinitions>
@@ -423,15 +433,19 @@
                                 <ColumnDefinition Width="96" />
                                 <ColumnDefinition Width="72" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="User" Style="{StaticResource AdminSmallMutedStyle}" FontFamily="{StaticResource SiloFontMedium}" />
-                            <TextBlock Grid.Column="1" Text="Last active" Style="{StaticResource AdminSmallMutedStyle}" FontFamily="{StaticResource SiloFontMedium}" />
-                            <TextBlock Grid.Column="2" Text="Status" Style="{StaticResource AdminSmallMutedStyle}" FontFamily="{StaticResource SiloFontMedium}" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.user')}" Style="{StaticResource AdminSmallMutedStyle}"
+                                       FontFamily="{StaticResource SiloFontMedium}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.lastActive')}" Style="{StaticResource AdminSmallMutedStyle}"
+                                       FontFamily="{StaticResource SiloFontMedium}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.status')}" Style="{StaticResource AdminSmallMutedStyle}"
+                                       FontFamily="{StaticResource SiloFontMedium}" />
                         </Grid>
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.Users, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Users">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Users, Mode=OneWay}" IsTabStop="False"
+                                      AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.title')}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="admin:AdminUserRow">
                                     <Grid ColumnSpacing="12" Padding="0,8" BorderBrush="#4D2A2A2F" BorderThickness="0,0,0,1"
-                                          AutomationProperties.Name="{x:Bind local:AdminDashboardView.UserName(Username, Role, LastActive, StatusText)}">
+                                          AutomationProperties.Name="{x:Bind ReadText}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="96" />
@@ -471,9 +485,9 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Text="No users." Style="{StaticResource AdminMessageStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.empty')}" Style="{StaticResource AdminMessageStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.UsersState), Mode=OneWay}" />
-                        <TextBlock Text="Failed to load users." Style="{StaticResource AdminErrorStyle}"
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.users.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                    Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.UsersState), Mode=OneWay}" />
                     </StackPanel>
                 </Border>
@@ -483,11 +497,13 @@
             <Border Style="{StaticResource AdminCardStyle}">
                 <StackPanel Spacing="6">
                     <Grid>
-                        <TextBlock Text="Recent Activity" Style="{StaticResource AdminCardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <HyperlinkButton Content="View all ›" Style="{StaticResource AdminLinkStyle}" HorizontalAlignment="Right"
-                                         Command="{x:Bind ViewModel.OpenActivityCommand}" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.recentActivity.title')}" Style="{StaticResource AdminCardTitleStyle}"
+                                   AutomationProperties.HeadingLevel="Level2" />
+                        <HyperlinkButton Content="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.recentActivity.viewAll')}" Style="{StaticResource AdminLinkStyle}"
+                                         HorizontalAlignment="Right" Command="{x:Bind ViewModel.OpenActivityCommand}" />
                     </Grid>
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.Recent, Mode=OneWay}" IsTabStop="False" AutomationProperties.Name="Recent activity">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Recent, Mode=OneWay}" IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.dashboard.widgetCatalog.recentActivity.title')}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="admin:AdminActivityRow">
                                 <Grid ColumnSpacing="12" Padding="0,10" BorderBrush="#4D2A2A2F" BorderThickness="0,0,0,1">
@@ -499,28 +515,18 @@
                                         <FontIcon Glyph="&#xE768;" FontSize="12" Foreground="{StaticResource SiloPrimaryBrush}" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Spacing="2">
-                                        <Grid ColumnSpacing="0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{x:Bind Username}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
-                                                       Foreground="{StaticResource SiloForegroundBrush}" />
-                                            <TextBlock Grid.Column="1" Text="{x:Bind local:AdminDashboardView.StartedWatching(ProfileNote)}" FontSize="12"
-                                                       Foreground="{StaticResource SiloMutedBrush}" />
-                                            <TextBlock Grid.Column="2" Text="{x:Bind Title}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
-                                                       Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
-                                        </Grid>
+                                        <!-- The web's sentence, its account and title in bold wherever the language puts them (OnRecentContextChanged). -->
+                                        <TextBlock FontSize="12" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis"
+                                                   DataContextChanged="OnRecentContextChanged" />
                                         <TextBlock Text="{x:Bind Meta}" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Text="No recent activity." Style="{StaticResource AdminMessageStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.recentActivity.empty')}" Style="{StaticResource AdminMessageStyle}"
                                Visibility="{x:Bind local:AdminDashboardView.Empty(ViewModel.SessionsState), Mode=OneWay}" />
-                    <TextBlock Text="Failed to load activity." Style="{StaticResource AdminErrorStyle}"
+                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.dashboard.widgets.recentActivity.loadFailed')}" Style="{StaticResource AdminErrorStyle}"
                                Visibility="{x:Bind local:AdminDashboardView.Failed(ViewModel.SessionsState), Mode=OneWay}" />
                 </StackPanel>
             </Border>

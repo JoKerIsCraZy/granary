@@ -7,6 +7,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ public sealed partial class PersonViewModel : ObservableObject
 
     public static readonly TimeSpan RefreshWindow = TimeSpan.FromMinutes(2);
 
-    private static readonly SettingChoice All = new("all", "All");
+    private static SettingChoice All => new("all", AppText.Get("web.person.filterAll"));
 
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
@@ -77,7 +78,8 @@ public sealed partial class PersonViewModel : ObservableObject
     }
 
     /// <summary>All, Movies, Series, as the web's filmography buttons.</summary>
-    public IReadOnlyList<SettingChoice> Filters { get; } = [All, new(MediaScopes.Movie, "Movies"), new(MediaScopes.Series, "Series")];
+    public IReadOnlyList<SettingChoice> Filters { get; } =
+        [All, new(MediaScopes.Movie, AppText.Get("web.person.filterMovies")), new(MediaScopes.Series, AppText.Get("web.person.filterSeries"))];
 
     [ObservableProperty]
     public partial SettingChoice Filter { get; set; }
@@ -178,8 +180,8 @@ public sealed partial class PersonViewModel : ObservableObject
     public bool HasRefreshNotice => RefreshNotice.Length > 0;
 
     public string RefreshLabel => IsRefreshPending
-        ? IsActingAdmin ? "Refreshing..." : "Queueing..."
-        : IsActingAdmin ? "Refresh now" : "Refresh metadata";
+        ? IsActingAdmin ? AppText.Get("web.person.refreshing") : AppText.Get("web.person.queueing")
+        : IsActingAdmin ? AppText.Get("web.person.refreshNow") : AppText.Get("web.person.refreshMetadata");
 
     /// <summary>The display's scale, so posters are asked for at the pixels they are drawn at.</summary>
     public double DisplayScale { get; set; } = 1;
@@ -300,12 +302,12 @@ public sealed partial class PersonViewModel : ObservableObject
             {
                 var person = await _admin.RefreshPersonAsync(server.BaseUri, id, token);
                 Show(person, server.BaseUri);
-                RefreshNotice = "Person metadata refreshed";
+                RefreshNotice = AppText.Get("web.person.toast.refreshed");
             }
             else
             {
                 await _catalog.RefreshPersonAsync(server.BaseUri, id, token);
-                RefreshNotice = "Person refresh queued";
+                RefreshNotice = AppText.Get("web.person.toast.refreshQueued");
                 Following = FollowRefreshAsync(server.BaseUri, id, token);
             }
         }
@@ -313,7 +315,7 @@ public sealed partial class PersonViewModel : ObservableObject
         {
             _logger.LogWarning("Refreshing a person failed: {Failure}", ApiFailureText.Describe(ex));
             RefreshFailed = true;
-            RefreshNotice = "Refresh failed. " + BrowseFailureText.Describe(ex, "Try again.");
+            RefreshNotice = RefreshFailure(ex);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -360,7 +362,7 @@ public sealed partial class PersonViewModel : ObservableObject
                 ShowGone();
                 return;
             }
-            ShowFailure(BrowseFailureText.Describe(ex, "Something went wrong while loading them. Try again in a moment."));
+            ShowFailure(BrowseFailureText.Describe(ex, AppText.Get("web.person.loadFailedBody")));
             return;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -405,7 +407,7 @@ public sealed partial class PersonViewModel : ObservableObject
             _logger.LogWarning("Loading more of a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
             if (ReferenceEquals(_pager, pager))
             {
-                LoadMoreError = BrowseFailureText.Describe(ex, "Couldn't load more titles.");
+                LoadMoreError = BrowseFailureText.Describe(ex, AppText.Get("granary.person.moreFailed"));
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -461,7 +463,7 @@ public sealed partial class PersonViewModel : ObservableObject
             {
                 _logger.LogError(ex, "Loading a person's titles failed");
             }
-            FilmographyError = BrowseFailureText.Describe(ex, "Couldn't load the titles.");
+            FilmographyError = BrowseFailureText.Describe(ex, AppText.Get("granary.person.titlesFailed"));
             FilmographyState = LibraryLoadState.Error;
         }
     }
@@ -577,17 +579,27 @@ public sealed partial class PersonViewModel : ObservableObject
         Bio = person.Bio?.Trim() ?? "";
     }
 
+    // A refresh that failed, and why, as one sentence each.
+    private static string RefreshFailure(Exception ex) => ex switch
+    {
+        SiloApiException { Status: 429 or 503 } => AppText.Get("granary.person.refreshFailedBusy"),
+        SiloApiException => AppText.Get("granary.person.refreshFailed"),
+        System.Text.Json.JsonException or HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse }
+            => AppText.Get("granary.person.refreshFailedUnexpected"),
+        _ => AppText.Get("granary.person.refreshFailedUnreachable"),
+    };
+
     private void ShowGone()
     {
-        ErrorTitle = "This person isn't available";
-        ErrorText = "They may have been removed from the catalog, or the link may be wrong.";
+        ErrorTitle = AppText.Get("web.person.unavailableTitle");
+        ErrorText = AppText.Get("web.person.unavailableBody");
         CanRetry = false;
         State = LibraryLoadState.Error;
     }
 
     private void ShowFailure(string why)
     {
-        ErrorTitle = "Couldn't load this person";
+        ErrorTitle = AppText.Get("web.person.loadFailedTitle");
         ErrorText = why;
         CanRetry = true;
         State = LibraryLoadState.Error;

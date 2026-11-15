@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 using Microsoft.UI;
 using Microsoft.UI.Input;
@@ -32,6 +33,9 @@ public sealed partial class SpeedTrack : UserControl
     private readonly Ellipse _thumb = new() { Width = ThumbSize, Height = ThumbSize, Fill = new SolidColorBrush(Colors.White) };
     private readonly List<Rectangle> _ticks = [];
     private readonly List<TextBlock> _labels = [];
+
+    /// <summary>"SPEED" over the track; the web shows its "Speed" in capitals.</summary>
+    public string SpeedHeading => AppText.Upper(AppText.Get("web.player.speed.heading"));
 
     public SpeedTrack()
     {
@@ -214,7 +218,7 @@ internal sealed partial class SpeedTrackAutomationPeer(SpeedTrack owner) : Frame
 
     protected override string GetClassNameCore() => nameof(SpeedTrack);
 
-    protected override string GetNameCore() => base.GetNameCore() is { Length: > 0 } name ? name : "Playback speed";
+    protected override string GetNameCore() => base.GetNameCore() is { Length: > 0 } name ? name : AppText.Get("granary.player.speedName");
 
     protected override object GetPatternCore(PatternInterface patternInterface) =>
         patternInterface is PatternInterface.RangeValue or PatternInterface.Value ? this : base.GetPatternCore(patternInterface);

@@ -117,7 +117,7 @@ public sealed class CollectionEditorViewModelTests
         var editor = await EditAsync();
         _harness.Silo.On(HttpMethod.Patch, CollectionPath, Versioned(Saved, "\"rev-2\""));
 
-        editor.Media = CollectionEditorViewModel.MediaChoices[2];
+        editor.Media = editor.MediaChoices[2];
         await editor.SaveCommand.ExecuteAsync(null);
 
         Assert.Equal(new CollectionShowOnly(CollectionShowOnly.Unwatched, CollectionShowOnly.Shows),
@@ -152,7 +152,7 @@ public sealed class CollectionEditorViewModelTests
         editor.Name = "Ghibli";
         await editor.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(["Name"], editor.Conflicts);
+        Assert.Equal([CollectionDraft.NameField], editor.Conflicts);
         Assert.Equal("Name changed in both places.", editor.ConflictText);
         Assert.False(editor.SaveCommand.CanExecute(null));
 
@@ -341,7 +341,7 @@ public sealed class CollectionEditorViewModelTests
 
         await editor.AddTitleCommand.ExecuteAsync(new CollectionSearchResult("movie:totoro", "My Neighbor Totoro", "", null, false, editor.AddTitleCommand));
 
-        Assert.Equal(["Name"], editor.Conflicts);
+        Assert.Equal([CollectionDraft.NameField], editor.Conflicts);
         Assert.Equal("Ghibli", editor.Name);
         Assert.False(editor.SaveCommand.CanExecute(null));
     }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -23,7 +24,7 @@ public enum LibraryFilterBadgeKind
 public sealed record LibraryFilterBadge(LibraryFilterBadgeKind Kind, string Value, string Label)
 {
     /// <summary>The ✕'s name for screen readers, as the web's.</summary>
-    public string RemoveName => $"Remove {Label}";
+    public string RemoveName => AppText.Get("web.catalog.filters.removeBadge", ("filter", Label));
 }
 
 /// <summary>
@@ -39,18 +40,22 @@ public static class LibraryFilterBadges
         ArgumentNullException.ThrowIfNull(filters);
         ArgumentNullException.ThrowIfNull(languageName);
         var badges = new List<LibraryFilterBadge>();
-        badges.AddRange(filters.Genres.Select(g => new LibraryFilterBadge(LibraryFilterBadgeKind.Genre, g, $"Genre: {g}")));
-        badges.AddRange(filters.Decades.Select(d => new LibraryFilterBadge(LibraryFilterBadgeKind.Decade, Invariant(d), $"Decade: {Invariant(d)}s")));
+        badges.AddRange(filters.Genres.Select(g =>
+            new LibraryFilterBadge(LibraryFilterBadgeKind.Genre, g, AppText.Get("web.catalog.filters.badgeGenre", ("genre", g)))));
+        badges.AddRange(filters.Decades.Select(d => new LibraryFilterBadge(LibraryFilterBadgeKind.Decade, Invariant(d),
+            AppText.Get("granary.libraryFilters.badgeDecade", ("decade", Invariant(d))))));
         if (YearLabel(filters.YearFrom, filters.YearTo) is { } years)
         {
             badges.Add(new LibraryFilterBadge(LibraryFilterBadgeKind.Year, "", years));
         }
-        badges.AddRange(filters.ContentRatings.Select(r => new LibraryFilterBadge(LibraryFilterBadgeKind.ContentRating, r, $"Rated: {r}")));
-        badges.AddRange(filters.OriginalLanguages.Select(l =>
-            new LibraryFilterBadge(LibraryFilterBadgeKind.OriginalLanguage, l, $"Language: {languageName(l)}")));
-        badges.AddRange(filters.AudioLanguages.Select(l => new LibraryFilterBadge(LibraryFilterBadgeKind.AudioLanguage, l, $"Audio: {languageName(l)}")));
-        badges.AddRange(filters.SubtitleLanguages.Select(l =>
-            new LibraryFilterBadge(LibraryFilterBadgeKind.SubtitleLanguage, l, $"Subtitles: {languageName(l)}")));
+        badges.AddRange(filters.ContentRatings.Select(r => new LibraryFilterBadge(LibraryFilterBadgeKind.ContentRating, r,
+            AppText.Get("web.catalog.filters.badgeContentRating", ("rating", r)))));
+        badges.AddRange(filters.OriginalLanguages.Select(l => new LibraryFilterBadge(LibraryFilterBadgeKind.OriginalLanguage, l,
+            AppText.Get("web.catalog.filters.badgeLanguage", ("language", languageName(l))))));
+        badges.AddRange(filters.AudioLanguages.Select(l => new LibraryFilterBadge(LibraryFilterBadgeKind.AudioLanguage, l,
+            AppText.Get("granary.libraryFilters.badgeAudio", ("language", languageName(l))))));
+        badges.AddRange(filters.SubtitleLanguages.Select(l => new LibraryFilterBadge(LibraryFilterBadgeKind.SubtitleLanguage, l,
+            AppText.Get("granary.libraryFilters.badgeSubtitles", ("language", languageName(l))))));
         if (WatchLabel(filters.WatchStatus) is { } watch)
         {
             badges.Add(new LibraryFilterBadge(LibraryFilterBadgeKind.WatchStatus, "", watch));
@@ -95,18 +100,18 @@ public static class LibraryFilterBadges
     // "Year: 1990–1999", "Year: >= 1990", "Year: <= 1999".
     private static string? YearLabel(int? from, int? to) => (from, to) switch
     {
-        ({ } first, { } last) => $"Year: {Invariant(first)}–{Invariant(last)}",
-        ({ } first, null) => $"Year: >= {Invariant(first)}",
-        (null, { } last) => $"Year: <= {Invariant(last)}",
+        ({ } first, { } last) => AppText.Get("web.catalog.filters.badgeYearRange", ("from", Invariant(first)), ("to", Invariant(last))),
+        ({ } first, null) => AppText.Get("web.catalog.filters.badgeYearFrom", ("year", Invariant(first))),
+        (null, { } last) => AppText.Get("web.catalog.filters.badgeYearTo", ("year", Invariant(last))),
         _ => null,
     };
 
     // The web lower-cases the status and spells in_progress with a space.
     private static string? WatchLabel(LibraryWatchStatus status) => status switch
     {
-        LibraryWatchStatus.Unwatched => "Watch: unwatched",
-        LibraryWatchStatus.InProgress => "Watch: in progress",
-        LibraryWatchStatus.Watched => "Watch: watched",
+        LibraryWatchStatus.Unwatched => AppText.Get("web.catalog.filters.badgeWatch", ("status", "unwatched")),
+        LibraryWatchStatus.InProgress => AppText.Get("web.catalog.filters.badgeWatch", ("status", "in_progress")),
+        LibraryWatchStatus.Watched => AppText.Get("web.catalog.filters.badgeWatch", ("status", "watched")),
         _ => null,
     };
 

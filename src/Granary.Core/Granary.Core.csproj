@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Granary.Core</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- LibraryImport's generated marshalling, for ICU's date patterns (Texts/IcuDates.cs). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,12 @@
   <ItemGroup>
     <!-- The public key updates are checked with (docs/release.md, "Signed releases"). -->
     <EmbeddedResource Include="Updates\update-key.pub" LogicalName="Granary.Core.Updates.update-key.pub" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The texts' catalogs, one file per language tag (docs/architecture.md, "Texts"): Silo's web's, and Granary's own. -->
+    <EmbeddedResource Include="Texts\Catalogs\web\*.json" LogicalName="Granary.Core.Texts.Catalogs.web.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Texts\Catalogs\granary\*.json" LogicalName="Granary.Core.Texts.Catalogs.granary.%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

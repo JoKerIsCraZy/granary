@@ -133,7 +133,8 @@ public sealed class PlayerViewModelTests
         _engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "loading failed"));
 
         Assert.True(viewModel.IsFailed);
-        Assert.Contains("loading failed", viewModel.ErrorMessage, StringComparison.Ordinal);
+        // The web player's sentence around the player's own reason.
+        Assert.Equal("Playback error: loading failed", viewModel.ErrorMessage);
     }
 
     [Fact]

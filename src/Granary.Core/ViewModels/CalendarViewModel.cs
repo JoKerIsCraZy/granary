@@ -7,6 +7,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -35,7 +36,9 @@ public sealed partial class CalendarDayChip(DateOnly date, string label, string 
     [ObservableProperty]
     public partial bool IsSelected { get; internal set; }
 
-    public string AccessibleName => $"{Label} {Day}{(HasEvents ? " (has events)" : "")}";
+    public string AccessibleName => HasEvents
+        ? AppText.Get("web.calendar.dayLabelWithEvents", ("weekday", Label), ("day", Day))
+        : AppText.Get("web.calendar.dayLabel", ("weekday", Label), ("day", Day));
 }
 
 /// <summary>Another preset, offered when the week is empty.</summary>
@@ -46,7 +49,7 @@ public sealed record CalendarPresetLink(string Label, SettingChoice Preset, ICom
 /// <param name="OpenCommand">Takes the airing's <see cref="MediaCard"/>.</param>
 public sealed record CalendarDayRow(DateOnly Date, string Heading, bool IsToday, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand)
 {
-    public string Badge => IsToday ? "TODAY" : "";
+    public string Badge => IsToday ? AppText.Upper(AppText.Get("web.calendar.today")) : "";
 
     public bool HasBadge => IsToday;
 
@@ -67,10 +70,11 @@ public sealed partial class CalendarViewModel : ObservableObject
     /// <summary>The <see cref="MediaCard.Type"/> of an airing: no card actions, the episode may not be in a library yet.</summary>
     public const string CardType = "calendar";
 
-    private static readonly SettingChoice Following = new(CalendarFilters.Following, "Following");
-    private static readonly SettingChoice Trending = new(CalendarFilters.Trending, "Trending");
-    private static readonly SettingChoice Everything = new(CalendarFilters.Everything, "All");
-    private static readonly SettingChoice AllLibraries = new("all", "All Libraries");
+    // The web's presets and library filter, worded when shown (pages/Calendar.tsx).
+    private static SettingChoice Following => new(CalendarFilters.Following, AppText.Get("web.calendar.presetFollowing"));
+    private static SettingChoice Trending => new(CalendarFilters.Trending, AppText.Get("web.calendar.presetTrending"));
+    private static SettingChoice Everything => new(CalendarFilters.Everything, AppText.Get("web.calendar.presetAll"));
+    private static SettingChoice AllLibraries => new("all", AppText.Get("web.calendar.allLibraries"));
 
     private readonly ISessionManager _session;
     private readonly CalendarApi _calendar;
@@ -143,10 +147,12 @@ public sealed partial class CalendarViewModel : ObservableObject
     /// <summary>"Oct 5 – 11, 2026".</summary>
     public string WeekLabel => CalendarText.WeekRange(WeekStart);
 
-    public string WeekName => $"Week of {WeekLabel}";
+    public string WeekName => AppText.Get("web.calendar.weekOf", ("range", WeekLabel));
 
     /// <summary>"Nothing scheduled for Monday, October 5th." when a day is picked in a week without any airings.</summary>
-    public string SelectedDayEmptyText => HasSelectedDayEmpty ? $"Nothing scheduled for {CalendarText.DayHeading(SelectedDay!.Value)}." : "";
+    public string SelectedDayEmptyText => HasSelectedDayEmpty
+        ? AppText.Get("web.calendar.nothingScheduledFor", ("date", CalendarText.DayHeading(SelectedDay!.Value)))
+        : "";
 
     // A week with airings has a row for every day, which says so itself.
     public bool HasSelectedDayEmpty => SelectedDay is not null && State == LibraryLoadState.Empty;
@@ -313,12 +319,12 @@ public sealed partial class CalendarViewModel : ObservableObject
             Days = ChipsOf(Rows);
             EmptyText = SelectedPreset.Value switch
             {
-                CalendarFilters.Following => "Nothing upcoming from shows you follow this week.",
-                CalendarFilters.Trending => "Nothing trending this week.",
-                _ => "Nothing scheduled this week.",
+                CalendarFilters.Following => AppText.Get("web.calendar.emptyFollowing"),
+                CalendarFilters.Trending => AppText.Get("web.calendar.emptyTrending"),
+                _ => AppText.Get("web.calendar.emptyEverything"),
             };
             EmptyLinks = [.. Presets.Where(p => p != SelectedPreset)
-                .Select(p => new CalendarPresetLink(p == Everything ? "Show everything" : p.Label, p, ShowPresetCommand))];
+                .Select(p => new CalendarPresetLink(p == Everything ? AppText.Get("web.calendar.showEverything") : p.Label, p, ShowPresetCommand))];
             State = Rows.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
         }
         catch (Exception ex)
@@ -372,7 +378,7 @@ public sealed partial class CalendarViewModel : ObservableObject
                 cards.Add(new MediaCard(airing.ContentId, CardType, airing.Title)
                 {
                     Shape = MediaCardShape.Poster,
-                    Subtitle = subtitle.Length > 0 ? subtitle.ToUpperInvariant() : null,
+                    Subtitle = subtitle.Length > 0 ? AppText.Upper(subtitle) : null,
                     Caption = CalendarText.AirTime(airing, zone),
                     ImageUrl = ArtworkUrl.Resolve(server, airing.PosterUrl),
                     StatusBadge = CalendarText.Badge(airing.Badges),

@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -296,6 +297,22 @@ public sealed class RequestsViewModelTests
     }
 
     [Fact]
+    public async Task ARowSiloTitled_ShowsItsTitleInTheLanguageOnScreen_AndExploreAllTakesIt()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _harness.Answer(DiscoverPath, Discover.Replace("\"title\": \"Trending Movies\",",
+            "\"title\": \"Trending Movies\", \"title_key\": \"home.section.discoverTrendingMovies\",", StringComparison.Ordinal));
+
+        var hub = await LoadedAsync();
+        hub.DiscoverRows[0].ExploreAllCommand!.Execute(null);
+
+        string german = AppText.Get("home.section.discoverTrendingMovies");
+        Assert.NotEqual("Trending Movies", german);
+        Assert.Equal(german, hub.DiscoverRows[0].Title);
+        Assert.Equal(new RequestTitlesRouteParameter("trending_movies", german), Assert.Single(_harness.Navigation.Navigations).Parameter);
+    }
+
+    [Fact]
     public async Task ARowOfOnePage_HasNothingMoreToShow()
     {
         _harness.Answer(DiscoverPath, Discover.Replace("\"total_pages\": 5", "\"total_pages\": 1", StringComparison.Ordinal));
@@ -587,6 +604,15 @@ public sealed class RequestsViewModelTests
         Assert.Equal("", RequestText.SeasonProgress([new RequestSeasonProgress(1, 0, 0)]));
         Assert.Equal("1 of 1 episode in the library", RequestText.SeasonProgress([new RequestSeasonProgress(1, 1, 3)]));
         Assert.Equal("2 of 5 episodes in the library", RequestText.SeasonProgress([new RequestSeasonProgress(1, 3, 2), new RequestSeasonProgress(2, 2, 0)]));
+    }
+
+    [Fact]
+    public void SeasonProgress_WritesTheEpisodeCount_AsTheLanguageDoes()
+    {
+        Assert.Equal("1,000 of 1,200 episodes in the library", RequestText.SeasonProgress([new RequestSeasonProgress(1, 1200, 1000)]));
+
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("1.000 von 1.200 Folgen in der Mediathek", RequestText.SeasonProgress([new RequestSeasonProgress(1, 1200, 1000)]));
     }
 
     [Theory]

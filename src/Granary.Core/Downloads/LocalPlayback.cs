@@ -6,6 +6,7 @@ using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -39,7 +40,7 @@ public sealed partial class LocalPlayback : IServerPlayback
     public static readonly TimeSpan StopWriteBudget = TimeSpan.FromSeconds(3);
 
     /// <summary>What the player says, beside Retry, when the file on this PC will not play.</summary>
-    public const string CannotPlay = "This download can't be played. Try again, or delete it and download it again.";
+    public static string CannotPlay => AppText.Get("granary.downloads.cannotPlay");
 
     // An end this close to the title's length is its end; an earlier one is a file that breaks off.
     private const double EndTolerance = 30;

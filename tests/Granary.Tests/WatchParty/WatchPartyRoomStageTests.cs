@@ -5,6 +5,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.WatchParty;
 using Granary.Core.WatchParty;
 using Granary.Tests.Catalog;
@@ -311,6 +312,18 @@ public sealed class WatchPartyRoomStageTests : IAsyncDisposable
 
         Assert.Equal(["Elena set guests can pause", "Maya is no longer ready"], page.ActivityRows.Select(r => r.Text));
         Assert.All(page.ActivityRows, r => Assert.Equal("now", r.Time));
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheRoom_SpeaksTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var page = await InRoomAsync(WatchPartyPayloads.Room(role: "guest"));
+
+        Assert.Equal(("Live · 2 hier", "Gastgeber wählt", "Gastgeber: Elena · Gastgeber steuert die Wiedergabe"),
+            (page.PhaseLabel, page.ModeLabel, page.RailFooter));
+        Assert.Equal("Elena entscheidet gerade. Alles, was du unten auswählst, wird als Vorschlag eingereicht.", page.LobbyText);
         page.Deactivate();
     }
 

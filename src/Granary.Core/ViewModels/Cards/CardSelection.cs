@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Cards;
 
@@ -20,8 +21,8 @@ public sealed partial class CardSelection : ObservableObject
 
     public bool HasPicks => Count > 0;
 
-    /// <summary>"3 selected".</summary>
-    public string CountText => $"{Count} selected";
+    /// <summary>"3 selected", in the web's words for its History picks (<c>pages/Catalog.tsx</c>).</summary>
+    public string CountText => AppText.Get("web.catalog.page.selectedCount", ("count", Count));
 
     /// <summary>The picked cards, in the order they were picked.</summary>
     public IReadOnlyList<MediaCard> Cards => [.. _picked.Values];

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.WatchParty;
+using Granary.Core.Texts;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
@@ -98,14 +99,14 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
 
     public bool IsBusy => IsCreating || IsJoining;
 
-    public string CreateLabel => IsCreating ? "Creating..." : "Create Watch Party";
+    public string CreateLabel => IsCreating ? AppText.Get("web.watchTogether.hub.creating") : AppText.Get("web.watchTogether.hub.create");
 
-    public string JoinLabel => IsJoining ? "Joining..." : "Join Watch Party";
+    public string JoinLabel => IsJoining ? AppText.Get("web.watchTogether.hub.joining") : AppText.Get("web.watchTogether.hub.join");
 
     /// <summary>This profile is in a room already, one that is not over.</summary>
     public bool IsInRoom => _party.IsInRoom;
 
-    public string CurrentRoomText => IsInRoom && _party.Room is { } room ? $"You're in Watch Party {room.Code}." : "";
+    public string CurrentRoomText => IsInRoom && _party.Room is { } room ? AppText.Get("granary.watchParty.inRoom", ("code", room.Code)) : "";
 
     /// <summary>
     /// The room this device was in is over: the hub says why, as Silo's apps do once they left the room for it, in the words
@@ -171,9 +172,9 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
         }
         row.Status = state switch
         {
-            WatchPartyRecentState.Live => WatchPartyRecentRow.LiveStatus,
-            WatchPartyRecentState.Unknown => WatchPartyRecentRow.UnknownStatus,
-            _ => WatchPartyRecentRow.EndedStatus,
+            WatchPartyRecentState.Live => WatchPartyRecentStatus.Live,
+            WatchPartyRecentState.Unknown => WatchPartyRecentStatus.Unknown,
+            _ => WatchPartyRecentStatus.Ended,
         };
     }
 
@@ -199,8 +200,10 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not go back into a recent Watch Party");
-            row.Status = ex is SiloApiException { Status: 403 or 404 or 409 or 410 } ? WatchPartyRecentRow.EndedStatus : row.Status;
-            Error = ex is SiloApiException { Status: 404 or 409 or 410 or 403 } ? "That room is no longer active." : "Failed to join room.";
+            row.Status = ex is SiloApiException { Status: 403 or 404 or 409 or 410 } ? WatchPartyRecentStatus.Ended : row.Status;
+            Error = ex is SiloApiException { Status: 404 or 409 or 410 or 403 }
+                ? AppText.Get("web.watchTogether.common.roomInactive")
+                : AppText.Get("web.watchTogether.hub.joinFailed");
         }
         finally
         {
@@ -228,7 +231,7 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not open a Watch Party");
-            Error = ex is SiloApiException api && api.Problem.Detail is { Length: > 0 } detail ? detail : "Failed to create room.";
+            Error = ex is SiloApiException api && api.Problem.Detail is { Length: > 0 } detail ? detail : AppText.Get("web.watchTogether.hub.createFailed");
         }
         finally
         {
@@ -252,18 +255,19 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
             // The profile or server changed meanwhile: the room it asked for is no longer this page's to show.
             _logger.LogDebug("A Watch Party joined for the profile before was not entered");
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            Error = ex.Message.Split(" (Parameter", StringSplitOptions.None)[0];
+            // Neither a code nor an invite link of this server.
+            Error = AppText.Get("granary.watchParty.joinNeedsCode");
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not join a Watch Party");
             Error = ex switch
             {
-                SiloApiException { Status: 404 } => "Room not found.",
-                SiloApiException { Status: 409 or 410 } => "That room is no longer active.",
-                _ => "Failed to join room.",
+                SiloApiException { Status: 404 } => AppText.Get("web.watchTogether.common.roomNotFound"),
+                SiloApiException { Status: 409 or 410 } => AppText.Get("web.watchTogether.common.roomInactive"),
+                _ => AppText.Get("web.watchTogether.hub.joinFailed"),
             };
         }
         finally

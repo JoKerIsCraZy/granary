@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -70,7 +71,9 @@ public sealed partial class LibraryGridViewModel(CatalogApi catalog, ILogger log
 
     /// <summary>"1,234 titles" once the first page arrived; "About …" when the server only estimated.</summary>
     public string TotalText => State is LibraryLoadState.Ready or LibraryLoadState.Empty
-        ? (_totalExact ? "" : "About ") + Total.ToString("N0", CultureInfo.InvariantCulture) + (Total == 1 ? " title" : " titles")
+        ? _totalExact
+            ? AppText.Get("web.catalog.page.titleCount", ("count", Total), ("shown", AppText.Number(Total)))
+            : AppText.Get("granary.library.titleCountAbout", ("count", Total), ("count_text", AppText.Number(Total)))
         : "";
 
     /// <summary>Raised when a listing starts over, so the view can scroll back to its top.</summary>

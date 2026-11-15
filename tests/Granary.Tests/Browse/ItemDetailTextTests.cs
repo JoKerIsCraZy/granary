@@ -1,4 +1,5 @@
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Tests.Browse;
@@ -36,8 +37,8 @@ public sealed class ItemDetailTextTests
         Assert.Equal(expected, DetailText.AirYears(first, last, year));
 
     [Theory]
-    [InlineData("2026-10-23", "23 Oct 2026")]
-    [InlineData("2026-10-23T20:00:00Z", "23 Oct 2026")]
+    [InlineData("2026-10-23", "Oct 23, 2026")]
+    [InlineData("2026-10-23T20:00:00Z", "Oct 23, 2026")]
     [InlineData("23.10.2026", null)]
     [InlineData(null, null)]
     public void Date_IsWordedLikeTheWeb(string? iso, string? expected) => Assert.Equal(expected, DetailText.Date(iso));
@@ -61,7 +62,7 @@ public sealed class ItemDetailTextTests
     [InlineData(CatalogItemTypes.Movie, null, null, null, false, "Play")]
     [InlineData(CatalogItemTypes.Movie, 0.0, true, null, false, "Resume")]
     [InlineData(CatalogItemTypes.Movie, 300.0, null, null, true, "Resume")]
-    [InlineData(CatalogItemTypes.Episode, null, false, null, true, "Play")]
+    [InlineData(CatalogItemTypes.Episode, null, false, null, true, "Play Episode")]
     [InlineData(CatalogItemTypes.Series, null, null, 1, false, "Resume")]
     [InlineData(CatalogItemTypes.Series, null, null, 0, false, "Play Next")]
     [InlineData(CatalogItemTypes.Series, null, null, 0, true, "Start From Episode 1")]
@@ -230,11 +231,13 @@ public sealed class ItemDetailTextTests
     }
 
     [Theory]
-    [InlineData(1_073_741_823L, "1.0 GB")]
-    [InlineData(1_048_575L, "1 MB")]
-    [InlineData(2_048L, "2 KB")]
-    [InlineData(500L, "1 KB")]
-    public void FileSizes_PickTheirUnitAfterRounding(long bytes, string expected) =>
+    [InlineData(1_073_741_824L, "1.0 GB")]
+    [InlineData(1_073_741_823L, "1024.0 MB")]
+    [InlineData(1_048_575L, "1024.0 KB")]
+    [InlineData(2_048L, "2.0 KB")]
+    [InlineData(500L, "500 B")]
+    public void FileSizes_AreWrittenAsTheWebsMediaInfoWritesThem(long bytes, string expected) =>
+        // formatFileSize: the unit by the size itself, one decimal, 1024-based (lib/mediaFormat.ts).
         Assert.Equal("Available version: " + expected, DetailFacts.AvailableVersionLine(Item(CatalogItemTypes.Movie) with
         {
             Versions = [new FileVersion { FileId = "1", FileSize = bytes }],
@@ -275,8 +278,8 @@ public sealed class ItemDetailTextTests
         };
         Season[] seasons = [new() { SeasonNumber = 0, IsSpecials = true }, new() { SeasonNumber = 1 }, new() { SeasonNumber = 2 }];
 
-        Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series));
-        Assert.Equal("2021–2026 · TV-MA · 2 seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series, seasons));
+        Assert.Equal("2021–2026 · TV-MA · 3 Seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series));
+        Assert.Equal("2021–2026 · TV-MA · 2 Seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series, seasons));
     }
 
     [Fact]
@@ -284,13 +287,13 @@ public sealed class ItemDetailTextTests
     {
         var episode = Item(CatalogItemTypes.Episode) with { SeasonNumber = 3, EpisodeNumber = 1, Runtime = 47, AirDate = "2021-01-08", ContentRating = "TV-MA" };
 
-        Assert.Equal("S3 E1 · 47m · 8 Jan 2021 · TV-MA", DetailFacts.MetaLine(episode));
+        Assert.Equal("S3 E1 · 47m · Jan 8, 2021 · TV-MA", DetailFacts.MetaLine(episode));
     }
 
     [Fact]
     public void MetaLine_OfASeason_IsItsYearAndEpisodes_AndLeavesOutWhatIsUnknown()
     {
-        Assert.Equal("2021 · 10 episodes", DetailFacts.MetaLine(Item(CatalogItemTypes.Season) with { AirDate = "2021-01-08", EpisodeCount = 10, Genres = [] }));
+        Assert.Equal("2021 · 10 Episodes", DetailFacts.MetaLine(Item(CatalogItemTypes.Season) with { AirDate = "2021-01-08", EpisodeCount = 10, Genres = [] }));
         Assert.Equal("", DetailFacts.MetaLine(Item(CatalogItemTypes.Movie) with { Genres = [] }));
     }
 
@@ -303,7 +306,7 @@ public sealed class ItemDetailTextTests
         };
 
         Assert.Equal("Available version: 720P · H264 · EAC3 · 9.3 GB", DetailFacts.AvailableVersionLine(movie));
-        Assert.Equal("Available version: 720P · 700 MB", DetailFacts.AvailableVersionLine(movie with
+        Assert.Equal("Available version: 720P · 700.0 MB", DetailFacts.AvailableVersionLine(movie with
         {
             Versions = [new FileVersion { FileId = "1", Resolution = "720p", FileSize = 734_003_200 }],
         }));
@@ -327,8 +330,8 @@ public sealed class ItemDetailTextTests
     }
 
     [Theory]
-    [InlineData(3753.4, "Resume from 1:02:33")]
-    [InlineData(725.0, "Resume from 12:05")]
+    [InlineData(3753.4, "Resume at 1:02:33")]
+    [InlineData(725.0, "Resume at 12:05")]
     [InlineData(null, "Play")]
     public void PlayButton_SaysWhereAMovieResumes(double? position, string expected)
     {
@@ -339,9 +342,9 @@ public sealed class ItemDetailTextTests
     }
 
     [Theory]
-    [InlineData(125.0, true, "Resume from 2:05")]
+    [InlineData(125.0, true, "Resume at 2:05")]
     [InlineData(0.4, true, "Resume")]
-    [InlineData(360_061.0, true, "Resume from 100:01:01")]
+    [InlineData(360_061.0, true, "Resume at 100:01:01")]
     public void PlayButton_OfAnEpisode_SaysWhereItResumes_FromASecondOn(double position, bool inProgress, string expected)
     {
         var episode = Item(CatalogItemTypes.Episode);
@@ -386,8 +389,8 @@ public sealed class ItemDetailTextTests
         Assert.Equal(("Maya Stone", "Elena"), (sections[1].Rows[0].Label, sections[1].Rows[0].Value));
         Assert.Equal(("Director", "Ann Lee"), (sections[2].Rows[0].Label, sections[2].Rows[0].Value));
         var file = sections[3].Rows.ToDictionary(r => r.Label, r => r.Value);
-        Assert.Equal("9.3 GB", file["Size"]);
-        Assert.Equal("8 Mb/s", file["Bitrate"]);
+        Assert.Equal("9.3 GB", file["File Size"]);
+        Assert.Equal("8,000 kbps", file["Bitrate"]);
         Assert.DoesNotContain(sections.SelectMany(s => s.Rows), r => r.Value.Contains("secret", StringComparison.Ordinal));
     }
 
@@ -400,8 +403,8 @@ public sealed class ItemDetailTextTests
         var before = DetailFacts.InfoSections(series)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
         var after = DetailFacts.InfoSections(series, seasons)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
 
-        Assert.Equal(("2021", "3 seasons", "25 episodes"), (before["Aired"], before["Seasons"], before["Episodes"]));
-        Assert.Equal(("1 season", "10 episodes"), (after["Seasons"], after["Episodes"]));
+        Assert.Equal(("2021", "3 Seasons", "25 Episodes"), (before["Aired"], before["Seasons"], before["Episodes"]));
+        Assert.Equal(("1 Season", "10 Episodes"), (after["Seasons"], after["Episodes"]));
         Assert.DoesNotContain("Runtime", before.Keys);
     }
 
@@ -412,7 +415,7 @@ public sealed class ItemDetailTextTests
 
         var details = DetailFacts.InfoSections(season, listedEpisodes: 8)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
 
-        Assert.Equal(("Season 3", "8 episodes", "23 Oct 2026"), (details["Season"], details["Episodes"], details["Released"]));
+        Assert.Equal(("Season 3", "8 Episodes", "Oct 23, 2026"), (details["Season"], details["Episodes"], details["Released"]));
     }
 
     [Fact]
@@ -429,7 +432,7 @@ public sealed class ItemDetailTextTests
         var sections = DetailFacts.InfoSections(episode);
 
         Assert.DoesNotContain(sections[0].Rows, r => r.Label is "Season" or "Seasons" or "Episodes");
-        Assert.Equal(["TRUEHD", "EAC3"], sections.Where(s => s.Title.StartsWith("File", StringComparison.Ordinal)).Select(s => s.Rows.Single(r => r.Label == "Audio").Value));
+        Assert.Equal(["TRUEHD", "EAC3"], sections.Where(s => s.Title.StartsWith("Version", StringComparison.Ordinal)).Select(s => s.Rows.Single(r => r.Label == "Audio").Value));
     }
 
     [Fact]
@@ -449,6 +452,47 @@ public sealed class ItemDetailTextTests
             Versions = [new FileVersion { FileId = "1", Resolution = "2160p" }, new FileVersion { FileId = "2", Resolution = "1080p" }],
         };
 
-        Assert.Equal(["Details", "File 1", "File 2"], DetailFacts.InfoSections(movie).Select(s => s.Title));
+        Assert.Equal(["Details", "Version 1", "Version 2"], DetailFacts.InfoSections(movie).Select(s => s.Title));
+    }
+
+    [Fact]
+    public void Info_LetsOnlyTheOverviewBeSelected()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with { Overview = "A long story.", Tagline = "Short." };
+
+        var rows = DetailFacts.InfoSections(movie)[0].Rows;
+
+        Assert.Equal(["Overview"], rows.Where(r => r.IsSelectable).Select(r => r.Label));
+    }
+
+    [Fact]
+    public void ASeasonWithoutANameOfItsOwn_IsNamedInTheLanguageOnScreen()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        var unnamed = Item(CatalogItemTypes.Season) with { SeasonNumber = 2, Title = "Season 2" };
+        var named = Item(CatalogItemTypes.Season) with { SeasonNumber = 3, Title = "The Return" };
+
+        // The server's English "Season 2" is no name of its own: the page names the season in the viewer's words, and
+        // shows no second line for it.
+        Assert.Equal("Staffel 2", DetailText.SeasonDisplayTitle(2, "Season 2"));
+        Assert.Null(DetailFacts.Subtitle(unnamed));
+        Assert.Equal("Staffel 2", DetailFacts.Breadcrumbs(unnamed)[1].Label);
+        Assert.Equal("The Return", DetailFacts.Subtitle(named));
+        Assert.Equal("The Return", DetailText.SeasonDisplayTitle(3, "The Return"));
+    }
+
+    [Fact]
+    public void AResumingPlay_IsKnownByItsKind_NotByItsWords()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        var movie = Item(CatalogItemTypes.Movie);
+        var watch = new WatchRollup { PositionSeconds = 725, IsInProgress = true };
+
+        var action = DetailFacts.PlayAction(movie, watch);
+
+        Assert.True(action.Resumes);
+        Assert.NotEqual("Resume at 12:05", DetailFacts.PlayButtonText(movie, watch, action));
+        Assert.Contains("12:05", DetailFacts.PlayButtonText(movie, watch, action), StringComparison.Ordinal);
+        Assert.False(DetailFacts.PlayAction(movie, null).Resumes);
     }
 }

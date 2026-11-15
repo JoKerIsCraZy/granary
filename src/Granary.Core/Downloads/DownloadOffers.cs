@@ -1,5 +1,6 @@
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Granary.Core.ViewModels.Downloads;
 
@@ -28,13 +29,13 @@ public sealed record NoDownloadOffer(string Reason) : DownloadOffer;
 public static class DownloadOffers
 {
     /// <summary>A title without a file, or a season none of whose episodes has one: the web's words (<c>web.detail.mediaInfo.noFiles</c>).</summary>
-    public const string NoFiles = "No media files for this item.";
+    public static string NoFiles => AppText.Get("web.detail.mediaInfo.noFiles");
 
     /// <summary>A season whose episodes with a file are all downloaded already.</summary>
-    public const string SeasonOnThisPc = "Every episode of this season is on this PC.";
+    public static string SeasonOnThisPc => AppText.Get("granary.downloads.seasonOnThisPc");
 
     /// <summary>A series whose episodes with a file are all downloaded already.</summary>
-    public const string SeriesOnThisPc = "Every episode of this series is on this PC.";
+    public static string SeriesOnThisPc => AppText.Get("granary.downloads.seriesOnThisPc");
 
     /// <summary>
     /// A film, or an episode of its series, as a download of <paramref name="fileId"/> (null lets the server choose); the

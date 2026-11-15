@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.App.Services;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -67,7 +68,7 @@ public sealed partial class TrailerOverlay : UserControl
         TearDown();
         _returnFocus ??= XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as FrameworkElement : null;
         var web = new WebView2 { DefaultBackgroundColor = Colors.Black, Opacity = 0 };
-        AutomationProperties.SetName(web, "Trailer");
+        AutomationProperties.SetName(web, AppText.Get("web.detail.trailers.playerDescription"));
         _web = web;
         WebHost.Child = web;
         Fit();

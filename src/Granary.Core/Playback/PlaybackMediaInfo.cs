@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Playback;
 
@@ -75,8 +76,9 @@ public sealed record PlaybackMediaInfo(string Title, string Subtitle, Uri? Artwo
     public static PlaybackMediaInfo OfEpisode(string? episodeTitle, string? seriesTitle, int? seasonNumber, int? episodeNumber, int? year,
         string? seriesId, Uri? artwork)
     {
+        // Without a title, the number in the web's words, as its episode rows name one (web.detail.episodes.numbered).
         string title = string.IsNullOrWhiteSpace(episodeTitle) && episodeNumber is { } number
-            ? string.Create(CultureInfo.InvariantCulture, $"Episode {number}")
+            ? AppText.Get("web.detail.episodes.numbered", ("episode", number))
             : episodeTitle ?? "";
         // The player's own code ("S1 · E5"), after the series as the apps write it.
         string code = seasonNumber is { } season && episodeNumber is { } episode

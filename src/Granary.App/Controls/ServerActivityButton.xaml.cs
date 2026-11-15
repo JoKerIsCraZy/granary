@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Composition;
@@ -73,6 +74,17 @@ public sealed partial class ServerActivityButton : UserControl
 
     // A section's heading for a screen reader, with its count: "Streams, 3". The count beside it is only drawn.
     public string SectionName(string title, string count, bool hasCount) => hasCount ? $"{title}, {count}" : title;
+
+    // A section's heading as the web's CSS shows it, in capitals by the rules of the language on screen.
+    public string Upper(string title) => AppText.Upper(title);
+
+    public string StreamsTitle => AppText.Get("web.admin.common.serverActivity.streams");
+
+    public string TasksTitle => AppText.Get("web.admin.common.serverActivity.tasks");
+
+    public string ScansTitle => AppText.Get("web.admin.common.serverActivity.scans");
+
+    public string PreparingTitle => AppText.Get("web.admin.common.serverActivity.preparing");
 
     private void OnPanelOpened(object? sender, object e) => ViewModel.IsPanelOpen = true;
 

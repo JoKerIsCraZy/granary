@@ -116,7 +116,7 @@ public sealed class AdminSessionTextTests
     [Fact]
     public void Route_OfAnOlderServer_IsItsReportingNode()
     {
-        Assert.Equal([new AdminRouteNode("legacy:Local server", "Node", "Local server")],
+        Assert.Equal([new AdminRouteNode("legacy:local", "Node", "Local server")],
             AdminSessionText.Route(new AdminPlaybackSession { ReportingNode = "local" }));
         Assert.Equal([new AdminRouteNode("legacy:gpu-box", "Node", "gpu-box")],
             AdminSessionText.Route(new AdminPlaybackSession { ReportingNode = "local", NodeDisplayName = "gpu-box" }));

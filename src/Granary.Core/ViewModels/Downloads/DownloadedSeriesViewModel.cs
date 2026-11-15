@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -45,8 +45,6 @@ public sealed class DownloadSeason
 /// </summary>
 public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDisposable
 {
-    public const string SpecialsTitle = "Specials";
-
     private readonly DownloadManager _downloads;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
@@ -216,8 +214,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
             int at = IndexOf(number);
             if (at < 0)
             {
-                _seasons.Insert(i, new DownloadSeason(number, number == 0 ? SpecialsTitle : "Season " + number.ToString(CultureInfo.InvariantCulture),
-                    OpenCardCommand));
+                _seasons.Insert(i, new DownloadSeason(number, DetailText.SeasonLabel(number), OpenCardCommand));
                 at = i;
             }
             else if (at != i)

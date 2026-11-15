@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -31,7 +32,6 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     /// <summary>The shortest text searched.</summary>
     internal const int MinQueryLength = 2;
 
-    internal const string MoreFailedText = "Couldn’t load more titles.";
 
     private readonly ISessionManager _session;
     private readonly RequestsApi _requests;
@@ -111,7 +111,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     public partial bool LibraryFoundNothing { get; set; }
 
     /// <summary>"Nothing in your library matches “heat”." under the heading, or empty.</summary>
-    public string Note => LibraryFoundNothing && Query.Length > 0 ? $"Nothing in your library matches “{Query}”." : "";
+    public string Note => LibraryFoundNothing && Query.Length > 0 ? AppText.Get("web.requests.toAdd.noLibraryMatch", ("query", Query)) : "";
 
     /// <summary>What Search's backdrop shows of <paramref name="card"/>, one of the cards shown; null for another.</summary>
     internal BrowseHeroTitle? BackdropOf(MediaCard card) => _backdrops.GetValueOrDefault(card.Id);

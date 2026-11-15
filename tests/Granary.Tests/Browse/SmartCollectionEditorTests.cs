@@ -5,6 +5,7 @@ using System.Text.Json;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Collections;
 using Granary.Tests.Profiles;
 
@@ -69,6 +70,13 @@ public sealed class SmartCollectionEditorTests
 
     private static SmartRuleViewModel Rule(CollectionEditorViewModel editor, int index) => editor.Rules.Groups[0].Rules[index];
 
+    // A sentence's words, and its boxes as <tag>, in order.
+    private static string[] Sentence(IReadOnlyList<TextRun> runs) =>
+    [
+        .. runs.Select(run => run.Text.Trim().Length > 0 ? run.Text.Trim() : run.Tags.FirstOrDefault(tag => tag != "w") is { } box ? $"<{box}>" : "")
+            .Where(part => part.Length > 0),
+    ];
+
     [Fact]
     public async Task ASmartCollection_ShowsItsRules_AndWhatTheyMatch()
     {
@@ -78,8 +86,8 @@ public sealed class SmartCollectionEditorTests
         Assert.Equal("Smart", editor.KindLabel);
         Assert.Equal("movie", editor.Rules.Scope.Value);
         Assert.Equal("Filme", editor.Rules.LibrariesText);
-        Assert.Equal("from the", editor.Rules.FromText);
-        Assert.Equal("library", editor.Rules.LibraryWord);
+        Assert.Equal(["Show", "<scope>", "from the", "<libraries>", "library"], Sentence(editor.Rules.SentenceRuns));
+        Assert.Equal(["that match", "<match>", "of these:"], Sentence(editor.Rules.Groups[0].SentenceRuns));
         Assert.Equal("Comedy", Rule(editor, 0).Text);
         Assert.True(Rule(editor, 0).ShowsSuggest);
         Assert.Equal(("1990", "1999"), (Rule(editor, 1).From, Rule(editor, 1).To));
@@ -96,6 +104,29 @@ public sealed class SmartCollectionEditorTests
     }
 
     [Fact]
+    public async Task ALibraryThisProfileNoLongerSees_StaysPicked_ByItsNumber()
+    {
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved.Replace("\"library_ids\": [1]", "\"library_ids\": [1, 99]", StringComparison.Ordinal), "\"rev-1\""));
+
+        var editor = await EditAsync();
+
+        var gone = Assert.Single(editor.Rules.Libraries, l => l.Id == 99);
+        Assert.Equal(("Library 99", true, false), (gone.Name, gone.IsPicked, gone.IsKnown));
+        Assert.Equal("Filme +1 more", editor.Rules.LibrariesText);
+    }
+
+    [Fact]
+    public async Task ALibraryKnownOnlyByItsNumber_IsNamedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved.Replace("\"library_ids\": [1]", "\"library_ids\": [1, 99]", StringComparison.Ordinal), "\"rev-1\""));
+
+        var editor = await EditAsync();
+
+        Assert.Equal("Mediathek 99", Assert.Single(editor.Rules.Libraries, l => l.Id == 99).Name);
+    }
+
+    [Fact]
     public async Task AChangedRule_IsSaved_WithWhatTheAppDoesNotKnowKept()
     {
         var editor = await EditAsync();
@@ -103,7 +134,7 @@ public sealed class SmartCollectionEditorTests
 
         Rule(editor, 0).Text = "Drama";
 
-        Assert.Equal(["Rules"], editor.ChangedFields);
+        Assert.Equal([CollectionDraft.RulesField], editor.ChangedFields);
         Assert.Equal("Rules not saved", editor.SaveBarMessage);
         await editor.SaveCommand.ExecuteAsync(null);
 
@@ -230,7 +261,7 @@ public sealed class SmartCollectionEditorTests
         Assert.Equal("any", editor.Rules.ToQuery().Match);
         Assert.Equal("Add an “or” group", editor.Rules.AddGroupText);
         Assert.True(editor.Rules.Groups[1].IsLater);
-        editor.Rules.Groups[1].Join = SmartRulesViewModel.Joins[0];
+        editor.Rules.Groups[1].Join = editor.Rules.Joins[0];
         Assert.Equal("all", editor.Rules.ToQuery().Match);
         editor.Rules.RemoveGroupCommand.Execute(editor.Rules.Groups[1]);
         Assert.Single(editor.Rules.Groups);
@@ -338,7 +369,7 @@ public sealed class SmartCollectionEditorTests
         Assert.True(editor.Rules.HasIncompleteRule);
         Assert.Equal(before, _harness.Silo.SentTo(HttpMethod.Post, PreviewPath).Count);
         Assert.True(editor.HasPreviewTiles);
-        Assert.Equal(["Rules"], editor.ChangedFields);
+        Assert.Equal([CollectionDraft.RulesField], editor.ChangedFields);
     }
 
     [Fact]
@@ -394,7 +425,7 @@ public sealed class SmartCollectionEditorTests
         var editor = await EditAsync();
         editor.Rules.SortField = editor.Rules.Sorts.First(s => s.Value == "rating_imdb");
 
-        editor.Rules.Scope = CollectionRuleFields.Scopes.First(s => s.Value == "audiobook");
+        editor.Rules.Scope = editor.Rules.Scopes.First(s => s.Value == "audiobook");
 
         Assert.Equal(new SmartSort("title", "asc"), editor.Rules.ToQuery().Sort);
         Assert.DoesNotContain(editor.Rules.Sorts, s => s.Value == "rating_imdb");
@@ -444,6 +475,6 @@ public sealed class SmartCollectionEditorTests
         Assert.Single(merged.Rules.Groups);
 
         var (_, both) = CollectionDraft.Merge(original, mine, theirs with { Rules = theirs.Rules! with { MediaScope = "movie" } });
-        Assert.Equal(["Rules"], both);
+        Assert.Equal([CollectionDraft.RulesField], both);
     }
 }

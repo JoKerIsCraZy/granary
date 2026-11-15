@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -40,7 +41,7 @@ public sealed partial class SidebarSectionHeader : UserControl
         Show();
     }
 
-    /// <summary>"Discover": shown in capitals, read as written.</summary>
+    /// <summary>"Discover": shown in capitals, by the language's rules as the web's CSS does, and read as written.</summary>
     public string Label
     {
         get => (string)GetValue(LabelProperty);
@@ -84,9 +85,11 @@ public sealed partial class SidebarSectionHeader : UserControl
 
     private void Show()
     {
-        Text.Text = Label.ToUpperInvariant();
+        Text.Text = AppText.Upper(Label);
         Chevron.Glyph = IsExpanded ? OpenGlyph : FoldedGlyph;
-        AutomationProperties.SetName(Toggle, $"{(IsExpanded ? "Collapse" : "Expand")} {Label}");
+        AutomationProperties.SetName(Toggle, IsExpanded
+            ? AppText.Get("web.shell.sidebar.collapse", ("name", Label))
+            : AppText.Get("web.shell.sidebar.expand", ("name", Label)));
         Toggle.Visibility = IsCompact ? Visibility.Collapsed : Visibility.Visible;
         Divider.Visibility = IsCompact ? Visibility.Visible : Visibility.Collapsed;
         Height = IsCompact ? CompactHeight : OpenHeight;

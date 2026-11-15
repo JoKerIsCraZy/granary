@@ -1,4 +1,5 @@
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -10,17 +11,17 @@ namespace Granary.Core.ViewModels.Player;
 public sealed record AudioTrackOption(int Ordinal, string Title, string Meta, string Codec, string Channels, bool IsDefault, bool IsSelected)
 {
     /// <summary>For screen readers: the row as one sentence, the chips in their own words.</summary>
-    public string AccessibleName => string.Join(", ", new[] { Title, $"{Codec} {Channels}".Trim(), IsDefault ? "default" : "", Meta }
+    public string AccessibleName => string.Join(", ", new[] { Title, $"{Codec} {Channels}".Trim(), IsDefault ? AppText.Get("web.player.audioMenu.defaultBadge") : "", Meta }
         .Where(part => part.Length > 0));
 
     /// <summary>The menu for <paramref name="tracks"/>, with the row of <paramref name="selected"/> checked.</summary>
-    public static IReadOnlyList<AudioTrackOption> For(IReadOnlyList<WatchAudioTrack> tracks, int? selected, IFormatProvider? culture = null)
+    public static IReadOnlyList<AudioTrackOption> For(IReadOnlyList<WatchAudioTrack> tracks, int? selected)
     {
         ArgumentNullException.ThrowIfNull(tracks);
         return [.. tracks.Select((track, ordinal) =>
         {
-            string title = TrackText.AudioTitle(track);
-            return new AudioTrackOption(ordinal, title, TrackText.AudioMeta(track, title, culture), TrackText.AudioCodec(track),
+            string title = TrackText.AudioTitle(track, ordinal + 1);
+            return new AudioTrackOption(ordinal, title, TrackText.AudioMeta(track, title), TrackText.AudioCodec(track),
                 TrackText.Channels(track.Channels), track.Default, ordinal == selected);
         })];
     }

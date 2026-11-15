@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -17,32 +18,36 @@ public static partial class TrackText
 
     /// <summary>
     /// The row title of an audio track: its own title, else the embedded one, else language, codec and channels as
-    /// the file has them (web: audioTitle).
+    /// the file has them (web: audioTitle), else "Track 2" by its place <paramref name="number"/>, from 1, as the web's
+    /// AudioTrackMenu.
     /// </summary>
-    public static string AudioTitle(WatchAudioTrack track)
+    public static string AudioTitle(WatchAudioTrack track, int number)
     {
         ArgumentNullException.ThrowIfNull(track);
         return NonBlank(track.Title) ?? NonBlank(track.EmbeddedTitle)
             ?? NonBlank(Join(" ", track.Language?.Trim(), track.Codec?.Trim(), Channels(track.Channels)))
-            ?? "Audio";
+            ?? AppText.Get("web.player.audioMenu.trackFallback", ("number", number));
     }
 
     /// <summary>"German · 5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; the language only when the title does not say it already.</summary>
-    public static string AudioMeta(WatchAudioTrack track, string title, IFormatProvider? culture = null)
+    public static string AudioMeta(WatchAudioTrack track, string title)
     {
         ArgumentNullException.ThrowIfNull(track);
         string language = LanguageName(track.Language);
-        return Join(" · ", string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language, CompactAudioMeta(track, culture));
+        return Join(" · ", string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language, CompactAudioMeta(track));
     }
 
-    /// <summary>"5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; empty when the file says none of it (web: compactAudioMeta).</summary>
-    public static string CompactAudioMeta(WatchAudioTrack track, IFormatProvider? culture = null)
+    /// <summary>
+    /// "5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; empty when the file says none of it (web: compactAudioMeta, its rate
+    /// and sample rate as formatBitrate and formatSampleRate write them).
+    /// </summary>
+    public static string CompactAudioMeta(WatchAudioTrack track)
     {
         ArgumentNullException.ThrowIfNull(track);
         return Join(" · ",
             track.Layout?.Trim(),
-            track.Bitrate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} kbps", track.Bitrate) : null,
-            track.SampleRate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} Hz", track.SampleRate) : null,
+            MediaText.Bitrate(track.Bitrate),
+            MediaText.SampleRate(track.SampleRate),
             track.BitDepth > 0 ? string.Create(CultureInfo.InvariantCulture, $"{track.BitDepth}-bit") : null);
     }
 
@@ -81,7 +86,7 @@ public static partial class TrackText
 
     /// <summary>A subtitle row's title: its language's name, "Unknown" without one (web: getLanguageName).</summary>
     public static string SubtitleLanguage(string? language) =>
-        string.IsNullOrWhiteSpace(language) ? "Unknown" : LanguageName(language);
+        string.IsNullOrWhiteSpace(language) ? AppText.Get("web.languageName.unknown") : LanguageName(language);
 
     /// <summary>"ASS", "SRT", "VTT", "PGS", "DVD", "DVB"; empty for any other codec (web: getSubtitleFormatLabel).</summary>
     public static string SubtitleFormat(string? codec) => codec?.Trim().ToLowerInvariant() switch
@@ -109,9 +114,9 @@ public static partial class TrackText
     /// <summary>"External", "Downloaded", else "Embedded".</summary>
     public static string SubtitleSource(string? source) => source switch
     {
-        SubtitleSources.External => "External",
-        SubtitleSources.Downloaded => "Downloaded",
-        _ => "Embedded",
+        SubtitleSources.External => AppText.Get("web.subtitles.menu.source.external"),
+        SubtitleSources.Downloaded => AppText.Get("web.subtitles.menu.source.downloaded"),
+        _ => AppText.Get("web.subtitles.menu.source.embedded"),
     };
 
     /// <summary>A track's own label under its row, unless it only repeats the language or the format; empty then.</summary>
@@ -130,14 +135,7 @@ public static partial class TrackText
         new((value ?? "").ToLowerInvariant().Where(char.IsAsciiLetterOrDigit).ToArray());
 
     /// <summary>"7.1", "5.1", "stereo", "3 ch"; empty when unknown (web: formatChannels).</summary>
-    public static string Channels(int channels) => channels switch
-    {
-        <= 0 => "",
-        8 => "7.1",
-        6 => "5.1",
-        2 => "stereo",
-        _ => string.Create(CultureInfo.InvariantCulture, $"{channels} ch"),
-    };
+    public static string Channels(int channels) => MediaText.Channels(channels);
 
     /// <summary>
     /// The English name of a track language: "German" for <c>de</c>, <c>ger</c> or <c>deu</c>, "Portuguese (Brazil)" for
@@ -160,7 +158,7 @@ public static partial class TrackText
             return string.Join(' ', tag.Split([' ', '-'], StringSplitOptions.RemoveEmptyEntries)
                 .Select(word => char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant()));
         }
-        return $"Unknown language ({tag})";
+        return AppText.Get("web.languageName.unknownTag", ("tag", tag));
     }
 
     private static string? EnglishName(string tag)

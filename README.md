@@ -61,8 +61,10 @@ screenshots were taken on.</sub>
   their appearance), intro and credits skipping and marker editing, the next episode, chapters, previews on the
   seek bar, playback info, a mini view (picture in picture) and a bar the player minimizes to. An
   administrator's pause, stop and messages reach the player.
-- **Settings:** playback, language and subtitles, card badges and the sidebar's entries per profile, servers,
-  and About with Check for updates. Granary takes the server's accent colour.
+- **Settings:** playback, language and subtitles, card badges and the sidebar's entries per profile, the app's
+  language, servers, and About with Check for updates. Granary takes the server's accent colour.
+- **Languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified Chinese, in the
+  translations of Silo's web and apps where they have the text, chosen per profile or from Windows' languages.
 - **Admin** (for a server's administrators): the Dashboard and Activity with the streams playing now.
 
 Profiles hide libraries the same way they do on the web. The full description of each screen is in
@@ -117,6 +119,8 @@ For development:
 - `--play-item <content id>` plays a title of the signed-in server.
 - `--remote` (debug builds) shows a TV remote and a game controller on screen beside the window, to try Granary
   without them; VS Code's "Granary: with TV remote" starts it.
+- `--language <tag>` (debug builds) shows Granary's texts in another of the languages it ships, such as `de`, to check
+  translated texts; `ar` shows Arabic, which is not offered yet, left to right.
 - Set `GRANARY_DATA_DIR` to an empty folder to keep servers, sign-ins, cache and logs out of your own
   `%LOCALAPPDATA%\Granary`, for example when you run a second copy.
 

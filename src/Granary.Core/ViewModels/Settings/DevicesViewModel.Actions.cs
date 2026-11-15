@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Downloads;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Settings;
@@ -9,10 +10,6 @@ namespace Granary.Core.ViewModels.Settings;
 // Settings → Devices: Sign out, Rename, Use profile settings and Forget, and the next page of sign-ins.
 public sealed partial class DevicesViewModel
 {
-    private const string SignOutNote = "A video already playing may continue until its next request. Saved device settings are kept.";
-
-    private const string SignOutFailed = "Couldn't sign out the session. Try again.";
-
     [RelayCommand]
     private async Task LoadMoreSessionsAsync()
     {
@@ -37,7 +34,7 @@ public sealed partial class DevicesViewModel
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning("More sign-ins could not be read: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't load more sessions. Reload the list.";
+            Status = AppText.Get("granary.settings.sessions.loadMoreFailed");
         }
     }
 
@@ -57,7 +54,7 @@ public sealed partial class DevicesViewModel
         catch (Exception ex)
         {
             _logger.LogWarning("A sign-in could not be signed out: {Failure}", ApiFailureText.Describe(ex));
-            Status = SignOutFailed;
+            Status = AppText.Get("web.settings.sessions.signOutFailed");
         }
     }
 
@@ -69,13 +66,13 @@ public sealed partial class DevicesViewModel
             return;
         }
         var (accountId, downloads) = row.IsCurrent ? await DownloadsOfAsync(target) : (null, "");
+        // Two paragraphs, as the web's question has them: what happens, then its note; Granary's own adds the downloads it takes along.
+        string note = AppText.Get("web.settings.sessions.confirm.note");
         bool asked = row.IsCurrent
-            ? await _confirmation.AskAsync("Sign out this device?",
-                "You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n" + SignOutNote + downloads,
-                "Sign out")
-            : await _confirmation.AskAsync($"Sign out {row.Name}?",
-                "This client will lose access on its next authenticated request. Its other sessions and password stay unchanged.\n\n" + SignOutNote,
-                "Sign out");
+            ? await _confirmation.AskAsync(AppText.Get("granary.settings.sessions.signOutThisDeviceTitle"),
+                AppText.Get("web.settings.sessions.confirm.thisBrowserDescription") + "\n\n" + note + downloads, AppText.Get("common.signOut"))
+            : await _confirmation.AskAsync(AppText.Get("web.settings.sessions.confirm.deviceTitle", ("device", row.Name)),
+                AppText.Get("web.settings.sessions.confirm.clientDescription") + "\n\n" + note, AppText.Get("common.signOut"));
         // The server, profile or account may have changed while the question was open: its downloads were the ones asked about.
         if (!asked || await TargetAsync() is not { } server || !Listed(row)
             || (row.IsCurrent && _downloads is not null && await _downloads.AccountOfAsync(server.Id, CancellationToken.None) != accountId))
@@ -103,13 +100,13 @@ public sealed partial class DevicesViewModel
             }
             await _devices.SignOutSessionAsync(server.BaseUri, row.Id);
             OtherSessions.Remove(row);
-            Status = "Session signed out";
+            Status = AppText.Get("web.settings.sessions.signedOut");
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
             // Already gone: signed out elsewhere, or expired.
             OtherSessions.Remove(row);
-            Status = "Session signed out";
+            Status = AppText.Get("web.settings.sessions.signedOut");
         }
         finally
         {
@@ -140,7 +137,7 @@ public sealed partial class DevicesViewModel
             var saved = await _devices.RenameDeviceAsync(server.BaseUri, row.DeviceId, name);
             row.Show(row.Device with { CustomName = saved.CustomName });
             row.EndRename();
-            Status = name is null ? "Device name reset" : "Device renamed";
+            Status = name is null ? AppText.Get("web.settings.device.nameReset") : AppText.Get("web.settings.device.renamed");
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
@@ -149,7 +146,7 @@ public sealed partial class DevicesViewModel
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning("A device could not be renamed: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't rename";
+            Status = AppText.Get("web.settings.device.renameFailed");
         }
         finally
         {
@@ -166,9 +163,9 @@ public sealed partial class DevicesViewModel
             return;
         }
         int changed = row.Device.ChangedCount;
-        bool asked = await _confirmation.AskAsync($"Use your profile settings on {row.Name}?",
-            $"This removes the {DeviceText.Count(changed, "setting")} changed on this device. Settings that only apply to devices go back to the app default.",
-            "Use profile settings");
+        bool asked = await _confirmation.AskAsync(AppText.Get("granary.settings.devices.useProfileSettingsTitle", ("device", row.Name)),
+            AppText.Get("granary.settings.devices.useProfileSettingsBody", ("count", changed), ("count_text", AppText.Number(changed))),
+            AppText.Get("web.settings.device.useProfileSettings"));
         if (!asked || await TargetAsync() is not { } server || !Listed(row))
         {
             return;
@@ -178,7 +175,7 @@ public sealed partial class DevicesViewModel
         try
         {
             await _devices.ClearDeviceSettingsAsync(server.BaseUri, row.DeviceId);
-            Status = "Removed the changes on this device";
+            Status = AppText.Get("web.settings.device.resetDone");
             await LoadDevicesAsync(server.BaseUri, _load, CancellationToken.None);
         }
         catch (SiloApiException ex) when (ex.Status == 404)
@@ -188,7 +185,7 @@ public sealed partial class DevicesViewModel
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning("A device's settings could not be cleared: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't clear";
+            Status = AppText.Get("web.settings.device.resetFailed");
         }
         finally
         {
@@ -204,8 +201,8 @@ public sealed partial class DevicesViewModel
         {
             return;
         }
-        bool asked = await _confirmation.AskAsync($"Forget {row.Name}?",
-            "Its settings are removed and it disappears from this list until it's used again.", "Forget");
+        bool asked = await _confirmation.AskAsync(AppText.Get("granary.settings.devices.forgetTitle", ("device", row.Name)),
+            AppText.Get("granary.settings.devices.forgetBody"), AppText.Get("web.settings.device.forget"));
         if (!asked || await TargetAsync() is not { } server || !Listed(row))
         {
             return;
@@ -216,18 +213,18 @@ public sealed partial class DevicesViewModel
         {
             await _devices.ForgetDeviceAsync(server.BaseUri, row.DeviceId);
             Remove(row);
-            Status = "Device forgotten";
+            Status = AppText.Get("web.settings.device.forgotten");
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
             // Already gone: forgotten elsewhere.
             Remove(row);
-            Status = "Device forgotten";
+            Status = AppText.Get("web.settings.device.forgotten");
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning("A device could not be forgotten: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't forget";
+            Status = AppText.Get("web.settings.device.forgetFailed");
         }
         finally
         {
@@ -246,7 +243,7 @@ public sealed partial class DevicesViewModel
             return server;
         }
         await ReloadForNowAsync();
-        Status = "The server or profile changed. The lists were read again.";
+        Status = AppText.Get("granary.settings.devices.targetChanged");
         return null;
     }
 
@@ -272,7 +269,7 @@ public sealed partial class DevicesViewModel
     private async Task GoneAsync(Uri server)
     {
         await LoadDevicesAsync(server, _load, CancellationToken.None);
-        Status = "That device is no longer listed.";
+        Status = AppText.Get("granary.settings.devices.gone");
     }
 
     private void Remove(UserDeviceRow row)

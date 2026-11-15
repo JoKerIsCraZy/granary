@@ -1,5 +1,5 @@
-using System.Globalization;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -26,19 +26,18 @@ public sealed record QualityOption(string Preference, string Label, string Bitra
         bool isAuto = string.Equals(preference, Auto, StringComparison.OrdinalIgnoreCase) || preference.Length == 0;
         return
         [
-            new QualityOption(Auto, isLimited ? "Auto · limited after buffering" : "Auto", "", isAuto),
+            new QualityOption(Auto, isLimited ? AppText.Get("bufferingQuality.autoLimited") : AppText.Get("web.player.quality.auto"), "", isAuto),
             .. qualities.Select(q => new QualityOption(q.Label, string.IsNullOrWhiteSpace(q.DisplayName) ? q.Label : q.DisplayName,
                 FormatBitrate(q.BitrateKbps), !isAuto && q.Label == active)),
         ];
     }
 
-    // "6 Mbps", "4.5 Mbps", "300 kbps".
+    // "6 Mbps", "4.5 Mbps", "300 kbps", as the web's formatQualityBitrate (player/playback-info.ts).
     public static string FormatBitrate(int? kbps) => kbps switch
     {
         null or <= 0 => "",
-        >= 1000 when kbps % 1000 == 0 => string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000} Mbps"),
-        >= 1000 => string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{kbps} kbps"),
+        >= 1000 => AppText.Get("web.player.quality.bitrateMbps", ("mbps", NumberText.Decimal(kbps.Value / 1000.0, kbps % 1000 == 0 ? 0 : 1))),
+        _ => AppText.Get("web.player.quality.bitrateKbps", ("kbps", kbps.Value)),
     };
 }
 
@@ -63,7 +62,9 @@ public sealed record VersionOption(string FileId, string Label, string Status, b
                 string label = $"{v.Resolution} {v.CodecVideo.ToUpperInvariant()}{(v.Hdr ? " HDR" : "")}".Trim();
                 bool isPlaying = v.FileId == playing;
                 bool isRequested = v.FileId == requested;
-                string status = isPlaying ? "Playing" : isRequested ? "Requested" : "";
+                string status = isPlaying ? AppText.Get("web.player.quality.versionPlaying")
+                    : isRequested ? AppText.Get("web.player.quality.versionRequested")
+                    : "";
                 return new VersionOption(v.FileId, label.Length > 0 ? label : v.FileId, status, isPlaying);
             }),
         ];
@@ -75,8 +76,8 @@ public static class PlaybackSpeeds
 {
     public static IReadOnlyList<double> Stops { get; } = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
-    /// <summary>"1.5×".</summary>
-    public static string Format(double speed) => speed.ToString("0.##", CultureInfo.InvariantCulture) + "×";
+    /// <summary>"1.5×", as the web's formatPlaybackSpeed: up to two decimals in the format locale.</summary>
+    public static string Format(double speed) => AppText.Get("web.player.speed.rate", ("rate", NumberText.Decimal(speed, 2, 0)));
 
     /// <summary>The stop nearest <paramref name="speed"/>, for a speed saved by another client.</summary>
     public static int NearestStop(double speed) =>

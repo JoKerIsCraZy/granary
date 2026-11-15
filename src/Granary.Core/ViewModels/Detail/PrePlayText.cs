@@ -1,7 +1,7 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.ViewModels.Detail;
@@ -12,9 +12,6 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static partial class PrePlayText
 {
-    private const double Kilobyte = 1024d;
-    private const double Megabyte = Kilobyte * 1024;
-    private const double Gigabyte = Megabyte * 1024;
 
     /// <summary>How high a resolution ranks; -1 for one the web does not know (web: resolutionScore).</summary>
     public static int ResolutionScore(string? resolution) => resolution?.ToLowerInvariant() switch
@@ -66,18 +63,18 @@ public static partial class PrePlayText
         ArgumentNullException.ThrowIfNull(version);
         return QualitySummary(version) is { Length: > 0 } quality ? quality
             : DetailLine(version) is { Length: > 0 } detail ? detail
-            : "Version " + version.FileId;
+            : FileIdFallback(version);
+    }
+
+    /// <summary>"Version 12": a file the server says nothing else about, by its id (web: versions.fileIdFallback).</summary>
+    public static string FileIdFallback(FileVersion version)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        return AppText.Get("web.detail.versions.fileIdFallback", ("id", version.FileId));
     }
 
     /// <summary>"38.9 GB", "700.0 MB": 1024-based with one decimal; empty for none (web: formatFileSize).</summary>
-    public static string FileSize(long bytes) => bytes switch
-    {
-        <= 0 => "",
-        >= (long)Gigabyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Gigabyte:0.0} GB"),
-        >= (long)Megabyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Megabyte:0.0} MB"),
-        >= (long)Kilobyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Kilobyte:0.0} KB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes} B"),
-    };
+    public static string FileSize(long bytes) => MediaText.FileSize(bytes);
 
     /// <summary>The source a release name tells: "Remux", "WEB-DL", "BluRay", …; null when it tells none (web: extractSourceHint).</summary>
     public static string? SourceHint(string? fileName)
@@ -97,26 +94,28 @@ public static partial class PrePlayText
     }
 
     /// <summary>"German · TrueHD Atmos · 7.1"; "Unknown" without a track (web: formatAudioTrackSummary).</summary>
-    public static string AudioSummary(WatchAudioTrack? track) =>
-        track is null ? "Unknown" : Join(TrackText.SubtitleLanguage(track.Language), TrackText.AudioCodec(track), TrackText.Channels(track.Channels));
+    public static string AudioSummary(WatchAudioTrack? track) => track is null
+        ? AppText.Get("web.detail.audio.unknown")
+        : Join(TrackText.SubtitleLanguage(track.Language), TrackText.AudioCodec(track), TrackText.Channels(track.Channels));
 
     /// <summary>
     /// The closed Subs picker's words for a track: its language, "(SDH)" and "(Forced)" when the name does not say so, and
-    /// the format, "English (SDH) · SRT" (web: formatSubtitlePillSummary).
+    /// the format, "English (SDH) · SRT" (web: formatSubtitlePillSummary, which puts its markers after the name the same way).
     /// </summary>
     public static string SubtitleSummary(string languageLabel, string? label, string? codec, bool forced, bool hearingImpaired)
     {
         string name = !string.IsNullOrWhiteSpace(languageLabel) ? languageLabel.Trim()
             : !string.IsNullOrWhiteSpace(label) ? label.Trim()
-            : "Unknown";
+            : AppText.Get("web.detail.subtitles.unknown");
         string text = name;
+        // The name is the track's own or a language's: the words it may already hold are the file's, in English.
         if (hearingImpaired && !HearingImpairedWord().IsMatch(name))
         {
-            text += " (SDH)";
+            text += " " + AppText.Get("web.detail.subtitles.sdhMarker");
         }
         if (forced && !name.Contains("forced", StringComparison.OrdinalIgnoreCase))
         {
-            text += " (Forced)";
+            text += " " + AppText.Get("web.detail.subtitles.forcedMarker");
         }
         string format = SubtitleFormat(codec);
         return format.Length > 0 ? $"{text} · {format}" : text;

@@ -28,6 +28,7 @@
   <!-- Exercise the HWND boundary without loading the WinUI application. -->
   <ItemGroup>
     <Compile Include="..\..\src\Granary.App\Interop\CursorShield.cs" Link="Interop\CursorShield.cs" />
+    <Compile Include="..\..\src\Granary.App\Controls\PlayerTime.cs" Link="Controls\PlayerTime.cs" />
   </ItemGroup>
 
   <!-- The phone remote's listener apart from its socket, the rule that picks the PC's LAN address, the PC's lock and the advertisement's answers apart from Windows: no test opens a socket, reads the adapters, asks Windows about the session or registers a service. -->

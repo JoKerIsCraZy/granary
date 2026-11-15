@@ -1,8 +1,6 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
-using Granary.Core.Playback;
 using Granary.Core.Servers;
-using Granary.Core.ViewModels;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Remote;
 
@@ -10,7 +8,7 @@ namespace Granary.Core.Remote;
 /// The texts Granary sends to a phone, which the phone shows as they are. They follow Silo's Roku app's, with "Roku" as
 /// "PC" (docs/api-contract.md 15.5 lists them). Silo's receivers write them in English.
 /// </summary>
-public static partial class RemoteTexts
+public static class RemoteTexts
 {
     /// <summary>The longest name of a phone Granary shows.</summary>
     public const int MaxNameLength = 64;
@@ -72,35 +70,40 @@ public static partial class RemoteTexts
     /// </summary>
     public const string CouldNotPlay = "This title could not be played on this PC.";
 
-    // The player's own failure texts, which name nothing (ServerPlayback, ServerPlayback.Recovery, PlaybackStarter,
-    // MediaAuthorization, PlayerViewModel). A text added there later and not here goes to a phone as CouldNotPlay.
-    private static readonly HashSet<string> PlayerFailures = new(StringComparer.Ordinal)
-    {
-        "Sign in to play from this server.",
-        "Choose a profile to play from this server.",
-        "Choose a server to play from.",
-        "The server ended the session. Sign in again to play.",
-        "The server could not renew the sign-in. Try again in a moment.",
-        "The server keeps rejecting the sign-in. Try again in a moment.",
-        "The server rejected the credentials.",
-        "This title has no file to play.",
-        "The room's file is not available here.",
-        "This server does not offer playback to this app.",
-        "This title is no longer available.",
-        "This title cannot be played right now.",
-        "This title could not be played. Try again later.",
-        "The server answered with a playback protocol this app does not support.",
-        "The server sent a stream address this app does not trust.",
-        "The connection to the server was lost.",
-        "Playback stopped because of an unexpected problem.",
-        "The server ended this playback session.",
-        ServerPlayback.AdminEndedText,
-        ServerPlayback.AdminStoppedText,
-        PlaybackUnavailableException.StartedForAnotherProfile,
-        ApiFailureText.Busy,
-        ApiFailureText.Unreachable,
-        ApiFailureText.Unexpected,
-    };
+    // The player's own failure texts that it words in the language on screen, which name nothing (ServerPlayback,
+    // ServerPlayback.Recovery, PlaybackStarter, MediaAuthorization, PlayerViewModel, ApiFailureText). A text added there
+    // later and not here goes to a phone as CouldNotPlay.
+    private static readonly string[] PlayerFailureKeys =
+    [
+        "granary.player.error.titleUnavailable",
+        "granary.player.error.notPlayableNow",
+        "granary.player.error.notPlayable",
+        "granary.player.error.protocolUnsupported",
+        "granary.player.error.untrustedAddress",
+        "granary.player.error.connectionLost",
+        "granary.player.error.unexpected",
+        "granary.player.error.serverEnded",
+        "granary.player.error.adminStopped",
+        "granary.player.error.credentialsRejected",
+        "granary.player.error.signInRejected",
+        "granary.player.error.networkPath",
+        // A download on this PC that does not play (LocalPlayback).
+        "granary.downloads.cannotPlay",
+        "granary.player.error.signIn",
+        "granary.player.error.chooseProfile",
+        "granary.player.error.chooseServer",
+        "granary.player.error.renewFailed",
+        "granary.player.error.roomFileUnavailable",
+        "granary.player.error.notOffered",
+        "granary.player.error.startedForAnotherProfile",
+        "web.player.session.endedByAdmin",
+        "web.player.error.authenticationRequired.message",
+        "web.player.error.noPlayableVersion.title",
+        "granary.apiFailure.busy",
+        "granary.apiFailure.unreachable",
+        "granary.apiFailure.unexpected",
+        "granary.apiFailure.tooManyRequestsLater",
+    ];
 
     /// <summary>A phone that gave no usable name. New.</summary>
     public const string UnnamedPhone = "A phone";
@@ -108,11 +111,11 @@ public static partial class RemoteTexts
     /// <summary><c>handoff_cancel handoff_failed</c> for an offer from another server: <c>AppSceneControl.bs</c> <c>controlOffer</c>.</summary>
     public static string PlaysFrom(string serverName) => string.Format(CultureInfo.InvariantCulture, "This PC plays from {0}.", serverName);
 
-    // What follows "Playback failed: " when the engine ends a title by itself: mpv's own error texts, as mpv_error_string
-    // gives them for an end-file error (LibMpv.Error; checked against the pinned libmpv-2.dll), and Granary's details
-    // (MpvPlaybackEngine, ServerPlayback). Nothing else follows it, so no server's words can.
-    private static readonly HashSet<string> PlaybackEndDetails = new(StringComparer.Ordinal)
-    {
+    // What the web's "Playback error: {message}" holds when the engine ends a title by itself: mpv's own error texts, as
+    // mpv_error_string gives them for an end-file error (LibMpv.Error; checked against the pinned libmpv-2.dll), and
+    // Granary's details (MpvPlaybackEngine, ServerPlayback). Nothing else goes in it, so no server's words can.
+    private static readonly string[] PlaybackEndDetails =
+    [
         "event queue full",
         "memory allocation failed",
         "core not initialized",
@@ -139,28 +142,113 @@ public static partial class RemoteTexts
         "Granary stopped using your mpv.conf",
         "No picture within the start timeout.",
         "No data within the stall timeout.",
-    };
+    ];
 
-    private const string PlaybackFailed = "Playback failed: ";
+    private const string PlaybackErrorKey = "web.player.error.playbackError";
+    private const string StartFailedKey = "granary.player.error.startFailed";
+    private const string TooManyRequestsKey = "granary.apiFailure.tooManyRequests";
+
+    // The largest number a numbered text is checked for; more digits are no status and no wait in minutes.
+    private const long MaxNumber = 100_000_000;
+
+    // Longer than any of the player's own texts in any language, numbers included: a longer text is not one of them, and
+    // is not searched, so a server's long message costs nothing.
+    private const int MaxOwnFailureLength = 1000;
+
+    // A numbered text holds one number, which a grouped one makes three candidates at most ("1,234": 1, 234 and 1234).
+    private const int MaxNumberCandidates = 4;
 
     /// <summary>
-    /// The player's failure as a phone may read it: the player's text only when it is one of Granary's own, which name
-    /// nothing, else <see cref="CouldNotPlay"/>. A terminal decision's message and an administrator's stop message are the
+    /// The player's failure as a phone may read it: when it is one of Granary's own, which name nothing, the same text in
+    /// English, else <see cref="CouldNotPlay"/>. A terminal decision's message and an administrator's stop message are the
     /// server's words and could name a host or an address, as could any text that came from elsewhere.
     /// </summary>
     public static string? PlayerError(string? message) =>
-        message is null ? null : IsGranarysOwnFailure(message) ? message : CouldNotPlay;
+        message is null ? null : GranarysOwnFailureInEnglish(message) ?? CouldNotPlay;
 
-    private static bool IsGranarysOwnFailure(string message) =>
-        PlayerFailures.Contains(message)
-        || (message.StartsWith(PlaybackFailed, StringComparison.Ordinal) && PlaybackEndDetails.Contains(message[PlaybackFailed.Length..]))
-        || GranarysNumberedFailure().IsMatch(message);
+    // The player's texts are compared in the language on screen, as it worded them; a numbered one by the numbers in it.
+    // Text that is sent stays English, as Silo's rule is and as Silo's receivers write theirs.
+    private static string? GranarysOwnFailureInEnglish(string message)
+    {
+        if (message.Length > MaxOwnFailureLength)
+        {
+            return null;
+        }
+        foreach (string key in PlayerFailureKeys)
+        {
+            if (AppText.Get(key) == message)
+            {
+                return AppText.English.Get(key);
+            }
+        }
+        foreach (string detail in PlaybackEndDetails)
+        {
+            if (AppText.Get(PlaybackErrorKey, ("message", detail)) == message)
+            {
+                return AppText.English.Get(PlaybackErrorKey, [("message", detail)]);
+            }
+        }
+        var numbers = NumbersIn(message);
+        if (numbers.Count > MaxNumberCandidates)
+        {
+            return null;
+        }
+        foreach (long number in numbers)
+        {
+            if (AppText.Get(StartFailedKey, ("status", number)) == message)
+            {
+                return AppText.English.Get(StartFailedKey, [("status", number)]);
+            }
+            if (AppText.Get(TooManyRequestsKey, ("count", number)) == message)
+            {
+                return AppText.English.Get(TooManyRequestsKey, [("count", number)]);
+            }
+        }
+        return null;
+    }
 
-    // The player's own texts with a number in them: the server's error status, and how long to wait.
-    [GeneratedRegex(@"^(?:The server could not start playback \(error \d{3}\)\."
-        + @"|The server is receiving too many requests\. Try again in (?:a few minutes|1 minute|\d{1,6} minutes)\.)\z",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex GranarysNumberedFailure();
+    // The whole numbers a text holds, in any script's digits, also one a language groups ("1,234", "1.234", "1 234"):
+    // the candidates for a numbered text, which matches only when its number was one of them.
+    private static HashSet<long> NumbersIn(string text)
+    {
+        var numbers = new HashSet<long>();
+        long? run = null;
+        long? grouped = null;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (char.IsDigit(c))
+            {
+                int digit = (int)char.GetNumericValue(c);
+                run = Append(run, digit);
+                grouped = Append(grouped, digit);
+                continue;
+            }
+            Add(numbers, run);
+            run = null;
+            // A separator between digits keeps a grouped number going; anything else ends it.
+            bool separates = grouped is not null && !char.IsLetter(c) && i + 1 < text.Length && char.IsDigit(text[i + 1]);
+            if (!separates)
+            {
+                Add(numbers, grouped);
+                grouped = null;
+            }
+        }
+        Add(numbers, run);
+        Add(numbers, grouped);
+        return numbers;
+    }
+
+    private static long? Append(long? number, int digit) =>
+        number is not { } value ? digit : value < MaxNumber ? value * 10 + digit : value;
+
+    private static void Add(HashSet<long> numbers, long? number)
+    {
+        if (number is { } value)
+        {
+            numbers.Add(value);
+        }
+    }
 
     /// <summary>
     /// A name a phone sent, as Granary shows it: cleaned as a discovered server's name is (no control, format or separator

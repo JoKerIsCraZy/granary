@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -29,7 +30,7 @@ public sealed partial class CollectionEditorViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPosterStaged), nameof(PosterState), nameof(LookSummary), nameof(PosterCaption), nameof(HasPosterCaption),
         nameof(PosterPreviewUrl), nameof(PosterPreviewImage), nameof(HasPosterPreview), nameof(CanClearPoster), nameof(StagedPosterText),
-        nameof(ShowsStagedPoster))]
+        nameof(StagedPosterUndo), nameof(ShowsStagedPoster))]
     public partial PosterChange? StagedPoster { get; private set; }
 
     /// <summary>Why the poster didn't save; it stays staged, with Retry.</summary>
@@ -67,7 +68,7 @@ public sealed partial class CollectionEditorViewModel
 
     public bool HasPosterPickError => PosterPickError.Length > 0;
 
-    public string PosterErrorText => $"Couldn't save the poster. {PosterError}";
+    public string PosterErrorText => AppText.Get("web.collections.fields.artworkSaveFailed", ("slot", "poster"), ("error", PosterError));
 
     /// <summary>What the poster will show after Save: none, awaiting-collage, collage, new or saved.</summary>
     public string PosterState => CollectionArtwork.State(StagedPoster, SavedPoster, UsesCollage, CollagePoster);
@@ -98,12 +99,20 @@ public sealed partial class CollectionEditorViewModel
     /// <summary>"Use the collage" (or "Remove poster") is offered for a new or saved image.</summary>
     public bool CanClearPoster => PosterState is CollectionArtwork.New or CollectionArtwork.Saved;
 
-    public string ClearPosterLabel => UsesCollage ? "Use the collage" : "Remove poster";
+    public string ClearPosterLabel => UsesCollage
+        ? AppText.Get("web.collections.fields.useTheCollage")
+        : AppText.Get("web.collections.fields.removeArtwork", ("slot", "poster"));
 
-    /// <summary>"The new poster saves when you press Save." with Undo.</summary>
-    public string StagedPosterText => StagedPoster is { IsRemovalOnly: true }
-        ? "The poster is removed when you save."
-        : "The new poster saves when you press Save.";
+    /// <summary>"The new poster saves when you press Save." before its Undo.</summary>
+    public string StagedPosterText => string.Concat(StagedPosterRuns.Where(run => !run.Tags.Contains("undo")).Select(run => run.Text)).Trim();
+
+    /// <summary>The Undo after <see cref="StagedPosterText"/>, in the message's own word.</summary>
+    public string StagedPosterUndo => string.Concat(StagedPosterRuns.Where(run => run.Tags.Contains("undo")).Select(run => run.Text));
+
+    // The web's line with its Undo button inside: the words outside the undo tag, then the button.
+    private IReadOnlyList<TextRun> StagedPosterRuns => StagedPoster is { IsRemovalOnly: true }
+        ? AppText.Runs("web.collections.fields.artworkRemovedOnSave", ("slot", "poster"))
+        : AppText.Runs("web.collections.fields.artworkSavesOnSave", ("slot", "poster"));
 
     public bool ShowsStagedPoster => IsPosterStaged && !HasPosterError;
 
@@ -408,7 +417,7 @@ public static class CollectionArtwork
 
     public const string Saved = "saved";
 
-    public const string NotAWebAddress = "Paste a link that starts with https:// or http://.";
+    public static string NotAWebAddress => AppText.Get("granary.collections.look.notAWebAddress");
 
     /// <summary>What a poster shows after Save: a staged image, the saved one, the collage, one to come, or none.</summary>
     public static string State(PosterChange? staged, Uri? saved, bool collages, Uri? collage)
@@ -429,20 +438,18 @@ public static class CollectionArtwork
         return collage is not null && staged is not { Remove: true } ? Collage : AwaitingCollage;
     }
 
-    public static string Summary(string state) => "Poster: " + state switch
+    public static string Summary(string state) => AppText.Get("web.collections.copy.lookPoster", ("state", state switch
     {
-        AwaitingCollage => "a collage once its titles have posters",
-        Collage => "a collage of its titles",
-        New => "a new image",
-        Saved => "an image",
+        AwaitingCollage => "awaitingCollage",
+        Collage or New or Saved => state,
         _ => "none",
-    };
+    }));
 
     public static string Caption(string state) => state switch
     {
-        Collage => "Collage of its titles",
-        AwaitingCollage => "A collage once its titles have posters",
-        None => "No poster",
+        Collage => AppText.Get("web.collections.copy.posterIsCollage"),
+        AwaitingCollage => AppText.Get("web.collections.copy.posterAwaitsCollage"),
+        None => AppText.Get("web.collections.copy.noPoster"),
         _ => "",
     };
 
@@ -451,13 +458,13 @@ public static class CollectionArtwork
     {
         if (!CollectionsApi.PosterTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase))
         {
-            return "Choose a JPEG, PNG or WebP image.";
+            return AppText.Get("web.item.images.wrongType");
         }
         if (length == 0)
         {
-            return "That image is empty.";
+            return AppText.Get("granary.collections.look.emptyImage");
         }
-        return length > CollectionsApi.PosterMaxBytes ? "Choose an image of 10 MB or less." : "";
+        return length > CollectionsApi.PosterMaxBytes ? AppText.Get("web.item.images.tooLarge") : "";
     }
 
     /// <summary>An absolute http or https address: what the server fetches a poster from.</summary>

@@ -1,6 +1,6 @@
-using System.Globalization;
 using Granary.Core.Downloads;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 
@@ -30,7 +30,7 @@ public static class DownloadCards
     private const string EmptyLine = "\u00A0";
 
     /// <summary>"Watched": a whole download the profile has watched, beside the watched mark.</summary>
-    public const string Watched = "Watched";
+    public static string Watched => AppText.Get("granary.downloads.watched");
 
     /// <summary>
     /// A film's download as a poster, or an episode's as a still ("S01E05 · Chapter Five", as a season's page names it). Play
@@ -84,7 +84,7 @@ public static class DownloadCards
         double rate = bytesPerSecond!.Value;
         string speed = DownloadText.Speed(rate);
         return DownloadText.TimeLeft(item, rate) is { } left
-            ? ($"{DownloadText.PercentText(item)} · {left}", speed)
+            ? (AppText.Get("granary.downloads.progressTimeLeft", ("percent", DownloadText.PercentOf(item)), ("timeLeft", left)), speed)
             : (DownloadText.Status(item), speed);
     }
 
@@ -146,15 +146,18 @@ public static class DownloadCards
         return whole.FirstOrDefault(e => !e.IsWatched) ?? whole.FirstOrDefault();
     }
 
-    /// <summary>"3 episodes", "1 episode"; "2 of 3 episodes" while some are not whole on this PC.</summary>
+    /// <summary>
+    /// "3 episodes", "1 episode" (the Apple app's words); "2 of 3 episodes" while some are not whole on this PC (the Android
+    /// app's).
+    /// </summary>
     public static string EpisodeCount(IReadOnlyCollection<DownloadItem> episodes)
     {
         ArgumentNullException.ThrowIfNull(episodes);
         int total = episodes.Count;
         int whole = episodes.Count(e => e.IsPlayable);
-        string noun = total == 1 ? "episode" : "episodes";
-        string all = total.ToString(CultureInfo.InvariantCulture);
-        return whole == total ? $"{all} {noun}" : $"{whole.ToString(CultureInfo.InvariantCulture)} of {all} {noun}";
+        return whole == total
+            ? AppText.Get("granary.downloads.episodeCount", ("count", total), ("count_text", AppText.Number(total)))
+            : AppText.Get("granary.downloads.episodesDone", ("count", total), ("done", AppText.Number(whole)), ("count_text", AppText.Number(total)));
     }
 
     /// <summary>The series an episode belongs to, by the title it was downloaded with; its own title when that is missing.</summary>
@@ -210,6 +213,6 @@ public static class DownloadCards
     private static string SizeLine(long bytes) => SizeText(bytes) is { Length: > 0 } size ? size : EmptyLine;
 
     private static string EpisodeTitle(DownloadItem item) => item is { SeasonNumber: { } season, EpisodeNumber: { } episode }
-        ? string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00} · {item.Title}")
+        ? DetailText.EpisodeTitle(season, episode, item.Title)
         : item.Title;
 }

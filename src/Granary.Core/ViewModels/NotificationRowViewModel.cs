@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -56,5 +57,6 @@ public sealed partial class NotificationRowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(AccessibleName))]
     public partial bool IsUnread { get; internal set; }
 
-    public string AccessibleName => $"{(IsUnread ? "Unread: " : "")}{Title}, {Description}, {When}";
+    public string AccessibleName => AppText.Get("granary.notifications.rowName", ("unread", IsUnread ? "yes" : "no"), ("title", Title),
+        ("description", Description), ("when", When));
 }

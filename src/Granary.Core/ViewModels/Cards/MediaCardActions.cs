@@ -5,6 +5,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +26,7 @@ public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatc
 /// <param name="State">The request's state in words ("Pending") once it went through; null when it failed or the server named none.</param>
 public sealed record CardRequestAnswer(string CardId, string Title, bool Succeeded, string? State = null)
 {
-    public string Text => Succeeded ? "Request submitted" : "Failed to submit request";
+    public string Text => Succeeded ? AppText.Get("web.common.requests.toast.submitted") : AppText.Get("requests.error.create");
 }
 
 /// <summary>
@@ -185,7 +186,7 @@ public sealed class MediaCardActions
     public bool HasRequestsInFlight => !_requesting.IsEmpty;
 
     /// <summary>"Request", or "Sending" while the request is on its way.</summary>
-    public string RequestActionText(MediaCard card) => IsRequesting(card) ? "Sending" : "Request";
+    public string RequestActionText(MediaCard card) => IsRequesting(card) ? AppText.Get("web.requests.card.sending") : AppText.Get("web.requests.request");
 
     /// <summary>"Request The Matrix (Movie · 1999)", or "Sending request for …" while on its way, as the web's label.</summary>
     public string RequestActionName(MediaCard card)
@@ -193,9 +194,12 @@ public sealed class MediaCardActions
         ArgumentNullException.ThrowIfNull(card);
         var offer = card.RequestOffer;
         string kind = RequestText.MediaTypeLabel(offer?.MediaType ?? "");
+        // The web's card label, "{title} ({meta})", with its meta line's parts after each other and a dot between.
         string meta = offer?.Year is int year ? $"{kind} · {year.ToString(CultureInfo.InvariantCulture)}" : kind;
-        string title = $"{card.Title} ({meta})";
-        return IsRequesting(card) ? $"Sending request for {title}" : $"Request {title}";
+        string title = AppText.Get("web.requests.card.label", ("title", card.Title), ("meta", meta));
+        return IsRequesting(card)
+            ? AppText.Get("web.requests.card.sendingFor", ("title", title))
+            : AppText.Get("web.requests.card.requestTitle", ("title", title));
     }
 
     /// <summary>

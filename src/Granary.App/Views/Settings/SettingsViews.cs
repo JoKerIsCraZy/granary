@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Granary.App.Controls;
 using Granary.Core;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Views.Settings;
@@ -192,21 +194,26 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
         {
             return;
         }
-        var name = new TextBox { PlaceholderText = "Name", MaxLength = 120, IsSpellCheckEnabled = false };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(name, "Preset name");
+        var name = new TextBox { PlaceholderText = AppText.Get("granary.settings.mpv.presetName.placeholder"), MaxLength = 120, IsSpellCheckEnabled = false };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(name, AppText.Get("granary.settings.mpv.presetName.name"));
         var note = new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Foreground = (Brush)Application.Current.Resources["SiloMutedBrush"] };
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-            Title = "Save as preset",
+            Title = AppText.Get("granary.settings.mpv.presetName.title"),
             Content = new StackPanel
             {
                 Spacing = 8,
-                Children = { new TextBlock { Text = "Keeps your mpv.conf as it is now under this name.", TextWrapping = TextWrapping.Wrap }, name, note },
+                Children =
+                {
+                    new TextBlock { Text = AppText.Get("granary.settings.mpv.presetName.body"), TextWrapping = TextWrapping.Wrap },
+                    name,
+                    note,
+                },
             },
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = AppText.Get("common.save"),
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Primary,
             IsPrimaryButtonEnabled = false,
         };
@@ -382,8 +389,8 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = BadgeSettingsViewModel.ResetTitle,
             Content = BadgeSettingsViewModel.ResetText,
-            PrimaryButtonText = "Reset badges",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = BadgeSettingsViewModel.ResetLabel,
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
@@ -414,6 +421,32 @@ public sealed partial class TitlePagesSettingsView : UserControl, IDisposable
         Loaded -= OnFirstLoaded;
         await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
     }
+}
+
+/// <summary>
+/// Settings → Accessibility; it reads the profile's app language again each time it is shown, coming back from another
+/// settings page too, as another device may have changed it, and lets go of it as the page leaves.
+/// </summary>
+public sealed partial class AccessibilitySettingsView : UserControl, IDisposable
+{
+    public AccessibilitySettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<AccessibilitySettingsViewModel>(App.Services);
+        InitializeComponent();
+        // Every time: the settings page keeps the view while it is open. A newer read drops an older one, and none puts back
+        // a language over a choice (AppLanguageSetting).
+        Loaded += OnLoaded;
+    }
+
+    public AccessibilitySettingsViewModel ViewModel { get; }
+
+    public void Dispose()
+    {
+        Loaded -= OnLoaded;
+        ViewModel.Dispose();
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e) => await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
 }
 
 /// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>
@@ -537,12 +570,34 @@ public sealed partial class DevicesSettingsView : UserControl, IDisposable
     /// <summary>"Active now" in green, as the web shows a sign-in seen in the last two minutes.</summary>
     public static Brush SeenBrush(bool activeNow) => activeNow ? ActiveBrush : (Brush)Application.Current.Resources["SiloMutedBrush"];
 
-    public static string Upper(string text) => text.ToUpperInvariant();
+    // A group's name in capitals by the language on screen's rules, as the web's CSS shows it.
+    public static string Upper(string text) => AppText.Upper(text);
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
         await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
+    }
+
+    // "Last seen 3 hr ago · Signed in …" as the web's message has it: the part it marks as the status in green while the
+    // sign-in is active, wherever the language puts it.
+    private void OnSessionStatusContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+    {
+        if (sender is not TextBlock text || args.NewValue is not SignedInSessionRow row)
+        {
+            return;
+        }
+        text.Inlines.Clear();
+        var seen = SeenBrush(row.IsActiveNow);
+        foreach (var part in row.StatusRuns)
+        {
+            var run = new Run { Text = part.Text };
+            if (part.Tags.Contains("status"))
+            {
+                run.Foreground = seen;
+            }
+            text.Inlines.Add(run);
+        }
     }
 
     private async void OnSignOutClick(object sender, RoutedEventArgs e)
@@ -680,7 +735,7 @@ internal static class ServerDialogs
         {
             return false;
         }
-        string message = "Granary signs out of this server and forgets it. You can add it again later.";
+        string message = AppText.Get("granary.servers.removeDialog.body");
         if (await DownloadsNoteAsync(server.Id) is { } note)
         {
             message += Environment.NewLine + Environment.NewLine + note;
@@ -689,10 +744,10 @@ internal static class ServerDialogs
         {
             XamlRoot = root,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-            Title = $"Remove {server.Name}?",
+            Title = AppText.Get("granary.servers.removeDialog.title", ("name", server.Name)),
             Content = message,
-            PrimaryButtonText = "Remove",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = AppText.Get("granary.servers.removeDialog.confirm"),
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;

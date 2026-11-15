@@ -1,4 +1,4 @@
-using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -17,6 +17,15 @@ public sealed partial class SubtitleAppearancePanel : UserControl
     private const double CardInset = 32;
 
     private PlayerViewModel? _viewModel;
+
+    // The panel's small headings, which the web writes in mixed case and shows in capitals.
+    public string CaptionsHeading => AppText.Upper(AppText.Get("web.settings.subtitlePanel.eyebrowDefault"));
+
+    public string TextHeading => AppText.Upper(AppText.Get("web.settings.subtitlePanel.text"));
+
+    public string BackgroundHeading => AppText.Upper(AppText.Get("web.settings.subtitlePanel.background"));
+
+    public string PositionHeading => AppText.Upper(AppText.Get("web.settings.subtitlePanel.position"));
 
     public SubtitleAppearancePanel()
     {
@@ -47,7 +56,7 @@ public sealed partial class SubtitleAppearancePanel : UserControl
     public static double SwatchSize(bool isSelected) => isSelected ? 24 : 28;
 
     // Upper case on screen only; screen readers get the line as written.
-    public string Upper(string text) => text.ToUpper(CultureInfo.CurrentCulture);
+    public string Upper(string text) => AppText.Upper(text);
 
     // The web's PercentField writes its number at the right. NumberBox has no TextAlignment of its own, so its text box
     // gets it.

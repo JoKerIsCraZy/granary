@@ -8,6 +8,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Settings;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
@@ -83,7 +84,7 @@ public sealed partial class StartPartyViewModel : ObservableObject
 
     /// <summary>What the party puts up first; null when nothing is picked (the room then opens empty).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EpisodeText), nameof(ChangeLabel), nameof(HostPickCaption), nameof(VoteCaption))]
+    [NotifyPropertyChangedFor(nameof(EpisodeText), nameof(ChangeLabel), nameof(ChangeName), nameof(HostPickCaption), nameof(VoteCaption))]
     public partial StartPartyTarget? Target { get; private set; }
 
     /// <summary>A series' next episode is being named.</summary>
@@ -96,9 +97,12 @@ public sealed partial class StartPartyViewModel : ObservableObject
     public bool HasEpisodeChoice => Request?.SeriesId is not null;
 
     /// <summary><c>S3 E1 "Chapter 1"</c>, or "Choose an episode".</summary>
-    public string EpisodeText => Target?.EpisodeText ?? (IsNamingTarget ? "" : "Choose an episode");
+    public string EpisodeText => Target?.EpisodeText ?? (IsNamingTarget ? "" : AppText.Get("web.watchTogether.startSheet.chooseEpisode"));
 
-    public string ChangeLabel => Target is null ? "Choose" : "Change";
+    public string ChangeLabel => Target is null ? AppText.Get("web.watchTogether.startSheet.choose") : AppText.Get("web.watchTogether.common.change");
+
+    /// <summary>What the Change button changes, for a screen reader: "Choose an episode" or "Change the episode".</summary>
+    public string ChangeName => Target is null ? AppText.Get("web.watchTogether.startSheet.chooseEpisode") : AppText.Get("granary.watchParty.changeEpisode");
 
     /// <summary>How the room picks: <see cref="WatchPartySelectionModes.HostPick"/> first on every opening, as on the web.</summary>
     [ObservableProperty]
@@ -131,11 +135,13 @@ public sealed partial class StartPartyViewModel : ObservableObject
         }
     }
 
-    public string HostPickCaption => $"{What} is up next. You start it when everyone is here.";
+    public string HostPickCaption => Target is null
+        ? AppText.Get("web.watchTogether.startSheet.hostPickCaptionEmpty")
+        : AppText.Get("web.watchTogether.startSheet.hostPickCaptionTarget");
 
-    public string VoteCaption => $"{What} is the first suggestion. Anyone can add and vote.";
-
-    private string What => Target is null ? "Nothing" : "This";
+    public string VoteCaption => Target is null
+        ? AppText.Get("web.watchTogether.startSheet.voteCaptionEmpty")
+        : AppText.Get("web.watchTogether.startSheet.voteCaptionTarget");
 
     /// <summary>
     /// "Allow guests to pause": the profile's saved choice, which the server gives the new room, until the host flips it.
@@ -164,7 +170,7 @@ public sealed partial class StartPartyViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
     public partial bool IsBusy { get; private set; }
 
-    public string CreateLabel => IsBusy ? "Creating…" : "Create party & copy invite";
+    public string CreateLabel => IsBusy ? AppText.Get("web.watchTogether.startSheet.creating") : AppText.Get("web.watchTogether.startSheet.create");
 
     /// <summary>Why the room could not be made, in the server's words where it has some.</summary>
     [ObservableProperty]
@@ -342,13 +348,13 @@ public sealed partial class StartPartyViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not start a Watch Party from a title");
-            Error = ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : "Could not create the room";
+            Error = ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : AppText.Get("web.watchTogether.startSheet.createFailed");
         }
         catch (Exception ex)
         {
             // A command's failure would end the app: anything else is said too.
             _logger.LogError(ex, "Starting a Watch Party from a title failed unexpectedly");
-            Error = "Could not create the room";
+            Error = AppText.Get("web.watchTogether.startSheet.createFailed");
         }
         return null;
     }
@@ -427,8 +433,8 @@ public sealed partial class StartPartyViewModel : ObservableObject
             if (room.GuestControlPolicy != policy)
             {
                 notices.Add(room.GuestsCanPause
-                    ? "Guests can pause in this party. Change it from the room."
-                    : "Only you control playback in this party. Change it from the room.");
+                    ? AppText.Get("web.watchTogether.startSheet.policyGuestsCanPause")
+                    : AppText.Get("web.watchTogether.startSheet.policyHostOnly"));
             }
             return;
         }
@@ -438,8 +444,8 @@ public sealed partial class StartPartyViewModel : ObservableObject
             return;
         }
         string notApplied = choice.GuestsCanPause
-            ? "Room created, but guests can't pause yet. Change it from the room."
-            : "Room created, but guests can still pause. Change it from the room.";
+            ? AppText.Get("web.watchTogether.startSheet.policyFailed")
+            : AppText.Get("web.watchTogether.startSheet.policyHostOnlyFailed");
         try
         {
             if (await _party.SetGuestsCanPauseAsync(choice.GuestsCanPause) && _party.Room?.GuestControlPolicy != policy)
@@ -474,7 +480,7 @@ public sealed partial class StartPartyViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "The new Watch Party's title could not be staged");
-            notices.Add("Room created, but that item couldn't be queued. Pick it from the room.");
+            notices.Add(AppText.Get("web.watchTogether.startSheet.stageFailed"));
             return false;
         }
     }
@@ -496,7 +502,7 @@ public sealed partial class StartPartyViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "The new Watch Party's first suggestion could not be added");
-            notices.Add(ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : "Could not add the first suggestion");
+            notices.Add(ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : AppText.Get("web.watchTogether.room.firstSuggestionFailed"));
             return false;
         }
     }
@@ -508,7 +514,9 @@ public sealed partial class StartPartyViewModel : ObservableObject
         {
             return null;
         }
-        return CopyText(link.AbsoluteUri) ? $"Invite copied. Room code {_party.Room?.Code}".Trim() : "Failed to copy invite link";
+        return CopyText(link.AbsoluteUri)
+            ? WatchPartyText.InviteCopied(_party.Room?.Code)
+            : AppText.Get("web.watchTogether.actions.inviteCopyFailed");
     }
 
     private async Task ReadSavedAsync(int opening, CancellationToken token)

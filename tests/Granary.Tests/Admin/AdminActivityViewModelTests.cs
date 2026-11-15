@@ -2,6 +2,7 @@ using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Granary.Tests.Browse;
@@ -45,7 +46,7 @@ public sealed class AdminActivityViewModelTests
             (episode.Title, episode.Subtitle, episode.Username, episode.Profile, episode.MethodLabel));
         Assert.Equal(("10:00 / 50:00", 0.2, "8.0 Mbps", "Node Local server", "Local"),
             (episode.Position, episode.Progress, episode.Bitrate, episode.Route, episode.Location));
-        Assert.Equal(("5m ago", "5:00"), (episode.Started, episode.Elapsed));
+        Assert.Equal(("5:00", "Session active 5:00"), (episode.Elapsed, episode.ActiveText));
         Assert.Equal("2 live", Sidebar.LiveText);
     }
 
@@ -188,6 +189,22 @@ public sealed class AdminActivityViewModelTests
     }
 
     [Fact]
+    public async Task ACommandsAnswer_IsWordedInTheLanguageOnScreen()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _silo.Map("api/v2/admin/sessions/s1/pause", request => Answer(request, []));
+        _silo.Map("api/v2/admin/sessions/s1/stop", _ => BrowseFakeSilo.Problem(409, "conflict"));
+        var activity = await ShownAsync();
+
+        await activity.TogglePauseCommand.ExecuteAsync(activity.Streams[0]);
+        Assert.Equal("Befehl zum Pausieren gesendet", activity.Notice);
+
+        await activity.StopCommand.ExecuteAsync(activity.Streams[0]);
+        Assert.Equal("Der Befehl „Stoppen“ wurde nicht angewendet: Silo internal detail", activity.Notice);
+        Assert.Equal("2 aktive Streams auf 1 Knoten", activity.SubtitleText);
+    }
+
+    [Fact]
     public async Task Commands_ForOneSession_RiseInSequence()
     {
         var bodies = new List<JsonElement>();
@@ -297,7 +314,7 @@ public sealed class AdminActivityViewModelTests
 
         var request = Assert.Single(_silo.To("api/v2/admin/ips"));
         Assert.Equal(("203.0.113.50", "30", "50"), (request.Query("ip"), request.Query("days"), request.Query("limit")));
-        Assert.Equal(new AdminIpUserRow("elena", "Oct 1, 2026, 8:00 AM", "Oct 27, 2026, 12:00 PM", "12,480"), Assert.Single(activity.IpUsers));
+        Assert.Equal(new AdminIpUserRow("elena", "10/1/2026, 8:00:00 AM", "10/27/2026, 12:00:00 PM", "12,480"), Assert.Single(activity.IpUsers));
         Assert.True(activity.HasMoreIpUsers);
 
         await activity.LoadMoreIpUsersCommand.ExecuteAsync(null);

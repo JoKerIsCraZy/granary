@@ -1,4 +1,5 @@
 using Granary.Core.Api.Admin;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Admin;
 
@@ -42,14 +43,14 @@ public static class AdminPlayMethod
         return video == "copy" || audio == "copy" ? Remux : Unknown;
     }
 
-    /// <summary>"Direct Play", "Remux", "Direct Stream", "Transcode" or "Unknown".</summary>
+    /// <summary>"Direct Play", "Remux", "Direct Stream", "Transcode" or "Unknown", as the web's activityMethodMeta.</summary>
     public static string Label(string method) => method switch
     {
-        Direct => "Direct Play",
-        Remux => "Remux",
-        DirectStream => "Direct Stream",
-        Transcode => "Transcode",
-        _ => "Unknown",
+        Direct => AppText.Get("web.common.activity.method.direct.label"),
+        Remux => AppText.Get("web.common.activity.method.remux.label"),
+        DirectStream => AppText.Get("web.common.activity.method.directStream.label"),
+        Transcode => AppText.Get("web.common.activity.method.transcode.label"),
+        _ => AppText.Get("web.common.activity.method.unknown.label"),
     };
 
     /// <summary>The web's order of the methods, by how much work the server does; unknown last, anything else after it.</summary>

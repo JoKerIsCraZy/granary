@@ -1,4 +1,4 @@
-using System.Globalization;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Detail;
 
@@ -9,8 +9,6 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 internal static class NextAiring
 {
-    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
-
     /// <summary>
     /// The first airing still to come, from any season but the specials: one with its time until that time, one with only
     /// its date from the day after on, since nobody can say whether today's has aired. The earliest moment goes first (a
@@ -37,7 +35,8 @@ internal static class NextAiring
 
     /// <summary>
     /// Apple's <c>downloads.monitor.next.*</c> words: a season's first episode starts the season, any other is named by its
-    /// number; the day is today, tomorrow, the weekday within a week, else a short date, in the viewer's zone.
+    /// number; the day is today, tomorrow, the weekday within a week, else the month and day, in the viewer's zone and the
+    /// format locale.
     /// </summary>
     public static string Text(EpisodeAiring airing, CalendarNow now)
     {
@@ -46,18 +45,17 @@ internal static class NextAiring
         var today = airing.AirAt is null ? now.Today : now.LocalToday;
         var day = SeasonGaps.Day(airing, now.Zone) ?? today;
         int days = day.DayNumber - today.DayNumber;
-        // Apple's LocaleFormat.integer: the locale's digits, never grouped.
-        bool starts = airing.EpisodeNumber == 1;
-        string number = (starts ? airing.SeasonNumber : airing.EpisodeNumber).ToString(English);
+        // A number in a message is Apple's LocaleFormat.integer: the language's digits, never grouped.
+        int season = airing.SeasonNumber, episode = airing.EpisodeNumber;
         string date = days < 7 ? CalendarText.Weekday(day) : CalendarText.ShortMonthDay(day);
-        return (days, starts) switch
+        return (days, episode == 1) switch
         {
-            (<= 0, true) => $"Season {number} starts today",
-            (<= 0, false) => $"Episode {number} today",
-            (1, true) => $"Season {number} starts tomorrow",
-            (1, false) => $"Episode {number} tomorrow",
-            (_, true) => $"Season {number} starts on {date}",
-            _ => $"Episode {number} on {date}",
+            (<= 0, true) => AppText.Get("granary.detail.nextAiring.seasonStartsToday", ("season", season)),
+            (<= 0, false) => AppText.Get("granary.detail.nextAiring.episodeToday", ("episode", episode)),
+            (1, true) => AppText.Get("granary.detail.nextAiring.seasonStartsTomorrow", ("season", season)),
+            (1, false) => AppText.Get("granary.detail.nextAiring.episodeTomorrow", ("episode", episode)),
+            (_, true) => AppText.Get("granary.detail.nextAiring.seasonStartsOn", ("season", season), ("date", date)),
+            _ => AppText.Get("granary.detail.nextAiring.episodeOn", ("episode", episode), ("date", date)),
         };
     }
 }

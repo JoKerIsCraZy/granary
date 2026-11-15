@@ -217,7 +217,7 @@ public sealed class MediaCardFactoryTests
     {
         var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp), Server);
 
-        Assert.Equal("Harbor Lights, Season 2 Episode 1 • Homecoming, new season", card.AccessibleName);
+        Assert.Equal("Harbor Lights, Season 2 Episode 1 • Homecoming, New Season", card.AccessibleName);
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public sealed class MediaCardFactoryTests
         var card = MediaCardFactory.Episode(episode, Server);
 
         Assert.Equal("S03E01 · Chapter 1", card.Title);
-        Assert.Equal("23 Oct 2026 · 52m", card.Subtitle);
+        Assert.Equal("Oct 23, 2026 · 52m", card.Subtitle);
         Assert.Equal("Assane devises a plan.", card.Caption);
         Assert.True(card.IsWatched);
         Assert.True(card.ShowsWatchedMark);

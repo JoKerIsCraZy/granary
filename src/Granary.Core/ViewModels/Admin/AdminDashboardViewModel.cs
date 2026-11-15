@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Admin;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -72,7 +73,7 @@ public sealed partial class AdminDashboardViewModel : ObservableObject
     [ObservableProperty]
     public partial string UpdatedText { get; private set; } = "";
 
-    public string RefreshText => IsRefreshing ? "Refreshing..." : "Refresh";
+    public string RefreshText => AppText.Get(IsRefreshing ? "web.admin.dashboard.page.refreshing" : "web.admin.dashboard.page.refresh");
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 
@@ -165,7 +166,7 @@ public sealed partial class AdminDashboardViewModel : ObservableObject
             }
             if (read.Stats.Error is SiloApiException { Status: 401 or 403 })
             {
-                ErrorText = "This account can't open the server's dashboard. Only administrators can.";
+                ErrorText = AppText.Get("granary.admin.dashboard.forbidden");
                 State = LibraryLoadState.Error;
                 return;
             }

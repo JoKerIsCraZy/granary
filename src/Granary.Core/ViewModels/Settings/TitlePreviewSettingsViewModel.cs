@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -10,7 +11,12 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class TitlePreviewSettingsViewModel : ObservableObject, IDisposable
 {
-    private static readonly (BrowseHeroSize Size, string Label)[] SizeLabels = [(BrowseHeroSize.Compact, "Compact"), (BrowseHeroSize.Full, "Full")];
+    // Read when shown, so the names follow the language on screen.
+    private static readonly (BrowseHeroSize Size, Func<string> Label)[] SizeLabels =
+    [
+        (BrowseHeroSize.Compact, () => AppText.Get("granary.settings.heroSize.compact")),
+        (BrowseHeroSize.Full, () => AppText.Get("granary.settings.heroSize.full")),
+    ];
 
     private readonly BrowseHeroSetting _setting;
 

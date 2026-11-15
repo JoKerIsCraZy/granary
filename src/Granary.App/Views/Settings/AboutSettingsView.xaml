@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -50,34 +51,37 @@
         <StackPanel Orientation="Horizontal" Spacing="20">
             <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="64" Height="64" AutomationProperties.AccessibilityView="Raw" />
             <StackPanel VerticalAlignment="Center" Spacing="2">
+                <!-- The app's name: not a text. -->
                 <TextBlock Text="Granary" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock Text="{x:Bind ViewModel.VersionText}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14" IsTextSelectionEnabled="True" />
             </StackPanel>
         </StackPanel>
         <TextBlock Margin="0,16,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="A native Windows client for Silo, the self-hosted media server. Granary is an independent project, not an official Silo app." />
+                   Text="{x:Bind t:AppText.Get('granary.settings.about.lead')}" />
 
-        <controls:SettingsGroup Title="Updates" Description="{x:Bind ViewModel.Updates.Summary, Mode=OneWay}">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.about.updates')}" Description="{x:Bind ViewModel.Updates.Summary, Mode=OneWay}">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind ViewModel.Updates.StatusText, Mode=OneWay}"
                                       Description="{x:Bind ViewModel.Updates.LastCheckedText, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}"
-                                      Visibility="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}" AutomationProperties.Name="Updating" />
+                                      Visibility="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.updating')}" />
                         <!-- With automatic updates off, what a release found changes is on its GitHub page until it is verified. -->
-                        <HyperlinkButton Content="Release notes" NavigateUri="{x:Bind ViewModel.AvailableReleaseUrl, Mode=OneWay}"
+                        <HyperlinkButton Content="{x:Bind t:AppText.Get('granary.settings.about.releaseNotes')}" NavigateUri="{x:Bind ViewModel.AvailableReleaseUrl, Mode=OneWay}"
                                          Visibility="{x:Bind ViewModel.HasAvailableReleaseUrl, Mode=OneWay}"
-                                         ToolTipService.ToolTip="Opens the release on GitHub" AutomationProperties.Name="Open the release notes on GitHub" />
-                        <Button Content="Check for updates" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                         ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.about.releaseNotesTooltip')}"
+                                         AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.releaseNotesName')}" />
+                        <Button Content="{x:Bind t:AppText.Get('granary.settings.about.checkForUpdates')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                 Command="{x:Bind ViewModel.Updates.CheckNowCommand}" Visibility="{x:Bind ViewModel.Updates.ShowsCheckNow, Mode=OneWay}" />
-                        <Button Content="Download and install" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                        <Button Content="{x:Bind t:AppText.Get('granary.settings.about.downloadAndInstall')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                 Command="{x:Bind ViewModel.Updates.DownloadAndInstallCommand}" Visibility="{x:Bind ViewModel.Updates.IsAvailable, Mode=OneWay}" />
                         <Button Content="{x:Bind ViewModel.Updates.RestartText, Mode=OneWay}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                 Command="{x:Bind ViewModel.Updates.RestartNowCommand}" Visibility="{x:Bind ViewModel.Updates.IsReady, Mode=OneWay}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <!-- Only for a copy that updates itself; the row's label names the switch. -->
-                <controls:SettingsRow Label="Automatic updates" Description="Look for new versions in the background and install them when Granary closes."
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.about.automaticUpdates')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.about.automaticUpdatesDescription')}"
                                       Visibility="{x:Bind ViewModel.Updates.CanUpdate}">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.Updates.IsAutomatic, Mode=TwoWay}" />
                 </controls:SettingsRow>
@@ -91,7 +95,7 @@
             </StackPanel>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="What's new" Description="The changes in each version of Granary, newest first."
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.about.whatsNew')}" Description="{x:Bind t:AppText.Get('granary.settings.about.whatsNewDescription')}"
                                 Visibility="{x:Bind ViewModel.HasChangelog}">
             <ItemsRepeater ItemsSource="{x:Bind ViewModel.Releases}">
                 <ItemsRepeater.Layout>
@@ -109,39 +113,43 @@
             </ItemsRepeater>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="License and source" Description="Granary is free software. It may be shared and changed under its license.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.about.licenseAndSource')}"
+                                Description="{x:Bind t:AppText.Get('granary.settings.about.licenseAndSourceDescription')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="License"
-                                      Description="GNU Affero General Public License, version 3 or later, with a platform library exception.">
-                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewLicenseClick" AutomationProperties.Name="View the license" />
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.about.license')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.about.licenseDescription')}">
+                    <Button Content="{x:Bind t:AppText.Get('granary.settings.about.view')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewLicenseClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.viewLicense')}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Platform library exception"
-                                      Description="The additional permission that lets Granary ship with platform SDKs such as the Windows App SDK.">
-                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewExceptionClick"
-                            AutomationProperties.Name="View the platform library exception" />
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.about.exception')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.about.exceptionDescription')}">
+                    <Button Content="{x:Bind t:AppText.Get('granary.settings.about.view')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewExceptionClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.viewException')}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Third-party notices"
-                                      Description="The components Granary uses and ships with their licenses, and the parts adapted from Silo's own apps.">
-                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewNoticesClick"
-                            AutomationProperties.Name="View the third-party notices" />
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.about.notices')}"
+                                      Description="{x:Bind t:AppText.Get('granary.settings.about.noticesDescription')}">
+                    <Button Content="{x:Bind t:AppText.Get('granary.settings.about.view')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewNoticesClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.viewNotices')}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Source code" Description="{x:Bind controls:SettingsText.Of(ViewModel.SourceUrl)}"
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.about.source')}" Description="{x:Bind controls:SettingsText.Of(ViewModel.SourceUrl)}"
                                       Visibility="{x:Bind ViewModel.HasSource}">
-                    <HyperlinkButton Content="Open" NavigateUri="{x:Bind ViewModel.SourceUrl}" ToolTipService.ToolTip="Opens the repository in the browser"
-                                     AutomationProperties.Name="Open the source code" />
+                    <HyperlinkButton Content="{x:Bind t:AppText.Get('granary.settings.about.open')}" NavigateUri="{x:Bind ViewModel.SourceUrl}"
+                                     ToolTipService.ToolTip="{x:Bind t:AppText.Get('granary.settings.about.sourceTooltip')}"
+                                     AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.openSource')}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
 
-        <controls:SettingsGroup Title="Troubleshooting" Description="Where Granary keeps its data on this computer, for when something goes wrong.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.about.troubleshooting')}"
+                                Description="{x:Bind t:AppText.Get('granary.settings.about.troubleshootingDescription')}">
             <StackPanel>
-                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Data folder" Description="{x:Bind ViewModel.DataDirectory}">
-                    <Button Content="Open" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenDataClick"
-                            AutomationProperties.Name="Open the data folder" />
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.about.dataFolder')}" Description="{x:Bind ViewModel.DataDirectory}">
+                    <Button Content="{x:Bind t:AppText.Get('granary.settings.about.open')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenDataClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.openData')}" />
                 </controls:SettingsRow>
-                <controls:SettingsRow Label="Logs" Description="{x:Bind ViewModel.LogsDirectory}">
-                    <Button Content="Open" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenLogsClick"
-                            AutomationProperties.Name="Open the logs folder" />
+                <controls:SettingsRow Label="{x:Bind t:AppText.Get('granary.settings.about.logs')}" Description="{x:Bind ViewModel.LogsDirectory}">
+                    <Button Content="{x:Bind t:AppText.Get('granary.settings.about.open')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenLogsClick"
+                            AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.about.openLogs')}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>

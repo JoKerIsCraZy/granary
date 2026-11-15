@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,9 @@ public sealed partial class ForYouPage : Page
     {
         ViewModel = App.Services.GetRequiredService<ForYouViewModel>();
         InitializeComponent();
+        // The web's small headings of the taste profile, in capitals as its CSS shows them.
+        TopGenresHeading.Text = AppText.Upper(AppText.Get("web.recommendations.topGenres"));
+        FavoriteDirectorsHeading.Text = AppText.Upper(AppText.Get("web.recommendations.favoriteDirectors"));
         Loaded += (_, _) => Hero.FollowScroll(Scroller);
     }
 

@@ -1,4 +1,5 @@
 using Granary.Core.Remote;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 
@@ -6,7 +7,7 @@ namespace Granary.Tests.Remote;
 
 /// <summary>
 /// What the PC shows while a phone controls it (design 5.9): the short "connected" notice, the quiet indicator, and its
-/// Disconnect Remote, over a receiver that serves fake phones in memory.
+/// Disconnect remote, over a receiver that serves fake phones in memory.
 /// </summary>
 public sealed class RemoteIndicatorViewModelTests : IAsyncDisposable
 {
@@ -120,6 +121,17 @@ public sealed class RemoteIndicatorViewModelTests : IAsyncDisposable
     public void ItsTexts_AreSilosTvApps()
     {
         Assert.Equal("Remote control active", RemoteIndicatorViewModel.ActiveText);
-        Assert.Equal("Disconnect Remote", RemoteIndicatorViewModel.DisconnectText);
+        Assert.Equal("Disconnect remote", RemoteIndicatorViewModel.DisconnectText);
+        Assert.Equal("Elena's phone connected", RemoteIndicatorViewModel.ConnectedNotice("Elena's phone"));
+    }
+
+    [Fact]
+    public void ItsTexts_InTheLanguageOnScreen_AreSilosAppsTranslations()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        Assert.Equal("Fernbedienung aktiv", RemoteIndicatorViewModel.ActiveText);
+        Assert.Equal("Fernbedienung trennen", RemoteIndicatorViewModel.DisconnectText);
+        Assert.Equal("Elena's phone verbunden", RemoteIndicatorViewModel.ConnectedNotice("Elena's phone"));
     }
 }

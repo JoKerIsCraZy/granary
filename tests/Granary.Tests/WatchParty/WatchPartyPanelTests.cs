@@ -199,7 +199,7 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
 
         await panel.StopCommand.ExecuteAsync(null);
 
-        Assert.Equal("Could not stop playback. Couldn't reach the server. Check the connection and try again.", LastSaid);
+        Assert.Equal("Could not stop playback. The server isn't responding. Try again in a moment.", LastSaid);
         Assert.True(_said[^1].IsWarning);
         Assert.True(panel.StopCommand.CanExecute(null));
 

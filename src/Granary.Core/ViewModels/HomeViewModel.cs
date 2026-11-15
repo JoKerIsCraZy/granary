@@ -8,6 +8,7 @@ using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -37,8 +38,6 @@ public sealed partial class HomeViewModel : ObservableObject
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
     internal const int MaxConcurrentRowRequests = 4;
-    internal const string LoadingText = "Loading Home";
-    internal const string EmptyText = "Nothing here yet";
 
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
@@ -230,7 +229,8 @@ public sealed partial class HomeViewModel : ObservableObject
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("Removing a card from Home failed: {Failure}", ApiFailureText.Describe(ex));
-            Notice = $"{card.Title} could not be removed. Try again.";
+            // The web's words for a card it could not take off Home (hooks/queries/homeDismissals.ts).
+            Notice = AppText.Get("web.home.dismiss.removeFailed");
             return;
         }
         if (_shownFor != shownFor)
@@ -335,7 +335,7 @@ public sealed partial class HomeViewModel : ObservableObject
         if (!HasContent)
         {
             IsLoading = true;
-            ShowState(hasError: false, isEmpty: false, LoadingText);
+            ShowState(hasError: false, isEmpty: false, AppText.Get("granary.home.loading"));
         }
         try
         {
@@ -369,7 +369,7 @@ public sealed partial class HomeViewModel : ObservableObject
             _loadedAt = null;
             if (!HasContent)
             {
-                string text = BrowseFailureText.Describe(ex, "Home could not be loaded right now.");
+                string text = BrowseFailureText.Describe(ex, AppText.Get("web.home.page.loadFailedBody"));
                 ErrorText = text;
                 ShowState(hasError: true, isEmpty: false, text);
             }
@@ -437,7 +437,7 @@ public sealed partial class HomeViewModel : ObservableObject
             // "Explore all" on every row, as the web's, also when the row already holds all of it.
             var exploreAll = section.Id.Length > 0
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
-                    new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
+                    new SectionRouteParameter(section.Id, SectionTitle.Shown(section), SectionType: section.SectionType)))
                 : null;
             rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll, RemoveCommand, PointCardCommand));
         }
@@ -520,7 +520,7 @@ public sealed partial class HomeViewModel : ObservableObject
     private void ShowLoaded()
     {
         bool isEmpty = !HasContent;
-        ShowState(hasError: false, isEmpty, isEmpty ? EmptyText : "");
+        ShowState(hasError: false, isEmpty, isEmpty ? AppText.Get("granary.home.empty") : "");
     }
 
     private void ShowState(bool hasError, bool isEmpty, string status)

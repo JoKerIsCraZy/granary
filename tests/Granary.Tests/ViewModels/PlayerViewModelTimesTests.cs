@@ -1,5 +1,5 @@
-using System.Globalization;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 
@@ -7,9 +7,8 @@ namespace Granary.Tests.ViewModels;
 
 /// <summary>
 /// The times under the player's title: the duration or the time left, as this PC chose last, and the clock time the
-/// title ends. Some tests change the current culture, so the class runs on its own.
+/// title ends, on the format locale's clock.
 /// </summary>
-[Collection(nameof(CurrentCultureChanges))]
 public sealed class PlayerViewModelTimesTests
 {
     // 45 minutes; the clock starts at 12:00 UTC, 14:00 on this PC.
@@ -50,7 +49,7 @@ public sealed class PlayerViewModelTimesTests
         _engine.RaiseState(new PlaybackSnapshot(true, paused, TimeSpan.FromSeconds(position),
             length is { } seconds ? TimeSpan.FromSeconds(seconds) : null, null, HasStarted: true, IsBuffering: buffering));
 
-    private static string Time(int hour, int minute) => new DateTime(2026, 10, 1, hour, minute, 0).ToString("t", CultureInfo.CurrentCulture);
+    private static string Time(int hour, int minute) => DateText.Time(new DateTime(2026, 10, 1, hour, minute, 0));
 
     private static string Ends(int hour, int minute) => "Ends " + Time(hour, minute);
 
@@ -120,21 +119,14 @@ public sealed class PlayerViewModelTimesTests
     [Theory]
     [InlineData("de-DE", "^Ends 14:35$")]
     [InlineData("en-US", @"^Ends 2:35\sPM$")]
-    public async Task TheTime_IsThisPcsShortTime_In24Or12Hours(string culture, string expected)
+    public async Task TheTime_IsTheFormatLocalesClock_In24Or12Hours(string culture, string expected)
     {
-        var before = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+        // In the app the format locale is Windows' regional format, so the clock is the PC's own.
+        using var formats = AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For(culture)));
 
-            using var viewModel = await PlayingAsync(600);
+        using var viewModel = await PlayingAsync(600);
 
-            Assert.Matches(expected, viewModel.EndsAtText);
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = before;
-        }
+        Assert.Matches(expected, viewModel.EndsAtText);
     }
 
     [Fact]
@@ -466,31 +458,19 @@ public sealed class PlayerViewModelTimesTests
         At(0, length: 3600);
 
         // An hour later the clocks say 02:30 again, not 03:30.
-        Assert.Equal("Ends " + new DateTime(2026, 10, 25, 2, 30, 0).ToString("t", CultureInfo.CurrentCulture), viewModel.EndsAtText);
+        Assert.Equal("Ends " + DateText.Time(new DateTime(2026, 10, 25, 2, 30, 0)), viewModel.EndsAtText);
     }
 
     [Fact]
     public async Task AnotherZoneOrTimeFormat_IsWrittenAtTheNextPosition()
     {
         using var viewModel = await PlayingAsync(600);
-        var before = CultureInfo.CurrentCulture;
-        try
-        {
-            _time.Zone = TimeZoneInfo.CreateCustomTimeZone("Granary test +3", TimeSpan.FromHours(3), "Granary test +3", "Granary test +3");
-            At(601);
-            Assert.Equal(Ends(15, 35), viewModel.EndsAtText);
+        _time.Zone = TimeZoneInfo.CreateCustomTimeZone("Granary test +3", TimeSpan.FromHours(3), "Granary test +3", "Granary test +3");
+        At(601);
+        Assert.Equal(Ends(15, 35), viewModel.EndsAtText);
 
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
-            At(602);
-            Assert.Matches(@"^Ends 3:35\sPM$", viewModel.EndsAtText);
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = before;
-        }
+        using var german = AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For("de-DE")));
+        At(602);
+        Assert.Equal("Ends 15:35", viewModel.EndsAtText);
     }
 }
-
-/// <summary>Tests that set the current culture run on their own, so no other test reads a culture they set.</summary>
-[CollectionDefinition(nameof(CurrentCultureChanges), DisableParallelization = true)]
-public sealed class CurrentCultureChanges;

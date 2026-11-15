@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -83,7 +84,7 @@ public sealed partial class AddServerViewModel
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             ConnectedServer = null;
-            Status = "Cancelled.";
+            Status = AppText.Get("granary.addServer.cancelled");
         }
         finally
         {
@@ -135,6 +136,6 @@ public sealed record FoundServerRow(DiscoveredServer Server, bool IsConnecting, 
     /// <summary>A found server answers plain HTTP: the row says "Not encrypted".</summary>
     public bool IsUnencrypted => Server.Url.Scheme == Uri.UriSchemeHttp;
 
-    public string AccessibleName =>
-        $"{Name}, {Detail}{(IsUnencrypted ? ", not encrypted" : "")}{(IsConnecting ? ", connecting" : "")}";
+    public string AccessibleName => AppText.Get("granary.addServer.foundRowName",
+        ("name", Name), ("detail", Detail), ("unencrypted", IsUnencrypted), ("connecting", IsConnecting));
 }

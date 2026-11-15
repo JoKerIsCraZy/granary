@@ -1,4 +1,5 @@
 using Granary.Core.Remote;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Granary.Tests.Fakes;
 using Granary.Tests.Remote;
@@ -8,7 +9,7 @@ namespace Granary.Tests.Settings;
 /// <summary>
 /// Settings → Playback → This PC → "Control Granary from your phone" and its Connect a Phone panel, over a receiver that
 /// runs on fakes (<see cref="RemoteHarness"/>): what the row says, the code shown only while the panel is open, and Reset
-/// Pairing Code.
+/// pairing code.
 /// </summary>
 public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
 {
@@ -216,8 +217,36 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     public void TheQuestionBeforeAReset_SaysWhatItDoes()
     {
         // The panel asks it in a flyout of its own; no second dialog can open over the panel's.
-        Assert.Equal(("Reset Pairing Code?", "Every phone has to scan the new code. Phones that are connected now are disconnected.", "Reset"),
+        Assert.Equal(("Reset pairing code?", "Every phone has to scan the new code. Phones that are connected now are disconnected.", "Reset"),
             (PhoneRemoteViewModel.ResetQuestionTitle, PhoneRemoteViewModel.ResetQuestionText, PhoneRemoteViewModel.ResetAction));
+    }
+
+    [Fact]
+    public void ThePhones_AreListedAsTheLanguageListsNames()
+    {
+        Assert.Equal("No phone is connected.", PhoneRemoteViewModel.PhonesLine([]));
+        Assert.Equal("Connected: Elena's phone", PhoneRemoteViewModel.PhonesLine(["Elena's phone"]));
+        Assert.Equal("Connected: Elena's phone and Elena's tablet", PhoneRemoteViewModel.PhonesLine(["Elena's phone", "Elena's tablet"]));
+
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        Assert.Equal("Kein Smartphone verbunden.", PhoneRemoteViewModel.PhonesLine([]));
+        Assert.Equal("Verbunden: Elena's phone und Elena's tablet", PhoneRemoteViewModel.PhonesLine(["Elena's phone", "Elena's tablet"]));
+    }
+
+    [Fact]
+    public void TheRowAndThePanel_SpeakTheLanguageOnScreen_WithThePhoneAppsNames()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        using var viewModel = new PhoneRemoteViewModel(_harness.Receiver, _harness.Preferences, _harness.Dispatcher, RemoteHarness.Client);
+
+        Assert.Equal("Steuere Granary mit deinem Smartphone", PhoneRemoteViewModel.SwitchLabel);
+        Assert.Equal("Smartphone verbinden", PhoneRemoteViewModel.ConnectAPhoneText);
+        Assert.Equal("Scanne diesen Code mit der Kamera deines Smartphones und öffne ihn in Silo. Wähle dann Elena's PC unter „Fernbedienung“.",
+            viewModel.ScanText);
+        Assert.Equal(("Kopplungscode zurücksetzen?", "Zurücksetzen", "Fertig"),
+            (PhoneRemoteViewModel.ResetQuestionTitle, PhoneRemoteViewModel.ResetAction, PhoneRemoteViewModel.DoneText));
+        Assert.Equal("Der Kopplungscode konnte nicht zurückgesetzt werden. Der alte Code funktioniert weiterhin.",
+            PhoneRemoteViewModel.ResetText(PairingResetOutcome.Failed));
     }
 
     [Fact]

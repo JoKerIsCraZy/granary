@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.Trailers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -41,7 +42,8 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
     /// </summary>
     public static readonly TimeSpan FullScreenInterval = TimeSpan.FromMilliseconds(500);
 
-    public const string UnavailableText = "This video can't play in Granary.";
+    /// <summary>What shows when the trailer can't play here, over "Open on YouTube".</summary>
+    public static string UnavailableText => AppText.Get("granary.trailer.unavailable");
 
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;

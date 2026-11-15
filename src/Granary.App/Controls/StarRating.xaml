@@ -11,8 +11,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     IsTabStop="False"
-    FontSize="20"
-    AutomationProperties.Name="Rating">
+    FontSize="20">
 
     <UserControl.Resources>
         <!-- The web's rgb(250 204 21) for a rated star, its muted foreground at 50 % for the others. -->

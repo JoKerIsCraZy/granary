@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Requests;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -32,7 +33,8 @@ public sealed partial class RequestSeasonChoice : ObservableObject
     [ObservableProperty]
     public partial bool IsPicked { get; set; }
 
-    public string AccessibleName => $"{Name}, {Meta}{(Status.Length > 0 ? ", " + Status : "")}";
+    public string AccessibleName => AppText.Get("granary.requests.seasonName", ("name", Name), ("meta", Meta), ("status", Status),
+        ("hasStatus", Status.Length > 0 ? "yes" : "no"));
 }
 
 /// <summary>
@@ -65,14 +67,16 @@ public sealed partial class RequestSeasonsViewModel : ObservableObject
         {
             season.PropertyChanged += OnSeasonChanged;
         }
-        Description = requestable ? $"Choose the seasons of {detail.Title} to request." : TitleText.UnavailableReason(detail.Request.Reason);
+        Description = requestable
+            ? AppText.Get("web.requests.seasons.choose", ("title", detail.Title))
+            : TitleText.UnavailableReason(detail.Request.Reason);
         bool inLibrary = detail.Availability == "available";
         // A series in the library with only upcoming seasons left needs them picked; one outside it is requested whole.
         Hint = _defaults.Count == 0 && choosable.Count > 0
-            ? inLibrary ? "Pick the upcoming seasons to request." : "No season has aired yet, so the request covers the whole series unless you pick seasons."
+            ? inLibrary ? AppText.Get("web.requests.seasons.pickUpcoming") : AppText.Get("web.requests.seasons.noneAired")
             : "";
         NoSeasonsText = requestable && detail.Seasons.Count == 0
-            ? "TMDB lists no seasons for this series yet; the request covers the whole series."
+            ? AppText.Get("web.requests.seasons.noSeasons")
             : "";
         Refresh();
     }
@@ -109,7 +113,7 @@ public sealed partial class RequestSeasonsViewModel : ObservableObject
 
     /// <summary>"Request Seasons 1–3", "Request series" (the server picks), or "Request".</summary>
     [ObservableProperty]
-    public partial string SubmitLabel { get; private set; } = "Request";
+    public partial string SubmitLabel { get; private set; } = "";
 
     [ObservableProperty]
     public partial bool CanSubmit { get; private set; }
@@ -186,7 +190,9 @@ public sealed partial class RequestSeasonsViewModel : ObservableObject
             Hint = "";
         }
         bool serverChooses = ServerChooses;
-        SubmitLabel = picked.Count > 0 ? $"Request {RequestText.SeasonList(picked)}" : serverChooses ? "Request series" : "Request";
+        SubmitLabel = picked.Count > 0 ? AppText.Get("web.requests.seasons.requestSeasons", ("seasons", RequestText.SeasonList(picked)))
+            : serverChooses ? AppText.Get("web.requests.seasons.requestSeries")
+            : AppText.Get("web.requests.request");
         CanSubmit = _detail.Request.Requestable && (serverChooses || picked.Count > 0);
         OnPropertyChanged(nameof(PickedSeasons));
     }

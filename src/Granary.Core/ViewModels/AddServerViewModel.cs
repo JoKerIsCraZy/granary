@@ -6,6 +6,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -25,9 +26,11 @@ public sealed partial class AddServerViewModel(
     LanServerDiscovery discovery,
     IUiDispatcher dispatcher) : ObservableObject
 {
-    internal const string UpdateRequiredMessage = "This Silo server is too old for this app. Update the server and try again.";
-    internal const string NeedsSetupMessage = "This server still needs its first-time setup. Finish it in the server's web interface.";
-    internal const string AnswersAsAnotherMessage = "That server no longer answers as the one found. Try again.";
+    internal static string UpdateRequiredMessage => AppText.Get("granary.addServer.updateRequired");
+
+    internal static string NeedsSetupMessage => AppText.Get("granary.addServer.needsSetup");
+
+    internal static string AnswersAsAnotherMessage => AppText.Get("granary.addServer.answersAsAnother");
 
     private readonly LanServerDiscovery _discovery = discovery;
     private readonly IUiDispatcher _dispatcher = dispatcher;
@@ -51,7 +54,7 @@ public sealed partial class AddServerViewModel(
         var candidates = ServerAddress.Candidates(Address);
         if (candidates.Count == 0)
         {
-            Status = "That is not a server address.";
+            Status = AppText.Get("granary.addServer.notAnAddress");
             return;
         }
 
@@ -63,7 +66,7 @@ public sealed partial class AddServerViewModel(
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             ConnectedServer = null;
-            Status = "Cancelled.";
+            Status = AppText.Get("granary.addServer.cancelled");
         }
         finally
         {
@@ -79,7 +82,7 @@ public sealed partial class AddServerViewModel(
         string lastReason = "";
         foreach (var candidate in candidates)
         {
-            Status = $"Trying {candidate.OriginalString}…";
+            Status = AppText.Get("granary.addServer.trying", ("address", candidate.OriginalString));
             var verdict = await probe.ProbeAsync(candidate, cancellationToken);
             if (verdict is ServerProbeResult.UpdateRequired)
             {
@@ -98,7 +101,8 @@ public sealed partial class AddServerViewModel(
             await AcceptAsync(candidate, setup, expectedServerId, cancellationToken);
             return;
         }
-        Status = $"No Silo server answered at that address ({lastReason}).";
+        // The reason is the probe's own, technical and English: "timeout", "HTTP 404".
+        Status = AppText.Get("granary.addServer.noServer", ("reason", lastReason));
     }
 
     private async Task AcceptAsync(Uri baseUri, SetupStatus? setup, string? expectedServerId, CancellationToken cancellationToken)
@@ -110,7 +114,7 @@ public sealed partial class AddServerViewModel(
             return;
         }
 
-        Status = $"Connecting to {baseUri.OriginalString}…";
+        Status = AppText.Get("granary.addServer.connectingTo", ("address", baseUri.OriginalString));
         var identity = await TryGetAsync(ct => system.GetIdentityAsync(baseUri, ct), cancellationToken);
         var branding = await TryGetAsync(ct => system.GetBrandingAsync(baseUri, ct), cancellationToken);
         string? serverId = identity?.ServerId is { } id && !string.IsNullOrWhiteSpace(id) ? id : null;
@@ -133,16 +137,16 @@ public sealed partial class AddServerViewModel(
             entry = await _registry.AddOrUpdateAsync(baseUri, name, serverId, reopened ? CancellationToken.None : cancellationToken);
             if (reopened)
             {
-                Status = $"Opening {entry.Name}…";
+                Status = AppText.Get("granary.addServer.opening", ("name", entry.Name));
                 return;
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Status = "Granary could not save the server. Try again.";
+            Status = AppText.Get("granary.addServer.saveFailed");
             return;
         }
-        Status = $"Found {entry.Name}.";
+        Status = AppText.Get("granary.addServer.found", ("name", entry.Name));
         navigation.NavigateTo(AppRoute.SignIn, entry.Id);
     }
 

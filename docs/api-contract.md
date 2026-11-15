@@ -522,6 +522,12 @@ calls; never to other origins (artwork CDNs, S3). Sources:
 `silo-server/internal/auth/client_device.go:14-55`, `silo-server/internal/apiv2/device_header.go:24-57`,
 `silo-server/docs/settings-api.md:724-781`.
 
+The same requests carry `Accept-Language` with one tag, the language on screen (`AppText.Language`: `en`, `es`, `de`, `fr`,
+`pt-BR`, `ja` or `zh-Hans`), as Silo's Android and Apple apps send it. It is a hint for text the server writes for that
+request: no answer depends on it yet, so the server sends no `Vary: Accept-Language`, and its plugin route proxy
+forwards it to plugins. Text the server writes for a profile rather than a request follows the profile's
+`ui.app_language` instead (`silo-server/docs/architecture/i18n.md`, "`Accept-Language`").
+
 ### 6.5 Multiple servers
 
 Android stores one registry entry per saved URL (`id`, `url`, display name, last profile id,
@@ -599,6 +605,7 @@ Profile and device settings live on the server (manifest
 | `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
 | `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
 | `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
+| `ui.app_language` | profile, profile_device (resolved device, profile, default) | `null` (follow the device) | the language Granary starts in ([6.6.5](#665-app-language)) |
 
 #### 6.6.1 Card badges
 
@@ -629,7 +636,7 @@ shared with the other desktop clients), so a browser and Granary each keep their
   either field missing or unknown, reads as the default, as `parseCardPresentation` does.
 - The effective item's `source` says where it comes from: `profile_client` is the desktop apps' own choice (Reset deletes it,
   `DELETE …?scope=profile_client`), `profile_device` this PC's value, which outranks it: editing is off until it is deleted
-  ("Match my other computers", `DELETE …?scope=profile_device`). `profile` or `default` apply when neither exists.
+  ("Use synced desktop settings", `DELETE …?scope=profile_device`). `profile` or `default` apply when neither exists.
 - A server whose effective read refuses the key (`422`) predates it: cards keep the default and nothing is editable.
 - The sizes are the web's at its Tailwind breakpoints (`sm` 640, `md` 768, `lg` 1024, `xl` 1280 px), measured against
   Granary's window width as the web's against its viewport, sidebar included:
@@ -697,6 +704,25 @@ value.
   writes them: `PUT …?scope=profile`, then `DELETE …?scope=profile_device` when the effective value came from this device.
   Only the acting profile's own read turns theme music on, never the previous profile's while the next one is read.
 
+#### 6.6.5 App language
+
+`ui.app_language` (revision 28; silo-server `docs/settings-api.md`, "App language", and `docs/architecture/i18n.md`): the
+language of a client's menus, buttons and messages, a nullable open language tag (`"de"`, `"pt-BR"`); `null` follows the
+device. A client applies a value only when it ships that language, matched as it matches the device's list, and otherwise
+acts as if it were `null`.
+
+- Read: the effective value, with `X-Silo-Device-Id`, so this PC's own row wins over the profile's. Granary reads it at
+  sign-in, with every server or profile, and each time Settings → Accessibility shows, and keeps the last value read on this PC for its next
+  start: its texts load once, as it starts. A server whose effective read refuses the key (`422`) predates it: the
+  profile follows the device.
+- Write (Settings → Accessibility → Language, as the web's `AccessibilitySettings.tsx` and the apps write it):
+  `PUT …/ui.app_language?scope=profile` with the tag, or `null` for Match device, so the choice follows the person to
+  every device; then, when the effective value came from this PC, `DELETE …?scope=profile_device` (a `404` means there was
+  nothing to clear), so it applies here too. A `DELETE` that only lands on Try again is followed by a read of the
+  effective value, as the profile's may have changed since. Both go out as the profile the choice was made for
+  (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
+  rewritten.
+
 ## 7. Catalog
 
 Every operation in this section needs the bearer token and, unless noted, `X-Profile-Id` (plus
@@ -715,7 +741,8 @@ has a PIN or access limits), and `getArtwork` (public, signed URL).
 | `dismissHomeItem` / `undismissHomeItem` | `PUT` / `DELETE /api/v2/home/dismissals/{surface}/{item_id}` | `204` |
 
 `Section`: `id` (opaque), `section_type` (open string set), `title`, `featured`, `item_limit`,
-`is_custom`, `customized`, `total_count` (lower bound), `items: CatalogItem[]`. Section rows take no
+`is_custom`, `customized`, `total_count` (lower bound), `items: CatalogItem[]`, and optionally `title_key` and
+`title_args` (below). Section rows take no
 `limit`/`cursor`; a row returns up to `item_limit` cards (Home default 100). "See all" is
 `GET /api/v2/catalog?source=section&scope=home&section_id=<id>` (cursor-paged; a library row uses
 `scope=library&library_id=<id>`, and `scope` defaults to `library`). A section listing keeps the
@@ -733,6 +760,24 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   "Recently Added TV"; TV groups arrivals by show, returning an `episode` card for a single episode
   and a `series` card otherwise).
 - Never key logic on a section `id`; admins can rename and add rows.
+- **Title keys**: `title_key` (string) and `title_args` (object, string values by placeholder name) name the message of
+  Silo's shared translation catalog whose English is `title`. They are present only while `title` is Silo's own
+  wording:
+  - a built-in row, such as `home.section.continueWatching`;
+  - a generated library row, such as `home.section.recentlyAddedIn` with `{"library": "Movies"}`;
+  - Next Up, and Because You Watched (`home.section.becauseYouWatchedTitle` with `title`);
+  - a For You or taste-match row that shows another row, such as `home.section.topGenre` with `genre`;
+  - a seasonal row's built-in title, `home.section.seasonal.<theme>.<vibe>`.
+
+  Both are absent when someone typed the title, and `title_args` is absent when the message has no placeholders. A
+  translated interface shows the message filled from `title_args`, else `title`; English shows `title` as sent. An
+  empty key counts as none (`silo-server/web/src/lib/sectionTitle.ts`). Granary reads them into `Section.TitleKey`
+  and `TitleArgs` and shows Home, library and Watch Party shelf rows by that rule, and For You's and Requests' Discover
+  rows alike (7.12, 7.15; `SectionTitle`,
+  `AppText.ServerText`); the messages come from the web's catalogs (docs/release.md, "Translations"). `default_title_key` and `default_title_args` come only with a profile's section settings
+  (`getProfileSectionSettings`), which Granary does not read. `getHomeCapabilities` reports `section_title_keys`,
+  which is informational. Sources: `silo-server/internal/apiv2/library_views.go` (`SectionTitleKey`),
+  `internal/sections/title_keys.go` and `docs/catalog-api.md`, "Section titles", at `0e95e55b6`.
 - **Hero banner**: `featured` marks the page's hero banner, set in Silo's web by an administrator or for one profile
   ("Use as hero banner"). The server keeps one per page, but a profile's own featured row can follow an administrator's,
   so the first one counts: Home shows it as its banner instead of as a row, as the web does
@@ -1075,9 +1120,13 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 
 ### 7.12 Recommendations (For You)
 
-- `GET /api/v2/recommendations/discover` (image size parameters) → `{ "items": [{ "type", "title", "kind"?, "key"?,
-  "items": CatalogItem[] }] }`. Rows of `type` `cluster` or `similar_users_liked` come from the profile's own
-  history (the web then calls the page personal). `kind` names the section that lists the row in full.
+- `GET /api/v2/recommendations/discover` (image size parameters) → `{ "items": [{ "type", "title", "title_key"?,
+  "title_args"?, "kind"?, "key"?, "items": CatalogItem[] }] }`. Rows of `type` `cluster` or `similar_users_liked` come
+  from the profile's own history (the web then calls the page personal). `kind` names the section that lists the row in
+  full. `title_key` and `title_args` follow the rule of a Home row's (7.1, "Title keys"): `home.section.forYou`,
+  `pickedFromYourHistory`, `becauseYouEnjoy` with `genres`, `profilesLikeYouEnjoyed`, `popularOnServer`,
+  `recentlyAdded`, `highlyRatedInLibrary` and `topGenre` with `genre` (`silo-server/internal/recommendations/titles.go`
+  at `0e95e55b6`); the section's answer below carries them too.
 - `GET /api/v2/recommendations/section/{kind}[?key=…]` → one such row, up to 60 cards (the default and maximum of `limit`). `kind` is one of
   `for-you-main`, `cluster`, `similar-users`, `popular`, `recently-added`, `top-rated`, `genre`; `key` is a cluster's
   index or a genre's name.
@@ -1171,7 +1220,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `estimated_completion_at`, `updated_at`), `targets`, `created_at`, `updated_at`.
 - `POST /api/v2/requests/{id}/cancel` with `{ "reason"? }` → the request; the owner can withdraw it while `outcome` is
   `active` and `status` is `pending`, or `approved` with no `targets` yet.
-- `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "page", "total_pages", "results": RequestMediaResult[] }] }`.
+- `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "title_key"?, "page", "total_pages", "results": RequestMediaResult[] }] }`.
+  `title_key` names a built-in row's default title while the row keeps it (`home.section.discoverTrendingMovies` and
+  the other `discover…` keys, never with values; `internal/requests/discoverrows/defaults.go` at `0e95e55b6`), as a Home
+  row's (7.1, "Title keys"); a row in full carries it too.
   `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `overview`, `poster_path`, `backdrop_path` (the
   Discover hero's picture, from TMDB at `w1280`), `availability` (`available` when the library has it),
   `library_content_id`, `in_watchlist`, `request` (`requestable`, `reason`, `status`, `state`, `following`,
@@ -1254,7 +1306,7 @@ else of the admin API is used.
   `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, `stream_bitrate_kbps`,
   `transcode_hw_accel`, where (`position_seconds`, `file_duration`, `is_paused`, `started_at`), the client
   (`client_label`, `client_label_full`, `client_name`, `client_version`, `client_ip`), the route (`routing_execution`,
-  `routing_egress` and their node names; older servers only `reporting_node` and `node_display_name`),
+  `routing_egress` and their node names and ids; older servers only `reporting_node` and `node_display_name`),
   `stream_location`, and `has_playback_control` (the player takes pause, resume and messages).
 - Commands: `POST /api/v2/admin/sessions/{id}/pause|resume|stop|message` with `{ "command_id" (a UUID), "sequence",
   "message"? }` → `202` (or `200` replaying a retry) `{ "command_id", "delivery" ("dispatched", or "fallback_scheduled":
@@ -3432,8 +3484,10 @@ is checked afresh, in this order:
 - **Opening** lasts until that player shows the title no longer loading, or shows it failed: the phone that launched
   it then gets `error launch_failed` with the player's message, here and as the status's `error`, only when it is one of
   Granary's own failure texts, which name nothing (`RemoteTexts.PlayerError`: a fixed set, and the server's error
-  status, a wait or mpv's error text in Granary's own wording). Any other text, such as a server's terminal message or
-  an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
+  status, a wait or mpv's error text in Granary's own wording), and then in English whatever language the PC shows, as
+  every text Granary sends a phone and as Silo's receivers send theirs. Any other text, such as a server's terminal
+  message or an administrator's stop message as they wrote them, goes out as "This title could not be played on this
+  PC." (*new*). A player that showed it and closed before it loaded,
   and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
 
 ### 14.8 Series monitoring

@@ -1,4 +1,5 @@
 using Granary.Core.Api.Notifications;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -6,12 +7,12 @@ namespace Granary.Core.ViewModels;
 internal static class NotifiedSeriesText
 {
     /// <summary>The preference that lets each reason notify, named as its switch is.</summary>
-    private static readonly IReadOnlyList<(string Key, string Switch, Func<NotificationPreferences, bool> IsOn)> Switches =
+    private static IReadOnlyList<(string Key, string Switch, Func<NotificationPreferences, bool> IsOn)> Switches =>
     [
-        (NotifiedSeriesReasonKeys.Favorite, "Favorites", p => p.NotifyFavorites),
-        (NotifiedSeriesReasonKeys.Watchlist, "Watchlist", p => p.NotifyWatchlist),
-        (NotifiedSeriesReasonKeys.ContinueWatching, "Continue Watching", p => p.NotifyContinueWatching),
-        (NotifiedSeriesReasonKeys.NextUp, "Next Up", p => p.NotifyNextUp),
+        (NotifiedSeriesReasonKeys.Favorite, AppText.Get("web.notifications.preferences.favorites"), p => p.NotifyFavorites),
+        (NotifiedSeriesReasonKeys.Watchlist, AppText.Get("web.notifications.preferences.watchlist"), p => p.NotifyWatchlist),
+        (NotifiedSeriesReasonKeys.ContinueWatching, AppText.Get("web.notifications.preferences.continueWatching"), p => p.NotifyContinueWatching),
+        (NotifiedSeriesReasonKeys.NextUp, AppText.Get("web.notifications.preferences.nextUp"), p => p.NotifyNextUp),
     ];
 
     /// <summary>What a new episode has to be for the series to notify: "Any new episode", "Any episode after S2E9".</summary>
@@ -20,9 +21,10 @@ internal static class NotifiedSeriesText
         var active = series.ActiveReasons;
         if (active.Favorite || active.Watchlist || active.ContinueWatching || series.NextUpAfter is not { } after)
         {
-            return "Any new episode";
+            return AppText.Get("web.notifications.series.anyNewEpisode");
         }
-        return $"Any episode after S{after.SeasonNumber}E{after.EpisodeNumber}";
+        string code = AppText.Get("web.notifications.queries.episodeCode", ("season", after.SeasonNumber), ("episode", after.EpisodeNumber));
+        return AppText.Get("web.notifications.series.anyEpisodeAfter", ("code", code));
     }
 
     /// <summary>
@@ -33,21 +35,24 @@ internal static class NotifiedSeriesText
     {
         if (series.Muted)
         {
-            return "Muted";
+            return AppText.Get("web.notifications.series.muted");
         }
         if (preferences is { Enabled: false })
         {
-            return "Notifications are off";
+            return AppText.Get("web.notifications.series.notificationsOff");
         }
         var off = preferences is null
             ? []
             : Switches.Where(s => series.Reasons.Has(s.Key) && !s.IsOn(preferences)).Select(s => s.Switch).ToList();
         if (off.Count == 0)
         {
-            return "Won’t notify right now";
+            return AppText.Get("web.notifications.series.wontNotifyNow");
         }
-        string names = off.Count == 1 ? off[0] : $"{string.Join(", ", off.Take(off.Count - 1))} and {off[^1]}";
-        return $"{names} notifications are off";
+        // The web's own list for these names: "Favorites, Watchlist and Next Up".
+        string names = off.Count == 1
+            ? off[0]
+            : AppText.Get("web.notifications.series.nameList", ("names", string.Join(", ", off.Take(off.Count - 1))), ("last", off[^1]));
+        return AppText.Get("web.notifications.series.reasonsOff", ("names", names));
     }
 
     /// <summary>The series' reasons as pills; one that does not count now (muted, or its switch off) is struck through.</summary>
@@ -62,5 +67,6 @@ internal static class NotifiedSeriesText
 /// <summary>A reason pill: "Favorite", struck through when it does not notify now.</summary>
 public sealed record ReasonPill(string Label, bool IsOff)
 {
-    public string AccessibleName => IsOff ? $"{Label} (off)" : Label;
+    // As the web, which reads "(off)" after the pill's word.
+    public string AccessibleName => IsOff ? $"{Label} {AppText.Get("web.notifications.series.reasonOff")}" : Label;
 }

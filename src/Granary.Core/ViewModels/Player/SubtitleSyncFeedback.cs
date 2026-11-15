@@ -1,6 +1,7 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -135,8 +136,8 @@ public sealed class SubtitleSyncFeedback : IDisposable
                 // Nobody follows the job any more: its spinner would never end. A note says so once, and leaves.
                 if (_announced.Add(job.Id + ":unfollowed"))
                 {
-                    Show(new SubtitleSyncNotice(job.Id + ":unfollowed", SubtitleSyncTone.Info, $"Still syncing {watched.Name} subtitles",
-                        "Open the subtitle menu later to see how it ended."));
+                    Show(new SubtitleSyncNotice(job.Id + ":unfollowed", SubtitleSyncTone.Info, AppText.Get("granary.player.subtitleSync.stillSyncing", ("name", watched.Name)),
+                        AppText.Get("granary.player.subtitleSync.stillSyncingDetail")));
                 }
                 else if (Notice is { IsRunning: true } running && running.Id == job.Id)
                 {
@@ -145,7 +146,7 @@ public sealed class SubtitleSyncFeedback : IDisposable
             }
             else if (job.IsInProgress)
             {
-                Show(new SubtitleSyncNotice(job.Id, SubtitleSyncTone.Progress, $"Syncing {watched.Name} subtitles", SubtitleSyncText.Phase(job),
+                Show(new SubtitleSyncNotice(job.Id, SubtitleSyncTone.Progress, AppText.Get("web.subtitles.syncNotice.trackSyncing", ("name", watched.Name)), SubtitleSyncText.Phase(job),
                     SubtitleSyncText.Percent(job) ?? 0));
             }
             else if (_announced.Add(job.Id))
@@ -153,7 +154,7 @@ public sealed class SubtitleSyncFeedback : IDisposable
                 if (job.Status == SubtitleSyncStatuses.Synced && watched.Key == input.ActiveKey)
                 {
                     SetApplying(new Applying(watched.Key, job.Id, SubtitleSyncText.Timing(watched.Timing), _startRevision[job.Id]));
-                    Show(new SubtitleSyncNotice(job.Id, SubtitleSyncTone.Progress, "Applying new timing…", Percent: 100));
+                    Show(new SubtitleSyncNotice(job.Id, SubtitleSyncTone.Progress, AppText.Get("web.subtitles.syncNotice.applying"), Percent: 100));
                 }
                 else
                 {
@@ -197,7 +198,7 @@ public sealed class SubtitleSyncFeedback : IDisposable
             else if (LoadedAfter(foreign.Key, foreign.Revision))
             {
                 _foreign = null;
-                Show(new SubtitleSyncNotice($"timing:{foreign.Key}:{input.ActiveRevision}", SubtitleSyncTone.Info, "Subtitle timing updated"));
+                Show(new SubtitleSyncNotice($"timing:{foreign.Key}:{input.ActiveRevision}", SubtitleSyncTone.Info, AppText.Get("web.subtitles.syncNotice.timingUpdated")));
             }
         }
     }
@@ -208,11 +209,11 @@ public sealed class SubtitleSyncFeedback : IDisposable
         string name = watched.Name;
         return job.Status switch
         {
-            SubtitleSyncStatuses.Synced => new(job.Id, SubtitleSyncTone.Success, $"{name} subtitles synced", SubtitleSyncText.Timing(watched.Timing)),
-            SubtitleSyncStatuses.AlreadySynced => new(job.Id, SubtitleSyncTone.Info, $"{name} subtitles already match the audio"),
-            SubtitleSyncStatuses.NoMatch => new(job.Id, SubtitleSyncTone.Warning, $"{name} subtitles don't match the audio",
-                "They're probably for another release. The timing wasn't changed."),
-            SubtitleSyncStatuses.Failed => new(job.Id, SubtitleSyncTone.Warning, $"Couldn't sync {name} subtitles", SubtitleSyncText.Failure(job.Failure)),
+            SubtitleSyncStatuses.Synced => new(job.Id, SubtitleSyncTone.Success, AppText.Get("web.subtitles.syncNotice.trackSynced", ("name", name)), SubtitleSyncText.Timing(watched.Timing)),
+            SubtitleSyncStatuses.AlreadySynced => new(job.Id, SubtitleSyncTone.Info, AppText.Get("web.subtitles.syncNotice.trackAlreadyMatches", ("name", name))),
+            SubtitleSyncStatuses.NoMatch => new(job.Id, SubtitleSyncTone.Warning, AppText.Get("web.subtitles.syncNotice.trackNoMatch", ("name", name)),
+                AppText.Get("web.subtitles.syncNotice.noMatchDetail")),
+            SubtitleSyncStatuses.Failed => new(job.Id, SubtitleSyncTone.Warning, AppText.Get("web.subtitles.syncNotice.trackFailed", ("name", name)), SubtitleSyncText.Failure(job.Failure)),
             _ => null,
         };
     }
@@ -226,7 +227,7 @@ public sealed class SubtitleSyncFeedback : IDisposable
         }
         SetApplying(null);
         _applied.Add(applying.JobId);
-        Show(new SubtitleSyncNotice(applying.JobId, SubtitleSyncTone.Success, "Subtitles synced", applying.Detail));
+        Show(new SubtitleSyncNotice(applying.JobId, SubtitleSyncTone.Success, AppText.Get("web.subtitles.syncNotice.synced"), applying.Detail));
     }
 
     private void SetApplying(Applying? applying)

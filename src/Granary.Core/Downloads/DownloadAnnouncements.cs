@@ -1,10 +1,10 @@
-using System.Globalization;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Downloads;
 
 /// <summary>
 /// What is said when downloads finished or failed (docs/architecture.md, "Downloads in the shell"): <see cref="Text"/>, in the
-/// Apple app's words where it has them; <see cref="IsFailure"/>, something did not download; <see cref="PlayDownloadId"/>, the
+/// language on screen, in the Apple app's words where it has them (<c>downloads.notification.*</c>, <c>downloads.failure.*</c>); <see cref="IsFailure"/>, something did not download; <see cref="PlayDownloadId"/>, the
 /// download Play starts, none when nothing finished.
 /// </summary>
 public sealed record DownloadAnnouncement(string Text, bool IsFailure, string? PlayDownloadId);
@@ -21,37 +21,10 @@ public sealed record DownloadAnnouncement(string Text, bool IsFailure, string? P
 /// </summary>
 public sealed class DownloadAnnouncements
 {
-    /// <summary>The Apple app's message for a finished download (<c>downloads.notification.completed</c>).</summary>
-    public const string ReadyFormat = "{0} is ready to watch offline";
-
-    /// <summary>Several episodes of one series, after the Apple app's message for one.</summary>
-    public const string EpisodesReadyFormat = "{0} episodes of {1} are ready to watch offline";
-
-    /// <summary>As <see cref="EpisodesReadyFormat"/>, for a series whose title the downloads do not know.</summary>
-    public const string EpisodesReadyUntitledFormat = "{0} episodes are ready to watch offline";
-
-    /// <summary>The Apple app's message for a failed download, with its reason (<c>downloads.notification.failed</c>).</summary>
-    public const string FailedFormat = "{0} didn't download: {1}";
-
-    /// <summary>As <see cref="FailedFormat"/>, for a failure whose reason Granary does not know.</summary>
-    public const string FailedWithoutReasonFormat = "{0} didn't download";
-
-    /// <summary>Several episodes of one series that failed.</summary>
-    public const string EpisodesFailedFormat = "{0} episodes of {1} didn't download";
-
-    /// <summary>As <see cref="EpisodesFailedFormat"/>, for a series whose title the downloads do not know.</summary>
-    public const string EpisodesFailedUntitledFormat = "{0} episodes didn't download";
-
-    /// <summary>What follows the finished ones when some episodes of the same series failed: "…; 1 didn't download".</summary>
-    public const string AlsoFailedFormat = "{0}; {1} didn't download";
-
-    /// <summary>How the Apple app names an episode in these messages: "Example Series (S2E8)" (<c>downloads.notification.episodeName</c>).</summary>
-    public const string EpisodeNameFormat = "{0} (S{1}E{2})";
-
     /// <summary>The Apple app's reasons (<c>downloads.failure.storageFull</c>, said of this PC; <c>sizeMismatch</c>; <c>notFound</c>).</summary>
-    public const string NotEnoughStorage = "Not enough storage on this PC";
-    public const string ArrivedIncomplete = "The file arrived incomplete";
-    public const string NoLongerOnServer = "No longer available on the server";
+    public static string NotEnoughStorage => AppText.Get("granary.downloads.failure.storageFull");
+    public static string ArrivedIncomplete => AppText.Get("granary.downloads.failure.sizeMismatch");
+    public static string NoLongerOnServer => AppText.Get("granary.downloads.failure.notFound");
 
     // The episodes of each series (or a film alone) that ended while others of it were still to come, in the order they ended.
     private readonly List<Batch> _batches = [];
@@ -139,7 +112,7 @@ public sealed class DownloadAnnouncements
     {
         string name = item.SeriesTitle ?? item.Title;
         return item is { SeasonNumber: { } season, EpisodeNumber: { } episode }
-            ? Format(EpisodeNameFormat, name, season.ToString(CultureInfo.InvariantCulture), episode.ToString(CultureInfo.InvariantCulture))
+            ? AppText.Get("granary.downloads.notice.episodeName", ("title", name), ("season", season), ("episode", episode))
             : name;
     }
 
@@ -150,8 +123,6 @@ public sealed class DownloadAnnouncements
         { Failure: DownloadFailure.Integrity } => ArrivedIncomplete,
         _ => null,
     };
-
-    private static string Format(string format, params object?[] args) => string.Format(CultureInfo.InvariantCulture, format, args);
 
     // Episodes by season and number, the specials (season 0) and the unnumbered last: Play starts the first.
     private static (int, int, int) EpisodeOrder(DownloadItem item) =>
@@ -196,30 +167,37 @@ public sealed class DownloadAnnouncements
             {
                 (> 0, 0) => Ready(finished),
                 (0, _) => Failed(failed),
-                _ => Format(AlsoFailedFormat, Ready(finished), failed.Count.ToString(CultureInfo.InvariantCulture)),
+                _ => AppText.Get("granary.downloads.notice.alsoFailed", ("ready", Ready(finished)), ("count", failed.Count),
+                    ("count_text", AppText.Number(failed.Count))),
             };
             return new DownloadAnnouncement(text, failed.Count > 0, finished.FirstOrDefault()?.DownloadId);
         }
 
+        // The Apple app's message for one (downloads.notification.completed); Granary's for several, after it.
         private static string Ready(List<DownloadItem> finished) => finished.Count == 1
-            ? Format(ReadyFormat, NameOf(finished[0]))
-            : Several(finished, EpisodesReadyFormat, EpisodesReadyUntitledFormat);
+            ? AppText.Get("granary.downloads.notice.ready", ("title", NameOf(finished[0])))
+            : Several(finished, "granary.downloads.notice.episodesReady", "granary.downloads.notice.episodesReadyUntitled");
 
+        // The Apple app's message for one with its reason (downloads.notification.failed); Granary's without one, and for several.
         private static string Failed(List<DownloadItem> failed)
         {
             if (failed.Count > 1)
             {
-                return Several(failed, EpisodesFailedFormat, EpisodesFailedUntitledFormat);
+                return Several(failed, "granary.downloads.notice.episodesFailed", "granary.downloads.notice.episodesFailedUntitled");
             }
             var item = failed[0];
-            return ReasonOf(item) is { } reason ? Format(FailedFormat, NameOf(item), reason) : Format(FailedWithoutReasonFormat, NameOf(item));
+            return ReasonOf(item) is { } reason
+                ? AppText.Get("granary.downloads.notice.failed", ("title", NameOf(item)), ("reason", reason))
+                : AppText.Get("granary.downloads.notice.failedWithoutReason", ("title", NameOf(item)));
         }
 
-        // Several are always episodes of one series.
-        private static string Several(List<DownloadItem> items, string format, string untitledFormat)
+        // Several are always episodes of one series: by its title, or without one the downloads do not know.
+        private static string Several(List<DownloadItem> items, string key, string untitledKey)
         {
-            string count = items.Count.ToString(CultureInfo.InvariantCulture);
-            return items[0].SeriesTitle is { } series ? Format(format, count, series) : Format(untitledFormat, count);
+            int count = items.Count;
+            return items[0].SeriesTitle is { } series
+                ? AppText.Get(key, ("count", count), ("count_text", AppText.Number(count)), ("series", series))
+                : AppText.Get(untitledKey, ("count", count), ("count_text", AppText.Number(count)));
         }
     }
 }

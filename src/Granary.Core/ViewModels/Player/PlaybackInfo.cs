@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -12,7 +13,7 @@ public sealed record PlaybackInfoRow(string Label, string Value);
 /// <summary>
 /// The playback info overlay of Silo's web player (web/src/player/playback-info.ts), for mpv: what the server chose,
 /// what the player measures, and the file that plays. Values it does not know read "—". A download played from this PC
-/// has no stream of the server's: the overlay says so ("Local file") and shows the file as its manifest describes it, in
+/// has no stream of the server's: the overlay says so (the Apple app's "Offline file") and shows the file as its manifest describes it, in
 /// the rows of the web's source file section that the manifest can fill.
 /// </summary>
 public static class PlaybackInfo
@@ -36,8 +37,8 @@ public static class PlaybackInfo
         ["truehd"] = "TrueHD",
     };
 
-    /// <summary>The play method of a download played from this PC.</summary>
-    public const string LocalFile = "Local file";
+    /// <summary>The play method of a download played from this PC, as the Apple app's stats name it (<c>player.stats.offlineFile</c>).</summary>
+    public static string LocalFile => AppText.Get("granary.downloads.offlineFile");
 
     /// <param name="stream">The server's stream; null for a download and for a file played directly.</param>
     /// <param name="playerWidth">The picture's area in pixels.</param>
@@ -46,32 +47,35 @@ public static class PlaybackInfo
         PlaybackLocalFile? local = null)
     {
         ArgumentNullException.ThrowIfNull(stats);
-        List<PlaybackInfoRow> player = [new("Player", "mpv")];
+        List<PlaybackInfoRow> player = [new(AppText.Get("web.player.info.player"), "mpv")];
         if (stream is null && local is not null)
         {
-            player.Add(new("Play method", LocalFile));
-            player.Add(new("Protocol", "file"));
+            player.Add(new(AppText.Get("web.player.info.playMethod"), LocalFile));
+            player.Add(new(AppText.Get("web.player.info.protocol"), "file"));
         }
         if (stream is not null)
         {
-            player.Add(new("Play method", PlayMethod(stream.Plan)));
-            player.Add(new("Protocol", stream.Url.Scheme));
-            player.Add(new("Stream type", stream.Plan.Stream.Protocol == StreamProtocols.Hls ? "HLS" : "Progressive"));
+            player.Add(new(AppText.Get("web.player.info.playMethod"), PlayMethod(stream.Plan)));
+            player.Add(new(AppText.Get("web.player.info.protocol"), stream.Url.Scheme));
+            player.Add(new(AppText.Get("web.player.info.streamType"),
+                stream.Plan.Stream.Protocol == StreamProtocols.Hls ? "HLS" : AppText.Get("web.player.info.streamTypeProgressive")));
             if (stream.Requested is { } requested && stream.Playing is { } playing && requested.FileId != playing.FileId)
             {
-                player.Add(new("Auto-switched from", Join(" ", requested.Resolution.Trim(), CodecLabel(requested.CodecVideo, ""), VideoRangeLabel(requested))));
+                player.Add(new(AppText.Get("web.player.info.autoSwitchedFrom"), Join(" ", requested.Resolution.Trim(), CodecLabel(requested.CodecVideo, ""), VideoRangeLabel(requested))));
             }
         }
         List<PlaybackInfoSection> sections =
         [
-            new("Player", player),
-            new("Video Info",
+            new(AppText.Get("web.player.info.section.player"), player),
+            new(AppText.Get("web.player.info.section.video"),
             [
-                new("Player dimensions", Dimensions(playerWidth, playerHeight)),
-                new("Video resolution", Dimensions(stats.VideoWidth, stats.VideoHeight)),
-                new("Decoding", stats.HardwareDecoder is { Length: > 0 } hwdec and not "no" ? $"Hardware ({hwdec})" : stats.VideoWidth > 0 ? "Software" : None),
-                new("Dropped frames", FrameCount(stats.DroppedFrames)),
-                new("Decoder-dropped frames", FrameCount(stats.DecoderDroppedFrames)),
+                new(AppText.Get("web.player.info.playerDimensions"), Dimensions(playerWidth, playerHeight)),
+                new(AppText.Get("web.player.info.videoResolution"), Dimensions(stats.VideoWidth, stats.VideoHeight)),
+                new(AppText.Get("granary.player.info.decoding"), stats.HardwareDecoder is { Length: > 0 } hwdec and not "no"
+                    ? AppText.Get("granary.player.info.decodingHardware", ("decoder", hwdec))
+                    : stats.VideoWidth > 0 ? AppText.Get("granary.player.info.decodingSoftware") : None),
+                new(AppText.Get("web.player.info.droppedFrames"), FrameCount(stats.DroppedFrames)),
+                new(AppText.Get("granary.player.info.decoderDroppedFrames"), FrameCount(stats.DecoderDroppedFrames)),
             ]),
         ];
         if (stream is null)
@@ -82,10 +86,10 @@ public static class PlaybackInfo
             }
             return sections;
         }
-        sections.Add(new("Playback Stream Info",
+        sections.Add(new(AppText.Get("web.player.info.section.stream"),
         [
-            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, StreamMethods.EncodesVideo(stream.Plan))),
-            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, StreamMethods.EncodesAudio(stream.Plan))),
+            new(AppText.Get("web.player.info.videoCodec"), Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, StreamMethods.EncodesVideo(stream.Plan))),
+            new(AppText.Get("web.player.info.audioCodec"), Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, StreamMethods.EncodesAudio(stream.Plan))),
         ]));
         sections.Add(SourceFile(stream.Playing, stream.AudioOrdinal));
         return sections;
@@ -125,28 +129,21 @@ public static class PlaybackInfo
         return dolbyVision ? (type.Length > 0 ? $"DV {type}" : "DV") : type.Length > 0 ? type : hdr ? "HDR" : "";
     }
 
-    /// <summary>"4.0 GiB", as the web's file sizes in binary units.</summary>
-    public static string FileSize(long bytes) => bytes switch
-    {
-        <= 0 => None,
-        >= 1L << 30 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (double)(1L << 30):0.0} GiB"),
-        >= 1L << 20 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (double)(1L << 20):0.0} MiB"),
-        >= 1L << 10 => string.Create(CultureInfo.InvariantCulture, $"{bytes / 1024.0:0.0} KiB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes} B"),
-    };
+    /// <summary>"4.0 GiB", as the web's playback info writes a file's size (formatFileSize in binary units).</summary>
+    public static string FileSize(long bytes) => MediaText.FileSize(bytes, iecUnits: true, fallback: None);
 
-    /// <summary>"12.0 Mbps" from kilobits per second.</summary>
-    public static string Mbps(long kbps) => kbps > 0 ? string.Create(CultureInfo.InvariantCulture, $"{kbps / 1000.0:0.0} Mbps") : None;
+    /// <summary>"12.0 Mbps" from kilobits per second (formatMbpsFromKbps).</summary>
+    public static string Mbps(long kbps) => MediaText.MbpsFromKbps(kbps, None);
 
     // The rows of the stream's source file section that a download's manifest can fill.
-    private static PlaybackInfoSection SourceFile(PlaybackLocalFile file) => new("Current Source File",
+    private static PlaybackInfoSection SourceFile(PlaybackLocalFile file) => new(AppText.Get("web.player.info.section.source"),
     [
-        new("Container", file.Container?.Trim() is { Length: > 0 } container ? container : None),
-        new("Size", FileSize(file.FileSize)),
-        new("Video codec", CodecLabel(file.VideoCodec)),
-        new("Video range type", file.Hdr ? "HDR" : "SDR"),
-        new("Audio codec", CodecLabel(file.AudioCodec)),
-        new("Audio channels", file.AudioChannels > 0 ? file.AudioChannels.ToString(CultureInfo.InvariantCulture) : None),
+        new(AppText.Get("web.player.info.container"), file.Container?.Trim() is { Length: > 0 } container ? container : None),
+        new(AppText.Get("web.player.info.size"), FileSize(file.FileSize)),
+        new(AppText.Get("web.player.info.videoCodec"), CodecLabel(file.VideoCodec)),
+        new(AppText.Get("web.player.info.videoRangeType"), file.Hdr ? "HDR" : "SDR"),
+        new(AppText.Get("web.player.info.audioCodec"), CodecLabel(file.AudioCodec)),
+        new(AppText.Get("web.player.info.audioChannels"), file.AudioChannels > 0 ? file.AudioChannels.ToString(CultureInfo.InvariantCulture) : None),
     ]);
 
     private static PlaybackInfoSection SourceFile(WatchFileVersion? version, int? audioOrdinal)
@@ -155,25 +152,25 @@ public static class PlaybackInfo
         var audio = version is null ? null
             : audioOrdinal is >= 0 and var ordinal && ordinal < version.AudioTracks.Count ? version.AudioTracks[ordinal]
             : version.AudioTracks.FirstOrDefault(t => t.Default) ?? version.AudioTracks.FirstOrDefault();
-        return new("Current Source File",
+        return new(AppText.Get("web.player.info.section.source"),
         [
-            new("Container", version?.Container is { Length: > 0 } container && container.Trim().Length > 0 ? container : None),
-            new("Size", FileSize(version?.FileSize ?? 0)),
-            new("Bitrate", Mbps(version?.Bitrate ?? 0)),
-            new("Video codec", CodecLabel(video?.Codec ?? version?.CodecVideo) is var codec && codec != None ? Join(" ", codec, video?.Profile?.Trim()) : None),
-            new("Video bitrate", Mbps(video?.Bitrate ?? 0)),
-            new("Video range type", VideoRangeType(version, video)),
-            new("Color range", (video?.ColorRange?.Trim().ToLowerInvariant()) switch
+            new(AppText.Get("web.player.info.container"), version?.Container is { Length: > 0 } container && container.Trim().Length > 0 ? container : None),
+            new(AppText.Get("web.player.info.size"), FileSize(version?.FileSize ?? 0)),
+            new(AppText.Get("web.player.info.bitrate"), Mbps(version?.Bitrate ?? 0)),
+            new(AppText.Get("web.player.info.videoCodec"), CodecLabel(video?.Codec ?? version?.CodecVideo) is var codec && codec != None ? Join(" ", codec, video?.Profile?.Trim()) : None),
+            new(AppText.Get("web.player.info.videoBitrate"), Mbps(video?.Bitrate ?? 0)),
+            new(AppText.Get("web.player.info.videoRangeType"), VideoRangeType(version, video)),
+            new(AppText.Get("web.player.info.colorRange"), (video?.ColorRange?.Trim().ToLowerInvariant()) switch
             {
-                "tv" => "Limited (tv)",
-                "pc" => "Full (pc)",
-                "unknown" => "Unknown",
+                "tv" => AppText.Get("web.player.info.colorRangeLimited"),
+                "pc" => AppText.Get("web.player.info.colorRangeFull"),
+                "unknown" => AppText.Get("web.player.info.colorRangeUnknown"),
                 _ => None,
             }),
-            new("Audio codec", audio is null ? CodecLabel(version?.CodecAudio) : AudioCodec(version!, audio)),
-            new("Audio bitrate", audio?.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{audio.Bitrate:N0} kbps") : None),
-            new("Audio channels", audio?.Channels > 0 ? audio.Channels.ToString(CultureInfo.InvariantCulture) : None),
-            new("Audio sample rate", audio?.SampleRate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{audio.SampleRate:N0} Hz") : None),
+            new(AppText.Get("web.player.info.audioCodec"), audio is null ? CodecLabel(version?.CodecAudio) : AudioCodec(version!, audio)),
+            new(AppText.Get("web.player.info.audioBitrate"), MediaText.Bitrate(audio?.Bitrate ?? 0, None)),
+            new(AppText.Get("web.player.info.audioChannels"), audio?.Channels > 0 ? audio.Channels.ToString(CultureInfo.InvariantCulture) : None),
+            new(AppText.Get("web.player.info.audioSampleRate"), MediaText.SampleRate(audio?.SampleRate ?? 0, None)),
         ]);
     }
 
@@ -188,12 +185,12 @@ public static class PlaybackInfo
         }
         if (plan.Delivery == PlaybackDeliveries.OriginalHttp)
         {
-            return $"{label} (direct)";
+            return AppText.Get("web.player.info.codec.direct", ("codec", label));
         }
         return encoded switch
         {
-            true => $"{label} (transcoded)",
-            false => $"{label} (copy)",
+            true => AppText.Get("web.player.info.codec.transcoded", ("codec", label)),
+            false => AppText.Get("web.player.info.codec.copy", ("codec", label)),
             null => label,
         };
     }

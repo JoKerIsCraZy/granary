@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
@@ -28,8 +29,9 @@ public sealed partial class WatchPartyRoomViewModel
 
     /// <summary>The rail's footer: the host's two minutes, or who hosts and who controls playback.</summary>
     public string RailFooter => Room is null ? ""
-        : IsHost ? "If you drop, the room waits 2 minutes for you before it ends."
-        : $"Host: {Room.Host?.DisplayName ?? "unknown"} · {(GuestsCanPause ? "guests can pause" : "host controls playback")}";
+        : IsHost ? AppText.Get("web.watchTogether.room.hostFooter")
+        : AppText.Get("web.watchTogether.room.guestFooter", ("host", Room.Host?.DisplayName ?? AppText.Get("web.watchTogether.room.unknownHost")),
+            ("policy", Policy(GuestsCanPause ? WatchPartyPolicies.GuestPlayPause : WatchPartyPolicies.HostOnly)));
 
     private void ShowMembers()
     {
@@ -43,11 +45,11 @@ public sealed partial class WatchPartyRoomViewModel
             string state = playing
                 ? room!.PlaybackState switch
                 {
-                    WatchPartyPlaybackStates.Playing => "Watching",
-                    WatchPartyPlaybackStates.Waiting => "Buffering",
-                    _ => "Paused",
+                    WatchPartyPlaybackStates.Playing => AppText.Get("web.watchTogether.rail.stateWatching"),
+                    WatchPartyPlaybackStates.Waiting => AppText.Get("web.watchTogether.rail.stateBuffering"),
+                    _ => AppText.Get("web.watchTogether.rail.statePaused"),
                 }
-                : member.LobbyReady ? "Ready" : "Connected";
+                : member.LobbyReady ? AppText.Get("web.watchTogether.rail.stateReady") : AppText.Get("web.watchTogether.rail.stateConnected");
             Members.Add(new WatchPartyMemberRow(member.DisplayName, member.IsHost, member.IsSelf, state, !playing && member.LobbyReady, waiting,
                 tints.GetValueOrDefault(member.Key)));
         }
@@ -88,39 +90,57 @@ public sealed partial class WatchPartyRoomViewModel
         }
     }
 
-    /// <summary>"now", "5m", "2h".</summary>
+    /// <summary>"now", "5m", "2h", in the web's words (<c>RoomRail.tsx</c>).</summary>
     public static string Ago(DateTimeOffset at, DateTimeOffset now)
     {
         double seconds = Math.Max(0, Math.Round((now - at).TotalSeconds));
         if (seconds < 45)
         {
-            return "now";
+            return AppText.Get("web.watchTogether.activity.timeNow");
         }
-        double minutes = Math.Round(seconds / 60);
-        return minutes < 60 ? $"{minutes:0}m" : $"{Math.Round(minutes / 60):0}h";
+        int minutes = (int)Math.Round(seconds / 60);
+        return minutes < 60
+            ? AppText.Get("web.watchTogether.activity.timeMinutes", ("minutes", minutes))
+            : AppText.Get("web.watchTogether.activity.timeHours", ("hours", (int)Math.Round(minutes / 60.0)));
     }
 
+    // Each kind is a whole sentence of the web's, its member and title put in where the language wants them.
     private string Line(WatchPartyActivityEntry entry)
     {
         string who = entry.Who ?? "";
         return entry.Kind switch
         {
-            WatchPartyActivityKinds.Joined => $"{who} joined",
-            WatchPartyActivityKinds.Left => $"{who} left",
-            WatchPartyActivityKinds.Ready => $"{who} is ready",
-            WatchPartyActivityKinds.Unready => $"{who} is no longer ready",
-            WatchPartyActivityKinds.Staged => $"{who} queued {Title(entry.ContentId)}",
-            WatchPartyActivityKinds.Unstaged => $"{who} cleared the queue",
-            WatchPartyActivityKinds.Started => $"{who} started {Title(entry.ContentId)}",
-            WatchPartyActivityKinds.Stopped => $"{who} stopped {Title(entry.ContentId)}",
-            WatchPartyActivityKinds.Mode => $"{who} switched the room to {(entry.Detail == WatchPartySelectionModes.Vote ? "everyone votes" : "host picks")}",
-            WatchPartyActivityKinds.Policy => $"{who} set {(entry.Detail == WatchPartyPolicies.GuestPlayPause ? "guests can pause" : "host controls playback")}",
-            WatchPartyActivityKinds.Playback => $"Playback {(entry.Detail == WatchPartyPlaybackStates.Playing ? "resumed" : "paused")}",
-            WatchPartyActivityKinds.Suggested => $"{who} suggested {entry.Detail}",
-            WatchPartyActivityKinds.Unsuggested => $"{who} removed {entry.Detail}",
+            WatchPartyActivityKinds.Joined => AppText.Get("web.watchTogether.activity.joined", ("who", who)),
+            WatchPartyActivityKinds.Left => AppText.Get("web.watchTogether.activity.left", ("who", who)),
+            WatchPartyActivityKinds.Ready => AppText.Get("web.watchTogether.activity.ready", ("who", who)),
+            WatchPartyActivityKinds.Unready => AppText.Get("web.watchTogether.activity.unready", ("who", who)),
+            WatchPartyActivityKinds.Staged => AppText.Get("web.watchTogether.activity.staged", ("who", who), ("title", Title(entry.ContentId))),
+            WatchPartyActivityKinds.Unstaged => AppText.Get("web.watchTogether.activity.unstaged", ("who", who)),
+            WatchPartyActivityKinds.Started => AppText.Get("web.watchTogether.activity.started", ("who", who), ("title", Title(entry.ContentId))),
+            WatchPartyActivityKinds.Stopped => AppText.Get("web.watchTogether.activity.stopped", ("who", who), ("title", Title(entry.ContentId))),
+            WatchPartyActivityKinds.Mode => AppText.Get("web.watchTogether.activity.mode", ("who", who), ("mode", Mode(entry.Detail))),
+            WatchPartyActivityKinds.Policy => AppText.Get("web.watchTogether.activity.policy", ("who", who), ("policy", Policy(entry.Detail))),
+            WatchPartyActivityKinds.Playback => entry.Detail == WatchPartyPlaybackStates.Playing
+                ? AppText.Get("web.watchTogether.activity.playbackResumed")
+                : AppText.Get("web.watchTogether.activity.playbackPaused"),
+            // A suggestion whose member left is named as the web names it.
+            WatchPartyActivityKinds.Suggested => AppText.Get("web.watchTogether.activity.suggested", ("who", Suggester(entry)), ("title", entry.Detail)),
+            WatchPartyActivityKinds.Unsuggested => AppText.Get("web.watchTogether.activity.unsuggested", ("who", Suggester(entry)), ("title", entry.Detail)),
             _ => "",
         };
     }
+
+    private static string Suggester(WatchPartyActivityEntry entry) => entry.Who ?? AppText.Get("web.watchTogether.common.someone");
+
+    // "everyone votes" or "host picks", as the activity names a room's mode.
+    private static string Mode(string? mode) => mode == WatchPartySelectionModes.Vote
+        ? AppText.Get("web.watchTogether.activity.modeVote")
+        : AppText.Get("web.watchTogether.activity.modeHostPick");
+
+    // "guests can pause" or "host controls playback", as the activity and the footer name a policy.
+    private static string Policy(string? policy) => policy == WatchPartyPolicies.GuestPlayPause
+        ? AppText.Get("web.watchTogether.common.policyGuestPlayPause")
+        : AppText.Get("web.watchTogether.common.policyHostOnly");
 
     // A title by its id: known, or "…" until it is read (the line fills in then).
     private string Title(string? contentId)
@@ -137,7 +157,7 @@ public sealed partial class WatchPartyRoomViewModel
         {
             _ = ReadTitleAsync(contentId);
         }
-        return "…";
+        return AppText.Get("web.watchTogether.activity.titleLoading");
     }
 
     private async Task ReadTitleAsync(string contentId)
@@ -150,7 +170,8 @@ public sealed partial class WatchPartyRoomViewModel
         {
             var item = await _catalog.GetItemAsync(server.BaseUri, contentId);
             _titles[contentId] = item.Type == CatalogItemTypes.Episode && item.SeriesTitle is { Length: > 0 } series
-                ? $"{series} · S{item.SeasonNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "?"} E{item.EpisodeNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "?"}"
+                ? AppText.Get("web.watchTogether.activity.episodeTitle", ("series", series), ("season", WatchPartyText.Code(item.SeasonNumber)),
+                    ("episode", WatchPartyText.Code(item.EpisodeNumber)))
                 : item.Title;
             foreach (var row in ActivityRows)
             {

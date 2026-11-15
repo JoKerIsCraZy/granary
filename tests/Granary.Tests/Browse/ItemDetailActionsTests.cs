@@ -42,7 +42,7 @@ public sealed class ItemDetailActionsTests
         Assert.False(detail.IsWatched);
         Assert.Equal("Mark Watched", detail.WatchedLabel);
         Assert.Equal("Resume", detail.PlayLabel);
-        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        Assert.Equal("Resume at 21:52", detail.PlayButtonText);
         Assert.Equal("Could not mark this as watched (error 500). Try again.", detail.ActionError);
         Assert.True(detail.HasActionError);
         // Non-retryable: one attempt only.

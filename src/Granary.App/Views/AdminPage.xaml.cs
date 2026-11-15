@@ -1,6 +1,7 @@
 using Granary.App.Controls;
 using Granary.App.Views.Admin;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,11 @@ public sealed partial class AdminPage : Page, IDockSpace, IPadSections
 
     /// <summary>The build and the live count at the sidebar's foot and beside Activity.</summary>
     public AdminSidebarViewModel Sidebar { get; }
+
+    // The web's section and build headings, which its CSS shows in capitals: by the rules of the language on screen.
+    public string MonitorHeading => AppText.Upper(AppText.Get("web.admin.shell.nav.section.monitor"));
+
+    public string BuildHeading => AppText.Upper(AppText.Get("web.admin.shell.sidebar.build.heading"));
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {

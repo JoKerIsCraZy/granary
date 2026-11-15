@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Admin;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Admin;
@@ -32,7 +33,7 @@ public sealed partial class AdminSidebarViewModel : ObservableObject
 
     /// <summary>"1715 · 13ad7a74", "dev build" for a server without build info, "loading..." or "load failed".</summary>
     [ObservableProperty]
-    public partial string BuildText { get; private set; } = "loading...";
+    public partial string BuildText { get; private set; } = Loading;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasLive), nameof(LiveText))]
@@ -44,7 +45,9 @@ public sealed partial class AdminSidebarViewModel : ObservableObject
     public string LastPage { get; set; } = AdminPages.Dashboard;
 
     /// <summary>"2 live" beside Activity while anything plays.</summary>
-    public string LiveText => $"{LiveCount} live";
+    public string LiveText => AppText.Get("web.admin.shell.sidebar.liveSessions", ("count", LiveCount), ("count_text", LiveCount));
+
+    private static string Loading => AppText.Get("web.admin.shell.sidebar.build.loading");
 
     /// <summary>Reads the build once for the server and profile, and the live count when it is stale.</summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -84,7 +87,7 @@ public sealed partial class AdminSidebarViewModel : ObservableObject
             _shownFor = key;
             _hasBuild = false;
             _countedAt = DateTimeOffset.MinValue;
-            BuildText = "loading...";
+            BuildText = Loading;
             LiveCount = 0;
         }
     }
@@ -92,7 +95,9 @@ public sealed partial class AdminSidebarViewModel : ObservableObject
     private void ShowBuild(AdminBuildInfo build)
     {
         _hasBuild = true;
-        BuildText = !build.Available ? "dev build" : build.BuildNumber > 0 ? $"{build.BuildNumber} · {build.Display}" : build.Display;
+        BuildText = !build.Available ? AppText.Get("web.admin.shell.sidebar.build.dev")
+            : build.BuildNumber > 0 ? $"{build.BuildNumber} · {build.Display}"
+            : build.Display;
     }
 
     private async Task ReadBuildAsync(Uri server, object? key, CancellationToken cancellationToken)
@@ -110,7 +115,7 @@ public sealed partial class AdminSidebarViewModel : ObservableObject
             _logger.LogWarning(ex, "Could not read the server's build for the admin sidebar");
             if (Equals(_shownFor, key))
             {
-                BuildText = "load failed";
+                BuildText = AppText.Get("web.admin.shell.sidebar.build.loadFailed");
             }
         }
     }

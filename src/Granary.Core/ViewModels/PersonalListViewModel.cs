@@ -5,6 +5,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -12,16 +13,26 @@ namespace Granary.Core.ViewModels;
 
 /// <summary>A media scope the personal lists narrow to, as the web's media menu (<c>CatalogFilterBar</c>).</summary>
 /// <param name="Type">The browse <c>type</c>; null for every kind.</param>
-public sealed record ListMediaScope(string? Type, string Label)
+public sealed record ListMediaScope(string? Type)
 {
     public static IReadOnlyList<ListMediaScope> All { get; } =
     [
-        new(null, "All Media"),
-        new(MediaScopes.Video, "Movies & Series"),
-        new(MediaScopes.Movie, "Movies"),
-        new(MediaScopes.Series, "Series"),
-        new(MediaScopes.Episode, "Episodes"),
+        new(Type: null),
+        new(MediaScopes.Video),
+        new(MediaScopes.Movie),
+        new(MediaScopes.Series),
+        new(MediaScopes.Episode),
     ];
+
+    /// <summary>Its name in the media menu, in the web's words, read when shown.</summary>
+    public string Label => Type switch
+    {
+        MediaScopes.Video => AppText.Get("web.catalog.mediaType.moviesAndSeries"),
+        MediaScopes.Movie => AppText.Get("web.catalog.mediaType.movies"),
+        MediaScopes.Series => AppText.Get("web.catalog.mediaType.series"),
+        MediaScopes.Episode => AppText.Get("web.catalog.mediaType.episodes"),
+        _ => AppText.Get("web.catalog.mediaType.allMedia"),
+    };
 }
 
 /// <summary>
@@ -36,16 +47,23 @@ public sealed partial class PersonalListViewModel : ObservableObject
 {
     public const int PageSize = 60;
 
-    private static readonly Dictionary<string, (string Title, string Description, string OrderLabel)> Lists = new(StringComparer.Ordinal)
+    // The lists in the web's catalog page's words (pages/Catalog.tsx, components/catalog/CatalogFiltersPanel.tsx), read when
+    // shown; null for another source.
+    private static (string Title, string Description, string OrderLabel)? ListOf(string source) => source switch
     {
-        [CatalogSources.Favorites] = ("Favorites", "Movies and shows you've marked as favorites.", "List Order"),
-        [CatalogSources.Watchlist] = ("Watchlist", "Things you've saved to watch later.", "List Order"),
-        [CatalogSources.History] = ("History", "Everything you've recently watched.", "Watch History"),
+        CatalogSources.Favorites => (AppText.Get("web.catalog.page.favorites"), AppText.Get("web.catalog.page.favoritesSubtitle"),
+            AppText.Get("web.catalog.sort.listOrder")),
+        CatalogSources.Watchlist => (AppText.Get("web.catalog.page.watchlist"), AppText.Get("web.catalog.page.watchlistSubtitle"),
+            AppText.Get("web.catalog.sort.listOrder")),
+        CatalogSources.History => (AppText.Get("web.catalog.page.history"), AppText.Get("web.catalog.page.historySubtitle"),
+            AppText.Get("web.catalog.sort.watchHistory")),
+        _ => null,
     };
 
     // The web's catalog page says the same over every other source.
-    private const string CollectionDescription = "Refine the archive by type, era, rating, or genre.";
-    private const string CollectionOrder = "Collection Order";
+    private static string CollectionDescription => AppText.Get("web.catalog.page.catalogSubtitle");
+
+    private static string CollectionOrder => AppText.Get("web.catalog.sort.collectionOrder");
 
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
@@ -149,13 +167,13 @@ public sealed partial class PersonalListViewModel : ObservableObject
 
     /// <summary>"List Order", "Watch History" for History, or "Collection Order": the list's own order.</summary>
     public string SourceOrderLabel => _collection is not null ? CollectionOrder
-        : Lists.TryGetValue(Source, out var list) ? list.OrderLabel : "List Order";
+        : ListOf(Source)?.OrderLabel ?? AppText.Get("web.catalog.sort.listOrder");
 
     public string ScopeLabel => Scope.Label;
 
     public string SortLabel => Sort?.Label ?? SourceOrderLabel;
 
-    public string OrderLabel => IsDescending ? "Descending" : "Ascending";
+    public string OrderLabel => IsDescending ? AppText.Get("web.catalog.sort.descending") : AppText.Get("web.catalog.sort.ascending");
 
     /// <summary>The list's own order has no direction to pick.</summary>
     public bool IsOrderShown => Sort is not null;
@@ -166,7 +184,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
     /// </summary>
     public Task ActivateAsync(string? source)
     {
-        if (source is null || !Lists.TryGetValue(source, out var list))
+        if (source is null || ListOf(source) is not { } list)
         {
             return Task.CompletedTask;
         }

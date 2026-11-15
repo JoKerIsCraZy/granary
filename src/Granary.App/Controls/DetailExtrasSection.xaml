@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:detail="using:Granary.Core.ViewModels.Detail">
+    xmlns:detail="using:Granary.Core.ViewModels.Detail"
+    xmlns:t="using:Granary.Core.Texts">
 
     <UserControl.Resources>
         <!-- The card's name says what it plays; its tooltip the whole title, which the card may cut short. -->
@@ -22,7 +23,7 @@
     </UserControl.Resources>
 
     <StackPanel Spacing="14">
-        <TextBlock Text="Extras" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+        <TextBlock Text="{x:Bind t:AppText.Get('web.detail.extras.heading')}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
         <ItemsRepeater ItemsSource="{x:Bind Groups, Mode=OneWay}">
             <ItemsRepeater.Layout>
                 <StackLayout Spacing="24" />

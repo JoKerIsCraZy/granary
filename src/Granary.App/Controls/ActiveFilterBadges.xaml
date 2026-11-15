@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:vm="using:Granary.Core.ViewModels">
+    xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts">
 
     <UserControl.Resources>
         <Style x:Key="BadgeRemoveButtonStyle" TargetType="Button">
@@ -26,7 +27,7 @@
     </UserControl.Resources>
 
     <ItemsRepeater x:Name="Repeater" ItemsSource="{x:Bind Filters.Badges, Mode=OneWay}" XYFocusKeyboardNavigation="Enabled"
-                   AutomationProperties.Name="Active filters">
+                   AutomationProperties.Name="{x:Bind t:AppText.Get('granary.libraryFilters.active')}">
         <ItemsRepeater.Layout>
             <controls:WrapLayout HorizontalSpacing="8" VerticalSpacing="8" />
         </ItemsRepeater.Layout>

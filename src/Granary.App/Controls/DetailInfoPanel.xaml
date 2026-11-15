@@ -8,10 +8,10 @@
     x:Class="Granary.App.Controls.DetailInfoPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts"
     xmlns:detail="using:Granary.Core.ViewModels.Detail">
 
-    <ScrollViewer Padding="0,0,16,0" IsTabStop="True" TabNavigation="Once" AutomationProperties.Name="Details">
+    <ScrollViewer Padding="0,0,16,0" IsTabStop="True" TabNavigation="Once" AutomationProperties.Name="{x:Bind t:AppText.Get('granary.detail.info.details')}">
         <ItemsRepeater ItemsSource="{x:Bind Sections}">
             <ItemsRepeater.Layout>
                 <StackLayout Spacing="28" />
@@ -34,7 +34,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{x:Bind Label}" FontSize="17" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                                         <TextBlock Grid.Column="1" Text="{x:Bind Value}" FontSize="17" TextWrapping="Wrap"
-                                                   IsTextSelectionEnabled="{x:Bind controls:DetailInfoPanel.Selectable(Label)}" />
+                                                   IsTextSelectionEnabled="{x:Bind IsSelectable}" />
                                     </Grid>
                                 </DataTemplate>
                             </ItemsRepeater.ItemTemplate>

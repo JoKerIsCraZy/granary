@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Downloads;
@@ -344,7 +345,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         await PickAsync(page, "dl_1", "Delete download");
 
-        Assert.Equal(("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
+        Assert.Equal(("Delete this download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
             Assert.Single(_confirmation.Asked));
         Assert.NotNull(_h.Find("dl_1"));
         Assert.Single(Cards(page));
@@ -473,7 +474,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         page.OpenCardCommand.Execute(card);
 
         Assert.Equal([(AppRoute.DownloadedSeries, (object?)"sr_1")], _navigation.Navigations);
-        Assert.Equal(["More Info", "Delete All Episodes"], Menu(page, "sr_1"));
+        Assert.Equal(["More Info", "Delete all episodes"], Menu(page, "sr_1"));
     }
 
     [Fact]
@@ -504,14 +505,14 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
         _confirmation.Answer = false;
 
-        await PickAsync(page, "sr_1", "Delete All Episodes");
+        await PickAsync(page, "sr_1", "Delete all episodes");
 
         Assert.Equal(("Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted from your Silo server.",
-            "Delete 2 Downloads"), Assert.Single(_confirmation.Asked));
+            "Delete 2 downloads"), Assert.Single(_confirmation.Asked));
         Assert.Equal(2, page.Series.Count);
 
         _confirmation.Answer = true;
-        await PickAsync(page, "sr_1", "Delete All Episodes");
+        await PickAsync(page, "sr_1", "Delete all episodes");
 
         Assert.Null(_h.Find("dl_11"));
         Assert.Null(_h.Find("dl_12"));
@@ -534,7 +535,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
             }
         };
 
-        await PickAsync(page, "sr_1", "Delete All Episodes");
+        await PickAsync(page, "sr_1", "Delete all episodes");
 
         Assert.Equal("8", _h.Session.ProfileId);
         Assert.Null(_h.Find("dl_11"));
@@ -551,7 +552,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
         SwitchProfileWhileAsking();
 
-        await PickAsync(page, "sr_1", "Delete All Episodes");
+        await PickAsync(page, "sr_1", "Delete all episodes");
 
         Assert.Null(_h.Find("dl_11"));
         Assert.Null(_h.Find("dl_12"));
@@ -594,9 +595,9 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
         _confirmation.Answer = false;
 
-        await PickAsync(page, "sr_1", "Delete All Episodes");
+        await PickAsync(page, "sr_1", "Delete all episodes");
 
-        Assert.Equal("Delete Download", Assert.Single(_confirmation.Asked).Action);
+        Assert.Equal("Delete download", Assert.Single(_confirmation.Asked).Action);
         Assert.Equal("1 episode", Card(page, "sr_1").Caption);
     }
 
@@ -680,6 +681,24 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         Assert.Equal("12.0 GB used · 200.0 GB free", page.SpaceText);
         Assert.Equal([_h.Preferences.Folder], _h.Disk.Asked);
+    }
+
+    [Fact]
+    public async Task InGerman_ThePageSpeaksTheAppsWords()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        await AddFilmAsync("dl_1", "Example Movie", size: 2 * GB, change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five", change: r => r with { IsWatched = true, ExpectedBytes = GB });
+        _h.Disk.Set(200 * GB);
+        var page = await AttachedAsync();
+        _confirmation.Answer = false;
+
+        await page.ReclaimCommand.ExecuteAsync(null);
+
+        Assert.Equal("3,0 GB belegt · 200,0 GB frei", page.SpaceText);
+        Assert.Equal(("Gesehene freigeben", "2 gesehene Downloads löschen und 3,0 GB freigeben?", "Freigeben"), Assert.Single(_confirmation.Asked));
+        Assert.Equal(("Filme", "Serien", "Noch keine Downloads"), (DownloadsViewModel.FilmsTitle, DownloadsViewModel.SeriesTitle, DownloadsViewModel.EmptyTitle));
+        Assert.Equal(["Abspielen", "Von Anfang an abspielen", "Mehr Infos", "Download löschen"], Menu(page, "dl_1"));
     }
 
     [Fact]
@@ -837,7 +856,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await ui.RunAsync(() => page.ReclaimCommand.ExecuteAsync(null));
 
         // The Android app's words, whole: its dialog's title, its question and its yes.
-        Assert.Equal(("Reclaim Watched", "Delete 2 watched downloads and free 3.0 GB?", "Reclaim"), Assert.Single(_confirmation.Asked));
+        Assert.Equal(("Reclaim watched", "Delete 2 watched downloads and free 3.0 GB?", "Reclaim"), Assert.Single(_confirmation.Asked));
         Assert.Equal(3, ui.Read(() => Cards(page).Count()));
 
         _confirmation.Answer = true;

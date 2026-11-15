@@ -228,7 +228,7 @@ public sealed class WatchPartySessionSuggestionsTests : IAsyncDisposable
         await hub.RefreshRecentAsync();
 
         Assert.Equal([("Heat (1995)", "Live", "Your room", true), ("Watch Party", "Ended", "Joined", false)],
-            hub.Recent.Select(r => (r.Title, r.Status, r.Role, r.CanRejoin)));
+            hub.Recent.Select(r => (r.Title, r.StatusText, r.Role, r.CanRejoin)));
         await hub.RejoinRecentCommand.ExecuteAsync(hub.Recent[0]);
 
         Assert.Equal(Granary.Core.Abstractions.AppRoute.WatchPartyRoom, navigation.Navigations[^1].Route);

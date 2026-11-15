@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Profiles;
 
@@ -46,6 +47,32 @@ public sealed class ForYouViewModelTests
         Assert.Equal(["Because you like crime", "Popular on This Server", "Coming Up"], page.Rows.Select(r => r.Title));
         Assert.Equal(["Heat", "Alien"], page.Rows[0].Cards.Select(c => c.Title));
         Assert.StartsWith(LibraryHarness.ImageQuery, _harness.Queries(DiscoverPath)[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RowsSiloTitled_ShowTheirTitlesInTheLanguageOnScreen_AndExploreAllTakesThem()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _harness.Answer(DiscoverPath, RecommendationPayloads.DiscoverKeyed);
+        var page = await LoadedAsync();
+
+        string topGenre = AppText.Get("home.section.topGenre", "genre", "Krimi");
+        string popular = AppText.Get("home.section.popularOnServer");
+        Assert.NotEqual("Popular on This Server", popular);
+        Assert.Equal([topGenre, popular], page.Rows.Select(r => r.Title));
+        Assert.Equal(new RecommendationSectionRouteParameter("genre", "Crime", topGenre), page.Rows[0].Section);
+    }
+
+    [Fact]
+    public async Task ASectionSiloTitled_ShowsItsTitleInTheLanguageOnScreen()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _harness.Answer("api/v2/recommendations/section/popular", RecommendationPayloads.KeyedSection);
+        var section = CreateSection();
+
+        await section.ShowAsync(new RecommendationSectionRouteParameter("popular", null, "Popular"));
+
+        Assert.Equal(AppText.Get("home.section.popularOnServer"), section.Title);
     }
 
     [Fact]

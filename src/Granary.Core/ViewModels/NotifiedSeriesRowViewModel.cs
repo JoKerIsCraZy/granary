@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -45,11 +46,13 @@ public sealed partial class NotifiedSeriesRowViewModel : ObservableObject
     public bool CanMute { get; }
 
     /// <summary>"Mute" or "Unmute".</summary>
-    public string MuteLabel => Muted ? "Unmute" : "Mute";
+    public string MuteLabel => Muted ? AppText.Get("web.notifications.series.unmute") : AppText.Get("web.notifications.series.mute");
 
-    public string MuteTip => Muted ? "Notify me about new episodes again" : "Stop notifying me about new episodes";
+    public string MuteTip => Muted ? AppText.Get("web.notifications.series.unmuteHint") : AppText.Get("web.notifications.series.muteHint");
 
-    public string MuteName => $"{MuteLabel} {Title}";
+    public string MuteName => Muted
+        ? AppText.Get("web.notifications.series.unmuteSeries", ("title", Title))
+        : AppText.Get("web.notifications.series.muteSeries", ("title", Title));
 
     /// <summary>Takes this row.</summary>
     public ICommand OpenCommand { get; }
@@ -64,5 +67,5 @@ public sealed partial class NotifiedSeriesRowViewModel : ObservableObject
 
     public bool CanPressMute => !IsPending;
 
-    public string AccessibleName => $"{Title}, {Line}";
+    public string AccessibleName => AppText.Get("granary.notifications.seriesName", ("title", Title), ("line", Line));
 }

@@ -1,3 +1,5 @@
+using Granary.Core.Texts;
+
 namespace Granary.Core.ViewModels.Detail;
 
 /// <summary>
@@ -20,8 +22,11 @@ public sealed record DetailAudioOption(int? Ordinal, string Title, string Descri
 {
     public bool IsAuto => Ordinal is null;
 
-    public string AccessibleName => string.Join(", ", new[] { Title, $"{Codec} {Channels}".Trim(), IsDefault ? "default" : "", Description }
-        .Where(part => part.Length > 0));
+    /// <summary>For screen readers: the row's parts in order, its chips in the web's words.</summary>
+    public string AccessibleName => string.Join(", ", new[]
+    {
+        Title, $"{Codec} {Channels}".Trim(), IsDefault ? AppText.Get("web.detail.mediaInfo.defaultBadge") : "", Description,
+    }.Where(part => part.Length > 0));
 }
 
 public enum DetailSubtitleKind
@@ -51,9 +56,11 @@ public sealed record DetailSubtitleOption(
 {
     public bool HasSection => Section.Length > 0;
 
+    /// <summary>For screen readers: the row's parts in order, its chips in the words of the web's Media Info.</summary>
     public string AccessibleName => string.Join(", ", new[]
     {
-        Title, Format, IsForced ? "forced" : "", IsHearingImpaired ? "for the hearing impaired" : "", IsDefault ? "default" : "", Description,
-        Section.Length > 0 ? Section : "",
+        Title, Format, IsForced ? AppText.Get("web.detail.mediaInfo.forced") : "",
+        IsHearingImpaired ? AppText.Get("web.detail.mediaInfo.row.hearingImpaired") : "",
+        IsDefault ? AppText.Get("web.detail.mediaInfo.defaultBadge") : "", Description, Section.Length > 0 ? Section : "",
     }.Where(part => part.Length > 0));
 }

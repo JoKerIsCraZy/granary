@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -19,11 +20,13 @@ namespace Granary.Core.ViewModels;
 /// </summary>
 public sealed partial class NotificationsViewModel : ObservableObject
 {
-    internal const string MarkAllFailedText = "Could not mark the displayed notifications read. Reload the inbox before trying again.";
+    // The web's line, whose "Reload inbox" is a link there; here it is said in words.
+    internal static string MarkAllFailedText => AppText.Get("web.notifications.inbox.markAllFailed");
 
-    private static readonly SettingChoice All = new("all", "All");
+    // The filters, worded once in the language on screen: the pills find the pick by these instances.
+    private readonly SettingChoice _all;
 
-    private static readonly SettingChoice SeriesChoice = new("series", "Series");
+    private readonly SettingChoice _seriesChoice;
 
     private readonly ISessionManager _session;
     private readonly NotificationsApi _notifications;
@@ -37,7 +40,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     private bool _following;
     private (string? ServerId, string? ProfileId)? _capabilitiesFor;
     private bool _seriesAvailable;
-    private string _inboxFilter = All.Value;
+    private string _inboxFilter = "all";
     private CancellationTokenSource _run = new();
 
     public NotificationsViewModel(ISessionManager session, NotificationsApi notifications, NotificationBadge badge, INavigationService navigation,
@@ -49,6 +52,9 @@ public sealed partial class NotificationsViewModel : ObservableObject
         _navigation = navigation;
         _time = time;
         _logger = logger;
+        _all = new("all", AppText.Get("web.notifications.inbox.filterAll"));
+        _seriesChoice = new("series", AppText.Get("web.notifications.inbox.filterSeries"));
+        SelectedFilter = _all;
         Preferences = new NotificationPreferencesViewModel(session, notifications, logger);
         Series = new NotifiedSeriesViewModel(session, notifications, navigation, time, logger);
         Preferences.Saved += (_, _) => _ = Series.RefreshAsync();
@@ -62,7 +68,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     public NotifiedSeriesViewModel Series { get; }
 
     /// <summary>Series is picked: the series that notify show instead of the inbox.</summary>
-    public bool IsSeriesView => SelectedFilter.Value == SeriesChoice.Value;
+    public bool IsSeriesView => SelectedFilter.Value == _seriesChoice.Value;
 
     public bool IsInboxView => !IsSeriesView;
 
@@ -77,7 +83,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     public partial IReadOnlyList<SettingChoice> Filters { get; private set; }
 
     [ObservableProperty]
-    public partial SettingChoice SelectedFilter { get; set; } = All;
+    public partial SettingChoice SelectedFilter { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsEmpty), nameof(HasError), nameof(IsReady))]
@@ -105,7 +111,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     public bool IsUnreadOnly => _inboxFilter == "unread";
 
     /// <summary>"No unread notifications" or "No notifications yet".</summary>
-    public string EmptyTitle => IsUnreadOnly ? "No unread notifications" : "No notifications yet";
+    public string EmptyTitle => IsUnreadOnly ? AppText.Get("web.notifications.inbox.emptyUnread") : AppText.Get("web.notifications.inbox.emptyAll");
 
     public bool HasUnread => _badge.HasUnread;
 
@@ -235,7 +241,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
             if (!token.IsCancellationRequested)
             {
                 Log(ex, "Could not load more notifications");
-                Notice = "Couldn't load more notifications. Try again.";
+                Notice = AppText.Get("granary.notifications.loadMoreFailed");
             }
         }
         finally
@@ -302,7 +308,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     {
         if (_seriesAvailable)
         {
-            SelectedFilter = Filters.First(f => f.Value == SeriesChoice.Value);
+            SelectedFilter = Filters.First(f => f.Value == _seriesChoice.Value);
         }
     }
 
@@ -310,7 +316,8 @@ public sealed partial class NotificationsViewModel : ObservableObject
     // inbox as it was, and coming back to the same filter shows it so.
     partial void OnSelectedFilterChanged(SettingChoice oldValue, SettingChoice newValue)
     {
-        if (oldValue.Value == newValue.Value)
+        // The first pick, made when the page is made, changes nothing.
+        if (oldValue is null || oldValue.Value == newValue.Value)
         {
             return;
         }
@@ -401,7 +408,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
             if (!token.IsCancellationRequested)
             {
                 // After a reload the rows are as the server has them; only the count needs reading again.
-                Notice = "Failed to mark notification read";
+                Notice = AppText.Get("web.notifications.queries.markReadFailed");
             }
             try
             {
@@ -451,10 +458,12 @@ public sealed partial class NotificationsViewModel : ObservableObject
     }
 
     private IReadOnlyList<SettingChoice> FiltersFor(int unread) => _seriesAvailable
-        ? [All, Unread(unread), SeriesChoice]
-        : [All, Unread(unread)];
+        ? [_all, Unread(unread), _seriesChoice]
+        : [_all, Unread(unread)];
 
-    private static SettingChoice Unread(int unread) => new("unread", unread > 0 ? $"Unread ({unread})" : "Unread");
+    private static SettingChoice Unread(int unread) => new("unread", unread > 0
+        ? AppText.Get("web.notifications.inbox.filterUnreadCount", ("count", unread))
+        : AppText.Get("web.notifications.inbox.filterUnread"));
 
     private bool CanPressLoadMore() => CanLoadMore && !IsLoadingMore;
 

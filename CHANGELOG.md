@@ -8,6 +8,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
+  Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
+  your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language
+  chooses it for your profile, as on Silo's web: Match device or a language by its own name. A new choice shows the
+  next time Granary starts. Arabic is not offered yet: it needs a layout that runs right to left, so a profile or a
+  Windows set to Arabic gets the next language in line.
 - **Downloads:** download a film, an episode, a whole season or a whole series from its ⋯ menu, in the original quality
   or a smaller one your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
   each with its size and where it stands, and while it downloads a bar, its speed and the time left; a series' card
@@ -74,6 +80,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
+  on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
+  as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
+  next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM". Sizes, rates and speeds
+  follow the same format ("1,5 GB", "1,25×" on a German Windows), and a title's Info lists its size and bitrate as the
+  web's media info does ("700.0 MB", "8,000 kbps").
 - The server's name or logo at the top of the sidebar opens Home, as on Silo's web.
 - A game controller now has to be switched on first, under Settings → Navigation & Cards → Controller → Game controller;
   0.4.0 read it from the start.

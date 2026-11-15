@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +21,7 @@ public sealed partial class NotifiedSeriesViewModel : ObservableObject
 {
     public static readonly TimeSpan SearchDelay = TimeSpan.FromMilliseconds(300);
 
-    internal const string LoadMoreFailedText = "Couldn’t load more series.";
+    internal static string LoadMoreFailedText => AppText.Get("web.notifications.series.loadMoreFailed");
 
     private readonly ISessionManager _session;
     private readonly NotificationsApi _notifications;
@@ -48,22 +49,23 @@ public sealed partial class NotifiedSeriesViewModel : ObservableObject
         _applied = Query();
     }
 
-    public static IReadOnlyList<SettingChoice> ReasonChoices { get; } =
+    /// <summary>The reasons to filter by, worded once in the language on screen: the menu finds the pick by instance.</summary>
+    public IReadOnlyList<SettingChoice> ReasonChoices { get; } =
     [
-        new("all", "All reasons"),
-        new(NotifiedSeriesReasonKeys.Favorite, "Favorites"),
-        new(NotifiedSeriesReasonKeys.Watchlist, "Watchlist"),
-        new(NotifiedSeriesReasonKeys.ContinueWatching, "Continue Watching"),
-        new(NotifiedSeriesReasonKeys.NextUp, "Next Up"),
+        new("all", AppText.Get("web.notifications.series.allReasons")),
+        new(NotifiedSeriesReasonKeys.Favorite, AppText.Get("web.notifications.preferences.favorites")),
+        new(NotifiedSeriesReasonKeys.Watchlist, AppText.Get("web.notifications.preferences.watchlist")),
+        new(NotifiedSeriesReasonKeys.ContinueWatching, AppText.Get("web.notifications.preferences.continueWatching")),
+        new(NotifiedSeriesReasonKeys.NextUp, AppText.Get("web.notifications.preferences.nextUp")),
     ];
 
-    public static IReadOnlyList<SettingChoice> SortChoices { get; } =
+    public IReadOnlyList<SettingChoice> SortChoices { get; } =
     [
-        new("title", "Title (A–Z)"),
-        new("-title", "Title (Z–A)"),
-        new("-latest_episode_added", "Latest episode"),
-        new("-added_at", "Recently added"),
-        new("-year", "Release year"),
+        new("title", AppText.Get("web.notifications.series.sortTitleAsc")),
+        new("-title", AppText.Get("web.notifications.series.sortTitleDesc")),
+        new("-latest_episode_added", AppText.Get("web.notifications.series.sortLatestEpisode")),
+        new("-added_at", AppText.Get("web.notifications.series.sortRecentlyAdded")),
+        new("-year", AppText.Get("web.notifications.series.sortReleaseYear")),
     ];
 
     /// <summary>The series that notify.</summary>
@@ -124,11 +126,13 @@ public sealed partial class NotifiedSeriesViewModel : ObservableObject
 
     /// <summary>The server mutes single series (its capability): the rows carry Mute.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IntroEnd))]
+    [NotifyPropertyChangedFor(nameof(IntroRuns))]
     public partial bool CanMute { get; internal set; }
 
-    /// <summary>The end of "Change which reasons count in Preferences, or mute one series."</summary>
-    public string IntroEnd => CanMute ? ", or mute one series." : ".";
+    /// <summary>"New episodes of these series notify this profile. Change which reasons count in Preferences, or mute one series.", Preferences as a link.</summary>
+    public IReadOnlyList<TextRun> IntroRuns => CanMute
+        ? AppText.Runs("web.notifications.series.introMute")
+        : AppText.Runs("web.notifications.series.intro");
 
     public bool HasNotice => Notice.Length > 0;
 
@@ -355,7 +359,7 @@ public sealed partial class NotifiedSeriesViewModel : ObservableObject
             if (muted && Key() == key)
             {
                 NoticeFailed = false;
-                Notice = $"Muted {title}";
+                Notice = AppText.Get("web.notifications.queries.muted", ("title", title));
                 _undo = (id, title);
                 CanUndo = true;
             }
@@ -366,7 +370,7 @@ public sealed partial class NotifiedSeriesViewModel : ObservableObject
             if (Key() == key)
             {
                 NoticeFailed = true;
-                Notice = muted ? "Failed to mute the series" : "Failed to unmute the series";
+                Notice = muted ? AppText.Get("web.notifications.queries.muteFailed") : AppText.Get("web.notifications.queries.unmuteFailed");
                 if (isUndo)
                 {
                     _undo = (id, title);

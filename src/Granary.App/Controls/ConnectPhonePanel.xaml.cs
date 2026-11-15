@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ public sealed partial class ConnectPhonePanel : UserControl
 
     public PhoneRemoteViewModel ViewModel { get; }
 
-    public string QrName => "Code to connect a phone. Scan it with your phone's camera.";
+    public string QrName => AppText.Get("granary.settings.phoneRemote.codeName");
 
     public string NotAdvertisedText => PhoneRemoteViewModel.NotAdvertisedText;
 

@@ -1,0 +1,18 @@
+{
+  "web": {
+    "repository": "Silo-Server/silo-server",
+    "commit": "0e95e55b605b38477a130ae26c88e760bbe7a302",
+    "path": "web/src/locales",
+    "sha256": {
+      "ar": "edb75d2aa60e6611405b0d7101ec2dd53685476f783524cd8b8fb46ab35f0435",
+      "de": "01fe04e0db269f8441aff2504226ef926e94dce0b07b69a86a797a477e16107d",
+      "en": "2a9ae46acf2ae38a6ff2a1c23181270e0c6e974c9334e829794f24003907f00d",
+      "es": "fafa1c89b125a104d30e33e77581a36d201965a416017aa418da7ef35cb8b153",
+      "fr": "ed6fc2a4d596240166e4f304302e99be4c7093c7bdcddc95daa773bae163ffd7",
+      "ja": "d5c3eb9e8d2722f5d97dd1208464e2da715902a87eeaadd7fe08b789fb01d7a3",
+      "pt-BR": "37f62d6538926fc0f919bcbbc2315d1e9c2cb545508840b6a0e49cc2971fef66",
+      "zh-Hans": "2ff7651d98602140b3d615837fc730b56fe4f2cb4d3f0d002b258afa2c9e7a00"
+    },
+    "note": "Silo's web client translations: <path>/<tag>.json of the repository at the commit, one file per language, each pinned by the SHA-256 of the whole file. scripts/sync-web-texts.ps1 checks them and keeps the keys src/Granary.Core/Texts/Catalogs/web-keys.txt lists, in src/Granary.Core/Texts/Catalogs/web/<tag>.json. Move the pin with the script's -Commit, not by hand (docs/release.md, \"Translations\")."
+  }
+}

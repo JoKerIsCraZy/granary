@@ -1,5 +1,6 @@
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -120,7 +121,7 @@ public sealed partial class ServerPlayback
     {
         if (++_authReloads > MaxAuthReloads)
         {
-            Fail("The server keeps rejecting the sign-in. Try again in a moment.", canRetry: true);
+            Fail(AppText.Get("granary.player.error.signInRejected"), canRetry: true);
             return;
         }
         _logger.LogInformation("The server rejected the media headers; reloading with fresh ones");
@@ -147,7 +148,7 @@ public sealed partial class ServerPlayback
         }
         if (_failedPlanKeys.Count > MaxPlanAttempts)
         {
-            Fail("This title could not be played. Try again later.", canRetry: true);
+            Fail(AppText.Get("granary.player.error.notPlayable"), canRetry: true);
             return;
         }
         _logger.LogWarning("The {Delivery} plan failed ({Classification}); asking for another", plan.Delivery, classification);
@@ -233,7 +234,7 @@ public sealed partial class ServerPlayback
             await AdoptAsync(decision, newSession: false, restorePosition: position);
             return;
         }
-        Fail("The connection to the server was lost.", canRetry: true);
+        Fail(AppText.Get("granary.player.error.connectionLost"), canRetry: true);
     }
 
     // The session is gone: a new attempt at the viewer's position, with the same file.

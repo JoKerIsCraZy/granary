@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -114,18 +115,18 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
 
     public bool CanUpload => HasFile && !IsUploading && !IsDetecting;
 
-    public string UploadText => IsUploading ? "Uploading…" : "Upload";
+    public string UploadText => IsUploading ? AppText.Get("web.subtitles.upload.uploading") : AppText.Get("web.subtitles.upload.upload");
 
-    public string SearchText => IsSearching ? "Searching…" : "Search";
+    public string SearchText => IsSearching ? AppText.Get("web.subtitles.search.searching") : AppText.Get("web.subtitles.search.search");
 
     /// <summary>"Select a language and press Search." before a search, and after one that found nothing.</summary>
     public bool ShowsSearchHint => Results.Count == 0 && !IsSearching && SearchError.Length == 0;
 
     /// <summary>"Detecting language…", then "Detected German from filename"; empty for a language the viewer chose.</summary>
     public string DetectionText => IsDetecting
-        ? "Detecting language…"
+        ? AppText.Get("web.subtitles.upload.detecting")
         : DetectionSource.Length > 0 && DetectionSource != "manual" && UploadLanguage is { } language
-            ? $"Detected {language.Label} from {SourceLabel(DetectionSource)}"
+            ? AppText.Get("web.subtitles.upload.detected", ("language", language.Label), ("source", DetectionSource))
             : "";
 
     /// <summary>Puts the dialog up afresh for <paramref name="mediaFileId"/>; the languages stay as last chosen.</summary>
@@ -157,7 +158,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
     }
 
     /// <summary>The file picker or a drop did not hand over a readable file.</summary>
-    public void FileCouldNotBeOpened() => UploadError = "The file could not be read.";
+    public void FileCouldNotBeOpened() => UploadError = AppText.Get("granary.player.addSubtitles.fileUnreadable");
 
     [RelayCommand]
     private void Close()
@@ -173,7 +174,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
         string name = Path.GetFileName(path);
         if (!Extensions.Contains(Path.GetExtension(name), StringComparer.OrdinalIgnoreCase))
         {
-            UploadError = "Unsupported file type. Use SRT, VTT, ASS, SSA, or SUB.";
+            UploadError = AppText.Get("web.subtitles.upload.unsupportedType");
             return;
         }
         int generation = _generation;
@@ -182,7 +183,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
         {
             if (new FileInfo(path).Length > MaxFileBytes)
             {
-                UploadError = "The file is larger than 5 MB.";
+                UploadError = AppText.Get("granary.player.addSubtitles.fileTooLarge", ("megabytes", MaxFileBytes / (1024 * 1024)));
                 return;
             }
             content = await File.ReadAllBytesAsync(path);
@@ -228,7 +229,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
             logger.LogInformation("The subtitle upload failed: {Failure}", ApiFailureText.Describe(ex));
             if (generation == _generation)
             {
-                UploadError = Failure(ex, "Upload failed");
+                UploadError = Failure(ex, AppText.Get("web.subtitles.upload.uploadFailed"));
             }
         }
         finally
@@ -267,7 +268,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
             logger.LogInformation("The subtitle search failed: {Failure}", ApiFailureText.Describe(ex));
             if (generation == _generation)
             {
-                SearchError = Failure(ex, "Search failed");
+                SearchError = Failure(ex, AppText.Get("web.subtitles.search.searchFailed"));
             }
         }
         finally
@@ -308,7 +309,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
             logger.LogInformation("The subtitle download failed: {Failure}", ApiFailureText.Describe(ex));
             if (generation == _generation)
             {
-                SearchError = Failure(ex, "Download failed");
+                SearchError = Failure(ex, AppText.Get("web.subtitles.search.downloadFailed"));
             }
         }
         finally
@@ -386,7 +387,7 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
             if (generation == _generation && detection == _detection)
             {
                 DetectionSource = "";
-                UploadError = Failure(ex, "Failed to detect subtitle language");
+                UploadError = Failure(ex, AppText.Get("web.subtitles.upload.detectFailed"));
             }
         }
         finally
@@ -433,15 +434,6 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
     private static IReadOnlyList<SettingChoice> LanguageChoices() =>
         [.. Languages.Select(code => new SettingChoice(code, TrackText.LanguageName(code))).OrderBy(c => c.Label, StringComparer.CurrentCulture)];
 
-    private static string SourceLabel(string source) => source switch
-    {
-        "filename" => "filename",
-        "metadata" => "file metadata",
-        "content" => "subtitle text",
-        "manual" => "manual selection",
-        _ => "detection",
-    };
-
     // The server's own words when it gave some, as the web shows them.
     private static string Failure(Exception ex, string fallback) => ex switch
     {
@@ -475,7 +467,7 @@ public sealed partial class SubtitleSearchRow(SubtitleSearchResult result, strin
     public bool IsHearingImpaired { get; } = result.HearingImpaired;
 
     /// <summary>"↓12,345".</summary>
-    public string DownloadsText { get; } = "↓" + result.Downloads.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+    public string DownloadsText { get; } = AppText.Get("web.subtitles.search.downloads", ("downloads", AppText.Number(result.Downloads)));
 
     /// <summary>"OS", "SDL", "SS", "UP", or the provider's own name.</summary>
     public string ProviderText { get; } = providerText;
@@ -483,8 +475,8 @@ public sealed partial class SubtitleSearchRow(SubtitleSearchResult result, strin
     public string ProviderColor { get; } = providerColor;
 
     /// <summary>"Score 87, Release.Name, hearing impaired, 12,345 downloads, OpenSubtitles".</summary>
-    public string AccessibleName =>
-        $"Score {ScoreText}, {ReleaseName}{(IsHearingImpaired ? ", hearing impaired" : "")}, {DownloadsText[1..]} downloads, {Result.Provider}";
+    public string AccessibleName => AppText.Get("granary.player.addSubtitles.resultName", ("hearingImpaired", IsHearingImpaired ? "yes" : "no"),
+        ("score", ScoreText), ("release", ReleaseName), ("downloads", AppText.Number(Result.Downloads)), ("provider", Result.Provider));
 
     [ObservableProperty]
     public partial bool IsDownloading { get; set; }

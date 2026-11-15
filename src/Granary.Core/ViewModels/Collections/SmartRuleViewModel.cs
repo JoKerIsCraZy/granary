@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -30,6 +31,9 @@ public sealed partial class SmartRuleViewModel : ObservableObject
         _rule = rule;
         _owner = owner;
         RemoveCommand = removeCommand;
+        _showing = true;
+        InLastUnit = owner.InLastUnits[0];
+        _showing = false;
         var definition = CollectionRuleFields.Find(rule.Field);
         bool editable = definition is not null && CanEdit(rule, definition);
         if (editable)
@@ -80,7 +84,10 @@ public sealed partial class SmartRuleViewModel : ObservableObject
     public partial string InLastCount { get; set; } = "";
 
     [ObservableProperty]
-    public partial SettingChoice InLastUnit { get; set; } = CollectionRuleFields.InLastUnits[0];
+    public partial SettingChoice InLastUnit { get; set; }
+
+    /// <summary>Days, weeks, months and years, for "is in the last".</summary>
+    public IReadOnlyList<SettingChoice> InLastUnits => _owner.InLastUnits;
 
     /// <summary>The picked option of a select, a language, or Yes/No.</summary>
     [ObservableProperty]
@@ -115,7 +122,7 @@ public sealed partial class SmartRuleViewModel : ObservableObject
 
     /// <summary>"Value", "YYYY-MM-DD", "Pick a genre".</summary>
     [ObservableProperty]
-    public partial string Placeholder { get; private set; } = "Value";
+    public partial string Placeholder { get; private set; } = "";
 
     internal RuleField? Definition => Field is { } picked ? CollectionRuleFields.Find(picked.Value) : null;
 
@@ -257,7 +264,7 @@ public sealed partial class SmartRuleViewModel : ObservableObject
             if (op == "between" && definition.SupportsRange)
             {
                 Shape = RuleShape.Range;
-                Placeholder = definition.Input == RuleInput.Date ? "YYYY-MM-DD" : "From";
+                Placeholder = definition.Input == RuleInput.Date ? DatePlaceholder : AppText.Get("web.catalog.rules.rangeFrom");
                 if (value.ValueKind == JsonValueKind.Array && value.GetArrayLength() == 2)
                 {
                     From = SmartValue.Display(value[0]);
@@ -284,7 +291,8 @@ public sealed partial class SmartRuleViewModel : ObservableObject
                     break;
                 case RuleInput.Facet or RuleInput.Person:
                     Shape = RuleShape.Suggest;
-                    Placeholder = definition.Placeholder ?? (definition.Input == RuleInput.Person ? "Search people" : "Pick a value");
+                    Placeholder = definition.Placeholder
+                        ?? (definition.Input == RuleInput.Person ? AppText.Get("web.ui.personSearch.placeholder") : AppText.Get("web.catalog.rules.pickValue"));
                     Text = SmartValue.Display(value);
                     break;
                 case RuleInput.Date when CollectionRuleFields.RelativeDateOperators.Contains(op):
@@ -292,18 +300,17 @@ public sealed partial class SmartRuleViewModel : ObservableObject
                     if (InLast.Match(SmartValue.Display(value)) is { Success: true } span)
                     {
                         InLastCount = span.Groups[1].Value;
-                        InLastUnit = CollectionRuleFields.InLastUnits.FirstOrDefault(u => u.Value == span.Groups[2].Value.ToLowerInvariant())
-                            ?? CollectionRuleFields.InLastUnits[0];
+                        InLastUnit = InLastUnits.FirstOrDefault(u => u.Value == span.Groups[2].Value.ToLowerInvariant()) ?? InLastUnits[0];
                     }
                     break;
                 case RuleInput.Date:
                     Shape = RuleShape.Date;
-                    Placeholder = "YYYY-MM-DD";
+                    Placeholder = DatePlaceholder;
                     Text = SmartValue.Display(value);
                     break;
                 default:
                     Shape = definition.Input == RuleInput.Number ? RuleShape.Number : RuleShape.Text;
-                    Placeholder = "Value";
+                    Placeholder = AppText.Get("web.catalog.rules.value");
                     Text = SmartValue.Display(value);
                     break;
             }
@@ -313,6 +320,9 @@ public sealed partial class SmartRuleViewModel : ObservableObject
             _showing = false;
         }
     }
+
+    // How a date is typed in: the web's date box takes the same form.
+    private static string DatePlaceholder => AppText.Get("granary.collections.rules.datePlaceholder");
 
     // The value the controls hold, typed as the field takes it: a number for number fields, text while one is empty.
     private JsonElement BuildValue()

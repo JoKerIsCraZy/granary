@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Collections;
 using Microsoft.Extensions.Logging;
 
@@ -33,8 +34,14 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
     // The facet values last read for the scope; the chips show them and any applied value they no longer hold.
     private CatalogFilters _options = new();
 
-    /// <summary>The Watch Status choices, as the web words them, in the order of <see cref="LibraryWatchStatus"/>.</summary>
-    public static IReadOnlyList<string> WatchStatusChoices { get; } = ["Any", "Unwatched", "In Progress", "Watched"];
+    /// <summary>The Watch Status choices, as the web's guided filters word them, in the order of <see cref="LibraryWatchStatus"/>.</summary>
+    public static IReadOnlyList<string> WatchStatusChoices =>
+    [
+        AppText.Get("web.collections.guidedRules.any"),
+        AppText.Get("web.collections.guidedRules.unwatched"),
+        AppText.Get("web.collections.guidedRules.inProgress"),
+        AppText.Get("web.collections.guidedRules.watched"),
+    ];
 
     /// <summary>The applied filters.</summary>
     public LibraryFilterSet Applied { get; private set; } = LibraryFilterSet.None;
@@ -57,7 +64,8 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
 
     /// <summary>This decade back to the 1900s, as "2020s".</summary>
     public IReadOnlyList<LibraryFilterToggle> DecadeOptions { get; } =
-        [.. LibraryFilterSet.DecadesUntil(DateTime.UtcNow.Year).Select(d => new LibraryFilterToggle(Invariant(d), Invariant(d) + "s"))];
+        [.. LibraryFilterSet.DecadesUntil(DateTime.UtcNow.Year)
+            .Select(d => new LibraryFilterToggle(Invariant(d), AppText.Get("web.collections.guidedRules.decadeOption", ("decade", Invariant(d)))))];
 
     public ObservableCollection<LibraryFilterToggle> RatingOptions { get; } = [];
 

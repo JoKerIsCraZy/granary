@@ -39,6 +39,9 @@ tests/Granary.Tests  net10.0-windows                 unit tests and libmpv integ
   what is saved where) follows the Android and Apple apps. How it looks and what it says follows the web app
   (`web/src`), including its exact texts.
 - Comments name the source they follow, for example "as the web's `pages/Catalog.tsx`".
+- A text the web lacks is Granary's own (`granary.*` in `src/Granary.Core/Texts/Catalogs/granary/en.json`) and needs its
+  seven translations in the same commit: the apps' wording where they have the text, else Silo's terms per language
+  (docs/release.md, "A text of Granary's own").
 - [docs/ui-design.md](docs/ui-design.md) describes every screen. Update it with the UI.
 
 ## Code style
@@ -92,7 +95,8 @@ classes in `tests/Granary.Tests/Fakes`.
   `%LOCALAPPDATA%\Granary`: it holds their servers, sign-ins and device id.
 - `--play <file>` plays a local file without a server. `--play-item <content id>` plays a title of the
   signed-in server. `--remote` (debug builds) shows a TV remote on screen that sends the keys a PC remote sends
-  (`Debugging/RemoteWindow.cs`).
+  (`Debugging/RemoteWindow.cs`). `--language <tag>` (debug builds) shows Granary's texts in a shipped language, such as
+  `de`, enabled or not, to check converted texts.
 - Drive the running app with UI Automation patterns, not simulated global mouse or keyboard input, which lands
   in whatever window is on top.
 - Never take actions on a real server that change someone's data, such as requests, watch state or settings,

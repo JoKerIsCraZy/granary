@@ -62,7 +62,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2", "S03E03 · The Heist", "S03E04 · Chapter 4", "S03E05 · Chapter 5"], Titles(detail));
         var missing = Assert.Single(detail.EpisodeGrid.OfType<DetailEpisodePlaceholder>());
         Assert.True(missing.IsMissing);
-        Assert.Equal("15 Sep 2026", missing.Detail);
+        Assert.Equal("Sep 15, 2026", missing.Detail);
         Assert.Equal("Episode 3, missing", missing.AccessibleName);
         Assert.Equal(4, detail.Episodes.Count);
         // The gap's window, a day wider at each end, and the days after the last episode up to yesterday are one request;
@@ -113,7 +113,7 @@ public sealed class ItemDetailMissingEpisodesTests
 
         var missing = Assert.Single(detail.EpisodeGrid.OfType<DetailEpisodePlaceholder>());
         Assert.Equal("S03E05 · Late Night", missing.Title);
-        Assert.Equal("9 Aug 2026", missing.Detail);
+        Assert.Equal("Aug 9, 2026", missing.Detail);
         Assert.Contains(("2026-07-31", "2026-08-09"), Windows());
     }
 
@@ -148,7 +148,7 @@ public sealed class ItemDetailMissingEpisodesTests
             Titles(detail));
         var places = detail.EpisodeGrid.OfType<DetailEpisodePlaceholder>().ToList();
         Assert.Equal([true, true, false], places.Select(p => p.IsMissing));
-        Assert.Equal(["27 Sep 2026", "1 Oct 2026", "Airs Thu, Oct 1"], places.Select(p => p.Detail));
+        Assert.Equal(["Sep 27, 2026", "Oct 1, 2026", "Airs Thu, Oct 1"], places.Select(p => p.Detail));
         Assert.Equal(["Episode 4, missing", "Episode 5, missing", "Episode 6, airs October 1"], places.Select(p => p.AccessibleName));
         Assert.Equal([("2026-09-20", "2026-09-30"), .. TodaysWindows], Windows());
     }

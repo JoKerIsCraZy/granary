@@ -7,6 +7,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:cards="using:Granary.Core.ViewModels.Cards"
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
+    xmlns:t="using:Granary.Core.Texts"
     PointerEntered="OnPointerEntered"
     PointerExited="OnPointerExited">
 
@@ -41,7 +42,7 @@
                 </Border>
             </StackPanel>
             <HyperlinkButton x:Name="ExploreAllLink" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}"
-                             Content="EXPLORE ALL" Command="{x:Bind ExploreAllCommand, Mode=OneWay}" Visibility="Collapsed"
+                             Content="{x:Bind ExploreAllText}" Command="{x:Bind ExploreAllCommand, Mode=OneWay}" Visibility="Collapsed"
                              AutomationProperties.Name="{x:Bind ExploreAllName(Title), Mode=OneWay}" />
         </Grid>
 
@@ -84,12 +85,12 @@
             <!-- Mouse users get arrows; touch and touchpads scroll directly, keyboard users tab through. -->
             <Button x:Name="PreviousButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
                     Margin="-18,0,0,40" Visibility="Collapsed" Click="OnPreviousClick" IsTabStop="False"
-                    AutomationProperties.Name="Scroll left">
+                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.carousel.scrollLeft')}">
                 <FontIcon Glyph="&#xE76B;" FontSize="14" />
             </Button>
             <Button x:Name="NextButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"
                     Margin="0,0,-18,40" Visibility="Collapsed" Click="OnNextClick" IsTabStop="False"
-                    AutomationProperties.Name="Scroll right">
+                    AutomationProperties.Name="{x:Bind t:AppText.Get('web.catalog.carousel.scrollRight')}">
                 <FontIcon Glyph="&#xE76C;" FontSize="14" />
             </Button>
         </Grid>

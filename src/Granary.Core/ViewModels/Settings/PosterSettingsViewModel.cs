@@ -1,14 +1,15 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Settings;
 
 /// <summary>One of a few choices, as the web's ChoiceButtons: the chosen one is filled; Pick saves it.</summary>
-public sealed partial class SettingsChoice(string label, Func<Task> pick) : ObservableObject
+public sealed partial class SettingsChoice(Func<string> label, Func<Task> pick) : ObservableObject
 {
-    public string Label { get; } = label;
+    public string Label => label();
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
@@ -24,16 +25,28 @@ public sealed partial class SettingsChoice(string label, Func<Task> pick) : Obse
 /// </summary>
 public sealed partial class PosterSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string UnavailableTitle = "Couldn't load your poster settings";
-    public const string UnavailableText = "Editing is off until they load, so nothing you chose earlier gets overwritten.";
-    public const string UnsupportedTitle = "Your server needs an update";
-    public const string UnsupportedText = "Poster size and captions can be changed once your server runs a newer version of Silo.";
+    // Granary's own: the web's panel names the menu too, which Granary keeps on the PC.
+    public static string UnavailableTitle => AppText.Get("granary.settings.posters.loadFailedTitle");
 
-    private static readonly (PosterSize Size, string Label)[] SizeLabels =
-        [(PosterSize.Compact, "Compact"), (PosterSize.Standard, "Standard"), (PosterSize.Large, "Large")];
+    public static string UnavailableText => AppText.Get("web.settings.interface.loadFailedDescription");
 
-    private static readonly (CardCaption Caption, string Label)[] CaptionLabels =
-        [(CardCaption.TitleMetadata, "Title and details"), (CardCaption.Title, "Title only"), (CardCaption.Artwork, "Nothing")];
+    public static string UnsupportedTitle => AppText.Get("web.settings.interface.unsupportedTitle");
+
+    public static string UnsupportedText => AppText.Get("granary.settings.posters.unsupportedDescription");
+
+    private static readonly (PosterSize Size, Func<string> Label)[] SizeLabels =
+    [
+        (PosterSize.Compact, () => AppText.Get("web.settings.interface.posterCompact")),
+        (PosterSize.Standard, () => AppText.Get("web.settings.interface.posterStandard")),
+        (PosterSize.Large, () => AppText.Get("web.settings.interface.posterLarge")),
+    ];
+
+    private static readonly (CardCaption Caption, Func<string> Label)[] CaptionLabels =
+    [
+        (CardCaption.TitleMetadata, () => AppText.Get("granary.settings.posters.captionTitleAndDetails")),
+        (CardCaption.Title, () => AppText.Get("granary.settings.posters.captionTitleOnly")),
+        (CardCaption.Artwork, () => AppText.Get("granary.settings.posters.captionNothing")),
+    ];
 
     private readonly CardPresentationSettings _settings;
 

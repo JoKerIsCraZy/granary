@@ -3,6 +3,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
@@ -221,6 +222,34 @@ public sealed class HomeViewModelTests
     }
 
     [Fact]
+    public async Task ARowSiloTitled_ShowsItsTitleInTheLanguageOnScreen_AndExploreAllTakesIt()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _silo.Map(SectionsPath, Serialize(new
+        {
+            sections = new object[]
+            {
+                new
+                {
+                    id = "films", section_type = "recently_added", title = "Recently Added in Filme", title_key = "home.section.recentlyAddedIn",
+                    title_args = new { library = "Filme" }, featured = false, item_limit = 20, is_custom = false, customized = false,
+                    total_count = 1, items = new[] { Item("m1") },
+                },
+                Section("typed", "genre", 1, Item("m2")),
+            },
+        }));
+        var home = Create();
+        await home.ActivateAsync();
+
+        home.Rows[0].ExploreAllCommand!.Execute(null);
+
+        string german = AppText.Get("home.section.recentlyAddedIn", "library", "Filme");
+        Assert.NotEqual("Recently Added in Filme", german);
+        Assert.Equal([german, "Row typed"], home.Rows.Select(row => row.Title));
+        Assert.Equal(new SectionRouteParameter("films", german, null, "recently_added"), _navigation.Navigations[^1].Parameter);
+    }
+
+    [Fact]
     public async Task Card_OpensTheItem()
     {
         _silo.Map(SectionsPath, Sections(Section("r", "genre", 1, Item("movie-9"))));
@@ -336,7 +365,7 @@ public sealed class HomeViewModelTests
 
         Assert.True(home.HasError);
         Assert.Empty(home.Rows);
-        Assert.Equal("The server is busy. Try again in a moment.", home.ErrorText);
+        Assert.Equal("The server isn't responding. Try again in a moment.", home.ErrorText);
         Assert.Equal(home.ErrorText, home.StatusText);
         Assert.DoesNotContain("Silo", home.ErrorText, StringComparison.Ordinal);
 
@@ -358,7 +387,7 @@ public sealed class HomeViewModelTests
         await home.ActivateAsync();
 
         Assert.True(home.HasError);
-        Assert.Equal("Could not reach the server. Check the connection and try again.", home.ErrorText);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", home.ErrorText);
     }
 
     [Fact]
@@ -371,7 +400,7 @@ public sealed class HomeViewModelTests
 
         Assert.True(home.IsEmpty);
         Assert.False(home.HasError);
-        Assert.Equal("Nothing here yet", home.StatusText);
+        Assert.Equal("Nothing to watch yet", home.StatusText);
     }
 
     [Fact]
@@ -576,7 +605,7 @@ public sealed class HomeViewModelTests
         await home.RemoveCommand.ExecuteAsync(home.Rows[0].Cards[0]);
 
         Assert.Single(home.Rows[0].Cards);
-        Assert.Equal("Title movie-1 could not be removed. Try again.", home.Notice);
+        Assert.Equal("Failed to remove item", home.Notice);
     }
 
     [Fact]

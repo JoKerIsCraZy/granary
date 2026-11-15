@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -76,7 +77,7 @@ public sealed partial class BrandRow : UserControl
 
     public static Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public string LoadingName(string? title) => $"Loading {title?.ToLowerInvariant()}";
+    public string LoadingName(string? title) => AppText.Get("granary.requests.brandRowLoading", "title", title ?? "");
 
     // "#RRGGBB", which the view model has checked.
     private static Color Parse(string hex)

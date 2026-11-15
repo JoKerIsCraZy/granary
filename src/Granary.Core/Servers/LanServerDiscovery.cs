@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Servers;
@@ -7,7 +8,7 @@ namespace Granary.Core.Servers;
 public sealed record DiscoveredServer(string ServerId, string Name, Uri Url)
 {
     /// <summary>"On this network · 192.168.1.6:8090": the port stays, so two deployments on one host differ.</summary>
-    public string Detail => $"On this network · {Url.Authority}";
+    public string Detail => AppText.Get("granary.addServer.onThisNetwork", ("address", Url.Authority));
 }
 
 /// <summary>

@@ -1,4 +1,5 @@
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -7,16 +8,16 @@ namespace Granary.Core.ViewModels;
 /// has them.
 /// </summary>
 /// <param name="Field">A server sort field (<see cref="CatalogSortFields"/>).</param>
-public sealed record LibrarySortOption(string Field, string Label, bool StartsDescending)
+public sealed record LibrarySortOption(string Field, bool StartsDescending)
 {
     /// <summary>Title, A to Z: the server's own default order.</summary>
-    public static LibrarySortOption Title { get; } = new(CatalogSortFields.Title, "Title", StartsDescending: false);
+    public static LibrarySortOption Title { get; } = new(CatalogSortFields.Title, StartsDescending: false);
 
-    private static readonly LibrarySortOption AddedAt = new(CatalogSortFields.AddedAt, "Date Added", StartsDescending: true);
-    private static readonly LibrarySortOption ReleaseDate = new(CatalogSortFields.ReleaseDate, "Release Date", StartsDescending: true);
-    private static readonly LibrarySortOption Year = new(CatalogSortFields.Year, "Year", StartsDescending: true);
-    private static readonly LibrarySortOption Runtime = new(CatalogSortFields.Runtime, "Duration", StartsDescending: true);
-    private static readonly LibrarySortOption RatingImdb = new(CatalogSortFields.RatingImdb, "IMDb Rating", StartsDescending: true);
+    private static readonly LibrarySortOption AddedAt = new(CatalogSortFields.AddedAt, StartsDescending: true);
+    private static readonly LibrarySortOption ReleaseDate = new(CatalogSortFields.ReleaseDate, StartsDescending: true);
+    private static readonly LibrarySortOption Year = new(CatalogSortFields.Year, StartsDescending: true);
+    private static readonly LibrarySortOption Runtime = new(CatalogSortFields.Runtime, StartsDescending: true);
+    private static readonly LibrarySortOption RatingImdb = new(CatalogSortFields.RatingImdb, StartsDescending: true);
 
     /// <summary>Every sort, in the web's order.</summary>
     public static IReadOnlyList<LibrarySortOption> All { get; } =
@@ -24,24 +25,47 @@ public sealed record LibrarySortOption(string Field, string Label, bool StartsDe
         Title,
         AddedAt,
         ReleaseDate,
-        new(CatalogSortFields.LastAirDate, "Latest Episode Air Date", StartsDescending: true) { IsSeriesOnly = true },
-        new(CatalogSortFields.LatestEpisodeAdded, "Latest Episode Added", StartsDescending: true) { IsSeriesOnly = true },
+        new(CatalogSortFields.LastAirDate, StartsDescending: true) { IsSeriesOnly = true },
+        new(CatalogSortFields.LatestEpisodeAdded, StartsDescending: true) { IsSeriesOnly = true },
         Year,
-        new(CatalogSortFields.ContentRating, "Content Rating", StartsDescending: false),
+        new(CatalogSortFields.ContentRating, StartsDescending: false),
         Runtime,
         RatingImdb,
-        new(CatalogSortFields.RatingTmdb, "TMDB Rating", StartsDescending: true),
-        new(CatalogSortFields.RatingRtCritic, "RT Critic Rating", StartsDescending: true) { RatingSource = "rt_critic" },
-        new(CatalogSortFields.RatingRtAudience, "RT Audience Rating", StartsDescending: true) { RatingSource = "rt_audience" },
-        new(CatalogSortFields.Resolution, "Resolution", StartsDescending: true),
-        new(CatalogSortFields.Bitrate, "Bitrate", StartsDescending: true),
-        new(CatalogSortFields.Progress, "Progress", StartsDescending: true),
-        new(CatalogSortFields.DateViewed, "Date Viewed", StartsDescending: true),
-        new(CatalogSortFields.Plays, "Plays", StartsDescending: true),
+        new(CatalogSortFields.RatingTmdb, StartsDescending: true),
+        new(CatalogSortFields.RatingRtCritic, StartsDescending: true) { RatingSource = "rt_critic" },
+        new(CatalogSortFields.RatingRtAudience, StartsDescending: true) { RatingSource = "rt_audience" },
+        new(CatalogSortFields.Resolution, StartsDescending: true),
+        new(CatalogSortFields.Bitrate, StartsDescending: true),
+        new(CatalogSortFields.Progress, StartsDescending: true),
+        new(CatalogSortFields.DateViewed, StartsDescending: true),
+        new(CatalogSortFields.Plays, StartsDescending: true),
     ];
 
     /// <summary>The sorts Favorites, Watchlist, History and a collection offer beside the list's own order.</summary>
     public static IReadOnlyList<LibrarySortOption> ForLists { get; } = [Title, AddedAt, ReleaseDate, Year, Runtime, RatingImdb];
+
+    /// <summary>The sort's name in the menu, in the language on screen, as the web's labels (its labelKey).</summary>
+    public string Label => Field switch
+    {
+        CatalogSortFields.Title => AppText.Get("catalog.sort.title"),
+        CatalogSortFields.AddedAt => AppText.Get("catalog.sort.added"),
+        CatalogSortFields.ReleaseDate => AppText.Get("catalog.sort.released"),
+        CatalogSortFields.LastAirDate => AppText.Get("web.common.sort.latestEpisodeAirDate"),
+        CatalogSortFields.LatestEpisodeAdded => AppText.Get("web.common.sort.latestEpisodeAdded"),
+        CatalogSortFields.Year => AppText.Get("catalog.sort.year"),
+        CatalogSortFields.ContentRating => AppText.Get("web.common.sort.contentRating"),
+        CatalogSortFields.Runtime => AppText.Get("web.common.sort.duration"),
+        CatalogSortFields.RatingImdb => AppText.Get("catalog.sort.imdbRating"),
+        CatalogSortFields.RatingTmdb => AppText.Get("web.common.sort.tmdbRating"),
+        CatalogSortFields.RatingRtCritic => AppText.Get("web.common.sort.rtCriticRating"),
+        CatalogSortFields.RatingRtAudience => AppText.Get("web.common.sort.rtAudienceRating"),
+        CatalogSortFields.Resolution => AppText.Get("catalog.sort.resolution"),
+        CatalogSortFields.Bitrate => AppText.Get("web.common.sort.bitrate"),
+        CatalogSortFields.Progress => AppText.Get("web.common.sort.progress"),
+        CatalogSortFields.DateViewed => AppText.Get("web.common.sort.dateViewed"),
+        CatalogSortFields.Plays => AppText.Get("web.common.sort.plays"),
+        _ => Field,
+    };
 
     /// <summary>
     /// Latest Episode Air Date and Latest Episode Added sort only shows, so a series library alone offers them, as the web's

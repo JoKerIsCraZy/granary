@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Collections;
@@ -33,7 +34,7 @@ public sealed partial class CollectionEditorViewModel
     public bool IsManualKind => !IsSmart;
 
     /// <summary>The kind's tag: "Manual" or "Smart".</summary>
-    public string KindLabel => IsSmart ? "Smart" : "Manual";
+    public string KindLabel => IsSmart ? AppText.Get("web.collections.types.kindSmart") : AppText.Get("web.collections.types.kindManual");
 
     /// <summary>The first titles the rules match.</summary>
     public ObservableCollection<CollectionPreviewTile> PreviewTiles { get; } = [];
@@ -75,16 +76,15 @@ public sealed partial class CollectionEditorViewModel
     internal Task Previewing { get; private set; } = Task.CompletedTask;
 
     // "1 title matches", "1,240 titles match".
-    internal static string Matches(long total) => total == 1
-        ? "1 title matches"
-        : $"{total.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)} titles match";
+    internal static string Matches(long total) =>
+        AppText.Get("web.collections.copy.previewMatches", ("count", total), ("total", AppText.Number(total)));
 
     // The save bar's hint before Create: how many match now.
     private string SmartCreateHint() => _previewTotal switch
     {
         null => "",
-        0 => "Nothing matches yet. Titles that match later join on their own.",
-        { } total => $"{Matches(total)} now. New ones join on their own.",
+        0 => AppText.Get("web.collections.copy.smartCreateHintNone"),
+        { } total => AppText.Get("web.collections.copy.smartCreateHint", ("matches", Matches(total))),
     };
 
     // Libraries to pick, what the server's rules take, and the values pickers offer: read once, none of them needed.
@@ -222,7 +222,9 @@ public sealed partial class CollectionEditorViewModel
                 PreviewTiles.Add(new CollectionPreviewTile(item.ContentId, item.Title, ArtworkUrl.Resolve(server.BaseUri, item.PosterUrl)));
             }
             PreviewCount = Matches(preview.Total);
-            PreviewShowing = PreviewTiles.Count > 0 && preview.Total > PreviewTiles.Count ? $"showing {PreviewTiles.Count}" : "";
+            PreviewShowing = PreviewTiles.Count > 0 && preview.Total > PreviewTiles.Count
+                ? AppText.Get("web.collections.preview.showing", ("shown", PreviewTiles.Count))
+                : "";
             PreviewState = PreviewTiles.Count > 0 ? LibraryLoadState.Ready : LibraryLoadState.Empty;
             IsPreviewRefreshing = false;
             OnPropertyChanged(nameof(SaveBarHint));

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -66,7 +67,7 @@ public sealed partial class AlphabetJumpBar : UserControl
         set => SetValue(LetterCommandProperty, value);
     }
 
-    private static string Spoken(string letter) => letter == Symbols ? "Numbers and symbols" : letter;
+    private static string Spoken(string letter) => letter == Symbols ? AppText.Get("web.catalog.letters.numbersAndSymbols") : letter;
 
     private void AddEntry(string letter)
     {
@@ -81,7 +82,7 @@ public sealed partial class AlphabetJumpBar : UserControl
         if ((sender as FrameworkElement)?.Tag is string letter && LetterCommand is { } command && command.CanExecute(letter))
         {
             command.Execute(letter);
-            Announcer.Announce(this, $"Showing titles under {Spoken(letter)}", "LetterJump");
+            Announcer.Announce(this, AppText.Get("web.catalog.letters.showing", ("letter", Spoken(letter))), "LetterJump");
         }
     }
 
@@ -109,8 +110,8 @@ public sealed partial class AlphabetJumpBar : UserControl
             bool has = counts.TryGetValue(letter, out int count);
             entry.IsEnabled = has;
             string name = Index is null ? Spoken(letter)
-                : has ? $"{Spoken(letter)}, {(count == 1 ? "1 title" : count.ToString("N0", CultureInfo.InvariantCulture) + " titles")}"
-                : $"{Spoken(letter)}, no titles";
+                : has ? AppText.Get("web.catalog.letters.letterTitles", ("letter", Spoken(letter)), ("count", count), ("shown", AppText.Number(count)))
+                : AppText.Get("web.catalog.letters.letterNoTitles", ("letter", Spoken(letter)));
             AutomationProperties.SetName(entry, name);
         }
         ShowActive();
@@ -127,7 +128,7 @@ public sealed partial class AlphabetJumpBar : UserControl
             {
                 entry.Style = style;
             }
-            AutomationProperties.SetItemStatus(entry, isActive ? "Current" : "");
+            AutomationProperties.SetItemStatus(entry, isActive ? AppText.Get("granary.library.letterCurrent") : "");
         }
     }
 }

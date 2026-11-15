@@ -68,7 +68,7 @@ public sealed record OverlayPreset(
         new(OverlayPresetId.Classic, "Classic", "Semi-transparent dark pill with a white border. The default.", 10, false, 25, 8, 2, null, 1, 4, 11, false),
         new(OverlayPresetId.Vibrant, "Vibrant", "Opaque, accent-colored badges. High contrast.", 10, true, 25, 8, 2, 6, 0, 4, 12, true),
         new(OverlayPresetId.Pill, "Pill", "Larger pill with more padding. Works well with icons.", 10, false, 25, 10, 4, null, 1, 4, 12, true),
-        new(OverlayPresetId.Square, "Square", "Blocky, high-density. Plex-inspired.", 9, true, 100, 6, 2, 4, 0, 2, 10, false),
+        new(OverlayPresetId.Square, "Square", "Blocky, high-density.", 9, true, 100, 6, 2, 4, 0, 2, 10, false),
     ];
 
     public static OverlayPreset Of(OverlayPresetId id) => All.First(preset => preset.Id == id);

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Detail;
 
@@ -8,12 +9,12 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static class DetailText
 {
-    /// <summary>"1h 49m", "52m" (web: formatRuntimeMinutes); null without a runtime.</summary>
+    /// <summary>"1h 49m", "52m", in the web's words (lib/mediaFormat.ts, formatRuntimeMinutes); null without a runtime.</summary>
     public static string? Runtime(int? minutes) => minutes switch
     {
         null or <= 0 => null,
-        >= 60 => string.Create(CultureInfo.InvariantCulture, $"{minutes / 60}h {minutes % 60}m"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{minutes}m"),
+        >= 60 => AppText.Get("web.common.format.runtime.hoursMinutes", ("hours", minutes.Value / 60), ("minutes", minutes.Value % 60)),
+        _ => AppText.Get("web.common.format.runtime.minutes", ("count", minutes.Value), ("count_text", AppText.Number(minutes.Value))),
     };
 
     /// <summary>The year of a <c>YYYY-MM-DD</c> date, or null when it has none.</summary>
@@ -38,34 +39,50 @@ public static class DetailText
         return last is not null && last != first ? $"{first}–{last}" : first;
     }
 
-    /// <summary>"3 seasons", "1 episode".</summary>
-    public static string Count(int count, string singular, string plural) =>
-        string.Create(CultureInfo.InvariantCulture, $"{count} {(count == 1 ? singular : plural)}");
-
-    /// <summary>A server date (<c>2026-10-23</c>) as the web shows it: "23 Oct 2026".</summary>
+    /// <summary>A server date (<c>2026-10-23</c>) as the web shows an air date: "Oct 23, 2026" (formatDate, "medium").</summary>
     public static string? Date(string? isoDate) =>
         DateOnly.TryParseExact(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-            ? date.ToString("d MMM yyyy", CultureInfo.InvariantCulture)
+            ? DateText.MediumDate(date.ToDateTime(TimeOnly.MinValue))
             : null;
 
     /// <summary>"S03E01 · Chapter 1", or the code alone for an episode without a title.</summary>
     public static string EpisodeTitle(int season, int episode, string? title)
     {
-        string code = string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}");
+        string code = EpisodeCode(season, episode);
         return string.IsNullOrWhiteSpace(title) ? code : $"{code} · {title.Trim()}";
     }
 
-    /// <summary>"Season 3", or "Specials" for season 0.</summary>
-    public static string SeasonLabel(int seasonNumber) =>
-        seasonNumber == 0 ? "Specials" : string.Create(CultureInfo.InvariantCulture, $"Season {seasonNumber}");
+    /// <summary>"S03E01", in the web's words (<c>web.detail.episodeCode</c>): two digits each, Latin in every language, as the cards write it.</summary>
+    public static string EpisodeCode(int season, int episode) => AppText.Get("web.detail.episodeCode",
+        ("season", season.ToString("00", CultureInfo.InvariantCulture)), ("episode", episode.ToString("00", CultureInfo.InvariantCulture)));
+
+    /// <summary>"Season 3", or "Specials" for season 0, in the language on screen.</summary>
+    public static string SeasonLabel(int seasonNumber) => seasonNumber == 0
+        ? AppText.Get("web.detail.seasons.specials")
+        : AppText.Get("web.detail.seasons.numbered", ("season", seasonNumber));
 
     /// <summary>A season's own name when it says more than its number ("Staffel 3"), else <see cref="SeasonLabel"/> (web: getSeasonDisplayTitle).</summary>
     public static string SeasonDisplayTitle(int seasonNumber, string? title, bool isSpecials = false)
     {
         if (isSpecials || seasonNumber == 0)
         {
-            return "Specials";
+            return AppText.Get("web.detail.seasons.specials");
         }
-        return string.IsNullOrWhiteSpace(title) ? SeasonLabel(seasonNumber) : title.Trim();
+        return IsOwnSeasonName(seasonNumber, title) ? title!.Trim() : SeasonLabel(seasonNumber);
+    }
+
+    /// <summary>
+    /// Whether a season's title from the server is a name of its own ("Staffel 3", "The Return"): not empty, and not the
+    /// English "Season 3" or "Specials" the server gives a season without one, which shows in the language on screen
+    /// instead. The web's getSeasonDisplayTitle compares with the English the same way.
+    /// </summary>
+    public static bool IsOwnSeasonName(int seasonNumber, string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+        string unnamed = seasonNumber == 0 ? "Specials" : string.Create(CultureInfo.InvariantCulture, $"Season {seasonNumber}");
+        return !string.Equals(title.Trim(), unnamed, StringComparison.Ordinal);
     }
 }

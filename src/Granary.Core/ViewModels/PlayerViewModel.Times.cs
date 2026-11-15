@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -27,9 +28,9 @@ public sealed partial class PlayerViewModel
     private DateTimeOffset? _endsAtBasis;
     private DateTimeOffset? _endsAt;
 
-    // The zone and culture the end was written in: Windows' time settings changed, it is written again.
+    // The zone and the format locale the end was written in: another zone, or another language applied, writes it again.
     private TimeZoneInfo? _endsAtZone;
-    private CultureInfo? _endsAtCulture;
+    private FormatLocale? _endsAtFormats;
 
     // The engine's latest load as the title began, and whether a position of the title's own has come since: until then
     // the position is the title before's, whose end would be the new one's wrong end.
@@ -51,6 +52,10 @@ public sealed partial class PlayerViewModel
     /// <summary>"Ends at 22:41", for screen readers; empty with <see cref="EndsAtText"/>.</summary>
     [ObservableProperty]
     public partial string EndsAtSpoken { get; private set; } = "";
+
+    /// <summary>"22:41" alone, for a sentence that names the end among other things; empty with <see cref="EndsAtText"/>.</summary>
+    [ObservableProperty]
+    public partial string EndsAtClock { get; private set; } = "";
 
     /// <summary>A click on the times: their end switches between the duration and the time left, kept for this PC.</summary>
     [RelayCommand]
@@ -135,22 +140,23 @@ public sealed partial class PlayerViewModel
         return left > 0 && left < EndsAtHorizon.TotalSeconds ? _time.GetUtcNow() + TimeSpan.FromSeconds(left) : null;
     }
 
-    // Written again when the minute changed, or the zone or the time format did: in this PC's zone and short time ("t",
-    // the culture's short time pattern, which follows Windows' own time format).
+    // Written again when the minute changed, or the zone or the time format did: in this PC's zone, as the web writes a
+    // time of day (formatTime) in the format locale.
     private void SetEndsAt(DateTimeOffset? minute)
     {
         var zone = _time.LocalTimeZone;
-        var culture = CultureInfo.CurrentCulture;
-        if (minute == _endsAt && ReferenceEquals(zone, _endsAtZone) && ReferenceEquals(culture, _endsAtCulture))
+        var formats = AppText.Language.Formats;
+        if (minute == _endsAt && ReferenceEquals(zone, _endsAtZone) && ReferenceEquals(formats, _endsAtFormats))
         {
             return;
         }
         _endsAt = minute;
         _endsAtZone = zone;
-        _endsAtCulture = culture;
-        string time = minute is { } at ? TimeZoneInfo.ConvertTime(at, zone).ToString("t", culture) : "";
-        EndsAtText = minute is null ? "" : "Ends " + time;
-        EndsAtSpoken = minute is null ? "" : "Ends at " + time;
+        _endsAtFormats = formats;
+        string time = minute is { } at ? DateText.Time(TimeZoneInfo.ConvertTime(at, zone).DateTime) : "";
+        EndsAtText = minute is null ? "" : AppText.Get("granary.player.endsAt", ("time", time));
+        EndsAtSpoken = minute is null ? "" : AppText.Get("granary.player.endsAtSpoken", ("time", time));
+        EndsAtClock = time;
     }
 
     // For good, as the player is disposed: a tick already posted finds it disposed and starts none.

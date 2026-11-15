@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -35,11 +36,18 @@ public sealed partial class CollectionEditorPage
     public Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>"Look, Poster: a collage of its titles" for the closed card's button.</summary>
-    public string LookName(string summary) => $"Look, {summary}";
+    public string LookName(string summary) => AppText.Get("granary.collections.editor.lookName", ("summary", summary));
+
+    // The poster's words of the web's artwork fields, which name the slot they are for.
+    public string PosterPreviewName => AppText.Get("web.collections.fields.artworkPreview", ("slot", "poster"));
+
+    public string ChangePosterName => AppText.Get("web.collections.fields.changeArtwork", ("slot", "poster"));
+
+    public string PosterLinkLabel => AppText.Get("web.collections.fields.imageLink", ("slot", "poster"));
 
     public string EmptyGlyph(bool collages) => collages ? CollageGlyph : PictureGlyph;
 
-    public string EmptyLabel(bool collages) => collages ? "Collage" : "No poster";
+    public string EmptyLabel(bool collages) => collages ? AppText.Get("web.collections.fields.collage") : AppText.Get("web.collections.copy.noPoster");
 
     private void FollowLook() => ViewModel.PropertyChanged += OnLookChanged;
 

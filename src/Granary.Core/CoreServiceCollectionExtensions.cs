@@ -113,6 +113,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<CardPresentationSettings>();
         services.AddSingleton<EpisodeSpoilerSettings>();
         services.AddSingleton<TitlePageSettings>();
+        // The profile's app language, read with every profile and kept on this PC for the next start (docs/architecture.md, "Texts").
+        services.AddSingleton(sp => new Texts.AppLanguageFile(Texts.AppLanguageFile.DefaultPath, sp.GetRequiredService<ILogger<Texts.AppLanguageFile>>()));
+        services.AddSingleton<AppLanguageSetting>();
         AddThemeMusic(services);
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();

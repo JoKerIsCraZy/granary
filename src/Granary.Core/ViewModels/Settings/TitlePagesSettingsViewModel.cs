@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Settings;
 
@@ -13,16 +14,20 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string UnavailableTitle = "Couldn't load your spoiler settings";
-    public const string UnavailableText = "Editing is off until they load, so nothing you chose earlier gets overwritten.";
-    public const string UnsupportedTitle = "Your server needs an update";
-    public const string UnsupportedText = "Spoiler settings can be changed once your server runs a newer version of Silo.";
+    // The panel is the web's Navigation & Cards one, in its words where they fit spoilers too.
+    public static string UnavailableTitle => AppText.Get("granary.settings.spoilers.loadFailedTitle");
+
+    public static string UnavailableText => AppText.Get("web.settings.interface.loadFailedDescription");
+
+    public static string UnsupportedTitle => AppText.Get("web.settings.interface.unsupportedTitle");
+
+    public static string UnsupportedText => AppText.Get("granary.settings.spoilers.unsupportedDescription");
 
     /// <summary>The web's words when a switch did not save.</summary>
-    public const string SaveFailedText = "Failed to save title page setting";
+    public static string SaveFailedText => AppText.Get("web.settings.titlePages.saveFailed");
 
     /// <summary>The web's words when the title art did not save.</summary>
-    public const string TitleArtSaveFailedText = "Could not save the title art setting";
+    public static string TitleArtSaveFailedText => AppText.Get("web.settings.titleArt.saveFailed");
 
     private readonly EpisodeSpoilerSettings _settings;
     private readonly TitlePageSettings? _titlePage;
@@ -86,14 +91,18 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
         set => _ = _titlePage?.SetTitleArtForAllDevicesAsync(value);
     }
 
-    /// <summary>The web's note under the switches: which devices the choice covers, or that the server's default applies.</summary>
+    /// <summary>
+    /// The web's note under the switches: which devices the choice covers, or that the server's default applies. Granary's
+    /// own words for this PC, where the web says this browser.
+    /// </summary>
     public string TitleArtNote => _titlePage?.Shown switch
     {
-        { TitleArtForAllDevices: true, ShowsTitleArt: var on } =>
-            $"Title art is {OnOff(on)} on every device signed into this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again.",
-        { TitleArtFollowsServerDefault: true, ShowsTitleArt: var on } when CanEditTitlePage =>
-            $"Using the server default ({OnOff(on)}). Change it here to choose for this PC.",
-        { TitleArtSource: Api.Settings.SettingScopes.ProfileDevice } => "Only affects this PC. Your other devices keep their own setting.",
+        { TitleArtForAllDevices: true, ShowsTitleArt: false } => AppText.Get("web.settings.titleArt.allDevicesOffNote"),
+        { TitleArtForAllDevices: true } => AppText.Get("web.settings.titleArt.allDevicesOnNote"),
+        { TitleArtFollowsServerDefault: true, ShowsTitleArt: false } when CanEditTitlePage =>
+            AppText.Get("granary.settings.titleArt.serverDefaultOffNote"),
+        { TitleArtFollowsServerDefault: true } when CanEditTitlePage => AppText.Get("granary.settings.titleArt.serverDefaultOnNote"),
+        { TitleArtSource: Api.Settings.SettingScopes.ProfileDevice } => AppText.Get("granary.settings.titleArt.ownChoiceNote"),
         _ => "",
     };
 
@@ -158,8 +167,6 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
     }
 
     private bool Offers(string key) => _titlePage?.Shown.Offered.Contains(key) ?? false;
-
-    private static string OnOff(bool? on) => on == false ? "off" : "on";
 
     private void OnTitleArtNoteChanged()
     {

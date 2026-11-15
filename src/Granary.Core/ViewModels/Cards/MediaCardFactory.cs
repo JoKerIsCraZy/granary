@@ -2,6 +2,8 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
+using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Cards;
 
@@ -67,10 +69,11 @@ public static class MediaCardFactory
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
             Caption = item.ItemSource == ItemSources.NextUp
-                ? (premiere ? null : "Next Episode")
+                ? (premiere ? null : AppText.Get("web.home.continueWatching.nextEpisode"))
                 : TimeLeft(item.PositionSeconds, item.DurationSeconds),
-            CaptionBadge = premiere ? "NEW SEASON" : null,
-            CaptionBadgeName = premiere ? "new season" : null,
+            // The web's badge of a season premiere (lib/upcomingEventPresentation.ts), in capitals as its CSS shows it.
+            CaptionBadge = premiere ? AppText.Upper(AppText.Get("web.calendar.event.badge.seasonPremiere")) : null,
+            CaptionBadgeName = premiere ? AppText.Get("web.calendar.event.badge.seasonPremiere") : null,
             Links = CardLinks.Landscape,
             // The web's headingHref: the series while the heading is the series' title.
             HeadingId = isEpisode && !string.IsNullOrEmpty(item.SeriesTitle) ? SeriesOf(item) : null,
@@ -80,16 +83,21 @@ public static class MediaCardFactory
         }, item);
     }
 
-    /// <summary>A season poster: "Staffel 3" with "4 of 8 episodes" and the season's progress.</summary>
+    /// <summary>
+    /// A season poster: "Staffel 3" with "4 of 8 episodes" and the season's progress; a season without a name of its own is
+    /// "Season 3" in the language on screen, as the web's SeasonCarousel names it (getSeasonDisplayTitle).
+    /// </summary>
     public static MediaCard Season(Season season, Uri serverBase)
     {
         int watched = season.UserData?.WatchedCount ?? 0;
-        return new MediaCard(season.ContentId, CatalogItemTypes.Season, season.Title)
+        return new MediaCard(season.ContentId, CatalogItemTypes.Season,
+            DetailText.SeasonDisplayTitle(season.SeasonNumber, season.Title, season.IsSpecials == true))
         {
             Shape = MediaCardShape.Poster,
             Caption = watched > 0 && watched < season.EpisodeCount
-                ? $"{watched} of {season.EpisodeCount} episodes"
-                : $"{season.EpisodeCount} {(season.EpisodeCount == 1 ? "episode" : "episodes")}",
+                ? AppText.Get("web.detail.seasons.watchedProgress", ("count", season.EpisodeCount), ("count_text", AppText.Number(season.EpisodeCount)),
+                    ("watched", AppText.Number(watched)))
+                : AppText.Get("web.detail.seasons.episodeCount", ("count", season.EpisodeCount), ("count_text", AppText.Number(season.EpisodeCount))),
             ImageUrl = ArtworkUrl.Resolve(serverBase, season.PosterUrl),
             ImageThumbhash = season.PosterThumbhash,
             // A season watched to the end keeps a full bar, green, as on the web.
@@ -107,9 +115,9 @@ public static class MediaCardFactory
     public static MediaCard Episode(Episode episode, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
         ArgumentNullException.ThrowIfNull(episode);
-        var meta = new[] { FormatDate(episode.AirDate), episode.Runtime > 0 ? $"{episode.Runtime}m" : null }.Where(s => s is not null);
+        var meta = new[] { FormatDate(episode.AirDate), DetailText.Runtime(episode.Runtime) }.Where(s => s is not null);
         return new MediaCard(episode.ContentId, CatalogItemTypes.Episode,
-            $"S{episode.SeasonNumber:00}E{episode.EpisodeNumber:00} · {episode.Title}")
+            $"{EpisodeCode(episode.SeasonNumber, episode.EpisodeNumber)} · {episode.Title}")
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = string.Join(" · ", meta) is { Length: > 0 } line ? line : null,
@@ -138,12 +146,12 @@ public static class MediaCardFactory
         ArgumentNullException.ThrowIfNull(boxSet);
         var poster = ArtworkUrl.Resolve(serverBase, boxSet.PosterUrl);
         string caption = boxSet.PlayedCount > 0
-            ? string.Create(CultureInfo.InvariantCulture, $"{boxSet.PlayedCount} / {boxSet.MovieCount} watched")
+            ? AppText.Get("web.detail.boxSet.watchedFraction", ("played", boxSet.PlayedCount), ("total", boxSet.MovieCount))
             : BoxSetText.Years(boxSet) ?? BoxSetText.FilmCount(boxSet.MovieCount);
         return new MediaCard($"{BoxSetType}:{boxSet.LibraryId}:{boxSet.Id}", BoxSetType, boxSet.Title)
         {
             Shape = MediaCardShape.Poster,
-            Subtitle = caption.ToUpperInvariant(),
+            Subtitle = AppText.Upper(caption),
             Links = CardLinks.TitleAndSubtitle,
             ImageUrl = poster ?? ArtworkUrl.Resolve(serverBase, boxSet.BackdropUrl),
             ImageThumbhash = poster is not null ? boxSet.PosterThumbhash : boxSet.BackdropThumbhash,
@@ -208,7 +216,7 @@ public static class MediaCardFactory
     private static MediaCard Decorate(MediaCard card, CatalogItemBase item) => card with
     {
         Overlay = OverlayOf(item),
-        StatusBadge = item.Badges.Contains(ItemBadges.New) ? "NEW" : null,
+        StatusBadge = item.Badges.Contains(ItemBadges.New) ? AppText.Upper(AppText.Get("granary.card.new")) : null,
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
         // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
         IsWatched = item.UserState?.Played == true,
@@ -218,12 +226,14 @@ public static class MediaCardFactory
         PlayContentId = item.PlayContentId,
     };
 
-    // Web: "2021 SERIES" under a series, the year under a movie, "S1 E5" under an episode.
+    // Web: "2021 SERIES" under a series (the year beside its word, in capitals as its CSS shows them, as the web's
+    // SectionItemCard), the year under a movie, "S1 E5" under an episode.
     private static string? PosterSubtitle(CatalogItemBase item) => item.Type switch
     {
         CatalogItemTypes.Movie => YearText(item.Year),
-        CatalogItemTypes.Series => item.Year is > 0 ? $"{item.Year} SERIES" : "SERIES",
-        CatalogItemTypes.Season => item.SeasonNumber is { } season ? $"SEASON {season}" : null,
+        CatalogItemTypes.Series => AppText.Upper(item.Year is > 0 ? $"{YearText(item.Year)} {AppText.Get("web.home.sectionRow.seriesType")}"
+            : AppText.Get("web.home.sectionRow.seriesType")),
+        CatalogItemTypes.Season => item.SeasonNumber is { } season ? AppText.Upper(AppText.Get("web.detail.seasons.numbered", ("season", season))) : null,
         CatalogItemTypes.Episode => YearText(item.Year),
         _ => item.Year is > 0 ? $"{item.Year} {item.Type.ToUpperInvariant()}" : item.Type.ToUpperInvariant(),
     };
@@ -238,14 +248,19 @@ public static class MediaCardFactory
             return null;
         }
         bool hasSeriesTitle = !string.IsNullOrEmpty(item.SeriesTitle) && item.SeriesTitle != item.Title;
-        return (hasSeriesTitle ? item.SeriesTitle! : item.Title, hasSeriesTitle ? item.Title : null,
-            string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}"));
+        return (hasSeriesTitle ? item.SeriesTitle! : item.Title, hasSeriesTitle ? item.Title : null, EpisodeCode(season, episode));
     }
+
+    // "S04E01", in the web's words (lib/episodeCardLabels.ts): its numbers two digits, Latin in every language.
+    private static string EpisodeCode(int season, int episode) => AppText.Get("web.detail.episodeCode",
+        ("season", season.ToString("00", CultureInfo.InvariantCulture)), ("episode", episode.ToString("00", CultureInfo.InvariantCulture)));
 
     private static string? SeriesOf(CatalogItemBase item) => string.IsNullOrWhiteSpace(item.SeriesId) ? null : item.SeriesId;
 
     private static string? EpisodeLine(int? season, int? episode, string title) =>
-        season is { } s && episode is { } e ? $"Season {s} Episode {e} • {title}" : title;
+        season is { } s && episode is { } e
+            ? AppText.Get("web.home.continueWatching.episodeLabelWithTitle", ("season", s), ("episode", e), ("title", title))
+            : title;
 
     private static string? YearText(int? year) => year is > 0 ? year.Value.ToString(CultureInfo.InvariantCulture) : null;
 
@@ -258,16 +273,16 @@ public static class MediaCardFactory
         }
         // To the nearest minute, a half up, as the web's ContinueWatchingCard.tsx rounds it (Math.round) and Silo's apps show it.
         int minutes = (int)Math.Round((duration.Value - position.Value) / 60, MidpointRounding.AwayFromZero);
-        return $"{minutes} min left";
+        return AppText.Get("web.home.continueWatching.minutesLeft", ("minutes", minutes));
     }
 
     private static double? ProgressOf(double? position, double? duration, bool played) =>
         !played && position is > 0 && duration is > 0 ? Math.Clamp(position.Value / duration.Value, 0, 1) : null;
 
-    // Server dates are ISO strings ("2026-10-23"); shown like the web: "23 Oct 2026".
+    // Server dates are ISO strings ("2026-10-23"); shown like the web's episode cards (episodeCardText.ts): "Oct 23, 2026".
     private static string? FormatDate(string? isoDate) =>
         DateOnly.TryParse(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, CultureInfo.InvariantCulture, out var date) ? FormatDate(date) : null;
 
-    /// <summary>An episode card's date: "23 Oct 2026".</summary>
-    internal static string FormatDate(DateOnly date) => date.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+    /// <summary>An episode card's date, the web's formatDate(…, "medium"): "Oct 23, 2026".</summary>
+    internal static string FormatDate(DateOnly date) => DateText.MediumDate(date.ToDateTime(TimeOnly.MinValue));
 }

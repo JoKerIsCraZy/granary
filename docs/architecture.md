@@ -327,6 +327,132 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   (`MpvPlaybackEngine.Opened`, `Started`, `Retracked`): a newer load meanwhile is neither open nor started yet, and keeps
   its own state.
 
+## Texts
+
+Granary shows its texts from Silo's translation catalogs, used by key as Silo's web uses them (silo-server
+`web/src/i18n/README.md` and `docs/architecture/i18n.md`), in English, Spanish, German, French, Brazilian Portuguese,
+Japanese and Simplified Chinese. Arabic ships too but is held back until Granary lays out right to left (below). A text
+the web has for the same place takes the web's key, and with it the web's English where Granary had worded it
+differently; a text only Granary has keeps its English under a key of its own. All of it is in
+`src/Granary.Core/Texts`.
+
+- **Catalogs** (`Catalogs/`, embedded in Granary.Core, one file per language tag; `TextCatalog`):
+  - `web/<tag>.json` holds the web's compiled catalogs (`web/src/locales/<tag>.json`), unchanged per key and trimmed
+    to the keys Granary uses (`web-keys.txt`): each key maps to formatjs' compiled message, an array of elements.
+  - `granary/<tag>.json` holds Granary's own texts: `granary.<area>.<thing>` keys with ICU MessageFormat source, parsed
+    by formatjs' rules into the same elements (`IcuMessageParser`). English is their source; `@`-keys, as in an ARB
+    file, are notes for translators and are skipped. Each other language's file holds every English key, in the
+    English order, without notes. A Granary key never takes the place of a web key.
+  - **Where Granary's own texts come from.** Where the web has no text for a place but Silo's Android and Apple apps do
+    (their generated catalogs, `strings_catalog.xml` and `Localizable.xcstrings`, carry the same translations), Granary
+    takes the apps' wording, English and translations, and its note names the app's key (`Silo apps: <key>`), in the
+    web's sentence case where the apps write Apple's title case. An app text that calls the app "Silo" or names the
+    device it runs on ("this Mac", "this Apple TV") is not taken as it is. Every other text Granary translates itself,
+    in the terms, form of address and punctuation Silo's web and app catalogs use in each language. A translation keeps
+    its English message's arguments, tags and select options and takes only its language's plural categories, and no
+    text names Silo more often than its English, which names it only for the server or the project
+    (`GranaryCatalogFilesTests`).
+  - A missing file is an empty catalog. A message that cannot be read, such as an ordinal plural or a number with a
+    style, which no upstream message has needed, is left out and logged when the language is loaded.
+- **Formatting** (`MessageFormatter`, `PluralRules`) gives what react-intl gives for the same message: `{name}`; a
+  number in the language's culture, without grouping in `{n}` and grouped in `#` and `{n, number}` (in Spanish from five
+  digits on, as CLDR and the web have it); `select`; `plural`
+  with CLDR's cardinal rules for the eight languages, an exact value (`=0`) first and the offset applied; and rich-text
+  tags, whose children show as plain text (`AppText.Runs` keeps the tags, for inlines). In Arabic, printed values are
+  wrapped in Unicode isolates as on the web, and numbers take the digits of the format locale (below): Arabic-Indic
+  with Arabic marks where it writes them (`ar`, `ar-EG`), Latin with Latin marks where it does not (`ar-AE`), as the
+  web's `ar-u-nu-…` locale; an English fallback keeps Latin digits. Strings are never changed.
+- **Dates and numbers** (`FormatLocale`, `DateText`, `NumberText`) follow the web's format locale (`lib/appLocale.ts`,
+  `formatLocale`): Windows' regional format, unless a language was chosen whose language Windows' format is not in,
+  then the chosen tag's own (`AppLanguage.FormatCulture`, the web's `resolveAppLocale`), so nobody who did not choose
+  sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
+  - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
+    in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). The clock is Windows'
+    own, 12 or 24 hours as its time format says (a user's choice included), as the web's 12h/24h preference sets Intl's
+    hour cycle; Granary does not read the web's date and time preferences. Without ICU it writes .NET's nearest pattern.
+    A value is written as it reads; callers convert to the viewer's zone first.
+  - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
+    `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
+    `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.
+    The marks are .NET's for the culture; whether a four-digit number is grouped (Spanish and Polish write 1234,
+    Mexican Spanish 1,234) is ICU's number formatter's, as Intl's.
+  - Units and the words around numbers come from the web's catalog where it words them (`web.common.format.*`: sizes,
+    rates, runtimes); where the web writes a unit in code ("Mbps", "ms", "3d 4h"), Granary does too.
+  - What is sent, stored, compared, logged or handed to mpv stays invariant. WinUI's own controls (NumberBox, InfoBadge,
+    the media flyout's timeline) and Discord write their numbers with Windows' settings.
+- **Fallback** (`TextLanguage`): a message the language lacks comes in English with English rules. A key English lacks
+  too shows as `[key]` in debug builds and as nothing in release, and each problem is logged once. A lookup never
+  throws.
+- **The API** (`AppText`): in XAML a static function with a constant key,
+  `Text="{x:Bind t:AppText.Get('common.cancel')}"` with `xmlns:t="using:Granary.Core.Texts"`, and with up to two values
+  `AppText.Get('key', 'name', ViewModel.Value)` (x:Bind tells overloads apart only by their number of arguments); in C#
+  `AppText.Get(key, ("count", n), …)` and `AppText.Runs(…)`, which keeps an empty tag (`<match></match>`) as an empty
+  run where the web puts a control, so `SentencePanel` (Granary.App) can place boxes where a language's sentence has
+  them. `SentenceLayout` cuts such a sentence into words and boxes, with a gap only where the message has space (none in
+  Japanese and Chinese, none before punctuation after a box), and works out the fewest changes from one sentence to the
+  next: the panel moves a box only when a language puts it elsewhere, so a box keeps focus and an open menu its anchor,
+  and it wraps the pieces like text. A line breaks only between pieces, never inside a word or a run without spaces,
+  such as the Japanese between two boxes; a box the message leaves out stands at the end. A screen reader hears the
+  panel as one group named by its sentence, with "…" where a box stands ("Show … from …", `SentencePlan.Spoken`), then
+  the boxes in that order, each with its own name and value; the words are left out of its tree. `TextList.And` lists names
+  ("Maya, Leo and Sam") by Granary's list patterns, as the web's `joinNames` does with `Intl.ListFormat`; `AppText.Upper`
+  writes a text in capitals by the language's rules where the web upper-cases it in CSS, as the sidebar's section names. The class is not called
+  `Texts`: inside `Granary.Core` that name is the namespace. The process has one language, which the app applies (`AppText.Apply`); until then, and
+  in tests, it is English. A test that needs another language calls `AppText.Use(language)`, which holds for its own
+  async flow only, so the tests xUnit runs beside it keep English; `AppTextTests` keeps `AppText.Apply` out of
+  everything but the app. Text that is stored, sent or compared stays English, as Silo's rule is.
+- **Text the server words** (`AppText.ServerText`, the web's `serverText`): a server text in English with the key of
+  its catalog message, such as a row's `title` with `title_key` and `title_args`, shows the language's message when its
+  own catalog has the key and the server's values fill every value the message uses; otherwise, and always in English,
+  it shows as the server sent it. Home, library and Watch Party shelf rows take their titles this way (`SectionTitle`,
+  as the web's `lib/sectionTitle.ts`), and the activity indicator its running tasks' names, by a key made of the task's
+  own (`ServerActivityText.TaskName`, as the web's `lib/taskText.ts`).
+- **Keys** (`TextKeysTests`): every key `src` gives `AppText.Get` or `AppText.Runs` as a literal, in C# or in an x:Bind,
+  must be in the English catalog, the web's or Granary's, as the web's typecheck holds its keys to `en.json`.
+- **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,
+  then English, each matched only against the enabled languages (`AppLanguage.Enabled`), as in Silo's apps. A language is
+  enabled as the web's `hasCatalog` decides it: each shipped language whose catalogs Granary carries (`TextCatalog.Ships`),
+  except one written right to left, which is Arabic: the web sets `dir="rtl"` for it, which mirrors the whole layout, and
+  Granary lays out only left to right. A profile that chose Arabic, and an Arabic Windows, get the next language in line,
+  else English. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
+  es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
+  `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
+  Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";
+  `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
+- **The profile's language** (`AppLanguageSetting`): `ui.app_language` is read for every profile, as the web's
+  `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in, with every
+  server or profile, and each time Settings → Accessibility shows; a read that a choice overtook is dropped and made again
+  once the choice lands. A server from before settings contract revision 28 has no such setting: its profiles follow
+  the device. What was read is kept on this PC (`app-language.json` in the data directory,
+  `AppLanguageFile`), the last profile's language, as Silo's apps keep the language they last applied for the screens
+  before sign-in; a failed read keeps what was kept, a profile that follows the device clears it. Signing out keeps it.
+- **The picker** (Settings → Accessibility → Language, `AccessibilitySettingsViewModel`, as the web's
+  `AccessibilitySettings.tsx`): Match device, then the enabled languages by their own names, and a stored tag Granary
+  does not offer under its name, so a save never clears another app's choice. A choice writes the profile's value (Match
+  device writes `null`), then clears this PC's own value when the read came from it (a `null` row of its own too), as
+  the web and the apps write it; one choice at a time, each bound to the server and profile whose language showed when
+  it was made, so none goes out for a profile that took over meanwhile. It is kept for the next start once it applies
+  here: when saved, or, with a row of this PC's own, once that is cleared; a clear that lands only on Try again reads
+  the profile's language again, as another device may have chosen one meanwhile. A file that could not be written is
+  written by the next keep.
+- **How a change applies**: at the next start. Silo's web and apps switch at once; Granary does not, because the texts
+  are read when each element is made (x:Bind functions run once, view models word their rows as they load) and live
+  elements would keep the old language: the shell, the sidebar, cached pages and their back stack, the player (also
+  minimized, with its title playing), the taskbar buttons and Windows' media controls. Switching live would mean rebuilding
+  all of them while a title may play. So the picker says "Applies after a restart." while the next start would show
+  another language or other formats than this run (`AppLanguage.ForStart` of the value kept for the next start against
+  that of the value the run started with).
+- **At start-up** the app resolves the language from that kept value and Windows' list (`IDeviceLanguages`, read once:
+  `GlobalizationPreferences.Languages`) and applies it before its first window (`App.ApplyLanguage`,
+  `AppLanguage.ForStart`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates and numbers; the log says
+  which. The texts load once, so a language read or chosen later shows from the next start. A debug build takes
+  `--language <tag>` to show a shipped language, enabled or not, for checking converted texts; it counts as a chosen
+  language for the formats. WinUI's own control texts (a text box's menu, for example) still follow Windows' display
+  language.
+- **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
+  (docs/api-contract.md, 6.4).
+
 ## Networking and security
 
 - `HttpClient` instances come from `IHttpClientFactory`. The server probe uses a client without
@@ -618,7 +744,7 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   switched to meanwhile does not lose it (the one before stays signed in) and a profile its server no longer acts as is
   never written for the new one. Saves of one profile go one after another, so the latest value is the one its server
   keeps; another profile's never wait for them, so a save that hangs on one server does not hold back the profile acting
-  now. Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
+  now. Switch Profile and Logout in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
   does not answer does not stop them. A timer that was due as a later change came saves nothing; a failed save is logged
   and the value holds for this run; a read that answers after a change made here, once another profile acts, after a
   newer read was taken or after a save of that profile went through, is dropped, as its answer is older than the value
@@ -2366,7 +2492,7 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. The Downloads page and a series' downloads have no tabs
-  but sections that all show at once (Films and Series; the seasons), so theirs move focus to the first card of the section
+  but sections that all show at once (Movies and Series; the seasons), so theirs move focus to the first card of the section
   before or after the one focus is in; a series' season comes into view first, since its repeater makes it only near the
   view. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
   `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request. Any other seek of the viewer's
@@ -2738,8 +2864,9 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
   `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one
   before may show the same title, failed or playing. The launch is opening until that player shows the title no longer
   loading, or failed (the phone that launched it gets `launch_failed` with the player's message, as the status's `error`
-  carries it: only one of Granary's own failure texts goes out as it is, `RemoteTexts.PlayerError`; anything else, a
-  server's or an administrator's words among them, goes out as a fixed text), or closes after it
+  carries it: only one of Granary's own failure texts goes out, recognised in the language on screen and sent in English,
+  `RemoteTexts.PlayerError`; anything else, a server's or an administrator's words among them, goes out as a fixed text),
+  or closes after it
   showed the title, or `LaunchWait` (30 seconds, silo-roku's `CONTROL_LAUNCH_WAIT_MS`) passes on the receiver's
   `TimeProvider`; meanwhile another launch gets `launch_pending`.
 - **The log** says "an offer to start a title is ready", "was refused (another profile)", "a launch opens the player",

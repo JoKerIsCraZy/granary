@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
@@ -16,10 +17,14 @@ namespace Granary.Core.ViewModels.WatchParty;
 /// <param name="PosterPath">The poster as the server named it.</param>
 public sealed record WatchPartyChoice(string ContentId, string ContentType, string Title, string Subtitle, string? PosterPath);
 
-/// <summary>An episode of the candidate series: "3 · The Hollow · 44m".</summary>
-public sealed record WatchPartyEpisodeRow(string ContentId, int SeasonNumber, int EpisodeNumber, string Title, string Runtime)
+/// <summary>An episode of the candidate series: "E3 · The Hollow · 44m", as the web's series drilldown lists it.</summary>
+/// <param name="Runtime">Its length in minutes, 0 when unknown.</param>
+public sealed record WatchPartyEpisodeRow(string ContentId, int SeasonNumber, int EpisodeNumber, string Title, int Runtime)
 {
-    public string Label => WatchPartyText.Join(EpisodeNumber.ToString(CultureInfo.InvariantCulture), Title, Runtime);
+    public string Label => WatchPartyText.Join(
+        AppText.Get("web.watchTogether.common.episodeNumber", ("number", WatchPartyText.Code(EpisodeNumber))),
+        Title,
+        Runtime > 0 ? AppText.Get("web.watchTogether.series.runtime", ("minutes", Runtime)) : "");
 }
 
 /// <summary>
@@ -58,7 +63,7 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
     public ObservableCollection<WatchPartyEpisodeRow> Episodes { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSeries), nameof(IsMovie), nameof(Title), nameof(Poster))]
+    [NotifyPropertyChangedFor(nameof(IsSeries), nameof(IsMovie), nameof(Title), nameof(Poster), nameof(CloseName))]
     [NotifyCanExecuteChangedFor(nameof(ConfirmCommand))]
     public partial WatchPartyShelfCard? Card { get; private set; }
 
@@ -106,14 +111,18 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
 
     public bool HasReplaces => Replaces.Length > 0;
 
-    public string ConfirmLabel => Stages ? "Stage it for the room" : "Suggest this";
+    public string ConfirmLabel => Stages ? AppText.Get("web.watchTogether.candidate.stageForRoom") : AppText.Get("web.watchTogether.candidate.suggestThis");
 
-    public string EpisodeActionLabel => Stages ? "Stage it" : "Suggest";
+    public string EpisodeActionLabel => Stages ? AppText.Get("web.watchTogether.candidate.stageIt") : AppText.Get("watchParty.button.suggest");
 
-    /// <summary>"S2 E3 · The Hollow" once an episode is picked.</summary>
+    /// <summary>The close button's name: "Close details" for a movie, "Close series" for a series.</summary>
+    public string CloseName => IsSeries ? AppText.Get("web.watchTogether.series.close") : AppText.Get("web.watchTogether.movie.close");
+
+    /// <summary><c>S2 E3 “The Hollow”</c> once an episode is picked.</summary>
     public string PickedText => SelectedEpisode is { } e
-        ? WatchPartyText.Join($"S{e.SeasonNumber} E{e.EpisodeNumber}", e.Title)
-        : "Pick an episode.";
+        ? AppText.Get("web.watchTogether.series.pickedEpisode", ("season", WatchPartyText.Code(e.SeasonNumber)),
+            ("episode", WatchPartyText.Code(e.EpisodeNumber)), ("title", e.Title))
+        : AppText.Get("granary.watchParty.pickEpisode");
 
     /// <summary>Shows <paramref name="card"/> on the stage.</summary>
     /// <param name="stages">Confirming stages it rather than suggesting it.</param>
@@ -125,8 +134,8 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
         _reads = new CancellationTokenSource();
         Card = card;
         Stages = stages;
-        Replaces = stages && replaces is { Length: > 0 } title ? $"Replaces {title}" : "";
-        Headline = card.Year is { } year ? $"{card.Title} ({year.ToString(CultureInfo.InvariantCulture)})" : card.Title;
+        Replaces = stages && replaces is { Length: > 0 } title ? AppText.Get("web.watchTogether.common.replaces", ("title", title)) : "";
+        Headline = WatchPartyText.MovieYear(card.Title, card.Year);
         Meta = "";
         Overview = "";
         SeenSummary = "";
@@ -228,25 +237,25 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
         }
         int count = room.Members.Count;
         SeenSummary = count == 0 ? ""
-            : started == 0 ? "new for everyone"
-            : watched == count ? "a rewatch for everyone"
-            : watched == 0 ? $"{started} of {count} started"
-            : $"{watched} of {count}";
+            : started == 0 ? AppText.Get("web.watchTogether.movie.newForEveryone")
+            : watched == count ? AppText.Get("web.watchTogether.movie.rewatchForEveryone")
+            : watched == 0 ? AppText.Get("web.watchTogether.movie.startedOf", ("started", started), ("total", count))
+            : AppText.Get("web.watchTogether.movie.seenOf", ("seen", watched), ("total", count));
     }
 
     private static string SeenState(Api.WatchParty.WatchPartyMemberWatchState? state)
     {
         if (state is null || state.State == "unseen")
         {
-            return "Hasn't seen it";
+            return AppText.Get("web.watchTogether.movie.notSeen");
         }
         if (state.State == "watched")
         {
-            return "Watched";
+            return AppText.Get("watchParty.whoSeen.watched");
         }
         return state.PositionSeconds is { } position && state.DurationSeconds is double duration && duration > 0
-            ? $"{Math.Round(position / duration * 100).ToString(CultureInfo.InvariantCulture)}% in"
-            : "In progress";
+            ? AppText.Get("web.watchTogether.movie.percentIn", ("percent", (int)Math.Round(position / duration * 100)))
+            : AppText.Get("watchParty.whoSeen.inProgress");
     }
 
     // The seasons, then the one the room is on (or the first that is not specials).
@@ -266,7 +275,7 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
             foreach (var season in seasons.Items.Where(s => s.EpisodeCount > 0 || s.IsSpecials != true))
             {
                 Seasons.Add(new SettingChoice(season.SeasonNumber.ToString(CultureInfo.InvariantCulture),
-                    season.Title.Length > 0 ? season.Title : $"Season {season.SeasonNumber}"));
+                    season.Title.Length > 0 ? season.Title : AppText.Get("web.watchTogether.common.season", ("number", season.SeasonNumber))));
             }
             SelectedSeason = Seasons.FirstOrDefault(s => card.Season is { } on && s.Value == on.ToString(CultureInfo.InvariantCulture))
                 ?? Seasons.FirstOrDefault(s => s.Value != "0") ?? Seasons.FirstOrDefault();
@@ -300,7 +309,7 @@ public sealed partial class WatchPartyCandidateViewModel : ObservableObject
             foreach (var episode in episodes.Items.Where(e => e.Files.Count > 0))
             {
                 Episodes.Add(new WatchPartyEpisodeRow(episode.ContentId, episode.SeasonNumber, episode.EpisodeNumber, episode.Title,
-                    WatchPartyText.Runtime(episode.Runtime)));
+                    episode.Runtime));
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)

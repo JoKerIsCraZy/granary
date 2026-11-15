@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -28,7 +29,7 @@ internal sealed class DialogConfirmation(IServiceProvider services) : IConfirmat
                 Title = title,
                 Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
                 PrimaryButtonText = action,
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             return await dialog.ShowAsync() == ContentDialogResult.Primary;

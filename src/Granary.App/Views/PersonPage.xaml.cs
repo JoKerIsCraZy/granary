@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -56,7 +57,7 @@ public sealed partial class PersonPage : Page
     }
 
     /// <summary>The facts as the web's badges write them: in capitals.</summary>
-    public IReadOnlyList<string> Badges(IReadOnlyList<string> facts) => [.. facts.Select(f => f.ToUpper(CultureInfo.CurrentCulture))];
+    public IReadOnlyList<string> Badges(IReadOnlyList<string> facts) => [.. facts.Select(AppText.Upper)];
 
     public Brush NoticeBrush(bool failed) => failed ? FailedBrush : (Brush)Application.Current.Resources["SiloMutedBrush"];
 

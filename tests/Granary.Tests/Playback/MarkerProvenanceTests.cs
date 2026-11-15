@@ -1,5 +1,6 @@
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Tests.Playback;
 
@@ -92,6 +93,20 @@ public sealed class MarkerProvenanceTests
 
         Assert.Null(unrated.Line(showConfidence: true, showSource: false));
         Assert.Equal("TheIntroDB", unrated.Line(showConfidence: true, showSource: true));
+    }
+
+    [Fact]
+    public void TheLine_IsInTheLanguageOnScreen()
+    {
+        using (AppText.Use(TextLanguage.Load("de")))
+        {
+            Assert.Equal("20 % · Erkannt", new MarkerProvenance("scanner", null, 0.2).Line(showConfidence: true, showSource: true));
+            Assert.Equal("Bearbeitet", new MarkerProvenance("manual", null, null).SourceLabel);
+        }
+        using (AppText.Use(TextLanguage.Load("ja")))
+        {
+            Assert.Equal("20% · 検出", new MarkerProvenance("plugin", "built_in", 0.2).Line(showConfidence: true, showSource: true));
+        }
     }
 
     [Fact]

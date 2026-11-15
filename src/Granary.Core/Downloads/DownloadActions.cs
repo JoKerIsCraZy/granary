@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Microsoft.Extensions.Logging;
 
@@ -22,15 +23,18 @@ public sealed record TitleDownloadState(bool IsShown, string Label, bool OpensDo
 /// </summary>
 public sealed class DownloadActions
 {
-    public const string DownloadLabel = "Download";
-    public const string DownloadSeasonLabel = "Download season";
+    /// <summary>The web's overflow item (<c>web.detail.actions.download</c>).</summary>
+    public static string DownloadLabel => AppText.Get("web.detail.actions.download");
+    public static string DownloadSeasonLabel => AppText.Get("granary.downloads.downloadSeason");
 
     /// <summary>A series' item, the Android app's words for its every episode (<c>detail_downloadSeries</c>).</summary>
-    public const string DownloadSeriesLabel = "Download series";
-    public const string DeleteLabel = "Delete download";
-    public const string DeleteTitle = "Delete download?";
-    public const string DeleteMessage = "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.";
-    public const string DeleteAction = "Delete";
+    public static string DownloadSeriesLabel => AppText.Get("granary.downloads.downloadSeries");
+
+    /// <summary>The Apple app's item and question (<c>downloads.action.delete</c>, <c>downloads.offlineDetail.*</c>).</summary>
+    public static string DeleteLabel => AppText.Get("granary.downloads.delete");
+    public static string DeleteTitle => AppText.Get("granary.downloads.deleteTitle");
+    public static string DeleteMessage => AppText.Get("granary.downloads.deleteMessage");
+    public static string DeleteAction => AppText.Get("granary.downloads.deleteConfirm");
 
     private readonly DownloadManager _downloads;
     private readonly DownloadsFeature _feature;

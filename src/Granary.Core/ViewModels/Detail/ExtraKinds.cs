@@ -1,3 +1,5 @@
+using Granary.Core.Texts;
+
 namespace Granary.Core.ViewModels.Detail;
 
 /// <summary>
@@ -9,27 +11,27 @@ public static class ExtraKinds
     /// <summary>The web's <c>extraKindLabel</c>, for one video: "Trailer", "Behind the Scenes", "Extra" for anything unknown.</summary>
     public static string Label(string? kind) => Key(kind) switch
     {
-        "trailer" => "Trailer",
-        "teaser" => "Teaser",
-        "featurette" => "Featurette",
-        "clip" => "Clip",
-        "behind_the_scenes" => "Behind the Scenes",
-        "bloopers" => "Bloopers",
-        "deleted_scene" => "Deleted Scene",
-        _ => "Extra",
+        "trailer" => AppText.Get("web.detail.extras.kind.trailer"),
+        "teaser" => AppText.Get("web.detail.extras.kind.teaser"),
+        "featurette" => AppText.Get("web.detail.extras.kind.featurette"),
+        "clip" => AppText.Get("web.detail.extras.kind.clip"),
+        "behind_the_scenes" => AppText.Get("web.detail.extras.kind.behindTheScenes"),
+        "bloopers" => AppText.Get("web.detail.extras.kind.bloopers"),
+        "deleted_scene" => AppText.Get("web.detail.extras.kind.deletedScene"),
+        _ => AppText.Get("web.detail.extras.kind.otherKind"),
     };
 
     /// <summary>The web's <c>extraKindGroupLabel</c>, a group's heading: "Featurettes", "Deleted Scenes", "Other" for anything unknown.</summary>
     public static string GroupLabel(string? kind) => Key(kind) switch
     {
-        "trailer" => "Trailers",
-        "teaser" => "Teasers",
-        "featurette" => "Featurettes",
-        "clip" => "Clips",
-        "behind_the_scenes" => "Behind the Scenes",
-        "bloopers" => "Bloopers",
-        "deleted_scene" => "Deleted Scenes",
-        _ => "Other",
+        "trailer" => AppText.Get("web.detail.extras.kindGroup.trailer"),
+        "teaser" => AppText.Get("web.detail.extras.kindGroup.teaser"),
+        "featurette" => AppText.Get("web.detail.extras.kindGroup.featurette"),
+        "clip" => AppText.Get("web.detail.extras.kindGroup.clip"),
+        "behind_the_scenes" => AppText.Get("web.detail.extras.kindGroup.behindTheScenes"),
+        "bloopers" => AppText.Get("web.detail.extras.kindGroup.bloopers"),
+        "deleted_scene" => AppText.Get("web.detail.extras.kindGroup.deletedScene"),
+        _ => AppText.Get("web.detail.extras.kindGroup.otherKind"),
     };
 
     /// <summary>

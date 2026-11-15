@@ -164,7 +164,7 @@ public sealed class AddSubtitlesViewModelTests : IDisposable
 
         await dialog.DownloadAsync(dialog.Results[0]);
 
-        Assert.Equal("Could not reach the server. Check the connection and try again.", dialog.SearchError);
+        Assert.Equal("Can't reach the server. Check your connection and try again.", dialog.SearchError);
         Assert.True(dialog.Results[0].CanDownload);
         Assert.False(dialog.IsDownloading);
         Assert.Empty(_added);

@@ -1,7 +1,7 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.Updates;
 using Microsoft.Extensions.Logging;
 
@@ -51,10 +51,6 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>How long closing waits for the switch to be saved, when it was used just before.</summary>
     public static readonly TimeSpan SaveWaitAtExit = TimeSpan.FromSeconds(2);
 
-    private const string AutomaticSummary =
-        "Granary looks for a new release when it starts and every six hours, downloads it in the background, and installs it when it closes.";
-
-    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
 
     private readonly IAppUpdater _updater;
     private readonly IUpdatePreferences _preferences;
@@ -137,7 +133,8 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>The downloaded release's version, once one is ready to apply.</summary>
     public string? ReadyVersion => IsReady ? Release?.Version : null;
 
-    public string NoticeText => ReadyVersion is { } version ? $"Granary {version} is ready to install" : "";
+    /// <summary>The shell's notice of a ready update: "Granary 0.2.0 is ready to install".</summary>
+    public string NoticeText => ReadyVersion is { } version ? AppText.Get("granary.update.notice", ("version", version)) : "";
 
     /// <summary>What the ready release changes, as it was packed with; empty without.</summary>
     public string ReleaseNotes => IsReady ? Release?.Notes ?? "" : "";
@@ -145,31 +142,31 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     public bool HasReleaseNotes => ReleaseNotes.Length > 0;
 
     /// <summary>Settings → About's button for a ready update.</summary>
-    public string RestartText => IsAutomatic ? "Restart now" : "Restart to update";
+    public string RestartText => IsAutomatic ? AppText.Get("granary.update.restartNow") : AppText.Get("granary.update.restartToUpdate");
 
     /// <summary>What Granary does about updates on its own, under the Updates heading.</summary>
     public string Summary => IsAutomatic || !CanUpdate
-        ? AutomaticSummary
-        : "Granary looks for a new release only when you check, and installs it only once you choose to.";
+        ? AppText.Get("granary.update.summaryAutomatic")
+        : AppText.Get("granary.update.summaryManual");
 
     /// <summary>One line on where the update stands.</summary>
     public string StatusText => State switch
     {
         AppUpdateState.Unsupported => _updater.Support == AppUpdateSupport.NotInstalled
-            ? "This copy wasn't installed with Granary's setup, so it doesn't update itself."
-            : "This build doesn't look for updates.",
-        AppUpdateState.Checking => "Checking for updates…",
-        AppUpdateState.Downloading => $"Downloading Granary {Release?.Version}… {DownloadPercent.ToString(English)}%",
-        AppUpdateState.UpToDate => "Granary is up to date.",
+            ? AppText.Get("granary.update.notInstalled")
+            : AppText.Get("granary.update.unsupportedBuild"),
+        AppUpdateState.Checking => AppText.Get("granary.update.checking"),
+        AppUpdateState.Downloading => AppText.Get("granary.update.downloading", ("version", Release?.Version), ("percent", DownloadPercent)),
+        AppUpdateState.UpToDate => AppText.Get("granary.update.upToDate"),
         AppUpdateState.Available => _downloadFailed
-            ? $"Couldn't download Granary {Release?.Version}. Check the connection and try again."
-            : $"Granary {Release?.Version} is available.",
-        AppUpdateState.Ready => $"Granary {Release?.Version} is ready. It installs when you restart or close Granary.",
-        AppUpdateState.Failed => "Couldn't check for updates. Check the connection and try again.",
+            ? AppText.Get("granary.update.downloadFailed", ("version", Release?.Version))
+            : AppText.Get("granary.update.available", ("version", Release?.Version)),
+        AppUpdateState.Ready => AppText.Get("granary.update.ready", ("version", Release?.Version)),
+        AppUpdateState.Failed => AppText.Get("granary.update.checkFailed"),
         AppUpdateState.NotVerified => IsAutomatic
-            ? $"The update to Granary {Release?.Version} couldn't be verified, so it wasn't installed. Granary will try again later."
-            : $"The update to Granary {Release?.Version} couldn't be verified, so it wasn't installed.",
-        _ => IsAutomatic ? "Granary looks for updates when it starts and every six hours." : "Automatic updates are off.",
+            ? AppText.Get("granary.update.notVerifiedRetry", ("version", Release?.Version))
+            : AppText.Get("granary.update.notVerified", ("version", Release?.Version)),
+        _ => IsAutomatic ? AppText.Get("granary.update.idleAutomatic") : AppText.Get("granary.update.idleManual"),
     };
 
     /// <summary>"Last checked today at 14:05", or "on Oct 26 at 09:12"; empty before the first look.</summary>
@@ -183,8 +180,11 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             }
             var local = TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone);
             var today = TimeZoneInfo.ConvertTime(_time.GetUtcNow(), _time.LocalTimeZone).Date;
-            string day = local.Date == today ? "today" : "on " + local.ToString("MMM d", English);
-            return $"Last checked {day} at {local.ToString("HH:mm", English)}";
+            // In the format locale, as the web writes a time (formatTime) and a month and day.
+            string time = DateText.Time(local.DateTime);
+            return local.Date == today
+                ? AppText.Get("granary.update.lastCheckedToday", ("time", time))
+                : AppText.Get("granary.update.lastCheckedOn", ("date", DateText.Format(local.DateTime, DateText.MonthDay)), ("time", time));
         }
     }
 

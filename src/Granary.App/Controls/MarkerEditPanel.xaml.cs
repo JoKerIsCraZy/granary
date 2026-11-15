@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Microsoft.UI;
@@ -65,9 +66,9 @@ public sealed partial class MarkerEditPanel : UserControl
 
     public static Brush RangeForeground(bool hasRange) => new SolidColorBrush(Color.FromArgb(hasRange ? (byte)0xBF : (byte)0x59, 0xFF, 0xFF, 0xFF));
 
-    public static string ResetName(string label) => $"Reset {label} marker";
+    public static string ResetName(string label) => AppText.Get("web.markers.panel.resetLabel", ("kind", label));
 
-    public static string ClearName(string label) => $"Clear {label} marker";
+    public static string ClearName(string label) => AppText.Get("web.markers.panel.clearLabel", ("kind", label));
 
     private static MarkerEditRow? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as MarkerEditRow;
 

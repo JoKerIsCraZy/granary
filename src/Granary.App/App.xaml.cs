@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime;
 using Granary.App.Services;
 using Granary.App.Themes;
@@ -12,6 +13,7 @@ using Granary.Core.Realtime;
 using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -78,6 +80,8 @@ public partial class App : Application
         Services = ConfigureServices(DispatcherQueue.GetForCurrentThread());
         _logger = Services.GetRequiredService<ILogger<App>>();
         _logger.LogInformation("Granary {Version} starting", typeof(App).Assembly.GetName().Version);
+        // The language texts come in, before the first window shows any (docs/architecture.md, "Texts").
+        ApplyLanguage();
         _window = Services.GetRequiredService<MainWindow>();
         // Windows' notifications for downloads that finish or fail while Granary is not in front, registered at every start
         // before anything reads how Granary was started: a click on one while Granary was closed started it, and its Play or
@@ -143,6 +147,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
         // And the rest of its Title Pages settings.
         _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
+        // Its app language, kept on this PC for the next start.
+        _ = Services.GetRequiredService<AppLanguageSetting>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
@@ -167,6 +173,46 @@ public partial class App : Application
         StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started,
             notices.ShellStarted);
     }
+
+    // The language the profile chose, as kept on this PC when it was last read, else Windows' (docs/architecture.md, "Texts").
+    // Dates and numbers follow Windows' regional format (CurrentCulture, which .NET takes from it), as the web's follow the
+    // browser's, unless a language of another was chosen. The texts load once: a language chosen later applies from the next
+    // start.
+    private void ApplyLanguage()
+    {
+        string? stored = Services.GetRequiredService<AppLanguageFile>().AtStart;
+        var device = Services.GetRequiredService<IDeviceLanguages>();
+        var (language, culture) = AppLanguage.ForStart(stored, device, AppLanguage.Enabled);
+#if DEBUG
+        if (DeveloperLanguage() is { } developer)
+        {
+            language = developer;
+            culture = AppLanguage.FormatCulture(language, developer, device.RegionalFormat);
+        }
+#endif
+        var formats = FormatLocale.For(culture);
+        AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>(), formats));
+        _logger?.LogInformation("Texts in {Language}, dates and numbers as {Formats}", AppText.Language.Tag, formats.Culture.Name);
+    }
+
+#if DEBUG
+    // Developer shortcut: --language <tag> shows the texts in that shipped language, enabled or not, to check converted texts.
+    private string? DeveloperLanguage()
+    {
+        string[] arguments = Environment.GetCommandLineArgs();
+        int index = Array.IndexOf(arguments, "--language");
+        if (index < 0 || index + 1 >= arguments.Length)
+        {
+            return null;
+        }
+        string? language = AppLanguage.Match(arguments[index + 1]);
+        if (language is null)
+        {
+            _logger?.LogWarning("--language {Tag} is not a language Granary ships", arguments[index + 1]);
+        }
+        return language;
+    }
+#endif
 
     private static PlayRequest? DeveloperPlayRequest()
     {
@@ -227,6 +273,8 @@ public partial class App : Application
         services.AddSingleton<DiscordStatus>();
         services.AddSingleton<IRichPresence>(sp => sp.GetRequiredService<DiscordStatus>());
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
+        // Windows' languages and regional format as Granary starts, which "Match device" follows.
+        services.AddSingleton<IDeviceLanguages, WindowsDeviceLanguages>();
         // The main window's full screen and mini view, shared by the app, the player and a trailer; and where the window
         // opens, where it was closed (window.json).
         services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));

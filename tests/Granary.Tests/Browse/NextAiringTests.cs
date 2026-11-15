@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Fakes;
 
@@ -148,6 +149,21 @@ public sealed class NextAiringTests
     public void TheNumber_IsNeverGrouped()
     {
         Assert.Equal("Episode 1024 on Oct 8", NextAiring.Text(At(3, 1024, "2026-10-08T20:00:00Z"), Now));
+    }
+
+    [Fact]
+    public void InGerman_TheWordsAreTheAppleApps_AndTheDayIsWrittenAsGermanWritesIt()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        Assert.Equal("Folge 6 heute", NextAiring.Text(At(3, 6, "2026-10-01T20:00:00Z"), Now));
+        Assert.Equal("Folge 6 morgen", NextAiring.Text(At(3, 6, "2026-10-02T20:00:00Z"), Now));
+        Assert.Equal("Folge 6 am Samstag", NextAiring.Text(At(3, 6, "2026-10-03T20:00:00Z"), Now));
+        Assert.Equal("Folge 1024 am 8. Okt.", NextAiring.Text(At(3, 1024, "2026-10-08T20:00:00Z"), Now));
+        Assert.Equal("Staffel 4 startet heute", NextAiring.Text(At(4, 1, "2026-10-01T20:00:00Z"), Now));
+        Assert.Equal("Staffel 4 startet morgen", NextAiring.Text(At(4, 1, "2026-10-02T20:00:00Z"), Now));
+        Assert.Equal("Staffel 4 startet am Dienstag", NextAiring.Text(At(4, 1, "2026-10-06T20:00:00Z"), Now));
+        Assert.Equal("Staffel 4 startet am 1. Dez.", NextAiring.Text(At(4, 1, "2026-12-01T20:00:00Z"), Now));
     }
 
     private static EpisodeAiring At(int season, int episode, string instant) =>

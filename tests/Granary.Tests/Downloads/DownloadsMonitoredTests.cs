@@ -123,7 +123,7 @@ public sealed class DownloadsMonitoredTests : IAsyncDisposable
         Assert.Equal("Download: Example Series", shown.DialogTitle);
 
         var entries = page.Actions.EntriesFor(card);
-        Assert.Equal(["Go to Series", "Options"], entries.Select(e => e.Label));
+        Assert.Equal(["Go to series", "Options"], entries.Select(e => e.Label));
         entries[0].Command.Execute(card);
         Assert.Equal((AppRoute.Item, (object?)"sr_1"), _navigation.Navigations[^1]);
     }
