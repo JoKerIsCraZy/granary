@@ -102,6 +102,70 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
         }
     }
 
+    // A refresh for profile 7 that waited for the downloads to be read goes on only after profile 8's refresh read the server.
+    [Fact]
+    public async Task ARefreshForAProfileThatLeftWhileTheDownloadsWereRead_LeavesTheNextProfilesAnswer()
+    {
+        var token = Token;
+        Capability(enabled: true, allowed: true);
+        var store = _h.UnreadStore();
+        // Not disposed: the load's thread may still be waking from it.
+        var released = new ManualResetEventSlim();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        store.Loading = () =>
+        {
+            reached.TrySetResult();
+            released.Wait(TimeSpan.FromSeconds(30), token);
+        };
+        var feature = new DownloadsFeature(_h.Session, _h.Api, store, _h.Time, _h.Logs.For<DownloadsFeature>());
+        // The load starts outside the held context, so it ends by itself; profile 7's refresh waits for it inside.
+        var loading = store.LoadAsync(token);
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
+        var held = new HeldContext();
+        Task first;
+        var context = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(held);
+        try
+        {
+            first = feature.RefreshAsync(token);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+        }
+        released.Set();
+        await loading.WaitAsync(TimeSpan.FromSeconds(5), token);
+        await Until(() => held.HasPosted, "profile 7's refresh may go on");
+
+        _h.Session.ProfileId = "8";
+        await feature.RefreshAsync(token);
+        Assert.True(feature.CanDownload);
+        held.RunPosted();
+        await first.WaitAsync(TimeSpan.FromSeconds(5), token);
+
+        Assert.True(feature.CanDownload);
+        Assert.True(feature.IsOffered);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, CapabilityPath));
+    }
+
+    // Keeps what is posted to it until the test runs it.
+    private sealed class HeldContext : SynchronizationContext
+    {
+        private readonly System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback Callback, object? State)> _posted = new();
+
+        public bool HasPosted => !_posted.IsEmpty;
+
+        public override void Post(SendOrPostCallback d, object? state) => _posted.Enqueue((d, state));
+
+        public void RunPosted()
+        {
+            while (_posted.TryDequeue(out var posted))
+            {
+                posted.Callback(posted.State);
+            }
+        }
+    }
+
     [Fact]
     public async Task AnotherProfilesDownloads_DoNotOfferTheEntry()
     {

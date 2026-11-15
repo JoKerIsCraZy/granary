@@ -1490,7 +1490,9 @@ client guide.
 `DownloadManager` is what the view models use; `DownloadsFeature` says whether downloads are offered.
 
 - **Offered.** `DownloadsFeature` reads the capability once per server, account and profile (a failed read again after a
-  minute, a cancelled one at the next refresh; a late answer for a profile that is no longer the active one is dropped): `CanDownload` when it is `enabled && allowed`, as Silo's Apple app gates it, and `IsOffered` (the sidebar's
+  minute, a cancelled one at the next refresh; a late answer for a profile that is no longer the active one is dropped,
+  and a refresh that waited for the downloads to be read while another profile became the active one reads nothing,
+  which would clear that profile's answer): `CanDownload` when it is `enabled && allowed`, as Silo's Apple app gates it, and `IsOffered` (the sidebar's
   entry) then or while the profile has downloads on this PC, which stay playable and deletable whatever the server says.
   Downloads on this PC show the entry before the capability is read, so it never waits for a server that cannot be
   reached, whose read can take the connection's whole timeout to fail.
