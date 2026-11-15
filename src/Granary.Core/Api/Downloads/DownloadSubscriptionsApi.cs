@@ -43,6 +43,11 @@ public sealed class DownloadSubscriptionsApi(SiloHttp http)
                 }
                 monitors.Add(monitor);
             }
+            // A page a cursor asked for has to say whether more follow; only the first may leave its paging out.
+            if (read.Page is null && page > 0)
+            {
+                throw NotWhole();
+            }
             if (read.Page is not { HasMore: true })
             {
                 return monitors;

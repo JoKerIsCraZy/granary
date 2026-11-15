@@ -69,6 +69,21 @@ public sealed class DownloadSubscriptionsApiTests
     }
 
     [Fact]
+    public async Task List_WhoseNextPageSaysNothingOfItsPaging_IsNotWhole()
+    {
+        // A first page without paging is the whole list; a page a cursor asked for must say whether more follow.
+        _silo.On(HttpMethod.Get, ListPath,
+            ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page("c2", MonitorPayloads.Monitor("sub_1"))),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ """ + MonitorPayloads.Monitor("sub_2", "sr_2") + """ ] }"""));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+
+        _silo.On(HttpMethod.Get, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ """ + MonitorPayloads.Monitor() + """ ] }"""));
+
+        Assert.Single(await Api.ListAsync(ScriptedSilo.Base, Profile, Token));
+    }
+
+    [Fact]
     public async Task List_WithAMonitorWithoutItsValidator_IsNotWhole()
     {
         _silo.On(HttpMethod.Get, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor(etag: ""))));

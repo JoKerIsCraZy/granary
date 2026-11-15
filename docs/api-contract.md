@@ -3140,7 +3140,8 @@ none.
   monitors download originals and the member is absent). Granary offers Monitor only when downloads are usable and
   `series_monitoring` is set (`DownloadCapability.CanMonitorSeries`); a monitor that exists stays shown, so it can be stopped.
 - `GET /api/v2/downloads/subscriptions?limit=100[&cursor=]` → `{ items: [DownloadSubscription], page }`, newest first, paused
-  ones included. Every page is read before a monitor counts as gone; a cursor or a monitor that comes back, a page over the
+  ones included. Every page is read before a monitor counts as gone; a cursor or a monitor that comes back, a page a cursor asked for
+  that says nothing of its paging, a page over the
   limit, a monitor without `id`, `series_id` or `etag`, or more than 1000 pages makes the list not whole, and nothing is
   taken from it. `GET .../subscriptions/{id}` → one, with its current `etag`.
 - `DownloadSubscription`: `id`, `series_id`, `mode`, `season_numbers` (int array), `target_season?` (`latest_season`'s
