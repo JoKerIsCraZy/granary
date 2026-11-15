@@ -14,6 +14,7 @@ using Granary.Core.Settings;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -95,6 +96,10 @@ public partial class App : Application
         var downloads = Services.GetRequiredService<DownloadQueue>();
         downloads.Start();
         _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
+        // The sidebar follows them for the whole run (docs/architecture.md, "Downloads in the shell").
+        var activity = Services.GetRequiredService<DownloadActivity>();
+        activity.Start();
+        _window.Closed += (_, _) => activity.Dispose();
         // What was watched from this PC goes to the server once it can be reached, and its progress comes back
         // (docs/architecture.md, "Offline progress"). The last position of a title that plays as Granary closes is kept
         // with its stop, which the window waits for.

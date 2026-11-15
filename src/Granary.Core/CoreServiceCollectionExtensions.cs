@@ -347,6 +347,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<CardDownloads>();
         // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
+        // The downloads outside their page, for the app's whole run: the sidebar's count; the app starts it.
+        services.AddSingleton<ViewModels.Downloads.DownloadActivity>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
         // What a download played from this PC recorded, kept in the data directory until the server took it, and the sync

@@ -1573,6 +1573,24 @@ client guide.
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
 
+### Downloads in the shell
+
+`DownloadActivity` (a singleton the app starts in `App.Launch` and disposes as the window closes) follows the active
+profile's downloads for the whole run, outside their page: `DownloadManager.Changed` and the session's `Changed`, on any
+thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burst, which reads `Items` and makes a
+`DownloadTally` of them. A transfer that only went further (`DownloadProgressedEventArgs`) changes nothing of it.
+
+- **The sidebar's count.** `PendingCount` counts the downloads coming or waiting (`DownloadTally.IsPending`): preparing,
+  queued or downloading, not paused by the viewer, their folder there and still on the server. One that waits for a
+  connection that is not metered counts, since it comes by itself. The window binds it to the Downloads entry's
+  `InfoBadge`, as Notifications' unread count, and its name for a screen reader (`EntryName`: "Downloads, 3 downloads in
+  progress", the Apple app's words).
+- **The pulse.** `IsTransferring` while one download comes now (`DownloadText.IsComing`: downloading, nothing pausing or
+  holding it). The window shows a 6 px dot in the accent before the count and has it breathe on the compositor
+  (`MainWindow.Downloads.cs`, as `ServerActivityButton`'s count breathes): no timer, nothing on the UI thread. With
+  Windows' animation effects off (`UISettings.AnimationsEnabled`, followed through `AnimationsEnabledChanged`) the dot
+  stands still. The window lives as long as the app and lets go of Windows' settings as it closes.
+
 ### Signing out
 
 `DownloadSignOut` takes a server's downloads along when the viewer signs out of it or removes it, as Silo's Apple app does.
