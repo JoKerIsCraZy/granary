@@ -300,8 +300,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   app's rule line ("Future episodes", "All episodes", "Last season · Season 3 on", "Seasons 2 and 3", with " · 10 Mbps" for
   a quality that is not original), and what it does next, the Apple app's status line ("Episode 6 on Thursday", "Season 2
   starts tomorrow", "Downloading Episode 6 · 42%", "Episode 7 is next", "Preparing Episode 7", "Episode 7 waits for an
-  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber, "Paused", "Up to date", or
-  "Monitoring" before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
+  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber (the limit that holds its first
+  held episode: the monitor's, or Settings → Downloads' for every download), "Paused", "Up to date", or "Monitoring"
+  before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
   has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
   downloads shows no empty box. Then "Films" and
   "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and

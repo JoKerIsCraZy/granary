@@ -1677,7 +1677,8 @@ titles of their series as a download dialog or a download named them.
   minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
 - **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards
   (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
-  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode; one under way; one waiting; the next airing the rule
+  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode, the one that holds the first held episode, its
+  monitor's or Granary's, as the queue says (`DownloadHold`); one under way; one waiting; the next airing the rule
   takes that this PC does not have; up to date once the calendar was read), from the page's downloads and
   `MonitorSchedule`, which the page asks to read as it shows and whenever the monitors change while it shows (a run at the
   start fills them a moment later; the calendar itself is read only when due); the monitors' and the schedule's `Changed`
