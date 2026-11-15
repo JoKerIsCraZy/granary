@@ -1357,7 +1357,8 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   second; Granary's own): a phone sends each once, when something changed, and never again, so a burst of commands
   before one (a seek dragged along the timeline, then the app put away) must not drop it and leave the phone counted
   as active, or passive, for good. Over a budget a message is dropped unanswered and the phone is told `rate_limited`
-  at most once a second, for both together; the player is not asked. Unknown types and controls are skipped before
+  at most once a second for each budget, so a dropped signal is told even right after a command flood was; the player
+  is not asked. Unknown types and controls are skipped before
   the budget, as they cause no more work than the frame they came in, which the connection's frame budget counts. A
   `presence` that changes nothing changes no phone.
 - **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
@@ -1386,7 +1387,7 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
 | Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
 | Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
 | Commands, offers and launches | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
-| `hello`, `presence` and the phone's `handoff_cancel` | 5 a second, bursts of 10, per phone, a budget of their own |
+| `hello`, `presence` and the phone's `handoff_cancel` | 5 a second, bursts of 10, per phone, a budget of their own; `error rate_limited` at most once a second |
 | Slow reader | dropped when one write waits 10 seconds or more than 128 KiB waits |
 | Close | at most half a second for the `close` to leave |
 

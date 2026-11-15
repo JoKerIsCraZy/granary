@@ -58,9 +58,10 @@ public sealed partial class RemoteReceiver
 
     // Every message a phone sends but ping, pong and close (which the controller answers) takes from a budget, since each
     // may post to the UI thread, log or be answered. Over it the message is dropped, and the phone is told at most once a
-    // second; a phone that floods gets nothing more. Unknown types and controls never get here. A hello, a presence and a
-    // phone's cancel take from a small budget of their own: each is sent once, when something changed, so one dropped
-    // after a burst of commands (a seek dragged, then the app put away) would leave the phone counted wrongly for good.
+    // second for each budget; a phone that floods gets nothing more. Unknown types and controls never get here. A hello, a
+    // presence and a phone's cancel take from a small budget of their own: each is sent once, when something changed, so
+    // one dropped after a burst of commands (a seek dragged, then the app put away) would leave the phone counted wrongly
+    // for good, and its drop is told even when the commands' was a moment before.
     private async ValueTask OnMessageAsync(Session session, SiloCastMessage message)
     {
         var budget = message is SiloCastMessage.PhoneHello or SiloCastMessage.Presence or SiloCastMessage.HandoffCancelled
@@ -68,7 +69,7 @@ public sealed partial class RemoteReceiver
             : session.Budget;
         if (!budget.TryTake())
         {
-            if (session.Budget.MayReport())
+            if (budget.MayReport())
             {
                 await session.Controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.RateLimited, RemoteTexts.RateLimited)).ConfigureAwait(false);
             }

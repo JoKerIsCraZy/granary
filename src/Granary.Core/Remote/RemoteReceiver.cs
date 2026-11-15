@@ -336,10 +336,10 @@ public sealed partial class RemoteReceiver
     {
         public RemoteController Controller { get; } = controller;
 
-        /// <summary>For commands, offers and launches; its reports of a rate limit stand for both budgets.</summary>
+        /// <summary>For commands, offers and launches.</summary>
         public CommandBudget Budget { get; } = budget;
 
-        /// <summary>For the hello, a presence and a phone's cancel.</summary>
+        /// <summary>For the hello, a presence and a phone's cancel; its rate limit is reported apart from the commands'.</summary>
         public CommandBudget Signals { get; } = signals;
 
         /// <summary>The address it came from, as IPv4.</summary>

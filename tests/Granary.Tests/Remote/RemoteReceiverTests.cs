@@ -713,6 +713,32 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASignalOverItsBudget_IsReported_AlsoRightAfterACommandFloodWas()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await phone.NextAsync("state");
+
+        // A flood of commands is told once.
+        for (int i = 0; i <= CommandBudget.Burst; i++)
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"seek","seconds":10},"v":2}""");
+        }
+        // Within the same second, presences beyond their own budget (the hello took one) are told too.
+        for (int i = 1; i <= CommandBudget.SignalBurst; i++)
+        {
+            await phone.SendAsync(i % 2 == 1
+                ? """{"type":"presence","presence":{"passive":true},"v":2}"""
+                : """{"type":"presence","presence":{"passive":false},"v":2}""");
+        }
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+
+        Assert.Equal(2, phone.Received.Count(message => message.Contains("rate_limited", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public async Task RepliesToAPhoneOnAnotherServer_CountAgainstItsBudget()
     {
         var (phone, _) = await _harness.HelloAsync(SiloCastServerId.From(new Uri("https://other.example")));
