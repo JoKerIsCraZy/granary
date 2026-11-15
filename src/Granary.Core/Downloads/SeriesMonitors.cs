@@ -79,6 +79,10 @@ public sealed partial class SeriesMonitors : IDisposable
     // Under _gate.
     private readonly Lock _gate = new();
     private readonly Dictionary<DownloadScope, Dictionary<string, string>> _pendingStops = [];
+
+    // The choices a create made that the server's monitor does not show yet (the change to it did not go), by monitor: until a
+    // list shows the monitor as the viewer asked, it deletes no watched episode on the server's word.
+    private readonly Dictionary<DownloadScope, Dictionary<string, MonitorChoice>> _unconfirmed = [];
     private ITimer? _settle;
     private ITimer? _interval;
     private DownloadScope? _following;

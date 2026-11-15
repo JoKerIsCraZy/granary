@@ -66,6 +66,8 @@ public sealed partial class SeriesMonitors
         if (listed && _book.In(scope).Count > 0 && IsStill(scope))
         {
             await TakeRegisteredAsync(scope, server, cancellationToken).ConfigureAwait(false);
+            // A monitor whose create's choice the server does not show yet is not sure either.
+            unsure.UnionWith(UnconfirmedOf(scope));
             await DeleteWatchedAsync(scope, unsure, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -93,6 +95,7 @@ public sealed partial class SeriesMonitors
         {
             ForgetStop(scope, wanted.Id);
         }
+        ConfirmListed(scope, listed);
         var stopping = StopsOf(scope);
         _book.Replace(scope, [.. listed.Where(m => !stopping.ContainsKey(m.Id))]);
         return true;

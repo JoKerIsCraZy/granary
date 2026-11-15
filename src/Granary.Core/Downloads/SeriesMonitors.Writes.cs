@@ -56,9 +56,17 @@ public sealed partial class SeriesMonitors
             _book.Put(scope, monitor);
             if (!Matches(monitor, choice))
             {
+                // The server's monitor as it was (another client's, or one this PC stopped and monitors again) is not what the
+                // viewer asked for: until it is, its Delete after watching is not taken at its word.
+                Unconfirm(scope, monitor.Id, choice);
                 var edit = new MonitorEdit(monitor.Mode == choice.Mode ? null : choice.Mode, choice.DeleteWatched, choice.MaxStorageBytes,
                     choice.Quality is null || choice.Quality == (monitor.Quality ?? DownloadQualities.Original) ? null : choice.Quality);
-                return await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false);
+                var changed = await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false);
+                if (changed == MonitorResult.Saved)
+                {
+                    Confirm(scope, monitor.Id);
+                }
+                return changed;
             }
             await SyncAndTakeAsync(scope, server, monitor, token).ConfigureAwait(false);
             return MonitorResult.Saved;
@@ -79,7 +87,7 @@ public sealed partial class SeriesMonitors
             null => MonitorResult.Removed,
             // The viewer changed the monitor as it was, which a run read anew since: their change goes over nothing they saw.
             { } monitor when edit.Etag is { } seen && monitor.Etag != seen => MonitorResult.Changed,
-            { } monitor => await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false),
+            { } monitor => await SavedChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false),
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -106,6 +114,7 @@ public sealed partial class SeriesMonitors
                 stops[monitor.Id] = monitor.Etag;
             }
             _book.Remove(scope, monitor.Id);
+            Confirm(scope, monitor.Id);
             await SendStopsAsync(scope, server, token).ConfigureAwait(false);
             return MonitorResult.Saved;
         }, cancellationToken).ConfigureAwait(false);
@@ -128,6 +137,69 @@ public sealed partial class SeriesMonitors
         finally
         {
             _one.Release();
+        }
+    }
+
+    // A viewer's change that went: what they chose is the monitor's now, so a create's choice still waiting for it is done.
+    private async Task<MonitorResult> SavedChangeAsync(DownloadScope scope, Uri server, DownloadSubscription monitor, MonitorEdit edit,
+        CancellationToken cancellationToken)
+    {
+        var result = await ChangeAsync(scope, server, monitor, edit, cancellationToken).ConfigureAwait(false);
+        if (result == MonitorResult.Saved)
+        {
+            Confirm(scope, monitor.Id);
+        }
+        return result;
+    }
+
+    private void Unconfirm(DownloadScope scope, string subscriptionId, MonitorChoice choice)
+    {
+        lock (_gate)
+        {
+            if (!_unconfirmed.TryGetValue(scope, out var choices))
+            {
+                _unconfirmed[scope] = choices = new Dictionary<string, MonitorChoice>(StringComparer.Ordinal);
+            }
+            choices[subscriptionId] = choice;
+        }
+    }
+
+    private void Confirm(DownloadScope scope, string subscriptionId)
+    {
+        lock (_gate)
+        {
+            if (_unconfirmed.TryGetValue(scope, out var choices))
+            {
+                choices.Remove(subscriptionId);
+            }
+        }
+    }
+
+    // The monitors whose create's choice the server does not show yet.
+    private HashSet<string> UnconfirmedOf(DownloadScope scope)
+    {
+        lock (_gate)
+        {
+            return _unconfirmed.TryGetValue(scope, out var choices) ? [.. choices.Keys] : [];
+        }
+    }
+
+    // A whole list read: a monitor it shows as its create asked, or does not show at all, waits for nothing more.
+    private void ConfirmListed(DownloadScope scope, IReadOnlyList<DownloadSubscription> listed)
+    {
+        lock (_gate)
+        {
+            if (!_unconfirmed.TryGetValue(scope, out var choices))
+            {
+                return;
+            }
+            foreach (var (id, choice) in choices.ToList())
+            {
+                if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, choice))
+                {
+                    choices.Remove(id);
+                }
+            }
         }
     }
 

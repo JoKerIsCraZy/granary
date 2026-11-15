@@ -269,6 +269,34 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeriesMonitoredAgainWithoutDeleteAfterWatching_DeletesNothing_WhileTheServerStillSaysOtherwise()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, NoAnswer());
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+
+        // Monitored again without Delete after watching; the change to the monitor the server still has did not go.
+        var result = await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+        await Monitors.SyncAsync(Token);
+
+        Assert.NotEqual(MonitorResult.Saved, result);
+        Assert.NotNull(_h.Find("dl_1"));
+
+        // Once a run reads it as the viewer asked, it is the series' monitor as any other.
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m2\"", deleteWatched: false));
+        await Monitors.SyncAsync(Token);
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m3\"", deleteWatched: true));
+        await Monitors.SyncAsync(Token);
+
+        Assert.Null(_h.Find("dl_1"));
+    }
+
+    [Fact]
     public async Task ASeriesWithAMonitorTheRunCouldNotBeSureOf_DeletesNothing_WhateverItsOtherMonitorsSay()
     {
         ListMonitors(MonitorPayloads.Monitor("sub_1", "sr_1", deleteWatched: true), MonitorPayloads.Monitor("sub_2", "sr_1", etag: "\"n1\"", deleteWatched: true));
