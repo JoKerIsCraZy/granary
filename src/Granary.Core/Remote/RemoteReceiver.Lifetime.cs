@@ -26,7 +26,7 @@ public sealed partial class RemoteReceiver
 
     // A stop's share of its budget: the phones, then each of the other two steps.
     private static readonly TimeSpan PhonesBudget = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan StepBudget = TimeSpan.FromMilliseconds(500);
+    internal static readonly TimeSpan StepBudget = TimeSpan.FromMilliseconds(500);
 
     private readonly SemaphoreSlim _lifetimeGate = new(1, 1);
     private readonly Lock _loopGate = new();

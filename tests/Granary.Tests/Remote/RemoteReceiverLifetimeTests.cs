@@ -624,14 +624,17 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
         var stopping = Receiver.StopAsync();
         await Time.WaitUntilAsync(() => Time.NextDue == RemoteTimings.Default.CloseGrace, Token);
         Time.Advance(RemoteTimings.Default.CloseGrace);
-        await Time.WaitUntilAsync(() => _harness.Advertiser.UnregisterStarted, Token);
-        Time.Advance(RemoteReceiver.StopBudget - RemoteTimings.Default.CloseGrace);
+        await Time.WaitUntilAsync(() => _harness.Advertiser.UnregisterStarted && Time.NextDue == RemoteReceiver.StepBudget, Token);
+        // As far as the removal's own share of the budget, and no further: the rest of the stop runs on other threads while
+        // the clock stands, and moved past the whole budget at once, the clock would end the wait for it first.
+        Time.Advance(RemoteReceiver.StepBudget);
 
         await stopping.WaitAsync(HangGuard, Token);
         Assert.False(_harness.Listener.IsListening);
         Assert.Equal("listener.Stop", _harness.Calls.All[^1]);
         Assert.True(Time.Elapsed <= RemoteReceiver.StopBudget);
         Assert.Equal(RemoteReceiverState.Off, Receiver.Status.State);
+        Assert.DoesNotContain("did not stop within its time", _harness.Logs.All, StringComparison.Ordinal);
     }
 
     [Fact]
