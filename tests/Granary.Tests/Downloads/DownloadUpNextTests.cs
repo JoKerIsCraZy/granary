@@ -1,5 +1,6 @@
 using System.Net;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Tests.Profiles;
@@ -22,7 +23,8 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private DownloadUpNext Create() => new(
-        new UpNextSource(new CatalogApi(_h.Silo.Http), _h.Session, _h.Logs.For<UpNextSource>()), _h.Store, _h.Session, _h.Time);
+        new UpNextSource(new CatalogApi(_h.Silo.Http), _h.Session,
+            new ImageParameterCache(new ImagesApi(_h.Silo.Http), _h.Logs.For<ImageParameterCache>()), _h.Logs.For<UpNextSource>()), _h.Store, _h.Session, _h.Time);
 
     private static string Episodes(int season, params int[] numbers) =>
         "{ \"items\": [" + string.Join(",", numbers.Select(n =>
@@ -48,7 +50,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await AddDownloadsAsync();
         _h.Silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 5, 6, 7)));
 
-        var next = await Create().NextEpisodeAsync(Episode5, Token);
+        var next = await Create().NextEpisodeAsync(Episode5, null, Token);
 
         // Episode 6 is not on this PC: it streams, as the series goes on in order.
         Assert.Equal(("ep_6", 1, 6), (next!.ContentId, next.SeasonNumber, next.EpisodeNumber));
@@ -60,7 +62,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await AddDownloadsAsync();
         Offline();
 
-        var next = await Create().NextEpisodeAsync(Episode5, Token);
+        var next = await Create().NextEpisodeAsync(Episode5, null, Token);
 
         Assert.Equal(new NextEpisode("ep_7", 1, 7, "Chapter Seven"), next);
         Assert.Null(next!.StillUrl);
@@ -72,7 +74,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await AddDownloadsAsync();
         Offline();
 
-        var next = await Create().NextEpisodeAsync(Episode5 with { ContentId = "ep_7", EpisodeNumber = 7 }, Token);
+        var next = await Create().NextEpisodeAsync(Episode5 with { ContentId = "ep_7", EpisodeNumber = 7 }, null, Token);
 
         Assert.Equal(new NextEpisode("ep_21", 2, 1, "Second Chapter One"), next);
     }
@@ -83,7 +85,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await AddDownloadsAsync();
         Offline();
 
-        Assert.Null(await Create().NextEpisodeAsync(new PlayingEpisode("ep_21", "sr_1", "Example Series", 2, 1), Token));
+        Assert.Null(await Create().NextEpisodeAsync(new PlayingEpisode("ep_21", "sr_1", "Example Series", 2, 1), null, Token));
     }
 
     [Fact]
@@ -96,7 +98,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await _h.AddPlayableAsync("dl_9", "ep_9", episode: 9, change: r => r with { Title = "Chapter Nine" });
         Offline();
 
-        var next = await Create().NextEpisodeAsync(Episode5, Token);
+        var next = await Create().NextEpisodeAsync(Episode5, null, Token);
 
         Assert.Equal("ep_9", next?.ContentId);
     }
@@ -108,11 +110,11 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         Offline();
         var source = Create();
 
-        var previous = await source.PreviousEpisodeAsync(Episode5 with { ContentId = "ep_7", EpisodeNumber = 7 }, Token);
+        var previous = await source.PreviousEpisodeAsync(Episode5 with { ContentId = "ep_7", EpisodeNumber = 7 }, null, Token);
 
         Assert.Equal(new NextEpisode("ep_5", 1, 5, "Chapter Five"), previous);
         // None before a season's first, as on the web.
-        Assert.Null(await source.PreviousEpisodeAsync(new PlayingEpisode("ep_21", "sr_1", "Example Series", 2, 1), Token));
+        Assert.Null(await source.PreviousEpisodeAsync(new PlayingEpisode("ep_21", "sr_1", "Example Series", 2, 1), null, Token));
     }
 
     [Fact]
@@ -125,7 +127,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
             throw new InvalidOperationException();
         });
 
-        var next = Create().NextEpisodeAsync(Episode5, Token);
+        var next = Create().NextEpisodeAsync(Episode5, null, Token);
         Assert.False(next.IsCompleted);
         _h.Time.Advance(DownloadUpNext.ServerBudget);
 
@@ -139,7 +141,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
         _h.Silo.On(HttpMethod.Get, Season1, () => answer.Task);
 
-        var next = Create().NextEpisodeAsync(Episode5, Token);
+        var next = Create().NextEpisodeAsync(Episode5, null, Token);
         _h.Time.Advance(DownloadUpNext.ServerBudget + TimeSpan.FromSeconds(30));
         Assert.False(next.IsCompleted);
         answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 5, 6))());
@@ -167,7 +169,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         _h.Store.RecheckFolders();
         Offline();
 
-        var next = await Create().NextEpisodeAsync(Episode5, Token);
+        var next = await Create().NextEpisodeAsync(Episode5, null, Token);
 
         Assert.Equal("ep_7", next?.ContentId);
     }
@@ -181,7 +183,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         _h.Silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 4, 5)));
         _h.Silo.On(HttpMethod.Get, Seasons, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "season_number": 1 } ] }"""));
 
-        var next = await Create().NextEpisodeAsync(Episode5, Token);
+        var next = await Create().NextEpisodeAsync(Episode5, null, Token);
 
         // Episode 7 is on this PC and still plays from its row; it is not what follows.
         Assert.Null(next);
@@ -211,7 +213,7 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
 
         async Task<(string?, int?, int?)> NextAsync()
         {
-            var next = await Create().NextEpisodeAsync(special, Token);
+            var next = await Create().NextEpisodeAsync(special, null, Token);
             return (next?.ContentId, next?.SeasonNumber, next?.EpisodeNumber);
         }
     }
@@ -223,6 +225,6 @@ public sealed class DownloadUpNextTests : IAsyncDisposable
         await _h.AddPlayableAsync("dl_901", "ep_901", episode: 9, season: 0);
         Offline();
 
-        Assert.Null(await Create().NextEpisodeAsync(Episode5, Token));
+        Assert.Null(await Create().NextEpisodeAsync(Episode5, null, Token));
     }
 }

@@ -563,7 +563,7 @@ white when white contrasts more than the dark label `#141417`. Granary reads it 
 ### 6.6 Settings the client reads
 
 Profile and device settings live on the server (manifest
-`silo-server/contracts/settings/v1/manifest.json`, revision 23).
+`silo-server/contracts/settings/v1/manifest.json`, revision 24).
 
 - Read: `GET /api/v2/settings/values/effective?keys=a&keys=b` with `X-Profile-Id` and
   `X-Silo-Device-Id` (needed for keys that allow `profile_device`; see [11.2](#112-intro-skip-mode)) →
@@ -584,6 +584,7 @@ Profile and device settings live on the server (manifest
 | `playback.audio_language`, `playback.subtitle_language`, `playback.subtitle_mode`, `playback.show_forced_subtitles` | profile, profile_device, profile_library, profile_series | –, –, `auto`, `true` | normally read through watch-detail `effective_*` ([8.8.1](#881-initial-track-selection-before-start)) |
 | `playback.subtitle_appearance` | profile, profile_device | style object | text subtitle styling in mpv |
 | `playback.intro_skip_mode` | profile, profile_device | `ask` | [11.2](#112-intro-skip-mode) |
+| `playback.show_marker_confidence`, `playback.show_marker_source` | profile, profile_device (resolved device, profile, default) | `false`, `false` | the line above the skip pill: the marker's confidence and where it came from ([11.1](#111-where-markers-come-from)); since revision 24, so read at each start in a batch of their own, and a server that refuses them (`422`) leaves the line off and keeps the other marker settings; Settings → Playback shows their switches only where the server knows them |
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
 | `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
@@ -2348,7 +2349,9 @@ same way:
    `.../seasons/{current}/episodes`; add the episodes of the lowest-numbered later season that is
    not specials (`is_specials`). The next episode is the smallest (season, episode) strictly after
    the current one (`silo-android/shared/src/commonMain/kotlin/org/siloserver/silo/playback/NextEpisodeResolver.kt:24-34`).
-   A multi-part item plays its next part before moving on.
+   A multi-part item plays its next part before moving on. Granary reads these episodes with `still_width` set to the
+   widest the Playing Next screen draws the still (400 px high in 16:9, at the display's scale), as the web reads them for
+   that screen (`web/src/lib/artworkWidths.ts`, `upNext`); without it the server sends a card's still (7.10).
 2. **Prompt**: when playback crosses `credits.start` of the playing version going forward, or
    `duration − playback.next_up_prompt_seconds` (default 30; 0 = only at the end) without a credits
    marker. Resuming inside the credits does not trigger it.
@@ -2373,8 +2376,18 @@ The playback start decision contains **no** markers or chapters. The watch detai
 - `marker_segments[]`: `{ "kind": "intro" | "credits" | "recap" | "preview", "start_seconds", "end_seconds", "thumbnail_url"?, "thumbnail_thumbhash"?, "thumbnail_capture_seconds"? }`,
   in source-time order. A kind may occur more than once; act on the range that contains the
   current position.
-- Singular `intro`, `credits`, `recap`, `preview` objects `{ "start_seconds", "end_seconds" }` as
-  compatibility projections (one range each).
+- Singular `intro`, `credits`, `recap`, `preview` objects
+  `{ "start_seconds", "end_seconds", "source"?, "provider"?, "confidence"?, "algorithm"? }` as compatibility
+  projections (one range each).
+- Where a range came from, beside it on the singular object (`silo-server/internal/apiv2/watch.go:178-195`), item level
+  and per version. The file keeps one origin per kind, so every occurrence of a kind in `marker_segments` shares it, as
+  the web takes it (`web/src/player/utils/watchPageMarkers.ts`, `provenanceOf`). `source`: `scanner` (Silo's own
+  detection), `plugin` or `online` (a provider), `s3`, `manual` (a person). `provider`: a capability id (`introdb`,
+  `built_in`) or, from a plugin, `plugin:<installation id>:<capability id>`; absent for Silo's own detection.
+  `confidence`: 0 to 1 on the source's own scale, so only comparable within one source; **absent** when nobody rated
+  the range, and a rated 0 is sent as 0. `algorithm` (`chromaprint:v4`, `introdb:v4`) is not read. A server from before
+  leaves all four out. Granary reads them into the skip pill's line ([6.6](#66-settings-the-client-reads); the web's
+  `lib/markerProvenance.ts`).
 
 Use the entry of the version that is actually playing (`source.media_file_id` in the plan). The
 item-level singular fields mirror one selected file: the `file_id` version when it is one of the
@@ -2390,7 +2403,8 @@ Dedicated reads, if needed: `GET /api/v2/markers/files/{file_id}` (preferred) an
 `file_id`, `marker_segments`, and `intro`/`credits`/`recap`/`preview` as
 `{ "start_seconds"?, "end_seconds"?, "source"?, "provider"?, "confidence"?, "algorithm"?, "detected_at"? }`
 (`{}` when absent). Sources: `silo-server/internal/apiv2/markers.go:21-48`,
-`silo-server/docs/markers-api.md:202-248`.
+`silo-server/docs/markers-api.md:202-248`. The answer to a save (`PUT /api/v2/markers/files/{file_id}`) is read the same
+way, its `source`, `provider` and `confidence` included: a marker a person set is `manual` with confidence 1.
 
 During playback, the per-session control socket can push `markers_updated` (see
 [8.9](#89-control-socket-optional)); Android re-reads `getWatchState(file_id)` after a reconnect or a
@@ -2421,7 +2435,10 @@ timer:
 - `never`: nothing.
 - `ask`: entering the intro shows "Skip Intro". Selecting it seeks to `end` and resolves the intro;
   Back hides and resolves it. A timeout hides the pill **without** resolving, so seeking back in
-  offers it again. Seeking out hides it; seeking back in restarts the timer.
+  offers it again. Seeking out hides it; seeking back in restarts the timer. After the timeout,
+  while still inside, "Skip Intro" returns **without a timer** whenever the controls show and hides
+  with them; it takes no focus, gives up the timed pill's, and claims Select/Back only while it
+  has focus (web: `useIntroSkipPrompt.ts` `expiredKey`, silo-server #3511).
 - `always`: entering the intro seeks to `end` immediately and shows "Intro skipped / Watch Intro".
   Selecting it seeks to `start` and resolves; the timeout resolves.
 - Shared: a resolved intro never prompts again in that session. Pause freezes the timer;
@@ -2721,8 +2738,9 @@ What the indicator reads, each source by itself (a source the server does not of
   until the next connection's snapshot, which the server writes right after `subscribed`; when it has not come after
   10 s (the server could not build it and sent an `error` frame), or cannot be read, the scans count as not known
   rather than as they were, since an end that happened while the stream was away, or that the server dropped for a
-  slow reader (its hub keeps 64 events per connection), is never sent again. Not known means neither a list nor
-  "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
+  slow reader (its hub keeps 64 events per connection), is never sent again. A `scan.*` event that cannot be read (cut
+  for its size, or no run; every one of them carries a run) leaves them not known as well. Not known means neither a
+  list nor "none": the runs the stream tells of from then on are the least there is. A run is about 0.3 KB while it waits and
   0.6 to 0.9 KB with its `result` (thirteen counters, `phase`, `message`, `current_scope`), plus its `path`, so 500 of
   them are 0.15 to 0.5 MB; a snapshot passes the 1 MiB a frame may have (12) only with paths of about 1.5 KB on
   average, and is then such a snapshot that cannot be read. The libraries' names for the rows come from

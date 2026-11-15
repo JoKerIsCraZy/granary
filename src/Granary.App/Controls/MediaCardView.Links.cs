@@ -20,7 +20,8 @@ namespace Granary.App.Controls;
 // grid asks TryOpenHeading first when the button clicks (CardClick). A key's click never finds such a press, so nothing
 // here changes what the keyboard, a remote or a screen reader meet.
 // Nothing is made per card: the line is found from the pointer's place among the text blocks already there, the cards
-// share their cursors, and only a card a pointer has come to while its title opens its series listens for presses.
+// share their cursors, and only a card a pointer has come to while its title opens its series, or that is given such a
+// title with the pointer on it, listens for presses.
 public sealed partial class MediaCardView
 {
     private enum LinkCursor
@@ -47,6 +48,8 @@ public sealed partial class MediaCardView
     private PointerEventHandler? _onHostCaptureLost;
     // The button those two are on.
     private ButtonBase? _pressHost;
+    // A pointer came to the card and has not left it (nor the card the screen).
+    private bool _isPointerOn;
 
     /// <summary>
     /// A click on the card's button: when it ends a pointer's press on a title line that opens its series, opens the series
@@ -68,6 +71,7 @@ public sealed partial class MediaCardView
     // series. Any pointer enters the caption before it presses there, so the card hears its first press too.
     private void ShowPointer(PointerRoutedEventArgs e, bool entered)
     {
+        _isPointerOn = true;
         Point at = default;
         var pointer = CardPointer.Artwork;
         if (_caption != CardCaption.Artwork)
@@ -111,6 +115,17 @@ public sealed partial class MediaCardView
         Underline(CardLines.None);
         SetCursor(LinkCursor.None);
         _headingPress?.Clear();
+    }
+
+    // A card given another title under a pointer that stays where it is hears no PointerEntered, and a click without a
+    // move hears no PointerMoved either: one whose title line now opens its series notes its presses all the same, or a
+    // click on that line would open the episode.
+    private void FollowPressesUnderPointer()
+    {
+        if (_isPointerOn && LinkedCard() is { HeadingId: not null })
+        {
+            FollowPresses();
+        }
     }
 
     // The card while it has lines that are links: not without a caption (the profile's "Nothing" under posters).

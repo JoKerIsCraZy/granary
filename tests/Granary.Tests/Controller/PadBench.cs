@@ -30,6 +30,16 @@ internal sealed class PadBench
 
     public List<PadAction> Read(PadButtons buttons) => Read(new PadReading(buttons));
 
+    /// <summary>
+    /// A reading at rest the window does not hand over while the pad is idle (MainWindow.ReadPad), <paramref name="after"/>
+    /// the one before.
+    /// </summary>
+    public void Skip(TimeSpan after)
+    {
+        _time.Advance(after);
+        Pad.Skip();
+    }
+
     /// <summary>The same reading frame after frame for <paramref name="duration"/>.</summary>
     public List<PadAction> Hold(PadReading reading, TimeSpan duration)
     {

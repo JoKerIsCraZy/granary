@@ -1,3 +1,4 @@
+using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Cards;
@@ -20,20 +21,20 @@ public sealed class DownloadUpNext(UpNextSource server, DownloadStore store, ISe
     /// </summary>
     public static readonly TimeSpan ServerBudget = TimeSpan.FromSeconds(5);
 
-    public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+    public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
         // After the last special comes the first season, as the server's lists are read (UpNextSource): the same on this PC.
-        return ServerFirstAsync(server.FindNextAsync(current, cancellationToken), () =>
+        return ServerFirstAsync(server.FindNextAsync(current, images, cancellationToken), () =>
             Downloaded(current, e => e.Season > current.SeasonNumber || (e.Season == current.SeasonNumber && e.Episode > current.EpisodeNumber))
                 .OrderBy(e => e.Season).ThenBy(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }
 
     // The web player's previous-episode button stays inside the season; so does this.
-    public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+    public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return ServerFirstAsync(server.FindPreviousAsync(current, cancellationToken), () =>
+        return ServerFirstAsync(server.FindPreviousAsync(current, images, cancellationToken), () =>
             Downloaded(current, e => e.Season == current.SeasonNumber && e.Episode < current.EpisodeNumber)
                 .OrderByDescending(e => e.Episode).Select(e => e.Next).FirstOrDefault(), cancellationToken);
     }

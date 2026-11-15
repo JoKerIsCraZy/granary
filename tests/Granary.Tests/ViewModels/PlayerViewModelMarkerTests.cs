@@ -9,6 +9,7 @@ namespace Granary.Tests.ViewModels;
 /// <summary>The skip pills of the player page, fed by the playback's markers and the engine's position.</summary>
 public sealed class PlayerViewModelMarkerTests
 {
+    private static readonly PlaybackMarker Recap = new(WatchMarkerKinds.Recap, 0, 40);
     private static readonly PlaybackMarker Intro = new(WatchMarkerKinds.Intro, 60, 120);
     private static readonly PlaybackMarker Credits = new(WatchMarkerKinds.Credits, 2500, 2600);
 
@@ -134,6 +135,138 @@ public sealed class PlayerViewModelMarkerTests
         Assert.False(viewModel.HasSkipPrompt);
     }
 
+    // Silo's design for intro skipping, ask: after its time ran out the offer comes back without a timer while the controls
+    // show, and it does not take focus as it comes (the page leaves focus where it is for IsSkipPromptWithControls).
+    [Fact]
+    public async Task AfterItsTimeRanOut_SkipIntroComesBackWithTheControls_WithoutATimer_AndGoesWithThem()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+        Assert.False(viewModel.HasSkipPrompt);
+
+        viewModel.AreControlsShown = true;
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+        Assert.Equal(0, viewModel.SkipProgress);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+
+        viewModel.AreControlsShown = false;
+        Assert.False(viewModel.HasSkipPrompt);
+        // Cleared with it, so the offer's next return is news to the page.
+        Assert.False(viewModel.IsSkipPromptWithControls);
+    }
+
+    [Fact]
+    public async Task TheTimedPill_IsNoOfferWithTheControls_UntilItsTimeRunsOutWithThemUp()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.False(viewModel.IsSkipPromptWithControls);
+
+        At(66, afterSeconds: 5);
+
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+        Assert.Equal(0, viewModel.SkipProgress);
+    }
+
+    [Fact]
+    public async Task SkipIntroBackWithTheControls_SeeksToTheIntrosEnd_AndEscLeavesIt()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+        viewModel.AreControlsShown = true;
+
+        Assert.False(viewModel.DismissSkipPrompt());
+        Assert.True(viewModel.HasSkipPrompt);
+
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([120], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    // As the web's untimed offer answers Space while focused (silo-server #3511); every other pill, and Space without focus,
+    // keeps the full player's play and pause.
+    [Fact]
+    public async Task Space_PressesOnlyTheFocusedSkipIntroBackWithTheControls()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: false));
+
+        viewModel.AreControlsShown = false;
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(2550);
+        Assert.Equal("Skip Credits", viewModel.SkipLabel);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+    }
+
+    [Fact]
+    public async Task TheControls_BringNoPillBack_WhilePlaybackCannotSeek_NorAfterTheEnd()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        viewModel.AreControlsShown = true;
+        Assert.False(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        viewModel.AreControlsShown = false;
+        viewModel.AreControlsShown = true;
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task AMarkerReadWhilePlaybackCannotSeek_BringsNoPillBack_UntilItCanAgain()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        Assert.False(viewModel.HasSkipPrompt);
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.False(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+    }
+
+    [Fact]
+    public async Task ANewTitle_StillKnowsTheControlsShow()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+
+        await viewModel.StartAsync(PlayRequest.Resume("episode-2"));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Playback.RaiseMarkers([Intro]);
+        At(61);
+        At(66, afterSeconds: 5);
+
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+    }
+
     [Fact]
     public async Task Always_SkipsTheIntroItself_AndOffersItBack()
     {
@@ -147,6 +280,74 @@ public sealed class PlayerViewModelMarkerTests
 
         viewModel.SkipCommand.Execute(null);
         Assert.Equal([120, 60], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task WatchIntro_PressedAfterSeekingBackBeforeTheIntro_DoesNotSeekForward()
+    {
+        var viewModel = await PlayingAsync(MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Always });
+        At(60.5);
+        At(120);
+        viewModel.SeekTo(30);
+        At(30);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("Watch Intro", viewModel.SkipLabel);
+
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([120, 30], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task ThePill_PressedWhileASeekOutOfItsPartIsOnItsWay_SkipsNothing()
+    {
+        var viewModel = await PlayingAsync();
+        At(2550);
+        Assert.Equal("Skip Credits", viewModel.SkipLabel);
+
+        viewModel.SeekTo(1000);
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([1000], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task AReadWhileASeekBackIsOnItsWay_TakesAwayAPillWhosePartNoLongerHoldsWherePlaybackGoes()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseMarkers([Recap, Intro, Credits]);
+        At(30, paused: true);
+        Assert.Equal("Skip Recap", viewModel.SkipLabel);
+
+        viewModel.SeekTo(10);
+        // Read again before the player reports the seek: the recap now starts at 20, which holds 30 but not 10.
+        Playback.RaiseMarkers([Recap with { StartSeconds = 20 }, Intro, Credits]);
+
+        Assert.False(viewModel.HasSkipPrompt);
+        viewModel.SkipCommand.Execute(null);
+        Assert.Equal([10], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task ThePill_ShowsWhereItsMarkerCameFrom_AndARereadThatNamesAnotherSourceChangesIt()
+    {
+        var viewModel = await PlayingAsync(MarkerSettings.Default with { ShowMarkerConfidence = true, ShowMarkerSource = true });
+        At(30);
+        Assert.Equal("", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("plugin", "plugin:4:introdb", 0.2) }, Credits]);
+        At(61);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+        Assert.Equal("20% · TheIntroDB", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.Equal("100% · Edited", viewModel.SkipProvenance);
+
+        Playback.RaiseMarkers([Intro, Credits]);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("", viewModel.SkipProvenance);
     }
 
     [Fact]

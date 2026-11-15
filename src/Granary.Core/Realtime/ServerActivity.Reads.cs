@@ -22,6 +22,14 @@ public sealed partial class ServerActivity
     // The failures in a row after which the window no longer grows: 5 s, 10, 20, 40, then LongestRetryWindow.
     private const int FailuresToLongestWindow = 5;
 
+    private int _readsUnderWay;
+
+    /// <summary>
+    /// The reads started and not yet over, answer and all. A read is started at once where it is asked for (a frame, a
+    /// timer), so with none under way a test knows that nothing more was read.
+    /// </summary>
+    internal int ReadsUnderWay => Volatile.Read(ref _readsUnderWay);
+
     /// <summary>Reads a list and answers how the state shows it.</summary>
     private delegate Task<Func<ServerActivityState, ServerActivityState>> Read(Uri server, CancellationToken cancellationToken);
 
@@ -47,11 +55,24 @@ public sealed partial class ServerActivity
         }
         reread.IsReading = true;
         reread.IsDue = false;
+        Interlocked.Increment(ref _readsUnderWay);
         // Off this thread: the lock is held, and a frame's thread is the lane's.
         _ = Task.Run(() => ReadAsync(reread, following), CancellationToken.None);
     }
 
     private async Task ReadAsync(Reread reread, Following following)
+    {
+        try
+        {
+            await ReadAndShowAsync(reread, following).ConfigureAwait(false);
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _readsUnderWay);
+        }
+    }
+
+    private async Task ReadAndShowAsync(Reread reread, Following following)
     {
         Func<ServerActivityState, ServerActivityState>? show = null;
         Exception? failure = null;

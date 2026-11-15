@@ -26,8 +26,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
     private static readonly string[] Keys =
     [
         SettingKeys.PreferredQuality, SettingKeys.MaxBitrateKbps, SettingKeys.BufferingQualityMode, SettingKeys.IntroSkipMode,
-        SettingKeys.AutoSkipRecap, SettingKeys.AutoSkipCredits, SettingKeys.AutoPlayNextPreview, SettingKeys.AutoPlayNext,
-        SettingKeys.SkipBackSeconds, SettingKeys.SkipForwardSeconds,
+        SettingKeys.ShowMarkerConfidence, SettingKeys.ShowMarkerSource, SettingKeys.AutoSkipRecap, SettingKeys.AutoSkipCredits,
+        SettingKeys.AutoPlayNextPreview, SettingKeys.AutoPlayNext, SettingKeys.SkipBackSeconds, SettingKeys.SkipForwardSeconds,
     ];
 
     // The ladder of the web's bitrate select (lib/bitrateOptions.ts), within the setting's 100 to 200000 kbps.
@@ -159,6 +159,19 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     public partial SettingChoice? SelectedIntroSkip { get; set; }
+
+    /// <summary>
+    /// The server knows Show marker confidence and Show marker source (settings contract 24); they came together, so one
+    /// gate covers both, as on the web. A switch that cannot save is worse than none.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool ShowsMarkerProvenance { get; private set; }
+
+    [ObservableProperty]
+    public partial bool ShowMarkerConfidence { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowMarkerSource { get; set; }
 
     [ObservableProperty]
     public partial bool AutoSkipRecaps { get; set; }
@@ -341,6 +354,9 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             SelectedBuffering = Choice(BufferingChoices, SettingValues.Text(Get(SettingKeys.BufferingQualityMode)), "always");
             ShowsIntroSkip = values.ContainsKey(SettingKeys.IntroSkipMode);
             SelectedIntroSkip = Choice(IntroSkipChoices, SettingValues.Text(Get(SettingKeys.IntroSkipMode)), "ask");
+            ShowsMarkerProvenance = values.ContainsKey(SettingKeys.ShowMarkerConfidence) && values.ContainsKey(SettingKeys.ShowMarkerSource);
+            ShowMarkerConfidence = SettingValues.Bool(Get(SettingKeys.ShowMarkerConfidence)) ?? false;
+            ShowMarkerSource = SettingValues.Bool(Get(SettingKeys.ShowMarkerSource)) ?? false;
             AutoSkipRecaps = SettingValues.Bool(Get(SettingKeys.AutoSkipRecap)) ?? false;
             AutoSkipCredits = SettingValues.Bool(Get(SettingKeys.AutoSkipCredits)) ?? false;
             StartNextAtPreview = SettingValues.Bool(Get(SettingKeys.AutoPlayNextPreview)) ?? false;
@@ -351,6 +367,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             _confirmed[SettingKeys.MaxBitrateKbps] = SelectedBitrate;
             _confirmed[SettingKeys.BufferingQualityMode] = SelectedBuffering;
             _confirmed[SettingKeys.IntroSkipMode] = SelectedIntroSkip;
+            _confirmed[SettingKeys.ShowMarkerConfidence] = ShowMarkerConfidence;
+            _confirmed[SettingKeys.ShowMarkerSource] = ShowMarkerSource;
             _confirmed[SettingKeys.AutoSkipRecap] = AutoSkipRecaps;
             _confirmed[SettingKeys.AutoSkipCredits] = AutoSkipCredits;
             _confirmed[SettingKeys.AutoPlayNextPreview] = StartNextAtPreview;
@@ -512,6 +530,12 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
             Save(SettingKeys.IntroSkipMode, value, () => SelectedIntroSkip, v => SelectedIntroSkip = v, SettingValues.Json(value.Value));
         }
     }
+
+    partial void OnShowMarkerConfidenceChanged(bool value) =>
+        Save(SettingKeys.ShowMarkerConfidence, value, () => ShowMarkerConfidence, v => ShowMarkerConfidence = v, SettingValues.Json(value));
+
+    partial void OnShowMarkerSourceChanged(bool value) =>
+        Save(SettingKeys.ShowMarkerSource, value, () => ShowMarkerSource, v => ShowMarkerSource = v, SettingValues.Json(value));
 
     partial void OnAutoSkipRecapsChanged(bool value) =>
         Save(SettingKeys.AutoSkipRecap, value, () => AutoSkipRecaps, v => AutoSkipRecaps = v, SettingValues.Json(value));
