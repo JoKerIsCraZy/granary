@@ -72,8 +72,8 @@
                     </StackPanel>
                 </controls:SettingsRow>
                 <!-- The list is labelled again once the server said what it offers: the select takes its items before its pick. -->
-                <controls:SettingsRow Label="Default quality"
-                                      Description="The quality a download starts on when your Silo server offers it, else Original.">
+                <!-- Its line is the Apple app's footer for what the server offers (DownloadSettingsViewModel.QualityDescription). -->
+                <controls:SettingsRow Label="Default quality" Description="{x:Bind ViewModel.QualityDescription, Mode=OneWay}">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.Qualities, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedQuality, Mode=TwoWay}" AutomationProperties.Name="Default quality" />
                 </controls:SettingsRow>
@@ -105,6 +105,20 @@
                     <NumberBox Minimum="0" Maximum="{x:Bind ViewModel.DefaultMonitorLimitMaxGb}" SmallChange="{x:Bind ViewModel.DefaultMonitorLimitStepGb}"
                                LargeChange="50" SpinButtonPlacementMode="Inline" Width="160"
                                Value="{x:Bind ViewModel.DefaultMonitorLimitGb, Mode=TwoWay}" AutomationProperties.Name="Storage limit in GB" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <!-- The Apple app's Storage: what this profile's downloads use, and Remove All Downloads, which asks first. -->
+        <controls:SettingsGroup Title="Storage">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Used">
+                    <TextBlock Text="{x:Bind ViewModel.UsedText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Remove All Downloads" Description="Deletes this profile's downloads from this PC. Nothing is deleted from your Silo server."
+                                      Visibility="{x:Bind ViewModel.CanRemoveAll, Mode=OneWay}">
+                    <Button Content="Remove All" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
+                            Command="{x:Bind ViewModel.RemoveAllCommand}" AutomationProperties.Name="Remove All Downloads" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>

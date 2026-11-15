@@ -23,6 +23,8 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// fail, on by default; and how many downloads come at once, the Apple app's Simultaneous Downloads (1 to 4, two by
 /// default); the Apple app's Monitoring Defaults, which fill in a new monitor (Delete after watching, and a storage limit in
 /// its stepper's steps of 5 GB up to 1000); and Granary's own storage limit for downloads, a slider saved once it rests (<see cref="SliderRest"/>). A folder is
+/// taken only when Granary can write there. The default quality's line is the Apple app's footer for what the server offers,
+/// and Storage says what the profile's downloads use, with the Apple app's Remove All Downloads, which asks first. A folder is
 /// taken only when Granary can write there,
 /// which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
@@ -52,6 +54,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadSettingsViewModel> _logger;
+    private readonly DownloadManager? _downloads;
+    private readonly IConfirmation? _confirmation;
 
     // Set while a select shows the saved quality or the folder's drive, so showing it saves nothing.
     private bool _showing;
@@ -61,7 +65,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private int _folderChoices;
 
     public DownloadSettingsViewModel(IDownloadPreferences preferences, DownloadsFeature feature, IFolderPicker picker, IFileLauncher launcher,
-        IUiDispatcher dispatcher, TimeProvider? time = null, ILogger<DownloadSettingsViewModel>? logger = null)
+        IUiDispatcher dispatcher, TimeProvider? time = null, ILogger<DownloadSettingsViewModel>? logger = null, DownloadManager? downloads = null,
+        IConfirmation? confirmation = null)
     {
         _preferences = preferences;
         _feature = feature;
@@ -70,6 +75,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time ?? TimeProvider.System;
         _logger = logger ?? NullLogger<DownloadSettingsViewModel>.Instance;
+        _downloads = downloads;
+        _confirmation = confirmation;
         Folder = preferences.Folder;
         DownloadsOnMetered = preferences.DownloadsOnMetered;
         KeepWatched = preferences.KeepWatched;
@@ -87,7 +94,14 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             _showing = false;
         }
         ShowQualities();
+        ShowStorage();
     }
+
+    /// <summary>Remove All Downloads' question, the Apple app's (<c>downloads.settings.removeAllTitle</c>).</summary>
+    public const string RemoveAllTitle = "Remove all downloaded files?";
+
+    /// <summary>Its yes, the Apple app's (<c>downloads.settings.removeAllConfirm</c>).</summary>
+    public const string RemoveAllAction = "Remove All";
 
     /// <summary>Where new downloads go; the ones on this PC stay where they are.</summary>
     [ObservableProperty]
@@ -155,6 +169,22 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial SettingChoice? SelectedQuality { get; set; }
 
+    /// <summary>
+    /// The Apple app's footer under its quality (<c>downloads.settings.quality*</c>) for what the server offers: what Original
+    /// and the presets are, and what the choice is the default for. Its "Download sheet" is the download dialog here.
+    /// </summary>
+    [ObservableProperty]
+    public partial string QualityDescription { get; private set; } = "";
+
+    /// <summary>What the active profile's downloads use on this PC, as the Apple app's Storage → Used says it: "3.0 GB".</summary>
+    [ObservableProperty]
+    public partial string UsedText { get; private set; } = "";
+
+    /// <summary>The profile has downloads on this PC: Remove All Downloads shows.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RemoveAllCommand))]
+    public partial bool CanRemoveAll { get; private set; }
+
     /// <summary>Why the folder was not taken or did not open; empty otherwise.</summary>
     [ObservableProperty]
     public partial string Status { get; private set; } = "";
@@ -198,6 +228,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         await _feature.RefreshAsync(cancellationToken);
         await _dispatcher.ResumeOnUi();
         ShowQualities();
+        ShowStorage();
         var listed = await drives;
         await _dispatcher.ResumeOnUi();
         ShowDrives(listed);
@@ -486,10 +517,59 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         return drives;
     }
 
+    /// <summary>
+    /// The Apple app's Remove All Downloads: after its question, every download of the profile the question was asked in goes
+    /// from this PC, as Delete deletes one; the server hears it.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRemoveAll))]
+    private async Task RemoveAllAsync()
+    {
+        if (_downloads is null || _confirmation is null || _downloads.ActiveScope is not { } scope)
+        {
+            return;
+        }
+        string[] asked = [.. _downloads.Items.Select(i => i.DownloadId)];
+        if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle,
+            "This removes the downloaded copies from this PC. Nothing is deleted from your Silo server.", RemoveAllAction))
+        {
+            await _downloads.DeleteAllAsync(scope, asked, CancellationToken.None);
+        }
+        await _dispatcher.ResumeOnUi();
+        ShowStorage();
+    }
+
+    // The space the profile's downloads use, as the queue and the store know it: no disk is read.
+    private void ShowStorage()
+    {
+        if (_downloads is null)
+        {
+            return;
+        }
+        long used = _downloads.BytesUsed();
+        UsedText = used > 0 ? PrePlayText.FileSize(used) : "0 B";
+        CanRemoveAll = _downloads.Items.Count > 0;
+    }
+
+    // The Apple app's footer: Original, then the presets (with "at up to the resolution shown" when the labels name one), then
+    // what the choice is the default for. Granary asks per episode for a season or a series, so every download takes the
+    // presets; only monitors depend on the server (monitor_quality).
+    private static string QualityFooter(DownloadCapability? capability)
+    {
+        bool resolution = capability is null || capability.QualityOptions.Count == 0 || capability.QualityOptions.Any(o => o.MaxHeight is > 0);
+        string presets = resolution
+            ? "Bitrate presets are prepared on the server when the original is larger, at up to the resolution shown."
+            : "Bitrate presets are prepared on the server when the original is larger.";
+        string scope = capability?.MonitorQuality == true
+            ? "This is the default for every download and monitor; the download dialog can change it."
+            : "This is the default for every download; the download dialog can change it. Monitored series download in original quality.";
+        return $"Original prefers source quality and may prepare a compatibility file if this device needs one. {presets} {scope}";
+    }
+
     // Each preset as the server offers it, else as the server's guide lists it. A new list clears the select first and then
     // picks the saved quality in it, as a select whose items change needs it.
     private void ShowQualities()
     {
+        QualityDescription = QualityFooter(_feature.Capability);
         var offered = _feature.Capability?.QualityOptions ?? [];
         IReadOnlyList<SettingChoice> qualities = [.. DownloadQualities.GuideOptions.Select(guide =>
             new SettingChoice(guide.Preset, DownloadText.QualityLabel(offered.FirstOrDefault(o => o.Preset == guide.Preset) ?? guide)))];

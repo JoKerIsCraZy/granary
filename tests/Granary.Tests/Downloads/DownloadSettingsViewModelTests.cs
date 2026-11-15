@@ -41,6 +41,48 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheDefaultQualitysLine_IsTheAppleAppsFooter_ForWhatTheServerOffers()
+    {
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability()));
+        var settings = Settings();
+        await settings.LoadAsync(Token);
+
+        Assert.Equal("Original prefers source quality and may prepare a compatibility file if this device needs one. Bitrate presets are "
+            + "prepared on the server when the original is larger, at up to the resolution shown. This is the default for every download and "
+            + "monitor; the download dialog can change it.", settings.QualityDescription);
+
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability(monitorQuality: false)));
+        var originals = Settings();
+        await originals.LoadAsync(Token);
+
+        Assert.EndsWith("This is the default for every download; the download dialog can change it. Monitored series download in original quality.",
+            originals.QualityDescription, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Storage_SaysWhatTheDownloadsUse_AndRemoveAllDeletesThemAfterAsking()
+    {
+        var confirmation = new FakeConfirmation { Answer = false };
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: 2 * GB, mediaItemId: "mv_1");
+        await _h.AddAsync("dl_2", DownloadState.Completed, size: GB, mediaItemId: "mv_2");
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: _h.NewManager(), confirmation: confirmation) { DriveList = () => [] };
+        await settings.LoadAsync(Token);
+
+        Assert.Equal(("3.0 GB", true), (settings.UsedText, settings.CanRemoveAll));
+
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+        Assert.Equal(("Remove all downloaded files?", "Remove All"), (confirmation.Asked[0].Title, confirmation.Asked[0].Action));
+        Assert.Equal(2, _h.Store.In(Scope7).Count);
+
+        confirmation.Answer = true;
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+
+        Assert.Empty(_h.Store.In(Scope7));
+        Assert.Equal(("0 B", false), (settings.UsedText, settings.CanRemoveAll));
+    }
+
+    [Fact]
     public void MonitoringDefaults_SaveDeleteAfterWatching_AndAStorageLimitInStepsOfFive()
     {
         var settings = Settings();

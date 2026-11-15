@@ -1566,8 +1566,12 @@ says why above the sections.
   Silo client has one): a slider from 0 to 4000 GB in steps of 10 with its value beside it ("No limit", "250 GB"), saved once
   it rests for half a second ("Downloads don't start past it, and a monitored series' new episodes wait at it. Nothing is
   deleted to make room."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
-  to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
-  your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
+  to 1080p", with the tallest output your server names, else the server guide's), its line the Apple app's footer for what
+  your server offers ("Original prefers source quality and may prepare a compatibility file if this device needs one.
+  Bitrate presets are prepared on the server when the original is larger, at up to the resolution shown. This is the
+  default for every download and monitor; the download dialog can change it.", its last sentence "This is the default for
+  every download; the download dialog can change it. Monitored series download in original quality." on a server whose
+  monitors keep no quality; the Apple app's "Download sheet" is the download dialog here). Keep watched downloads, a switch, off by default as in both apps, with the
   settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
   finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
   own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
@@ -1577,7 +1581,11 @@ says why above the sections.
   app's stepper as a number box with spin buttons, 0 to 1000 GB in steps of 5 (a number typed in is held to them), its
   row named as the Apple app names it ("Storage limit: 25 GB", "Storage limit: Unlimited" at 0). They only fill in the
   download dialog's Monitor for a series not monitored yet. Each saves on this PC at once (`download-settings.json`; the
-  storage limit for downloads once its slider rests).
+  storage limit for downloads once its slider rests). Last, the Apple app's Storage: Used, what this profile's downloads
+  take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove All Downloads ("Deletes this
+  profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
+  All in red, which asks the Apple app's "Remove all downloaded files?" with Remove All and Cancel, then deletes each as
+  Delete does.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
