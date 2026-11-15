@@ -5,9 +5,17 @@ namespace Granary.App.Interop;
 /// <summary>A button of a window's thumbnail toolbar, the row of buttons under its taskbar preview.</summary>
 internal readonly record struct ThumbButton(uint Id, nint Icon, string Tip, bool IsHidden, bool IsEnabled);
 
+/// <summary>The TBPFLAG values (shobjidl_core.h) Granary uses: how a taskbar button's progress bar shows.</summary>
+internal enum TaskbarProgressFlag
+{
+    NoProgress = 0,
+    Normal = 0x2,
+    Paused = 0x8,
+}
+
 /// <summary>
-/// Explorer's ITaskbarList3 (CLSID_TaskbarList), its thumbnail toolbar only, via the COM vtable. Made and used on the UI
-/// thread; released with <see cref="Dispose"/>.
+/// Explorer's ITaskbarList3 (CLSID_TaskbarList), its thumbnail toolbar and its progress bar, via the COM vtable. Made and used
+/// on the UI thread; released with <see cref="Dispose"/>.
 /// </summary>
 internal sealed unsafe partial class TaskbarList : IDisposable
 {
@@ -19,6 +27,8 @@ internal sealed unsafe partial class TaskbarList : IDisposable
     // vtable: IUnknown (3); ITaskbarList: HrInit … SetActiveAlt (5); ITaskbarList2: MarkFullscreenWindow; ITaskbarList3:
     // SetProgressValue … SetTabActive (6), then ThumbBarAddButtons and ThumbBarUpdateButtons.
     private const int HrInitSlot = 3;
+    private const int SetProgressValueSlot = 9;
+    private const int SetProgressStateSlot = 10;
     private const int ThumbBarAddButtonsSlot = 15;
     private const int ThumbBarUpdateButtonsSlot = 16;
 
@@ -59,6 +69,25 @@ internal sealed unsafe partial class TaskbarList : IDisposable
 
     /// <summary>Changes buttons added before, each found by its id.</summary>
     public void UpdateButtons(nint hwnd, ReadOnlySpan<ThumbButton> buttons) => Call(ThumbBarUpdateButtonsSlot, hwnd, buttons);
+
+    /// <summary>
+    /// How far the taskbar button's bar is: <paramref name="completed"/> of <paramref name="total"/>. A bar that showed none, or
+    /// moved without an end, turns a normal one; a paused one stays paused.
+    /// </summary>
+    public void SetProgressValue(nint hwnd, ulong completed, ulong total)
+    {
+        ObjectDisposedException.ThrowIf(_list == 0, this);
+        var method = (delegate* unmanaged[Stdcall]<nint, nint, ulong, ulong, int>)(*(nint**)_list)[SetProgressValueSlot];
+        Marshal.ThrowExceptionForHR(method(_list, hwnd, completed, total));
+    }
+
+    /// <summary>How the taskbar button's bar shows (TBPFLAG): none, normal (green), paused (yellow).</summary>
+    public void SetProgressState(nint hwnd, TaskbarProgressFlag state)
+    {
+        ObjectDisposedException.ThrowIf(_list == 0, this);
+        var method = (delegate* unmanaged[Stdcall]<nint, nint, int, int>)(*(nint**)_list)[SetProgressStateSlot];
+        Marshal.ThrowExceptionForHR(method(_list, hwnd, (int)state));
+    }
 
     public void Dispose()
     {

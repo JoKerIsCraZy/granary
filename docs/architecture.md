@@ -1065,7 +1065,9 @@ hidden, disabled or enabled, and Play/Pause's paused), hide them all, and a pres
   and hides them (`THBF_HIDDEN`) and greys them (`THBF_DISABLED`). The icons (`Interop/TaskbarIcons.cs`: ⏮, ▶, ⏸, ⏭)
   are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with `CreateIconIndirect`; the taskbar
   copies them, and Granary destroys its own when they are replaced and when the window closes, with the COM object. A
-  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on.
+  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on. Between
+  the player's `Show` and its `Hide` it is `IsInUse` (`InUseChanged`), and the downloads' progress leaves the taskbar
+  button alone meanwhile (Downloads, "Downloads in the shell").
 
 ## Watch Party
 
@@ -1578,7 +1580,8 @@ client guide.
 `DownloadActivity` (a singleton the app starts in `App.Launch` and disposes as the window closes) follows the active
 profile's downloads for the whole run, outside their page: `DownloadManager.Changed` and the session's `Changed`, on any
 thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burst, which reads `Items` and makes a
-`DownloadTally` of them. A transfer that only went further (`DownloadProgressedEventArgs`) changes nothing of it.
+`DownloadTally` of them. A burst of transfers that only went further (`DownloadProgressedEventArgs`) reads just their bytes
+(`BytesDone(id)`) into the downloads as last read, as the Downloads page does.
 
 - **The sidebar's count.** `PendingCount` counts the downloads coming or waiting (`DownloadTally.IsPending`): preparing,
   queued or downloading, not paused by the viewer, their folder there and still on the server. One that waits for a
@@ -1590,6 +1593,19 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   (`MainWindow.Downloads.cs`, as `ServerActivityButton`'s count breathes): no timer, nothing on the UI thread. With
   Windows' animation effects off (`UISettings.AnimationsEnabled`, followed through `AnimationsEnabledChanged`) the dot
   stands still. The window lives as long as the app and lets go of Windows' settings as it closes.
+- **The taskbar button.** `Progress` (`DownloadProgress`) is the downloads to come (preparing, queued or downloading, their
+  folder there and still on the server, paused or not) as one bar: none without any; `Normal` while any is not paused by
+  the viewer and does not wait for an unmetered connection, over those alone, so a paused download does not hold the bar
+  back; `Paused` once every one is, over all of them. Done and total are their bytes so far (within each file) and their
+  sizes; a size not known yet (a preparing copy) counts in neither. `WindowsTaskbarProgress` (App, started in
+  `App.Launch`) sends it to the main window's taskbar button through `ITaskbarList3` (`Interop/TaskbarList.cs`:
+  `SetProgressValue` in thousandths, then `SetProgressState` `TBPF_NORMAL` or `TBPF_PAUSED`; `TBPF_NOPROGRESS` for none),
+  only when it changes by a thousandth or its state does, and only once Explorer made the taskbar button
+  (`WindowMessageHook.HasTaskbarButton`); a new taskbar button (Explorer restarted) gets it again, with a COM object made
+  again. While the player has its buttons in the preview (`WindowsTaskbarToolbar.IsInUse`, from `Show` until `Hide`), the
+  downloads leave the taskbar button alone and show no bar; it comes back as the player is left. A send that fails drops
+  the COM object, is logged once by its kind until one gets through, and the next change tries again. Explorer's side has
+  no unit tests; `DownloadTallyTests` and `DownloadActivityTests` hold what the bar shows.
 
 ### Signing out
 

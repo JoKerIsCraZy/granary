@@ -8,10 +8,10 @@ namespace Granary.Core.ViewModels.Downloads;
 
 /// <summary>
 /// The active profile's downloads as the shell shows them outside their page (docs/architecture.md, "Downloads in the shell"):
-/// the sidebar's count of the downloads coming or waiting (<see cref="DownloadTally.IsPending"/>) and whether one comes now. It
-/// follows the downloads and the session for the app's whole run, from <see cref="Start"/>: changes come on any thread and are
-/// shown on the UI thread, one refresh per burst, as the Downloads page's follower shows them. A transfer that only went further
-/// changes neither.
+/// the sidebar's count of the downloads coming or waiting (<see cref="DownloadTally.IsPending"/>), whether one comes now, and
+/// the taskbar button's progress. It follows the downloads and the session for the app's whole run, from <see cref="Start"/>:
+/// changes come on any thread and are shown on the UI thread, one refresh per burst, as the Downloads page's follower shows
+/// them. A transfer that only went further updates its bytes without reading every download again.
 /// </summary>
 public sealed partial class DownloadActivity : ObservableObject, IDisposable
 {
@@ -22,10 +22,16 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     private readonly ISessionManager _session;
     private readonly IUiDispatcher _dispatcher;
 
+    // What arrived since the last refresh: a change of any kind, or transfers that went further, by download.
     private readonly Lock _gate = new();
+    private readonly HashSet<string> _progressed = new(StringComparer.Ordinal);
     private bool _started;
     private bool _disposed;
     private bool _posted;
+    private bool _changed;
+
+    // On the UI thread: the downloads as last read.
+    private IReadOnlyList<DownloadItem> _items = [];
 
     public DownloadActivity(DownloadManager downloads, ISessionManager session, IUiDispatcher dispatcher)
     {
@@ -47,6 +53,10 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     /// <summary>One of them comes now: its bytes arrive, nothing pauses or holds it.</summary>
     [ObservableProperty]
     public partial bool IsTransferring { get; private set; }
+
+    /// <summary>The downloads' overall progress, as the taskbar button shows it.</summary>
+    [ObservableProperty]
+    public partial DownloadProgress Progress { get; private set; } = DownloadProgress.None;
 
     /// <summary>
     /// The entry as a screen reader names it: "Downloads", or "Downloads, 3 downloads in progress" in the Apple app's words for
@@ -95,13 +105,21 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     // Any thread. One refresh is posted at a time; what comes meanwhile waits for it.
     private void OnChanged(object? sender, EventArgs e)
     {
-        if (e is DownloadProgressedEventArgs)
-        {
-            return;
-        }
         lock (_gate)
         {
-            if (_disposed || _posted)
+            if (_disposed)
+            {
+                return;
+            }
+            if (e is DownloadProgressedEventArgs progressed)
+            {
+                _progressed.Add(progressed.DownloadId);
+            }
+            else
+            {
+                _changed = true;
+            }
+            if (_posted)
             {
                 return;
             }
@@ -112,6 +130,8 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
 
     private void Refresh()
     {
+        bool changed;
+        HashSet<string> progressed;
         lock (_gate)
         {
             _posted = false;
@@ -119,13 +139,26 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
             {
                 return;
             }
+            changed = _changed;
+            _changed = false;
+            progressed = new HashSet<string>(_progressed, StringComparer.Ordinal);
+            _progressed.Clear();
         }
-        Show(DownloadTally.Of(_downloads.Items));
+        if (changed)
+        {
+            _items = _downloads.Items;
+        }
+        else if (progressed.Count > 0)
+        {
+            _items = [.. _items.Select(i => progressed.Contains(i.DownloadId) ? i with { BytesDone = _downloads.BytesDone(i.DownloadId) } : i)];
+        }
+        Show(DownloadTally.Of(_items));
     }
 
     private void Show(DownloadTally tally)
     {
         PendingCount = tally.Pending;
         IsTransferring = tally.IsTransferring;
+        Progress = tally.Progress;
     }
 }

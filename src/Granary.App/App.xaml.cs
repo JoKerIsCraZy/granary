@@ -96,10 +96,11 @@ public partial class App : Application
         var downloads = Services.GetRequiredService<DownloadQueue>();
         downloads.Start();
         _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
-        // The sidebar follows them for the whole run (docs/architecture.md, "Downloads in the shell").
+        // The sidebar and the taskbar button follow them for the whole run (docs/architecture.md, "Downloads in the shell").
         var activity = Services.GetRequiredService<DownloadActivity>();
         activity.Start();
         _window.Closed += (_, _) => activity.Dispose();
+        Services.GetRequiredService<WindowsTaskbarProgress>().Start();
         // What was watched from this PC goes to the server once it can be reached, and its progress comes back
         // (docs/architecture.md, "Offline progress"). The last position of a title that plays as Granary closes is kept
         // with its stop, which the window waits for.
@@ -190,8 +191,11 @@ public partial class App : Application
         // opens, where it was closed (window.json).
         services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
         services.AddSingleton<WindowModeService>();
-        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
-        services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
+        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays, and the
+        // downloads' progress on its taskbar button while none does.
+        services.AddSingleton<WindowsTaskbarToolbar>();
+        services.AddSingleton<ITaskbarToolbar>(sp => sp.GetRequiredService<WindowsTaskbarToolbar>());
+        services.AddSingleton<WindowsTaskbarProgress>();
         // Keeps the display on while a title plays.
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
         // Title pages' theme music, through Windows' own media player beside mpv.

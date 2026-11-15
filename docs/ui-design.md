@@ -351,6 +351,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
   season to season, to its first card. Once the series has no downloads
   left on this PC (its last episode deleted), the page goes back by itself.
+- Downloads outside their page (Granary's own: a PC's taskbar): the sidebar's count (above), and Granary's taskbar button
+  shows how far the downloads to come are, as one bar over their bytes: green while any of them is not paused, also while
+  it waits its turn or for the server, then over those alone; yellow once every one is paused or waits for a connection
+  that is not metered, over all of them; none once nothing comes (finished, failed or deleted). A size the server has not
+  said yet adds nothing. While the player has its buttons in the preview, the taskbar button shows no bar.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -1966,6 +1971,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     it, and Play/Pause in a Watch Party asks the room. A press while a button is off does nothing.
   - Leaving the player hides all three at once: Windows keeps buttons once added, so they are hidden, not removed. They
     change only with what they show, never as the position moves on.
+  - While the player has them, the taskbar button shows no downloads' progress (Downloads, Layout above); it comes back
+    once the player is left.
 - **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
   bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the

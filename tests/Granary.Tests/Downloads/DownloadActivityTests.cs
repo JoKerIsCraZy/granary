@@ -6,8 +6,8 @@ using static Granary.Tests.Downloads.DownloadHarness;
 namespace Granary.Tests.Downloads;
 
 /// <summary>
-/// The sidebar's Downloads entry: the count of the active profile's downloads coming or waiting, and whether one comes now,
-/// following the downloads for the app's whole run.
+/// The downloads outside their page: the sidebar's count of the active profile's downloads coming or waiting, whether one comes
+/// now, and the taskbar button's progress, following the downloads for the app's whole run.
 /// </summary>
 public sealed class DownloadActivityTests : IAsyncDisposable
 {
@@ -123,5 +123,49 @@ public sealed class DownloadActivityTests : IAsyncDisposable
         await _h.AddAsync("dl_2", DownloadState.Queued);
 
         Assert.Equal(1, activity.PendingCount);
+    }
+
+    [Fact]
+    public async Task TheProgress_FollowsTheBytes_AsATransferGoesFurther_AndEndsWithIt()
+    {
+        // A UI thread of its own, as the app's: the refreshes a running transfer posts run one after another.
+        using var ui = new SerialDispatcher();
+        await _h.AddAsync("dl_1", DownloadState.Queued, size: 3000);
+        var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
+        var activity = new DownloadActivity(_h.NewManager(_h.StartQueue()), _h.Session, ui);
+        _activity = activity;
+        await ui.RunAsync(() =>
+        {
+            activity.Start();
+            return Task.CompletedTask;
+        });
+        await Until(() => ui.Read(() => activity.IsTransferring), "the download came");
+        Assert.Equal(new DownloadProgress(DownloadProgressState.Normal, 0, 3000), ui.Read(() => activity.Progress));
+
+        body.Release(1800);
+
+        await Until(() => ui.Read(() => activity.Progress.Done) == 1800, "the progress showed");
+        Assert.Equal(new DownloadProgress(DownloadProgressState.Normal, 1800, 3000), ui.Read(() => activity.Progress));
+
+        body.ReleaseAll();
+
+        await Until(() => ui.Read(() => activity.Progress) == DownloadProgress.None, "the download finished");
+        Assert.Equal((0, false), ui.Read(() => (activity.PendingCount, activity.IsTransferring)));
+        Assert.Empty(ui.Failures);
+    }
+
+    [Fact]
+    public async Task ThePausedProgress_ShowsWhileEveryDownloadIsPaused()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Queued, size: 3000);
+        var manager = _h.NewManager();
+        var activity = Started(manager);
+        Assert.Equal(DownloadProgressState.Normal, activity.Progress.State);
+
+        await manager.PauseAsync("dl_1");
+        Assert.Equal(DownloadProgressState.Paused, activity.Progress.State);
+
+        await manager.DeleteAsync("dl_1", Token);
+        Assert.Equal(DownloadProgress.None, activity.Progress);
     }
 }
