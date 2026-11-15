@@ -92,6 +92,7 @@
                         <Setter Target="SubtitleText.FontSize" Value="15" />
                         <Setter Target="MetaText.FontSize" Value="15" />
                         <Setter Target="TaglineText.FontSize" Value="15" />
+                        <Setter Target="ScoreRow.MaxWidth" Value="720" />
                         <Setter Target="TaglineText.MaxWidth" Value="720" />
                         <Setter Target="OverviewText.FontSize" Value="14" />
                         <Setter Target="OverviewText.LineHeight" Value="22" />
@@ -199,12 +200,13 @@
             <!--
                 The scores, as the web's ScoreRow under its badges (pages/ItemDetail/components/ScoreRow.tsx, RatingEntry.tsx):
                 each source's mark in 13 px SemiBold at 75 % beside its score in 15 px Bold, both in the accent colour, 20
-                apart. A movie, a series or an episode; a season has none.
+                apart, wrapping 8 below at the overview's width as the web's flex-wrap. A movie, a series or an episode; a
+                season has none.
             -->
-            <ItemsRepeater x:Name="ScoreRow" HorizontalAlignment="Left" ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}"
+            <ItemsRepeater x:Name="ScoreRow" MaxWidth="900" HorizontalAlignment="Left" ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}"
                            Visibility="{x:Bind ViewModel.HasRatings, Mode=OneWay}" AutomationProperties.Name="Ratings">
                 <ItemsRepeater.Layout>
-                    <StackLayout Orientation="Horizontal" Spacing="20" />
+                    <controls:WrapLayout HorizontalSpacing="20" VerticalSpacing="8" />
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="detail:DetailRating">

@@ -605,7 +605,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     a movie's, series' or episode's scores, as the web's `ScoreRow` (`pages/ItemDetail/components/ScoreRow.tsx`) under
     its badges: every rating the server gives, in its order, each source's mark ("IMDb", "TMDB") in 13 SemiBold at 75 %
-    beside its score in 15 Bold, both in the accent colour, 20 apart (a season's page has none, as the web's); the
+    beside its score in 15 Bold, both in the accent colour, 20 apart, wrapping 8 below at the overview's width (a
+    season's page has none, as the web's); the
     tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
