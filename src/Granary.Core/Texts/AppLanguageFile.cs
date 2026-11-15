@@ -21,16 +21,18 @@ public sealed class AppLanguageFile
 
     private readonly string _filePath;
     private readonly ILogger<AppLanguageFile> _logger;
-    // Saves one at a time, each the value as it is when its turn comes, so the last one written is the latest.
+    // Saves one at a time, each the value last asked for when its turn comes, so the last one written is the latest.
     private readonly SemaphoreSlim _gate = new(1, 1);
+    // What the file holds, and what was last asked for.
     private volatile string? _kept;
+    private volatile string? _wanted;
 
     public AppLanguageFile(string filePath, ILogger<AppLanguageFile> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         _filePath = Path.GetFullPath(filePath);
         _logger = logger;
-        AtStart = _kept = Load();
+        AtStart = _kept = _wanted = Load();
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "app-language.json");
@@ -38,18 +40,34 @@ public sealed class AppLanguageFile
     /// <summary>What the file held as Granary started: the language this run's texts were chosen by.</summary>
     public string? AtStart { get; }
 
-    /// <summary>What the next start follows.</summary>
+    /// <summary>What the next start follows: what the file holds.</summary>
     public string? Kept => _kept;
 
-    /// <summary>Keeps <paramref name="tag"/> for the next start, null to follow Windows. Never fails: a save that does not work is logged.</summary>
+    /// <summary>
+    /// Keeps <paramref name="tag"/> for the next start, null to follow Windows. Never fails: a save that does not work is
+    /// logged, and the next keep tries again.
+    /// </summary>
     public async Task KeepAsync(string? tag)
     {
-        if (tag == _kept)
-        {
-            return;
-        }
-        _kept = tag;
+        _wanted = tag;
         await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            // The value last asked for when this turn comes; nothing to do when the file holds it.
+            string? wanted = _wanted;
+            if (wanted != _kept)
+            {
+                await WriteAsync(wanted).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task WriteAsync(string? tag)
+    {
         // Its own temporary file: a second Granary on the same data folder saving at the same moment cannot write into it.
         string temp = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
@@ -57,10 +75,11 @@ public sealed class AppLanguageFile
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             await using (var stream = File.Create(temp))
             {
-                await JsonSerializer.SerializeAsync(stream, new AppLanguageFileData(_kept), AppLanguageJsonContext.Default.AppLanguageFileData)
+                await JsonSerializer.SerializeAsync(stream, new AppLanguageFileData(tag), AppLanguageJsonContext.Default.AppLanguageFileData)
                     .ConfigureAwait(false);
             }
             File.Move(temp, _filePath, overwrite: true);
+            _kept = tag;
         }
         catch (Exception ex)
         {
@@ -73,10 +92,6 @@ public sealed class AppLanguageFile
             {
                 _logger.LogDebug(deleteFailure, "A half-written file of the app language stays behind");
             }
-        }
-        finally
-        {
-            _gate.Release();
         }
     }
 

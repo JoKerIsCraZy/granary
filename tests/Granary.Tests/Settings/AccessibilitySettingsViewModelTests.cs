@@ -228,4 +228,43 @@ public sealed class AccessibilitySettingsViewModelTests : IDisposable
         Assert.True(page.IsUnsupported);
         Assert.False(page.OffersLanguage);
     }
+
+    [Fact]
+    public async Task WhileAChoiceSaves_TheSelectStaysOn_AndAnotherChoiceGoesBack()
+    {
+        // As the web: one save at a time, the select keeps the keyboard.
+        var page = await OpenAsync(regional: "de-DE");
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+
+        page.SelectedChoice = page.Choices.Single(c => c.Value == "en");
+        var first = page.Working;
+        page.SelectedChoice = page.Choices[0];
+
+        Assert.True(page.CanChoose);
+        Assert.Equal("en", page.SelectedChoice?.Value);
+        Assert.Empty(page.RestartNote);
+        release.SetResult();
+        await first;
+
+        Assert.Equal(["""{"value":"en"}"""], Saved());
+        Assert.Equal("Applies after a restart.", page.RestartNote);
+    }
+
+    [Fact]
+    public async Task AChoiceThatDoesNotApplyHereYet_SaysNothingOfARestart()
+    {
+        // This run started in Japanese, which this PC's own value keeps; English is saved for the profile, not cleared here.
+        await KeptFile().KeepAsync("ja");
+        Answer("ja", source: SettingScopes.ProfileDevice);
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"));
+        var page = await OpenAsync(windows: ["de-DE"], regional: "de-DE");
+        Assert.Empty(page.RestartNote);
+
+        page.SelectedChoice = page.Choices.Single(c => c.Value == "en");
+        await page.Working;
+
+        Assert.True(page.OffersTryAgain);
+        Assert.Empty(page.RestartNote);
+    }
 }

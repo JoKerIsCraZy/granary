@@ -62,6 +62,10 @@ public sealed partial class AppLanguageSetting : ObservableObject
     // The profile whose language Stored is.
     private (string? ServerId, string? ProfileId)? _readFor;
     private int _loads;
+    // Counts the choices and their retries, and whose the last was: a read for that profile that began before one, or
+    // while one saved, or ends while one saves, does not put the old language back.
+    private int _choices;
+    private (string? ServerId, string? ProfileId)? _choiceFor;
 
     public AppLanguageSetting(ISessionManager session, IProfileSettings settings, SettingsApi api, AppLanguageFile file, IUiDispatcher dispatcher,
         ILogger<AppLanguageSetting> logger)
@@ -72,6 +76,7 @@ public sealed partial class AppLanguageSetting : ObservableObject
         _file = file;
         _dispatcher = dispatcher;
         _logger = logger;
+        KeptForNextStart = file.Kept;
     }
 
     [ObservableProperty]
@@ -92,8 +97,12 @@ public sealed partial class AppLanguageSetting : ObservableObject
     [ObservableProperty]
     public partial AppLanguageFailure Failure { get; private set; }
 
-    // The server and profile the last choice was saved for, while this PC's own value still outranks it.
-    private WriteTarget? _clearPending;
+    // The last choice, while this PC's own value still outranks it here: whose it is, where it goes, and the language.
+    private PendingClear? _clearPending;
+
+    /// <summary>What the next start follows, as kept on this PC (<see cref="AppLanguageFile.Kept"/>).</summary>
+    [ObservableProperty]
+    public partial string? KeptForNextStart { get; private set; }
 
     /// <summary>The read in flight, for tests.</summary>
     internal Task Working { get; private set; } = Task.CompletedTask;
@@ -129,6 +138,8 @@ public sealed partial class AppLanguageSetting : ObservableObject
         }
         var owner = Owner();
         var target = new WriteTarget(server.BaseUri, profileId);
+        _choices++;
+        _choiceFor = owner;
         string? before = Stored;
         bool clearDevice = StoredForThisDevice;
         IsSaving = true;
@@ -157,41 +168,46 @@ public sealed partial class AppLanguageSetting : ObservableObject
             }
             if (!clearDevice)
             {
-                await _file.KeepAsync(tag);
+                await KeepAsync(tag);
                 return;
             }
-            StoredForThisDevice = false;
-            _clearPending = target;
-            await ClearDeviceAsync(owner, target);
+            _clearPending = new PendingClear(owner, target, tag);
+            await ClearDeviceAsync(_clearPending.Value);
         }
         finally
         {
             IsSaving = false;
+            ReadIfDropped();
         }
     }
 
     /// <summary>Clears this PC's own value again, after it failed: the profile's choice was saved, but that value outranks it here.</summary>
     public async Task RetryDeviceClearAsync()
     {
-        if (IsSaving || _clearPending is not { } target || Failure != AppLanguageFailure.DeviceNotCleared)
+        if (IsSaving || _clearPending is not { } pending || pending.Owner != Owner() || Failure != AppLanguageFailure.DeviceNotCleared)
         {
             return;
         }
+        _choices++;
+        _choiceFor = pending.Owner;
         IsSaving = true;
         Failure = AppLanguageFailure.None;
         try
         {
-            await ClearDeviceAsync(Owner(), target);
+            await ClearDeviceAsync(pending);
         }
         finally
         {
             IsSaving = false;
+            ReadIfDropped();
         }
     }
 
     // Goes out as the profile it was chosen for, refused unsent once another acts, so it never clears the next profile's.
-    private async Task ClearDeviceAsync((string? ServerId, string? ProfileId) owner, WriteTarget target)
+    // Once cleared, the choice applies here: it shows, and the next start follows it.
+    private async Task ClearDeviceAsync(PendingClear pending)
     {
+        var (owner, target, tag) = pending;
         try
         {
             await _api.ClearValueAsProfileAsync(target.Server, Key, SettingScopes.ProfileDevice, target.ProfileId);
@@ -212,8 +228,26 @@ public sealed partial class AppLanguageSetting : ObservableObject
         if (Owner() == owner)
         {
             _clearPending = null;
-            await _file.KeepAsync(Stored);
+            Stored = tag;
+            StoredForThisDevice = false;
+            await KeepAsync(tag);
         }
+    }
+
+    // A read dropped while a choice saved left the profile's state to that choice; read again once it is done, so the
+    // page and the next start follow what the server has.
+    private void ReadIfDropped()
+    {
+        if (_loadedFor is null)
+        {
+            Working = LoadIfNewAsync();
+        }
+    }
+
+    private async Task KeepAsync(string? tag)
+    {
+        await _file.KeepAsync(tag);
+        KeptForNextStart = _file.Kept;
     }
 
     // Match device writes null, as the web's does, rather than clearing the profile's value.
@@ -229,6 +263,9 @@ public sealed partial class AppLanguageSetting : ObservableObject
 
     // The server and profile a choice was made for.
     private readonly record struct WriteTarget(Uri Server, string ProfileId);
+
+    // A choice saved for the profile whose clearing of this PC's own value is still to land.
+    private readonly record struct PendingClear((string? ServerId, string? ProfileId) Owner, WriteTarget Target, string? Tag);
 
     private Task LoadIfNewAsync()
     {
@@ -266,6 +303,8 @@ public sealed partial class AppLanguageSetting : ObservableObject
 
     private async Task LoadAsync((string? ServerId, string? ProfileId) owner, int load)
     {
+        int choices = _choices;
+        bool savingAtStart = IsSaving;
         IReadOnlyDictionary<string, EffectiveSetting>? values = null;
         try
         {
@@ -279,6 +318,17 @@ public sealed partial class AppLanguageSetting : ObservableObject
         if (load != _loads || Owner() != owner)
         {
             // A later read, or another profile, is on its way.
+            return;
+        }
+        if (_choiceFor == owner && (choices != _choices || savingAtStart || IsSaving))
+        {
+            // The viewer chose meanwhile: that choice is newer than what the server answered. Read again once it is done,
+            // or now when it already is.
+            _loadedFor = null;
+            if (!IsSaving)
+            {
+                Working = LoadIfNewAsync();
+            }
             return;
         }
         if (values is null)
@@ -298,14 +348,15 @@ public sealed partial class AppLanguageSetting : ObservableObject
             State = AppLanguageState.Unsupported;
             Stored = null;
             StoredForThisDevice = false;
-            await _file.KeepAsync(null);
+            await KeepAsync(null);
             return;
         }
         _readFor = owner;
         Stored = SettingValues.Text(setting);
-        StoredForThisDevice = Stored is not null && setting.Source == SettingScopes.ProfileDevice;
+        // This PC's own row outranks the profile's, a null one too (it follows the device here): a choice clears it.
+        StoredForThisDevice = setting.Source == SettingScopes.ProfileDevice;
         State = AppLanguageState.Ready;
-        await _file.KeepAsync(Stored);
+        await KeepAsync(Stored);
     }
 
     private (string? ServerId, string? ProfileId) Owner() => (_session.ActiveServer?.Id, _session.ProfileId);

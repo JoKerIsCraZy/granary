@@ -325,4 +325,120 @@ public sealed class AppLanguageSettingTests : IDisposable
         Assert.Equal("ja", setting.Stored);
         Assert.Equal("ja", KeptFile().AtStart);
     }
+
+    [Fact]
+    public async Task AReadThatBeganBeforeAChoice_DoesNotPutTheOldLanguageBack_AndIsMadeAgain()
+    {
+        var setting = await ReadyAsync();
+        var release = new TaskCompletionSource();
+        _harness.Answer(EffectivePath, LibraryHarness.Held(release, Answer("de")), Json(Answer("fr")));
+
+        var refresh = setting.RefreshAsync();
+        await setting.ChooseAsync("fr");
+        release.SetResult();
+        await refresh;
+        await setting.Working;
+
+        Assert.Equal("fr", setting.Stored);
+        Assert.Equal("fr", KeptFile().AtStart);
+        Assert.Equal(3, _harness.Count(EffectivePath));
+    }
+
+    [Fact]
+    public async Task AReadStartedWhileAChoiceSaved_DoesNotPutTheOldLanguageBack()
+    {
+        var setting = await ReadyAsync();
+        var saved = new TaskCompletionSource();
+        var answered = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(saved, "{}"));
+        _harness.Answer(EffectivePath, LibraryHarness.Held(answered, Answer("de")), Json(Answer("fr")));
+
+        var choosing = setting.ChooseAsync("fr");
+        var refresh = setting.RefreshAsync();
+        saved.SetResult();
+        await choosing;
+        answered.SetResult();
+        await refresh;
+        await setting.Working;
+
+        Assert.Equal("fr", setting.Stored);
+        Assert.Equal("fr", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task AReadInFlightDuringTryAgain_DoesNotPutThisPCsOldLanguageBack()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var setting = await ReadyAsync();
+        await setting.ChooseAsync("es");
+        var answered = new TaskCompletionSource();
+        _harness.Answer(EffectivePath, LibraryHarness.Held(answered, Answer("ja", source: SettingScopes.ProfileDevice)), Json(Answer("es")));
+
+        var refresh = setting.RefreshAsync();
+        await setting.RetryDeviceClearAsync();
+        answered.SetResult();
+        await refresh;
+        await setting.Working;
+
+        Assert.Equal("es", setting.Stored);
+        Assert.Equal("es", KeptFile().AtStart);
+    }
+
+    private static Func<Task<HttpResponseMessage>> Json(string body) => ScriptedSilo.Json(System.Net.HttpStatusCode.OK, body);
+
+    [Fact]
+    public async Task ThisPCsOwnValue_ThatFollowsTheDevice_IsClearedByAChoiceToo()
+    {
+        // A null row of this PC's own still outranks the profile's choice here.
+        _harness.Answer(EffectivePath, """{ "items": [{ "key": "ui.app_language", "source": "profile_device", "value": null }], "revision": 28 }""");
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Equal(["PUT ?scope=profile {\"value\":\"fr\"}", "DELETE ?scope=profile_device"], Writes());
+        Assert.Equal("fr", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task TryAgain_AfterTheLanguageWasReadAgain_StillAppliesTheChoice()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var setting = await ReadyAsync();
+        await setting.ChooseAsync("es");
+        await setting.RefreshAsync();
+        Assert.Equal("ja", setting.Stored);
+
+        await setting.RetryDeviceClearAsync();
+
+        Assert.Equal(AppLanguageFailure.None, setting.Failure);
+        Assert.Equal("es", setting.Stored);
+        Assert.Equal("es", setting.KeptForNextStart);
+        Assert.Equal("es", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task BackOnTheProfileWhileItsChoiceSaves_ItIsReadAgainOnceTheChoiceLands()
+    {
+        var setting = await ReadyAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+        _harness.Answer(EffectivePath, Answer("ja"), Answer("de"), Answer("fr"));
+
+        var saving = setting.ChooseAsync("fr");
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        await setting.Working;
+        _harness.Session.ProfileId = "7";
+        _harness.Session.RaiseChanged();
+        await setting.Working;
+        Assert.Equal(AppLanguageState.Loading, setting.State);
+        release.SetResult();
+        await saving;
+        await setting.Working;
+
+        Assert.Equal(AppLanguageState.Ready, setting.State);
+        Assert.Equal("fr", setting.Stored);
+    }
 }

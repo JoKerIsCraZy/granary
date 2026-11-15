@@ -44,21 +44,28 @@ public sealed partial class AccessibilitySettingsViewModel : ObservableObject, I
         get => Choices.FirstOrDefault(choice => choice.Value == (_setting.Stored ?? MatchDevice));
         set
         {
-            if (value is null)
+            if (value is null || value.Value == (_setting.Stored ?? MatchDevice))
             {
                 return;
             }
-            Working = _setting.ChooseAsync(value.Value.Length == 0 ? null : value.Value);
-            if (SelectedChoice?.Value != value.Value)
+            // After the select's own change: a choice can change the list, which the select must not see mid-change.
+            _dispatcher.Post(() =>
             {
-                // Not taken (one is on its way) or refused at once: the select goes back, once its own change is done.
-                _dispatcher.Post(() => OnPropertyChanged(nameof(SelectedChoice)));
-            }
+                Working = _setting.ChooseAsync(value.Value.Length == 0 ? null : value.Value);
+                if (SelectedChoice?.Value != value.Value)
+                {
+                    // Not taken, as one is on its way (the web's one save at a time): the select goes back.
+                    OnPropertyChanged(nameof(SelectedChoice));
+                }
+            });
         }
     }
 
-    /// <summary>The select can be used: the profile's language is known and no choice is on its way.</summary>
-    public bool CanChoose => _setting.State == AppLanguageState.Ready && !_setting.IsSaving;
+    /// <summary>
+    /// The select can be used: the profile's language is known. It stays on while a choice saves, as the web's, so it keeps
+    /// the keyboard; another choice meanwhile is not taken.
+    /// </summary>
+    public bool CanChoose => _setting.State == AppLanguageState.Ready;
 
     /// <summary>The Language group shows: the server keeps the setting, or has not said yet.</summary>
     public bool OffersLanguage => _setting.State != AppLanguageState.Unsupported;
@@ -79,9 +86,10 @@ public sealed partial class AccessibilitySettingsViewModel : ObservableObject, I
 
     /// <summary>
     /// Under the select when the next start shows another language, or other dates and numbers, than this run: Granary loads
-    /// its texts as it starts. Empty otherwise.
+    /// its texts as it starts. It follows what is kept for the next start, so a choice that does not apply here yet (its
+    /// save on its way, or this PC's own value not cleared) says nothing of a restart. Empty otherwise.
     /// </summary>
-    public string RestartNote => _setting.State == AppLanguageState.Ready && NextStart(_setting.Stored) != _shown
+    public string RestartNote => NextStart(_setting.KeptForNextStart) != _shown
         ? AppText.Get("web.admin.backups.restore.caveat.restart")
         : "";
 
@@ -141,17 +149,15 @@ public sealed partial class AccessibilitySettingsViewModel : ObservableObject, I
                 }
                 OnPropertyChanged(nameof(SelectedChoice));
                 OnPropertyChanged(nameof(UnavailableNote));
-                OnPropertyChanged(nameof(RestartNote));
                 break;
             case nameof(AppLanguageSetting.State):
                 OnPropertyChanged(nameof(CanChoose));
                 OnPropertyChanged(nameof(OffersLanguage));
                 OnPropertyChanged(nameof(IsUnsupported));
                 OnPropertyChanged(nameof(LoadFailed));
-                OnPropertyChanged(nameof(RestartNote));
                 break;
-            case nameof(AppLanguageSetting.IsSaving):
-                OnPropertyChanged(nameof(CanChoose));
+            case nameof(AppLanguageSetting.KeptForNextStart):
+                OnPropertyChanged(nameof(RestartNote));
                 break;
             case nameof(AppLanguageSetting.Failure):
                 OnPropertyChanged(nameof(FailureText));

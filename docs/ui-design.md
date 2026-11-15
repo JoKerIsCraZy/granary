@@ -1329,10 +1329,11 @@ says why above the sections.
   Français, Português (Brasil), 日本語, 简体中文. A language another Silo app chose that Granary does not offer (Arabic,
   which needs a right-to-left layout, or one Silo does not ship) stays listed under its name, after Match device, so saving here never clears it, with "This
   language isn't available in Granary yet, so Granary follows your device." under the select. The select is off until the
-  profile's choice is read, and while a choice saves. A choice saves at once for the profile, as the web's does, and this
-  PC's own value is cleared after it; Granary loads its texts as it starts, so while the next start would show another
-  language, or other dates and numbers, than this run, "Applies after a restart." stands under the select (the web
-  switches at once). Under the select too, in 13 px muted: "Couldn't load your app language. Try again." with Retry, a
+  profile's choice is read. A choice saves at once for the profile, as the web's does, and this PC's own value is cleared
+  after it; while it saves the select stays on and keeps the keyboard, and another choice goes back (one at a time, as on
+  the web). Granary loads its texts as it starts, so while the next start would show another language, or other dates and
+  numbers, than this run, "Applies after a restart." stands under the select (the web switches at once); a choice still
+  saving, or one this PC's own value still outranks, does not count yet. Under the select too, in 13 px muted: "Couldn't load your app language. Try again." with Retry, a
   refused choice put back with "Couldn’t save the app language", or "Saved, but this PC still uses its own language. Try
   again." with Try again (the web's toasts, which say browser). A server too old for the setting shows "Your server needs
   an update" and "The app language can be chosen once your server runs a newer version of Silo." instead of the group.

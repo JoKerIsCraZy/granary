@@ -79,4 +79,22 @@ public sealed class AppLanguageFileTests : IDisposable
 
         Assert.Null(Create().AtStart);
     }
+
+    [Fact]
+    public async Task ASaveThatFailed_IsTriedAgain_ByTheNextKeep()
+    {
+        // A folder where the file goes: the move cannot replace it.
+        Directory.CreateDirectory(FilePath);
+        var file = Create();
+
+        await file.KeepAsync("de");
+
+        Assert.Null(file.Kept);
+        Directory.Delete(FilePath);
+
+        await file.KeepAsync("de");
+
+        Assert.Equal("de", file.Kept);
+        Assert.Equal("de", Create().AtStart);
+    }
 }
