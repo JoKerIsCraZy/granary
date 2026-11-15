@@ -1131,6 +1131,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
   page's load does not wait for any of it. A failed calendar request leaves the season, or More Episodes, as listed,
   with a warning in the log.
+- The monitored series' schedule (`MonitorSchedule`, as Apple's `AutoDownloadSchedule`) asks the next 30 days with
+  `filter=everything` and the viewer's zone, and each monitored series' item (7.6) for its title and poster, bound to the
+  account and profile the read began for (`SiloRequestOptions.Account`, `.Profile`): once another acts, neither goes out
+  (`ProfileChangedException`), and the next refresh for that profile asks again.
 
 ### 7.14 Notifications
 

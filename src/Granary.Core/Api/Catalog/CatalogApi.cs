@@ -96,6 +96,16 @@ public sealed class CatalogApi(SiloHttp http)
         http.GetAsync(server, $"api/v2/catalog/items/{Segment(id)}{Query(images, libraryId)}", SiloAuth.Profile,
             SiloJsonContext.Default.CatalogItemDetail, cancellationToken);
 
+    /// <summary>
+    /// As <see cref="GetItemAsync"/>, for a read that belongs to profile <paramref name="profileId"/> of account
+    /// <paramref name="accountId"/>, as a monitored series' title: it goes out only while the server still acts as both, else it
+    /// throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public Task<CatalogItemDetail> GetItemAsAccountProfileAsync(Uri server, string accountId, string profileId, string id,
+        CancellationToken cancellationToken) =>
+        http.GetAsAccountProfileAsync(server, $"api/v2/catalog/items/{Segment(id)}", accountId, profileId, SiloJsonContext.Default.CatalogItemDetail,
+            cancellationToken);
+
     public Task<SeasonCollection> ListSeasonsAsync(Uri server, string seriesId, string? libraryId = null, ImageParameters? images = null, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, $"api/v2/catalog/series/{Segment(seriesId)}/seasons{Query(images, libraryId)}", SiloAuth.Profile,
             SiloJsonContext.Default.SeasonCollection, cancellationToken);

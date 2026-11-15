@@ -1674,7 +1674,10 @@ titles of their series as a download dialog or a download named them.
   the server has it now. A save goes over the monitor the dialog showed (`MonitorEdit.Etag`): one a run read anew while it
   showed, or that came meanwhile, is shown as it is now with the same words, and nothing is sent. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
   calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
-  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
+  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`. Those reads are bound to the
+  account and profile the refresh began for (`CalendarApi.GetAsAccountProfileAsync`,
+  `CatalogApi.GetItemAsAccountProfileAsync`), so a switch before they go out sends nothing and keeps no other profile's
+  airings or titles for this one; nothing counts as failed, and the next refresh asks again.
 - **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards
   (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
   (`MonitorRules.StatusOf`: paused; a storage limit holding an episode, the one that holds the first held episode, its
