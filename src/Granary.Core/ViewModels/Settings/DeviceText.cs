@@ -19,8 +19,6 @@ public enum SessionDeviceKind
 /// </summary>
 public static partial class DeviceText
 {
-    private static readonly CultureInfo English = CultureInfo.GetCultureInfo("en-US");
-
     /// <summary>
     /// The name and kind of a sign-in: a client that named itself keeps its name; a browser's User-Agent reads as
     /// "Chrome on Windows", in English as the web writes it, like the names the server gives devices; anything else that
@@ -157,9 +155,12 @@ public static partial class DeviceText
         _ => AppText.Get("web.common.devicePlatform.kind.unknown"),
     };
 
-    /// <summary>A date and time in the viewer's own zone, as the web writes it: "Oct 1, 2026, 8:00 AM".</summary>
-    public static string Stamp(DateTimeOffset at, TimeZoneInfo zone) =>
-        TimeZoneInfo.ConvertTime(at, zone).ToString("MMM d, yyyy, h:mm tt", English);
+    /// <summary>
+    /// A date and time in the viewer's own zone, as the web's LoginSessionRow writes it with formatDateTime:
+    /// "10/1/2026, 8:00:05 AM", or "10/1/2026, 8:00 AM" without <paramref name="seconds"/>.
+    /// </summary>
+    public static string Stamp(DateTimeOffset at, TimeZoneInfo zone, bool seconds = true) =>
+        DateText.DateTime(TimeZoneInfo.ConvertTime(at, zone).DateTime, seconds);
 
     private static int Round(double value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
 

@@ -314,7 +314,7 @@ public sealed class AdminActivityViewModelTests
 
         var request = Assert.Single(_silo.To("api/v2/admin/ips"));
         Assert.Equal(("203.0.113.50", "30", "50"), (request.Query("ip"), request.Query("days"), request.Query("limit")));
-        Assert.Equal(new AdminIpUserRow("elena", "Oct 1, 2026, 8:00 AM", "Oct 27, 2026, 12:00 PM", "12,480"), Assert.Single(activity.IpUsers));
+        Assert.Equal(new AdminIpUserRow("elena", "10/1/2026, 8:00:00 AM", "10/27/2026, 12:00:00 PM", "12,480"), Assert.Single(activity.IpUsers));
         Assert.True(activity.HasMoreIpUsers);
 
         await activity.LoadMoreIpUsersCommand.ExecuteAsync(null);

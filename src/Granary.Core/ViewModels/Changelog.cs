@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels;
 
@@ -112,7 +113,7 @@ public static partial class Changelog
         // A linked heading, [0.2.0](https://...), reads as its words before the brackets go.
         string version = Plain(parts[0]).Trim('[', ']');
         string? date = parts.Length > 1
-            ? DateOnly.TryParseExact(parts[1], "yyyy-MM-dd", English, DateTimeStyles.None, out var day) ? day.ToString("MMM d, yyyy", English) : parts[1]
+            ? DateOnly.TryParseExact(parts[1], "yyyy-MM-dd", English, DateTimeStyles.None, out var day) ? DateText.MediumDate(day.ToDateTime(TimeOnly.MinValue)) : parts[1]
             : null;
         return (version, date);
     }

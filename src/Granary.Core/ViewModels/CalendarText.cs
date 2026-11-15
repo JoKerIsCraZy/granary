@@ -6,8 +6,8 @@ namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// The Calendar page's words, as the web's <c>lib/calendarWeek.ts</c> and <c>lib/upcomingEventPresentation.ts</c> put them
-/// ("Oct 5 – 11, 2026", "Monday, October 5th", "S2 · E1 - Hello"); dates in English like the rest of the app, air times
-/// in the viewer's clock format.
+/// ("Oct 5 – 11, 2026", "Monday, October 5th", "S2 · E1 - Hello"), dates and air times in the format locale
+/// (<see cref="DateText"/>).
 /// </summary>
 internal static class CalendarText
 {
@@ -16,26 +16,48 @@ internal static class CalendarText
     /// <summary>The Monday of the week <paramref name="day"/> is in.</summary>
     public static DateOnly WeekStart(DateOnly day) => day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
 
-    /// <summary>"Oct 5 – 11, 2026", or "Sep 28 – Oct 4, 2026" across two months.</summary>
+    /// <summary>"Oct 5 – 11, 2026", or "Sep 28 – Oct 4, 2026" across two months (the web's formatWeekRangeLabel).</summary>
     public static string WeekRange(DateOnly start)
     {
         var end = start.AddDays(6);
         return start.Month == end.Month && start.Year == end.Year
-            ? $"{start.ToString("MMM d", English)} – {end.Day}, {start.Year}"
-            : $"{start.ToString("MMM d", English)} – {end.ToString("MMM d, yyyy", English)}";
+            ? AppText.Get("web.calendar.weekRangeSameMonth", ("month", Date(start, DateText.ShortMonth)), ("start_day", start.Day),
+                ("end_day", end.Day), ("year", start.Year))
+            : AppText.Get("web.calendar.weekRange", ("start", Date(start, DateText.MonthDay)), ("end", Date(end, DateText.MediumDay)));
     }
 
-    /// <summary>"Monday, October 5th".</summary>
-    public static string DayHeading(DateOnly day) => $"{day.ToString("dddd, MMMM", English)} {Ordinal(day.Day)}";
+    /// <summary>
+    /// "Monday, October 5th" (the web's formatDayHeading). Languages that write weekdays in lower case still start the
+    /// heading with a capital; English keeps its text as it is.
+    /// </summary>
+    public static string DayHeading(DateOnly day)
+    {
+        string heading = AppText.Get("web.calendar.dayHeading", ("weekday", Date(day, DateText.Weekday)),
+            ("month", Date(day, DateText.Month)), ("day", day.Day));
+        if (AppText.Language.Tag == AppLanguage.English)
+        {
+            return heading;
+        }
+        // Past any isolate or direction marks at the start, as the web's /^([⁦-⁩‎‏]*)(\p{Ll})/u.
+        int first = 0;
+        while (first < heading.Length && heading[first] is (>= '⁦' and <= '⁩') or '‎' or '‏')
+        {
+            first++;
+        }
+        return first < heading.Length && char.IsLower(heading[first])
+            ? string.Concat(heading.AsSpan(0, first), char.ToUpper(heading[first], AppText.Language.Formats.Culture).ToString(),
+                heading.AsSpan(first + 1))
+            : heading;
+    }
 
-    /// <summary>"Mon".</summary>
-    public static string ShortDay(DateOnly day) => day.ToString("ddd", English);
+    /// <summary>"Mon" (the web's formatShortDay).</summary>
+    public static string ShortDay(DateOnly day) => Date(day, DateText.ShortWeekday);
 
-    /// <summary>"Thu, Nov 19".</summary>
-    public static string ShortDate(DateOnly day) => day.ToString("ddd, MMM d", English);
+    /// <summary>"Thu, Nov 19", as the web's formatUpcomingDate.</summary>
+    public static string ShortDate(DateOnly day) => Date(day, DateText.WeekdayMonthDay);
 
     /// <summary>"November 19".</summary>
-    public static string MonthDay(DateOnly day) => day.ToString("MMMM d", English);
+    public static string MonthDay(DateOnly day) => Date(day, DateText.LongMonthDay);
 
     /// <summary>"S2 · E1 - Hello" or "Season 2 · Hello" for an episode, "Movie" for a movie.</summary>
     public static string Subtitle(CalendarEvent airing)
@@ -58,15 +80,18 @@ internal static class CalendarText
         return airing.Type == "movie" ? AppText.Get("web.calendar.event.movie") : "";
     }
 
-    /// <summary>The airing's time on the viewer's clock, or the network's wall-clock time; null when neither is known.</summary>
+    /// <summary>
+    /// The airing's time on the viewer's clock, or the network's wall-clock time, as the web's formatUpcomingTime; null
+    /// when neither is known.
+    /// </summary>
     public static string? AirTime(CalendarEvent airing, TimeZoneInfo zone)
     {
         if (airing.AirAt is { } instant)
         {
-            return TimeZoneInfo.ConvertTime(instant, zone).ToString("t", CultureInfo.CurrentCulture);
+            return DateText.Time(TimeZoneInfo.ConvertTime(instant, zone).DateTime);
         }
         return TimeOnly.TryParseExact(airing.AirTime, "HH:mm", English, DateTimeStyles.None, out var time)
-            ? time.ToString("t", CultureInfo.CurrentCulture)
+            ? DateText.Time(DateOnly.MinValue.ToDateTime(time))
             : null;
     }
 
@@ -102,14 +127,8 @@ internal static class CalendarText
             return null;
         }
         int hours = (int)offset.TotalHours;
-        return hours == 0 ? "Etc/UTC" : $"Etc/GMT{(hours > 0 ? "-" : "+")}{Math.Abs(hours)}";
+        return hours == 0 ? "Etc/UTC" : string.Create(English, $"Etc/GMT{(hours > 0 ? "-" : "+")}{Math.Abs(hours)}");
     }
 
-    private static string Ordinal(int day) => day + (day % 100 is 11 or 12 or 13 ? "th" : (day % 10) switch
-    {
-        1 => "st",
-        2 => "nd",
-        3 => "rd",
-        _ => "th",
-    });
+    private static string Date(DateOnly day, string skeleton) => DateText.Format(day.ToDateTime(TimeOnly.MinValue), skeleton);
 }

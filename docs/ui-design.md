@@ -609,7 +609,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
     whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
-    rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
+    rating, regular seasons and genres, an episode's "S2 E7 · 54m · Oct 30, 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
@@ -748,7 +748,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     half, a 20 % white hairline dashed 4 and 3, radius 16), "MISSING" in the badge style with muted text in its top left
     corner for a missing one, and under it the episode's line in the card title style, muted ("S01E05 · Title", or
     "Episode 5" when the calendar does not name it), and its air date where an episode card has its date and runtime
-    ("23 Oct 2026", or "Airs Thu, Nov 19" for an upcoming one; the viewer's day, as the Calendar writes days). The page
+    ("Oct 23, 2026", or "Airs Thu, Nov 19" for an upcoming one; the viewer's day, as the Calendar writes days). The page
     does not wait for the places: they come in once the calendar answers, among the episode cards, which stay as they
     are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
     the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
@@ -1326,7 +1326,7 @@ says why above the sections.
   sessions** (only for the household's primary profile, or an administrator without a profile, as on the web): "This
   device" with Granary's own sign-in, then "Other signed-in sessions", each a line between hairlines: a 36 px outlined
   icon by kind (computer, phone, TV, unknown), the name ("Chrome on Windows", or the name a client sent) with a "This
-  device" pill on Granary's own, and "Active now" (green) or "Last seen 3 hr ago" · "Signed in Oct 1, 2026, 8:00 AM";
+  device" pill on Granary's own, and "Active now" (green) or "Last seen 3 hr ago" · "Signed in 10/1/2026, 8:00 AM";
   on the right Sign out (outline; "Sign out this device" on Granary's own) and Details with a chevron, which opens the
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
@@ -1352,7 +1352,7 @@ says why above the sections.
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
   restart or close Granary.", "The update to Granary 0.3.0 couldn't be verified, so it wasn't installed. Granary will
-  try again later.", why a copy does not update) over "Last checked today at 14:05", Check for updates (off
+  try again later.", why a copy does not update) over "Last checked today at 2:05 PM" (the time as the format locale writes it), Check for updates (off
   while it looks, or when the copy cannot update) or Restart now once a release is ready, and "What's new in 0.3.0"
   from the notes its signed package carries. Below it the Automatic updates switch ("Look for new versions in the
   background and install them when Granary closes.", on by default, named by its row for screen readers), only for a
@@ -1385,9 +1385,9 @@ stream's commands on Activity.
   (MONITOR, BUILD, PLAYBACK METHOD, STREAMS). Granary's own, in English until they are translated: what only Granary
   has (Auto refresh and its "Every 10 s", the question before Terminate, "Scans may be running", the refusals of an
   account that is no administrator, Address and Look up in a stream's details) and the names a screen reader alone
-  hears where the web has none (the address box, the filter box, a user's row, a method that filters). Sizes, rates,
-  times and their units stay as they were until numbers are converted, as the web writes its units the same in every
-  language; dates stay English.
+  hears where the web has none (the address box, the filter box, a user's row, a method that filters). Dates, times,
+  sizes and rates are written as the web writes them in the format locale (docs/architecture.md, "Texts"), their units
+  as the web writes them in every language.
 - **Dashboard** (`AdminDashboardView` on `AdminDashboardViewModel`, the web's default arrangement without Customize or
   Scan): "Dashboard" and its line, "Updated less than 1 minute ago" and Refresh ("Refreshing..."); read again once a
   minute while shown. Six tiles (Active Streams, Egress now, Profiles · 24h, Total Movies, Total Shows, Storage: label and
@@ -1596,8 +1596,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Granary's own: the web forgets the choice, this PC
   keeps it for the next player and after a restart (`time_left` in `playback-device.json`; the click is its only
   setting). After the times "· ENDS 22:41", in the line's muted upper case, also Granary's own as none of Silo's
-  clients has it: the clock time the title ends at the speed it plays, rounded to the minute, in Windows' short time
-  (12 or 24 hours as Windows writes it). It moves later while paused or waiting, and with a seek or another speed;
+  clients has it: the clock time the title ends at the speed it plays, rounded to the minute, as the format locale
+  writes a time (12 or 24 hours as Windows writes it, unless a language of another was chosen). It moves later while paused or waiting, and with a seek or another speed;
   it is not there without a known length (a stream without one included), for an end a day or more away, as it would
   not say which day, or once nothing is left to play: at the end, also while the player holds at the end of the file
   before the title is over, as it would only say the time it is now. Screen readers hear "Ends at 22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the

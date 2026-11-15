@@ -4469,6 +4469,98 @@
       "value": "All Libraries"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "day",
+      "options": {
+        "1": {
+          "value": [
+            {
+              "type": 0,
+              "value": "1st"
+            }
+          ]
+        },
+        "2": {
+          "value": [
+            {
+              "type": 0,
+              "value": "2nd"
+            }
+          ]
+        },
+        "3": {
+          "value": [
+            {
+              "type": 0,
+              "value": "3rd"
+            }
+          ]
+        },
+        "21": {
+          "value": [
+            {
+              "type": 0,
+              "value": "21st"
+            }
+          ]
+        },
+        "22": {
+          "value": [
+            {
+              "type": 0,
+              "value": "22nd"
+            }
+          ]
+        },
+        "23": {
+          "value": [
+            {
+              "type": 0,
+              "value": "23rd"
+            }
+          ]
+        },
+        "31": {
+          "value": [
+            {
+              "type": 0,
+              "value": "31st"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "day"
+            },
+            {
+              "type": 0,
+              "value": "th"
+            }
+          ]
+        }
+      }
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -4721,6 +4813,50 @@
     {
       "type": 1,
       "value": "range"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": ", "
+    },
+    {
+      "type": 1,
+      "value": "year"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -7962,6 +8098,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "just now"
     }
   ],
   "web.common.date.minutesAgo": [
@@ -13595,6 +13737,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "Requested "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "Requested "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · Updated "
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [

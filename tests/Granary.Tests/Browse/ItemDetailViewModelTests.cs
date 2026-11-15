@@ -422,11 +422,11 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal("8 total", detail.EpisodesTotalText);
         var first = detail.Episodes[0];
         Assert.Equal("S03E01 · Chapter 1", first.Card.Title);
-        Assert.Equal("23 Oct 2026 · 52m", first.Card.Subtitle);
+        Assert.Equal("Oct 23, 2026 · 52m", first.Card.Subtitle);
         Assert.Null(first.Card.Caption);
         Assert.Equal("Assane returns to Paris.", first.Overview);
         Assert.True(first.Card.IsWatched);
-        Assert.Equal("S03E01 · Chapter 1, 23 Oct 2026 · 52m, Watched", first.AccessibleName);
+        Assert.Equal("S03E01 · Chapter 1, Oct 23, 2026 · 52m, Watched", first.AccessibleName);
         Assert.Equal(0.5, detail.Episodes[1].Card.Progress);
         Assert.Null(detail.Episodes[1].Overview);
         Assert.DoesNotContain(_fixture.Silo.Sent, r => r.Uri.AbsolutePath.Contains("/recommendations/", StringComparison.Ordinal));
@@ -477,7 +477,7 @@ public sealed class ItemDetailViewModelTests
         Assert.Null(detail.LogoUrl);
         Assert.True(detail.ShowsTitleText);
         Assert.Equal(Art("/api/v2/artwork/episodes/1/still/w1280.webp?exp=1&sig=still"), detail.BackdropUrl);
-        Assert.Equal("S3 E1 · 52m · 23 Oct 2026", detail.MetaLine);
+        Assert.Equal("S3 E1 · 52m · Oct 23, 2026", detail.MetaLine);
         Assert.Equal("", detail.AvailableVersionLine);
         Assert.Equal("2160p · HEVC · HDR · TrueHD", detail.Pickers.VersionSummary);
         Assert.Equal(["Details", "Cast", "Crew", "Version 1", "Version 2"], detail.InfoSections.Select(s => s.Title));

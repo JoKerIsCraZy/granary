@@ -147,8 +147,7 @@ public sealed partial class DeviceSignInViewModel : ObservableObject, IDisposabl
         StatusText = Describe(state.Status);
     }
 
-    private string FormatTime(DateTimeOffset value) =>
-        TimeZoneInfo.ConvertTime(value, _time.LocalTimeZone).ToString("t", CultureInfo.CurrentCulture);
+    private string FormatTime(DateTimeOffset value) => DateText.Time(TimeZoneInfo.ConvertTime(value, _time.LocalTimeZone).DateTime);
 
     // The web login's words where it shows the same step (pages/Login.tsx); the retries and a server without the code are
     // Granary's own.

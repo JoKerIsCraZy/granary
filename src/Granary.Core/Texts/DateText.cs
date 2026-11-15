@@ -18,8 +18,20 @@ public static class DateText
     /// <summary>"3:04 PM", "15:04": the web's <c>formatTime(value)</c>, an hour and its minutes on the locale's clock.</summary>
     public const string HourMinute = "jmm";
 
+    /// <summary>"3 PM", "15 Uhr": <c>formatTime(value, { hour: "numeric", minute: undefined })</c>, an hour alone.</summary>
+    public const string Hour = "j";
+
     /// <summary>"Nov 5", "5. Nov.": <c>{ month: "short", day: "numeric" }</c>.</summary>
     public const string MonthDay = "MMMd";
+
+    /// <summary>"November 5", "5. November": <c>{ month: "long", day: "numeric" }</c>.</summary>
+    public const string LongMonthDay = "MMMMd";
+
+    /// <summary>"November 5, 2026", "5. November 2026": <c>{ day: "numeric", month: "long", year: "numeric" }</c>.</summary>
+    public const string LongDay = "yMMMMd";
+
+    /// <summary>"3:04:09 PM", "15:04:09": the web's <c>formatTime(value, { second: "2-digit" })</c>.</summary>
+    public const string HourMinuteSecond = "jmmss";
 
     /// <summary>"Thu, Nov 5", "Do., 5. Nov.": <c>{ weekday: "short", month: "short", day: "numeric" }</c>.</summary>
     public const string WeekdayMonthDay = "MMMEd";
@@ -49,6 +61,13 @@ public static class DateText
     public static string Time(DateTime value) => Format(value, HourMinute);
 
     /// <summary>
+    /// A date and its time, the web's <c>formatDateTime(value, { dateStyle, seconds })</c>: "11/5/2026, 3:04:09 PM", or
+    /// with <paramref name="medium"/> "Nov 5, 2026, 3:04 PM".
+    /// </summary>
+    public static string DateTime(DateTime value, bool seconds = true, bool medium = false) =>
+        $"{Format(value, medium ? MediumDay : NumericDate)}, {Format(value, seconds ? HourMinuteSecond : HourMinute)}";
+
+    /// <summary>
     /// <paramref name="value"/> with the fields of <paramref name="skeleton"/> (one of this class's constants), in the format
     /// locale's best pattern for them.
     /// </summary>
@@ -66,7 +85,10 @@ public static class DateText
             NumericDate => "d",
             MediumDay => "D",
             HourMinute => "t",
-            MonthDay or WeekdayMonthDay => "M",
+            MonthDay or WeekdayMonthDay or LongMonthDay => "M",
+            LongDay => "D",
+            HourMinuteSecond => "T",
+            Hour => "%H",
             Weekday => "dddd",
             ShortWeekday => "ddd",
             Month => "MMMM",

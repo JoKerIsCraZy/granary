@@ -172,7 +172,7 @@ public sealed class PlayerViewModelNextUpTests
         Assert.False(viewModel.IsNextUpCardShown);
         Assert.Equal("ted", viewModel.NextUpSeriesTitle);
         Assert.Equal("S1:E4", viewModel.NextUpCode);
-        Assert.Equal("11 January 2024 • 37m", viewModel.NextUpMeta);
+        Assert.Equal("January 11, 2024 • 37m", viewModel.NextUpMeta);
         Assert.Equal("series-ted", _source.OnDeckExcept);
         Assert.Equal("Alles Routine", Assert.Single(viewModel.OnDeck).Title);
         Assert.False(viewModel.IsNextUpCountingDown);

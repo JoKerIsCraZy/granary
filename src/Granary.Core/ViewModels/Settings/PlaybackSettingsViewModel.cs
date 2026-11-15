@@ -458,7 +458,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         LearnedLimitText = limit is null
             ? ""
             : AppText.Get("web.settings.playbackConnection.learnedLimit", ("rate", ConnectionRate(limit.Kbps)),
-                ("date", limit.ObservedAt.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture)));
+                ("date", DateText.Format(limit.ObservedAt.ToLocalTime().DateTime, DateText.MonthDay)));
         ConnectionSpeedText = _meteredNote ?? SpeedText(_connection);
         ShowsTestSpeed = _meteredNote is null;
         long? budget = ignoresLimit && limit is not null ? null : _connection?.AutoBudgetKbps;

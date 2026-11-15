@@ -562,11 +562,11 @@ public sealed partial class RequestsViewModel : ObservableObject
         {
             details.Add(progress);
         }
-        string dates = $"Requested {RequestText.Date(request.CreatedAt, zone)}";
-        if (RequestText.LastChange(request, now, zone) is { } changed)
-        {
-            dates += $" · Updated {changed}";
-        }
+        // As the web's Requests page: "Requested Oct 5, 2026 · Updated 3h ago".
+        string created = RequestText.Date(request.CreatedAt, zone);
+        string dates = RequestText.LastChange(request, now, zone) is { } changed
+            ? AppText.Get("web.requests.hub.requestedUpdated", ("created", created), ("updated", changed))
+            : AppText.Get("web.requests.hub.requested", ("created", created));
         bool isError = !string.IsNullOrWhiteSpace(request.LastError);
         return new RequestRowViewModel(request.Id, request.Title)
         {

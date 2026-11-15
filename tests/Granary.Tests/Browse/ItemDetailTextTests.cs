@@ -37,8 +37,8 @@ public sealed class ItemDetailTextTests
         Assert.Equal(expected, DetailText.AirYears(first, last, year));
 
     [Theory]
-    [InlineData("2026-10-23", "23 Oct 2026")]
-    [InlineData("2026-10-23T20:00:00Z", "23 Oct 2026")]
+    [InlineData("2026-10-23", "Oct 23, 2026")]
+    [InlineData("2026-10-23T20:00:00Z", "Oct 23, 2026")]
     [InlineData("23.10.2026", null)]
     [InlineData(null, null)]
     public void Date_IsWordedLikeTheWeb(string? iso, string? expected) => Assert.Equal(expected, DetailText.Date(iso));
@@ -285,7 +285,7 @@ public sealed class ItemDetailTextTests
     {
         var episode = Item(CatalogItemTypes.Episode) with { SeasonNumber = 3, EpisodeNumber = 1, Runtime = 47, AirDate = "2021-01-08", ContentRating = "TV-MA" };
 
-        Assert.Equal("S3 E1 · 47m · 8 Jan 2021 · TV-MA", DetailFacts.MetaLine(episode));
+        Assert.Equal("S3 E1 · 47m · Jan 8, 2021 · TV-MA", DetailFacts.MetaLine(episode));
     }
 
     [Fact]
@@ -413,7 +413,7 @@ public sealed class ItemDetailTextTests
 
         var details = DetailFacts.InfoSections(season, listedEpisodes: 8)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
 
-        Assert.Equal(("Season 3", "8 Episodes", "23 Oct 2026"), (details["Season"], details["Episodes"], details["Released"]));
+        Assert.Equal(("Season 3", "8 Episodes", "Oct 23, 2026"), (details["Season"], details["Episodes"], details["Released"]));
     }
 
     [Fact]

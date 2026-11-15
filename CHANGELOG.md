@@ -6,6 +6,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
+  on a German Windows an episode aired on "5. Nov. 2026" and the calendar's air times and Ends say "21:00". Dates read
+  as the web reads them too: an episode's air date is "Nov 5, 2026" in American English, the
+  next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM".
+
 ## [0.4.0] - 2026-11-14
 
 ### Added

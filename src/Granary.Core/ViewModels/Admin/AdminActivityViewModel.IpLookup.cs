@@ -102,7 +102,6 @@ public sealed partial class AdminActivityViewModel
         }
     }
 
-    // In the viewer's own time: "Oct 27, 2026, 8:41 PM".
-    private string Stamp(DateTimeOffset at) =>
-        TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone).ToString("MMM d, yyyy, h:mm tt", CultureInfo.GetCultureInfo("en-US"));
+    // In the viewer's own time, as the web's AdminActivity writes it with formatDateTime: "10/27/2026, 8:41:05 PM".
+    private string Stamp(DateTimeOffset at) => DateText.DateTime(TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone).DateTime);
 }

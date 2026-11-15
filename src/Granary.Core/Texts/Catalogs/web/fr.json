@@ -4872,6 +4872,94 @@
       "value": "Toutes les bibliothèques"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 5,
+      "value": "day",
+      "options": {
+        "1": {
+          "value": [
+            {
+              "type": 0,
+              "value": "1er"
+            }
+          ]
+        },
+        "2": {
+          "value": [
+            {
+              "type": 0,
+              "value": "2"
+            }
+          ]
+        },
+        "3": {
+          "value": [
+            {
+              "type": 0,
+              "value": "3"
+            }
+          ]
+        },
+        "21": {
+          "value": [
+            {
+              "type": 0,
+              "value": "21"
+            }
+          ]
+        },
+        "22": {
+          "value": [
+            {
+              "type": 0,
+              "value": "22"
+            }
+          ]
+        },
+        "23": {
+          "value": [
+            {
+              "type": 0,
+              "value": "23"
+            }
+          ]
+        },
+        "31": {
+          "value": [
+            {
+              "type": 0,
+              "value": "31"
+            }
+          ]
+        },
+        "other": {
+          "value": [
+            {
+              "type": 1,
+              "value": "day"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -5124,6 +5212,50 @@
     {
       "type": 1,
       "value": "range"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "year"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -8592,6 +8724,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "à l’instant"
     }
   ],
   "web.common.date.minutesAgo": [
@@ -14544,6 +14682,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "Demandée "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "Demandée "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · Mise à jour "
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [

@@ -103,6 +103,8 @@
   "granary.detail.markWatchedFailed": "{reason, select, wait {{count, plural, other {无法将此作品标记为已看。服务器收到的请求过多。请在#分钟后重试。}}} later {无法将此作品标记为已看。服务器收到的请求过多。请在几分钟后重试。} busy {无法将此作品标记为已看。服务器繁忙，请重试。} gone {无法标记为已看：此作品已不可用。} error {无法将此作品标记为已看（错误{status}）。请重试。} other {无法将此作品标记为已看。请检查网络连接，然后重试。}}",
   "granary.detail.missing": "缺失",
   "granary.detail.missingEpisodeName": "第{episode}集，缺失",
+  "granary.detail.upcomingAirs": "{date}播出",
+  "granary.detail.upcomingEpisodeName": "第{episode}集，{date}播出",
   "granary.detail.noServer": "尚未配置服务器。",
   "granary.detail.playTrailer": "播放预告片",
   "granary.detail.quality": "画质",

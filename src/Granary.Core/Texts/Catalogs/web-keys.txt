@@ -636,10 +636,11 @@ web.auth.passwordRules.savePassword
 web.auth.signIn
 web.auth.username
 
-# Calendar, in the words of the web's Calendar page and its airings (lib/upcomingEventPresentation.ts):
-# src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and CalendarText.cs in src/Granary.Core/ViewModels.
-# The dates themselves stay in English for now.
+# Calendar, in the words of the web's Calendar page, its week and day headings (lib/calendarWeek.ts) and its airings
+# (lib/upcomingEventPresentation.ts): src/Granary.App/Views/CalendarPage.xaml(.cs) and CalendarViewModel.cs and
+# CalendarText.cs in src/Granary.Core/ViewModels.
 web.calendar.allLibraries
+web.calendar.dayHeading
 web.calendar.dayLabel
 web.calendar.dayLabelWithEvents
 web.calendar.emptyEverything
@@ -677,6 +678,8 @@ web.calendar.title
 web.calendar.today
 web.calendar.todayButton
 web.calendar.weekOf
+web.calendar.weekRange
+web.calendar.weekRangeSameMonth
 
 # A row's header and arrows, as the web's MediaCarousel: src/Granary.App/Controls/MediaRow.xaml(.cs). Explore all of a row,
 # as the web's catalog page for a section (pages/Catalog.tsx, components/ItemGrid.tsx):
@@ -1157,9 +1160,11 @@ web.common.activity.subtitle.series
 web.common.activity.title.file
 
 # More of Admin → Dashboard's words: a time ago, as the web's formatRelativeTime (lib/date.ts), as above under
-# web.admin.dashboard.chart.columnReading.
+# web.admin.dashboard.chart.columnReading. A request's last change takes them too (LastChange in
+# src/Granary.Core/ViewModels/RequestText.cs).
 web.common.date.daysAgo
 web.common.date.hoursAgo
+web.common.date.justNow
 web.common.date.minutesAgo
 
 # A device's kind, as the web's device lists name it (components/admin/devicePlatformLabels.ts): KindLabel in
@@ -2030,6 +2035,8 @@ web.requests.hub.onTheWay
 web.requests.hub.openInLibrary
 web.requests.hub.openInLibraryFor
 web.requests.hub.reason
+web.requests.hub.requested
+web.requests.hub.requestedUpdated
 web.requests.hub.statusApproved
 web.requests.hub.statusAvailable
 web.requests.hub.statusCancelled

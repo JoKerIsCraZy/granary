@@ -20,7 +20,8 @@ public sealed partial class SignedInSessionRow : ObservableObject
         LastSeenText = DeviceText.SessionLastSeen(session.LastSeenAt, now);
         IsActiveNow = DeviceText.IsActiveNow(session.LastSeenAt, now);
         SignedInDetail = DeviceText.Stamp(session.CreatedAt, zone);
-        StatusRuns = AppText.Runs("web.settings.sessions.row.summary", ("last_seen", LastSeenText), ("signed_in", SignedInDetail));
+        StatusRuns = AppText.Runs("web.settings.sessions.row.summary", ("last_seen", LastSeenText),
+            ("signed_in", DeviceText.Stamp(session.CreatedAt, zone, seconds: false)));
         StatusLine = string.Concat(StatusRuns.Select(run => run.Text));
         LastSeenDetail = session.LastSeenAt is { } seen ? DeviceText.Stamp(seen, zone) : AppText.Get("web.settings.sessions.row.notRecorded");
         IpAddress = session.IpAddress.Length > 0 ? session.IpAddress : AppText.Get("web.settings.sessions.row.unknown");

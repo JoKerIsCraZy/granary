@@ -278,10 +278,10 @@ public static class MediaCardFactory
     private static double? ProgressOf(double? position, double? duration, bool played) =>
         !played && position is > 0 && duration is > 0 ? Math.Clamp(position.Value / duration.Value, 0, 1) : null;
 
-    // Server dates are ISO strings ("2026-10-23"); shown like the web: "23 Oct 2026".
+    // Server dates are ISO strings ("2026-10-23"); shown like the web's episode cards (episodeCardText.ts): "Oct 23, 2026".
     private static string? FormatDate(string? isoDate) =>
         DateOnly.TryParse(isoDate?.Length >= 10 ? isoDate[..10] : isoDate, CultureInfo.InvariantCulture, out var date) ? FormatDate(date) : null;
 
-    /// <summary>An episode card's date: "23 Oct 2026".</summary>
-    internal static string FormatDate(DateOnly date) => date.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+    /// <summary>An episode card's date, the web's formatDate(…, "medium"): "Oct 23, 2026".</summary>
+    internal static string FormatDate(DateOnly date) => DateText.MediumDate(date.ToDateTime(TimeOnly.MinValue));
 }

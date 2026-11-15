@@ -161,10 +161,13 @@ internal static class RequestText
         return string.Join(" · ", parts);
     }
 
-    /// <summary>"Oct 5, 2026".</summary>
-    public static string Date(DateTimeOffset value, TimeZoneInfo zone) => TimeZoneInfo.ConvertTime(value, zone).ToString("MMM d, yyyy", English);
+    /// <summary>"Oct 5, 2026", the web's formatRequestDate (formatDate, "medium").</summary>
+    public static string Date(DateTimeOffset value, TimeZoneInfo zone) => DateText.MediumDate(TimeZoneInfo.ConvertTime(value, zone).DateTime);
 
-    /// <summary>"Updated 3h ago" wording for a change after the request was made; null when it changed within a minute of it.</summary>
+    /// <summary>
+    /// "3h ago" for a change after the request was made, as the web's Requests page words it (formatRelativeTime, a date
+    /// from a week on); null when it changed within a minute of it.
+    /// </summary>
     public static string? LastChange(MediaRequest request, DateTimeOffset now, TimeZoneInfo zone)
     {
         if (request.UpdatedAt - request.CreatedAt < TimeSpan.FromMinutes(1))
@@ -175,19 +178,19 @@ internal static class RequestText
         int minutes = (int)Math.Round(ago.TotalMinutes, MidpointRounding.AwayFromZero);
         if (minutes < 1)
         {
-            return "just now";
+            return AppText.Get("web.common.date.justNow");
         }
         if (minutes < 60)
         {
-            return $"{minutes}m ago";
+            return AppText.Get("web.common.date.minutesAgo", ("count", minutes), ("count_text", minutes));
         }
         int hours = (int)Math.Round(ago.TotalHours, MidpointRounding.AwayFromZero);
         if (hours < 24)
         {
-            return $"{hours}h ago";
+            return AppText.Get("web.common.date.hoursAgo", ("count", hours), ("count_text", hours));
         }
         int days = (int)Math.Round(ago.TotalDays, MidpointRounding.AwayFromZero);
-        return days < 7 ? $"{days}d ago" : Date(request.UpdatedAt, zone);
+        return days < 7 ? AppText.Get("web.common.date.daysAgo", ("count", days), ("count_text", days)) : Date(request.UpdatedAt, zone);
     }
 
     // "12 min", "2 hr", "2 hr 5 min", as the web's formatHoursMinutes words a time left.

@@ -182,11 +182,11 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             }
             var local = TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone);
             var today = TimeZoneInfo.ConvertTime(_time.GetUtcNow(), _time.LocalTimeZone).Date;
-            // The date and time as before; their own formats follow the language once dates do.
-            string time = local.ToString("HH:mm", English);
+            // In the format locale, as the web writes a time (formatTime) and a month and day.
+            string time = DateText.Time(local.DateTime);
             return local.Date == today
                 ? AppText.Get("granary.update.lastCheckedToday", ("time", time))
-                : AppText.Get("granary.update.lastCheckedOn", ("date", local.ToString("MMM d", English)), ("time", time));
+                : AppText.Get("granary.update.lastCheckedOn", ("date", DateText.Format(local.DateTime, DateText.MonthDay)), ("time", time));
         }
     }
 

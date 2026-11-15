@@ -5953,6 +5953,28 @@
       "value": "كل المكتبات"
     }
   ],
+  "web.calendar.dayHeading": [
+    {
+      "type": 1,
+      "value": "weekday"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "day"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    }
+  ],
   "web.calendar.dayLabel": [
     {
       "type": 1,
@@ -6205,6 +6227,50 @@
     {
       "type": 1,
       "value": "range"
+    }
+  ],
+  "web.calendar.weekRange": [
+    {
+      "type": 1,
+      "value": "start"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end"
+    }
+  ],
+  "web.calendar.weekRangeSameMonth": [
+    {
+      "type": 1,
+      "value": "start_day"
+    },
+    {
+      "type": 0,
+      "value": " – "
+    },
+    {
+      "type": 1,
+      "value": "end_day"
+    },
+    {
+      "type": 0,
+      "value": " "
+    },
+    {
+      "type": 1,
+      "value": "month"
+    },
+    {
+      "type": 0,
+      "value": "، "
+    },
+    {
+      "type": 1,
+      "value": "year"
     }
   ],
   "web.catalog.carousel.exploreAll": [
@@ -10260,6 +10326,12 @@
       },
       "offset": 0,
       "pluralType": "cardinal"
+    }
+  ],
+  "web.common.date.justNow": [
+    {
+      "type": 0,
+      "value": "الآن"
     }
   ],
   "web.common.date.minutesAgo": [
@@ -17008,6 +17080,52 @@
     {
       "type": 1,
       "value": "reason"
+    }
+  ],
+  "web.requests.hub.requested": [
+    {
+      "type": 0,
+      "value": "طُلب "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    }
+  ],
+  "web.requests.hub.requestedUpdated": [
+    {
+      "type": 0,
+      "value": "طُلب "
+    },
+    {
+      "type": 8,
+      "value": "createdTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "created"
+        }
+      ]
+    },
+    {
+      "type": 0,
+      "value": " · حُدّث "
+    },
+    {
+      "type": 8,
+      "value": "updatedTime",
+      "children": [
+        {
+          "type": 1,
+          "value": "updated"
+        }
+      ]
     }
   ],
   "web.requests.hub.statusApproved": [
