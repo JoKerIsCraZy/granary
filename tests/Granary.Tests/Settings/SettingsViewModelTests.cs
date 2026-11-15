@@ -87,8 +87,8 @@ public sealed class SettingsViewModelTests : IDisposable
         await using var harness = new Remote.RemoteHarness(lifetime: true);
         await harness.StartListeningAsync();
         PhoneRemoteViewModel? made = null;
-        var page = Playback(phoneRemote: () => made = new PhoneRemoteViewModel(harness.Receiver, harness.Preferences, new FakeConfirmation(),
-            harness.Dispatcher, Remote.RemoteHarness.Client));
+        var page = Playback(phoneRemote: () => made = new PhoneRemoteViewModel(harness.Receiver, harness.Preferences, harness.Dispatcher,
+            Remote.RemoteHarness.Client));
         Assert.Same(made, page.PhoneRemote);
         await harness.Dispatcher.InvokeAsync(() =>
         {

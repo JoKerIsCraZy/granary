@@ -15,12 +15,11 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(10);
 
     private readonly RemoteHarness _harness = new(lifetime: true);
-    private readonly FakeConfirmation _confirmation = new();
     private readonly PhoneRemoteViewModel _viewModel;
 
     public PhoneRemoteViewModelTests()
     {
-        _viewModel = new PhoneRemoteViewModel(_harness.Receiver, _harness.Preferences, _confirmation, _harness.Dispatcher, RemoteHarness.Client);
+        _viewModel = new PhoneRemoteViewModel(_harness.Receiver, _harness.Preferences, _harness.Dispatcher, RemoteHarness.Client);
     }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -195,29 +194,7 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ResetPairingCode_AsksFirst_ThenShowsANewCode()
-    {
-        await ShownAsync();
-        await SwitchOnAsync();
-        await OnUiAsync(() => _viewModel.OpenPanelCommand.Execute(null));
-        string before = Read(vm => vm.PairingLink)!;
-        string keyId = _harness.PairingStore.Current!.KeyId;
-
-        await _harness.Dispatcher.RunAsync(() => _viewModel.ResetPairingCommand.ExecuteAsync(null));
-        await SettleAsync();
-
-        var asked = Assert.Single(_confirmation.Asked);
-        Assert.Equal(("Reset Pairing Code?", "Every phone has to scan the new code. Phones that are connected now are disconnected.", "Reset"),
-            asked);
-        Assert.NotEqual(keyId, _harness.PairingStore.Current!.KeyId);
-        string after = Read(vm => vm.PairingLink)!;
-        Assert.NotEqual(before, after);
-        Assert.Equal(Receiver.PairingLink, after);
-        Assert.Equal("", Read(vm => vm.ResetMessage));
-    }
-
-    [Fact]
-    public async Task AResetAnsweredInThePanel_ResetsWithoutAskingAgain()
+    public async Task AResetAnsweredInThePanel_ShowsANewCode()
     {
         await ShownAsync();
         await SwitchOnAsync();
@@ -228,10 +205,19 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
         await _harness.Dispatcher.RunAsync(_viewModel.ResetPairingAnsweredAsync);
         await SettleAsync();
 
-        Assert.Empty(_confirmation.Asked);
         Assert.NotEqual(keyId, _harness.PairingStore.Current!.KeyId);
-        Assert.NotEqual(before, Read(vm => vm.PairingLink));
-        Assert.Equal(Receiver.PairingLink, Read(vm => vm.PairingLink));
+        string after = Read(vm => vm.PairingLink)!;
+        Assert.NotEqual(before, after);
+        Assert.Equal(Receiver.PairingLink, after);
+        Assert.Equal("", Read(vm => vm.ResetMessage));
+    }
+
+    [Fact]
+    public void TheQuestionBeforeAReset_SaysWhatItDoes()
+    {
+        // The panel asks it in a flyout of its own; no second dialog can open over the panel's.
+        Assert.Equal(("Reset Pairing Code?", "Every phone has to scan the new code. Phones that are connected now are disconnected.", "Reset"),
+            (PhoneRemoteViewModel.ResetQuestionTitle, PhoneRemoteViewModel.ResetQuestionText, PhoneRemoteViewModel.ResetAction));
     }
 
     [Fact]
@@ -243,24 +229,6 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ARefusedReset_ChangesNothing()
-    {
-        _confirmation.Answer = false;
-        await ShownAsync();
-        await SwitchOnAsync();
-        await OnUiAsync(() => _viewModel.OpenPanelCommand.Execute(null));
-        string before = Read(vm => vm.PairingLink)!;
-        string keyId = _harness.PairingStore.Current!.KeyId;
-
-        await _harness.Dispatcher.RunAsync(() => _viewModel.ResetPairingCommand.ExecuteAsync(null));
-        await SettleAsync();
-
-        Assert.Single(_confirmation.Asked);
-        Assert.Equal(keyId, _harness.PairingStore.Current!.KeyId);
-        Assert.Equal(before, Read(vm => vm.PairingLink));
-    }
-
-    [Fact]
     public async Task AResetThatCannotBeSaved_SaysTheOldCodeStillWorks()
     {
         await ShownAsync();
@@ -269,7 +237,7 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
         string before = Read(vm => vm.PairingLink)!;
         _harness.Secrets.FailWrites = new IOException("The disk is full.");
 
-        await _harness.Dispatcher.RunAsync(() => _viewModel.ResetPairingCommand.ExecuteAsync(null));
+        await _harness.Dispatcher.RunAsync(_viewModel.ResetPairingAnsweredAsync);
         await SettleAsync();
 
         Assert.Equal("Couldn't reset the pairing code. The old code still works.", Read(vm => vm.ResetMessage));

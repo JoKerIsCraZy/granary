@@ -1465,8 +1465,9 @@ second net: a disposable transient resolved from the root provider would be kept
   and again at every change of the status or the code; closing the panel, switching off, `Detach` and a receiver that
   stops listening drop it. The last also closes the panel, so the code never comes back by itself when the receiver
   listens again. The view draws the code from it and keeps it nowhere else.
-- Reset Pairing Code asks first (`IConfirmation`), then resets through the receiver and says so when a phone could not
-  be let go or the new key could not be saved (the old code then still works).
+- Reset Pairing Code is asked first by the panel (its question's texts are the view model's), then
+  `ResetPairingAnsweredAsync` resets through the receiver and says so when a phone could not be let go or the new key
+  could not be saved (the old code then still works).
 - Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
   with "TV" as "PC"; Silo's web has no wording for this. The description leaves out that a phone can start titles here
   until it can.

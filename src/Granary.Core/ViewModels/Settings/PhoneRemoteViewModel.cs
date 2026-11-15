@@ -99,21 +99,17 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
 
     private readonly RemoteReceiver _receiver;
     private readonly IPlaybackDevicePreferences _preferences;
-    private readonly IConfirmation _confirmation;
     private readonly IUiDispatcher _dispatcher;
     private bool _attached;
 
-    public PhoneRemoteViewModel(RemoteReceiver receiver, IPlaybackDevicePreferences preferences, IConfirmation confirmation,
-        IUiDispatcher dispatcher, ClientIdentity client)
+    public PhoneRemoteViewModel(RemoteReceiver receiver, IPlaybackDevicePreferences preferences, IUiDispatcher dispatcher, ClientIdentity client)
     {
         ArgumentNullException.ThrowIfNull(receiver);
         ArgumentNullException.ThrowIfNull(preferences);
-        ArgumentNullException.ThrowIfNull(confirmation);
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(client);
         _receiver = receiver;
         _preferences = preferences;
-        _confirmation = confirmation;
         _dispatcher = dispatcher;
         ScanText = string.Format(CultureInfo.InvariantCulture, ScanFormat, client.DeviceName);
         IsOn = preferences.PhoneRemote;
@@ -237,24 +233,12 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Reset Pairing Code once the viewer said yes where the question was asked: the Connect a Phone panel asks it itself,
-    /// with <see cref="ResetQuestionTitle"/>, <see cref="ResetQuestionText"/> and <see cref="ResetAction"/>, since no second
-    /// dialog can open over the panel's. On the UI thread.
+    /// Reset Pairing Code once the viewer said yes where the question was asked: every phone has to scan again, so the
+    /// Connect a Phone panel asks first itself, with <see cref="ResetQuestionTitle"/>, <see cref="ResetQuestionText"/> and
+    /// <see cref="ResetAction"/>, in a flyout, since no second dialog can open over the panel's. The code shown changes once
+    /// the receiver runs under the new key. On the UI thread.
     /// </summary>
-    public Task ResetPairingAnsweredAsync() => ResetAsync();
-
-    // Asked first: every phone has to scan again. The code shown changes once the receiver runs under the new key.
-    [RelayCommand]
-    private async Task ResetPairingAsync()
-    {
-        if (!await _confirmation.AskAsync(ResetQuestionTitle, ResetQuestionText, ResetAction))
-        {
-            return;
-        }
-        await ResetAsync();
-    }
-
-    private async Task ResetAsync()
+    public async Task ResetPairingAnsweredAsync()
     {
         var outcome = await _receiver.ResetPairingAsync();
         OnUiThread(() =>
