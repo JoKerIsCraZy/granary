@@ -14,10 +14,11 @@ public sealed record FetchedAssets(OfflineManifest Manifest, IReadOnlyDictionary
     IReadOnlyDictionary<string, string> SubtitleRevisions);
 
 /// <summary>
-/// The server's manifest is of another revision than the media a finished download has on this PC: the server has other bytes
-/// for it now, which reading the registry again tells (a larger revision replaces the download).
+/// The server's manifest is of another revision than the download: an older one than the record names (the registry is ahead
+/// of it, so it does not describe the bytes the transfer fetches), or, for a finished download, any other than its media's
+/// (the server has other bytes for it now, which reading the registry again tells: a larger revision replaces the download).
 /// </summary>
-public sealed class ManifestRevisionException() : Exception("The manifest is of another revision than the media on this PC.");
+public sealed class ManifestRevisionException() : Exception("The manifest is of another revision than the download on this PC.");
 
 /// <summary>
 /// A download's manifest, artwork and subtitles, kept beside its media so it plays and shows without the server
@@ -46,7 +47,10 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     /// or whose revision changed.
     /// </summary>
     /// <exception cref="JsonException">The server's manifest is not this download's.</exception>
-    /// <exception cref="ManifestRevisionException">The download is finished and the manifest is of another revision than its media.</exception>
+    /// <exception cref="ManifestRevisionException">
+    /// The manifest is of an older revision than the record, or the download is finished and the manifest is of another revision
+    /// than its media.
+    /// </exception>
     /// <exception cref="SiloApiException">The manifest was refused.</exception>
     /// <exception cref="HttpRequestException">The manifest did not come.</exception>
     /// <exception cref="IOException">The manifest could not be written to the folder.</exception>
@@ -63,8 +67,8 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         }
         // Beside finished media the manifest, its tracks and its subtitles describe that media: those of another revision are
         // not kept (the Apple app's subtitle refresh passes them over the same way). Before then the next transfer fetches the
-        // server's current file, which this manifest describes.
-        if (record.State == DownloadState.Completed && manifest.Revision != record.Revision)
+        // server's current file, which a newer manifest describes; an older one than the record names does not.
+        if (manifest.Revision < record.Revision || (record.State == DownloadState.Completed && manifest.Revision != record.Revision))
         {
             throw new ManifestRevisionException();
         }

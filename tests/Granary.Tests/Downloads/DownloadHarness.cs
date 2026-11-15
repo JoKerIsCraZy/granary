@@ -177,10 +177,14 @@ internal sealed class DownloadHarness : IAsyncDisposable
         return download;
     }
 
-    /// <summary>The manifest of <paramref name="id"/> for <paramref name="size"/> bytes, its artwork and its subtitle.</summary>
+    /// <summary>
+    /// The manifest of <paramref name="id"/> for <paramref name="size"/> bytes, its artwork and its subtitle. As the server's,
+    /// the manifest is of the revision the PC keeps the download at (the registry's, once a reconcile took it).
+    /// </summary>
     public void ServeAssets(string id, long size = 3000, string subtitleRevision = "r1")
     {
-        Silo.On(HttpMethod.Get, ManifestPath(id), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest(id, "mkv", size, subtitleRevision)));
+        Silo.On(HttpMethod.Get, ManifestPath(id), () => ScriptedSilo.Json(HttpStatusCode.OK,
+            DownloadPayloads.Manifest(id, "mkv", size, subtitleRevision, revision: Store.All.FirstOrDefault(d => d.Record.DownloadId == id)?.Record.Revision ?? 1))());
         foreach (string kind in new[] { "poster", "backdrop", "series_poster" })
         {
             Silo.On(HttpMethod.Get, ArtworkPath(id, kind), DownloadPayloads.Asset(PosterBytes, "image/jpeg"));

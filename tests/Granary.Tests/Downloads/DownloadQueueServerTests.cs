@@ -407,7 +407,7 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
             if (Interlocked.Exchange(ref replaced, 1) == 0)
             {
                 _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
-                _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4")));
+                _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4", revision: 2)));
                 queue!.AwaitingReplacedTransfer = _ => awaiting.Set();
                 reconcile = Task.Run(() => queue!.ReconcileAsync(Token));
                 replacingMeanwhile = awaiting.Wait(HangLimit, Token);

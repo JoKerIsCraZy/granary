@@ -1476,8 +1476,10 @@ client guide.
   folder lacks and the subtitles whose revision changed. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
   which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). Before
-  the first transfer a newer manifest is kept: the file fetched next is the server's current one. The finished file is
-  named after the manifest's container.
+  the first transfer a newer manifest is kept: the file fetched next is the server's current one. An older one than the
+  revision the record names (the registry is ahead of it) is not: its size and tracks are not the bytes fetched next, and
+  the attempt ends as one whose manifest did not come, tried again after the retry delays. The finished file is named
+  after the manifest's container.
 - **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
   its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
   files go first. The server work looks at the folder when it is about to send, and remembers one still there until the

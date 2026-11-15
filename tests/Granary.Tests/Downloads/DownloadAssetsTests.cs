@@ -116,6 +116,20 @@ public sealed class DownloadAssetsTests : IAsyncDisposable
         Assert.Contains(DownloadPaths.Manifest, FilesIn(stored));
     }
 
+    // The registry named revision 2 already, and the manifest still describes revision 1: its size and tracks are not the
+    // bytes the transfer fetches next. It is not kept, and the transfer tries again later.
+    [Fact]
+    public async Task AManifestOfAnOlderRevision_IsNotKept_BeforeTheFirstTransferEither()
+    {
+        var stored = await _h.AddAsync("dl_1", change: r => r with { Revision = 2 });
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", revision: 1)));
+
+        await Assert.ThrowsAsync<ManifestRevisionException>(() => Assets().FetchAsync(ScriptedSilo.Base, stored, Token));
+
+        Assert.DoesNotContain(DownloadPaths.Manifest, FilesIn(stored));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")));
+    }
+
     // The day-old read of a finished download's manifest finds another revision: the registry is read again, which replaces
     // the download once it lists the new bytes, rather than the old media being shown with the new manifest.
     [Fact]
