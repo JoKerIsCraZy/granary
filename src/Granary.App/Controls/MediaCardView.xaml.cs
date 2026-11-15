@@ -1185,12 +1185,17 @@ public sealed partial class MediaCardView : UserControl
 
     // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
     // blurred, never sharp. A download's artwork comes from its file, as wide as the card: a poster for a poster, a still for
-    // a wide card.
+    // a wide card, blurred as well when it is hidden.
     private void LoadArtwork(CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
         if (_artworkPath is { } path)
         {
+            if (_blurs)
+            {
+                _ = LoadSpoilerAsync(SpoilerArtwork.LoadFileAsync(path, _artWidth, cancellationToken), cancellationToken);
+                return;
+            }
             ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3),
                 OnLocalArtworkFailed);
             return;
@@ -1201,7 +1206,7 @@ public sealed partial class MediaCardView : UserControl
         }
         if (_blurs)
         {
-            _ = LoadSpoilerAsync(url, cancellationToken);
+            _ = LoadSpoilerAsync(SpoilerArtwork.LoadAsync(url, _artWidth, cancellationToken), cancellationToken);
             return;
         }
         ArtImage.Source = _landscape

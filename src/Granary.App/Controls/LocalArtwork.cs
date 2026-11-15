@@ -44,24 +44,45 @@ internal static class LocalArtwork
     {
         try
         {
-            byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path));
-            using var stream = new InMemoryRandomAccessStream();
-            await stream.WriteAsync(bytes.AsBuffer());
-            stream.Seek(0);
+            using var stream = await ReadAsync(path);
             await bitmap.SetSourceAsync(stream);
             return;
         }
         catch (Exception ex)
         {
-            bool first;
-            lock (SaidGate)
-            {
-                first = Said.Add(path);
-            }
-            // Only the kind: a file system error's message holds the full path, with the Windows user name.
-            Logger.Log(first ? LogLevel.Information : LogLevel.Debug, "A download's artwork could not be shown ({Failure})", ex.GetType().Name);
+            SayFailed(path, ex);
         }
         // Back on the UI thread, where each await above came back to.
         failed?.Invoke(bitmap);
+    }
+
+    /// <summary>The file at <paramref name="path"/> in memory, read on the thread pool.</summary>
+    public static async Task<InMemoryRandomAccessStream> ReadAsync(string path)
+    {
+        byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path));
+        var stream = new InMemoryRandomAccessStream();
+        try
+        {
+            await stream.WriteAsync(bytes.AsBuffer());
+            stream.Seek(0);
+            return stream;
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>Says in the log that a download's picture could not be shown: once a file, then only while debugging.</summary>
+    public static void SayFailed(string path, Exception failure)
+    {
+        bool first;
+        lock (SaidGate)
+        {
+            first = Said.Add(path);
+        }
+        // Only the kind: a file system error's message holds the full path, with the Windows user name.
+        Logger.Log(first ? LogLevel.Information : LogLevel.Debug, "A download's artwork could not be shown ({Failure})", failure.GetType().Name);
     }
 }

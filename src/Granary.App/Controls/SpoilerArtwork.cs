@@ -41,17 +41,7 @@ internal static class SpoilerArtwork
                 }
                 Blurred.Add(url, shownWidth, pixels);
             }
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return null;
-            }
-            var bitmap = new WriteableBitmap(pixels.Width, pixels.Height);
-            using (var target = bitmap.PixelBuffer.AsStream())
-            {
-                target.Write(pixels.Bgra);
-            }
-            bitmap.Invalidate();
-            return bitmap;
+            return cancellationToken.IsCancellationRequested ? null : Bitmap(pixels);
         }
         catch (Exception ex)
         {
@@ -59,6 +49,41 @@ internal static class SpoilerArtwork
             Logger.LogWarning("A hidden still {Path} could not be blurred: {Failure}", url.AbsolutePath, ex.GetType().Name);
             return null;
         }
+    }
+
+    /// <summary>
+    /// A download's hidden still, from its file on this PC (<see cref="LocalArtwork.ReadAsync"/>); null when there is none. Not
+    /// kept with the server's blurs: the file is at hand, and its path names the Windows user.
+    /// </summary>
+    public static async Task<ImageSource?> LoadFileAsync(string path, double shownWidth, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var stream = await LocalArtwork.ReadAsync(path);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
+            var pixels = await Task.Run(() => DecodeAsync(stream, shownWidth), CancellationToken.None);
+            return pixels is null || cancellationToken.IsCancellationRequested ? null : Bitmap(pixels);
+        }
+        catch (Exception ex)
+        {
+            LocalArtwork.SayFailed(path, ex);
+            return null;
+        }
+    }
+
+    // On the UI thread, which a bitmap needs.
+    private static WriteableBitmap Bitmap(BlurredPicture pixels)
+    {
+        var bitmap = new WriteableBitmap(pixels.Width, pixels.Height);
+        using (var target = bitmap.PixelBuffer.AsStream())
+        {
+            target.Write(pixels.Bgra);
+        }
+        bitmap.Invalidate();
+        return bitmap;
     }
 
     // On the thread pool: the decoder is agile, and the blur works on a few thousand pixels.
