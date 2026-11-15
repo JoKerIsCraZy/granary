@@ -34,7 +34,8 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   `IThemeAudioOutput` plays title pages' theme music (see Theme music).
   `IRemoteListener`, `IServiceAdvertiser` and `ILanAddressSource` give the phone remote its one listening socket, its
   DNS-SD advertisement and the PC's LAN address; Core's stand-ins listen on nothing, advertise nothing and know no
-  address (see Phone remote).
+  address, and the App's `TcpRemoteListener`, `DnssdServiceAdvertiser` and `LanAddressSource` replace them (see Phone
+  remote, Windows).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -348,6 +349,14 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   minutes, so a stream on its way is not cut. An unreachable saved address keeps a route verified before.
 - Proxy-node URLs are checked as they will be sent: written without dot segments or anything encoded
   that would become one, taken in canonical form, and never on this machine or a link-local address.
+- **The one inbound port.** Granary listens on the network only for the phone remote, and only while it is switched on,
+  a profile is signed in and the PC has a private IPv4 address: one TCP port (52817, or the next free one up to 52826,
+  then any), on that one address, never on every address of the PC (see Phone remote, Windows). The loopback media
+  proxy listens on loopback only. A peer that is not on a local network, or that opened 20 connections in the last
+  minute, is closed unread. Any other peer gets an answer to one small plain frame only: a `sealed_hello` that names the
+  pairing key's id is answered with the receiver's, anything else, or another key, with a plain `close unauthorized`.
+  Only a phone with the key (the code it scanned) gets further, and every frame after is sealed under that key; a
+  phone on another server stays connected but sees and controls nothing.
 
 ## Artwork
 
@@ -1511,6 +1520,52 @@ takes).
   app's does, so a phone that started it sees it at once.
 - **When it changes.** `StateChanged` follows the properties the status is read from; the position alone is not among
   them, since the receiver's 500 ms tick carries it.
+
+### Windows
+
+The App implements the three ports in `Services/` and registers them in `App.ConfigureServices` before
+`AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
+connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 seconds) for its stop.
+
+- **`LanAddressSource`** reads Windows' adapters (`NetworkInterface`) and chooses by `LanAddressRule`: of the adapters
+  that are up and neither loopback nor a tunnel, a private IPv4 address (10/8, 172.16/12, 192.168/16) or a link-local one
+  (169.254/16), those on an adapter with an IPv4 default gateway first, then the first listed; the adapter's IPv4 index
+  goes along for the advertisement. A home network has a gateway, the virtual switches of Hyper-V and WSL usually have
+  none. While the receiver follows it, it reads the adapters off the UI thread, once at the start and again at
+  `NetworkChange.NetworkAddressChanged` (followed with the first handler and left with the last), and raises `Changed`
+  only when the chosen address differs; `Current` answers what it read last, so the receiver's lifetime never waits on
+  the adapters. The address is never logged.
+- **`TcpRemoteListener`** is a `TcpListener` on that one address, IPv4 only and never `IPAddress.Any`, with a backlog of
+  4, on the first port of the receiver's list that binds. Its accept loop (`RemoteAcceptLoop`, apart from the socket so
+  the tests run it without one) hands each connection over at once, with Nagle off, and never waits for it; a
+  connection that fails as it is accepted is skipped, and ten failures in a row stop the loop rather than spin it.
+  `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
+  handed over. A connection (`AcceptedConnection`) closes its socket itself when it is disposed, not only its stream,
+  so a read or write in flight ends at once; Windows sends what was written before, a `close` frame included, in the
+  background.
+- **`DnssdServiceAdvertiser`** registers with Windows' own DNS-SD (`DnsServiceConstructInstance`,
+  `DnsServiceRegister`, `DnsServiceDeRegister` and `DnsServiceFreeInstance` from `dnsapi.dll`, `Interop/DnsService.cs`),
+  over mDNS (`unicastEnabled` false) on the adapter of the chosen address. Windows' DNS client answers the queries, so
+  Granary opens no UDP socket, and the registration ends with the process at the latest. Not a WinRT registration,
+  which is tied to a WinRT socket listener, and not an mDNS library, which would bind UDP 5353 beside Windows' own
+  responder and add a dependency. The API cannot change a registration: a new TXT value (`playing`, `kid`, the
+  server) is a removal and a new registration, and replacing one waits up to 2 seconds for Windows to confirm the
+  removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and if it
+  goes through later it is removed once a newer one replaces it. Each registration owns its native memory (the names,
+  the TXT pairs, the address, the instance Windows built and the request); the request stays at one address until
+  Windows confirmed the registration's end, since removing takes the same request, and all of it is freed a moment
+  after that. Memory Windows might still read is never freed. The completion callback is a static
+  `UnmanagedCallersOnly` function, so no delegate can be collected under Windows; its context is a registration's
+  number, so a late call finds nothing; it catches everything, frees an instance Windows hands it that is not the
+  registration's own, and only completes a task. Only status numbers are logged.
+- **The firewall.** The first time the switch is on and Granary listens, Windows may ask to let Granary through its
+  firewall; the switch's description says so beforehand. Granary installs per user without administrator rights, so
+  it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see
+  the PC but cannot connect, which Granary cannot tell from its socket; the Connect a Phone panel always shows where to
+  allow it.
+- None of these three has a test that touches the network: the accept loop, a connection's end and the address rule
+  are tested apart from the socket and the adapters (`RemoteAcceptLoopTests`, `LanAddressRuleTests`); binding, the
+  adapters and the DNS-SD calls are read by hand.
 
 ## Windows App SDK
 

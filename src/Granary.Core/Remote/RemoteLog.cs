@@ -5,9 +5,10 @@ namespace Granary.Core.Remote;
 /// <summary>
 /// What the phone remote writes to the log. A line names a connection by its number and says what happened in one of the
 /// fixed phrases below; it never carries a value from a frame, a key, a nonce, a name, an address or an id. An
-/// exception is logged by its type and code only: a socket's or a file's message can name an address or a path.
+/// exception is logged by its type and code only: a socket's or a file's message can name an address or a path. The App's
+/// listener, advertiser and address source log the same way.
 /// </summary>
-internal static class RemoteLog
+public static class RemoteLog
 {
     /// <summary>An exception as the log may name it: its type and code.</summary>
     public static string Failure(Exception ex)
