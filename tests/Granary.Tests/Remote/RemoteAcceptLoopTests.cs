@@ -221,9 +221,9 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
-    public async Task OnlyAnUnbrokenRunOfShortages_CountsTowardsTheHalfMinute()
+    public async Task AFewShortagesAmongAPeersResets_DoNotStopTheLoop()
     {
-        // A shortage, then a peer's resets for longer than the half minute, then another shortage: no run of shortages lasted.
+        // A shortage, then a peer's resets for longer than the half minute, then another shortage: two are no lasting shortage.
         var source = Source();
         var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
         var loop = Loop(source, connection =>
@@ -246,6 +246,24 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         Assert.Same(good, await handed.Task);
         Assert.True(_time.Elapsed > RemoteAcceptLoop.GiveUpAfter);
         Assert.Equal(0, Volatile.Read(ref _failures));
+    }
+
+    [Fact]
+    public async Task ALastingShortage_StopsTheLoop_AlsoWithAPeersResetsAmongIt()
+    {
+        // A peer's resets between the shortages must not hide that this PC is out of sockets: the port must not stay advertised.
+        var source = Source();
+        var loop = Loop(source, _ => Task.CompletedTask);
+        loop.Start();
+        for (int i = 0; i < 100; i++)
+        {
+            source.Fail(i % 2 == 0 ? new SocketException((int)SocketError.TooManyOpenSockets) : new SocketException((int)SocketError.ConnectionReset));
+        }
+
+        await FireTimersUntilAsync(loop.Running);
+
+        Assert.Equal(1, Volatile.Read(ref _failures));
+        Assert.True(_time.Elapsed >= RemoteAcceptLoop.GiveUpAfter);
     }
 
     [Fact]
