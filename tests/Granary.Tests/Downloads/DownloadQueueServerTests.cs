@@ -506,19 +506,22 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         var queue = _h.StartQueue();
         await IdleAsync(queue);
         // The replace holds until the loop has made the pass its change woke, which passes the download over while it is
-        // being replaced: only a wake once the replace is done starts it.
+        // being replaced: only a wake once the replace is done starts it. The queue's own handler, before this one, woke the
+        // loop, which parks again only after a pass that began since (a pass under way then ends without parking). The result
+        // is checked after the call, not in the handler, which would throw into the store's change.
         int held = 0;
+        bool passedMeanwhile = false;
         _h.Store.Changed += (_, _) =>
         {
             if (_h.Find("dl_1")?.Record.Revision == 2 && Interlocked.Exchange(ref held, 1) == 0)
             {
-                long passes = queue.Passes;
-                SpinWait.SpinUntil(() => queue.Passes > passes, TimeSpan.FromSeconds(2));
+                passedMeanwhile = SpinWait.SpinUntil(() => queue.Parked.IsCompleted, HangLimit);
             }
         };
 
         _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
         await queue.ReconcileAsync(Token);
+        Assert.True(passedMeanwhile);
 
         await CompletedAsync("dl_1");
         Assert.Equal(2, _h.Find("dl_1")!.Record.Revision);
