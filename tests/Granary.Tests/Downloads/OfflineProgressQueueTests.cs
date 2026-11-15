@@ -474,6 +474,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     [Fact]
     public async Task WhatIsRemovedWhileAnEarlierWriteIsUnderWay_IsOnTheDiskOnceTheLatestWriteIsDone()
     {
+        var token = Token;
         await FourOnTheDiskAsync();
         var queue = Open();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -481,7 +482,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
         queue.Writing = () =>
         {
             reached.TrySetResult();
-            released.Wait(TimeSpan.FromSeconds(30));
+            released.Wait(TimeSpan.FromSeconds(30), token);
         };
         queue.Record(OtherAccount, "ep_5", 5000, 0);
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
@@ -650,6 +651,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     [Fact]
     public async Task ATryThatComesDueWhileAWriteIsUnderWay_WritesAfterIt_NotBesideIt()
     {
+        var token = Token;
         await FourOnTheDiskAsync();
         await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
         var queue = Open();
@@ -673,7 +675,7 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
                 Volatile.Write(ref besideEachOther, true);
             }
             reached.TrySetResult();
-            released.Wait(TimeSpan.FromSeconds(30));
+            released.Wait(TimeSpan.FromSeconds(30), token);
             Interlocked.Decrement(ref underWay);
         };
         // A position of another server is recorded, and its write is held on its way to the disk.

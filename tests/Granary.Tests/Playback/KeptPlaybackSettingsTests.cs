@@ -400,6 +400,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
     [Fact]
     public async Task WhatIsForgottenWhileAWriteStillWaits_IsOnTheDiskOnceTheLatestWriteIsDone()
     {
+        var token = Token;
         await FourOnTheDiskAsync();
         var kept = Open();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -407,7 +408,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         kept.Writing = () =>
         {
             reached.TrySetResult();
-            released.Wait(TimeSpan.FromSeconds(30));
+            released.Wait(TimeSpan.FromSeconds(30), token);
         };
         kept.Keep("srv1/2/8", ["a"], new EffectiveSettings([], 3));
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
@@ -532,6 +533,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
     [Fact]
     public async Task ATryThatComesDueWhileAWriteWaits_JoinsThatWrite_AndStartsNoSecondOne()
     {
+        var token = Token;
         await FourOnTheDiskAsync();
         await File.WriteAllTextAsync(NotePath, """{ "version": 1, "removals": [] }""", Token);
         var kept = Open();
@@ -549,7 +551,7 @@ public sealed class KeptPlaybackSettingsTests : IAsyncDisposable
         {
             Interlocked.Increment(ref writes);
             reached.TrySetResult();
-            released.Wait(TimeSpan.FromSeconds(30));
+            released.Wait(TimeSpan.FromSeconds(30), token);
         };
         // The server's answer for another account is kept, and its write is held before it starts.
         kept.Keep("srv10/1/7", ["b"], new EffectiveSettings([], 4));

@@ -133,13 +133,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderThatDoesNotAnswer_HoldsThePlayThreeSecondsAtMost_ThenTheTitleStreams()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         var answer = TryAsync(PlayRequest.Resume("ep_5"));
@@ -174,13 +175,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task PlayPressedAgainWhileAFolderDoesNotAnswer_WaitsForTheSameRead_NotOneMore()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         int reads = 0;
         _fixture.Playbacks.Reading = () =>
         {
             Interlocked.Increment(ref reads);
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
 
         // Three presses on a share that does not answer: each gives up after the budget.
@@ -205,13 +207,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderReadThatFailsAfterItsPlayGaveUp_IsLogged_NotLeftUnobserved()
     {
+        var token = LocalPlaybackFixture.Token;
         await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
             throw new InvalidOperationException("boom in a folder");
         };
 
@@ -243,13 +246,14 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     [Fact]
     public async Task AFolderReadBegunBeforeTheDownloadsBytesWereFetchedAgain_DoesNotSayTheNewFileIsMissing()
     {
+        var token = LocalPlaybackFixture.Token;
         var download = await _fixture.Harness.AddPlayableAsync();
         using var held = new ManualResetEventSlim();
         using var reading = new ManualResetEventSlim();
         _fixture.Playbacks.Reading = () =>
         {
             reading.Set();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
         var answer = TryAsync(PlayRequest.Resume("ep_5"));
         Assert.True(reading.Wait(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token));

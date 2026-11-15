@@ -71,6 +71,7 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
     [Fact]
     public async Task AProfileThatLeftWhileTheDownloadsWereRead_DoesNotShowTheEntryForTheNextOne()
     {
+        var token = Token;
         Capability(enabled: false, allowed: false);
         await _h.AddAsync("dl_1", DownloadState.Completed);
         var store = _h.UnreadStore();
@@ -80,7 +81,7 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
         store.Loading = () =>
         {
             reached.TrySetResult();
-            released.Wait(TimeSpan.FromSeconds(30));
+            released.Wait(TimeSpan.FromSeconds(30), token);
         };
         try
         {
