@@ -46,12 +46,26 @@ public sealed class NextAiringTests
     }
 
     [Fact]
-    public void OnOneDay_ADateWithoutATimeGoesFirst_AndOneMomentGoesToTheLowerNumber()
+    public void ADateWithoutATime_IsTheStartOfItsDay_AndOneMomentGoesToTheLowerNumber()
     {
-        // Apple reads a date without a time as the start of its day.
+        // Apple reads a date without a time as the start of its day, and orders by the moment, then the numbers.
         Assert.Equal((3, 9), Numbers(NextAiring.Find([At(3, 8, "2026-10-04T20:00:00Z"), On(3, 9, "2026-10-04")], Now)));
+        Assert.Equal((3, 8), Numbers(NextAiring.Find([At(3, 8, "2026-10-04T00:00:00Z"), On(3, 9, "2026-10-04")], Now)));
         Assert.Equal((3, 6), Numbers(NextAiring.Find([At(3, 7, "2026-10-04T20:00:00Z"), At(3, 6, "2026-10-04T20:00:00Z")], Now)));
         Assert.Equal((3, 7), Numbers(NextAiring.Find([At(4, 1, "2026-10-04T20:00:00Z"), At(3, 7, "2026-10-04T20:00:00Z")], Now)));
+    }
+
+    [Fact]
+    public void InAZoneTheServerHasNoNameFor_ADateStartsInTheCalendarsReckoning()
+    {
+        // Half past one on 2 October here, still 1 October in UTC, which the server reckons in for this zone. The episode at
+        // 9 pm in UTC is half past two on 2 October here, before 2 October begins in UTC.
+        _clock.Zone = TimeZoneInfo.CreateCustomTimeZone("Granary half hour", TimeSpan.FromMinutes(330), "Half hour", "Half hour");
+        _clock.Advance(TimeSpan.FromHours(8));
+
+        var next = NextAiring.Find([On(3, 7, "2026-10-02"), At(3, 6, "2026-10-01T21:00:00Z")], Now);
+
+        Assert.Equal((3, 6), Numbers(next));
     }
 
     [Fact]

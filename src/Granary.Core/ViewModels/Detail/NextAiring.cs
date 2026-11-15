@@ -12,21 +12,28 @@ internal static class NextAiring
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
 
     /// <summary>
-    /// The first airing still to come, from any season but the specials: one with its time once that time is past, one with
-    /// only its date from the day after on, since nobody can say whether today's has aired. Ties go to the earlier moment
-    /// (a date alone is its day's start), then the lower season and episode.
+    /// The first airing still to come, from any season but the specials: one with its time until that time, one with only
+    /// its date from the day after on, since nobody can say whether today's has aired. The earliest moment goes first (a
+    /// date alone is the start of its day in the calendar's reckoning), then the lower season and episode.
     /// </summary>
     public static EpisodeAiring? Find(IEnumerable<EpisodeAiring> airings, CalendarNow now) => airings
-        .Select(airing => (Airing: airing, Day: SeasonGaps.Day(airing, now.Zone)))
-        .Where(entry => entry.Airing.SeasonNumber > 0 && entry.Day is { } day
-            && (entry.Airing.AirAt is { } at ? at > now.Now : day > now.Today))
-        .OrderBy(entry => entry.Day)
-        .ThenBy(entry => entry.Airing.AirAt.HasValue)
-        .ThenBy(entry => entry.Airing.AirAt)
+        .Select(airing => (Airing: airing, Moment: MomentOf(airing, now)))
+        .Where(entry => entry.Airing.SeasonNumber > 0 && entry.Moment is not null)
+        .OrderBy(entry => entry.Moment)
         .ThenBy(entry => entry.Airing.SeasonNumber)
         .ThenBy(entry => entry.Airing.EpisodeNumber)
         .Select(entry => entry.Airing)
         .FirstOrDefault();
+
+    // When an airing still to come airs, as Apple's AirDateParser reads it; null for one that may have aired, or has no date.
+    private static DateTimeOffset? MomentOf(EpisodeAiring airing, CalendarNow now)
+    {
+        if (airing.AirAt is { } at)
+        {
+            return at > now.Now ? at : null;
+        }
+        return SeasonGaps.Day(airing, now.Zone) is { } day && day > now.Today ? now.StartOf(day) : null;
+    }
 
     /// <summary>
     /// Apple's <c>downloads.monitor.next.*</c> words: a season's first episode starts the season, any other is named by its

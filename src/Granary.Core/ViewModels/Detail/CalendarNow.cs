@@ -14,6 +14,17 @@ internal readonly record struct CalendarNow(DateTimeOffset Now, TimeZoneInfo Zon
     /// <summary>The day in the viewer's zone, which an airing's instant is judged in; <see cref="Today"/> unless the server reckons in UTC.</summary>
     public DateOnly LocalToday => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(Now, Zone).DateTime);
 
+    /// <summary>The zone the server reckons the calendar's days in: the viewer's, or UTC for a zone without a name.</summary>
+    public TimeZoneInfo DayZone => TimeZone is null ? TimeZoneInfo.Utc : Zone;
+
+    /// <summary>The moment <paramref name="day"/> of the calendar starts, as Apple reads a date without a time.</summary>
+    public DateTimeOffset StartOf(DateOnly day)
+    {
+        // A midnight a clock change skips gets the standard offset, which lands on the day's first moment after the change.
+        var midnight = day.ToDateTime(TimeOnly.MinValue);
+        return new DateTimeOffset(midnight, DayZone.GetUtcOffset(midnight));
+    }
+
     public static CalendarNow Of(TimeProvider time)
     {
         var now = time.GetUtcNow();
