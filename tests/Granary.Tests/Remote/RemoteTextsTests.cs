@@ -149,6 +149,16 @@ public sealed class RemoteTextsTests
     }
 
     [Fact]
+    public void ADownloadThatCannotPlay_GoesInEnglish()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        string shown = Granary.Core.Downloads.LocalPlayback.CannotPlay;
+        Assert.DoesNotContain("can't be played", shown, StringComparison.Ordinal);
+
+        Assert.Equal("This download can't be played. Try again, or delete it and download it again.", RemoteTexts.PlayerError(shown));
+    }
+
+    [Fact]
     public void ANetworkPathTheLocalPlayerRefuses_GoesAsItIs() =>
         Assert.Equal("Network paths cannot be played; copy the file to this computer.",
             RemoteTexts.PlayerError("Network paths cannot be played; copy the file to this computer."));
