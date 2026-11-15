@@ -196,6 +196,28 @@ public sealed class DownloadAnnouncementsTests
     }
 
     [Fact]
+    public void AnEpisodeDeletedWhileItsSeasonWasHeldBack_IsNotCounted_NorPlayed()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Queued));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Queued)));
+        // The viewer deletes the finished one while the other is still to come.
+        Assert.Empty(Look(Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        var announced = Assert.Single(Look(Episode("dl_2", 1, 2, DownloadState.Completed)));
+
+        Assert.Equal(new DownloadAnnouncement("Example Series (S1E2) is ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"), announced);
+    }
+
+    [Fact]
+    public void ASeasonWhoseHeldEpisodesWereAllDeleted_SaysNothing()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Queued));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Queued)));
+
+        Assert.Empty(Look(Episode("dl_2", 1, 2, DownloadState.Queued, paused: true)));
+    }
+
+    [Fact]
     public void AnotherProfile_StartsAfresh()
     {
         Look(Episode("dl_1", 1, 1, DownloadState.Completed), Episode("dl_2", 1, 2, DownloadState.Downloading));

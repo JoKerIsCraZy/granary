@@ -82,7 +82,12 @@ public sealed class DownloadAnnouncements
         var announced = new List<DownloadAnnouncement>();
         foreach (var batch in _batches.ToList())
         {
-            if (!items.Any(i => DownloadTally.IsPending(i) && GroupOf(i) == batch.Group))
+            // One the viewer deleted while it waited is neither counted nor played; a batch left with none says nothing.
+            if (!batch.KeepOnly(_seen))
+            {
+                _batches.Remove(batch);
+            }
+            else if (!items.Any(i => DownloadTally.IsPending(i) && GroupOf(i) == batch.Group))
             {
                 _batches.Remove(batch);
                 announced.Add(batch.Announcement());
@@ -157,6 +162,13 @@ public sealed class DownloadAnnouncements
         {
             _ended.RemoveAll(e => e.Item.DownloadId == item.DownloadId);
             _ended.Add((item, failed));
+        }
+
+        /// <summary>Drops the downloads that are gone; false when none is left.</summary>
+        public bool KeepOnly(IReadOnlyDictionary<string, DownloadItem> present)
+        {
+            _ended.RemoveAll(e => !present.ContainsKey(e.Item.DownloadId));
+            return _ended.Count > 0;
         }
 
         public DownloadAnnouncement Announcement()
