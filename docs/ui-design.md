@@ -313,7 +313,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   GB, Downloading", the same while it comes: the percentage is the bar's value (in percent, on every card).
   A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
   as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
-  did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
+  did. A series' card opens its downloads (below). Play on a card (its play disc under the pointer, a remote's Play, a
+  controller's X) plays a whole download as the click does, and on a series' card its next episode here: the first whole
+  one not watched, by season and episode with the specials last, else the first, as a series' card elsewhere plays its
+  next episode; a card with nothing whole has no play disc and Play does nothing there. The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
   remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
   too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
@@ -1103,7 +1106,7 @@ On the pages, and in the minimized player's bar:
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
 | A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
 | B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
-| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| X | Plays or resumes the focused card, as a remote's Play: on the Downloads pages a whole download from this PC, and a series' card its next episode there. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |

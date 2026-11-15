@@ -1535,7 +1535,9 @@ client guide.
   keeps its `LiveCard`, its element in the grid and the focus, and only takes its new look (a `MediaCard` compares by
   value, so an unchanged card tells nothing). What a card's click and its ⋮ menu do is `DownloadCardActions`, an
   `ICardMenuSource` the pages hand to their cards (`ICardMenuHost`); each entry acts on the download as it is when it is
-  picked (`DownloadManager.Find`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
+  picked (`DownloadManager.Find`). Play on a card (its play disc, a remote's Play, a controller's X: the window's
+  `PlayFocused`, through `MediaCardActions`) plays its `PlayContentId`: a whole download's own title, and on a series'
+  card its next episode here (`DownloadCards.NextEpisode`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
   a play from this PC left it, or the server's position read back when that is newer; see "Offline progress") over
   `DurationMs`, the title's length, which the manifest gives when it is read (before the first transfer, and again a day
   on) and a play from this PC keeps with each position, for a download kept before the record had it. So it needs no
