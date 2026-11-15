@@ -119,6 +119,11 @@ public partial class App : Application
         var progress = Services.GetRequiredService<OfflineProgressSync>();
         progress.Start();
         _window.Closed += (_, _) => progress.Dispose();
+        // Monitored series bring their new episodes: at the start, with each profile, every four hours and after a change
+        // (docs/architecture.md, "Series monitoring").
+        var monitors = Services.GetRequiredService<SeriesMonitors>();
+        monitors.Start();
+        _window.Closed += (_, _) => monitors.Dispose();
         // The server's accent recolours Granary as it arrives, and with every other server.
         var accent = Services.GetRequiredService<ServerAccent>();
         accent.PropertyChanged += (_, e) =>

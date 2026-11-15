@@ -337,6 +337,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadsFeature>();
         services.AddSingleton<PlayingDownloads>();
         services.AddSingleton<DownloadManager>();
+        // Series monitors: their list for the queue's storage limits and the pages, and the runs that sync them with the server.
+        services.AddSingleton<MonitorBook>();
+        services.AddSingleton<SeriesMonitors>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
         // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
         services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();

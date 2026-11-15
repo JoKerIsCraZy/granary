@@ -1577,6 +1577,47 @@ client guide.
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
 
+### Series monitoring
+
+A monitor keeps a series downloaded on this PC (docs/api-contract.md, 14.8), as Silo's Apple app keeps one
+(`DownloadManager.swift`, "Series monitoring"); only that app has it. The server registers a monitored series' episodes only
+when the client syncs, so `SeriesMonitors` (a singleton the app starts in `App.Launch` and disposes as the window closes)
+runs for the active profile; `MonitorBook` holds each profile's monitors as last read or written, for the run only, and the
+titles of their series as a download dialog or a download named them.
+
+- **A run.** It reads the capability (`series_monitoring`), sends the stops still to go, reads the whole monitor list (one
+  that does not end whole changes nothing), syncs each active monitor page by page under the validator read before its
+  first page, and takes what the server registered. A page that got no answer goes again as it was, a second and two
+  seconds later; a monitor that changed under its sync (409) is read again and its sync starts over, twice at most; one the
+  server no longer has (404, and 404 again when read) leaves the list. A server that cannot be reached, or asks to wait
+  (429, 503), ends the run's syncs: the next monitors would meet the same. While the server does not monitor series, a run
+  reads the list but syncs nothing, so a monitor that is there can still be stopped.
+- **When.** At the start, when another server, account or profile becomes the active one, every `SyncInterval` (4 hours,
+  the Apple app's background refresh) while Granary runs, after a monitor is made or changed (that monitor alone), and when
+  asked (`SyncSoon`). Wishes settle for `Settle` (2 s) into one run; a wish while a run is under way is one more run after
+  it. Signed out there is nothing to run, and the monitors stay on the server: they are the profile's.
+- **Taking registered episodes.** After the syncs, the registry (14.3) is read whole and each entry of a monitored series
+  (its `content_id` a monitor's series, an episode) that the PC neither keeps, by id or by episode, nor is deleting, whose
+  status is preparing, ready, downloading or completed, is kept as a download, its title and numbers from its manifest,
+  queued (Preparing while the server prepares it) in episode order with the specials last, so the queue brings the first
+  first. A manifest that does not come ends the taking for that run; the next run takes the rest. The store's
+  `ClearGeneration` is taken first and a sign-out under way takes nothing, as a create does (`AddUnlessClearedAsync`). The
+  Apple app takes every entry it does not know; Granary only a monitored series'. Once kept, it downloads as any other:
+  the queue's order, metered connections, the drive and pause all hold.
+- **Make, change, stop.** `CreateAsync` sends the create once; no answer, a 409 or a 5xx reads the list, which tells whether
+  the server made it (`Uncertain` when it does not). The server answers a series this PC monitors already with that monitor
+  as it is, so what differs from the choice goes as a change. `UpdateAsync` changes a monitor under the validator it was read
+  with: a 412 or 409 reads it again and answers `Changed`, sending nothing more (the Apple app sends the same change again
+  under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
+  monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
+  read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
+  back meanwhile. Waiting stops are kept for the run, not on disk: one that never reached the server before Granary closed
+  shows its monitor again at the next start.
+- **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that
+  landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it. Everything
+  runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it
+  applies nothing more. The log names no series, title or profile.
+
 ### Downloads in the shell
 
 `DownloadActivity` (a singleton the app starts in `App.Launch` and disposes as the window closes) follows the active
