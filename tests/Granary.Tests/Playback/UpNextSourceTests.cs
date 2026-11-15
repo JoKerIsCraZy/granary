@@ -28,6 +28,14 @@ public sealed class UpNextSourceTests
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" },
         new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _logs.For<UpNextSource>());
 
+    // One query parameter's value, whole: "still_width=712" is not "still_width=7120".
+    private static string? QueryValue(Uri uri, string name) =>
+        uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(pair => pair.Split('=', 2))
+            .Where(pair => pair[0] == name)
+            .Select(pair => pair.Length > 1 ? Uri.UnescapeDataString(pair[1]) : "")
+            .SingleOrDefault();
+
     private static string Episodes(int season, params int[] numbers) =>
         "{ \"items\": [" + string.Join(",", numbers.Select(n =>
             $$"""{ "content_id": "ted-{{season}}-{{n}}", "season_number": {{season}}, "episode_number": {{n}}, "title": "Episode {{n}}", "runtime": 37, "still_url": "/s/{{n}}.jpg" }""")) + "] }";
@@ -120,7 +128,31 @@ public sealed class UpNextSourceTests
 
         Assert.Equal("ted-1-3", next?.ContentId);
         var read = Assert.Single(_silo.Sent, r => r.Uri.AbsolutePath.EndsWith("/seasons/1/episodes", StringComparison.Ordinal));
-        Assert.Contains("still_width=1067", read.Uri.Query, StringComparison.Ordinal);
+        Assert.Equal("1067", QueryValue(read.Uri, "still_width"));
+    }
+
+    [Fact]
+    public async Task TheNextAndThePreviousEpisode_AskedForTogetherWithAWidth_ReadTheSeasonOnce_WhileTheServersSizesAreStillRead()
+    {
+        var capabilities = new TaskCompletionSource();
+        _silo.On(HttpMethod.Get, "api/v2/images/capabilities", async () =>
+        {
+            await capabilities.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities)();
+        });
+        _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(1, [1, 2, 3])));
+        var source = Create();
+        var current = LastOfSeason1 with { ContentId = "ted-1-2" };
+        var sizes = new ImageSizes(Still: 1067);
+
+        var next = source.NextEpisodeAsync(current, sizes, Token);
+        var previous = source.PreviousEpisodeAsync(current, sizes, Token);
+        capabilities.SetResult();
+
+        Assert.Equal("ted-1-3", (await next)?.ContentId);
+        Assert.Equal("ted-1-1", (await previous)?.ContentId);
+        var read = Assert.Single(_silo.Sent, r => r.Uri.AbsolutePath.EndsWith("/seasons/1/episodes", StringComparison.Ordinal));
+        Assert.Equal("1067", QueryValue(read.Uri, "still_width"));
     }
 
     [Fact]
@@ -135,7 +167,7 @@ public sealed class UpNextSourceTests
 
         Assert.Equal("ted-2-1", next?.ContentId);
         var read = Assert.Single(_silo.Sent, r => r.Uri.AbsolutePath.EndsWith("/seasons/2/episodes", StringComparison.Ordinal));
-        Assert.Contains("still_width=712", read.Uri.Query, StringComparison.Ordinal);
+        Assert.Equal("712", QueryValue(read.Uri, "still_width"));
     }
 
     [Fact]
@@ -147,6 +179,7 @@ public sealed class UpNextSourceTests
 
         Assert.Equal("ted-1-3", next?.ContentId);
         var read = Assert.Single(_silo.Sent);
+        Assert.Null(QueryValue(read.Uri, "still_width"));
         Assert.DoesNotContain("width", read.Uri.Query, StringComparison.Ordinal);
     }
 

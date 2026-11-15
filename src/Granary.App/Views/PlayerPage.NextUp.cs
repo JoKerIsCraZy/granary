@@ -57,8 +57,33 @@ public sealed partial class PlayerPage
     private void FadeMiniPlayer() =>
         VideoFrame.Opacity = ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended ? 0 : 1;
 
+    // The window whose scale the still's width follows while the page shows.
+    private XamlRoot? _stillRoot;
+
     // The server sends the next episode's still as wide as the screen can draw it, in device pixels at the window's scale.
     private void TellNextUpStillWidth(XamlRoot? root) => ViewModel.NextUpStillWidth = WidestStill * (root?.RasterizationScale ?? 1);
+
+    // The page shows: the still's width follows the window, also onto a display of another scale (for the next title's read).
+    private void FollowNextUpStillWidth()
+    {
+        _stillRoot = XamlRoot;
+        TellNextUpStillWidth(_stillRoot);
+        if (_stillRoot is not null)
+        {
+            _stillRoot.Changed += OnXamlRootChangedForStill;
+        }
+    }
+
+    private void StopNextUpStillWidth()
+    {
+        if (_stillRoot is not null)
+        {
+            _stillRoot.Changed -= OnXamlRootChangedForStill;
+            _stillRoot = null;
+        }
+    }
+
+    private void OnXamlRootChangedForStill(XamlRoot sender, XamlRootChangedEventArgs e) => TellNextUpStillWidth(sender);
 
     private void SizeNextUpStill()
     {
