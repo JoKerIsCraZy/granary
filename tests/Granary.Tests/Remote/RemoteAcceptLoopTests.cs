@@ -334,6 +334,33 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         Assert.Equal(1, socket.Closes);
     }
 
+    [Fact]
+    public async Task AConnectionsDispose_EndsTheSendingFirst_SoWhatWasWrittenLeavesBeforeTheClose()
+    {
+        // With bytes from the phone still unread, a close alone would reset the connection and drop a close frame not sent yet.
+        var pipe = NewPipe();
+        var socket = new FakeSocket(pipe.Receiver);
+        var connection = new AcceptedConnection(pipe.Receiver, PhoneAddress, socket);
+
+        await connection.DisposeAsync();
+
+        Assert.Equal(["shutdown send", "close"], socket.Steps);
+    }
+
+    [Fact]
+    public async Task AConnectionsDispose_StillCloses_WhenItsSendingCannotBeEnded()
+    {
+        var pipe = NewPipe();
+        var socket = new FakeSocket(pipe.Receiver) { ShutdownFails = new SocketException((int)SocketError.NotConnected) };
+        var connection = new AcceptedConnection(pipe.Receiver, PhoneAddress, socket);
+
+        var disposing = connection.DisposeAsync();
+
+        Assert.True(disposing.IsCompleted);
+        await disposing;
+        Assert.Equal(["shutdown send", "close"], socket.Steps);
+    }
+
     private AcceptSource Source(bool heedsStop = true)
     {
         var source = new AcceptSource(heedsStop);
@@ -410,17 +437,50 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         }
     }
 
-    /// <summary>A connection's socket: closing it ends what is in flight on the stream, as closing a real socket does.</summary>
-    private sealed class FakeSocket(Stream stream) : IDisposable
+    /// <summary>
+    /// A connection's socket: closing it ends what is in flight on the stream, as closing a real socket does. It notes the
+    /// end of sending and the close in order, and its end of sending can be told to fail.
+    /// </summary>
+    private sealed class FakeSocket(Stream stream) : IConnectionSocket
     {
+        private readonly List<string> _steps = [];
         private int _closes;
 
         public int Closes => Volatile.Read(ref _closes);
 
         public bool IsClosed => Closes > 0;
 
+        public Exception? ShutdownFails { get; set; }
+
+        public IReadOnlyList<string> Steps
+        {
+            get
+            {
+                lock (_steps)
+                {
+                    return [.. _steps];
+                }
+            }
+        }
+
+        public void ShutdownSend()
+        {
+            lock (_steps)
+            {
+                _steps.Add("shutdown send");
+            }
+            if (ShutdownFails is { } failure)
+            {
+                throw failure;
+            }
+        }
+
         public void Dispose()
         {
+            lock (_steps)
+            {
+                _steps.Add("close");
+            }
             Interlocked.Increment(ref _closes);
             stream.Dispose();
         }

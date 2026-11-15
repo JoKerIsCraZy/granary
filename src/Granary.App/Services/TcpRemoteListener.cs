@@ -120,7 +120,7 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
             socket.NoDelay = true;
             var peer = (socket.RemoteEndPoint as IPEndPoint)?.Address ?? throw new SocketException((int)SocketError.NotConnected);
             // Throws IOException for a socket that is no longer connected: a peer that connected and reset at once.
-            return new AcceptedConnection(new NetworkStream(socket, ownsSocket: true), peer, socket);
+            return new AcceptedConnection(new NetworkStream(socket, ownsSocket: true), peer, new SocketEnd(socket));
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {

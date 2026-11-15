@@ -1572,9 +1572,11 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   the listener closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by
   itself, only at the next change of the switch, the session, the PC's address or the key.
   `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
-  handed over. A connection (`AcceptedConnection`) closes its socket itself when it is disposed, not only its stream,
-  so a read or write in flight ends at once; Windows sends what was written before, a `close` frame included, in the
-  background.
+  handed over. A connection (`AcceptedConnection`) ends its sending first when it is disposed (`shutdown` with
+  `SD_SEND`), then closes its socket itself, not only its stream, so a read or write in flight ends at once. Closed with
+  bytes from the phone still unread, a socket would reset the connection and drop the `close` frame not sent yet; ended
+  first, what was written leaves before the end. Neither waits for the phone. Whatever fails after an accept (a peer
+  that connected and reset at once) closes that socket at once rather than leaving it to the finalizer.
 - **`DnssdServiceAdvertiser`** registers with Windows' own DNS-SD (`DnsServiceConstructInstance`,
   `DnsServiceRegister`, `DnsServiceDeRegister` and `DnsServiceFreeInstance` from `dnsapi.dll`, `Interop/DnsService.cs`),
   over mDNS (`unicastEnabled` false) on the adapter of the chosen address. Windows' DNS client answers the queries, so
