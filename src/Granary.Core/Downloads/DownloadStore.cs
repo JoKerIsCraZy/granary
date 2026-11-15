@@ -91,7 +91,10 @@ public sealed partial class DownloadStore
     /// <summary>For tests: runs with a download's folder before <see cref="BytesOnDisk"/> reads its files.</summary>
     internal Action<string>? MeasuringFolder { get; set; }
 
-    /// <summary>The most folders a load's look for download folders lists; it says so in the log when it stops there.</summary>
+    /// <summary>
+    /// The most folders of Granary's layout a load's look for download folders finds, a download's folder included; it says so in
+    /// the log when it stops there.
+    /// </summary>
     internal int ScanLimit { get; init; } = 2000;
 
     /// <summary>What the last load's look for download folders did.</summary>

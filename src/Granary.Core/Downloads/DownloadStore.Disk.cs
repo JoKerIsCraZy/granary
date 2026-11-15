@@ -406,7 +406,7 @@ public sealed partial class DownloadStore
     // Every download.json at <root>\<server>\acct-<account>\<profile>\<download>\ under the downloads folder and the default one,
     // which is "downloads" in the data folder the index is in (DownloadPaths.DefaultRoot for the app's own index), except in the
     // folders already known. The downloads folder can be any folder, a media library among them: the look goes only into names
-    // Granary's layout makes, and lists at most ScanLimit folders.
+    // Granary's layout makes, and finds at most ScanLimit such folders, so it lists and reads no more than that.
     private List<StoredDownload> FindFolders(HashSet<string> known)
     {
         var found = new List<StoredDownload>();
@@ -440,7 +440,12 @@ public sealed partial class DownloadStore
         List<string> level = [root];
         for (int depth = 1; depth <= 4; depth++)
         {
-            level = [.. level.SelectMany(folder => SubfoldersOf(folder, scan)).Where(folder => IsLayoutName(Path.GetFileName(folder), depth))];
+            var next = new List<string>();
+            foreach (string folder in level)
+            {
+                LayoutFoldersIn(folder, depth, scan, next);
+            }
+            level = next;
         }
         return level;
     }
@@ -467,27 +472,35 @@ public sealed partial class DownloadStore
         return roots.Distinct(StringComparer.OrdinalIgnoreCase);
     }
 
-    // A folder's subfolders, counted against the scan's limit; none once it is reached.
-    private string[] SubfoldersOf(string folder, Scan scan)
+    // The subfolders of a folder whose names the layout makes at that depth, each counted against the scan's limit as it is
+    // found; none once the limit is reached. The listing is read as it goes, so a folder of many others (a media library's)
+    // is never held whole.
+    private void LayoutFoldersIn(string folder, int depth, Scan scan, List<string> found)
     {
-        if (scan.Folders >= scan.Limit)
-        {
-            scan.Capped = true;
-            return [];
-        }
         try
         {
             if (!Directory.Exists(folder))
             {
-                return [];
+                return;
             }
-            scan.Folders++;
-            return Directory.GetDirectories(folder);
+            foreach (string subfolder in Directory.EnumerateDirectories(folder))
+            {
+                if (!IsLayoutName(Path.GetFileName(subfolder), depth))
+                {
+                    continue;
+                }
+                if (scan.Folders >= scan.Limit)
+                {
+                    scan.Capped = true;
+                    return;
+                }
+                scan.Folders++;
+                found.Add(subfolder);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogDebug("A folder under the downloads folder could not be read ({Failure})", DownloadLog.Failure(ex));
-            return [];
         }
     }
 

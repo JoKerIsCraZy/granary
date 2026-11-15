@@ -724,7 +724,7 @@ public sealed class DownloadStoreTests : IDisposable
         var store = await LoadedAsync();
 
         Assert.Equal(added.Folder, Assert.Single(store.All).Folder);
-        // The root, srv1, acct-1, 7 and the ten lower-case folders a server could be named; nothing below them.
+        // srv1 and the ten lower-case folders a server could be named, acct-1, 7 and dl_1; nothing below the ten.
         Assert.Equal(new DownloadStore.ScanCount(14, 1, false), store.LastScan);
     }
 
@@ -751,6 +751,26 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Empty(store.All);
         Assert.True(store.LastScan.Capped);
         Assert.Contains("stopped after 2 folders", _logs.All, StringComparison.Ordinal);
+    }
+
+    // The limit counts the folders the look finds, not the folders it lists: a profile's folder of many downloads is one
+    // listing, and each download in it is a record to read.
+    [Fact]
+    public async Task TheStartScan_CountsEachFolderItFinds_AgainstItsLimit()
+    {
+        var first = await LoadedAsync();
+        for (int i = 1; i <= 5; i++)
+        {
+            await first.AddAsync(Record("dl_" + i), Token);
+        }
+        await File.WriteAllTextAsync(IndexPath, """{ "downloads": [] }""", Token);
+        var store = new DownloadStore(IndexPath, _preferences, _time, _logs.For<DownloadStore>()) { ScanLimit = 5 };
+
+        await store.LoadAsync(Token);
+
+        // srv1, acct-1 and 7, then two of the five downloads.
+        Assert.Equal(new DownloadStore.ScanCount(5, 2, true), store.LastScan);
+        Assert.Equal(2, store.All.Count);
     }
 
     [Fact]

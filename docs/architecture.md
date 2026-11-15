@@ -1251,8 +1251,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
   not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
   The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
-  `Segment`'s, and `acct-` and one at the second level), skips the folders the index loaded, and lists at most 2000
-  folders, saying so in the log when it stops there.
+  `Segment`'s, and `acct-` and one at the second level), skips the folders the index loaded, and finds at most 2000 such
+  folders, each counted as it is found (a profile's folder of many downloads is many, not one), so it reads no more records
+  than that; it says so in the log when it stops there. A folder's listing is read as it goes, never held whole.
 - **What files say.** JSON can say null or anything for every member, so each is checked (`DownloadRecords`). An index
   entry without its scope, id or title, or whose folder is not laid out as above for its scope and id, is left out and
   logged; such a folder is never read, written or deleted. A record with a member missing or impossible (a negative size,
