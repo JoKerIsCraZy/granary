@@ -312,7 +312,14 @@ public sealed class RemoteControllerTests : IAsyncDisposable
         controller.SaidHello = true;
         phone.AnswersPings = false;
 
-        Time.Advance(TimeSpan.FromMilliseconds(11999));
+        // Each ping reaches the phone before the clock moves on, as in three real seconds: in one jump of twelve, the
+        // fourth beat could drop the phone while the third ping still waited to be written.
+        for (int ping = 0; ping < 3; ping++)
+        {
+            Time.Advance(TimeSpan.FromSeconds(3));
+            await phone.NextAsync("ping");
+        }
+        Time.Advance(TimeSpan.FromMilliseconds(2999));
         Assert.True(controller.IsOpen);
         Time.Advance(TimeSpan.FromMilliseconds(1));
 
