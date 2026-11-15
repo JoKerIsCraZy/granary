@@ -710,7 +710,7 @@ device. A client applies a value only when it ships that language, matched as it
 acts as if it were `null`.
 
 - Read: the effective value, with `X-Silo-Device-Id`, so this PC's own row wins over the profile's. Granary reads it at
-  sign-in, with every server or profile, and when Settings → Accessibility opens, and keeps the last value read on this PC for its next
+  sign-in, with every server or profile, and each time Settings → Accessibility shows, and keeps the last value read on this PC for its next
   start: its texts load once, as it starts. A server whose effective read refuses the key (`422`) predates it: the
   profile follows the device.
 - Write (Settings → Accessibility → Language, as the web's `AccessibilitySettings.tsx` and the apps write it):

@@ -409,7 +409,7 @@ differently; a text only Granary has keeps its English under a key of its own. A
   `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
 - **The profile's language** (`AppLanguageSetting`): `ui.app_language` is read for every profile, as the web's
   `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in, with every
-  server or profile, and when Settings → Accessibility opens; a read that a choice overtook is dropped and made again
+  server or profile, and each time Settings → Accessibility shows; a read that a choice overtook is dropped and made again
   once the choice lands. A server from before settings contract revision 28 has no such setting: its profiles follow
   the device. What was read is kept on this PC (`app-language.json` in the data directory,
   `AppLanguageFile`), the last profile's language, as Silo's apps keep the language they last applied for the screens
