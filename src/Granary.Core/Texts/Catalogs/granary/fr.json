@@ -140,7 +140,7 @@
   "granary.downloads.goToSeries": "Aller à la série",
   "granary.downloads.monitored": "Surveillés",
   "granary.downloads.movies": "Films",
-  "granary.downloads.notice.alsoFailed": "{count, plural, one {{ready} ; échec pour {count_text}} many {{ready} ; échec pour {count_text}} other {{ready} ; échec pour {count_text}}}",
+  "granary.downloads.notice.alsoFailed": "{count, plural, one {{ready} ; {count_text} n’a pas pu être téléchargé} many {{ready} ; {count_text} n’ont pas pu être téléchargés} other {{ready} ; {count_text} n’ont pas pu être téléchargés}}",
   "granary.downloads.notice.episodeName": "{title} (S{season}E{episode})",
   "granary.downloads.notice.episodesFailed": "{count, plural, one {Échec du téléchargement de {count_text} épisode de {series}} many {Échec du téléchargement de {count_text} d’épisodes de {series}} other {Échec du téléchargement de {count_text} épisodes de {series}}}",
   "granary.downloads.notice.episodesFailedUntitled": "{count, plural, one {Échec du téléchargement de {count_text} épisode} many {Échec du téléchargement de {count_text} d’épisodes} other {Échec du téléchargement de {count_text} épisodes}}",
