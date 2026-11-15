@@ -1527,7 +1527,9 @@ While Silo's phone app controls this PC (Settings → Playback → This PC → C
   indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
   icon and menu (under Player).
 - **A title a phone starts** opens as a page's Play opens it, in place of what plays, without a question on the PC; the
-  window is not brought to the front. The player's notice card (under Player, Notices) then says "Starting Example
+  window is not brought to the front. Minimized or behind other windows, it stays so: the player opens inside it, and
+  when the player opens in full screen (as it was last left), it goes full screen only once the viewer brings the window
+  back; left before that, the player keeps its full screen choice as it was. The player's notice card (under Player, Notices) then says "Starting Example
   Movie" and, under it, "From Elena's phone" (Silo's own `cast_standby_starting` and `cast_standby_from`, which its TV
   apps show when a phone started a title), for four seconds, once the title's name is known; a series' title is its
   name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then. Should the

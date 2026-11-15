@@ -54,6 +54,9 @@ public sealed partial class PlayerPage : Page
     // Whether a title opens the player in full screen, as it was last left on this PC.
     private readonly PlayerFullScreen _fullScreen;
     private readonly IPlaybackDevicePreferences _devicePreferences;
+    // A title a phone started while the window was minimized or behind others: full screen waits until the viewer brings
+    // the window to the front, so the window is not raised or restored for them (design 5.9).
+    private bool _fullScreenWhenInFront;
 
     public PlayerPage()
     {
@@ -111,14 +114,24 @@ public sealed partial class PlayerPage : Page
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
 
     /// <summary>
-    /// Plays <paramref name="request"/>, a title opened from the app (a page, a Watch Party, <c>--play</c>); the window shows
-    /// the page over everything first, and goes full screen when the player was in full screen as it was last left.
+    /// Plays <paramref name="request"/>, a title opened from the app (a page, a Watch Party, <c>--play</c>) or from a phone;
+    /// the window shows the page over everything first, and goes full screen when the player was in full screen as it was
+    /// last left. Without <paramref name="mayChangeWindow"/> (a phone's title while the window is minimized or behind
+    /// others) full screen waits for the viewer to bring the window to the front (<see cref="WindowCameToFront"/>): a
+    /// change of presenter would restore or raise it.
     /// </summary>
-    public void Start(PlayRequest request)
+    public void Start(PlayRequest request, bool mayChangeWindow = true)
     {
         if (_fullScreen.OpensInFullScreen)
         {
-            _modes.SetFullScreen(true);
+            if (mayChangeWindow)
+            {
+                _modes.SetFullScreen(true);
+            }
+            else
+            {
+                _fullScreenWhenInFront = true;
+            }
         }
         // The page may not be in the window yet: the window's own scale then, so the first episode's read has it.
         TellNextUpStillWidth(XamlRoot ?? App.Services.GetRequiredService<MainWindow>().Content?.XamlRoot);
@@ -133,9 +146,30 @@ public sealed partial class PlayerPage : Page
     public void Leave()
     {
         SetMiniView(false);
-        // Saved as Granary goes on; closing it later waits for this PC's choices anyway.
-        _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
+        // Saved as Granary goes on; closing it later waits for this PC's choices anyway. A title whose full screen still
+        // waited for the window was never seen as it was left: the choice stays.
+        if (!_fullScreenWhenInFront)
+        {
+            _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
+        }
         ViewModel.Leave();
+    }
+
+    /// <summary>
+    /// The viewer brought the window to the front: a phone's title that waited for it goes full screen now, as it would
+    /// have opened, unless the player has become the bar or the mini view meanwhile.
+    /// </summary>
+    public void WindowCameToFront()
+    {
+        if (!_fullScreenWhenInFront)
+        {
+            return;
+        }
+        _fullScreenWhenInFront = false;
+        if (!IsDocked && !IsMiniView)
+        {
+            _modes.SetFullScreen(true);
+        }
     }
 
     /// <summary>
@@ -145,7 +179,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public Task LeaveWithWindow()
     {
-        var save = _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
+        var save = _fullScreenWhenInFront ? Task.CompletedTask : _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
         ViewModel.Leave();
         return save;
     }

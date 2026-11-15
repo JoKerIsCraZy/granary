@@ -1676,9 +1676,13 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. It reads
   only whether the session is locked and connected, and logs only "The PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
   depends on the lock.
-- **The "Starting" notice.** The receiver raises `Launched` with the phone's name and the request just before it opens
-  the player; the window keeps it and, when it makes the player for that very request (it may wait for the player before
-  to unload), calls `PlayerViewModel.NoteStartedFromPhone`. The player shows "Starting {title}" and "From {phone}" in its
+- **The "Starting" notice, and the window left where it is.** The receiver raises `Launched` with the phone's name and
+  the request just before it opens the player; the window keeps it and, when it makes the player for that very request
+  (it may wait for the player before to unload), calls `PlayerViewModel.NoteStartedFromPhone`. A phone's title changes
+  nothing about where the window is: when the window is not in front (minimized or behind others), `PlayerPage.Start`
+  does not set the full-screen presenter, which would restore or raise it, and the page goes full screen at the window's
+  next `Activated` instead (`WindowCameToFront`), unless it became the bar or the mini view; a player left before that
+  saves no full screen choice. The player shows "Starting {title}" and "From {phone}" in its
   notice card for four seconds once the title's name is known, and only for that request.
 
 ## Windows App SDK

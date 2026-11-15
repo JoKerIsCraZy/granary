@@ -89,8 +89,13 @@ public sealed partial class MainWindow : IPlayerOverlay
         PlayerHost.Child = page;
         PlayerHost.Visibility = Visibility.Visible;
         Expand();
-        page.Start(play);
-        TellStartedFromPhone(page, play);
+        // A phone's title changes nothing about where the window is: minimized or behind others, it stays there.
+        string? phone = TakeLaunch(play);
+        page.Start(play, mayChangeWindow: phone is null || _isInFront);
+        if (phone is not null)
+        {
+            page.ViewModel.NoteStartedFromPhone(play, phone);
+        }
     }
 
     public void ClosePlayer()

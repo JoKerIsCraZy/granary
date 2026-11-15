@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using Granary.App.Views;
 using Granary.Core.Playback;
 using Granary.Core.Remote;
 using Granary.Core.ViewModels;
@@ -32,24 +31,36 @@ public sealed partial class MainWindow
     {
         Remote.PropertyChanged += OnRemoteChanged;
         _receiver.Launched += OnLaunched;
+        // A phone's title that opened while the window was away goes full screen once the viewer brings it back.
+        Activated += OnActivatedForPhoneTitle;
         Closed += (_, _) =>
         {
             Remote.PropertyChanged -= OnRemoteChanged;
             _receiver.Launched -= OnLaunched;
+            Activated -= OnActivatedForPhoneTitle;
         };
         ShowRemoteIndicator();
     }
 
     private void OnLaunched(object? sender, RemoteLaunch launch) => _launched = launch;
 
-    // The player made for play: when a phone started that very request, it says so once the title is known.
-    private void TellStartedFromPhone(PlayerPage page, PlayRequest play)
+    private void OnActivatedForPhoneTitle(object sender, WindowActivatedEventArgs e)
     {
-        if (_launched is { } launch && ReferenceEquals(launch.Request, play))
+        if (e.WindowActivationState != WindowActivationState.Deactivated)
         {
-            _launched = null;
-            page.ViewModel.NoteStartedFromPhone(play, launch.PhoneName);
+            _player?.WindowCameToFront();
         }
+    }
+
+    // The phone's name when a phone started that very request, once; null for any other title.
+    private string? TakeLaunch(PlayRequest play)
+    {
+        if (_launched is not { } launch || !ReferenceEquals(launch.Request, play))
+        {
+            return null;
+        }
+        _launched = null;
+        return launch.PhoneName;
     }
 
     private void OnRemoteChanged(object? sender, PropertyChangedEventArgs e)
