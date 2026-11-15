@@ -365,7 +365,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;
   "Specials" last) with its episodes in a grid of 16:9 stills (`MediaGrid`'s landscape cards, as a season's page shows
   them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
-  status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
+  status and the Downloads page's click and menu. The still of an episode the profile has neither watched nor started is
+  blurred while its spoiler switch hides those (`MediaCard.BlursImage`, as the apps' download rows), and follows the switch
+  while the page shows; the switches are read from the server, so offline, before they were read, nothing is blurred.
+  It has the Back disc; Back, a controller's B and a remote's Back lead
   to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
   focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
   season to season, to its first card. Once the series has no downloads
