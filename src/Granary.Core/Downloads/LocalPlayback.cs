@@ -31,6 +31,12 @@ public sealed partial class LocalPlayback : IServerPlayback
     /// <summary>How long the stop waits for the server to take the last position; a slower send goes on by itself.</summary>
     public static readonly TimeSpan StopSendBudget = TimeSpan.FromSeconds(3);
 
+    /// <summary>
+    /// How long the stop waits for the last position to be written on this PC (the download's record, the queue's file); a drive
+    /// or share that does not answer gets it once it does.
+    /// </summary>
+    public static readonly TimeSpan StopWriteBudget = TimeSpan.FromSeconds(3);
+
     /// <summary>What the player says, beside Retry, when the file on this PC will not play.</summary>
     public const string CannotPlay = "This download can't be played. Try again, or delete it and download it again.";
 
@@ -327,14 +333,14 @@ public sealed partial class LocalPlayback : IServerPlayback
         return EndStopAsync();
     }
 
-    // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then. While
-    // the server answers, it has the position by then too, as after a stream's stop: the pages that reload when a playback
-    // stops (ViewerStateChanges) read where the viewer left off, not where they were before. Without the server the send
-    // fails at once and the position waits; a send slower than the budget goes on by itself, and tells the pages when it
-    // is through (OfflineProgressSync).
+    // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then, unless
+    // the drive did not answer within StopWriteBudget. While the server answers, it has the position by then too, as after a
+    // stream's stop: the pages that reload when a playback stops (ViewerStateChanges) read where the viewer left off, not where
+    // they were before. Without the server the send fails at once and the position waits; a send slower than the budget goes
+    // on by itself, and tells the pages when it is through (OfflineProgressSync).
     private async Task EndStopAsync()
     {
-        await Task.WhenAll(_saves, _records, _progress?.LatestSave ?? Task.CompletedTask).ConfigureAwait(false);
+        await Task.WhenAll(_saves, WaitForWritesAsync()).ConfigureAwait(false);
         if (_sync is not { } sync || !_played)
         {
             return;
@@ -363,7 +369,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _subtitleDelaySave?.Dispose();
         _playingMark?.Dispose();
         await _saves.ConfigureAwait(false);
-        await _records.ConfigureAwait(false);
+        await WaitForWritesAsync().ConfigureAwait(false);
     }
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));

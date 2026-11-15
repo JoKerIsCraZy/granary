@@ -38,6 +38,9 @@ public sealed partial class LocalPlayback
     // The record's writes, in the order the positions were recorded.
     private Task _records = Task.CompletedTask;
 
+    // The end's wait for the writes, once begun: the stop and the let-go after it share it.
+    private Task? _writesWaited;
+
     // The store's clears as the play began: a sign-out that takes the account's downloads along since then ends the recording.
     private readonly long _clearsSeen;
 
@@ -103,6 +106,28 @@ public sealed partial class LocalPlayback
             ? (r.DurationMs is null && durationMs is not null ? r with { DurationMs = durationMs } : r)
             : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd, DurationMs = durationMs ?? r.DurationMs });
         _sync?.FlushSoon(readBack: isFinal);
+    }
+
+    // Once the play ends (nothing is recorded after that): the download's record and the queue's file as written, waited for
+    // within StopWriteBudget, once for the stop and the let-go after it. The record goes to the download's folder, which can lie
+    // on a drive or share that stops answering in the middle of a write: that holds no stop up, the position is in the queue
+    // already and is sent all the same, and the writes go on and log their own failure.
+    private Task WaitForWritesAsync() => _writesWaited ??= WaitWithinAsync(Task.WhenAll(_records, _progress?.LatestSave ?? Task.CompletedTask));
+
+    private async Task WaitWithinAsync(Task writes)
+    {
+        try
+        {
+            await writes.WaitAsync(StopWriteBudget, _time).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("The last position of download {DownloadId} was not written on this PC within {Seconds} s; it is written once the drive answers",
+                _download.Record.DownloadId, StopWriteBudget.TotalSeconds);
+            // Not waited for any longer: a failure of theirs is looked at here, so it is never one nobody observed.
+            _ = writes.ContinueWith(static task => _ = task.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
     }
 
     private async Task KeepAsync(Task previous, Func<DownloadRecord, DownloadRecord> change)

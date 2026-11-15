@@ -388,6 +388,42 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheStop_DoesNotWaitLongerThanItsBudget_ForADriveThatDoesNotAnswer_AndStillSendsThePosition()
+    {
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+        // Another change to the downloads is being written as the drive stops answering: the position's write waits behind it.
+        using var entered = new ManualResetEventSlim();
+        using var drive = new ManualResetEventSlim();
+        _fixture.Harness.Store.WritingIndex = () =>
+        {
+            entered.Set();
+            drive.Wait();
+        };
+        var other = _fixture.Harness.AddAsync("dl_2");
+        try
+        {
+            await Until(() => entered.IsSet, "the other change's write began");
+
+            var stop = playback.StopAsync();
+            Assert.False(stop.IsCompleted);
+            _fixture.Harness.Time.Advance(LocalPlayback.StopWriteBudget);
+            await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+            // Let go right after its stop, as the player does: no second wait.
+            await playback.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+            // The server heard where the viewer left off all the same.
+            var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+            Assert.Contains("\"position_ms\":120000", sent.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            drive.Set();
+            await other;
+        }
+    }
+
+    [Fact]
     public async Task APlayStillOpenWhenItsAccountIsSignedOutWithItsDownloads_RecordsNothingMore()
     {
         _fixture.GoOffline();

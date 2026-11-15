@@ -2157,7 +2157,11 @@ device.
   second does not, since it may be an older one. One the listing does not show that way stays pending. A row missing from the listing changes nothing, since the listing is
   live.
 - **Closing.** `LocalPlayback.StopAsync` answers once the last position is in the queue's file and the download's record
-  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). A position that did
+  and its send was tried, and the window waits for a player's stop as it closes (`PlaybackStops`). The writes are waited
+  for within `StopWriteBudget` (3 s): the record lies in the download's folder, and a drive or share that stops answering
+  in the middle of a write would otherwise hold the stop, and with it the player's "still playing", for good. The send is
+  tried all the same, from the queue, and the writes go on until the drive answers; the let-go after the stop
+  (`DisposeAsync`) does not wait for them a second time. A position that did
   not go by then is in the file, and the next start sends it.
 - **Signing out.** A sign-out the viewer asks for, and a server's removal, take the account's entries out of the queue
   and its file with the downloads (`DownloadSignOut` → `OfflineProgressQueue.Remove`): they name what was watched and
