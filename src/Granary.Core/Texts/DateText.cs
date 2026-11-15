@@ -88,7 +88,9 @@ public static class DateText
             NumericDate => "d",
             MediumDay => "D",
             HourMinute => "t",
-            MonthDay or WeekdayMonthDay or LongMonthDay => "M",
+            MonthDay or LongMonthDay => "M",
+            // .NET has no pattern with the weekday and the day alone: the short weekday before the month and day's.
+            WeekdayMonthDay => "ddd, " + locale.Culture.DateTimeFormat.MonthDayPattern,
             LongDay => "D",
             HourMinuteSecond => "T",
             Hour => locale.HourCycle == 'h' ? "h tt" : "%H",

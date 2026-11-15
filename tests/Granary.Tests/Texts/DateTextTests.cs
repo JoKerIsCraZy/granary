@@ -133,5 +133,18 @@ public sealed class DateTextTests
         Assert.Equal(expected, DateText.Fallback(Thursday, skeleton, FormatLocale.For(formats)));
     }
 
+    [Theory]
+    [InlineData("en", "Thu")]
+    [InlineData("de", "Do")]
+    public void WithoutICU_AWeekdayWithItsDay_KeepsTheWeekday(string formats, string weekday)
+    {
+        var locale = FormatLocale.For(formats);
+
+        string text = DateText.Fallback(Thursday, DateText.WeekdayMonthDay, locale);
+
+        Assert.StartsWith(weekday, text, StringComparison.Ordinal);
+        Assert.EndsWith(DateText.Fallback(Thursday, DateText.MonthDay, locale), text, StringComparison.Ordinal);
+    }
+
     private static IDisposable Formats(string tag) => AppText.Use(TextLanguage.Load("en", formats: FormatLocale.For(tag)));
 }
