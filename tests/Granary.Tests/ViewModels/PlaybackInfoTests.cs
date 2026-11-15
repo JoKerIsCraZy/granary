@@ -1,5 +1,6 @@
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Player;
 
 namespace Granary.Tests.ViewModels;
@@ -216,13 +217,27 @@ public sealed class PlaybackInfoTests
     public void Codecs_AreNamedAsOnTheWeb(string codec, string expected) => Assert.Equal(expected, PlaybackInfo.CodecLabel(codec));
 
     [Fact]
-    public void ADownloadPlayedFromThisPC_SaysItIsALocalFile_AndShowsTheFileAsItsManifestDescribesIt()
+    public void InGerman_ADownloadsFile_IsDescribedInTheWebsAndTheAppsWords()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var file = new PlaybackLocalFile("mkv", 8L << 30, "hevc", Hdr: true, "eac3", 6);
+
+        var sections = PlaybackInfo.Sections(null, new PlaybackStats(3840, 2160, 0, 0, "d3d11va"), 2560, 1440, file);
+
+        Assert.Equal(("Wiedergabemethode", "Offline-Datei"), (sections[0].Rows[1].Label, sections[0].Rows[1].Value));
+        Assert.Equal("Aktuelle Quelldatei", sections[^1].Title);
+        Assert.Equal(["Container", "Größe", "Video-Codec", "Video-Dynamikbereich", "Audio-Codec", "Audiokanäle"], sections[^1].Rows.Select(r => r.Label));
+        Assert.Equal("8,0 GiB", sections[^1].Rows[1].Value);
+    }
+
+    [Fact]
+    public void ADownloadPlayedFromThisPC_SaysItIsAnOfflineFile_AndShowsTheFileAsItsManifestDescribesIt()
     {
         var file = new PlaybackLocalFile("mkv", 8L << 30, "hevc", Hdr: true, "eac3", 6);
 
         var sections = PlaybackInfo.Sections(null, new PlaybackStats(3840, 2160, 0, 0, "d3d11va"), 2560, 1440, file);
 
-        Assert.Equal(new Dictionary<string, string> { ["Player"] = "mpv", ["Play method"] = "Local file", ["Protocol"] = "file" }, Rows(sections, "Player"));
+        Assert.Equal(new Dictionary<string, string> { ["Player"] = "mpv", ["Play method"] = "Offline file", ["Protocol"] = "file" }, Rows(sections, "Player"));
         Assert.Equal("3840x2160", Rows(sections, "Video Info")["Video resolution"]);
         // No server stream: nothing was planned, remuxed or transcoded.
         Assert.DoesNotContain(sections, s => s.Title == "Playback Stream Info");

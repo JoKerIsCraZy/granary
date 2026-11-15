@@ -13,7 +13,7 @@ public sealed record PlaybackInfoRow(string Label, string Value);
 /// <summary>
 /// The playback info overlay of Silo's web player (web/src/player/playback-info.ts), for mpv: what the server chose,
 /// what the player measures, and the file that plays. Values it does not know read "—". A download played from this PC
-/// has no stream of the server's: the overlay says so ("Local file") and shows the file as its manifest describes it, in
+/// has no stream of the server's: the overlay says so (the Apple app's "Offline file") and shows the file as its manifest describes it, in
 /// the rows of the web's source file section that the manifest can fill.
 /// </summary>
 public static class PlaybackInfo
@@ -37,8 +37,8 @@ public static class PlaybackInfo
         ["truehd"] = "TrueHD",
     };
 
-    /// <summary>The play method of a download played from this PC.</summary>
-    public const string LocalFile = "Local file";
+    /// <summary>The play method of a download played from this PC, as the Apple app's stats name it (<c>player.stats.offlineFile</c>).</summary>
+    public static string LocalFile => AppText.Get("granary.downloads.offlineFile");
 
     /// <param name="stream">The server's stream; null for a download and for a file played directly.</param>
     /// <param name="playerWidth">The picture's area in pixels.</param>
@@ -136,14 +136,14 @@ public static class PlaybackInfo
     public static string Mbps(long kbps) => MediaText.MbpsFromKbps(kbps, None);
 
     // The rows of the stream's source file section that a download's manifest can fill.
-    private static PlaybackInfoSection SourceFile(PlaybackLocalFile file) => new("Current Source File",
+    private static PlaybackInfoSection SourceFile(PlaybackLocalFile file) => new(AppText.Get("web.player.info.section.source"),
     [
-        new("Container", file.Container?.Trim() is { Length: > 0 } container ? container : None),
-        new("Size", FileSize(file.FileSize)),
-        new("Video codec", CodecLabel(file.VideoCodec)),
-        new("Video range type", file.Hdr ? "HDR" : "SDR"),
-        new("Audio codec", CodecLabel(file.AudioCodec)),
-        new("Audio channels", file.AudioChannels > 0 ? file.AudioChannels.ToString(CultureInfo.InvariantCulture) : None),
+        new(AppText.Get("web.player.info.container"), file.Container?.Trim() is { Length: > 0 } container ? container : None),
+        new(AppText.Get("web.player.info.size"), FileSize(file.FileSize)),
+        new(AppText.Get("web.player.info.videoCodec"), CodecLabel(file.VideoCodec)),
+        new(AppText.Get("web.player.info.videoRangeType"), file.Hdr ? "HDR" : "SDR"),
+        new(AppText.Get("web.player.info.audioCodec"), CodecLabel(file.AudioCodec)),
+        new(AppText.Get("web.player.info.audioChannels"), file.AudioChannels > 0 ? file.AudioChannels.ToString(CultureInfo.InvariantCulture) : None),
     ]);
 
     private static PlaybackInfoSection SourceFile(WatchFileVersion? version, int? audioOrdinal)
