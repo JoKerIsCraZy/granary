@@ -21,6 +21,9 @@ public sealed record MonitorEdit(string? Mode, bool DeleteWatched, long MaxStora
     public string? Etag { get; init; }
 }
 
+/// <summary>A create's choice the server's monitor does not show yet, and the validator that monitor had when it was made.</summary>
+public sealed record UnconfirmedChoice(MonitorChoice Choice, string Etag);
+
 /// <summary>What a monitor's create, change or stop came to.</summary>
 public enum MonitorResult
 {
@@ -81,9 +84,10 @@ public sealed partial class SeriesMonitors : IDisposable
     private readonly Lock _gate = new();
     private readonly Dictionary<DownloadScope, Dictionary<string, string>> _pendingStops = [];
 
-    // The choices a create made that the server's monitor does not show yet (the change to it did not go), by monitor: until a
-    // list shows the monitor as the viewer asked, it deletes no watched episode on the server's word.
-    private readonly Dictionary<DownloadScope, Dictionary<string, MonitorChoice>> _unconfirmed = [];
+    // The choices a create made that the server's monitor does not show yet (the change to it did not go), by monitor, with the
+    // validator the monitor had then: until a list shows it as the viewer asked, or changed since (a newer word than the
+    // viewer's), it deletes no watched episode on the server's word.
+    private readonly Dictionary<DownloadScope, Dictionary<string, UnconfirmedChoice>> _unconfirmed = [];
     private ITimer? _settle;
     private ITimer? _interval;
     private DownloadScope? _following;

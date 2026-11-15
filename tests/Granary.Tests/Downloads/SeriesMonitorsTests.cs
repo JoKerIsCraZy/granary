@@ -312,6 +312,23 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AChoiceTheServerDidNotTake_GivesWayToAChangeMadeToTheMonitorAfterIt()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        SyncAnswers(MonitorPayloads.Sync());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(deleteWatched: true)));
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+
+        // Another client turned Delete after watching on after the viewer's choice: the monitor's newer word holds.
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m9\"", deleteWatched: true));
+        await Monitors.SyncAsync(Token);
+
+        Assert.Null(_h.Find("dl_1"));
+    }
+
+    [Fact]
     public async Task ASeriesWithAMonitorTheRunCouldNotBeSureOf_DeletesNothing_WhateverItsOtherMonitorsSay()
     {
         ListMonitors(MonitorPayloads.Monitor("sub_1", "sr_1", deleteWatched: true), MonitorPayloads.Monitor("sub_2", "sr_1", etag: "\"n1\"", deleteWatched: true));

@@ -58,7 +58,7 @@ public sealed partial class SeriesMonitors
             {
                 // The server's monitor as it was (another client's, or one this PC stopped and monitors again) is not what the
                 // viewer asked for: until it is, its Delete after watching is not taken at its word.
-                Unconfirm(scope, monitor.Id, choice);
+                Unconfirm(scope, monitor.Id, new UnconfirmedChoice(choice, monitor.Etag));
                 var edit = new MonitorEdit(monitor.Mode == choice.Mode ? null : choice.Mode, choice.DeleteWatched, choice.MaxStorageBytes,
                     choice.Quality is null || choice.Quality == (monitor.Quality ?? DownloadQualities.Original) ? null : choice.Quality);
                 var changed = await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false);
@@ -154,13 +154,13 @@ public sealed partial class SeriesMonitors
         return result;
     }
 
-    private void Unconfirm(DownloadScope scope, string subscriptionId, MonitorChoice choice)
+    private void Unconfirm(DownloadScope scope, string subscriptionId, UnconfirmedChoice choice)
     {
         lock (_gate)
         {
             if (!_unconfirmed.TryGetValue(scope, out var choices))
             {
-                _unconfirmed[scope] = choices = new Dictionary<string, MonitorChoice>(StringComparer.Ordinal);
+                _unconfirmed[scope] = choices = new Dictionary<string, UnconfirmedChoice>(StringComparer.Ordinal);
             }
             choices[subscriptionId] = choice;
         }
@@ -186,7 +186,9 @@ public sealed partial class SeriesMonitors
         }
     }
 
-    // A whole list read: a monitor it shows as its create asked, or does not show at all, waits for nothing more.
+    // A whole list read: a monitor it shows as its create asked, or does not show at all, waits for nothing more; nor does one
+    // that changed since the viewer's choice (its validator moved), whose newer word holds, as any monitor's. A sync does not
+    // move a validator: its pages all name the one read before the first.
     private void ConfirmListed(DownloadScope scope, IReadOnlyList<DownloadSubscription> listed)
     {
         lock (_gate)
@@ -195,9 +197,9 @@ public sealed partial class SeriesMonitors
             {
                 return;
             }
-            foreach (var (id, choice) in choices.ToList())
+            foreach (var (id, waiting) in choices.ToList())
             {
-                if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, choice))
+                if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, waiting.Choice) || monitor.Etag != waiting.Etag)
                 {
                     choices.Remove(id);
                 }

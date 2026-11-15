@@ -1619,7 +1619,8 @@ titles of their series as a download dialog or a download named them.
   the server made it (`Uncertain` when it does not); a stop of that series' monitor still waiting is then no longer sent,
   as the series is wanted again. When the monitor a create comes to is not what the viewer chose (the server's monitor as it
   was) and the change to it did not go, that monitor deletes no watched episode until a list shows it as the viewer
-  asked, they save it, or it goes: Delete after watching the viewer turned off is not undone by the server's old word. The server answers a series this PC monitors already with that monitor
+  asked, they save it, it goes, or it changes since (its validator moves: another client's newer word holds, as any
+  monitor's; a sync does not move it): Delete after watching the viewer turned off is not undone by the server's old word. The server answers a series this PC monitors already with that monitor
   as it is, so what differs from the choice goes as a change. `UpdateAsync` changes a monitor under the validator it was read
   with: a 412 or 409 reads it again and answers `Changed`, sending nothing more (the Apple app sends the same change again
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
