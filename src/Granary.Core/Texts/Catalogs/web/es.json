@@ -833,6 +833,30 @@
       "value": "Mostrar subtítulos forzados"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "Muestra sobre el botón Omitir introducción qué tan segura está la fuente. Cada fuente usa su propia escala, así que el porcentaje solo es comparable dentro de una misma fuente; activa la línea de la fuente para ver cuál es."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "Mostrar confianza del marcador"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "Muestra sobre el botón Omitir introducción de dónde viene la omisión: la detección propia de Silo, una persona o el proveedor que aportó el marcador."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "Mostrar fuente del marcador"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -11383,6 +11407,34 @@
     {
       "type": 0,
       "value": "Fijar inicio"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "Detectado"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "Editado"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "En línea"
     }
   ],
   "web.markers.save": [

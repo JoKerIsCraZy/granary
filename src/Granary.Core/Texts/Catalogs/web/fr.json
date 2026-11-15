@@ -833,6 +833,30 @@
       "value": "Afficher les sous-titres forcés"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "Affiche au-dessus du bouton « Passer l’intro » le degré de confiance de la source. Chaque source note selon sa propre échelle : le pourcentage n’est donc comparable qu’au sein d’une même source ; activez la ligne de source pour savoir de laquelle il s’agit."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "Afficher la confiance du marqueur"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "Affiche au-dessus du bouton « Passer l’intro » l’origine du passage : la détection de Silo, une personne ou le fournisseur du marqueur."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "Afficher la source du marqueur"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -11391,6 +11415,34 @@
     {
       "type": 0,
       "value": "Définir le début"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "Détecté"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "Modifié"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "En ligne"
     }
   ],
   "web.markers.save": [

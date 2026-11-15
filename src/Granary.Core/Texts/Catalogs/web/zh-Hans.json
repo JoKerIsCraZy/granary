@@ -833,6 +833,30 @@
       "value": "显示强制字幕"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "在“跳过片头”按钮上方显示来源的置信度。每个来源使用各自的评分标准，因此百分比只能在同一来源内比较；开启来源显示即可查看是哪个来源。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "显示标记置信度"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "在“跳过片头”按钮上方显示跳过标记的来源：Silo自身检测、人工标记，或提供该标记的提供商。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "显示标记来源"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -9922,6 +9946,34 @@
     {
       "type": 0,
       "value": "设为开始"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "已检测"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "已编辑"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "在线"
     }
   ],
   "web.markers.save": [

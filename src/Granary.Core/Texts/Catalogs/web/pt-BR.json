@@ -833,6 +833,30 @@
       "value": "Mostrar legendas forçadas"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "Mostra acima do botão Pular abertura o grau de confiança da fonte. Cada fonte avalia na própria escala, então a porcentagem só é comparável dentro de uma mesma fonte; ative a linha da fonte para ver qual é."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "Mostrar confiança do marcador"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "Mostra acima do botão Pular abertura a origem do salto: a detecção do próprio Silo, uma pessoa ou o provedor que forneceu o marcador."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "Mostrar origem do marcador"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -11399,6 +11423,34 @@
     {
       "type": 0,
       "value": "Definir início"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "Detectado"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "Editado"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "Online"
     }
   ],
   "web.markers.save": [

@@ -1,5 +1,5 @@
-using System.Globalization;
 using Granary.Core.Api.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.Playback;
 
@@ -25,8 +25,8 @@ public sealed record MarkerProvenance(string? Source, string? Provider, double? 
     /// </summary>
     public string? SourceLabel => Source switch
     {
-        "scanner" => Detected,
-        "manual" => "Edited",
+        "scanner" => Detected(),
+        "manual" => AppText.Get("web.markers.provenance.edited"),
         "plugin" or "online" => ProviderName(Provider),
         // No source recorded (an older server, or a row from before it kept one): a provider is still worth naming.
         _ => string.IsNullOrEmpty(Provider) ? null : ProviderName(Provider),
@@ -34,7 +34,8 @@ public sealed record MarkerProvenance(string? Source, string? Provider, double? 
 
     /// <summary>"20%"; null for an unrated part. Out-of-range ratings are clamped, half a percent rounds up, as on the web.</summary>
     public string? ConfidencePercent => Confidence is { } confidence && double.IsFinite(confidence)
-        ? string.Create(CultureInfo.InvariantCulture, $"{(int)Math.Round(Math.Clamp(confidence, 0, 1) * 100, MidpointRounding.AwayFromZero)}%")
+        ? AppText.Get("web.markers.provenance.confidence",
+            ("percent", (int)Math.Round(Math.Clamp(confidence, 0, 1) * 100, MidpointRounding.AwayFromZero)))
         : null;
 
     /// <summary>
@@ -49,7 +50,7 @@ public sealed record MarkerProvenance(string? Source, string? Provider, double? 
         return shown.Count > 0 ? string.Join(" · ", shown) : null;
     }
 
-    private const string Detected = "Detected";
+    private static string Detected() => AppText.Get("web.markers.provenance.detected");
 
     // Provider ids are not uniform: a plugin's comes as plugin:<installation id>:<capability id>, where only the capability
     // means anything to a viewer; a built-in one is built_in; another may be its own slug.
@@ -58,7 +59,7 @@ public sealed record MarkerProvenance(string? Source, string? Provider, double? 
         string id = provider?.Trim() ?? "";
         if (id.Length == 0)
         {
-            return "Online";
+            return AppText.Get("web.markers.provenance.online");
         }
         if (KnownName(id) is { } named)
         {
@@ -70,7 +71,7 @@ public sealed record MarkerProvenance(string? Source, string? Provider, double? 
     private static string? KnownName(string id) => id switch
     {
         "introdb" => "TheIntroDB",
-        "built_in" => Detected,
+        "built_in" => Detected(),
         _ => null,
     };
 

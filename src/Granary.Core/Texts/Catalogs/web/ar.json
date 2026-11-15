@@ -833,6 +833,30 @@
       "value": "عرض الترجمة الإجبارية"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "عرض مدى ثقة المصدر فوق زر «تخطي المقدمة». يقيّم كل مصدر وفق مقياسه الخاص، لذا لا تصلح النسبة المئوية للمقارنة إلا ضمن مصدر واحد؛ فعّل سطر المصدر لمعرفة المصدر."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "عرض ثقة العلامة"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "عرض مصدر التخطي فوق زر «تخطي المقدمة»: اكتشاف Silo الخاص، أو شخص، أو المزود الذي قدّم العلامة."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "عرض مصدر العلامة"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -13391,6 +13415,34 @@
     {
       "type": 0,
       "value": "تحديد البداية"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "مكتشفة"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "معدّلة"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "عبر الإنترنت"
     }
   ],
   "web.markers.save": [

@@ -833,6 +833,30 @@
       "value": "強制字幕を表示"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "「イントロをスキップ」ボタンの上にソースの信頼度を表示します。ソースごとに独自の基準で評価するため、割合は同じソース内でのみ比較できます。どのソースかを確認するには、ソースの表示をオンにしてください。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "マーカーの信頼度を表示"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "「イントロをスキップ」ボタンの上にスキップの出所を表示します。Silo独自の検出、人による指定、またはマーカーを提供したプロバイダーのいずれかです。"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "マーカーのソースを表示"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -9882,6 +9906,34 @@
     {
       "type": 0,
       "value": "開始を設定"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": "%"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "検出"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "編集済み"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "オンライン"
     }
   ],
   "web.markers.save": [

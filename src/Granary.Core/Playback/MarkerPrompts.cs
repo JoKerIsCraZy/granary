@@ -419,7 +419,7 @@ public sealed class MarkerPrompts
             return;
         }
         // The same pill without its fill.
-        Prompt = Offer is { } expired ? new SkipPrompt("Skip Intro", null, null) { Provenance = LineOf(expired), WithControls = true } : null;
+        Prompt = Offer is { } expired ? new SkipPrompt(AppText.Get("introSkip.pill.skip"), null, null) { Provenance = LineOf(expired), WithControls = true } : null;
     }
 
     // The ask prompt whose time ran out, back while the controls show; null when none is.

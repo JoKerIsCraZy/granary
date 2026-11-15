@@ -841,6 +841,30 @@
       "value": "Erzwungene Untertitel anzeigen"
     }
   ],
+  "settingsManifest.playback.show_marker_confidence.description": [
+    {
+      "type": 0,
+      "value": "Zeigt über der Schaltfläche „Intro überspringen“ an, wie sicher sich die Quelle ist. Jede Quelle bewertet auf ihrer eigenen Skala, daher ist der Prozentwert nur innerhalb einer Quelle vergleichbar; schalte die Zeile zur Quelle ein, um zu sehen, welche es ist."
+    }
+  ],
+  "settingsManifest.playback.show_marker_confidence.label": [
+    {
+      "type": 0,
+      "value": "Sicherheit der Markierung anzeigen"
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.description": [
+    {
+      "type": 0,
+      "value": "Zeigt über der Schaltfläche „Intro überspringen“ an, woher das Überspringen stammt: von Silos eigener Erkennung, von einer Person oder vom Anbieter, der die Markierung geliefert hat."
+    }
+  ],
+  "settingsManifest.playback.show_marker_source.label": [
+    {
+      "type": 0,
+      "value": "Quelle der Markierung anzeigen"
+    }
+  ],
   "settingsManifest.playback.subtitle_language.unsetLabel": [
     {
       "type": 0,
@@ -10703,6 +10727,34 @@
     {
       "type": 0,
       "value": "Beginn setzen"
+    }
+  ],
+  "web.markers.provenance.confidence": [
+    {
+      "type": 1,
+      "value": "percent"
+    },
+    {
+      "type": 0,
+      "value": " %"
+    }
+  ],
+  "web.markers.provenance.detected": [
+    {
+      "type": 0,
+      "value": "Erkannt"
+    }
+  ],
+  "web.markers.provenance.edited": [
+    {
+      "type": 0,
+      "value": "Bearbeitet"
+    }
+  ],
+  "web.markers.provenance.online": [
+    {
+      "type": 0,
+      "value": "Online"
     }
   ],
   "web.markers.save": [

@@ -204,6 +204,10 @@ settingsManifest.playback.preferred_quality.option.480p
 settingsManifest.playback.preferred_quality.option.720p
 settingsManifest.playback.preferred_quality.option.auto
 settingsManifest.playback.show_forced_subtitles.label
+settingsManifest.playback.show_marker_confidence.description
+settingsManifest.playback.show_marker_confidence.label
+settingsManifest.playback.show_marker_source.description
+settingsManifest.playback.show_marker_source.label
 settingsManifest.playback.subtitle_language.unsetLabel
 settingsManifest.playback.subtitle_mode.option.always
 settingsManifest.playback.subtitle_mode.option.auto
@@ -1589,6 +1593,13 @@ web.markers.panel.resetLabel
 web.markers.panel.resetTitle
 web.markers.panel.setEnd
 web.markers.panel.setStart
+
+# The line above a skip pill, its marker's confidence and source, as the web's lib/markerProvenance.ts words them:
+# src/Granary.Core/Playback/MarkerProvenance.cs.
+web.markers.provenance.confidence
+web.markers.provenance.detected
+web.markers.provenance.edited
+web.markers.provenance.online
 
 # Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
 web.markers.save
