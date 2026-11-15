@@ -477,12 +477,13 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   make the element anew and take the focus off it. A card given the same title again keeps what the pointer did on it
   (its play disc and buttons), and with the same picture its artwork (`MediaCardView.KeepsPicture`) rather than going back
   through its blur, unless that picture failed.
-- A card that had the focus and leaves its grid's list (a download deleted from its menu) hands the focus to the card now
-  in its place, or the last one (`MediaGrid.Focus.cs`): the grid notes the place of the card that took the focus, sees
-  the focused card cleared (`ElementClearing`; the repeater keeps a focused card it only scrolled away) and, once the
-  change is laid out, focuses that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere
-  stays there. A grid left without cards asks the page above it (`ICardFocusHost`; the Downloads page moves on to its
-  other grid), and a series' downloads page moves on to the next season when one goes with its focused card.
+- A card that had the focus and leaves its grid's list (a download deleted from its menu) hands the focus to the card
+  now in its place, or the last one (`MediaGrid.Focus.cs`): the grid sees the focused card cleared (`ElementClearing`;
+  the repeater keeps a focused card it only scrolled away), takes its place from the repeater then, not from when it
+  took the focus, since cards before it that came or went since have moved it, and, once the change is laid out, focuses
+  that place when the focus went nowhere. Focus the repeater or the viewer put elsewhere stays there. A grid left
+  without cards asks the page above it (`ICardFocusHost`; the Downloads page moves on to its other grid), and a series'
+  downloads page moves on to the next season when one goes with its focused card.
 - A card's bar is in percent (0 to 100), the value screen readers say. A card whose lines change as it shows names itself
   by `MediaCard.AccessibleLines` instead of them, so its name stays while its bar moves; `MediaCard.ToolTip` gives its
   whole status where its lines show it in parts, and `MediaCard.PlainSubtitle` sets a poster's second line in the

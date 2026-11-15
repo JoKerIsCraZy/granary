@@ -24,8 +24,7 @@
             </StackPanel>
 
             <!-- Each season with its episodes. Every template's root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
-            <ItemsRepeater x:Name="SeasonsRepeater" ItemsSource="{x:Bind ViewModel.Seasons}" GotFocus="OnSeasonGotFocus"
-                           ElementClearing="OnSeasonClearing">
+            <ItemsRepeater x:Name="SeasonsRepeater" ItemsSource="{x:Bind ViewModel.Seasons}" ElementClearing="OnSeasonClearing">
                 <ItemsRepeater.Layout>
                     <StackLayout Spacing="40" />
                 </ItemsRepeater.Layout>
