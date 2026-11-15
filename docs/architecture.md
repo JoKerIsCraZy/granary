@@ -1762,7 +1762,7 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   in it, and an episode paused or deleted does not hold the others back. What is said is looked at as it is then: an
   episode that finished while the others came is said ready, and played, only while it can still play (not once its drive
   went away or its file was deleted), and one that failed only while it still stands failed (not once Retry queued it
-  again); with none left, nothing is said. The words are the Apple app's
+  again), each by its title, numbers and reason as they are then; with none left, nothing is said. The words are the Apple app's
   (`DownloadNotifications.swift`): "Example Movie is ready to watch offline", an episode "Example Series (S2E8)", "… didn't
   download: Not enough storage on this PC" with its reasons (storage, an incomplete file, no longer on the server), and
   none when Granary knows no reason; the Apple app says each episode alone, so a group's are Granary's after them ("8

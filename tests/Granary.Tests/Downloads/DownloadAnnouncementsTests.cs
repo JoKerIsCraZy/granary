@@ -18,8 +18,9 @@ public sealed class DownloadAnnouncementsTests
             BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private static DownloadItem Episode(string id, int season, int episode, DownloadState state, string seriesId = "sr_1",
-        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false, bool missing = false) =>
-        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, false, missing, false,
+        string seriesTitle = "Example Series", DownloadFailure failure = DownloadFailure.None, bool paused = false, bool missing = false,
+        bool gone = false) =>
+        new(id, "ep_" + id, "Chapter " + episode, seriesId, seriesTitle, season, episode, state, failure, paused, gone, missing, false,
             ExpectedBytes: 1000, BytesDone: 0, PreparationProgress: null, PosterPath: null, MediaFileId: null);
 
     private IReadOnlyList<DownloadAnnouncement> Look(params DownloadItem[] items) => _announcements.Look(Scope7, items);
@@ -256,6 +257,19 @@ public sealed class DownloadAnnouncementsTests
         var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Queued, paused: true), Episode("dl_2", 1, 2, DownloadState.Completed)));
 
         Assert.Equal(new DownloadAnnouncement("Example Series (S1E2) is ready to watch offline", IsFailure: false, PlayDownloadId: "dl_2"), announced);
+    }
+
+    [Fact]
+    public void AnEpisodeHeldBack_IsSaidAsItIsWhenTheMessageComes()
+    {
+        Look(Episode("dl_1", 1, 1, DownloadState.Downloading), Episode("dl_2", 1, 2, DownloadState.Downloading));
+        Assert.Empty(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Server), Episode("dl_2", 1, 2, DownloadState.Downloading)));
+
+        // Meanwhile the server says it no longer has it; the other is paused.
+        var announced = Assert.Single(Look(Episode("dl_1", 1, 1, DownloadState.Failed, failure: DownloadFailure.Server, gone: true),
+            Episode("dl_2", 1, 2, DownloadState.Queued, paused: true)));
+
+        Assert.Equal("Example Series (S1E1) didn't download: No longer available on the server", announced.Text);
     }
 
     [Fact]

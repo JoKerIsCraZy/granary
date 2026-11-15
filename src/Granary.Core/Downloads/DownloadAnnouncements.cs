@@ -180,14 +180,14 @@ public sealed class DownloadAnnouncements
         /// <summary>
         /// What to say of the batch as the downloads are <paramref name="now"/>: one that finished while the others came is said
         /// ready, and played, only while it can still play (not once its drive went away or its file was deleted by hand), and
-        /// one that failed only while it still stands failed (not once Retry queued it again). Null when none is left to say.
+        /// one that failed only while it still stands failed (not once Retry queued it again). Each is said as it is now: its
+        /// title, numbers and reason as the downloads have them then. Null when none is left to say.
         /// </summary>
         public DownloadAnnouncement? Announcement(IReadOnlyDictionary<string, DownloadItem> now)
         {
-            var finished = _ended.Where(e => !e.Failed && now.GetValueOrDefault(e.Item.DownloadId)?.IsPlayable == true)
-                .Select(e => e.Item).OrderBy(EpisodeOrder).ToList();
-            var failed = _ended.Where(e => e.Failed && now.GetValueOrDefault(e.Item.DownloadId)?.State == DownloadState.Failed)
-                .Select(e => e.Item).ToList();
+            var current = _ended.Select(e => (Now: now.GetValueOrDefault(e.Item.DownloadId), e.Failed)).Where(e => e.Now is not null).ToList();
+            var finished = current.Where(e => !e.Failed && e.Now!.IsPlayable).Select(e => e.Now!).OrderBy(EpisodeOrder).ToList();
+            var failed = current.Where(e => e.Failed && e.Now!.State == DownloadState.Failed).Select(e => e.Now!).ToList();
             if (finished.Count == 0 && failed.Count == 0)
             {
                 return null;
