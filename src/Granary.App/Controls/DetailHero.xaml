@@ -200,8 +200,8 @@
             <!--
                 The scores, as the web's ScoreRow under its badges (pages/ItemDetail/components/ScoreRow.tsx, RatingEntry.tsx):
                 each source's mark in 13 px SemiBold at 75 % beside its score in 15 px Bold, both in the accent colour, 20
-                apart, wrapping 8 below at the overview's width as the web's flex-wrap. A movie, a series or an episode; a
-                season has none.
+                apart, wrapping 8 below at the overview's width as the web's flex-wrap. A rating itself never breaks (the web's
+                whitespace-nowrap); one wider than the row is cut short. A movie, a series or an episode; a season has none.
             -->
             <ItemsRepeater x:Name="ScoreRow" MaxWidth="900" HorizontalAlignment="Left" ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}"
                            Visibility="{x:Bind ViewModel.HasRatings, Mode=OneWay}" AutomationProperties.Name="Ratings">
@@ -210,7 +210,7 @@
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="detail:DetailRating">
-                        <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
+                        <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" TextTrimming="CharacterEllipsis" AutomationProperties.Name="{x:Bind AccessibleName}">
                             <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
                                  Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
                             <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
