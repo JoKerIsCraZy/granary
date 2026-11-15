@@ -184,7 +184,10 @@ public sealed partial class AppLanguageSetting : ObservableObject
         }
     }
 
-    /// <summary>Clears this PC's own value again, after it failed: the profile's choice was saved, but that value outranks it here.</summary>
+    /// <summary>
+    /// Clears this PC's own value again, after it failed: the profile's choice was saved, but that value outranks it here.
+    /// Once cleared, the profile's language is read again, as another device may have chosen one since.
+    /// </summary>
     public async Task RetryDeviceClearAsync()
     {
         if (IsSaving || _clearPending is not { } pending || pending.Owner != Owner() || Failure != AppLanguageFailure.DeviceNotCleared)
@@ -197,7 +200,11 @@ public sealed partial class AppLanguageSetting : ObservableObject
         Failure = AppLanguageFailure.None;
         try
         {
-            await ClearDeviceAsync(pending);
+            if (await ClearDeviceAsync(pending))
+            {
+                // The chosen language stands until the read says what the profile has now.
+                _loadedFor = null;
+            }
         }
         finally
         {
@@ -207,8 +214,9 @@ public sealed partial class AppLanguageSetting : ObservableObject
     }
 
     // Goes out as the profile it was chosen for, refused unsent once another acts, so it never clears the next profile's.
-    // Once cleared, the choice applies here: it shows, and the next start follows it.
-    private async Task ClearDeviceAsync(PendingClear pending)
+    // Once cleared, the choice applies here: it shows, and the next start follows it. True when it was cleared for the
+    // profile that still acts.
+    private async Task<bool> ClearDeviceAsync(PendingClear pending)
     {
         var (owner, target, tag) = pending;
         try
@@ -226,15 +234,17 @@ public sealed partial class AppLanguageSetting : ObservableObject
             {
                 Failure = AppLanguageFailure.DeviceNotCleared;
             }
-            return;
+            return false;
         }
-        if (Owner() == owner)
+        if (Owner() != owner)
         {
-            _clearPending = null;
-            Stored = tag;
-            StoredForThisDevice = false;
-            await KeepAsync(tag);
+            return false;
         }
+        _clearPending = null;
+        Stored = tag;
+        StoredForThisDevice = false;
+        await KeepAsync(tag);
+        return true;
     }
 
     // A read dropped while a choice saved left the profile's state to that choice; read again once it is done, so the

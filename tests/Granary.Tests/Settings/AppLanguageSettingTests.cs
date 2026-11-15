@@ -258,8 +258,10 @@ public sealed class AppLanguageSettingTests : IDisposable
         Assert.Equal(AppLanguageFailure.DeviceNotCleared, setting.Failure);
         Assert.Equal("es", setting.Stored);
         Assert.Equal("ja", KeptFile().AtStart);
+        _harness.Answer(EffectivePath, Answer("es"));
 
         await setting.RetryDeviceClearAsync();
+        await setting.Working;
 
         Assert.Equal(AppLanguageFailure.None, setting.Failure);
         Assert.Equal("es", KeptFile().AtStart);
@@ -400,10 +402,28 @@ public sealed class AppLanguageSettingTests : IDisposable
         Assert.Equal(AppLanguageFailure.DeviceNotCleared, setting.Failure);
 
         await setting.RetryDeviceClearAsync();
+        await setting.Working;
 
         Assert.Equal(AppLanguageFailure.None, setting.Failure);
         Assert.Equal(["PUT ?scope=profile {\"value\":\"es\"}", "DELETE ?scope=profile_device", "PUT ?scope=profile {\"value\":\"fr\"}",
             "DELETE ?scope=profile_device"], Writes());
+    }
+
+    [Fact]
+    public async Task AClearThatLandsLate_ReadsWhatTheProfileHasNow()
+    {
+        // Between the choice and Try again, another device chose German for the profile.
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var setting = await ReadyAsync();
+        await setting.ChooseAsync("es");
+        _harness.Answer(EffectivePath, Answer("de"));
+
+        await setting.RetryDeviceClearAsync();
+        await setting.Working;
+
+        Assert.Equal("de", setting.Stored);
+        Assert.Equal("de", KeptFile().AtStart);
     }
 
     private static Func<Task<HttpResponseMessage>> Json(string body) => ScriptedSilo.Json(System.Net.HttpStatusCode.OK, body);
@@ -430,8 +450,10 @@ public sealed class AppLanguageSettingTests : IDisposable
         await setting.ChooseAsync("es");
         await setting.RefreshAsync();
         Assert.Equal("ja", setting.Stored);
+        _harness.Answer(EffectivePath, Answer("es"));
 
         await setting.RetryDeviceClearAsync();
+        await setting.Working;
 
         Assert.Equal(AppLanguageFailure.None, setting.Failure);
         Assert.Equal("es", setting.Stored);

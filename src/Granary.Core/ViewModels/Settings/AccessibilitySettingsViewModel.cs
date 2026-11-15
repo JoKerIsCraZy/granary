@@ -113,7 +113,14 @@ public sealed partial class AccessibilitySettingsViewModel : ObservableObject, I
     public void Dispose() => _setting.PropertyChanged -= OnSettingChanged;
 
     [RelayCommand]
-    private Task TryAgainAsync() => Working = _setting.RetryDeviceClearAsync();
+    private Task TryAgainAsync() => Working = RetryThenReadAsync();
+
+    // A clear that lands reads the profile's language again: both are the one step Try again takes.
+    private async Task RetryThenReadAsync()
+    {
+        await _setting.RetryDeviceClearAsync();
+        await _setting.Working;
+    }
 
     [RelayCommand]
     private Task RetryAsync() => LoadAsync();

@@ -716,7 +716,8 @@ acts as if it were `null`.
 - Write (Settings → Accessibility → Language, as the web's `AccessibilitySettings.tsx` and the apps write it):
   `PUT …/ui.app_language?scope=profile` with the tag, or `null` for Match device, so the choice follows the person to
   every device; then, when the effective value came from this PC, `DELETE …?scope=profile_device` (a `404` means there was
-  nothing to clear), so it applies here too. Both go out as the profile the choice was made for
+  nothing to clear), so it applies here too. A `DELETE` that only lands on Try again is followed by a read of the
+  effective value, as the profile's may have changed since. Both go out as the profile the choice was made for
   (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
   rewritten.
 
