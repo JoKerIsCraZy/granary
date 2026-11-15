@@ -26,6 +26,8 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     // Runs as a stream's playback is made, before the player has taken it.
     private Action? _whileAStreamIsMade;
 
+    private readonly LogSink _logs = new();
+
     private PlayerViewModel NewPlayer(IUpNextSource? upNext = null) =>
         new(_fixture.Engine, new ImmediateDispatcher(), _navigation, () =>
         {
@@ -33,8 +35,8 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
             _streams.Add(stream);
             _whileAStreamIsMade?.Invoke();
             return stream;
-        }, _fixture.Stops, _fixture.Harness.Time, upNext, audioDelay: _fixture.AudioDelay, devicePreferences: _fixture.Device,
-            downloads: _fixture.Playbacks);
+        }, _fixture.Stops, _fixture.Harness.Time, upNext, logger: _logs.For<PlayerViewModel>(), audioDelay: _fixture.AudioDelay,
+            devicePreferences: _fixture.Device, downloads: _fixture.Playbacks);
 
     private void Frame(double seconds, bool paused = false) => _fixture.Engine.RaiseState(LocalPlaybackFixture.Frame(seconds, paused));
 
@@ -65,6 +67,115 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
 
         Assert.Single(_streams);
         Assert.Equal(PlayRequest.Resume("mv_streamed"), _streams[0].Started);
+    }
+
+    [Fact]
+    public async Task ADownload_PlayedRightAfterAStream_FollowsTheEngine()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.Resume("mv_streamed"));
+        _streams[0].Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Frame(5);
+
+        // Back to the downloaded episode in the same player, as Previous does after the next one streamed.
+        await player.StartAsync(PlayRequest.Resume("ep_5"));
+        Frame(1099);
+        Frame(1101);
+
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Equal(1101, player.PositionSeconds);
+        Assert.True(player.CanSeek);
+    }
+
+    [Fact]
+    public async Task ADownload_PlayedAgainAfterItEndedAndTheNextEpisodeStreamed_FollowsTheEngine()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.Resume("ep_5"));
+        Frame(7190);
+        Frame(7199);
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+        // Playing Next streams the next episode, and the viewer goes back to the downloaded one.
+        await player.StartAsync(PlayRequest.ResumeWithoutRewind("ep_6"));
+        _streams[0].Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Frame(5);
+        await player.StartAsync(PlayRequest.ResumeWithoutRewind("ep_5"));
+        Frame(1099);
+        Frame(1101);
+
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Equal(1101, player.PositionSeconds);
+        Assert.True(player.CanSeek);
+    }
+
+    [Fact]
+    public async Task ATimeThatStandsWhileTheEnginePlays_IsLogged_WithWhatThePlayerHolds()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+
+        // The engine plays on, but nothing of it reaches the player.
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+        player.CheckFollowsEngine();
+
+        string line = Assert.Single(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
+        Assert.Contains("shows 10.0 s, the engine is at 20.0 s", line, StringComparison.Ordinal);
+        Assert.Contains("phase Playing", line, StringComparison.Ordinal);
+        Assert.Contains("LocalPlayback", line, StringComparison.Ordinal);
+
+        // It follows again, and says so once.
+        Frame(21);
+        player.CheckFollowsEngine();
+        Assert.Single(_logs.Lines, l => l.Contains("The player's time follows the engine again", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APause_HoldsTheTimeAgainstTheEngine_BeforeItPauses()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+
+        player.TogglePauseCommand.Execute(null);
+
+        Assert.Single(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ASeekOnItsWay_IsNoStall()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+
+        player.SeekTo(100);
+        // The engine is somewhere else than the player shows while the seek is on its way: that is the seek, not a stall.
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+        player.CheckFollowsEngine();
+
+        Assert.DoesNotContain(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APausedOrMatchingPlayer_LogsNoStall()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+        player.CheckFollowsEngine();
+        Frame(30, paused: true);
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(40, paused: true) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+        player.CheckFollowsEngine();
+
+        Assert.DoesNotContain(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
     }
 
     [Fact]

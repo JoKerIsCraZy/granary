@@ -1867,6 +1867,16 @@ while the server answers.
   name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
   of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
   folder and goes whole, since a folder's name can hold a dot too ("elena.moreau").
+- **Diagnosis of a player that stops following.** A tester saw the player's time stand and its buttons do nothing while
+  the picture played on and Space still paused it, after a download played right after a streamed episode. It could not
+  be reproduced, so the log now says more: at each press on the player and each pause, `PlayerViewModel.CheckFollowsEngine`
+  holds the time it shows against the engine's `Current` (in every pause path, before the engine pauses), and when they
+  stand more than 3 s apart while the engine plays it logs what it holds (phase, can seek, the playback's kind and
+  phase, the engine's load and the snapshot numbers), at every such moment, and once that the time follows again. Not
+  while the player prepares a title or waits for a seek of its own: then they are apart by design. No timer runs for it:
+  nothing ticks while a title plays. `PlayerPage` logs each press: what it landed on, the elements at that point from the
+  top, and how the bottom bar stands; a press the hidden cursor's shield took says what lies under the pointer. Kinds and
+  names of elements only, nothing of the title.
 
 ### Offline progress
 
