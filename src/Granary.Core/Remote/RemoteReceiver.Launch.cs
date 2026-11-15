@@ -33,6 +33,7 @@ public sealed partial class RemoteReceiver
     private const string StillOpening = "a launch is still opening";
     private const string NoTitle = "no title";
     private const string PlayerDidNotOpen = "the player did not open";
+    private const string Leaving = "the connection is on its way out";
 
     // The sign-in the ready offers were made under, and how often it changed; under _gate. Another profile or server, or
     // none, voids every ready offer, also when the same one comes back later.
@@ -59,15 +60,25 @@ public sealed partial class RemoteReceiver
         {
             return;
         }
-        await controller.SendAsync(await answering.ConfigureAwait(false)).ConfigureAwait(false);
+        if (await answering.ConfigureAwait(false) is { } answer)
+        {
+            await controller.SendAsync(answer).ConfigureAwait(false);
+        }
     }
 
     // Ready for the profile signed in on the PC, or why not: a phone before its hello as one too old, a phone or an offer
     // on another server with the server this PC plays from, a Watch Party, another profile. A resume token a phone sends
-    // back is not even read: every offer is checked afresh.
-    private byte[] AnswerOffer(Session session, SiloCastMessage.HandoffOffer offer)
+    // back is not even read: every offer is checked afresh. A connection on its way out (a newer one of the same phone
+    // took its place while its offer waited here) gets nothing, and readies nothing: it must not take the newer one's
+    // readiness away. Null when nothing is to be sent.
+    private byte[]? AnswerOffer(Session session, SiloCastMessage.HandoffOffer offer)
     {
         var controller = session.Controller;
+        if (!IsStillConnected(session))
+        {
+            _logger.LogInformation("Connection {Number}: an offer to start a title was dropped ({Why})", controller.Number, Leaving);
+            return null;
+        }
         var identity = Identity();
         (string Reason, string Message, string Why)? refusal = null;
         if (!controller.SaidHello)
@@ -87,8 +98,13 @@ public sealed partial class RemoteReceiver
         {
             refusal = (SiloCastCancelReasons.WatchPartyActive, RemoteTexts.LeaveWatchParty, InAWatchParty);
         }
-        else if (MakeReady(session, offer.ProfileId) is not { } token)
+        else if (MakeReady(session, offer.ProfileId, out bool gone) is not { } token)
         {
+            if (gone)
+            {
+                _logger.LogInformation("Connection {Number}: an offer to start a title was dropped ({Why})", controller.Number, Leaving);
+                return null;
+            }
             refusal = (SiloCastCancelReasons.HandoffFailed, RemoteTexts.AnotherProfile, AnotherProfile);
         }
         else
@@ -103,13 +119,18 @@ public sealed partial class RemoteReceiver
 
     // The offer is for the profile signed in on the PC: this connection is ready, and no other is (readiness is one
     // phone's alone, as silo-roku's controlReady and Silo's TV apps keep it). Answers the connection's resume token, or
-    // null for another profile or none.
-    private string? MakeReady(Session session, string profileId)
+    // null for another profile or none, or, with <paramref name="gone"/>, for a connection that is on its way out by now.
+    private string? MakeReady(Session session, string profileId, out bool gone)
     {
         var now = SignedInAs();
         lock (_gate)
         {
             NoteSignInLocked(now);
+            gone = session.Leaving || !session.Controller.IsOpen || !_sessions.Contains(session);
+            if (gone)
+            {
+                return null;
+            }
             if (_offersMadeFor is not { State: SessionState.Ready, ProfileId: { } signedIn } || !string.Equals(signedIn, profileId, StringComparison.Ordinal))
             {
                 return null;

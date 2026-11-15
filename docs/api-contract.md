@@ -3172,7 +3172,9 @@ is checked afresh, in this order:
   Granary takes no token back.
 - **Readiness** is one connection's alone, as on silo-roku and Silo's TV apps: a newer ready offer, on any connection,
   voids the one before. It is void too once the PC's profile or server changes (also when the same one comes back),
-  and it ends with its connection. A phone's own `handoff_cancel` changes nothing, as nothing waits on an offer.
+  and it ends with its connection. A connection on its way out (a newer one of the same phone took its place while its
+  offer waited) gets no answer and is never made ready, so it cannot take the newer one's readiness away. A phone's own
+  `handoff_cancel` changes nothing, as nothing waits on an offer.
 - **Replacing a title.** The phone asks its own user before it offers another title while the PC's status shows one
   playing, and sends `replaceConfirmed` with `replacingContentId`. Granary never answers `replace_confirmation_required`:
   Silo's receivers do only when a title plays under another profile than the offered one, and Granary readies only its

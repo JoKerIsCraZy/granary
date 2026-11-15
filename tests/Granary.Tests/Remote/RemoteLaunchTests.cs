@@ -256,6 +256,28 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnOfferFromAConnectionOnItsWayOut_ReadiesNothing()
+    {
+        var old = await PhoneAsync();
+        FakePhone? newer = null;
+
+        // The old connection's offer waits for the UI thread while a newer connection of the same phone takes its place.
+        await WhileTheUiThreadIsBusyAsync(async () =>
+        {
+            await old.SendAsync(Offer());
+            await _harness.Dispatcher.UntilWaitingAsync(1, Token);
+            newer = await PhoneAsync();
+        });
+        await newer!.SendAsync(Offer("request-2"));
+        await newer.NextAsync("handoff_ready");
+        await newer.SendAsync(Launch(AtThePhonesPosition));
+
+        await LoadingAsync(newer);
+        Assert.DoesNotContain("Connection 1: an offer to start a title is ready", _harness.Logs.All, StringComparison.Ordinal);
+        Assert.Single(Navigations);
+    }
+
+    [Fact]
     public async Task AfterTheProfileChanged_TheOldOfferIsVoid()
     {
         var phone = await ReadyAsync();
@@ -646,6 +668,27 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
             _harness.Time, _harness.Logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _harness.Logs.For<WatchPartySession>(), time: _harness.Time);
         _harness.WatchParty = _party;
         return _party;
+    }
+
+    // Runs <paramref name="work"/> while the UI thread is busy with something else, then lets it go on.
+    private async Task WhileTheUiThreadIsBusyAsync(Func<Task> work)
+    {
+        var busy = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Dispatcher.Post(() =>
+        {
+            started.SetResult();
+            busy.Task.Wait(HangGuard, CancellationToken.None);
+        });
+        await started.Task.WaitAsync(HangGuard, Token);
+        try
+        {
+            await work();
+        }
+        finally
+        {
+            busy.SetResult();
+        }
     }
 
     // The next status that holds <paramref name="text"/>; older ones may still wait before it.

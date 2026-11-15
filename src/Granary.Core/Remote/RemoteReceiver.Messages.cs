@@ -230,9 +230,12 @@ public sealed partial class RemoteReceiver
         }
     }
 
-    // The phone is still connected, authorized and not on its way out, and its session is still under the PC's key: the same
-    // key, not merely one with the same id.
-    private bool StillControls(Session session)
+    // The phone is still connected, authorized and not on its way out, and its session is still under the PC's key.
+    private bool StillControls(Session session) => session.Controller.IsAuthorized && IsStillConnected(session);
+
+    // The connection is open and not on its way out (replaced, closed to make room, let go), and its session is still under
+    // the PC's key: the same key, not merely one with the same id.
+    private bool IsStillConnected(Session session)
     {
         var controller = session.Controller;
         bool leaving;
@@ -240,8 +243,7 @@ public sealed partial class RemoteReceiver
         {
             leaving = session.Leaving;
         }
-        return controller.IsOpen && controller.IsAuthorized && !leaving && controller.SessionMaterial is { } material
-            && PairingMaterial.Same(Pairing(), material);
+        return controller.IsOpen && !leaving && controller.SessionMaterial is { } material && PairingMaterial.Same(Pairing(), material);
     }
 
     // On the UI thread. Without a player only stop is done: there is nothing to stop.

@@ -1568,7 +1568,8 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
 - **Readiness.** A ready offer is kept with its connection, with the profile it was for and the sign-in it was made
   under: the receiver follows `ISessionManager.Changed` for as long as it lives, and another state, server or profile
   (also the same one again later) voids every ready offer; a change that keeps all three (a token refreshed) does not.
-  Readiness is one connection's alone, as on silo-roku: a newer ready offer voids the one before. The resume token is
+  Readiness is one connection's alone, as on silo-roku: a newer ready offer voids the one before; a connection on its
+  way out (replaced, closed to make room, let go) is asked about again first and readies nothing. The resume token is
   random, made once per connection, kept in memory only, and never read back.
 - **The launch** runs on the UI thread, where the phone is asked about again (as for a command) and the checks go in
   silo-roku's order: a ready offer under the sign-in that is still the PC's, the launch's server (by id, or by the
