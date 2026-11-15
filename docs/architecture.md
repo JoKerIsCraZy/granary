@@ -1361,9 +1361,10 @@ deleted here; every result but Completed keeps what was written.
 ### The queue
 
 `DownloadQueue` (a singleton the app starts in `App.Launch`, after the local route, and stops when the window closes,
-waiting `StopBudget` for it) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
-Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
-missing their folder.
+waiting `StopBudget` for it) runs the active profile's downloads, as many at once as Settings → Downloads' Simultaneous
+Downloads says (`IDownloadPreferences.SimultaneousDownloads`, 1 to 4, two by default as Silo's Apple app), oldest first:
+those queued or under way, not paused by the viewer, not gone from the server and not missing their folder, passing over
+a monitored series' episode a storage limit holds ("Series monitoring").
 
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
   settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
@@ -1516,7 +1517,7 @@ client guide.
   on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
-  free space check holds back one that does not fit. However many there are, the queue runs two at a time.
+  free space check holds back one that does not fit. However many there are, the queue runs them as many at a time as Simultaneous Downloads says.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1588,7 +1589,14 @@ client guide.
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
-  downloads, Notify when downloads finish) and takes a folder only below a drive's or a share's root and once it
+  downloads, Notify when downloads finish) and each select as it is chosen (Simultaneous Downloads, which the queue reads
+  at every pass and whose change wakes it), Monitoring Defaults (Delete after watching, and the storage limit a new monitor
+  starts with, held to the Apple app's stepper: 0 to 1000 GB in fives) as they change, and the storage limit for downloads
+  once its slider rests for `SliderRest` (half a second), on the `TimeProvider`, so a drag is one save. The Default
+  quality's line is the Apple app's footer for the capability read at `LoadAsync`; Storage's Used is
+  `DownloadManager.BytesUsed`, followed between `Attach` and `Detach` (the view's Loaded and Unloaded) through the
+  manager's `Changed`, one refresh posted to the UI thread at a time, and Remove All Downloads, after asking, `DeleteAllAsync` over the downloads the question
+  counted, in the profile it was asked in. It takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
@@ -1601,6 +1609,116 @@ client guide.
   as refused, and the select goes back. The
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
+
+### Series monitoring
+
+A monitor keeps a series downloaded on this PC (docs/api-contract.md, 14.8), as Silo's Apple app keeps one
+(`DownloadManager.swift`, "Series monitoring"); only that app has it. The server registers a monitored series' episodes only
+when the client syncs, so `SeriesMonitors` (a singleton the app starts in `App.Launch` and disposes as the window closes)
+runs for the active profile; `MonitorBook` holds each profile's monitors as last read or written, for the run only, and the
+titles of their series as a download dialog or a download named them.
+
+- **A run.** It reads the capability (`series_monitoring`), sends the stops still to go, reads the whole monitor list (one
+  that does not end whole changes nothing), syncs each active monitor page by page under the validator read before its
+  first page, and takes what the server registered. A page that got no answer goes again as it was, a second and two
+  seconds later; a monitor that changed under its sync (409) is read again and its sync starts over, twice at most; one the
+  server no longer has (404, and 404 again when read) leaves the list. A server that cannot be reached, or asks to wait
+  (429, 503), ends the run's syncs: the next monitors would meet the same. While the server does not monitor series, a run
+  reads the list but syncs nothing, so a monitor that is there can still be stopped. A list that could not be read leaves
+  the monitors as last read, which are synced, as the Apple app syncs its stored ones; but that run takes nothing and
+  deletes nothing on their word, since another client may have stopped one or changed it.
+- **When.** At the start, when another server, account or profile becomes the active one, every `SyncInterval` (4 hours,
+  the Apple app's background refresh) while Granary runs, after a monitor is made or changed (that monitor alone), and when
+  a new notification comes for the profile on the events connection (`RealtimeEvents.NotificationArrived`, on
+  `notification.created`), as a push wakes the Apple app's sync: a new episode's notification is one (`SyncSoon`). While a
+  profile's monitors were never read, a run that could not read them is followed by another a minute later (`UnreadRetry`),
+  up to `UnreadRuns` (3) in a row, as the queue holds that profile's episodes until then (Storage limits, below).
+  Wishes settle into one run `Settle` (2 s) after the first of them, so a stream of them never puts the run off; a wish
+  while a run is under way is one more run after it. Signed out there is nothing to run, and the monitors stay on the
+  server: they are the profile's.
+- **Taking registered episodes.** After the syncs, the registry (14.3) is read whole and each entry of a monitored series
+  (its `content_id` a monitor's series, an episode) that the PC neither keeps, by id or by episode, nor is deleting, whose
+  status is preparing, ready, downloading or completed, is kept as a download, its title and numbers from its manifest,
+  queued (Preparing while the server prepares it) in episode order with the specials last, so the queue brings the first
+  first. A manifest that does not come ends the taking for that run; the next run takes the rest. The store's
+  `ClearGeneration` is taken first and a sign-out under way takes nothing, as a create does (`AddUnlessClearedAsync`). The
+  Apple app takes every entry it does not know; Granary only a monitored series'. Once kept, it downloads as any other:
+  the queue's order, metered connections, the drive and pause all hold.
+- **Make, change, stop.** `CreateAsync` sends the create once; no answer, a 409 or a 5xx reads the list, which tells whether
+  the server made it (`Uncertain` when it does not); a stop of that series' monitor still waiting is then no longer sent,
+  as the series is wanted again. When the monitor a create comes to is not what the viewer chose (the server's monitor as it
+  was) and the change to it did not go, that monitor deletes no watched episode until a list shows it as the viewer
+  asked, they save it, it goes, or its Delete after watching changes since (a newer word on it than the viewer's; any other
+  change, as the server pausing it when its storage is revoked, leaves the choice waiting): Delete after watching the viewer
+  turned off is not undone by the server's old word. The server answers a series this PC monitors already with that monitor
+  as it is, so what differs from the choice goes as a change. `UpdateAsync` changes a monitor under the validator it was read
+  with: a 412 or 409 reads it again and answers `Changed`, sending nothing more (the Apple app sends the same change again
+  under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
+  monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
+  read again, as the Apple app does, also for a stop kept from before a restart: the server keeps a monitor per device, so
+  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer waits for
+  the next run, and the list does not bring the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
+  profile, monitor id and validator), as the Apple app keeps them, so one that never reached the server before Granary
+  closed goes after it starts again, and its monitor does not come back meanwhile. The file keeps a create's choices still
+  waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
+  after watching delete what the viewer chose to keep. It is read before the first run or write, written one save after
+  another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it)
+  is read again with the next run or write, and never written over before; until then no run goes (as one that could not
+  read the monitors) and a write fails, so nothing deletes on a monitor's old word, brings back a stopped one or is undone
+  by what the file holds.
+- **The dialog's Monitor.** `DownloadOptionsViewModel.Monitor.cs` gives a series' dialog (a `SeriesMonitorTarget` from its
+  page or its card) the Apple app's One Time | Monitor while the capability has `series_monitoring` with a mode Granary
+  offers, or the series has a monitor. It prefills from the series' monitor, else the Monitoring Defaults and the default
+  quality; it creates through `SeriesMonitors.CreateAsync` or sends what changed through `UpdateAsync` (an unchanged mode or
+  quality is never sent, as the server checks a quality's permission whenever it gets one), and shows a `Changed` monitor as
+  the server has it now. A save goes over the monitor the dialog showed (`MonitorEdit.Etag`): one a run read anew while it
+  showed, or that came meanwhile, is shown as it is now with the same words, and nothing is sent. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
+  calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
+  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
+- **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards
+  (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
+  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode; one under way; one waiting; the next airing the rule
+  takes that this PC does not have; up to date once the calendar was read), from the page's downloads and
+  `MonitorSchedule`, which the page asks to read as it shows and whenever the monitors change while it shows (a run at the
+  start fills them a moment later; the calendar itself is read only when due); the monitors' and the schedule's `Changed`
+  refresh it through the page's follower. A card's click and Options open `DownloadActions.OfferReadAsync` for the series, on Monitor.
+- **Delete after watching.** A monitor's `delete_watched` is the client's to carry out, as the Apple app does it
+  (`retentionDeletions`): at the end of each run, once the server heard what was watched on this PC and its progress was
+  read back (`OfflineProgressSync.FlushAsync`), the whole episodes of such a series that the profile watched for sure
+  (`DownloadRecord.IsWatched`: the server says so, or a play here went to the end) are deleted as Delete deletes one
+  (`DownloadManager.DeleteWatchedAsync`: looked at right before each, not one that plays now, and the server hears it). The
+  server's sync, for its part, registers no episode the profile finished and none this PC deleted while the monitor was
+  there, so a deleted episode does not come back. A monitor that changed under its sync (409) and could not be read
+  again, or kept changing past the restarts, deletes nothing that run: what changed may be Delete after watching itself.
+  As what goes is a series' episodes, a series is deleted from only when every monitor of it the book holds deletes watched
+  ones and none of them is one the run could not be sure of.
+  Nothing else deletes for a monitor.
+- **Storage limits.** A monitor's `max_storage_bytes` is the client's to keep (the server only roughly holds registration
+  back), as the Apple app keeps it (`exceedsStorageCap`), and Settings → Downloads has Granary's own limit for every
+  download on this PC (`IDownloadPreferences.StorageLimitGb`, in GiB, none by default). The queue starts no episode of a
+  monitored series (paused or not) whose size, or its bytes so far when more, would take its series' downloads past the
+  monitor's limit, or all downloads past Granary's (`DownloadQueue.HoldOf`, `DownloadHold`): whole files count their size,
+  a transfer under way the size it comes to, the rest the bytes they have, and missing files nothing. It starts once
+  there is room, as a delete, a raised limit (the book's `Changed` and the settings' wake the queue) or another monitor
+  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. Until a run read a profile's
+  monitor list whole, or gave up on it (`MonitorBook.IsKnown`: the server offers no downloads, or did not answer
+  `SeriesMonitors.UnreadRuns` (3) runs in a row, `UnreadRetry` (1 minute) apart), whether a limit holds its episodes is not
+  known, which is not "not monitored": the queue holds them (`DownloadHold.PolicyUnknown`, shown as Queued), as at Granary's
+  start, when the queue runs before monitoring's first run; the book becoming known wakes the queue. A create or a stop
+  alone does not make it known, as the profile's other monitors are not known from one. What the downloads take is counted
+  once for each pass and each list a page reads (`LimitTally`), and a pass adds each transfer it starts at the size it comes
+  to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. A held
+  download whose retry falls due gives the loop no time to look again (`NextWake`): only what lifts the hold wakes it. Its card says "Series storage
+  limit reached" (the Apple app's words) or "Storage limit for downloads reached", also one that was coming when Granary
+  stopped, which then does not count as coming. Other downloads are never held: the
+  download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
+  dialog opens and again as Download is pressed, and what the choice needs), and says so.
+- **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that
+  landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it, and the
+  dialog's Cancel ends that wait (nothing is sent) but never a write that began. The book counts a monitor as changed when
+  its id or validator did, which changes with every change to it. Everything
+  runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it
+  applies nothing more. The log names no series, title or profile.
 
 ### Downloads in the shell
 

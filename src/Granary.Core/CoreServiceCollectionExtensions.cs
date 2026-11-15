@@ -343,6 +343,7 @@ public static class CoreServiceCollectionExtensions
     private static void AddDownloads(IServiceCollection services)
     {
         services.AddTransient<DownloadsApi>();
+        services.AddTransient<DownloadSubscriptionsApi>();
         // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
         services.AddSingleton<IDownloadPreferences>(sp =>
             new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));
@@ -357,6 +358,13 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadsFeature>();
         services.AddSingleton<PlayingDownloads>();
         services.AddSingleton<DownloadManager>();
+        // Series monitors: their list for the queue's storage limits and the pages, and the runs that sync them with the server.
+        services.AddSingleton<MonitorBook>();
+        // The monitor writes the server has not taken yet (stops, and a create's choice), kept across starts.
+        services.AddSingleton(sp => new MonitorPendingFile(MonitorPendingFile.DefaultPath, sp.GetRequiredService<ILogger<MonitorPendingFile>>()));
+        services.AddSingleton<SeriesMonitors>();
+        // The airing calendar and the monitored series' titles and posters, for the Monitored list and the download dialog.
+        services.AddSingleton<ViewModels.Downloads.MonitorSchedule>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
         // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
         services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();

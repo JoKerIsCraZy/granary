@@ -7,7 +7,8 @@ namespace Granary.Core.Downloads;
 /// each null until fetched. <see cref="IsWatched"/>: the profile has watched it for sure (<see cref="DownloadRecord.IsWatched"/>).
 /// <see cref="IsPlaying"/>: a player of this app has it open now (<see cref="PlayingDownloads"/>). <see cref="ResumeMs"/> and
 /// <see cref="DurationMs"/>: where the profile left it and how long it is, as the record keeps them
-/// (<see cref="DownloadRecord.ResumeMs"/>, <see cref="DownloadRecord.DurationMs"/>).
+/// (<see cref="DownloadRecord.ResumeMs"/>, <see cref="DownloadRecord.DurationMs"/>). <see cref="Hold"/>: a storage limit keeps it
+/// from starting (<see cref="DownloadQueue.HoldOf"/>).
 /// </summary>
 public sealed record DownloadItem(
     string DownloadId,
@@ -32,7 +33,8 @@ public sealed record DownloadItem(
     bool IsWatched = false,
     bool IsPlaying = false,
     long? ResumeMs = null,
-    long? DurationMs = null)
+    long? DurationMs = null,
+    DownloadHold Hold = DownloadHold.None)
 {
     /// <summary>How much of the file is on this PC, 0 to 1; 1 once it is downloaded.</summary>
     public double Progress => State == DownloadState.Completed ? 1 : ExpectedBytes > 0 ? Math.Clamp((double)BytesDone / ExpectedBytes, 0, 1) : 0;

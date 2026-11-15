@@ -25,7 +25,115 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
     // This PC's own drives are never read: the tests that list drives give their own.
     private DownloadSettingsViewModel Settings(IDownloadPreferences? preferences = null, IUiDispatcher? dispatcher = null) =>
-        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher()) { DriveList = () => [] };
+        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher(), _h.Time) { DriveList = () => [] };
+
+    [Fact]
+    public void SimultaneousDownloads_OffersOneToFour_AndSavesTheChoice()
+    {
+        var settings = Settings();
+
+        Assert.Equal(["1", "2", "3", "4"], settings.SimultaneousChoices.Select(c => c.Label));
+        Assert.Equal("2", settings.SelectedSimultaneous?.Value);
+
+        settings.SelectedSimultaneous = settings.SimultaneousChoices[2];
+
+        Assert.Equal(3, _h.Preferences.SimultaneousDownloads);
+    }
+
+    [Fact]
+    public async Task TheDefaultQualitysLine_IsTheAppleAppsFooter_ForWhatTheServerOffers()
+    {
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability()));
+        var settings = Settings();
+        await settings.LoadAsync(Token);
+
+        Assert.Equal("Original prefers source quality and may prepare a compatibility file if this device needs one. Bitrate presets are "
+            + "prepared on the server when the original is larger, at up to the resolution shown. This is the default for every download and "
+            + "monitor; the download dialog can change it.", settings.QualityDescription);
+
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability(monitorQuality: false)));
+        var originals = Settings();
+        await originals.LoadAsync(Token);
+
+        Assert.EndsWith("This is the default for every download; the download dialog can change it. Monitored series download in original quality.",
+            originals.QualityDescription, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Storage_SaysWhatTheDownloadsUse_AndRemoveAllDeletesThemAfterAsking()
+    {
+        var confirmation = new FakeConfirmation { Answer = false };
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: 2 * GB, mediaItemId: "mv_1");
+        await _h.AddAsync("dl_2", DownloadState.Completed, size: GB, mediaItemId: "mv_2");
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: _h.NewManager(), confirmation: confirmation) { DriveList = () => [] };
+        await settings.LoadAsync(Token);
+
+        Assert.Equal(("3.0 GB", true), (settings.UsedText, settings.CanRemoveAll));
+
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+        Assert.Equal(("Remove all downloaded files?", "Remove All"), (confirmation.Asked[0].Title, confirmation.Asked[0].Action));
+        Assert.Equal(2, _h.Store.In(Scope7).Count);
+
+        confirmation.Answer = true;
+        await settings.RemoveAllCommand.ExecuteAsync(null);
+
+        Assert.Empty(_h.Store.In(Scope7));
+        Assert.Equal(("0 B", false), (settings.UsedText, settings.CanRemoveAll));
+    }
+
+    [Fact]
+    public async Task Storage_FollowsTheDownloadsWhileItShows_AndNoLongerOnceItIsLeft()
+    {
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: _h.NewManager(), confirmation: new FakeConfirmation()) { DriveList = () => [] };
+        settings.Attach();
+        Assert.Equal(("0 B", false), (settings.UsedText, settings.CanRemoveAll));
+
+        // A monitoring run kept the first download while Settings showed.
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: GB, mediaItemId: "mv_1");
+
+        Assert.Equal(("1.0 GB", true), (settings.UsedText, settings.CanRemoveAll));
+
+        settings.Detach();
+        await _h.AddAsync("dl_2", DownloadState.Completed, size: GB, mediaItemId: "mv_2");
+
+        Assert.Equal("1.0 GB", settings.UsedText);
+    }
+
+    [Fact]
+    public void MonitoringDefaults_SaveDeleteAfterWatching_AndAStorageLimitInStepsOfFive()
+    {
+        var settings = Settings();
+        Assert.Equal((false, 0d, "Storage limit: Unlimited"), (settings.DefaultDeleteWatched, settings.DefaultMonitorLimitGb, settings.DefaultMonitorLimitText));
+
+        settings.DefaultDeleteWatched = true;
+        settings.DefaultMonitorLimitGb = 25;
+
+        Assert.Equal((true, 25), (_h.Preferences.DefaultDeleteWatched, _h.Preferences.DefaultMonitorLimitGb));
+        Assert.Equal("Storage limit: 25 GB", settings.DefaultMonitorLimitText);
+
+        // A number typed in is held to the stepper's steps and range.
+        settings.DefaultMonitorLimitGb = 23;
+        Assert.Equal(25, _h.Preferences.DefaultMonitorLimitGb);
+        settings.DefaultMonitorLimitGb = 4000;
+        Assert.Equal(1000, _h.Preferences.DefaultMonitorLimitGb);
+    }
+
+    [Fact]
+    public void TheStorageLimitForDownloads_SaysItsLimit_AndIsSavedOnceTheSliderRests()
+    {
+        var settings = Settings();
+        Assert.Equal((0d, "No limit"), (settings.StorageLimitGb, settings.StorageLimitText));
+
+        settings.StorageLimitGb = 120;
+        settings.StorageLimitGb = 250;
+
+        Assert.Equal("250 GB", settings.StorageLimitText);
+        Assert.Equal(0, _h.Preferences.StorageLimitGb);
+        _h.Time.Advance(DownloadSettingsViewModel.SliderRest);
+        Assert.Equal(250, _h.Preferences.StorageLimitGb);
+    }
 
     [Fact]
     public async Task ChangeFolder_TakesAWritableFolder()
@@ -393,6 +501,20 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
         public bool NotifyWhenFinished => true;
 
+        public int SimultaneousDownloads => 2;
+
+        public int StorageLimitGb => 0;
+
+        public bool DefaultDeleteWatched => false;
+
+        public int DefaultMonitorLimitGb => 0;
+
+        public Task SetDefaultDeleteWatchedAsync(bool delete) => Task.CompletedTask;
+
+        public Task SetDefaultMonitorLimitGbAsync(int gigabytes) => Task.CompletedTask;
+
+        public Task SetStorageLimitGbAsync(int gigabytes) => Task.CompletedTask;
+
         public event EventHandler? Changed
         {
             add { }
@@ -410,5 +532,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public Task SetKeepWatchedAsync(bool keep) => Task.CompletedTask;
 
         public Task SetNotifyWhenFinishedAsync(bool notify) => Task.CompletedTask;
+
+        public Task SetSimultaneousDownloadsAsync(int count) => Task.CompletedTask;
     }
 }

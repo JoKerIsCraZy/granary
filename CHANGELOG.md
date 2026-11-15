@@ -18,12 +18,25 @@ release's section is what its update says it changes (docs/release.md).
   ("Example Movie is ready to watch offline"): in its window while it is in front, else as a Windows notification with
   Play and Open Downloads; a season or a series that finishes together is one message. Settings → Downloads → Notify
   when downloads finish turns these messages off, and Download settings on the Downloads page leads there. Downloads
-  wait on a metered connection unless Settings → Downloads allows them, and carry on where they stopped when Granary
-  starts again. X on a controller plays a
+  wait on a metered connection unless Settings → Downloads allows them, come two at a time unless Settings → Downloads →
+  Simultaneous Downloads says from one to four, and carry on where they stopped when Granary starts again. X on a controller plays a
   downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
   and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
   controller, which Windows' folder picker behind Change does not take. Signing out of a server or
   removing it deletes its downloads after asking. Your Silo server has to allow downloads.
+- **Monitored series:** a series' Download, from its page or its ⋯ menu, has One Time and Monitor: Monitor keeps new
+  episodes coming to this PC as they air, from all episodes, future ones or the last season on, in the quality you pick
+  when your Silo server allows it, with Delete after watching and a storage limit; for a monitored series it saves what
+  you change or stops monitoring, after asking. The Downloads page lists your monitored series with what each takes and
+  what comes next ("Episode 6 on Thursday"). A monitored series brings its new episodes by itself: Granary asks the
+  server for them when it starts, when you switch profiles, when a notification comes and every four hours, and downloads
+  what the server registered like any other download, in episode order. A monitor with Delete after watching deletes
+  the episodes you finished at the end of each of these runs, never the one that plays. A monitor's storage limit holds
+  back the episodes that would pass it, and so does Settings → Downloads → Storage limit for downloads, a slider, which
+  the download dialog keeps to as well; nothing is deleted to make room. Settings → Downloads → Monitoring Defaults says
+  what a new monitor starts with: Delete after watching, and a storage limit. Settings → Downloads also explains the
+  default quality as Silo's iPhone and iPad app does, and its new Storage says what your downloads use, with Remove All
+  Downloads, after asking. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server

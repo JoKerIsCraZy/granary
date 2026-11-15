@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Downloads;
+using Granary.Core.ViewModels.Downloads;
 
 namespace Granary.Core.ViewModels;
 
@@ -77,7 +78,8 @@ public sealed partial class ItemDetailViewModel
             if (downloads.CanDownload && _downloadOffers is { } offers && _contentId.Length > 0)
             {
                 string seriesId = _contentId;
-                await downloads.OfferReadAsync(cancellationToken => offers.ReadAsync(seriesId, CatalogItemTypes.Series, cancellationToken));
+                await downloads.OfferReadAsync(cancellationToken => offers.ReadAsync(seriesId, CatalogItemTypes.Series, cancellationToken),
+                    new SeriesMonitorTarget(seriesId, item.Title));
             }
         }
         else if (DownloadState() is { OpensDownloads: true })

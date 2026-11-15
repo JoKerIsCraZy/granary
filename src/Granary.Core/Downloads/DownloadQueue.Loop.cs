@@ -277,25 +277,32 @@ public sealed partial class DownloadQueue
     }
 
     // Starts the scope's transfers, while it is still the active one: a session change since the pass took it has the next pass
-    // start the new scope's, and none of this one's.
+    // start the new scope's, and none of this one's. A monitored series' episode that a storage limit holds is passed over.
     private void StartTransfers(DownloadScope scope, Uri server, long generation)
     {
         var now = _time.GetUtcNow();
-        foreach (var download in _store.In(scope).Where(IsWanted).OrderBy(d => d.Record.CreatedAt))
+        var all = _store.All;
+        LimitTally? tally = null;
+        foreach (var download in all.Where(d => d.Record.Scope == scope && IsWanted(d)).OrderBy(d => d.Record.CreatedAt))
         {
             var key = Key.Of(download.Record);
             lock (_gate)
             {
-                if (_stopping || _running.Count >= MaxConcurrent || _current.Scope != scope || _current.Server != server || IsClearedLocked(scope))
+                if (_stopping || _running.Count >= Concurrency || _current.Scope != scope || _current.Server != server || IsClearedLocked(scope))
                 {
                     return;
                 }
-                if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now))
+                tally ??= TallyLocked(all);
+                if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now)
+                    || HoldLocked(download, tally) != DownloadHold.None)
                 {
                     continue;
                 }
                 var run = new Running(key, server, download.Record.Revision, generation);
+                long before = TakenLocked(download);
                 _running[key] = run;
+                // Under way, it takes what it comes to: the episodes weighed after it in this pass count that.
+                tally.Add(download.Record, TakenLocked(download) - before);
                 run.Task = Task.Run(() => RunAsync(run));
             }
         }
@@ -425,13 +432,18 @@ public sealed partial class DownloadQueue
         {
             next = Earliest(next, activation.At);
         }
+        var all = runnable ? _store.All : [];
         lock (_gate)
         {
-            bool canStart = !metered && !_stopping && _running.Count < MaxConcurrent;
+            bool canStart = !metered && !_stopping && _running.Count < Concurrency;
+            LimitTally? tally = null;
             foreach (var download in downloads)
             {
                 var key = Key.Of(download.Record);
-                if (canStart && IsWanted(download) && !_running.ContainsKey(key) && !_resetting.Contains(key) && _retries.TryGetValue(key, out var retry))
+                // A download a storage limit holds does not start when its retry falls due: its time is no time to look again.
+                // What lifts the hold (a delete, a limit raised, a monitor changed) wakes the loop itself.
+                if (canStart && IsWanted(download) && !_running.ContainsKey(key) && !_resetting.Contains(key) && _retries.TryGetValue(key, out var retry)
+                    && HoldLocked(download, tally ??= TallyLocked(all)) == DownloadHold.None)
                 {
                     next = Earliest(next, retry.At);
                 }

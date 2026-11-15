@@ -2945,7 +2945,8 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 - `GET /api/v2/capabilities/downloads` (profile) → `enabled`, `allowed` (`download_allowed` and no demo-mode refusal),
   `quality_presets` (always an array, best first; empty without downloads), `quality_options` (`[{ preset, bitrate_kbps?,
   max_height? }]`, one per preset, both numbers absent for `original`), `proxy_delivery`, `preparation_progress`,
-  `prepare_again`, `revoked_removes_local`. Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
+  `prepare_again`, `revoked_removes_local`, and for series monitors `series_monitoring`, `monitoring_modes` and
+  `monitor_quality` (14.8). Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
   downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`. The download
   queue reads it again whenever a profile's downloads become the active ones: `revoked_removes_local` lets a revoked
   download's files go (14.6); a read that fails leaves it off. `proxy_delivery` is not used: see `/file-proxy` in 14.4.
@@ -3429,6 +3430,58 @@ is checked afresh, in this order:
   status, a wait or mpv's error text in Granary's own wording). Any other text, such as a server's terminal message or
   an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
   and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
+
+### 14.8 Series monitoring
+
+A monitor keeps a series downloaded on this PC (`silo-server/docs/downloads-api.md`, 8, 9.2 and 11.8); it belongs to the
+account, the profile and the PC (`X-Silo-Device-Id`). The server has no worker of its own: the client syncs each monitor,
+which registers the episodes it takes, and then takes those new entries from the registry (14.3). Every call goes through
+`Api/Downloads/DownloadSubscriptionsApi`, bound to its profile, as Silo's Apple app calls them
+(`APIv2Client+DownloadSubscriptions.swift`). Only the Apple app monitors series; the Android app has unused plumbing, the web
+none.
+
+- Capability (14.1): `series_monitoring` (monitors can be made), `monitoring_modes` (the modes a new monitor may take:
+  `all`, `future`, `latest_season`, `specific_seasons`) and `monitor_quality` (a monitor keeps a `quality`; without it,
+  monitors download originals and the member is absent). Granary offers Monitor only when downloads are usable and
+  `series_monitoring` is set (`DownloadCapability.CanMonitorSeries`); a monitor that exists stays shown, so it can be stopped.
+- `GET /api/v2/downloads/subscriptions?limit=100[&cursor=]` → `{ items: [DownloadSubscription], page }`, newest first, paused
+  ones included. Every page is read before a monitor counts as gone; a cursor or a monitor that comes back, a page a cursor asked for
+  that says nothing of its paging, a page over the
+  limit, a monitor without `id`, `series_id` or `etag`, or more than 1000 pages makes the list not whole, and nothing is
+  taken from it. `GET .../subscriptions/{id}` → one, with its current `etag`.
+- `DownloadSubscription`: `id`, `series_id`, `mode`, `season_numbers` (int array), `target_season?` (`latest_season`'s
+  first season), `delete_watched`, `max_storage_bytes` (int64, 0 for no limit), `quality?`, `active` (false while paused),
+  `created_at`, `updated_at`, `etag` (the validator, quotes and all).
+- `POST /api/v2/downloads/subscriptions` with `{ series_id, mode, season_numbers? (only for specific_seasons), delete_watched,
+  max_storage_bytes, quality? (only with monitor_quality) }` → `200` monitor. When this PC already monitors the series, the
+  server answers with that monitor unchanged, so Granary then sends what differs as a `PATCH`. Never sent twice: after no
+  answer, a 409 or a 5xx, the list (above) tells whether it was made. A 422 (`validation_failed`) is a choice the server does
+  not take.
+- `PATCH /api/v2/downloads/subscriptions/{id}` with `If-Match: <etag>` and only what changes (a member left out stays; null
+  is refused) → `200` monitor with its new `etag`. A quality is sent only when it changes (the server checks the account's
+  transcode permission for any quality it gets), and so is the mode. `412` (the validator is stale) or `409` (the monitor
+  changed while the server applied the write): Granary reads the monitor again and says it changed, in the Apple app's words,
+  and sends nothing more; the viewer saves again over what they now see. The Apple app sends the same fields once more under
+  the new validator; Granary does not, as for every other write with a version (`AGENTS.md`). `404`: the monitor is gone.
+  `428` (no `If-Match`) cannot happen: every write sends one.
+- `DELETE /api/v2/downloads/subscriptions/{id}` with `If-Match` → `204`; `404` is gone already. The downloads it registered
+  stay, on the server and the PC. A `412` or `409` reads the validator again and deletes once more, as the Apple app does:
+  stopping does not depend on what changed.
+- `POST /api/v2/downloads/subscriptions/sync?limit=100[&cursor=]` with `{ subscription_id, etag }` (the `etag` read before the
+  first page, on every page) → `{ subscription_id, registered, examined, page: { has_more, next_cursor? } }`. Pages follow
+  `next_cursor` while `has_more`, also when `registered` is 0. A page that got no answer is sent again with the same body and
+  cursor, twice at most, a second and two seconds later; a repeated page skips what it registered already. `409`: the monitor
+  changed, so it is read again and the sync starts over under its new `etag`, twice at most. `404`: the monitor is gone, or
+  its series is no longer the profile's; a read of the monitor tells which. An answer that names another monitor is no
+  answer. Paused monitors register nothing and are not synced. A `delete_watched` monitor's sync passes over the episodes the
+  profile finished, and no sync registers an episode this PC deleted while the monitor existed (14.6's `DELETE`).
+- Monitor rows: the sync's entries are the registry's own (14.3): `content_id` the series, `episode_id` the episode, `status`
+  `ready`, or `preparing` for a bitrate `quality`. Granary takes every entry of a monitored series (`content_id` is one of the
+  profile's monitors' `series_id`) that it does not keep and has no `DELETE` waiting for, whose status is `preparing`, `ready`,
+  `downloading` or `completed`, with its manifest (14.5) for its title and numbers; it downloads as any other. The Apple app
+  takes every unknown entry; Granary only a monitored series', so an entry from elsewhere never starts downloading.
+- `max_storage_bytes` is the client's to keep (the server only roughly holds registration back): Granary starts no
+  episode of the series that would take its downloads past it, and deletes nothing for it.
 
 ## Appendix: where docs and code disagree
 

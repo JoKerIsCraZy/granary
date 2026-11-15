@@ -120,6 +120,11 @@ public partial class App : Application
         var progress = Services.GetRequiredService<OfflineProgressSync>();
         progress.Start();
         _window.Closed += (_, _) => progress.Dispose();
+        // Monitored series bring their new episodes: at the start, with each profile, every four hours and after a change
+        // (docs/architecture.md, "Series monitoring").
+        var monitors = Services.GetRequiredService<SeriesMonitors>();
+        monitors.Start();
+        _window.Closed += (_, _) => monitors.Dispose();
         // The server's accent recolours Granary as it arrives, and with every other server.
         var accent = Services.GetRequiredService<ServerAccent>();
         accent.PropertyChanged += (_, e) =>
@@ -141,6 +146,8 @@ public partial class App : Application
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
+        // A new notification syncs the monitored series, as a push does in Silo's Apple app: it may be a new episode's.
+        realtime.NotificationArrived += (_, _) => monitors.SyncSoon();
         realtime.Start();
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
         // The phone remote follows its switch, the session and the PC's address from now on (Settings → Playback → This PC).

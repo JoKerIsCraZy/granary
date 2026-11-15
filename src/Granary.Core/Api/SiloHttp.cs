@@ -258,6 +258,29 @@ public sealed class SiloHttp(HttpClient http)
     }
 
     /// <summary>
+    /// As the <c>SendAsProfileAsync</c> that answers JSON, for a write the server takes only at <paramref name="version"/>
+    /// (<c>If-Match</c>): one changed since answers 412. The answer carries its own new version, as a series monitor does.
+    /// </summary>
+    public async Task<TResponse> SendIfMatchAsProfileAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, string profileId,
+        string version, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId);
+        IfMatch(request, version);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the other <c>SendIfMatchAsProfileAsync</c>, for a bodiless write that answers 204, as a delete.</summary>
+    public async Task SendIfMatchAsProfileAsync(HttpMethod method, Uri server, string path, string profileId, string version,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId);
+        IfMatch(request, version);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// For a download read as it arrives: the answer once its headers are in, whatever its status, for the caller to
     /// read and dispose. <paramref name="url"/> is absolute; credentials still go only beneath <paramref name="server"/>.
     /// </summary>

@@ -6,7 +6,9 @@
     comes; a series' card opens its episodes (DownloadedSeriesPage). Play, Pause, Resume, Retry, More Info and Delete are in
     each card's ⋮ menu (DownloadCardActions). Above them, while the profile has watched downloads and does not keep them,
     the Android app's Reclaim Watched; and, after a start that could not reach the server, a note that says so, with Retry.
-    The page is cached and follows the downloads only while it shows.
+    Above the films, the Apple app's Monitored: each monitored series' poster, what it takes and what comes next; a card opens
+    its series' download dialog on Monitor, its menu has Go to Series and Options. The page is cached and follows the
+    downloads only while it shows.
 -->
 <Page
     x:Class="Granary.App.Views.DownloadsPage"
@@ -82,6 +84,13 @@
                                MaxWidth="448" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
                 </StackPanel>
             </Grid>
+
+            <!-- The monitored series, running ones first: the Apple app's Monitored list as the page's own cards. -->
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasMonitored, Mode=OneWay}">
+                <TextBlock Text="{x:Bind MonitoredTitle}" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <controls:MediaGrid x:Name="MonitoredGrid" ItemsSource="{x:Bind ViewModel.Monitored}" ShowsAllLines="True"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" />
+            </StackPanel>
 
             <!--
                 The films, then the series, each a library's grid of posters (MediaGrid) whose cards follow their downloads in

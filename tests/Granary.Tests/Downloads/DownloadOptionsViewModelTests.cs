@@ -183,6 +183,44 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task PastTheStorageLimitForDownloads_SaysSo_AndCannotStart()
+    {
+        _h.Disk.Set(200 * GB);
+        await _h.Preferences.SetStorageLimitGbAsync(10);
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: 5 * GB, mediaItemId: "mv_9");
+
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        Assert.False(options.CanStart);
+        Assert.True(options.IsShortOfSpace);
+        Assert.Equal("Over your storage limit for downloads: 8.0 GB needed, 5.0 GB left of 10.0 GB.", options.SpaceText);
+        Assert.False(await options.StartAsync());
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, CreatePath));
+
+        await _h.Preferences.SetStorageLimitGbAsync(20);
+        var roomy = await ForTitleAsync(Movie, [OneFile]);
+
+        Assert.True(roomy.CanStart);
+        Assert.Equal("200.0 GB free on this PC.", roomy.SpaceText);
+    }
+
+    [Fact]
+    public async Task Download_CountsWhatTheDownloadsTakeAsItIsPressed_NotAsTheDialogOpened()
+    {
+        _h.Disk.Set(200 * GB);
+        await _h.Preferences.SetStorageLimitGbAsync(10);
+        var options = await ForTitleAsync(Movie, [OneFile]);
+        Assert.True(options.CanStart);
+
+        // Downloads went on while the dialog showed.
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: 5 * GB, mediaItemId: "mv_9");
+
+        Assert.False(await options.StartAsync());
+        Assert.Equal("Over your storage limit for downloads: 8.0 GB needed, 5.0 GB left of 10.0 GB.", options.SpaceText);
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, CreatePath));
+    }
+
+    [Fact]
     public async Task EnoughSpace_SaysWhatIsFree()
     {
         _h.Disk.Set(200 * GB);

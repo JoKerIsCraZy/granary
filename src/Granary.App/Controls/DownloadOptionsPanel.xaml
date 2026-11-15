@@ -4,7 +4,9 @@
     a download disc, the quality line and the size (one row per file, a choice here: Download starts the chosen one), and
     the footer under more than one. Granary adds the qualities your Silo server offers as pills, the size of what starts, the
     free space on this PC, and the web's error in an error bar. From a card, the title's files come while it shows: its
-    parts follow the view model. Shown in a ContentDialog (Services/DownloadOptionsDialog.cs).
+    parts follow the view model. A series that can be monitored has the Apple app's One Time | Monitor above it
+    (SeriesDownloadSheet.swift): Monitor's rules as rows, its quality, Delete after watching, its storage limit, one sentence
+    on what comes, and Stop Monitoring, which asks in place. Shown in a ContentDialog (Services/DownloadOptionsDialog.cs).
 -->
 <UserControl
     x:Class="Granary.App.Controls.DownloadOptionsPanel"
@@ -35,6 +37,14 @@
     </UserControl.Resources>
 
     <StackPanel Width="400" Spacing="16">
+        <!-- One Time | Monitor, with the Apple app's line under it: only for a series that can be monitored. -->
+        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsKinds, Mode=OneWay}">
+            <controls:PillChoices ItemsSource="{x:Bind ViewModel.Kinds, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedKind, Mode=TwoWay}"
+                                  AutomationProperties.Name="Download" />
+            <TextBlock Text="{x:Bind ViewModel.KindHint, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+        </StackPanel>
+
+        <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.ShowsOneTime, Mode=OneWay}">
         <!-- The web's description; from a card, its words while the title is read, or why there is nothing to download. -->
         <TextBlock Text="{x:Bind ViewModel.DescriptionText, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
 
@@ -111,6 +121,64 @@
 
         <TextBlock Text="{x:Bind Footer}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}"
                    Visibility="{x:Bind ViewModel.ShowsFooter, Mode=OneWay}" />
+        </StackPanel>
+
+        <!-- Monitor: the Apple app's rules as rows (a title and its line), then its settings card's choices. -->
+        <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsMonitorChosen, Mode=OneWay}">
+            <ListView ItemsSource="{x:Bind ViewModel.MonitorRows, Mode=OneWay}" SelectionMode="Single" MaxHeight="280"
+                      SelectedItem="{x:Bind ViewModel.SelectedRule, Mode=TwoWay}" ItemContainerStyle="{StaticResource VersionRowStyle}"
+                      ContainerContentChanging="OnRuleContainerChanging" AutomationProperties.Name="Monitor">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="downloads:MonitorRuleRow">
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="{x:Bind Title}" FontSize="14" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                       Foreground="{StaticResource SiloForegroundBrush}" />
+                            <TextBlock Text="{x:Bind Detail}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ShowsMonitorQualities, Mode=OneWay}">
+                <TextBlock Text="QUALITY" Style="{StaticResource EyebrowStyle}" AutomationProperties.AccessibilityView="Raw" />
+                <controls:PillChoices ItemsSource="{x:Bind ViewModel.MonitorQualities, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedMonitorQuality, Mode=TwoWay}" AutomationProperties.Name="Quality" />
+            </StackPanel>
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Delete after watching" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                <ToggleSwitch Grid.Column="1" IsOn="{x:Bind ViewModel.DeleteWatched, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0"
+                              AutomationProperties.Name="Delete after watching" />
+            </Grid>
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Storage limit" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                <ComboBox Grid.Column="1" ItemsSource="{x:Bind ViewModel.StorageLimits, Mode=OneWay}" MinWidth="120"
+                          SelectedItem="{x:Bind ViewModel.SelectedStorageLimit, Mode=TwoWay}" AutomationProperties.Name="Storage limit" />
+            </Grid>
+
+            <TextBlock Text="{x:Bind ViewModel.MonitorSummary, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+
+            <!-- A monitored series: Stop Monitoring, which asks in place (a dialog cannot open over this one). -->
+            <Button Content="Stop Monitoring" Command="{x:Bind ViewModel.StopMonitoringCommand}" HorizontalAlignment="Stretch"
+                    Foreground="{StaticResource SiloDestructiveBrush}" Visibility="{x:Bind ViewModel.ShowsStopMonitoring, Mode=OneWay}" />
+            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsConfirmingStop, Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.StopTitle}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                           TextWrapping="Wrap" Foreground="{StaticResource SiloForegroundBrush}" />
+                <TextBlock Text="{x:Bind StopMessage}" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="Keep" Command="{x:Bind ViewModel.KeepMonitoringCommand}" />
+                    <Button Content="Stop" Command="{x:Bind ViewModel.ConfirmStopCommand}" Foreground="{StaticResource SiloDestructiveBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
 
         <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                  Message="{x:Bind ViewModel.ErrorText, Mode=OneWay}" />

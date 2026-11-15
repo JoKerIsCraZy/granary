@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.Downloads;
 
 /// <summary>
-/// Runs the active profile's downloads (docs/architecture.md, "The queue"): at most <see cref="MaxConcurrent"/> transfers at
-/// once, oldest first. One loop decides what starts, on a wake: <see cref="Wake"/>, a session change, the network or this PC's
+/// Runs the active profile's downloads (docs/architecture.md, "The queue"): as many transfers at once as Settings → Downloads
+/// says (<see cref="IDownloadPreferences.SimultaneousDownloads"/>, two by default), oldest first. One loop decides what starts, on a wake: <see cref="Wake"/>, a session change, the network or this PC's
 /// settings changing, the store changing, a transfer ending, or the earliest time something waits for. Transfers stop at once
 /// when their download is deleted or paused, the connection turns metered without the setting, the profile changes, or the
 /// queue stops; each keeps its bytes and carries on with <c>Range</c> and <c>If-Range</c>. What the server is told and asked
@@ -20,9 +20,6 @@ namespace Granary.Core.Downloads;
 /// </remarks>
 public sealed partial class DownloadQueue : IDisposable
 {
-    /// <summary>Transfers at once, as Silo's Apple app runs them.</summary>
-    public const int MaxConcurrent = 2;
-
     /// <summary>
     /// What a transfer found interrupted at the start gives up of its part: at most this much was written but not yet on the
     /// disk when Granary or Windows stopped (the transfer flushes every 3 MiB of 1 MiB writes).
@@ -59,6 +56,7 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly IDownloadPreferences _preferences;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadQueue> _logger;
+    private readonly MonitorBook? _monitors;
 
     // Guards every field below; the store and the handlers' callers are never called while it is held, except the store's
     // reads, which take only the store's own lock.
@@ -134,7 +132,7 @@ public sealed partial class DownloadQueue : IDisposable
     private ActivationRetry? _activationRetry;
 
     public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadAssets assets, DownloadsApi api, ISessionManager session,
-        INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
+        INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger, MonitorBook? monitors = null)
     {
         _store = store;
         _transfer = transfer;
@@ -145,8 +143,15 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences = preferences;
         _time = time;
         _logger = logger;
+        _monitors = monitors;
         _stopToken = _stop.Token;
     }
+
+    /// <summary>
+    /// How many transfers run at once now: Settings → Downloads' Simultaneous Downloads, held to 1 to 4. A lower number lets the
+    /// ones under way finish; a higher one starts more at the next pass, which the setting's change wakes.
+    /// </summary>
+    private int Concurrency => Math.Clamp(_preferences.SimultaneousDownloads, DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous);
 
     /// <summary>A download's bytes on disk changed; raised on a transfer's thread, at most every half second for each.</summary>
     public event EventHandler<string>? Progressed;
@@ -213,6 +218,10 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences.Changed += OnConditionsChanged;
         _store.Changed += OnStoreChanged;
         _store.ClearEnded += OnClearEnded;
+        if (_monitors is not null)
+        {
+            _monitors.Changed += OnMonitorsChanged;
+        }
         var scope = DownloadScope.Of(_session);
         var server = _session.ActiveServer?.BaseUri;
         lock (_gate)
@@ -341,6 +350,10 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences.Changed -= OnConditionsChanged;
         _store.Changed -= OnStoreChanged;
         _store.ClearEnded -= OnClearEnded;
+        if (_monitors is not null)
+        {
+            _monitors.Changed -= OnMonitorsChanged;
+        }
     }
 
     // Raised on the UI thread: the new scope is taken here, and the other scopes' transfers stop. A scope that comes back after

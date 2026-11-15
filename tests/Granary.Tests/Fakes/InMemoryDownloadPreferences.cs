@@ -16,6 +16,48 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
 
     public bool NotifyWhenFinished { get; private set; } = true;
 
+    public int SimultaneousDownloads { get; private set; } = DownloadPreferenceLimits.DefaultSimultaneous;
+
+    public int StorageLimitGb { get; private set; }
+
+    public bool DefaultDeleteWatched { get; private set; }
+
+    public int DefaultMonitorLimitGb { get; private set; }
+
+    public Task SetDefaultDeleteWatchedAsync(bool delete)
+    {
+        DefaultDeleteWatched = delete;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    public Task SetDefaultMonitorLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxMonitorLimitGb);
+        DefaultMonitorLimitGb = gigabytes;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    public Task SetStorageLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxStorageLimitGb);
+        StorageLimitGb = gigabytes;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    public Task SetSimultaneousDownloadsAsync(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, DownloadPreferenceLimits.MinSimultaneous);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, DownloadPreferenceLimits.MaxSimultaneous);
+        SimultaneousDownloads = count;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
     public event EventHandler? Changed;
 
     public Task LatestSave => Task.CompletedTask;
