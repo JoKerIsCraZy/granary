@@ -250,6 +250,25 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeriesMonitoredAgain_WhileItsStopWaits_KeepsItsMonitor_AlsoWhenTheCreatesAnswerIsLost()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, NoAnswer());
+
+        var result = await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+        await Monitors.SyncAsync(Token);
+
+        // The server still has it, as the stop never reached it: it is the series' monitor again, and its stop is not sent.
+        Assert.Equal(MonitorResult.Saved, result);
+        Assert.Equal("sub_1", Monitors.For("sr_1")?.Id);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, Monitor1Path));
+    }
+
+    [Fact]
     public async Task Create_ThatCouldNotConnect_SentNothing_AndFails()
     {
         _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.NetworkError());

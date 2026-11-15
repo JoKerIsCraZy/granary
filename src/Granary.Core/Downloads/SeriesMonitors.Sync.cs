@@ -71,7 +71,9 @@ public sealed partial class SeriesMonitors
     }
 
     // The whole list, or nothing from it. Monitors whose stop waits to be sent stay out: the server lists them until it goes.
-    private async Task<bool> ReadListAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken)
+    // A create that got no clear answer reads it for its series (<paramref name="monitoring"/>): that series' monitor is wanted
+    // again, so a stop of it still waiting is no longer sent, and it stays in.
+    private async Task<bool> ReadListAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken, string? monitoring = null)
     {
         IReadOnlyList<DownloadSubscription> listed;
         try
@@ -86,6 +88,10 @@ public sealed partial class SeriesMonitors
         if (!IsStill(scope))
         {
             return false;
+        }
+        if (monitoring is not null && listed.FirstOrDefault(m => m.SeriesId == monitoring) is { } wanted)
+        {
+            ForgetStop(scope, wanted.Id);
         }
         var stopping = StopsOf(scope);
         _book.Replace(scope, [.. listed.Where(m => !stopping.ContainsKey(m.Id))]);

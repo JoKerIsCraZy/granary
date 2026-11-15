@@ -36,7 +36,7 @@ public sealed partial class SeriesMonitors
             catch (Exception ex) when (IsUncertain(ex, token))
             {
                 _logger.LogInformation("A monitor's create got no clear answer ({Failure}); the list is read", Describe(ex));
-                if (!await ReadListAsync(scope, server, token).ConfigureAwait(false) || _book.ForSeries(scope, seriesId) is not { } listed)
+                if (!await ReadListAsync(scope, server, token, monitoring: seriesId).ConfigureAwait(false) || _book.ForSeries(scope, seriesId) is not { } listed)
                 {
                     return MonitorResult.Uncertain;
                 }

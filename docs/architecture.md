@@ -1615,7 +1615,8 @@ titles of their series as a download dialog or a download named them.
   Apple app takes every entry it does not know; Granary only a monitored series'. Once kept, it downloads as any other:
   the queue's order, metered connections, the drive and pause all hold.
 - **Make, change, stop.** `CreateAsync` sends the create once; no answer, a 409 or a 5xx reads the list, which tells whether
-  the server made it (`Uncertain` when it does not). The server answers a series this PC monitors already with that monitor
+  the server made it (`Uncertain` when it does not); a stop of that series' monitor still waiting is then no longer sent,
+  as the series is wanted again. The server answers a series this PC monitors already with that monitor
   as it is, so what differs from the choice goes as a change. `UpdateAsync` changes a monitor under the validator it was read
   with: a 412 or 409 reads it again and answers `Changed`, sending nothing more (the Apple app sends the same change again
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
