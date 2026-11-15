@@ -323,7 +323,7 @@
                             <!--
                                 Download in the web's library group, after Add to Collection (ActionBar.tsx). A title on this PC
                                 reads its status instead ("Downloading · 42%", "Downloaded"), opens the Downloads page, and has
-                                Delete download, Granary's own, under it.
+                                the Apple app's Delete download under it.
                             -->
                             <MenuFlyoutItem Text="{x:Bind ViewModel.DownloadLabel, Mode=OneWay}" Command="{x:Bind ViewModel.OpenDownloadCommand}"
                                             Visibility="{x:Bind ViewModel.ShowsDownload, Mode=OneWay}">
@@ -331,7 +331,7 @@
                                     <FontIcon Glyph="&#xE896;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Delete download" Command="{x:Bind ViewModel.DeleteDownloadCommand}"
+                            <MenuFlyoutItem Text="{x:Bind t:AppText.Get('granary.downloads.delete')}" Command="{x:Bind ViewModel.DeleteDownloadCommand}"
                                             Visibility="{x:Bind ViewModel.CanDeleteDownload, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE74D;" />

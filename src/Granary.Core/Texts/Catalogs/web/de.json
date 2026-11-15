@@ -107,6 +107,12 @@
       "value": "Erneut versuchen"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "Zu viele Anfragen. Warte kurz und versuche es erneut."
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -707,6 +713,30 @@
     {
       "type": 0,
       "value": "Empfohlenes Alter anzeigen"
+    }
+  ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "Download-Qualität"
+    }
+  ],
+  "settingsManifest.downloads.default_quality.option.original": [
+    {
+      "type": 0,
+      "value": "Original"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "Schlägt nicht vor, Speicherplatz von fertig geschauten Downloads freizugeben."
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "Gesehene Downloads behalten"
     }
   ],
   "settingsManifest.playback.audio_language.unsetLabel": [
@@ -8642,6 +8672,12 @@
       "value": "Serie durchsuchen"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "Herunterladen"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -9268,6 +9304,12 @@
       "value": "SDH"
     }
   ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "Keine Mediendateien für dieses Element."
+    }
+  ],
   "web.detail.mediaInfo.row.bitrate": [
     {
       "type": 0,
@@ -9686,6 +9728,40 @@
     {
       "type": 0,
       "value": "Version"
+    }
+  ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "Wähle eine Datei zum Herunterladen. Achte darauf, dass genug Speicherplatz frei ist."
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "Größere Dateien benötigen mehr Speicherplatz."
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "Der Download konnte nicht gestartet werden. Prüfe den Zugriff und versuche es erneut."
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "Download"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "Download: "
+    },
+    {
+      "type": 1,
+      "value": "title"
     }
   ],
   "web.home.addRow.libraries": [
@@ -10479,6 +10555,24 @@
       "value": "Zur Merkliste hinzufügen"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "Die Details des Eintrags konnten nicht geladen werden."
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "Wird geladen …"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "Aktuelle Details des Eintrags werden geladen …"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -10495,6 +10589,12 @@
     {
       "type": 0,
       "value": "Von Anfang an abspielen"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "Versuche es erneut."
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -10525,6 +10625,12 @@
     {
       "type": 0,
       "value": "In Empfehlungen anzeigen"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "Erneut versuchen"
     }
   ],
   "web.item.rating.label": [

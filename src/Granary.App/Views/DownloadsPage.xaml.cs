@@ -41,12 +41,14 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost,
 
     public string SettingsTitle => DownloadsViewModel.SettingsTitle;
 
-    /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus; Go to Series and Options on a monitor's.</summary>
+    public string ReclaimTitle => DownloadsViewModel.ReclaimTitle;
+
+    /// <summary>Play, Pause, Resume, Retry, More Info and Delete download in the cards' menus; Go to series and Options on a monitor's.</summary>
     public ICardMenuSource CardMenu => ViewModel.Actions;
 
     /// <summary>
     /// The last card of a section went with the focus: the next section's first takes it, or the last section's before it's
-    /// last; none is left: Reclaim Watched when it shows, else Download settings. Whatever is left, a keyboard, a controller or a
+    /// last; none is left: Reclaim watched when it shows, else Download settings. Whatever is left, a keyboard, a controller or a
     /// remote carries on from there.
     /// </summary>
     public void FocusAfterLastCard(MediaGrid grid, FocusState state)
@@ -65,7 +67,7 @@ public sealed partial class DownloadsPage : Page, ICardMenuHost, ICardFocusHost,
     /// <summary>
     /// A controller's bumpers: the page has no tabs, but sections, Monitored, Films and Series, so a bumper goes to the first card of
     /// the one before or after the section focus is in, as a bumper picks the tab beside the chosen one, and stops at the ends.
-    /// From above them (Retry, Reclaim Watched, Download settings) or the sidebar, RB goes to the first section with cards. A section without
+    /// From above them (Retry, Reclaim watched, Download settings) or the sidebar, RB goes to the first section with cards. A section without
     /// cards is stepped over.
     /// </summary>
     void IPadSections.StepSection(int by)

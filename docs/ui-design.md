@@ -282,18 +282,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
   download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
   without your Silo server.". While the profile has watched downloads that are whole on this PC, an outline
-  button "Reclaim Watched" (History's outline button, at the left) stands above the list. The words are the Android
-  app's throughout: the button and the title of its question ("Reclaim Watched"), the question ("Delete 2 watched
-  downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its yes ("Reclaim"). The size is
+  button "Reclaim watched" (History's outline button, at the left) stands above the list. The words are the Android
+  app's throughout, in the web's sentence case: the button and the title of its question ("Reclaim watched"), the
+  question ("Delete 2 watched downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its
+  yes ("Reclaim"). The size is
   the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
   Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
   hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before
-  its label, in Reclaim Watched's outline pill, opens Settings → Downloads
+  its label, in Reclaim watched's outline pill, opens Settings → Downloads
   over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
-  Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
+  Retry and Reclaim watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
   download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
   is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
   only the space used until the new folder's is read. Then, while the profile monitors a series, "Monitored" (the Apple app's
@@ -306,10 +307,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber (the limit that holds its first
   held episode: the monitor's, or Settings → Downloads' for every download), "Paused", "Up to date", or "Monitoring"
   before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
-  has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
-  downloads shows no empty box. Then "Films" and
-  "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
-  gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
+  has the Apple app's Go to series (the series' page) and Options (that dialog). A page with monitored series and no
+  downloads shows no empty box. Then "Movies" and "Series" (the Apple app's names for them in its storage card,
+  `downloads.storage.movies` and `.series`; the row titles' 20 px semibold), each a library's grid of Granary's own
+  cards (`MediaGrid`, its columns and gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
   files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
   title stands in, as on any card. Every card has three lines, the two under the title in the caption's style (12 px,
@@ -345,17 +346,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
   too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
-  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete All
-  Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
-  from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
+  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
+  episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
+  from your Silo server." with "Delete 3 downloads" ("Delete download" for one). Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows, else Download settings. A controller's bumpers go between
-  Films and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
+  film, and with neither left Reclaim watched when it shows, else Download settings. A controller's bumpers go between
+  Movies and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
-  the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
+  the header, above Reclaim watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
   your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
   button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
   ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
@@ -837,15 +838,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     every season's episodes with a file that are not on this PC yet. The page lists one season's episodes at most, so the
     item stays once all are here, and its dialog reads them as a card's does and says so. A title on
     this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
-    available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
-    page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
-    server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
-    downloads: the title's progress, and its episodes' on a season's page. Its cards (the episodes of a season's grid,
-    More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as every card does
-    (Components, cards above); the page adds none to them.
+    available"), which opens the Downloads page, and the Apple app's "Delete download" (the bin) under it, which asks first
+    as the Downloads page does (the Apple app's "Delete this download?", "This removes the downloaded copy from this PC.
+    Nothing is deleted from your Silo server.", Delete and Cancel); both stay whatever the server says now. While the page
+    shows, the items follow the downloads: the title's progress, and its episodes' on a season's page. Its cards (the
+    episodes of a season's grid, More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as
+    every card does (Components, cards above); the page adds none to them.
   - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
     Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season,
-    "Download: Example Series · All Episodes" for a series, the Apple app's name for a series' every episode), "Choose
+    "Download: Example Series · All episodes" for a series, the Apple app's name for a series' every episode), "Choose
     a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
     files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
     download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
@@ -858,7 +859,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
     episode of this series is on this PC."), and Download stays
     off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
-    Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
+    Original, labelled as Settings → Downloads labels them, its Download quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
     more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,
     the one it asks for; the episodes alone for a preset) and under it the free space where
@@ -876,22 +877,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
     download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
     never starts after the dialog was closed on it.
-  - **One Time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
-    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One Time first, with its line
+  - **One time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
+    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One time first, with its line
     under them ("Download now. Nothing else downloads later." / "Keep new episodes coming to this PC as they air."). One
-    Time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
-    Series": the rules the server offers as rows in the version rows' style, a title and its line (All Episodes "Download
-    every episode now, then new ones as they air", Future Episodes "Only episodes that air from now on", the default, Last
-    Season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
+    time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
+    Series": the rules the server offers as rows in the version rows' style, a title and its line (All episodes "Download
+    every episode now, then new ones as they air", Future episodes "Only episodes that air from now on", the default, Last
+    season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
     client's Custom, "Seasons 2 and 3", only for its own monitor); the qualities as pills when the server keeps a monitor's
     quality (else none, and monitors download originals); Delete after watching, a switch; Storage limit, a select of None,
-    10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring Defaults fill both in for a new
+    10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring defaults fill both in for a new
     monitor. Under them the Apple app's sentence on what comes: "Episode 6 downloads Thursday. Monitored episodes download
     at 10 Mbps." (the first part while the calendar names an airing the rule takes; "…in original quality."). The button
-    says Start Monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
-    Stop Monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
+    says Start monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
+    Stop monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
     "Episodes already on this PC stay until you delete them.", Keep and Stop; Stop closes the dialog. A save that did not
-    go says why in the error bar: "Couldn't Save Monitoring", "Monitoring for this series changed on the server. Try
+    go says why in the error bar: "Couldn't save monitoring", "Monitoring for this series changed on the server. Try
     again." (the dialog then shows the monitor as it is now), "This series is no longer monitored.", or "Granary couldn't
     confirm the monitoring change. Check this series again once you're back online."
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
@@ -1216,7 +1217,7 @@ On the pages, and in the minimized player's bar:
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Films and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Movies and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
@@ -1662,11 +1663,12 @@ says why above the sections.
   or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
   above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
-  phone's hotspot."). Simultaneous Downloads, the Apple app's select of 1 to 4, two by default ("How many downloads come
+  phone's hotspot."). Simultaneous downloads, the Apple app's select of 1 to 4, two by default ("How many downloads come
   at once."): more start at once when it goes up, and the ones under way finish when it goes down. Storage limit for downloads, Granary's own (no
   Silo client has one): a slider from 0 to 4000 GB in steps of 10 with its value beside it ("No limit", "250 GB"), saved once
   it rests for half a second ("Downloads don't start past it, and a monitored series' new episodes wait at it. Nothing is
-  deleted to make room."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  deleted to make room."). Download quality (the settings contract's name for `downloads.default_quality`), a select of
+  Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), its line the Apple app's footer for what
   your server offers ("Original prefers source quality and may prepare a compatibility file if this device needs one.
   Bitrate presets are prepared on the server when the original is larger, at up to the resolution shown. This is the
@@ -1677,15 +1679,15 @@ says why above the sections.
   finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
   own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
   Granary is in the background."): off, neither the notice nor the notification comes (Downloads outside their page,
-  Layout above). Then Monitoring Defaults, the Apple app's section ("What a new monitored series starts with. Each one
+  Layout above). Then Monitoring defaults, the Apple app's section ("What a new monitored series starts with. Each one
   keeps its own.", Granary's words): Delete after watching, a switch, off by default; and the storage limit, the Apple
   app's stepper as a number box with spin buttons, 0 to 1000 GB in steps of 5 (a number typed in is held to them), its
   row named as the Apple app names it ("Storage limit: 25 GB", "Storage limit: Unlimited" at 0). They only fill in the
   download dialog's Monitor for a series not monitored yet. Each saves on this PC at once (`download-settings.json`; the
   storage limit for downloads once its slider rests). Last, the Apple app's Storage: Used, what this profile's downloads
-  take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove All Downloads ("Deletes this
+  take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove all downloads ("Deletes this
   profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
-  All in red, which asks the Apple app's "Remove all downloaded files?" with Remove All and Cancel, then deletes each as
+  all in red, which asks the Apple app's "Remove all downloaded files?" with Remove all and Cancel, then deletes each as
   Delete does.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
@@ -1939,7 +1941,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
   are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
   rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
-  sync. The playback info says "Play method: Local file" and "Protocol:
+  sync. The playback info says "Play method: Offline file" (the Apple app's stats' word) and "Protocol:
   file" under Player, has no Playback Stream Info, and shows the file under Current Source File as the download's
   manifest describes it: Container, Size, Video codec, Video range type (HDR or SDR), and the codec and channels of the
   audio track that plays. A file that will not play shows the failed screen with Granary's own "This download can't be played. Try

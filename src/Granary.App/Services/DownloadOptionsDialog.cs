@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Granary.App.Controls;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -108,7 +109,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 Title = options.DialogTitle,
                 Content = new DownloadOptionsPanel(options),
                 PrimaryButtonText = options.PrimaryText,
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 IsPrimaryButtonEnabled = options.CanStart,
             };

@@ -1,5 +1,6 @@
 using Granary.Core.Downloads;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
@@ -49,6 +50,22 @@ public sealed class DownloadCardsTests
         Assert.Equal(("42% · 6 min left", "12.3 MB/s", "Downloading · 42% · 12.3 MB/s · 6 min left"),
             (measured.Subtitle, measured.Caption, measured.ToolTip));
         Assert.True(measured.PlainSubtitle);
+    }
+
+    [Fact]
+    public void InGerman_ACardsLines_AreTheApps()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var item = Coming(8 * GB, (8 * GB * 42 / 100) + 1, seriesId: "sr_1");
+        var whole = Coming(8 * GB, 8 * GB, DownloadState.Completed, seriesId: "sr_1");
+
+        var measured = DownloadCards.Download(item, bytesPerSecond: 12.3 * MB);
+
+        Assert.Equal(("42 % · noch 6 Min.", "12,3 MB/s"), (measured.Subtitle, measured.Caption));
+        Assert.Equal("S01F05 · Example Movie", measured.Title);
+        Assert.Equal("1 Folge", DownloadCards.EpisodeCount([whole]));
+        Assert.Equal("1 von 2 Folgen", DownloadCards.EpisodeCount([whole, item]));
+        Assert.Equal("Gesehen", DownloadCards.Download(whole with { IsWatched = true }).Caption);
     }
 
     [Fact]

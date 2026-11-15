@@ -1,8 +1,8 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Auth;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -16,8 +16,8 @@ namespace Granary.Core.ViewModels.Downloads;
 /// </summary>
 public sealed partial class DownloadActivity : ObservableObject, IDisposable
 {
-    /// <summary>The sidebar entry's name, and its start while downloads are in progress.</summary>
-    public const string EntryTitle = "Downloads";
+    /// <summary>The sidebar entry's name, the apps' name for their Downloads tab (<c>tab.downloads</c>).</summary>
+    public static string EntryTitle => AppText.Get("granary.downloads.title");
 
     private readonly DownloadManager _downloads;
     private readonly ISessionManager _session;
@@ -70,12 +70,9 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     /// The entry as a screen reader names it: "Downloads", or "Downloads, 3 downloads in progress" in the Apple app's words for
     /// downloads still coming.
     /// </summary>
-    public string EntryName => PendingCount switch
-    {
-        0 => EntryTitle,
-        1 => $"{EntryTitle}, 1 download in progress",
-        _ => $"{EntryTitle}, {PendingCount.ToString(CultureInfo.InvariantCulture)} downloads in progress",
-    };
+    public string EntryName => PendingCount == 0
+        ? EntryTitle
+        : AppText.Get("granary.downloads.entryName", ("count", PendingCount), ("count_text", AppText.Number(PendingCount)));
 
     /// <summary>Starts following, and reads the downloads once on the UI thread. Once.</summary>
     public void Start()

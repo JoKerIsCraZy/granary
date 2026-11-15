@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -83,6 +84,26 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal("Download: Example Series · Season 1", season.Title);
         Assert.Equal("Choose a file to download. Make sure you have enough disk space.", DownloadOptionsViewModel.Description);
         Assert.Equal("Larger files require more storage space.", DownloadOptionsViewModel.Footer);
+    }
+
+    [Fact]
+    public async Task InGerman_TheDialogSpeaksTheWebsWords_AndItsOwnWithGermanNumbers()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _h.Disk.Set(1 * GB);
+
+        var movie = await ForTitleAsync(Movie, [OneFile]);
+        var preset = await ForTitleAsync(Movie, [new("4567", "2160p · HEVC", 40 * GB)], 7200, "original", "10mbps");
+        preset.SelectedQuality = preset.Qualities[1];
+        var season = await OptionsAsync();
+        season.ForSeason(Season, "", 6 * GB);
+        await season.SpaceRead;
+
+        Assert.Equal("Wähle eine Datei zum Herunterladen. Achte darauf, dass genug Speicherplatz frei ist.", DownloadOptionsViewModel.Description);
+        Assert.Equal("Download: Example Movie", movie.Title);
+        Assert.Equal("Nicht genug freier Speicherplatz auf diesem PC: 8,0 GB benötigt, 1,0 GB frei.", movie.SpaceText);
+        Assert.Equal("Etwa 9,2 GB", preset.SizeText);
+        Assert.Equal(("Download: Example Series · Staffel 1", "3 Folgen · 6,0 GB"), (season.Title, season.SizeText));
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -15,33 +16,30 @@ public sealed record SeriesMonitorTarget(string SeriesId, string SeriesTitle);
 public sealed record MonitorRuleRow(string Mode, string Title, string Detail);
 
 /// <summary>
-/// A series' download dialog's One Time | Monitor, as Silo's Apple app's series sheet (<c>SeriesDownloadSheet.swift</c>) has
-/// them, in its words with "this PC" for its device: One Time downloads the series now; Monitor keeps new episodes coming, by a
-/// rule (All Episodes, Future Episodes by default, Last Season; another client's Custom kept, never offered), in a quality when
-/// the server keeps one for monitors, with Delete after watching and a storage limit, which start from Settings → Downloads'
-/// Monitoring Defaults. Monitor shows while the server monitors series, and for a series monitored already so it can be
-/// stopped, which asks first. Saving sends only what changed; a monitor that changed on the server meanwhile is shown as it is
-/// now, and saying so is all.
+/// A series' download dialog's One time | Monitor, as Silo's Apple app's series sheet (<c>SeriesDownloadSheet.swift</c>) has
+/// them, in its words and translations with "this PC" for its device (<c>granary.downloadOptions.*</c>): One time downloads the
+/// series now; Monitor keeps new episodes coming, by a rule (All episodes, Future episodes by default, Last season; another
+/// client's Custom kept, never offered), in a quality when the server keeps one for monitors, with Delete after watching and a
+/// storage limit, which start from Settings → Downloads' Monitoring defaults. Monitor shows while the server monitors series,
+/// and for a series monitored already so it can be stopped, which asks first. Saving sends only what changed; a monitor that
+/// changed on the server meanwhile is shown as it is now, and saying so is all.
 /// </summary>
 public sealed partial class DownloadOptionsViewModel
 {
-    public const string OneTimeLabel = "One Time";
-    public const string MonitorLabel = "Monitor";
-    public const string OneTimeHint = "Download now. Nothing else downloads later.";
-    public const string MonitorHint = "Keep new episodes coming to this PC as they air.";
-    public const string StartMonitoringText = "Start Monitoring";
-    public const string SaveText = "Save";
-    public const string StopMonitoringText = "Stop Monitoring";
-    public const string StopMessage = "Episodes already on this PC stay until you delete them.";
-    public const string StopAction = "Stop";
-    public const string KeepAction = "Keep";
-    public const string NoLimit = "None";
-    public const string SaveFailed = "Couldn't Save Monitoring";
-    public const string MonitorChanged = "Monitoring for this series changed on the server. Try again.";
-    public const string MonitorRemoved = "This series is no longer monitored.";
+    public static string OneTimeLabel => AppText.Get("granary.downloadOptions.oneTime");
+    public static string MonitorLabel => AppText.Get("granary.downloadOptions.monitor");
+    public static string OneTimeHint => AppText.Get("granary.downloadOptions.oneTimeHint");
+    public static string MonitorHint => AppText.Get("granary.downloadOptions.monitorHint");
+    public static string StartMonitoringText => AppText.Get("granary.downloadOptions.startMonitoring");
+    public static string SaveText => AppText.Get("common.save");
+    public static string StopMessage => AppText.Get("granary.downloadOptions.stopMessage");
+    public static string NoLimit => AppText.Get("granary.downloadOptions.noLimit");
+    public static string SaveFailed => AppText.Get("granary.downloadOptions.saveFailed");
+    public static string MonitorChanged => AppText.Get("granary.downloadOptions.monitorChanged");
+    public static string MonitorRemoved => AppText.Get("granary.downloadOptions.monitorRemoved");
 
     /// <summary>The Apple app's words, with Granary for the app that could not confirm it.</summary>
-    public const string MonitoringUncertain = "Granary couldn't confirm the monitoring change. Check this series again once you're back online.";
+    public static string MonitoringUncertain => AppText.Get("granary.downloadOptions.monitoringUncertain");
 
     // The storage limits a new monitor offers, as the Apple app's menu: none, 10, 25, 50 and 100 GB.
     private static readonly int[] LimitChoicesGb = [0, 10, 25, 50, 100];
@@ -121,17 +119,21 @@ public sealed partial class DownloadOptionsViewModel
     public bool ShowsStopMonitoring => HasMonitor && !IsConfirmingStop;
 
     /// <summary>"Stop monitoring Example Series?"</summary>
-    public string StopTitle => $"Stop monitoring {_monitorTarget?.SeriesTitle}?";
+    public string StopTitle => AppText.Get("granary.downloadOptions.stopTitle", ("title", _monitorTarget?.SeriesTitle ?? ""));
 
     /// <summary>"Episode 6 downloads Thursday. Monitored episodes download at 10 Mbps.", the Apple app's one sentence on what happens next.</summary>
     [ObservableProperty]
     public partial string MonitorSummary { get; private set; } = "";
 
-    /// <summary>The dialog's button: "Download"; on Monitor, "Start Monitoring", or "Save" for a monitored series.</summary>
-    public string PrimaryText => !IsMonitorChosen ? PlainTitle : HasMonitor && CurrentMonitor()?.Active == true ? SaveText : StartMonitoringText;
+    /// <summary>
+    /// The dialog's button: the web's "Download" (<c>web.detail.actions.download</c>); on Monitor, "Start monitoring", or "Save"
+    /// for a monitored series.
+    /// </summary>
+    public string PrimaryText => !IsMonitorChosen ? AppText.Get("web.detail.actions.download")
+        : HasMonitor && CurrentMonitor()?.Active == true ? SaveText : StartMonitoringText;
 
     /// <summary>The dialog's title: <see cref="Title"/>, and on Monitor the series', "Download: Example Series".</summary>
-    public string DialogTitle => IsMonitorChosen && _monitorTarget is { } target ? $"{PlainTitle}: {target.SeriesTitle}" : Title;
+    public string DialogTitle => IsMonitorChosen && _monitorTarget is { } target ? TitleWithName(target.SeriesTitle) : Title;
 
     /// <summary>Raised when the dialog is done without its button: a monitor was stopped.</summary>
     public event EventHandler? CloseRequested;
@@ -254,8 +256,8 @@ public sealed partial class DownloadOptionsViewModel
     {
         string quality = ShowsMonitorQualities && SelectedMonitorQuality is { } chosen ? chosen.Value : DownloadQualities.Original;
         string sentence = quality == DownloadQualities.Original
-            ? "Monitored episodes download in original quality."
-            : $"Monitored episodes download at {DownloadText.QualityLabel(new DownloadQualityOption(quality, null, null))}.";
+            ? AppText.Get("granary.downloadOptions.monitorOriginal")
+            : AppText.Get("granary.downloadOptions.monitorQuality", ("quality", DownloadText.QualityLabel(new DownloadQualityOption(quality, null, null))));
         if (_schedule is { } schedule && _monitorTarget is { } target && SelectedRule is { } rule)
         {
             var existing = CurrentMonitor();
@@ -263,7 +265,8 @@ public sealed partial class DownloadOptionsViewModel
             var now = _time.GetUtcNow();
             if (MonitorRules.NextEpisode(rule.Mode, LatestSeason(existing, rule.Mode), existing?.SeasonNumbers ?? [], schedule.Upcoming(target.SeriesId), known, now) is { } next)
             {
-                sentence = MonitorRules.Headline(new MonitorStatus.Next(next), now, _time.LocalTimeZone) + ". " + sentence;
+                sentence = AppText.Get("granary.downloadOptions.monitorSummary",
+                    ("next", MonitorRules.Headline(new MonitorStatus.Next(next), now, _time.LocalTimeZone)), ("quality", sentence));
             }
         }
         MonitorSummary = sentence;

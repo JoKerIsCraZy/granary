@@ -1,3 +1,4 @@
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.UI.Xaml;
@@ -25,6 +26,12 @@ public sealed partial class DownloadOptionsPanel : UserControl
 
     public string StopMessage => DownloadOptionsViewModel.StopMessage;
 
+    /// <summary>The small heading over the files, in capitals as the language writes them.</summary>
+    public string VersionEyebrow => AppText.Upper(AppText.Get("granary.downloadOptions.version"));
+
+    /// <summary>The small heading over the qualities, in capitals as the language writes them.</summary>
+    public string QualityEyebrow => AppText.Upper(AppText.Get("granary.downloadOptions.quality"));
+
     /// <summary>The server's qualities as the pills take them.</summary>
     public IReadOnlyList<SettingChoice> Qualities { get; }
 
@@ -48,7 +55,7 @@ public sealed partial class DownloadOptionsPanel : UserControl
     public static Brush SpaceForeground(bool isShortOfSpace) =>
         (Brush)Application.Current.Resources[isShortOfSpace ? "SiloDestructiveBrush" : "SiloMutedBrush"];
 
-    // A screen reader says a rule as its row shows it: "Future Episodes, Only episodes that air from now on".
+    // A screen reader says a rule as its row shows it: "Future episodes, Only episodes that air from now on".
     private void OnRuleContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
     {
         if (args.Item is MonitorRuleRow row)

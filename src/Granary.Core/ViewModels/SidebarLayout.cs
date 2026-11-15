@@ -42,7 +42,7 @@ public sealed partial class SidebarLayout : ObservableObject
         new("Collections", AppText.Get("web.shell.sidebar.collections"), SidebarSection.YourStuff, "Collections"),
         new("List:history", AppText.Get("web.shell.sidebar.history"), SidebarSection.YourStuff, "List:history"),
         // The active profile's downloads on this PC (AppRoute.Downloads); a profile that arranged its entries before it came has it last.
-        new("Downloads", "Downloads", SidebarSection.YourStuff, "Downloads"),
+        new("Downloads", AppText.Get("granary.downloads.title"), SidebarSection.YourStuff, "Downloads"),
     ];
 
     private readonly string _filePath;

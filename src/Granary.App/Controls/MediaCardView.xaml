@@ -172,10 +172,12 @@
                 </Border>
             </Grid>
 
-            <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
+            <!--
+                Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions).
+                The bar is named in the language on screen as it is made (granary.card.progress).
+            -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
-                         Maximum="100" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"
-                         AutomationProperties.Name="Progress" />
+                         Maximum="100" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000" />
 
             <!--
                 While its grid selects (History's Select): the web's pick mark top left, an empty ring or the accent with a

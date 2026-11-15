@@ -87,6 +87,8 @@ public static class RemoteTexts
         "granary.player.error.credentialsRejected",
         "granary.player.error.signInRejected",
         "granary.player.error.networkPath",
+        // A download on this PC that does not play (LocalPlayback).
+        "granary.downloads.cannotPlay",
         "granary.player.error.signIn",
         "granary.player.error.chooseProfile",
         "granary.player.error.chooseServer",

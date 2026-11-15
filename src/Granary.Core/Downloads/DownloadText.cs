@@ -1,32 +1,36 @@
 using System.Globalization;
 using Granary.Core.Api.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.Downloads;
 
 /// <summary>
-/// The words of a download's status and of a quality preset. The web has no downloads page, so they are the apps':
-/// "Downloading · 42%", "Downloaded", "12.3 MB/s", "4 min left", "Original", "10 Mbps · up to 1080p".
+/// The words of a download's status and of a quality preset, in the language on screen. The web has no downloads page, so they
+/// are the apps' (<c>granary.downloads.status.*</c>): "Downloading · 42%", "Downloaded", "12.3 MB/s", "4 min left", "Original",
+/// "10 Mbps · up to 1080p".
 /// </summary>
 public static class DownloadText
 {
-    public const string MissingFile = "Missing file";
-    public const string NoLongerAvailable = "No longer available";
-    public const string Paused = "Paused";
-    public const string Preparing = "Preparing…";
-    public const string Queued = "Queued";
-    public const string PausedMetered = "Paused · metered connection";
-    public const string Downloaded = "Downloaded";
-    public const string Downloading = "Downloading";
-    public const string Failed = "Failed";
-    public const string FailedNoSpace = "Failed · not enough space";
+    public static string MissingFile => AppText.Get("granary.downloads.status.missingFile");
+    public static string NoLongerAvailable => AppText.Get("granary.downloads.status.noLongerAvailable");
+    public static string Paused => AppText.Get("granary.downloads.status.paused");
+    public static string Preparing => AppText.Get("granary.downloads.status.preparing");
+    public static string Queued => AppText.Get("granary.downloads.status.queued");
+    public static string PausedMetered => AppText.Get("granary.downloads.status.pausedMetered");
+    public static string Downloaded => AppText.Get("granary.downloads.status.downloaded");
+    public static string Downloading => AppText.Get("granary.downloads.status.downloading");
+    public static string Failed => AppText.Get("granary.downloads.status.failed");
+    public static string FailedNoSpace => AppText.Get("granary.downloads.status.failedNoSpace");
 
     /// <summary>A monitored series' storage limit holds it: the Apple app's words (<c>downloads.wait.storageLimit</c>).</summary>
-    public const string SeriesLimitReached = "Series storage limit reached";
+    public static string SeriesLimitReached => AppText.Get("granary.downloads.status.seriesLimit");
 
     /// <summary>Granary's storage limit for downloads holds it; Granary's own words, as the limit is.</summary>
-    public const string DownloadsLimitReached = "Storage limit for downloads reached";
-    public const string Original = "Original";
+    public static string DownloadsLimitReached => AppText.Get("granary.downloads.status.downloadsLimit");
+
+    /// <summary>The download quality that keeps the original file, as the settings manifest names that choice.</summary>
+    public static string Original => AppText.Get("settingsManifest.downloads.default_quality.option.original");
 
     /// <summary>
     /// The status a row and the title page's menu show. Missing files come first (a folder that is gone, or a finished
@@ -42,7 +46,8 @@ public static class DownloadText
             { FilesMissing: true } => MissingFile,
             { IsNoLongerAvailable: true } => NoLongerAvailable,
             { IsPausedByViewer: true } => Paused,
-            { State: DownloadState.Preparing, PreparationProgress: { } progress } => $"{Preparing} {Percent(progress)}%",
+            { State: DownloadState.Preparing, PreparationProgress: { } progress } =>
+                AppText.Get("granary.downloads.status.preparingPercent", ("percent", Percent(progress))),
             { State: DownloadState.Preparing } => Preparing,
             // Also one that was coming when Granary stopped: Downloading, and held now, it waits as a queued one does.
             { State: DownloadState.Queued or DownloadState.Downloading, Hold: DownloadHold.SeriesLimit } => SeriesLimitReached,
@@ -52,7 +57,7 @@ public static class DownloadText
             // Waiting for monitoring's first run to say whether a limit holds it: it waits its turn as any queued one.
             { State: DownloadState.Downloading, Hold: DownloadHold.PolicyUnknown } => Queued,
             { State: DownloadState.Queued } => Queued,
-            { State: DownloadState.Downloading } => $"{Downloading} · {PercentText(item)}",
+            { State: DownloadState.Downloading } => AppText.Get("granary.downloads.status.downloadingPercent", ("percent", PercentOf(item))),
             { State: DownloadState.Completed } => Downloaded,
             { Failure: DownloadFailure.NotEnoughSpace } => FailedNoSpace,
             _ => Failed,
@@ -103,15 +108,16 @@ public static class DownloadText
         return item.ExpectedBytes > 0 && left > 0 && bytesPerSecond > 0 ? TimeLeft(TimeSpan.FromSeconds(left / bytesPerSecond)) : null;
     }
 
-    /// <summary>"42%": how much of the file is here, in whole percent, never rounded up.</summary>
-    public static string PercentText(DownloadItem item)
+    /// <summary>42 for "42%": how much of the file is here, in whole percent, never rounded up.</summary>
+    public static int PercentOf(DownloadItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        return Percent(item.Progress) + "%";
+        return Percent(item.Progress);
     }
 
     /// <summary>"12.3 MB/s": the size a second, in the sizes the page says everywhere.</summary>
-    public static string Speed(double bytesPerSecond) => PrePlayText.FileSize((long)Math.Max(1, bytesPerSecond)) + "/s";
+    public static string Speed(double bytesPerSecond) =>
+        AppText.Get("granary.downloads.speed", ("size", PrePlayText.FileSize((long)Math.Max(1, bytesPerSecond))));
 
     /// <summary>
     /// "4 min left", in whole minutes, rounded, as the Apple app says a download's time left; "under 1 min left" below half a
@@ -122,18 +128,23 @@ public static class DownloadText
         long minutes = (long)Math.Round(Math.Max(0, left.TotalMinutes), MidpointRounding.AwayFromZero);
         if (minutes < 1)
         {
-            return "under 1 min left";
+            return AppText.Get("granary.downloads.timeLeft.underMinute");
         }
         if (minutes < 60)
         {
-            return $"{minutes.ToString(CultureInfo.InvariantCulture)} min left";
+            return AppText.Get("granary.downloads.timeLeft.minutes", ("minutes", minutes));
         }
-        string hours = (minutes / 60).ToString(CultureInfo.InvariantCulture);
+        long hours = minutes / 60;
         long rest = minutes % 60;
-        return rest == 0 ? $"{hours} hr left" : $"{hours} hr {rest.ToString(CultureInfo.InvariantCulture)} min left";
+        return rest == 0
+            ? AppText.Get("granary.downloads.timeLeft.hours", ("hours", hours))
+            : AppText.Get("granary.downloads.timeLeft.hoursMinutes", ("hours", hours), ("minutes", rest));
     }
 
-    /// <summary>"Original", or the preset's bitrate and, where the server says, its tallest output: "10 Mbps · up to 1080p".</summary>
+    /// <summary>
+    /// "Original", or the preset's bitrate in the web's words for it and, where the server says, its tallest output: "10 Mbps · up
+    /// to 1080p".
+    /// </summary>
     public static string QualityLabel(DownloadQualityOption option)
     {
         ArgumentNullException.ThrowIfNull(option);
@@ -142,18 +153,21 @@ public static class DownloadText
             return Original;
         }
         string? mbps = option.BitrateKbps is { } kbps
-            ? (kbps / 1000.0).ToString("0.#", CultureInfo.InvariantCulture)
+            ? NumberText.Decimal(kbps / 1000.0, 1, 0)
             : option.Preset.EndsWith("mbps", StringComparison.Ordinal) && int.TryParse(option.Preset[..^4], NumberStyles.None, CultureInfo.InvariantCulture, out int named)
-                ? named.ToString(CultureInfo.InvariantCulture)
+                ? NumberText.Decimal(named, 0)
                 : null;
         if (mbps is null)
         {
             return option.Preset;
         }
-        return option.MaxHeight is { } height ? $"{mbps} Mbps · up to {height.ToString(CultureInfo.InvariantCulture)}p" : $"{mbps} Mbps";
+        string quality = AppText.Get("web.common.format.bitrate.mbps", ("rate", mbps));
+        // The height as a resolution's name, "1080p", in Latin digits as the apps write it.
+        return option.MaxHeight is { } height
+            ? AppText.Get("granary.downloads.quality.upTo", ("quality", quality), ("resolution", height.ToString(CultureInfo.InvariantCulture) + "p"))
+            : quality;
     }
 
     // Whole percent, never rounded up: 99.9% is not shown as done.
-    private static string Percent(double progress) =>
-        ((int)Math.Floor(Math.Clamp(progress, 0, 1) * 100 + 1e-9)).ToString(CultureInfo.InvariantCulture);
+    private static int Percent(double progress) => (int)Math.Floor(Math.Clamp(progress, 0, 1) * 100 + 1e-9);
 }

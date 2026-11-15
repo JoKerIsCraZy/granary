@@ -5,6 +5,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
 
@@ -32,27 +33,29 @@ public sealed record DownloadQualityRow(string Preset, string Label);
 /// </summary>
 public sealed partial class DownloadOptionsViewModel : ObservableObject
 {
-    public const string Description = "Choose a file to download. Make sure you have enough disk space.";
-    public const string Footer = "Larger files require more storage space.";
-    public const string StartFailed = "Download could not be started. Check access and try again.";
+    /// <summary>The web's description under the title (<c>web.downloads.versionPicker.description</c>).</summary>
+    public static string Description => AppText.Get("web.downloads.versionPicker.description");
+
+    /// <summary>The web's line under more than one file (<c>web.downloads.versionPicker.sizeNote</c>).</summary>
+    public static string Footer => AppText.Get("web.downloads.versionPicker.sizeNote");
+
+    /// <summary>The web's words when a download did not start (<c>web.downloads.versionPicker.startFailed</c>).</summary>
+    public static string StartFailed => AppText.Get("web.downloads.versionPicker.startFailed");
 
     /// <summary>
     /// The server refused for the account's limit of downloads (429): the web's words for that problem
     /// (<c>error.rate_limited</c>).
     /// </summary>
-    public const string RateLimited = "Too many requests. Wait a moment and try again.";
+    public static string RateLimited => AppText.Get("error.rate_limited");
 
     /// <summary>The web's words while a card's dialog reads its item (<c>web.item.menu.loadingDetails</c>).</summary>
-    public const string LoadingDetails = "Loading the latest item details…";
+    public static string LoadingDetails => AppText.Get("web.item.menu.loadingDetails");
 
     /// <summary>The web's words when that read failed (<c>web.item.menu.detailsFailed</c>).</summary>
-    public const string DetailsFailed = "The item details could not be loaded.";
+    public static string DetailsFailed => AppText.Get("web.item.menu.detailsFailed");
 
-    // The dialog's title before it knows what it offers (web: web.downloads.versionPicker.title).
-    private const string PlainTitle = "Download";
-
-    // A series' every episode, in the Apple app's words (downloads.seriesSheet.allEpisodes).
-    private const string AllEpisodes = "All Episodes";
+    // The dialog's title before it knows what it offers.
+    private static string PlainTitle => AppText.Get("web.downloads.versionPicker.title");
 
     /// <summary>
     /// The longest the free space is waited for (<see cref="DiskSpaceReads.Timeout"/>): a share that does not answer would
@@ -116,7 +119,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
 
     /// <summary>
     /// "Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1", "Download: Example
-    /// Series · All Episodes"; "Download" while a card's dialog does not know its title yet.
+    /// Series · All episodes"; "Download" while a card's dialog does not know its title yet.
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DialogTitle))]
@@ -372,20 +375,20 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         switch (offer)
         {
             case TitleDownloadOffer title:
-                Title = "Download: " + TitleOf(title.Request);
+                Title = TitleWithName(TitleOf(title.Request));
                 Versions = title.Versions;
                 HasOffer = true;
                 return title.Versions.FirstOrDefault(v => v.FileId == title.Request.MediaFileId) ?? title.Versions.FirstOrDefault();
             case SeasonDownloadOffer season:
                 string name = string.IsNullOrWhiteSpace(season.SeasonTitle)
-                    ? "Season " + season.Request.SeasonNumber.ToString(CultureInfo.InvariantCulture)
+                    ? AppText.Get("web.detail.seasons.numbered", ("season", season.Request.SeasonNumber))
                     : season.SeasonTitle.Trim();
-                Title = $"Download: {season.Request.SeriesTitle} · {name}";
+                Title = TitleWithName($"{season.Request.SeriesTitle} · {name}");
                 Versions = [];
                 HasOffer = true;
                 return null;
             case SeriesDownloadOffer series:
-                Title = $"Download: {series.Request.SeriesTitle} · {AllEpisodes}";
+                Title = TitleWithName($"{series.Request.SeriesTitle} · {AppText.Get("granary.downloadOptions.allEpisodes")}");
                 Versions = [];
                 HasOffer = true;
                 return null;
@@ -520,14 +523,14 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             return ("", 0);
         }
         estimate = source > 0 ? Math.Min(estimate, source) : estimate;
-        return ("About " + PrePlayText.FileSize(estimate), estimate);
+        return (AppText.Get("granary.downloadOptions.aboutSize", ("size", PrePlayText.FileSize(estimate))), estimate);
     }
 
     // A season's or a series' episodes and, for the original, what their files take; a preset's files are not known before the
     // server makes them.
     private (string Text, long Bytes) EpisodesSize(int count)
     {
-        string episodes = count == 1 ? "1 episode" : count.ToString(CultureInfo.InvariantCulture) + " episodes";
+        string episodes = AppText.Get("granary.downloadOptions.episodes", ("count", count));
         return IsOriginal && _episodesBytes > 0 ? ($"{episodes} · {PrePlayText.FileSize(_episodesBytes)}", _episodesBytes) : (episodes, 0);
     }
 
@@ -575,7 +578,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         if (limit > 0 && _needed > 0 && _taken + _needed > limit)
         {
             IsShortOfSpace = true;
-            SpaceText = $"Over your storage limit for downloads: {Size(_needed)} needed, {Size(Math.Max(0, limit - _taken))} left of {Size(limit)}.";
+            SpaceText = AppText.Get("granary.downloadOptions.overLimit", ("needed", Size(_needed)), ("left", Size(Math.Max(0, limit - _taken))),
+                ("limit", Size(limit)));
             return;
         }
         if (_free is not { } free)
@@ -586,8 +590,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
         IsShortOfSpace = _needed > 0 && free - DownloadTransfer.SpaceReserve < _needed;
         SpaceText = IsShortOfSpace
-            ? $"Not enough free space on this PC: {Size(_needed)} needed, {Size(free)} free."
-            : $"{Size(free)} free on this PC.";
+            ? AppText.Get("granary.downloadOptions.notEnoughSpace", ("needed", Size(_needed)), ("free", Size(free)))
+            : AppText.Get("granary.downloadOptions.freeSpace", ("free", Size(free)));
     }
 
     // What a press of Download came to.
@@ -628,7 +632,11 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         : result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started
         : StartOutcome.Failed;
 
+    // The web's "Download: {title}".
+    private static string TitleWithName(string title) => AppText.Get("web.downloads.versionPicker.titleWithName", ("title", title));
+
     // A film by its own title; an episode as "Example Series · S1 · E5", since its own title alone does not say which one it is.
+    // The codes keep Latin digits in every language.
     private static string TitleOf(DownloadRequest request)
     {
         if (request.SeriesId is null || string.IsNullOrWhiteSpace(request.SeriesTitle))
@@ -647,5 +655,5 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         return string.Join(" · ", parts);
     }
 
-    private static string Size(long bytes) => bytes > 0 ? PrePlayText.FileSize(bytes) : "0 B";
+    private static string Size(long bytes) => bytes > 0 ? PrePlayText.FileSize(bytes) : AppText.Get("web.common.format.size.bytes", ("size", 0));
 }
