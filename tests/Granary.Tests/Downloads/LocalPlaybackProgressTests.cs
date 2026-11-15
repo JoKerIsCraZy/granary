@@ -390,6 +390,11 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     [Fact]
     public async Task TheStop_DoesNotWaitLongerThanItsBudget_ForADriveThatDoesNotAnswer_AndStillSendsThePosition()
     {
+        // The server answers that the title is watched now: taking that into the download is a write too.
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "items": [ { "media_item_id": "ep_5", "position_seconds": 0, "duration_seconds": 7200, "completed": true, "updated_at": "2027-01-01T12:00:00Z" } ],
+              "page": { "has_more": false } }
+            """));
         var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
         Frame(120);
         // Another change to the downloads is being written as the drive stops answering: the position's write waits behind it.
@@ -408,6 +413,9 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
             var stop = playback.StopAsync();
             Assert.False(stop.IsCompleted);
             _fixture.Harness.Time.Advance(LocalPlayback.StopWriteBudget);
+            // The send goes, and so does the read back, whose write waits behind the drive as well.
+            await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.ProgressPath).Count == 1, "the server's progress was read back");
+            _fixture.Harness.Time.Advance(LocalPlayback.StopSendBudget);
             await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
             // Let go right after its stop, as the player does: no second wait.
             await playback.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
@@ -418,8 +426,12 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         }
         finally
         {
+            // The drive answers again; whatever was written meanwhile is through before the test's folder goes.
+            _fixture.Harness.Store.WritingIndex = null;
             drive.Set();
             await other;
+            await _fixture.Sync.LatestRun;
+            await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", record => record, LocalPlaybackFixture.Token);
         }
     }
 
