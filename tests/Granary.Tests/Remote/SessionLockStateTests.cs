@@ -100,6 +100,25 @@ public sealed class SessionLockStateTests
     }
 
     [Fact]
+    public void OnceTheNoticesEnd_EveryAnswerIsReadAnew()
+    {
+        // The window closed while the receiver still answers: what the notices said last is not trusted any more.
+        _read = false;
+        var state = Following();
+        Assert.False(state.IsLocked);
+
+        state.Unfollowed();
+        _read = true;
+        Assert.True(state.IsLocked);
+        _read = null;
+        Assert.True(state.IsLocked);
+        // A late notice after the end changes nothing.
+        _read = true;
+        state.Changed(SessionLock.Unlock);
+        Assert.True(state.IsLocked);
+    }
+
+    [Fact]
     public void WhatWindowsCannotSay_CountsAsLocked()
     {
         _read = null;

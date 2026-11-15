@@ -1676,7 +1676,8 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   `WTSFreeMemory`), and read again at a connect. A lock or a disconnect (console or remote: nobody sits at the session,
   and whoever connects again signs in first) counts as locked, an unlock as unlocked (`SessionLockState`, tested apart
   from Windows in `SessionLockStateTests`). It fails closed: should Windows not take the window for the notices, the
-  session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. It reads
+  session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. The same
+  once the window has closed and the notices ended: what they said last is not trusted any more. It reads
   only whether the session is locked and connected, and logs only "The PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
   depends on the lock.
 - **The "Starting" notice, and the window left where it is.** The receiver raises `Launched` with the phone's name and

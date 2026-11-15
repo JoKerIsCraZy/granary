@@ -34,8 +34,27 @@ internal sealed class SessionLockState(Func<bool?> read)
         Volatile.Write(ref _followed, true);
     }
 
-    /// <summary>A notice of the session (WM_WTSSESSION_CHANGE's reason): a lock, an unlock, a disconnect, or a reason to read again.</summary>
-    public void Changed(int reason) => Store(SessionLock.AfterChange(reason) ?? read());
+    /// <summary>
+    /// The notices end (the window closed, while the receiver may still answer): what they said last is not trusted any
+    /// more, and every answer is read anew.
+    /// </summary>
+    public void Unfollowed()
+    {
+        Volatile.Write(ref _followed, false);
+        Store(null);
+    }
+
+    /// <summary>
+    /// A notice of the session (WM_WTSSESSION_CHANGE's reason): a lock, an unlock, a disconnect, or a reason to read again.
+    /// None counts while the notices are not followed.
+    /// </summary>
+    public void Changed(int reason)
+    {
+        if (Volatile.Read(ref _followed))
+        {
+            Store(SessionLock.AfterChange(reason) ?? read());
+        }
+    }
 
     private void Store(bool? locked) => Volatile.Write(ref _state, locked switch { true => Locked, false => Unlocked, null => Unknown });
 }

@@ -62,7 +62,7 @@ internal sealed partial class WindowsPcLock : IPcLock, IDisposable
         }
     }
 
-    /// <summary>The window closes: Windows sends it no more of the session's notices.</summary>
+    /// <summary>The window closes: Windows sends it no more of the session's notices, and later questions read the session.</summary>
     public void Dispose()
     {
         if (_hwnd == 0)
@@ -72,6 +72,8 @@ internal sealed partial class WindowsPcLock : IPcLock, IDisposable
         WindowMessageHook.SessionChanged -= OnSessionChanged;
         _ = WTSUnRegisterSessionNotification(_hwnd);
         _hwnd = 0;
+        // A receiver that outlives the window reads the session again rather than what the notices said last.
+        _state.Unfollowed();
     }
 
     // Inside the window's message, on the UI thread: nothing may escape (the hook catches it anyway).
