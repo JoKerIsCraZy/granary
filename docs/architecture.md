@@ -2072,7 +2072,9 @@ device.
   server or profile is gone), and anything the file says that is no entry is left out.
 - **The file is never written before it was read.** A file that cannot be read now (a virus scanner has it open at the
   start, a sharing violation) is left as it is: what this run records is kept in memory, each write tries the read again
-  first, and once it works the file's entries join this run's, the newer of a title's two holding. A file that is not a
+  first, and once it works the file's entries join this run's, the newer of a title's two holding. Each run of the sync
+  tries the read again too (`LoadAsync`), and while the file stays unread it runs again after `RetryInterval`, so what an
+  earlier run left goes once the file can be read, without waiting for a new position or a removal. A file that is not a
   queue at all is moved aside as `offline-progress.json.bad` before a new one is written. A write that was cut off
   between its temporary file and the move leaves `offline-progress.json.<id>.tmp` behind; the read deletes those older
   than a minute.

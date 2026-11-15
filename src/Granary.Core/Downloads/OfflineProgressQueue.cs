@@ -94,6 +94,18 @@ public sealed class OfflineProgressQueue
     internal Action? Writing { get; set; }
 
     /// <summary>The write started most recently: done once the file is on the disk, or could not be written and was logged.</summary>
+    /// <summary>The file was read, or there was none: until then, only this run's positions are known here.</summary>
+    public bool IsRead
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _loaded;
+            }
+        }
+    }
+
     public Task LatestSave
     {
         get
@@ -107,11 +119,22 @@ public sealed class OfflineProgressQueue
 
     /// <summary>
     /// Reads the file on the thread pool, so the first use from the UI thread does not; done once it was read or could not be.
+    /// A file that could not be read before is read again here, so what an earlier run left goes once it can be read, without
+    /// waiting for a write.
     /// </summary>
     public Task LoadAsync() => Task.Run(() =>
     {
         lock (_gate)
         {
+            if (_loadTried && !_loaded)
+            {
+                TryLoad();
+                // A note an earlier run left goes once the file is written without what it names.
+                if (_loaded && _note.Waits)
+                {
+                    Save();
+                }
+            }
             Loaded();
         }
     });
@@ -300,7 +323,8 @@ public sealed class OfflineProgressQueue
     }
 
     // Under the lock. The file is read at the first use (LoadAsync has the sync do that off the UI thread): a small file in
-    // the data folder. One that could not be read then is read again by the next write, not by every caller.
+    // the data folder. One that could not be read then is read again by the next write and the sync's next LoadAsync, not
+    // by every caller.
     private List<OfflineProgressEntry> Loaded()
     {
         if (!_loadTried)

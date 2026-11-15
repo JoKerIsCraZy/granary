@@ -297,6 +297,27 @@ public sealed class OfflineProgressQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_ReadsAFileThatCouldNotBeReadBefore_WithoutAWrite()
+    {
+        var before = Open();
+        before.Record(Scope7, "ep_5", 5_000, 0);
+        await before.LatestSave;
+        var queue = Open();
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await queue.LoadAsync();
+            Assert.False(queue.IsRead);
+            Assert.Empty(queue.Entries(Scope7));
+        }
+
+        // Nothing was recorded or removed since: the next load reads the file all the same.
+        await queue.LoadAsync();
+
+        Assert.True(queue.IsRead);
+        Assert.Equal("ep_5", Assert.Single(queue.Entries(Scope7)).MediaItemId);
+    }
+
+    [Fact]
     public async Task EntriesNobodyCouldSendForNinetyDays_AreLetGo()
     {
         var queue = Open();

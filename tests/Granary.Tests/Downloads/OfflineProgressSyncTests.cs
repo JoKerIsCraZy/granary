@@ -87,6 +87,30 @@ public sealed class OfflineProgressSyncTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APositionInAFileThatCouldNotBeReadAtTheFlush_GoesOnceItCanBe_WithoutANewPosition()
+    {
+        string path = Path.Combine(_h.Directory, "data", "offline-progress.json");
+        var earlierRun = new OfflineProgressQueue(path, _h.Time, _h.Logs.For<OfflineProgressQueue>());
+        earlierRun.Record(Scope7, "ep_5", 10_000, 0);
+        await earlierRun.LatestSave;
+        var sync = Sync();
+
+        // Something has the file open and shares nothing, as a virus scanner at the start.
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await sync.FlushAsync(readBack: false, Token);
+        }
+        Assert.Empty(Sends);
+
+        // Nothing new is recorded: the sync looks again after its retry, reads the file and sends what it holds.
+        _h.Time.Advance(OfflineProgressSync.RetryInterval);
+        _h.Time.Advance(OfflineProgressSync.Settle);
+
+        await Until(() => Sends.Count == 1, "the position was sent");
+        Assert.Contains("\"media_item_id\":\"ep_5\"", Sends[0].Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AnItemTheServerTook_AndOneItWillNeverTake_LeaveTheQueue()
     {
         _queue.Record(Scope7, "ep_5", 10_000, 0);
