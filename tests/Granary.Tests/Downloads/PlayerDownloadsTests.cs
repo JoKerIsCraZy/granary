@@ -26,6 +26,8 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     // Runs as a stream's playback is made, before the player has taken it.
     private Action? _whileAStreamIsMade;
 
+    private readonly LogSink _logs = new();
+
     private PlayerViewModel NewPlayer(IUpNextSource? upNext = null) =>
         new(_fixture.Engine, new ImmediateDispatcher(), _navigation, () =>
         {
@@ -33,8 +35,8 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
             _streams.Add(stream);
             _whileAStreamIsMade?.Invoke();
             return stream;
-        }, _fixture.Stops, _fixture.Harness.Time, upNext, audioDelay: _fixture.AudioDelay, devicePreferences: _fixture.Device,
-            downloads: _fixture.Playbacks);
+        }, _fixture.Stops, _fixture.Harness.Time, upNext, logger: _logs.For<PlayerViewModel>(), audioDelay: _fixture.AudioDelay,
+            devicePreferences: _fixture.Device, downloads: _fixture.Playbacks);
 
     private void Frame(double seconds, bool paused = false) => _fixture.Engine.RaiseState(LocalPlaybackFixture.Frame(seconds, paused));
 
@@ -106,6 +108,45 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         Assert.Equal(PlayerPhase.Playing, player.Phase);
         Assert.Equal(1101, player.PositionSeconds);
         Assert.True(player.CanSeek);
+    }
+
+    [Fact]
+    public async Task ATimeThatStandsWhileTheEnginePlays_IsLoggedOnce_WithWhatThePlayerHolds()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+
+        // The engine plays on, but nothing of it reaches the player.
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+        player.CheckFollowsEngine();
+        player.CheckFollowsEngine();
+
+        string line = Assert.Single(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
+        Assert.Contains("shows 10.0 s, the engine is at 20.0 s", line, StringComparison.Ordinal);
+        Assert.Contains("phase Playing", line, StringComparison.Ordinal);
+        Assert.Contains("LocalPlayback", line, StringComparison.Ordinal);
+
+        // It follows again, and says so once.
+        Frame(21);
+        player.CheckFollowsEngine();
+        Assert.Single(_logs.Lines, l => l.Contains("The player's time follows the engine again", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APausedOrMatchingPlayer_LogsNoStall()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+        player.CheckFollowsEngine();
+        Frame(30, paused: true);
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(40, paused: true) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+        player.CheckFollowsEngine();
+
+        Assert.DoesNotContain(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
     }
 
     [Fact]

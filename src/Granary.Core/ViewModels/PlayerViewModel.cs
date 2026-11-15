@@ -250,6 +250,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         // Back only now that the title before is cleared, so what follows the player (the taskbar, Windows' media
         // controls, the Discord status) does not show that one again for a moment.
         HasLeft = false;
+        _stallLogged = false;
         LeavePlayback();
         ResetFill();
         ResetLook();
@@ -421,6 +422,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void TogglePause()
     {
+        CheckFollowsEngine();
         if (IsPlaying)
         {
             _streak.Reset();
