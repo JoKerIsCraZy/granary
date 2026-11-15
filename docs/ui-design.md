@@ -598,7 +598,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    breadcrumbs; the series' next airing (below); the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
     whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
@@ -608,6 +608,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     beside its score in 15 Bold, both in the accent colour, 20 apart, wrapping 8 below at the overview's width (a
     season's page has none, as the web's); the
     tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - The series' next airing, Granary's own (no Silo client shows it on a title's page): a series' page and its seasons'
+    and episodes' pages name when the series' next episode airs, the same on each, in a neutral chip (`SiloChipStyle`, a
+    12 px calendar mark in muted grey 7 before 13 px text) between the breadcrumbs and the logo or title. Its words are
+    those Silo's Apple app gives a monitored series' next download: "Episode 6 on Thursday", "Episode 6 today",
+    "Episode 6 tomorrow", and for a season's first episode "Season 4 starts on Oct 15", "… starts today", "… starts
+    tomorrow". The day is the viewer's: today, tomorrow, the weekday within a week, else the month and day. It is the
+    first airing of the calendar's next 62 days ([7.13](api-contract.md#713-calendar)) still to come, from any season but
+    the specials: one with its time until that time, one with only its date from the day after on (today's may have
+    aired). The page does not wait for it; with nothing to come in those days, or a calendar that does not answer, there
+    is no chip. It changes when the page reads its data again (opening it, or the reading after the player or a mark),
+    not with the clock; a later reading the calendar does not answer keeps the chip as it was. A screen reader reads its
+    text.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
@@ -747,10 +759,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
     the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
     nothing opens; Tab and a remote's arrows pass it by, and screen readers hear one line, "Episode 5, missing" or
-    "Episode 11, airs November 19". Play, Resume, the watched toggles, the spoiler blur and More Episodes know only the
-    listed episodes, and specials get no places.
+    "Episode 11, airs November 19". An episode's More Episodes holds the same places (below). Play, Resume, the watched
+    toggles and the spoiler blur know only the listed episodes, and specials get no places.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
-    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    order, the episode itself included, and among them the places the season's grid shows (above), from the same
+    calendar answers: a place of the row's card size, its dashed box 16:9 as the episode cards' stills, with the grid's
+    words. The listed episodes show at once and the places come in once the calendar answers (a failed answer leaves the
+    row as listed). When the page reads the season again (after a stop, a start or a watched mark) and its episodes
+    changed, the places are made again, here and in the season's grid. A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
+    row centres on the page's own card as without places. The row shows only when it has more than one entry, places
+    included: a season of one listed episode shows it once a place joins it. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,

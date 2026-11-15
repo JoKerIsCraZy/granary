@@ -24,11 +24,12 @@ public sealed partial class MediaRow
     private void FindCurrent()
     {
         _currentIndex = -1;
-        if (ItemsSource is IReadOnlyList<MediaCard> cards)
+        // Cards, or cards with places among them (an episode's More Episodes).
+        if (ItemsSource is IReadOnlyList<object> entries)
         {
-            for (int i = 0; i < cards.Count; i++)
+            for (int i = 0; i < entries.Count; i++)
             {
-                if (cards[i].IsCurrent)
+                if (entries[i] is MediaCard { IsCurrent: true })
                 {
                     _currentIndex = i;
                     break;

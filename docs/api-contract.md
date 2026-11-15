@@ -1098,14 +1098,16 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   window whose series is in a library the profile may see, whether the episode has a file or not; no specials (season
   0); a `season_premiere` only for a season whose first episode has no air date. A double episode's later episode is a
   row of its own. `filter` absent is `all`, no restriction; `library_id` keeps one library's series.
-- A season's grid (`ItemDetailViewModel.Airings.cs`, `SeasonGaps`, Granary's own; no Silo client does this) places the
-  episodes its listing lacks by the calendar, asked with no `filter` and the viewer's zone, and matched by `series_id`,
+- A season's grid and an episode's More Episodes (`ItemDetailViewModel.Airings.cs`, `SeasonGaps`, Granary's own; no Silo
+  client does this) place the episodes the season's listing lacks by the calendar, asked with no `filter` and the viewer's zone, and matched by `series_id`,
   season and episode number. Its windows, at most 4 requests a page: today's next 62 days as two, always; then, the
   latest first, each gap's between listed episodes, from one neighbour's `air_date` to the other's when they are at most
   31 days apart (a day more at each end where that still fits, as the listing's source dates can be a day off the
   viewer's), and the 31 days after the last listed episode's air date, up to yesterday. Windows that fit in 31 days
   together are one request. Without an IANA name for the viewer's zone the server reckons in UTC, and the windows do too.
-  A season with no listed episode asks today's two windows only. Specials ask nothing.
+  A season with no listed episode asks today's two windows only. Specials ask nothing. An episode's page asks the
+  windows of its season's listing (`GET /api/v2/catalog/series/{id}/seasons/{n}/episodes`), the same as the season's
+  page, so the two share their answers.
 - An episode is missing once aired and upcoming before (by `air_at`, else by the day it is listed under), and dated by
   the viewer's day. One aired more than 31 days after the last listed one is not found. A gap of at most 10 numbers shows
   every number, by number alone where the calendar names none; a wider one, more likely numbering or a stray number,
@@ -1115,12 +1117,19 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   otherwise that episode is read (`GET /api/v2/catalog/items/{id}`, three at a time) for its versions'
   `multi_episode_start`/`multi_episode_end`, so a double episode an older server lists by its first number only is never
   a gap. One that cannot be read keeps the places it checks out.
+- The hero's next airing (`ItemDetailViewModel.NextAiring.cs`, `NextAiring`, Granary's own; the choice and the words are
+  Apple's `AutoDownloadSchedule` and `AutoDownloadRules` for a monitored series): a series', season's or episode's page
+  reads today's two windows, the season grid's own keys, for the series. It takes `episode` events and `season_premiere`
+  ones, a premiere standing for the season's episode 1 (the grid places nothing by those); not season 0. The next is the
+  first with `air_at` after now, or with only a date (`local_air_date`, else `air_date`) from the day after that date
+  on, ordered by moment (a date alone is its day's start in the zone the days are reckoned in), then season and episode.
+  Nothing in the 62 days, or a failed request, shows nothing.
 - The calendar's answer for a window lists every series, so it is asked once per server, profile, zone and window, kept
   by series for 5 minutes (`SeriesAirings`) and shared by every page waiting for it; an episode's files are kept as long
   (`EpisodeSpans`). A request goes out as whichever profile acts then, so an answer that came while another profile acts
   is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
-  page's load does not wait for any of it. A failed calendar request leaves the season as listed, with a warning in the
-  log.
+  page's load does not wait for any of it. A failed calendar request leaves the season, or More Episodes, as listed,
+  with a warning in the log.
 
 ### 7.14 Notifications
 

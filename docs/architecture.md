@@ -358,6 +358,17 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   Only a phone with the key (the code it scanned) gets further, and every frame after is sealed under that key; a
   phone on another server stays connected but sees and controls nothing.
 
+## Calendar airings
+
+The detail pages read the calendar (docs/api-contract.md 7.13) through `SeriesAirings`, one for the whole app: a season's
+grid and an episode's More Episodes place the episodes the season's listing lacks (`SeasonGaps`,
+`ItemDetailViewModel.Airings`), and the hero of a series', season's or episode's page names the series' next airing
+(`NextAiring`, `ItemDetailViewModel.NextAiring`). A window's answer lists every series, so `KeptAnswers` keeps it by
+server, profile, zone and window for 5 minutes and every page waiting for a window shares its one request. The hero reads
+today's two windows, which every season asks too, and `CalendarNow` gives each reader the same moment, zone and day, so
+they ask the same windows: while the answers are kept, a series, its season and an episode ask each of today's windows
+once between them. The page's load waits for neither.
+
 ## Artwork
 
 `ArtworkLoader` (Granary.Core) loads every catalog image the app shows; the controls only decode its

@@ -15,6 +15,10 @@ release's section is what its update says it changes (docs/release.md).
   another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
   left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
   nothing.
+- **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
+  still to air among More Episodes, as the season's page does.
+- **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
+  on Thursday" or "Season 4 starts tomorrow".
 
 ### Fixed
 
