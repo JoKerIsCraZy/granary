@@ -161,6 +161,8 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         }
         if (!registration.WentThrough)
         {
+            // Windows' own word that the registration did not go through: no word on it comes after that. No removal was
+            // taken for it (one taken is never asked again), so this is not a removal's word taken for the registration's.
             Ended(registration);
             return true;
         }
@@ -194,6 +196,8 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         uint status = registration.Remove();
         if (status == DnsService.RequestPending)
         {
+            // Every word from now on counts as the removal's (DnssdAnswers), so the registration's own may never be seen:
+            // it is not freed, whatever comes, and is not asked about again.
             if (await registration.RemovedAsync(RemoveWait).ConfigureAwait(false) is null)
             {
                 logger.LogWarning("Windows did not confirm the removal of an unanswered advertisement of the phone remote in time");
@@ -285,7 +289,9 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         }
     }
 
-    // DNS_SERVICE_REGISTER_COMPLETE, on Windows' thread: nothing may escape it.
+    // DNS_SERVICE_REGISTER_COMPLETE, on Windows' thread: nothing may escape it. The instance Windows hands it is the
+    // callback's to free (Microsoft's page for the callback), unless it is the registration's own, which Free frees; the
+    // registration's Instance never changes, also once freed, so a call that found it just before Free cannot free it twice.
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static void OnComplete(uint status, nint context, nint instance)
     {
@@ -316,7 +322,11 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         /// <summary>The callback's context: the registration is found by it in <see cref="s_live"/>.</summary>
         public nint Number { get; }
 
-        /// <summary>The DNS_SERVICE_INSTANCE Windows built; the request points to it.</summary>
+        /// <summary>
+        /// The DNS_SERVICE_INSTANCE Windows built; the request points to it. Set once as the registration is built and kept
+        /// after <see cref="Free"/>, as the address a callback compares with: zeroed there, a callback that found the
+        /// registration just before would take the freed instance for one of Windows' copies and free it again.
+        /// </summary>
         public nint Instance { get; private set; }
 
         /// <summary>The DNS_SERVICE_REGISTER_REQUEST, at one address from <see cref="Start"/> until the registration ended.</summary>
@@ -404,7 +414,6 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             if (Instance != 0)
             {
                 DnsService.DnsServiceFreeInstance(Instance);
-                Instance = 0;
             }
             foreach (nint block in _blocks)
             {

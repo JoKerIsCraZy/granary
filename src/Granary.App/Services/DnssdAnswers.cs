@@ -6,6 +6,8 @@ namespace Granary.App.Services;
 /// own, with nothing that says which of the two a word is about, and may do so before <c>DnsServiceDeRegister</c> has
 /// returned. A word that comes while a removal is being asked for is therefore held until Windows says whether it took
 /// the removal: taken, it is the removal's; not taken, no word on a removal comes, and it is the registration's own.
+/// Once a removal is taken every word counts as the removal's, so for a registration not answered before, its own word
+/// may never be seen and <see cref="Registered"/> may never complete: nothing frees a registration on that word alone.
 /// </summary>
 internal sealed class DnssdAnswers
 {

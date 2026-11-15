@@ -1670,10 +1670,13 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   after that. Memory Windows might still read is never freed. The completion callback is a static
   `UnmanagedCallersOnly` function, so no delegate can be collected under Windows; its context is a registration's
   number, so a late call finds nothing; it catches everything, frees an instance Windows hands it that is not the
-  registration's own, and only completes a task. A word says nothing of whether it is about the registration or its
-  removal, and may come before `DnsServiceDeRegister` returns, so one that comes while a removal is asked for is held
-  (`DnssdAnswers`) until Windows says whether it took the removal: taken, it is the removal's; not taken, it is the
-  registration's own, so a registration that went through just then is known to have. Only status numbers are logged.
+  registration's own (the callback's to free, Microsoft's page says), and only completes a task. The registration keeps
+  its instance's address after freeing it, so a call that found the registration just before cannot free it again. A
+  word says nothing of whether it is about the registration or its removal, and may come before `DnsServiceDeRegister`
+  returns, so one that comes while a removal is asked for is held (`DnssdAnswers`) until Windows says whether it took
+  the removal: taken, it is the removal's; not taken, it is the registration's own, so a registration that went through
+  just then is known to have. Once a removal is taken, every word is the removal's, so a registration not answered
+  before may never be seen answered; nothing is freed on that alone. Only status numbers are logged.
 - **The firewall.** The first time the switch is on and Granary listens, Windows may ask to let Granary through its
   firewall; the switch's description says so beforehand. Granary installs per user without administrator rights, so
   it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see
