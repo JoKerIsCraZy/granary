@@ -587,7 +587,7 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AStopFromBeforeARestart_WhoseMonitorChangedSince_IsDropped_NotSentOverTheChange()
+    public async Task AStopFromBeforeARestart_WhoseMonitorTheServerPausedSince_GoesUnderItsValidatorReadAgain()
     {
         ListMonitors(MonitorPayloads.Monitor());
         SyncAnswers(MonitorPayloads.Sync());
@@ -598,16 +598,16 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         await Monitors.PendingSaved;
         Monitors.Dispose();
 
-        // Meanwhile the series was set up again on another client: the monitor changed.
+        // A monitor is this PC's alone: the server paused it meanwhile (its storage was revoked), and the stop still goes.
         _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.Problem(412, "precondition_failed"), ScriptedSilo.NoContent());
-        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")));
-        ListMonitors(MonitorPayloads.Monitor(etag: "\"m2\""));
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"", active: false)));
+        ListMonitors();
         _monitors = NewMonitors(PendingFile());
         await Monitors.SyncAsync(Token);
         await Monitors.PendingSaved;
 
-        Assert.Equal(["\"m1\"", "\"m1\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
-        Assert.Equal("sub_1", Monitors.For("sr_1")?.Id);
+        Assert.Equal(["\"m1\"", "\"m1\"", "\"m2\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
+        Assert.Empty(Monitors.Monitors);
         Assert.False(File.Exists(PendingPath));
     }
 

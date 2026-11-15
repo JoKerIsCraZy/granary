@@ -111,9 +111,6 @@ public sealed partial class SeriesMonitors : IDisposable
     // The file was read: from then on it holds what Granary keeps. Until then it is never written over.
     private bool _pendingLoaded;
 
-    // The stops read from the file, made before this start: one whose monitor changed since is not sent over that change.
-    private readonly HashSet<(DownloadScope Scope, string SubscriptionId)> _stopsFromBefore = [];
-
     public SeriesMonitors(DownloadSubscriptionsApi api, DownloadsApi downloads, DownloadStore store, MonitorBook book, DownloadManager manager,
         ISessionManager session, TimeProvider time, ILogger<SeriesMonitors> logger, OfflineProgressSync? progress = null, MonitorPendingFile? pending = null)
     {

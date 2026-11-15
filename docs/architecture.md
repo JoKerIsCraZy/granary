@@ -1628,12 +1628,11 @@ titles of their series as a download dialog or a download named them.
   with: a 412 or 409 reads it again and answers `Changed`, sending nothing more (the Apple app sends the same change again
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
   monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
-  read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
-  back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
+  read again, as the Apple app does, also for a stop kept from before a restart: the server keeps a monitor per device, so
+  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer waits for
+  the next run, and the list does not bring the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
   profile, monitor id and validator), as the Apple app keeps them, so one that never reached the server before Granary
-  closed goes after it starts again, and its monitor does not come back meanwhile; but one kept from before the start whose
-  monitor changed since (412 or 409) is dropped, not sent under the validator read again: what changed (someone set the
-  monitor up again, maybe long after) is newer than the stop, and the list shows the monitor again. The file keeps a create's choices still
+  closed goes after it starts again, and its monitor does not come back meanwhile. The file keeps a create's choices still
   waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
   after watching delete what the viewer chose to keep. It is read before the first run or write, written one save after
   another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it)
