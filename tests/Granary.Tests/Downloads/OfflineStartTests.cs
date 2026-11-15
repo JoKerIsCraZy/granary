@@ -243,6 +243,24 @@ public sealed class OfflineStartTests : IAsyncDisposable
         Assert.Equal([AppRoute.Downloads], _navigation.Resets);
     }
 
+    // A problem body, but not one of the server's: a proxy or a filter in front of it can write problems of its own, with
+    // about:blank or a type of its own. Silo's problems all live under its own origin.
+    [Theory]
+    [InlineData("about:blank")]
+    [InlineData("https://proxy.example/errors/forbidden")]
+    public async Task AProblemThatIsNotTheServers_IsNotTheServer(string type)
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath,
+            ScriptedSilo.Json(HttpStatusCode.Forbidden, $$"""{"type":"{{type}}","title":"Forbidden","status":403}"""));
+        var offline = Offline();
+
+        await Shell(offline).StartAsync(cancellationToken: Token);
+
+        Assert.Equal([AppRoute.Downloads], _navigation.Resets);
+        Assert.True(offline.IsOffline);
+    }
+
     // A network's sign-in page answers every address with a page of its own, as a hotel's does.
     [Fact]
     public async Task APageThatIsNotTheServers_IsNotTheServer()

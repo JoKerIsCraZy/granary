@@ -2193,8 +2193,9 @@ offline mode: no app-wide offline state, no banner on other pages, and nothing s
     gives);
   - no answer in time;
   - an error status without a problem the server wrote (`SiloApiException.HasProblem` false: the body names no problem
-    type), whatever the status: a proxy's or a filter's own 401, 403 or 404, a sign-in page's 511. `SiloHttp` raises
-    those from the status alone, and Home could only show an error for them;
+    type under Silo's own origin, `ApiProblem.TypeOrigin`, under which the server writes every one), whatever the
+    status: a proxy's or a filter's own 401, 403 or 404, also as a problem of its own (`about:blank`), a sign-in page's
+    511. `SiloHttp` raises those from the status alone, and Home could only show an error for them;
   - 502, 503, 504, 520 to 527 and 530, which a reverse proxy or a tunnel says in the server's place, as Silo's Android
     app tells them (`isGatewayOrTunnelFailureStatus`), also with a problem body.
 
