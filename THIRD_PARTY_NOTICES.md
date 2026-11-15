@@ -133,8 +133,9 @@ independent client and not an official Silo product.
 
 ## TMDB logo
 
-`src/Granary.App/Assets/Ratings/tmdb-logo.svg` is TMDB's approved logo, unmodified, from
-<https://www.themoviedb.org/about/logos-attribution>, as Silo's web client ships it. It is TMDB's trademark and not
+`src/Granary.App/Assets/Ratings/tmdb-logo.svg` is TMDB's approved logo from
+<https://www.themoviedb.org/about/logos-attribution>, as Silo's web client ships it, its look unmodified (its gradient
+is set as an attribute rather than through a stylesheet, which Windows' SVG renderer does not read). It is TMDB's trademark and not
 covered by Granary's license. Granary shows it only beside a TMDB score, as TMDB's terms allow
 (`src/Granary.App/Assets/Ratings/NOTICE.txt`). Granary uses TMDB's data through your Silo server and is not endorsed
 or certified by TMDB.

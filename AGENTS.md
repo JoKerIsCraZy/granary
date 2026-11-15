@@ -137,6 +137,9 @@ classes in `tests/Granary.Tests/Fakes`.
   `CollectionCapabilities.Artwork` and `TakesArtwork`).
 - **DI lifetimes:** a transient `IAsyncDisposable` resolved from the root provider lives until exit and breaks a
   synchronous container dispose. Register a `Func<T>` factory instead (see `Func<PlaybackControlLane>`).
+- **SVG assets:** an `Image` draws an `.svg` through Direct2D, which ignores a `<style>` sheet and `class`: a shape styled
+  only through them is drawn black. Give every shape its paint as an attribute (`fill="…"`); `RatingLogoTests` checks the
+  TMDB logo so.
 - **Writes with a version:** writes that carry a version send it back as `If-Match` (`SiloHttp.SendIfMatchAsync`).
   A 412 means the data changed elsewhere: read it again, never just overwrite.
 
