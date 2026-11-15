@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 
@@ -23,7 +24,7 @@ internal static class LocalArtwork
     /// <summary>
     /// A bitmap of the file at <paramref name="path"/>, filled once it is read; null without a path. A file that cannot be read
     /// or decoded leaves it empty, which raises no ImageFailed: <paramref name="failed"/> hears of it instead, with the bitmap,
-    /// on the UI thread.
+    /// on the UI thread, never before the caller has shown the bitmap.
     /// </summary>
     public static BitmapImage? Load(string? path, int decodeWidth, Action<BitmapImage>? failed = null)
     {
@@ -32,7 +33,9 @@ internal static class LocalArtwork
             return null;
         }
         var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
-        Fill(bitmap, path, failed);
+        // Read after this returns: a read that fails at once would otherwise report the bitmap before the caller shows it, and
+        // the caller, finding another picture shown, would not take it for a failure to try again.
+        DispatcherQueue.GetForCurrentThread().TryEnqueue(() => Fill(bitmap, path, failed));
         return bitmap;
     }
 
