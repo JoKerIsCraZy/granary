@@ -1,4 +1,5 @@
 using Granary.Core.Downloads;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
@@ -166,5 +167,21 @@ public sealed class DownloadCardsTests
         Assert.True(MediaCardActions.CanPlay(card));
         Assert.Equal("ep_11", allWatched.PlayContentId);
         Assert.Null(noneWhole.PlayContentId);
+    }
+
+    // As the apps' download rows (Apple's DownloadEpisodeRow.hidesStill, Android's downloadItemHidesArtwork): an episode's saved
+    // picture is its still, and one the profile has neither watched nor started is blurred while it hides them.
+    [Fact]
+    public void AnEpisodesStill_IsBlurred_WhileItIsUnwatchedAndTheProfileHidesThem()
+    {
+        var hides = new EpisodeSpoilers(HidesImages: true, HidesOverviews: false);
+        var episode = Coming(GB, GB, DownloadState.Completed, "sr_1");
+
+        Assert.True(DownloadCards.Download(episode, spoilers: hides).BlursImage);
+        Assert.False(DownloadCards.Download(episode with { IsWatched = true }, spoilers: hides).BlursImage);
+        Assert.False(DownloadCards.Download(episode with { ResumeMs = 90_000 }, spoilers: hides).BlursImage);
+        Assert.False(DownloadCards.Download(episode, spoilers: EpisodeSpoilers.Off).BlursImage);
+        // A film's poster is never hidden.
+        Assert.False(DownloadCards.Download(Coming(GB, GB, DownloadState.Completed), spoilers: hides).BlursImage);
     }
 }

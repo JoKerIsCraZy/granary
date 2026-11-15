@@ -91,7 +91,10 @@ public sealed partial class DownloadStore
     /// <summary>For tests: runs with a download's folder before <see cref="BytesOnDisk"/> reads its files.</summary>
     internal Action<string>? MeasuringFolder { get; set; }
 
-    /// <summary>The most folders a load's look for download folders lists; it says so in the log when it stops there.</summary>
+    /// <summary>
+    /// The most folders of Granary's layout a load's look for download folders finds, a download's folder included; it says so in
+    /// the log when it stops there.
+    /// </summary>
     internal int ScanLimit { get; init; } = 2000;
 
     /// <summary>What the last load's look for download folders did.</summary>
@@ -258,13 +261,25 @@ public sealed partial class DownloadStore
     /// <paramref name="queueServerDelete"/>, the server's entry is kept as a <see cref="PendingDelete"/> until it is sent. One that
     /// is not kept here is no change.
     /// </summary>
-    public async Task RemoveAsync(DownloadScope scope, string downloadId, bool queueServerDelete, CancellationToken cancellationToken)
+    public Task RemoveAsync(DownloadScope scope, string downloadId, bool queueServerDelete, CancellationToken cancellationToken) =>
+        RemoveAsync(scope, downloadId, queueServerDelete, null, cancellationToken);
+
+    /// <summary>
+    /// As the other <c>RemoveAsync</c>, only while <paramref name="onlyIf"/> holds for the download as it is: asked in the same
+    /// change that removes it, so nothing else changes it, or decides on it, in between. True when it was removed.
+    /// </summary>
+    public async Task<bool> RemoveAsync(DownloadScope scope, string downloadId, bool queueServerDelete, Func<StoredDownload, bool>? onlyIf,
+        CancellationToken cancellationToken)
     {
         await LoadAsync(cancellationToken);
         StoredDownload? removed = null;
         Change(state =>
         {
             removed = state.Downloads.FirstOrDefault(d => d.Record.Scope == scope && d.Record.DownloadId == downloadId);
+            if (removed is not null && onlyIf?.Invoke(removed) == false)
+            {
+                removed = null;
+            }
             if (removed is null)
             {
                 return state;
@@ -278,9 +293,10 @@ public sealed partial class DownloadStore
         });
         if (removed is null)
         {
-            return;
+            return false;
         }
         await RaiseThenPersistAsync();
+        return true;
     }
 
     /// <summary>

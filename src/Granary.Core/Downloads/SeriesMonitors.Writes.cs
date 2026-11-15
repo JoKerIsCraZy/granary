@@ -31,7 +31,7 @@ public sealed partial class SeriesMonitors
             DownloadSubscription monitor;
             try
             {
-                monitor = await _api.CreateAsync(server, scope.ProfileId, body, token).ConfigureAwait(false);
+                monitor = await _api.CreateAsync(server, scope.AccountId, scope.ProfileId, body, token).ConfigureAwait(false);
             }
             catch (Exception ex) when (IsUncertain(ex, token))
             {
@@ -231,7 +231,7 @@ public sealed partial class SeriesMonitors
         DownloadSubscription changed;
         try
         {
-            changed = await _api.UpdateAsync(server, scope.ProfileId, monitor.Id, monitor.Etag, body, cancellationToken).ConfigureAwait(false);
+            changed = await _api.UpdateAsync(server, scope.AccountId, scope.ProfileId, monitor.Id, monitor.Etag, body, cancellationToken).ConfigureAwait(false);
         }
         catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
         {
@@ -277,8 +277,8 @@ public sealed partial class SeriesMonitors
 
     // The stops still to go for the scope, each under the validator its monitor was last read with. One whose monitor changed
     // since (412, or 409 while the server applied another change) goes once more under its validator read again, as the Apple
-    // app's: a stop does not depend on what changed. One the server will not take is dropped (the list shows the monitor again);
-    // one that got no answer waits for the next run.
+    // app's: a stop does not depend on what changed. One that changed again by then waits for the next run, as one that got no
+    // answer does, under the validator read last. One the server will not take is dropped (the list shows the monitor again).
     private async Task SendStopsAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken)
     {
         foreach (var (id, etag) in StopsOf(scope))
@@ -287,22 +287,31 @@ public sealed partial class SeriesMonitors
             {
                 return;
             }
+            string latest = etag;
             try
             {
                 try
                 {
-                    await _api.DeleteAsync(server, scope.ProfileId, id, etag, cancellationToken).ConfigureAwait(false);
+                    await _api.DeleteAsync(server, scope.AccountId, scope.ProfileId, id, etag, cancellationToken).ConfigureAwait(false);
                 }
                 catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
                 {
-                    var current = await _api.GetAsync(server, scope.ProfileId, id, cancellationToken).ConfigureAwait(false);
-                    await _api.DeleteAsync(server, scope.ProfileId, id, current.Etag, cancellationToken).ConfigureAwait(false);
+                    latest = (await _api.GetAsync(server, scope.AccountId, scope.ProfileId, id, cancellationToken).ConfigureAwait(false)).Etag;
+                    await _api.DeleteAsync(server, scope.AccountId, scope.ProfileId, id, latest, cancellationToken).ConfigureAwait(false);
                 }
                 ForgetStop(scope, id);
             }
             catch (SiloApiException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
             {
                 ForgetStop(scope, id);
+            }
+            catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
+            {
+                // It changed again between the read and the second try: the server still has it, and the stop is still wanted.
+                // It goes with the next run, as the Apple app keeps a stop that met a conflict; the other stops go now. It goes under
+                // the validator read last, so a monitor that changed once costs the next run no refusal.
+                _logger.LogInformation("A monitor changed again under its stop ({Status}); the stop goes with the next run", ex.Status);
+                KeepStop(scope, id, latest);
             }
             catch (SiloApiException ex) when (ex.Status is >= 400 and < 500 and not (int)HttpStatusCode.RequestTimeout and not (int)HttpStatusCode.TooManyRequests)
             {
@@ -322,6 +331,24 @@ public sealed partial class SeriesMonitors
         lock (_gate)
         {
             return _pendingStops.TryGetValue(scope, out var stops) ? new Dictionary<string, string>(stops, StringComparer.Ordinal) : [];
+        }
+    }
+
+    // A stop still to go, from now on under the validator just read.
+    private void KeepStop(DownloadScope scope, string subscriptionId, string etag)
+    {
+        bool changed = false;
+        lock (_gate)
+        {
+            if (_pendingStops.TryGetValue(scope, out var stops) && stops.TryGetValue(subscriptionId, out string? kept) && kept != etag)
+            {
+                stops[subscriptionId] = etag;
+                changed = true;
+            }
+        }
+        if (changed)
+        {
+            SavePending();
         }
     }
 

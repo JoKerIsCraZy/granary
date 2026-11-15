@@ -280,6 +280,27 @@ public sealed class SiloHttp(HttpClient http)
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>As the <c>SendIfMatchAsProfileAsync</c> that answers JSON, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task<TResponse> SendIfMatchAsAccountProfileAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, string accountId,
+        string profileId, string version, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        IfMatch(request, version);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the bodiless <c>SendIfMatchAsProfileAsync</c>, bound to account <paramref name="accountId"/> as well.</summary>
+    public async Task SendIfMatchAsAccountProfileAsync(HttpMethod method, Uri server, string path, string accountId, string profileId, string version,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId, accountId);
+        IfMatch(request, version);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// For a download read as it arrives: the answer once its headers are in, whatever its status, for the caller to
     /// read and dispose. <paramref name="url"/> is absolute; credentials still go only beneath <paramref name="server"/>.

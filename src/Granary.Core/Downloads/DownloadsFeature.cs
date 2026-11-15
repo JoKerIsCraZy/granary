@@ -63,10 +63,15 @@ public sealed partial class DownloadsFeature : ObservableObject
             return;
         }
         await _store.LoadAsync(cancellationToken);
+        // A refresh for a profile that is no longer the active one leaves everything to that one's refresh, which may have
+        // read the server already: a read for this one would clear its answer and outdate its read.
+        if (DownloadScope.Of(_session) != scope)
+        {
+            return;
+        }
         // Downloads on this PC show the entry whatever the server says, so it does not wait for an answer: a server that
         // cannot be reached can take the connection's whole timeout to fail, while the Downloads page is already open.
-        // Not for a profile that is no longer the active one: its downloads are not the next one's.
-        if (DownloadScope.Of(_session) == scope && _store.In(scope).Count > 0)
+        if (_store.In(scope).Count > 0)
         {
             IsOffered = true;
         }

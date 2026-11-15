@@ -263,10 +263,11 @@ public sealed class DownloadStoreTests : IDisposable
         using var drive = new ManualResetEventSlim();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var store = Create();
+        var token = Token;
         store.Loading = () =>
         {
             reached.TrySetResult();
-            drive.Wait(TimeSpan.FromSeconds(30));
+            drive.Wait(TimeSpan.FromSeconds(30), token);
         };
         var loading = store.LoadAsync(Token);
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
@@ -298,10 +299,11 @@ public sealed class DownloadStoreTests : IDisposable
         using var drive = new ManualResetEventSlim();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var store = Create();
+        var token = Token;
         store.Loading = () =>
         {
             reached.TrySetResult();
-            drive.Wait(TimeSpan.FromSeconds(30));
+            drive.Wait(TimeSpan.FromSeconds(30), token);
         };
         var loading = store.LoadAsync(Token);
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
@@ -724,7 +726,7 @@ public sealed class DownloadStoreTests : IDisposable
         var store = await LoadedAsync();
 
         Assert.Equal(added.Folder, Assert.Single(store.All).Folder);
-        // The root, srv1, acct-1, 7 and the ten lower-case folders a server could be named; nothing below them.
+        // srv1 and the ten lower-case folders a server could be named, acct-1, 7 and dl_1; nothing below the ten.
         Assert.Equal(new DownloadStore.ScanCount(14, 1, false), store.LastScan);
     }
 
@@ -751,6 +753,49 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Empty(store.All);
         Assert.True(store.LastScan.Capped);
         Assert.Contains("stopped after 2 folders", _logs.All, StringComparison.Ordinal);
+    }
+
+    // The limit counts the folders the look finds, not the folders it lists: a profile's folder of many downloads is one
+    // listing, and each download in it is a record to read.
+    [Fact]
+    public async Task TheStartScan_CountsEachFolderItFinds_AgainstItsLimit()
+    {
+        var first = await LoadedAsync();
+        for (int i = 1; i <= 5; i++)
+        {
+            await first.AddAsync(Record("dl_" + i), Token);
+        }
+        await File.WriteAllTextAsync(IndexPath, """{ "downloads": [] }""", Token);
+        var store = new DownloadStore(IndexPath, _preferences, _time, _logs.For<DownloadStore>()) { ScanLimit = 5 };
+
+        await store.LoadAsync(Token);
+
+        // srv1, acct-1 and 7, then two of the five downloads.
+        Assert.Equal(new DownloadStore.ScanCount(5, 2, true), store.LastScan);
+        Assert.Equal(2, store.All.Count);
+    }
+
+    // The folders the index knows are not looked into, and do not use up the limit: a download it lost after them is found.
+    [Fact]
+    public async Task TheStartScan_DoesNotCountTheFoldersTheIndexKnows_AgainstItsLimit()
+    {
+        var first = await LoadedAsync();
+        for (int i = 1; i <= 5; i++)
+        {
+            await first.AddAsync(Record("dl_" + i), Token);
+        }
+        // The index lost dl_5, the last of the profile's folders.
+        var index = JsonNode.Parse(await File.ReadAllTextAsync(IndexPath, Token))!;
+        var downloads = index["downloads"]!.AsArray();
+        downloads.Remove(downloads.Single(e => (string?)e!["download_id"] == "dl_5"));
+        await File.WriteAllTextAsync(IndexPath, index.ToJsonString(), Token);
+        var store = new DownloadStore(IndexPath, _preferences, _time, _logs.For<DownloadStore>()) { ScanLimit = 4 };
+
+        await store.LoadAsync(Token);
+
+        // srv1, acct-1 and 7, then dl_5 alone.
+        Assert.Equal(new DownloadStore.ScanCount(4, 1, false), store.LastScan);
+        Assert.NotNull(store.Find(Scope7, "dl_5"));
     }
 
     [Fact]

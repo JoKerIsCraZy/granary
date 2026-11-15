@@ -34,6 +34,9 @@ public sealed partial class LocalPlayback
     private ITimer? _subtitleDelaySave;
     private Task _saves = Task.CompletedTask;
 
+    // The end's wait for the saves, once begun: the stop and the let-go after it share it, on the UI thread one after the other.
+    private Task? _savesWaited;
+
     public PlaybackPreferences Preferences { get; private set; } = PlaybackPreferences.Default;
 
     public double Speed => _speed;
@@ -155,6 +158,11 @@ public sealed partial class LocalPlayback
     }
 
     private bool _deviceDelayCleared;
+
+    // Once the play ends (nothing is saved after that): the saves still on their way, waited for within StopSendBudget, as the
+    // last position's send. Each has its own SaveTimeout, but they go one after another, so several behind a server that takes
+    // them and does not answer would hold the stop for each in turn.
+    private Task WaitForSavesAsync() => _savesWaited ??= WaitWithinAsync(_saves, StopSendBudget, "its settings saved");
 
     // In the order the viewer chose, whatever happens to playback meanwhile; nobody waits for one but the stop.
     private void Save(string kind, string key, string json, string scope, bool clearDevice = false)

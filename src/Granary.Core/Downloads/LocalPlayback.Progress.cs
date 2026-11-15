@@ -38,6 +38,10 @@ public sealed partial class LocalPlayback
     // The record's writes, in the order the positions were recorded.
     private Task _records = Task.CompletedTask;
 
+    // The end's wait for the writes, once begun: the stop and the let-go after it share it. Both come on the UI thread, one
+    // after the other (see the class's remarks), so they never race for it.
+    private Task? _writesWaited;
+
     // The store's clears as the play began: a sign-out that takes the account's downloads along since then ends the recording.
     private readonly long _clearsSeen;
 
@@ -75,7 +79,8 @@ public sealed partial class LocalPlayback
         // Nothing new while the position stands, but for the title's end, and for a file that breaks off where its position
         // was just recorded as one left near the end: that record would have the next play start over.
         bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd && !(brokeOff && _recordedStartsOver);
-        if (!double.IsFinite(position) || position <= 0 || stands)
+        // 0 is a position too once a frame showed, as the Apple app records it: the viewer went back to the start and left there.
+        if (!double.IsFinite(position) || position < 0 || stands)
         {
             return;
         }
@@ -102,6 +107,30 @@ public sealed partial class LocalPlayback
             ? (r.DurationMs is null && durationMs is not null ? r with { DurationMs = durationMs } : r)
             : r with { ResumeMs = resumeMs, ResumeAt = entry.UpdatedAt, IsWatched = playedToTheEnd, DurationMs = durationMs ?? r.DurationMs });
         _sync?.FlushSoon(readBack: isFinal);
+    }
+
+    // Once the play ends (nothing is recorded after that): the download's record and the queue's file as written, waited for
+    // within StopWriteBudget, once for the stop and the let-go after it. The record goes to the download's folder, which can lie
+    // on a drive or share that stops answering in the middle of a write: that holds no stop up, the position is in the queue
+    // already and is sent all the same, and the writes go on and log their own failure.
+    private Task WaitForWritesAsync() => _writesWaited ??=
+        WaitWithinAsync(Task.WhenAll(_records, _progress?.LatestSave ?? Task.CompletedTask), StopWriteBudget, "its last position written on this PC");
+
+    // What the end waits for, within its budget; past it, the work goes on by itself and logs its own failure.
+    private async Task WaitWithinAsync(Task work, TimeSpan budget, string what)
+    {
+        try
+        {
+            await work.WaitAsync(budget, _time).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("Download {DownloadId} did not have {What} within {Seconds} s; that goes on by itself", _download.Record.DownloadId,
+                what, budget.TotalSeconds);
+            // Not waited for any longer: a failure of its own is looked at here, so it is never one nobody observed.
+            _ = work.ContinueWith(static task => _ = task.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
     }
 
     private async Task KeepAsync(Task previous, Func<DownloadRecord, DownloadRecord> change)

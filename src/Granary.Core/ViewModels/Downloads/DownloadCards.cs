@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Downloads;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 
@@ -35,9 +36,12 @@ public static class DownloadCards
     /// A film's download as a poster, or an episode's as a still ("S01E05 · Chapter Five", as a season's page names it). Play
     /// on the card plays it from this PC once it is whole. While it comes, its status has the speed and the time left once
     /// <paramref name="bytesPerSecond"/> is known. Once it is whole, its watch progress from the best position this PC knows:
-    /// its own play's, or the server's when that is newer (<see cref="DownloadRecord.ResumeMs"/>).
+    /// its own play's, or the server's when that is newer (<see cref="DownloadRecord.ResumeMs"/>). An episode the profile has
+    /// neither watched nor started has its still blurred while <paramref name="spoilers"/> hides them, as the apps' download
+    /// rows (Apple's <c>DownloadEpisodeRow</c>, Android's <c>downloadItemHidesArtwork</c>); where its picture came from is not
+    /// kept, so it counts as the still.
     /// </summary>
-    public static MediaCard Download(DownloadItem item, double? bytesPerSecond = null)
+    public static MediaCard Download(DownloadItem item, double? bytesPerSecond = null, EpisodeSpoilers spoilers = default)
     {
         ArgumentNullException.ThrowIfNull(item);
         bool episode = item.SeriesId is not null;
@@ -55,6 +59,7 @@ public static class DownloadCards
             AccessibleLines = string.Join(", ", new[] { SizeText(item.ExpectedBytes), SteadyStatus(item) }.Where(s => s.Length > 0)),
             ToolTip = whole ? null : DownloadText.Status(item, bytesPerSecond),
             LocalImagePath = item.PosterPath,
+            BlursImage = episode && spoilers.HidesImage(EpisodeSpoilers.IsUnwatched(item.IsWatched, null, item.ResumeMs / 1000.0), null),
             Progress = Bar(item),
             IsWatched = watched,
             ShowsWatchedMark = watched,

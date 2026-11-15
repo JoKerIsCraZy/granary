@@ -129,6 +129,15 @@ public sealed class DownloadsApiTests
     }
 
     [Fact]
+    public async Task List_APageThatDoesNotSayWhetherMoreFollow_IsNoAnswer()
+    {
+        _silo.On(HttpMethod.Get, "api/v2/downloads", ScriptedSilo.Json(HttpStatusCode.OK, "{ \"items\": [], \"skipped\": [], \"page\": {} }"));
+
+        var failure = await Assert.ThrowsAsync<HttpRequestException>(() => Api.ListAsync(ScriptedSilo.Base, Profile, "abc", Token));
+        Assert.Equal(HttpRequestError.InvalidResponse, failure.HttpRequestError);
+    }
+
+    [Fact]
     public async Task OpenFile_Past4GB_AsksForTheRestWithIfRange()
     {
         _silo.On(HttpMethod.Get, FilePath,

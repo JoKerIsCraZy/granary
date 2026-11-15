@@ -14,6 +14,13 @@ public sealed record FetchedAssets(OfflineManifest Manifest, IReadOnlyDictionary
     IReadOnlyDictionary<string, string> SubtitleRevisions);
 
 /// <summary>
+/// The server's manifest is of another revision than the download the PC keeps: it describes other bytes than the record names,
+/// the media on this PC's or the file the record's transfer is for. Reading the registry again tells: a larger revision there
+/// replaces the download, which then reads a manifest of its own revision.
+/// </summary>
+public sealed class ManifestRevisionException() : Exception("The manifest is of another revision than the download on this PC.");
+
+/// <summary>
 /// A download's manifest, artwork and subtitles, kept beside its media so it plays and shows without the server
 /// (docs/architecture.md, "What the server says"). The manifest is kept as the server sent it; artwork and subtitles that do not
 /// come are logged and left out, to be tried at the next refresh. Only this download's own asset paths are asked for
@@ -40,6 +47,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     /// or whose revision changed.
     /// </summary>
     /// <exception cref="JsonException">The server's manifest is not this download's.</exception>
+    /// <exception cref="ManifestRevisionException">The manifest is of another revision than the record.</exception>
     /// <exception cref="SiloApiException">The manifest was refused.</exception>
     /// <exception cref="HttpRequestException">The manifest did not come.</exception>
     /// <exception cref="IOException">The manifest could not be written to the folder.</exception>
@@ -53,6 +61,16 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
         if (manifest.DownloadId != record.DownloadId)
         {
             throw new JsonException("The manifest is another download's.");
+        }
+        // The manifest kept beside a download is always of the record's revision, so a play never pairs other bytes' length
+        // and tracks with the media (DownloadPlaybacks compares them). Beside finished media one of another revision describes
+        // other bytes (the Apple app's subtitle refresh passes it over the same way); before the first transfer an older one does
+        // not describe the file fetched next, and a newer one would leave the record behind the bytes it fetches, so that the
+        // server refuses its reports and the registry replaces it after the file came. Either way the registry is read again
+        // (the caller), which replaces the download for a larger revision the usual way.
+        if (manifest.Revision != record.Revision)
+        {
+            throw new ManifestRevisionException();
         }
         SafeFile.WriteWhole(Path.Combine(download.Folder, DownloadPaths.Manifest), temp => File.WriteAllBytes(temp, bytes));
         var artwork = await FetchArtworkAsync(server, download, manifest, cancellationToken).ConfigureAwait(false);

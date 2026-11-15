@@ -459,10 +459,11 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         await SettleAsync(queue);
         using var held = new ManualResetEventSlim();
         var reading = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var token = Token;
         _h.Network.Reading = () =>
         {
             reading.TrySetResult();
-            held.Wait(TimeSpan.FromSeconds(10));
+            held.Wait(TimeSpan.FromSeconds(10), token);
         };
         _h.Network.SetMetered(true);
         await reading.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);

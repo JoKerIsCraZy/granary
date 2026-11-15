@@ -18,8 +18,11 @@ public enum MonitorPhase
     /// <summary>The connection is metered and Settings → Downloads does not allow it: the PC's way of waiting for Wi-Fi.</summary>
     WaitingForUnmetered,
 
-    /// <summary>A storage limit holds it.</summary>
-    StorageLimit,
+    /// <summary>Its monitor's storage limit holds it.</summary>
+    SeriesLimit,
+
+    /// <summary>Granary's storage limit for every download on this PC (Settings → Downloads) holds it.</summary>
+    DownloadsLimit,
 }
 
 /// <summary>One of a monitored series' downloads still on its way: its numbers, where it stands, and how much has come.</summary>
@@ -153,11 +156,12 @@ public static class MonitorRules
         {
             return new MonitorStatus.Paused();
         }
-        if (activity.Any(a => a.Phase == MonitorPhase.StorageLimit))
-        {
-            return new MonitorStatus.StorageLimit(monitor.MaxStorageBytes > 0 ? monitor.MaxStorageBytes : downloadsLimit ?? 0);
-        }
         var ordered = activity.OrderBy(a => a.SeasonNumber ?? 0).ThenBy(a => a.EpisodeNumber ?? 0).ToList();
+        // The first episode a limit holds names that limit: its monitor's, or Granary's for every download.
+        if (ordered.FirstOrDefault(a => a.Phase is MonitorPhase.SeriesLimit or MonitorPhase.DownloadsLimit) is { } held)
+        {
+            return new MonitorStatus.StorageLimit(held.Phase == MonitorPhase.SeriesLimit ? monitor.MaxStorageBytes : downloadsLimit ?? 0);
+        }
         if (ordered.FirstOrDefault(a => a.Phase == MonitorPhase.Downloading) is { } downloading)
         {
             return new MonitorStatus.Downloading(downloading.EpisodeNumber, downloading.Fraction);
