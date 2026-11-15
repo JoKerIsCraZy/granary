@@ -129,6 +129,13 @@ public sealed record PlayRequest
         return this with { OnlyForServer = serverEntryId, OnlyForProfile = profileId };
     }
 
+    /// <summary>
+    /// This request, bound as <paramref name="before"/> is (<see cref="OnlyFor"/>): the episode before or after a title a
+    /// phone started plays only for that sign-in too. Unbound when <paramref name="before"/> is.
+    /// </summary>
+    public PlayRequest BoundAs(PlayRequest? before) =>
+        before is { OnlyForServer: { } server, OnlyForProfile: { } profile } ? OnlyFor(server, profile) : this;
+
     public static PlayRequest Direct(string pathOrUrl)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pathOrUrl);
