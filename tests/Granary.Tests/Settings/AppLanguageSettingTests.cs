@@ -385,6 +385,27 @@ public sealed class AppLanguageSettingTests : IDisposable
         Assert.Equal("es", KeptFile().AtStart);
     }
 
+    [Fact]
+    public async Task ARefusedChoice_AfterAFailedClear_KeepsTryAgainForTheChoiceBefore()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var setting = await ReadyAsync();
+        await setting.ChooseAsync("es");
+        _harness.Silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.Problem(503, "unavailable"));
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Equal("es", setting.Stored);
+        Assert.Equal(AppLanguageFailure.DeviceNotCleared, setting.Failure);
+
+        await setting.RetryDeviceClearAsync();
+
+        Assert.Equal(AppLanguageFailure.None, setting.Failure);
+        Assert.Equal(["PUT ?scope=profile {\"value\":\"es\"}", "DELETE ?scope=profile_device", "PUT ?scope=profile {\"value\":\"fr\"}",
+            "DELETE ?scope=profile_device"], Writes());
+    }
+
     private static Func<Task<HttpResponseMessage>> Json(string body) => ScriptedSilo.Json(System.Net.HttpStatusCode.OK, body);
 
     [Fact]

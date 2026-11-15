@@ -142,6 +142,8 @@ public sealed partial class AppLanguageSetting : ObservableObject
         _choiceFor = owner;
         string? before = Stored;
         bool clearDevice = StoredForThisDevice;
+        // A choice before whose clearing of this PC's own value failed: a refused choice leaves its Try again as it was.
+        var pendingBefore = _clearPending;
         IsSaving = true;
         Failure = AppLanguageFailure.None;
         _clearPending = null;
@@ -158,7 +160,8 @@ public sealed partial class AppLanguageSetting : ObservableObject
                 if (Owner() == owner)
                 {
                     Stored = before;
-                    Failure = AppLanguageFailure.NotSaved;
+                    _clearPending = pendingBefore;
+                    Failure = pendingBefore is null ? AppLanguageFailure.NotSaved : AppLanguageFailure.DeviceNotCleared;
                 }
                 return;
             }
