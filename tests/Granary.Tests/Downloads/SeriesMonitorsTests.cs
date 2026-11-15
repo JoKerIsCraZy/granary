@@ -365,7 +365,7 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AChoiceTheServerDidNotTake_GivesWayToAChangeMadeToTheMonitorAfterIt()
+    public async Task AChoiceTheServerDidNotTake_StillHolds_WhenTheServerPausesTheMonitor()
     {
         ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
         SyncAnswers(MonitorPayloads.Sync());
@@ -374,7 +374,24 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
         await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
 
-        // Another client turned Delete after watching on after the viewer's choice: the monitor's newer word holds.
+        // The server paused it (its storage was revoked): its validator moved, its Delete after watching is still the old one.
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m9\"", deleteWatched: true, active: false));
+        await Monitors.SyncAsync(Token);
+
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
+    public async Task AChoiceTheServerDidNotTake_GivesWayToALaterChangeOfDeleteAfterWatchingItself()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor()));
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.All, false, 0, null), Token);
+
+        // Delete after watching was turned on after the viewer's choice, which did not touch it: that newer word holds.
         ListMonitors(MonitorPayloads.Monitor(etag: "\"m9\"", deleteWatched: true));
         await Monitors.SyncAsync(Token);
 

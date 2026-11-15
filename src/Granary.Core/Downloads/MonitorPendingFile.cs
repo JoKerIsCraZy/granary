@@ -56,9 +56,9 @@ public sealed class MonitorPendingFile(string path, ILogger<MonitorPendingFile> 
             // A member a hand or a damaged file left out makes that entry no entry.
             var stops = (file?.Stops ?? []).Where(s => s is { Server.Length: > 0, Account.Length: > 0, Profile.Length: > 0, Id.Length: > 0, Etag.Length: > 0 })
                 .Select(s => new PendingStop(new DownloadScope(s.Server!, s.Account!, s.Profile!), s.Id!, s.Etag!));
-            var choices = (file?.Choices ?? []).Where(c => c is { Server.Length: > 0, Account.Length: > 0, Profile.Length: > 0, Id.Length: > 0, Etag.Length: > 0, Mode.Length: > 0 })
+            var choices = (file?.Choices ?? []).Where(c => c is { Server.Length: > 0, Account.Length: > 0, Profile.Length: > 0, Id.Length: > 0, Mode.Length: > 0 })
                 .Select(c => new PendingChoice(new DownloadScope(c.Server!, c.Account!, c.Profile!), c.Id!,
-                    new UnconfirmedChoice(new MonitorChoice(c.Mode!, c.DeleteWatched, Math.Max(0, c.MaxStorageBytes), c.Quality), c.Etag!)));
+                    new UnconfirmedChoice(new MonitorChoice(c.Mode!, c.DeleteWatched, Math.Max(0, c.MaxStorageBytes), c.Quality), c.ServerDeleteWatched)));
             return new MonitorPending([.. stops], [.. choices]);
         }
         catch (JsonException ex)
@@ -83,7 +83,7 @@ public sealed class MonitorPendingFile(string path, ILogger<MonitorPendingFile> 
             var data = new MonitorPendingData(
                 [.. pending.Stops.Select(s => new MonitorStopData(s.Scope.ServerEntryId, s.Scope.AccountId, s.Scope.ProfileId, s.SubscriptionId, s.Etag))],
                 [.. pending.Choices.Select(c => new MonitorChoiceData(c.Scope.ServerEntryId, c.Scope.AccountId, c.Scope.ProfileId, c.SubscriptionId,
-                    c.Choice.Etag, c.Choice.Choice.Mode, c.Choice.Choice.DeleteWatched, c.Choice.Choice.MaxStorageBytes, c.Choice.Choice.Quality))]);
+                    c.Choice.ServerDeleteWatched, c.Choice.Choice.Mode, c.Choice.Choice.DeleteWatched, c.Choice.Choice.MaxStorageBytes, c.Choice.Choice.Quality))]);
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(data, MonitorPendingJsonContext.Default.MonitorPendingData);
             SafeFile.WriteWhole(_path, temp => File.WriteAllBytes(temp, json));
         }
@@ -98,7 +98,7 @@ internal sealed record MonitorPendingData(IReadOnlyList<MonitorStopData>? Stops,
 
 internal sealed record MonitorStopData(string? Server, string? Account, string? Profile, string? Id, string? Etag);
 
-internal sealed record MonitorChoiceData(string? Server, string? Account, string? Profile, string? Id, string? Etag, string? Mode, bool DeleteWatched,
+internal sealed record MonitorChoiceData(string? Server, string? Account, string? Profile, string? Id, bool ServerDeleteWatched, string? Mode, bool DeleteWatched,
     long MaxStorageBytes, string? Quality);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]

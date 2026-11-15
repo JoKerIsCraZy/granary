@@ -58,7 +58,7 @@ public sealed partial class SeriesMonitors
             {
                 // The server's monitor as it was (another client's, or one this PC stopped and monitors again) is not what the
                 // viewer asked for: until it is, its Delete after watching is not taken at its word.
-                Unconfirm(scope, monitor.Id, new UnconfirmedChoice(choice, monitor.Etag));
+                Unconfirm(scope, monitor.Id, new UnconfirmedChoice(choice, monitor.DeleteWatched));
                 var edit = new MonitorEdit(monitor.Mode == choice.Mode ? null : choice.Mode, choice.DeleteWatched, choice.MaxStorageBytes,
                     choice.Quality is null || choice.Quality == (monitor.Quality ?? DownloadQualities.Original) ? null : choice.Quality);
                 var changed = await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false);
@@ -190,8 +190,8 @@ public sealed partial class SeriesMonitors
     }
 
     // A whole list read: a monitor it shows as its create asked, or does not show at all, waits for nothing more; nor does one
-    // that changed since the viewer's choice (its validator moved), whose newer word holds, as any monitor's. A sync does not
-    // move a validator: its pages all name the one read before the first.
+    // whose Delete after watching changed since the viewer's choice, a newer word on it. Any other change (the server pausing
+    // it when its storage is revoked) says nothing of that setting, so the choice still waits.
     private void ConfirmListed(DownloadScope scope, IReadOnlyList<DownloadSubscription> listed)
     {
         bool confirmed = false;
@@ -203,7 +203,7 @@ public sealed partial class SeriesMonitors
             }
             foreach (var (id, waiting) in choices.ToList())
             {
-                if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, waiting.Choice) || monitor.Etag != waiting.Etag)
+                if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, waiting.Choice) || monitor.DeleteWatched != waiting.ServerDeleteWatched)
                 {
                     confirmed |= choices.Remove(id);
                 }
