@@ -185,7 +185,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (Home's rows, Continue Watching and Next Up, the libraries, search, collections, a title page's rows and episodes),
   with the title page's entries and rules (Detail pages, below): "Download" while your Silo server lets the profile
   download, or the download's status in the Downloads page's words, which opens the Downloads page, and "Delete download"
-  under it; a season's card "Download season"; a series' card nothing (`CardDownloads`). They come from what this PC
+  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`). They come from what this PC
   knows, so opening the menu asks the server nothing. Below a line come the entries of the list a card is in, from the
   nearest grid above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a collection's own.
   Right-click, Shift+F10, the menu key and a controller's Menu open the same menu. The web's admin entries (play
@@ -313,7 +313,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   GB, Downloading", the same while it comes: the percentage is the bar's value (in percent, on every card).
   A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
   as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
-  did. A series' card opens its downloads (below). The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
+  did. A series' card opens its downloads (below). Play on a card (its play disc under the pointer, a remote's Play, a
+  controller's X) plays a whole download as the click does, and on a series' card its next episode here: the first whole
+  one not watched, by season and episode with the specials last, else the first, as a series' card elsewhere plays its
+  next episode; a card with nothing whole has no play disc and Play does nothing there. The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
   remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
   too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
@@ -323,7 +326,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows. The sidebar's page has no Back disc.
+  film, and with neither left Reclaim Watched when it shows. A controller's bumpers go between Films and Series, to the
+  first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
@@ -341,7 +345,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
   status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
   to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
-  focus, the next season's first card takes it (the one before, after the last season). Once the series has no downloads
+  focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
+  season to season, to its first card. Once the series has no downloads
   left on this PC (its last episode deleted), the page goes back by itself.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
@@ -708,8 +713,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, Download and Delete download, then
     Start a Watch Party below a line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode has ⋮ with
-    Download and Start a Watch Party, a season with Download season and Start a Watch Party; ⋮ shows while any of its items
-    does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a line of
+    Download and Start a Watch Party, a season with Download season and Start a Watch Party, a series with Watchlist, Add to
+    Collection, Download series and Start a Watch Party; ⋮ shows while any of its items does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a line of
     Granary's own (the web has none), kept beside the quality badges for the video codec and the size they do not say.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
@@ -755,7 +760,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
   - Download, the web's overflow item (ActionBar.tsx, its download arrow), in ⋮ after Add to Collection: on a movie or an
     episode with a file while your Silo server lets the profile download (downloads on and allowed). A season has
-    "Download season" instead, for its episodes with a file that are not on this PC yet, and none once all are. A title on
+    "Download season" instead, for its episodes with a file that are not on this PC yet, and none once all are. A series has
+    the Android app's "Download series" (its series page's download menu) while your Silo server lets the profile download:
+    every season's episodes with a file that are not on this PC yet. The page lists one season's episodes at most, so the
+    item stays once all are here, and its dialog reads them as a card's does and says so. A title on
     this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
     available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
     page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
@@ -764,7 +772,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as every card does
     (Components, cards above); the page adds none to them.
   - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
-    Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season), "Choose
+    Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season,
+    "Download: Example Series · All Episodes" for a series, the Apple app's name for a series' every episode), "Choose
     a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
     files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
     download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
@@ -774,18 +783,26 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     latest item details…" in place of the description and a 16 px ring with "Loading…", Download off; then the dialog as
     from the title page. A read that failed says "The item details could not be loaded." with "Please try again." and
     Try Again; a title without a file (or a season none of whose episodes has one) says the web's "No media files for this
-    item.", a season whose episodes are all on this PC "Every episode of this season is on this PC.", and Download stays
+    item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
+    episode of this series is on this PC."), and Download stays
     off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
-    more, never above the file; "10 episodes · 21.4 GB" for a season in Original) and under it the free space where
+    more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,
+    the one it asks for; the episodes alone for a preset) and under it the free space where
     downloads go, "200.0 GB free on this PC.", or in red "Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.",
     which keeps Download off. The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
     Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
     the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
-    Check access and try again." in an error bar, until another version or quality is picked; a season pressed again
-    sends only the episodes not started yet. Cancel closes it; while a start runs, Cancel and Esc wait for it, so a
-    download never starts after the dialog was closed on it.
+    Check access and try again." in an error bar, until another version or quality is picked; a season or a series
+    pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
+    first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
+    whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
+    downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
+    many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
+    closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
+    download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
+    never starts after the dialog was closed on it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
@@ -1094,11 +1111,11 @@ On the pages, and in the minimized player's bar:
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
 | A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
 | B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
-| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| X | Plays or resumes the focused card, as a remote's Play: on the Downloads pages a whole download from this PC, and a series' card its next episode there. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Films and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
@@ -1150,7 +1167,9 @@ Always:
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
 pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
 seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
-order and Filters are menus, not a row to step through: A opens them.
+order and Filters are menus, not a row to step through: A opens them. Windows' folder picker (Settings → Downloads →
+Change) is a window of its own that takes no controller, and Granary reads none while it is in front; the Drive select
+beside it chooses where downloads go with a controller.
 
 ## Signed-out screens
 
@@ -1474,7 +1493,16 @@ says why above the sections.
   (selectable, wrapping at 360 px) over Open, a link that shows the folder in File Explorer (made first when nothing went
   there yet), and Change (outline), Windows' folder picker starting in Downloads; a folder Granary can't write to, or a
   drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
-  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Download on metered
+  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Drive, while the
+  PC has more than one ("New downloads go to a Granary folder on the drive you choose. Change picks any folder."), a
+  select of its disks and removable drives with their free space ("D: · 200.0 GB free") and its mapped network drives by
+  letter alone ("Z:": asking a share that went away keeps Windows waiting), read for 5 s at most once the qualities show,
+  and without them the row stays away; the folder's own drive chosen (none for a share), and a drive chosen while
+  another is still being checked wins over it: another one takes
+  `Granary\Downloads` on it, or the default folder on the default folder's drive, refused as Change refuses. It is how a
+  controller chooses where downloads go: Windows' folder picker is a window of its own, which takes a mouse, a keyboard
+  or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
+  above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
   phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when

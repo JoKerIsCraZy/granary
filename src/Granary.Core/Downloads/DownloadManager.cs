@@ -28,6 +28,12 @@ public enum DownloadStartResult
 
     /// <summary>The server could not be asked, or did not say what it made.</summary>
     Failed,
+
+    /// <summary>
+    /// The server's limit of downloads for the account was reached (429): it refuses every create until downloads finish or
+    /// time passes, so a season or a series asks for none after it.
+    /// </summary>
+    Limited,
 }
 
 /// <summary>A season to download, one episode at a time.</summary>
@@ -36,8 +42,20 @@ public sealed record SeasonDownloadRequest(string SeriesId, string SeriesTitle, 
 /// <param name="MediaFileId">The file to download, the one the dialog's size counted; null lets the server choose.</param>
 public sealed record SeasonEpisode(string EpisodeId, int EpisodeNumber, string Title, string? MediaFileId = null);
 
-/// <summary>How many episodes of a season started, were there already, or could not start.</summary>
-public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed);
+/// <summary>A whole series to download: its seasons in the order they start, each one episode at a time.</summary>
+public sealed record SeriesDownloadRequest(string SeriesId, string SeriesTitle, IReadOnlyList<SeriesSeason> Seasons, string Quality)
+{
+    public int EpisodeCount => Seasons.Sum(s => s.Episodes.Count);
+}
+
+/// <summary>A season of a series' download, by number (0 holds the specials), with its episodes to download.</summary>
+public sealed record SeriesSeason(int SeasonNumber, IReadOnlyList<SeasonEpisode> Episodes);
+
+/// <summary>
+/// How many episodes of a season or a series started, were there already, or could not start; <paramref name="ReachedLimit"/>:
+/// the server's limit of downloads stopped it (<see cref="DownloadStartResult.Limited"/>).
+/// </summary>
+public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed, bool ReachedLimit = false);
 
 /// <summary>
 /// What <see cref="DownloadManager.Changed"/> carries when only a transfer went further: the download it is, so a page can show

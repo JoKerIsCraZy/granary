@@ -555,8 +555,9 @@ public sealed partial class MediaCardView : UserControl
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
-        // Download comes only to a film's, an episode's or a season's card, which has Mark Watched: the ⋮ and its lines stand
-        // without it, so its entries are asked for only as the menu opens (ShowDownloadEntries), not with every card shown.
+        // Download comes only to a film's, an episode's, a season's or a series' card, which has Mark Watched: the ⋮ and its
+        // lines stand without it, so its entries are asked for only as the menu opens (ShowDownloadEntries), not with every card
+        // shown.
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
         // Only a grid or page with entries of its own asks for them; every other card skips this.

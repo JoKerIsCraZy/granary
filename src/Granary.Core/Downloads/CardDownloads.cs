@@ -6,11 +6,11 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.Downloads;
 
 /// <summary>
-/// The Download entries of a film's, an episode's and a season's card in its ⋯ menu, wherever the card shows (Home's rows,
-/// the libraries, search, collections, a title page's rows and seasons), as the title page's ⋯ has them
-/// (<see cref="DownloadActions"/>): "Download", or "Download season", while the server lets the profile download; a title on
-/// this PC its status, which opens the Downloads page, and "Delete download", whatever the server says now. A series gets
-/// none. The entries come from what this PC knows, so the menu reads nothing from the server; the dialog reads the title's
+/// The Download entries of a film's, an episode's, a season's and a series' card in its ⋯ menu, wherever the card shows (Home's
+/// rows, the libraries, search, collections, a title page's rows and seasons), as the title page's ⋯ has them
+/// (<see cref="DownloadActions"/>): "Download", "Download season" or "Download series" while the server lets the profile
+/// download; a title on this PC its status, which opens the Downloads page, and "Delete download", whatever the server says
+/// now. The entries come from what this PC knows, so the menu reads nothing from the server; the dialog reads the title's
 /// files once it opens (<see cref="DownloadOfferReader"/>). One for the app: the commands take the card.
 /// </summary>
 public sealed partial class CardDownloads(DownloadActions actions, DownloadOfferReader offers, ILogger<CardDownloads> logger)
@@ -24,9 +24,10 @@ public sealed partial class CardDownloads(DownloadActions actions, DownloadOffer
         {
             return [];
         }
-        if (card.Type == CatalogItemTypes.Season)
+        if (card.Type is CatalogItemTypes.Season or CatalogItemTypes.Series)
         {
-            return actions.CanDownload ? [new(DownloadActions.DownloadSeasonLabel, DownloadCommand)] : [];
+            string label = card.Type == CatalogItemTypes.Season ? DownloadActions.DownloadSeasonLabel : DownloadActions.DownloadSeriesLabel;
+            return actions.CanDownload ? [new(label, DownloadCommand)] : [];
         }
         if (card.Type is not (CatalogItemTypes.Movie or CatalogItemTypes.Episode))
         {

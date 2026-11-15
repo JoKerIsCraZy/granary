@@ -445,14 +445,15 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ASeriesCard_CountsItsEpisodes_AndOpensThem()
+    public async Task ASeriesCard_CountsItsEpisodes_OpensThem_AndPlaysTheFirst()
     {
         await AddEpisodeAsync("dl_11", 1, 1, "Pilot");
         await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two");
         var page = await AttachedAsync();
 
         var card = Card(page, "sr_1");
-        Assert.Equal(("Example Series", "5.9 KB", "2 episodes", (double?)null, (string?)null),
+        // Play on it (its play disc, a remote's Play, a controller's X) plays the first episode not watched.
+        Assert.Equal(("Example Series", "5.9 KB", "2 episodes", (double?)null, (string?)"ep_dl_11"),
             (card.Title, card.Subtitle, card.Caption, card.Progress, card.PlayContentId));
         page.OpenCardCommand.Execute(card);
 

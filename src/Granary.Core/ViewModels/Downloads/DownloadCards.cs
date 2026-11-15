@@ -93,7 +93,8 @@ public static class DownloadCards
 
     /// <summary>
     /// A series' downloads as its poster: the size they take and how many there are, "3 episodes", or "2 of 3 episodes" while
-    /// some are not whole yet (the Android app's words), with a bar for how much of them is here. It opens their own page.
+    /// some are not whole yet (the Android app's words), with a bar for how much of them is here. It opens their own page; Play
+    /// on it plays its next episode here (<see cref="NextEpisode"/>).
     /// </summary>
     public static MediaCard Series(string seriesId, IReadOnlyList<DownloadItem> episodes)
     {
@@ -118,7 +119,23 @@ public static class DownloadCards
             LocalImagePath = episodes.Select(e => e.SeriesPosterPath).FirstOrDefault(p => p is not null),
             // No bar before any of their bytes came, as a download's card has none.
             Progress = whole || here <= 0 ? null : here,
+            PlayContentId = NextEpisode(episodes)?.MediaItemId,
         };
+    }
+
+    /// <summary>
+    /// What Play on a series' card plays (its play disc, a remote's Play, a controller's X), as a series' card elsewhere plays
+    /// its next episode: the first whole episode here not watched, by season and episode with the specials last (the Apple
+    /// app's offline series screen plays a season's first one not watched); every one watched, the first. None while none is
+    /// whole.
+    /// </summary>
+    public static DownloadItem? NextEpisode(IEnumerable<DownloadItem> episodes)
+    {
+        ArgumentNullException.ThrowIfNull(episodes);
+        var whole = episodes.Where(e => e.IsPlayable)
+            .OrderBy(e => e.SeasonNumber is 0 ? 1 : 0).ThenBy(e => e.SeasonNumber ?? int.MaxValue).ThenBy(e => e.EpisodeNumber ?? int.MaxValue)
+            .ToList();
+        return whole.FirstOrDefault(e => !e.IsWatched) ?? whole.FirstOrDefault();
     }
 
     /// <summary>"3 episodes", "1 episode"; "2 of 3 episodes" while some are not whole on this PC.</summary>

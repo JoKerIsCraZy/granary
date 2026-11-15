@@ -1476,9 +1476,19 @@ client guide.
   the disk, and the server's entry stays, as any entry of an account that signed out. While a sign-out of the account is
   under way (`IsClearPending`, checked after the generation is taken), a start creates nothing and is `Unavailable`: its
   download would be kept after the sign-out took the account's along, and stay behind as a row of a signed-out account.
-- **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
-  fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
-  the profile it started for is no longer the active one.
+- **Seasons and series.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has
+  or is fetching, and counts what started, what was there and what failed. `StartSeriesAsync` does the same for a whole
+  series, season after season in the order its offer lists them (`DownloadOffers.ForSeries`: by number, the specials last),
+  so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
+  cancelled (between two episodes: a create under way is not cut off, since one the server made is kept), the profile
+  they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
+  of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
+  after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
+  cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
+  on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
+  episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
+  above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
+  free space check holds back one that does not fit. However many there are, the queue runs two at a time.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1501,17 +1511,22 @@ client guide.
   which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
-  `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
-  `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
+  `StartAsync` runs (a deferral of the button's click) and when it answers false. Cancel or Esc meanwhile calls
+  `StopStarting`, which cancels the token of a season's or a series' run (checked between two episodes; each create gets
+  none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
+  from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
-  version rows with their sizes, the runtime, a season's episodes with a file that are not on this PC).
-- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's and season's card its entries, which
-  `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
+  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
+  series' page lists one season's episodes at most, so its Download series reads them as a card does
+  (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
+- **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,
+  which `MediaCardView` asks for as its menu opens (not with every card it shows while a row scrolls) and puts before Not
   Interested: from `DownloadActions.StateOf` and `CanDownload` alone, so a menu never waits for the server. The menu items run the entries' commands on Click rather
   than binding them, since a command of the app's would hold every item a menu ever made. A card carries no files, so its
   Download opens the dialog at once (`DownloadActions.OfferReadAsync`, `DownloadOptionsViewModel.ForReading`) and
   `DownloadOfferReader` reads the title as its page reads it (`GET /api/v2/catalog/items/{id}`; a season with
-  `GET /api/v2/catalog/items/{id}/episodes` beside it) on the thread pool, shown on the UI thread. A read that failed
+  `GET /api/v2/catalog/items/{id}/episodes` beside it; a series with its seasons beside it, then each season's episodes,
+  one list after another) on the thread pool, shown on the UI thread. A read that failed
   can be tried again; one the dialog closed on is cancelled and shows nothing; one that answers after another server,
   account or profile became the active one counts as failed (`ProfileChangedException`), so Try Again reads for the
   active one. Download from a card never throws at the menu: what fails is logged by its kind. No title page adds download
@@ -1525,7 +1540,9 @@ client guide.
   keeps its `LiveCard`, its element in the grid and the focus, and only takes its new look (a `MediaCard` compares by
   value, so an unchanged card tells nothing). What a card's click and its ⋮ menu do is `DownloadCardActions`, an
   `ICardMenuSource` the pages hand to their cards (`ICardMenuHost`); each entry acts on the download as it is when it is
-  picked (`DownloadManager.Find`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
+  picked (`DownloadManager.Find`). Play on a card (its play disc, a remote's Play, a controller's X: the window's
+  `PlayFocused`, through `MediaCardActions`) plays its `PlayContentId`: a whole download's own title, and on a series'
+  card its next episode here (`DownloadCards.NextEpisode`). A whole download's card shows how much was watched from its record: `ResumeMs` (where
   a play from this PC left it, or the server's position read back when that is newer; see "Offline progress") over
   `DurationMs`, the title's length, which the manifest gives when it is read (before the first transfer, and again a day
   on) and a play from this PC keeps with each position, for a download kept before the record had it. So it needs no
@@ -1543,7 +1560,16 @@ client guide.
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
-  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first. The
+  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
+  Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
+  controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
+  read with `LoadAsync` on the thread pool (`DriveInfo`: ready disks and removable drives with their available free
+  space, network drives without asking them anything, since a share that went away keeps `IsReady` waiting), for
+  `DiskSpaceReads.Timeout` at most and shown after the qualities, so a slow drive holds nothing back; a list that fails is
+  logged by its kind and leaves the select away. A drive's choice takes `<drive>\Granary\Downloads`, or the default folder
+  on its own drive, through the same check as Change. Each choice (Change, a drive) is counted, and a check that ends
+  after a newer choice changes nothing, so the last choice holds; a drive's choice that fails unexpectedly is logged, said
+  as refused, and the select goes back. The
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
 
@@ -2018,7 +2044,10 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
-  (`Views/IPadSections.cs`), through the selection a click makes. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
+  (`Views/IPadSections.cs`), through the selection a click makes. The Downloads page and a series' downloads have no tabs
+  but sections that all show at once (Films and Series; the seasons), so theirs move focus to the first card of the section
+  before or after the one focus is in; a series' season comes into view first, since its repeater makes it only near the
+  view. A seek being made shows on the seek bar (`SeekBar.ShowTarget`) and is sent through
   `SeekBar.RequestSeek`, so a stream and a Watch Party's room get one request. Any other seek of the viewer's
   (`PlayerViewModel.ViewerSought`: a key, the mouse, a skip, a chapter, the seek bar's own step for the D-pad) replaces
   it: the page drops the preview and raises `PadSeekReplaced`, and the window calls `PadInterpreter.CancelSeek` and

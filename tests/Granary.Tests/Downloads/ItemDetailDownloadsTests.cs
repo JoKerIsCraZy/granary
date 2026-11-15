@@ -4,6 +4,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -17,7 +18,8 @@ namespace Granary.Tests.Downloads;
 
 /// <summary>
 /// The title page's Download items in its ⋯ menu: Download opens the dialog, a download on this PC shows its status and opens
-/// the Downloads page, a downloaded one can be deleted after asking, and a season page offers "Download season".
+/// the Downloads page, a downloaded one can be deleted after asking, a season page offers "Download season" and a series page
+/// "Download series".
 /// </summary>
 public sealed class ItemDetailDownloadsTests : IAsyncDisposable
 {
@@ -58,6 +60,7 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         _detail.Downloads = new DownloadActions(Manager, Feature, _dialog, _confirmation, _detail.Navigation, dispatcher,
             () => new DownloadOptionsViewModel(Manager, Feature, _h.Preferences, _h.Disk, dispatcher, _h.Time, _h.Logs.For<DownloadOptionsViewModel>()),
             _h.Logs.For<DownloadActions>());
+        _detail.DownloadOffers = new DownloadOfferReader(new CatalogApi(_h.Silo.Http), _h.Session, Manager);
         return _detail.Create();
     }
 
@@ -245,6 +248,52 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await page.Refreshing;
 
         Assert.Equal((true, "Download season"), (page.ShowsDownload, page.DownloadLabel));
+    }
+
+    // The page lists one season at most: its Download series reads every season's episodes as the dialog opens, as a series'
+    // card does (CardDownloadsTests).
+    [Fact]
+    public async Task ASeries_OffersDownloadSeries_ForEveryEpisodeOfEverySeason()
+    {
+        _detail.Get(ItemDetailFixture.ItemPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.Series))
+            .Get(ItemDetailFixture.SimilarPath("sr_1"), ItemDetailFixture.Ok("""{ "items": [] }"""))
+            .Get(ItemDetailFixture.SeasonsPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.SeriesSeasons))
+            .Get(ItemDetailFixture.SeriesEpisodesPath("sr_1", 0), ItemDetailFixture.Ok(TitlePayloads.SpecialsEpisodes))
+            .Get(ItemDetailFixture.SeriesEpisodesPath("sr_1", 2), ItemDetailFixture.Ok(TitlePayloads.SecondSeasonEpisodes))
+            // The page reads its seasons' episodes for their stills.
+            .Get(ItemDetailFixture.SeasonItemEpisodesPath("se_0"), ItemDetailFixture.Ok(TitlePayloads.SpecialsEpisodes))
+            .Get(ItemDetailFixture.SeasonItemEpisodesPath("se_2"), ItemDetailFixture.Ok(TitlePayloads.SecondSeasonEpisodes));
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")), Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: EpisodeId)),
+            Created(DownloadPayloads.Entry("dl_21", "ready", episodeId: "ep_21")), Created(DownloadPayloads.Entry("dl_s1", "ready", episodeId: "sp_1")));
+        _dialog.WhileShown = async options =>
+        {
+            await options.Reading;
+            await options.StartAsync();
+        };
+        var page = await FollowedAsync("sr_1");
+
+        await Until(() => page.ShowsDownload, "Download series showed");
+        Assert.Equal(("Download series", false, true), (page.DownloadLabel, page.CanDeleteDownload, page.ShowsMoreMenu));
+
+        await page.OpenDownloadCommand.ExecuteAsync(null);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(("Download: Example Series · All Episodes", "4 episodes · 7.0 GB"), (shown.Title, shown.SizeText));
+        Assert.Equal(["ep_1", EpisodeId, "ep_21", "sp_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        // Download series stays: the page does not know every season's episodes, and the dialog says when all are here.
+        Assert.True(page.ShowsDownload);
+    }
+
+    [Fact]
+    public async Task ASeries_OffersNoDownload_WhenTheServerDoesNotAllowIt()
+    {
+        DownloadsOff();
+        _detail.Get(ItemDetailFixture.ItemPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.Series))
+            .Get(ItemDetailFixture.SimilarPath("sr_1"), ItemDetailFixture.Ok("""{ "items": [] }"""));
+
+        var page = await FollowedAsync("sr_1");
+
+        Assert.False(page.ShowsDownload);
     }
 
     // A season's episode cards carry their Download as every film's and episode's card does (CardDownloadsTests): the page

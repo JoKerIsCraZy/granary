@@ -27,6 +27,7 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     private static readonly MediaCard Movie = new("mv_1", CatalogItemTypes.Movie, "Example Movie");
     private static readonly MediaCard Episode = new("ep_5", CatalogItemTypes.Episode, "Example Series") { EpisodeTitle = "Chapter Five" };
     private static readonly MediaCard Season = new("se_1", CatalogItemTypes.Season, "Season 1");
+    private static readonly MediaCard Series = new("sr_1", CatalogItemTypes.Series, "Example Series");
 
     private readonly DownloadHarness _h = new();
     private readonly FakeDownloadOptionsDialog _dialog = new();
@@ -38,7 +39,12 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         _h.Silo.On(HttpMethod.Get, ItemDetailFixture.ItemPath("mv_1"), ItemDetailFixture.Ok(TitlePayloads.Movie))
             .On(HttpMethod.Get, ItemDetailFixture.ItemPath("ep_5"), ItemDetailFixture.Ok(TitlePayloads.Episode))
             .On(HttpMethod.Get, ItemDetailFixture.ItemPath("se_1"), ItemDetailFixture.Ok(TitlePayloads.Season))
-            .On(HttpMethod.Get, ItemDetailFixture.SeasonItemEpisodesPath("se_1"), ItemDetailFixture.Ok(TitlePayloads.SeasonEpisodes));
+            .On(HttpMethod.Get, ItemDetailFixture.SeasonItemEpisodesPath("se_1"), ItemDetailFixture.Ok(TitlePayloads.SeasonEpisodes))
+            .On(HttpMethod.Get, ItemDetailFixture.ItemPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.Series))
+            .On(HttpMethod.Get, ItemDetailFixture.SeasonsPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.SeriesSeasons))
+            .On(HttpMethod.Get, ItemDetailFixture.SeriesEpisodesPath("sr_1", 0), ItemDetailFixture.Ok(TitlePayloads.SpecialsEpisodes))
+            .On(HttpMethod.Get, ItemDetailFixture.SeriesEpisodesPath("sr_1", 1), ItemDetailFixture.Ok(TitlePayloads.SeasonEpisodes))
+            .On(HttpMethod.Get, ItemDetailFixture.SeriesEpisodesPath("sr_1", 2), ItemDetailFixture.Ok(TitlePayloads.SecondSeasonEpisodes));
     }
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
@@ -93,13 +99,14 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     private void WaitForTheOffer() => _dialog.WhileShown = options => options.Reading;
 
     [Fact]
-    public async Task FilmAndEpisodeCards_OfferDownload_AndASeasonCard_DownloadSeason()
+    public async Task FilmAndEpisodeCards_OfferDownload_ASeasonCard_DownloadSeason_AndASeriesCard_DownloadSeries()
     {
         var cards = await CardsAsync();
 
         Assert.Equal(["Download"], Labels(cards, Movie));
         Assert.Equal(["Download"], Labels(cards, Episode));
         Assert.Equal(["Download season"], Labels(cards, Season));
+        Assert.Equal(["Download series"], Labels(cards, Series));
     }
 
     [Fact]
@@ -107,7 +114,6 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     {
         var cards = await CardsAsync();
 
-        Assert.Empty(cards.EntriesFor(new MediaCard("sr_1", CatalogItemTypes.Series, "Example Series")));
         // A movie's own card in its box set's row offers no actions: the page's buttons hold them.
         Assert.Empty(cards.EntriesFor(Movie with { CurrentMark = CurrentMark.ThisFilm }));
         Assert.Empty(cards.EntriesFor(new MediaCard("col_1", LibraryCollectionsViewModel.CardType, "Weekend")));
@@ -125,6 +131,7 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         Assert.Empty(cards.EntriesFor(Movie));
         Assert.Empty(cards.EntriesFor(Episode));
         Assert.Empty(cards.EntriesFor(Season));
+        Assert.Empty(cards.EntriesFor(Series));
     }
 
     [Fact]
@@ -133,7 +140,7 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         var cards = await CardsAsync();
         int sent = _h.Silo.Sent.Count;
 
-        foreach (var card in new[] { Movie, Episode, Season })
+        foreach (var card in new[] { Movie, Episode, Season, Series })
         {
             cards.EntriesFor(card);
         }
@@ -301,6 +308,59 @@ public sealed class CardDownloadsTests : IAsyncDisposable
 
         var shown = Assert.Single(_dialog.Shown);
         Assert.Equal(("Every episode of this season is on this PC.", false), (shown.DescriptionText, shown.CanStart));
+    }
+
+    // Every season's episodes with a file that are not on this PC, one create each, in the order a series' page lists its
+    // seasons: by number, the specials last.
+    [Fact]
+    public async Task ASeriesCardsDownload_OffersEveryEpisodeNotOnThisPC_SeasonBySeason_TheSpecialsLast()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: "ep_5")), Created(DownloadPayloads.Entry("dl_21", "ready", episodeId: "ep_21")),
+            Created(DownloadPayloads.Entry("dl_s1", "ready", episodeId: "sp_1")));
+        PressDownloadOnceRead();
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1");
+        var cards = await CardsAsync();
+
+        await ChooseAsync(cards, Series);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(("Download: Example Series · All Episodes", "3 episodes · 6.0 GB"), (shown.Title, shown.SizeText));
+        var bodies = CreateBodies();
+        Assert.Equal([("ep_5", "4575"), ("ep_21", "4581"), ("sp_1", "4590")],
+            bodies.Select(b => (b.GetProperty("episode_id").GetString(), b.GetProperty("media_file_id").GetString())));
+        Assert.All(bodies, b => Assert.Equal("sr_1", b.GetProperty("content_id").GetString()));
+        var eleventh = _h.Find("dl_21")!.Record;
+        Assert.Equal(("Chapter Eleven", "Example Series", 2, 1), (eleventh.Title, eleventh.SeriesTitle, eleventh.SeasonNumber, eleventh.EpisodeNumber));
+    }
+
+    [Fact]
+    public async Task ASeriesWhoseEpisodesAreAllOnThisPC_SaysSoInTheDialog()
+    {
+        foreach (string episode in new[] { "ep_1", "ep_5", "ep_21", "sp_1" })
+        {
+            await _h.AddAsync("dl_" + episode, DownloadState.Completed, mediaItemId: episode);
+        }
+        WaitForTheOffer();
+        var cards = await CardsAsync();
+
+        await ChooseAsync(cards, Series);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(("Every episode of this series is on this PC.", false), (shown.DescriptionText, shown.CanStart));
+        Assert.Empty(CreateBodies());
+    }
+
+    [Fact]
+    public async Task ASeriesWithoutAFile_SaysSoInTheDialog()
+    {
+        _h.Silo.On(HttpMethod.Get, ItemDetailFixture.SeasonsPath("sr_1"), ItemDetailFixture.Ok("""{ "items": [] }"""));
+        WaitForTheOffer();
+        var cards = await CardsAsync();
+
+        await ChooseAsync(cards, Series);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(("No media files for this item.", false), (shown.DescriptionText, shown.CanStart));
     }
 
     [Fact]

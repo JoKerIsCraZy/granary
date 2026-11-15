@@ -8,12 +8,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- **Downloads:** download a film, an episode or a whole season from its ⋯ menu, in the original quality or a smaller one
-  your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
+- **Downloads:** download a film, an episode, a whole season or a whole series from its ⋯ menu, in the original quality
+  or a smaller one your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
   each with its size and where it stands, and while it downloads a bar, its speed and the time left; a series' card
   opens its episodes by season. Each card's menu pauses, resumes, retries and deletes, and the top says the space they
   take; a download you delete while it still comes leaves this PC at once. Downloads wait on a metered connection unless
-  Settings → Downloads allows them, and carry on where they stopped when Granary starts again. Signing out of a server or
+  Settings → Downloads allows them, and carry on where they stopped when Granary starts again. X on a controller plays a
+  downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
+  and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
+  controller, which Windows' folder picker behind Change does not take. Signing out of a server or
   removing it deletes its downloads after asking. Your Silo server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
@@ -26,9 +29,11 @@ release's section is what its update says it changes (docs/release.md).
   Keep watched downloads is on.
 - **Offline start:** when Granary starts and can't reach your Silo server, it opens your downloads instead of an error,
   with Retry.
-- **Download from any card:** the ⋯ menu of a film's, an episode's or a season's card has Download wherever the card
-  shows, on Home, in a library, in search, in a collection and on a title's page. A title on this PC shows how its
-  download stands there instead, which opens the Downloads page, with Delete download beside it.
+- **Download from any card:** the ⋯ menu of a film's, an episode's, a season's or a series' card has Download wherever the
+  card shows, on Home, in a library, in search, in a collection and on a title's page. Download series takes every
+  season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need
+  before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
+  its download stands there instead, which opens the Downloads page, with Delete download beside it.
 
 ### Fixed
 

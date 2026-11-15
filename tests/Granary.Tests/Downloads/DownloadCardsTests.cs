@@ -127,4 +127,44 @@ public sealed class DownloadCardsTests
 
         Assert.Null(card.Progress);
     }
+
+    // A controller's X and a remote's Play play the card they are on (MediaCardActions.CanPlay): a whole download from this
+    // PC, as its click does; one still coming plays nothing, as a card without a title to play.
+    [Fact]
+    public void AWholeDownloadsCard_PlaysWithPlay_AndOneStillComingDoesNot()
+    {
+        var whole = DownloadCards.Download(Coming(8 * GB, 8 * GB, DownloadState.Completed));
+        var coming = DownloadCards.Download(Coming(8 * GB, GB));
+
+        Assert.Equal(("mv_1", true), (whole.PlayContentId, MediaCardActions.CanPlay(whole)));
+        Assert.False(MediaCardActions.CanPlay(coming));
+    }
+
+    // Play on a series' card (its play disc, a remote's Play, a controller's X) plays its next episode on this PC, as a series'
+    // card elsewhere plays its next episode: the first whole one not watched, by season and episode, the specials last.
+    [Fact]
+    public void ASeriesCard_PlaysItsFirstWholeEpisodeNotWatched_InTheSeasonsOrder()
+    {
+        DownloadItem Episode(string id, int season, int episode, DownloadState state = DownloadState.Completed, bool watched = false) =>
+            Coming(GB, state == DownloadState.Completed ? GB : 0, state, "sr_1") with
+            {
+                DownloadId = "dl_" + id, MediaItemId = id, SeasonNumber = season, EpisodeNumber = episode, IsWatched = watched,
+            };
+
+        var card = DownloadCards.Series("sr_1",
+        [
+            Episode("sp_1", 0, 1),
+            Episode("ep_22", 2, 2),
+            Episode("ep_21", 2, 1, DownloadState.Downloading),
+            Episode("ep_12", 1, 2),
+            Episode("ep_11", 1, 1, watched: true),
+        ]);
+        var allWatched = DownloadCards.Series("sr_1", [Episode("ep_12", 1, 2, watched: true), Episode("ep_11", 1, 1, watched: true)]);
+        var noneWhole = DownloadCards.Series("sr_1", [Episode("ep_11", 1, 1, DownloadState.Queued)]);
+
+        Assert.Equal("ep_12", card.PlayContentId);
+        Assert.True(MediaCardActions.CanPlay(card));
+        Assert.Equal("ep_11", allWatched.PlayContentId);
+        Assert.Null(noneWhole.PlayContentId);
+    }
 }

@@ -70,6 +70,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly BoxSetsApi? _boxSets;
     private readonly BoxSetLibraries? _boxSetLibraries;
     private readonly DownloadActions? _downloads;
+    private readonly DownloadOfferReader? _downloadOffers;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -110,7 +111,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         EpisodeSpans? spans = null,
         BoxSetsApi? boxSets = null,
         BoxSetLibraries? boxSetLibraries = null,
-        DownloadActions? downloads = null)
+        DownloadActions? downloads = null,
+        DownloadOfferReader? downloadOffers = null)
     {
         _session = session;
         _catalog = catalog;
@@ -132,6 +134,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _boxSets = boxSets;
         _boxSetLibraries = boxSetLibraries;
         _downloads = downloads;
+        _downloadOffers = downloadOffers;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
