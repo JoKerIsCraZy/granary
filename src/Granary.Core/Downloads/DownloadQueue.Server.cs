@@ -284,6 +284,7 @@ public sealed partial class DownloadQueue
         {
             if (running is not null)
             {
+                AwaitingReplacedTransfer?.Invoke(key.Id);
                 await running.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
             // The record as the old transfer left it: one that finished meanwhile named its file, which goes too.

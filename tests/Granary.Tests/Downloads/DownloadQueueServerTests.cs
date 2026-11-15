@@ -371,22 +371,26 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         DownloadQueue? queue = null;
         Task? reconcile = null;
         int replaced = 0;
+        using var awaiting = new ManualResetEventSlim();
+        bool replacingMeanwhile = false;
         // As the old transfer puts its last bytes on the disk, the server has new ones (in an MP4 now): a reconcile replaces the
-        // download while that transfer finishes, names its file media.mkv and says so.
+        // download while that transfer finishes, names its file media.mkv and says so. The transfer goes on only once the
+        // replacement stopped it and waits for it to end; the result is checked after, not in the callback.
         queue = _h.StartQueue(flushed: _ =>
         {
             if (Interlocked.Exchange(ref replaced, 1) == 0)
             {
                 _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
                 _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4")));
+                queue!.AwaitingReplacedTransfer = _ => awaiting.Set();
                 reconcile = Task.Run(() => queue!.ReconcileAsync(Token));
-                SpinWait.SpinUntil(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count >= 2, TimeSpan.FromSeconds(2));
-                Thread.Sleep(200);
+                replacingMeanwhile = awaiting.Wait(HangLimit, Token);
             }
         });
 
         await Until(() => _h.Find("dl_1")?.Record is { Revision: 2, State: DownloadState.Completed }, "the new revision completed");
         await reconcile!;
+        Assert.True(replacingMeanwhile);
 
         Assert.Equal("media.mp4", _h.Find("dl_1")!.Record.MediaFile);
         Assert.False(System.IO.File.Exists(File(stored, "media.mkv")));

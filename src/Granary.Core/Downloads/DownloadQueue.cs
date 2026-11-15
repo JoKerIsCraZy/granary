@@ -201,6 +201,9 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>For tests: runs on the loop's thread in a pass that took its scope, right before it starts that scope's transfers.</summary>
     internal Action? StartingTransfers { get; set; }
 
+    /// <summary>For tests: runs with a download's id once a new revision stopped its transfer, right before it waits for that transfer to end.</summary>
+    internal Action<string>? AwaitingReplacedTransfer { get; set; }
+
     /// <summary>Starts following the session, the network, the settings and the store, and the loop. Once.</summary>
     public void Start()
     {
