@@ -14,6 +14,17 @@ release's section is what its update says it changes (docs/release.md).
   chooses it for your profile, as on Silo's web: Match device or a language by its own name. A new choice shows the
   next time Granary starts. Arabic is not offered yet: it needs a layout that runs right to left, so a profile or a
   Windows set to Arabic gets the next language in line.
+- **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
+  subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
+  and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
+  phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
+  another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
+  left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
+  nothing.
+- **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
+  still to air among More Episodes, as the season's page does.
+- **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
+  on Thursday" or "Season 4 starts tomorrow".
 
 ### Changed
 
@@ -23,6 +34,20 @@ release's section is what its update says it changes (docs/release.md).
   next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM". Sizes, rates and speeds
   follow the same format ("1,5 GB", "1,25×" on a German Windows), and a title's Info lists its size and bitrate as the
   web's media info does ("700.0 MB", "8,000 kbps").
+- A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
+  Added Movies" itself.
+- A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
+
+### Fixed
+
+- Admin → Activity: a stream's Look up opens IP Lookup and scrolls to it with the accounts seen at that address, as on
+  Silo's web, where before it looked the address up in the closed lookup. The address sits in the middle of its field.
+- The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
+  or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.
+- A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and
+  every other score your Silo server shows for it.
+- The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
+  screen draws it, as Silo's web does, where it came at a card's size and was stretched.
 
 ## [0.4.0] - 2026-11-14
 

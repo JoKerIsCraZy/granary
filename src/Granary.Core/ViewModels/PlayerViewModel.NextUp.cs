@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.Texts;
@@ -65,6 +66,17 @@ public sealed partial class PlayerViewModel
 
     [ObservableProperty]
     public partial Uri? NextUpStill { get; private set; }
+
+    /// <summary>
+    /// How wide the Playing Next screen draws the still at most, in device pixels; 0 until the page says. The episodes
+    /// around are read with stills that wide, as the web reads them for its Playing Next screen (its <c>upNext</c> in
+    /// <c>lib/artworkWidths.ts</c>): the server's own size for a season's episodes is a card's, too small to be sharp there.
+    /// </summary>
+    public double NextUpStillWidth { get; set; }
+
+    // The still's width for the read, or null for the server's own sizes while the page has not said.
+    private ImageSizes? NextUpStillSizes =>
+        double.IsFinite(NextUpStillWidth) && NextUpStillWidth > 0 ? new ImageSizes(Still: (int)Math.Ceiling(NextUpStillWidth)) : null;
 
     /// <summary>
     /// The still is an unwatched episode's own and the profile hides those: the screen blurs it, as the web's
@@ -192,16 +204,17 @@ public sealed partial class PlayerViewModel
             return;
         }
         _nextUpLoad = new CancellationTokenSource();
-        _ = ResolveNextAsync(_upNext, episode, _nextUpLoad.Token);
-        _ = ResolvePreviousAsync(_upNext, episode, _nextUpLoad.Token);
+        var stills = NextUpStillSizes;
+        _ = ResolveNextAsync(_upNext, episode, stills, _nextUpLoad.Token);
+        _ = ResolvePreviousAsync(_upNext, episode, stills, _nextUpLoad.Token);
     }
 
-    private async Task ResolveNextAsync(IUpNextSource source, PlayingEpisode episode, CancellationToken cancellationToken)
+    private async Task ResolveNextAsync(IUpNextSource source, PlayingEpisode episode, ImageSizes? stills, CancellationToken cancellationToken)
     {
         NextEpisode? next;
         try
         {
-            next = await source.NextEpisodeAsync(episode, cancellationToken);
+            next = await source.NextEpisodeAsync(episode, stills, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -257,7 +270,7 @@ public sealed partial class PlayerViewModel
         if (_nextUp.Next is { } next)
         {
             StopCountdown();
-            _ = PlayAsync(PlayRequest.FromStart(next.ContentId));
+            _ = PlayAsync(Following(PlayRequest.FromStart(next.ContentId)));
         }
     }
 

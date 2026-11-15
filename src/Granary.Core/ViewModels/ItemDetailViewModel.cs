@@ -213,6 +213,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     public partial string MetaLine { get; private set; } = "";
 
     /// <summary>
+    /// The scores under the facts, "IMDb 8.3", "TMDB 8.5", as the web's ScoreRow shows them on its movie, series and episode
+    /// pages; a season's page has none.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRatings))]
+    public partial IReadOnlyList<DetailRating> Ratings { get; private set; } = [];
+
+    public bool HasRatings => Ratings.Count > 0;
+
+    /// <summary>
     /// "Available version: 720P · H264 · EAC3 · 9.3 GB" under the buttons; empty for a series or season, and for several
     /// files, which the Version picker names instead.
     /// </summary>
@@ -319,14 +329,22 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     public partial string EpisodesTotalText { get; private set; } = "";
 
     /// <summary>
-    /// An episode's whole season in its order, the episode itself marked (<see cref="MediaCard.IsCurrent"/>), as the web's;
-    /// empty unless there is another episode to go to.
+    /// The cards of an episode's whole season in its order, the episode itself marked (<see cref="MediaCard.IsCurrent"/>), as
+    /// the web's; empty while the row does not show (<see cref="MoreEpisodesRow"/>).
+    /// </summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<MediaCard> MoreEpisodes { get; private set; } = [];
+
+    /// <summary>
+    /// The "More Episodes" row as shown: <see cref="MoreEpisodes"/> with the places of the season's missing and upcoming
+    /// episodes among them (<see cref="DetailEpisodePlaceholder"/>, ItemDetailViewModel.Airings.cs); empty unless it has more
+    /// than one entry.
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMoreEpisodes))]
-    public partial IReadOnlyList<MediaCard> MoreEpisodes { get; private set; } = [];
+    public partial IReadOnlyList<object> MoreEpisodesRow { get; private set; } = [];
 
-    public bool HasMoreEpisodes => MoreEpisodes.Count > 0;
+    public bool HasMoreEpisodes => MoreEpisodesRow.Count > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasTrailers))]
@@ -397,6 +415,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             }
             Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
+            StartNextAiring(server.BaseUri, generation, cancellationToken);
             await LoadSectionsAsync(item, server.BaseUri, profileId, images, generation, cancellationToken);
             if (generation == _generation)
             {
@@ -491,6 +510,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropUrl = null;
         BackdropThumbhash = "";
         AvailableVersionLine = "";
+        Ratings = [];
         ResetPrePlay();
         ResetRating();
         InfoSections = [];
@@ -499,9 +519,13 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Episodes = [];
         StopPlacing();
         _places = [];
+        _placedAt = null;
         EpisodeGrid.Clear();
+        StopNextAiring();
+        NextAiringText = "";
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
+        MoreEpisodesRow = [];
         ExtraGroups = [];
         Trailers = [];
         Credits = [];
@@ -529,6 +553,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
         Overview = item.Overview?.Trim() ?? "";
         ShowMetaLine();
+        Ratings = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series or CatalogItemTypes.Episode ? DetailFacts.Ratings(item) : [];
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
@@ -584,7 +609,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             if (episodes is not null)
             {
                 ShowEpisodes(only.ContentId, episodes.Items, only.EpisodeCount);
-                StartPlacing(server, _contentId, only.SeasonNumber, generation, cancellationToken);
+                StartPlacing(server, _contentId, only.SeasonNumber, episodes.Items, generation, cancellationToken);
                 return;
             }
         }
@@ -635,11 +660,11 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowMetaLine(listedEpisodes: collection.Items.Count);
         InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
-        StartPlacing(server, item.SeriesId, item.SeasonNumber, generation, cancellationToken);
+        StartPlacing(server, item.SeriesId, item.SeasonNumber, collection.Items, generation, cancellationToken);
     }
 
     // The season crumb links once the season is known; "More Episodes" lists the whole season, this episode marked Now
-    // Viewing, as the web's EpisodeContent.tsx.
+    // Viewing, as the web's EpisodeContent.tsx, and the places of the episodes the season's listing lacks as its grid does.
     private async Task LoadEpisodeContextAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(item.SeriesId) || item.SeasonNumber is not { } number || number < 0)
@@ -658,6 +683,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         if (generation == _generation && episodes is not null)
         {
             ShowSiblings(episodes.Items);
+            StartPlacing(server, seriesId, number, _siblings, generation, cancellationToken);
         }
     }
 

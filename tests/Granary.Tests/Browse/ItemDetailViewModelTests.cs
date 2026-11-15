@@ -184,7 +184,7 @@ public sealed class ItemDetailViewModelTests
         // Specials do not count as a season; the regular seasons hold 10 + 7 + 8 episodes.
         var details = detail.InfoSections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
         Assert.Equal(("3 Seasons", "25 Episodes"), (details["Seasons"], details["Episodes"]));
-        Assert.Equal("IMDb 7.5 · TMDB 7.7 · Rotten Tomatoes 98%", details["Ratings"]);
+        Assert.Equal("IMDb 7.5 · TMDB 7.7 · Rotten Tomatoes 98% · Metacritic 75", details["Ratings"]);
         Assert.Equal("George Kay, François Uzan", detail.InfoSections.Single(s => s.Title == "Crew").Rows.Single(r => r.Label == "Creator").Value);
         Assert.Equal([("George Kay", "Creator"), ("François Uzan", "Creator"), ("Omar Sy", "Assane Diop")], detail.People.Select(p => (p.Name, p.Role ?? "")));
         Assert.Equal(new Uri("https://cdn.example/lupin-logo.png"), detail.LogoUrl);

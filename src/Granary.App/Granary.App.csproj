@@ -66,6 +66,9 @@
     <Content Include="Assets\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- Silo's mark, unmodified, to refer to Silo where a server is added and signed in to (Assets/Brand/NOTICE.txt). -->
     <Content Include="Assets\Brand\silo-mark-flat.svg" CopyToOutputDirectory="PreserveNewest" />
+    <!-- TMDB's approved logo, unmodified, beside a TMDB score as the web shows it (Assets/Ratings/NOTICE.txt). -->
+    <Content Include="Assets\Ratings\tmdb-logo.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Ratings\NOTICE.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- Granary's own mark and icon; Assets/Logo/granary-icon.svg is the icon's source. -->
     <Content Include="Assets\Logo\granary-mark.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Logo\granary.ico" CopyToOutputDirectory="PreserveNewest" />

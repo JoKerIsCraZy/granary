@@ -106,7 +106,7 @@ public sealed class ItemDetailTextTests
         Assert.Equal(expected, DetailFacts.WatchedLabel(type, isWatched));
 
     [Fact]
-    public void Ratings_AreShownAsGivenAndAtMostThree()
+    public void Ratings_AreShownAsGiven_EveryOneTheServerChose()
     {
         var item = Item(CatalogItemTypes.Movie) with
         {
@@ -119,7 +119,7 @@ public sealed class ItemDetailTextTests
             ],
         };
 
-        Assert.Equal(["IMDb 5.4", "TMDB 7.1", "PLUGIN_X 90/100"], DetailFacts.Ratings(item).Select(r => r.AccessibleName));
+        Assert.Equal(["IMDb 5.4", "TMDB 7.1", "PLUGIN_X 90/100", "Rotten Tomatoes 98%"], DetailFacts.Ratings(item).Select(r => r.AccessibleName));
     }
 
     [Fact]

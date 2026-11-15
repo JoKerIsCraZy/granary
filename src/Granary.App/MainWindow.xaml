@@ -228,13 +228,28 @@
             <FontIcon Glyph="&#xE76B;" FontSize="14" />
         </Button>
 
-        <!--
-            What the server does, for an acting administrator, as the web's ServerActivity: a glass disc at the top right of
-            the page, where the web has it (20 px from the edge), level with the way back. Shown and hidden by
-            MainWindow.Activity.cs; after the page in the tab order, so it is never a page's first focus.
-        -->
-        <controls:ServerActivityButton x:Name="ActivityButton" Grid.Row="1" Margin="0,12,20,0" HorizontalAlignment="Right"
-                                       VerticalAlignment="Top" Visibility="Collapsed" />
+        <StackPanel Grid.Row="1" Margin="0,12,20,0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <!--
+                While Silo's phone app controls this PC (design 5.9): a quiet disc beside the activity indicator, "Remote control
+                active", whose menu lets the phones go. Shown and hidden by MainWindow.PhoneRemote.cs; the full player has its own
+                in its bar.
+            -->
+            <Button x:Name="RemoteIndicator" Style="{StaticResource SiloPageBackButtonStyle}" Visibility="Collapsed"
+                    AutomationProperties.Name="{x:Bind RemoteActiveText}" ToolTipService.ToolTip="{x:Bind RemoteActiveText}">
+                <FontIcon Glyph="&#xE8EA;" FontSize="14" />
+                <Button.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                        <MenuFlyoutItem Text="{x:Bind RemoteDisconnectText}" Click="OnDisconnectRemoteClick" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+            <!--
+                What the server does, for an acting administrator, as the web's ServerActivity: a glass disc at the top right of
+                the page, where the web has it (20 px from the edge), level with the way back. Shown and hidden by
+                MainWindow.Activity.cs; after the page in the tab order, so it is never a page's first focus.
+            -->
+            <controls:ServerActivityButton x:Name="ActivityButton" VerticalAlignment="Top" Visibility="Collapsed" />
+        </StackPanel>
 
         <!--
             A downloaded update of Granary itself: restart into it, or it installs when Granary closes (AppUpdatesViewModel,
@@ -275,6 +290,14 @@
         <!-- A notice for the minimized player: above its bar, at its left edge (MainWindow.Player.cs, ShowDockNotice). -->
         <controls:PlaybackNoticeView x:Name="DockNotice" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" MaxWidth="576"
                                      Visibility="Collapsed" />
+
+        <!--
+            "Elena's phone connected" for four seconds when a phone starts to control this PC, as Silo's Roku app says it
+            (RemoteIndicatorViewModel): the notice card of the player's, over the pages and the player alike, where the player
+            shows its own, below its top bar.
+        -->
+        <controls:PlaybackNoticeView Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,80,16,0" MaxWidth="576"
+                                     Message="{x:Bind Remote.NoticeText, Mode=OneWay}" Visibility="{x:Bind Remote.HasNotice, Mode=OneWay}" />
 
         <!--
             A trailer, over everything but the start screen, title bar included, as a dialog: YouTube's player on a scrim

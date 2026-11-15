@@ -197,7 +197,8 @@
                         </ItemsRepeater>
                     </StackPanel>
 
-                    <controls:MediaRow Title="{x:Bind t:AppText.Get('web.detail.episodes.moreEpisodes')}" ItemsSource="{x:Bind ViewModel.MoreEpisodes, Mode=OneWay}"
+                    <!-- The season's episodes with the places of those the library does not have among them (ItemDetailViewModel.Airings.cs). -->
+                    <controls:MediaRow Title="{x:Bind t:AppText.Get('web.detail.episodes.moreEpisodes')}" ItemsSource="{x:Bind ViewModel.MoreEpisodesRow, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasMoreEpisodes, Mode=OneWay}" />
 

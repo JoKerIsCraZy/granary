@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Detail;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,9 @@ namespace Granary.App.Controls;
 /// <summary>
 /// A titled row of cards, as wide as the web's for the profile's poster size at the window's breakpoint.
 /// <see cref="CardInvokedCommand"/> gets the <see cref="MediaCard"/>; "Explore all" shows only when
-/// <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the row shows images at once.
+/// <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the row shows images at once. Among
+/// an episode's More Episodes stand the places of its season's missing and upcoming episodes
+/// (<see cref="DetailEpisodePlaceholder"/>), as wide as its cards and passed by the keyboard.
 /// </summary>
 public sealed partial class MediaRow : UserControl
 {
@@ -97,7 +100,7 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(TitleStyleProperty, value);
     }
 
-    /// <summary>The cards: any enumerable of <see cref="MediaCard"/>.</summary>
+    /// <summary>The cards: any enumerable of <see cref="MediaCard"/>, with <see cref="DetailEpisodePlaceholder"/> places among them.</summary>
     public object? ItemsSource
     {
         get => GetValue(ItemsSourceProperty);
@@ -147,6 +150,15 @@ public sealed partial class MediaRow : UserControl
     // Instance helpers because x:Bind function bindings call them.
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
+    // The title takes the mouse only while it opens something; a bool of its own, as one function must not feed two types.
+    public bool LinksTitle(ICommand? command) => command is not null;
+
+    // The accent under the pointer, as the web's title link (hover:text-primary); the style's colour again once it leaves.
+    private void OnTitlePointerEntered(object sender, PointerRoutedEventArgs e) =>
+        TitleText.Foreground = (Brush)Application.Current.Resources["SiloPrimaryBrush"];
+
+    private void OnTitlePointerExited(object sender, PointerRoutedEventArgs e) => TitleText.ClearValue(TextBlock.ForegroundProperty);
+
     public string ExploreAllName(string title) => AppText.Get("web.catalog.carousel.exploreAllLabel", ("title", title));
 
     /// <summary>The web's "Explore all", in capitals as Granary's row shows it.</summary>
@@ -163,9 +175,14 @@ public sealed partial class MediaRow : UserControl
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
             {
-                if (VisualTreeHelper.GetChild(Items, i) is Button { Content: MediaCardView view } button)
+                switch (VisualTreeHelper.GetChild(Items, i))
                 {
-                    ShowLook(button, view, view.Card?.Shape ?? MediaCardShape.Poster);
+                    case Button { Content: MediaCardView view } button:
+                        ShowLook(button, view, view.Card?.Shape ?? MediaCardShape.Poster);
+                        break;
+                    case Grid { Children: [DetailEpisodePlaceholderCard] } place:
+                        ShowPlaceLook(place);
+                        break;
                 }
             }
         }
@@ -179,6 +196,10 @@ public sealed partial class MediaRow : UserControl
             var shape = sender.ItemsSourceView?.GetAt(args.Index) is MediaCard card ? card.Shape : MediaCardShape.Poster;
             ShowLook(button, view, shape);
             view.IsParked = false;
+        }
+        else if (args.Element is Grid { Children: [DetailEpisodePlaceholderCard] } place)
+        {
+            ShowPlaceLook(place);
         }
     }
 
@@ -197,6 +218,9 @@ public sealed partial class MediaRow : UserControl
         button.Width = _look.Presentation.RowCardWidth(shape, _look.Breakpoint);
         view.Caption = _look.Presentation.Caption;
     }
+
+    // A place is as wide as the episode cards around it, which centring and paging the row count on (RowBleed).
+    private void ShowPlaceLook(Grid place) => place.Width = _look.Presentation.RowCardWidth(MediaCardShape.Landscape, _look.Breakpoint);
 
     private ScrollViewer? PageScroller()
     {

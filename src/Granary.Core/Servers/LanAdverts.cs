@@ -128,7 +128,7 @@ public static class LanAdverts
 
     /// <summary>A found server's label: its branding name, else the advertised instance name, else "Silo".</summary>
     public static string DisplayName(string? brandingName, string? instanceName) =>
-        Clean(brandingName) ?? Clean(instanceName) ?? "Silo";
+        CleanLabel(brandingName, MaxNameLength) ?? CleanLabel(instanceName, MaxNameLength) ?? "Silo";
 
     /// <summary>The letter of a label's mark: its first character when that is a letter or digit, else "S".</summary>
     public static string Initial(string label)
@@ -141,8 +141,9 @@ public static class LanAdverts
 
     // The label comes from whoever answered: what could reorder or hide text goes (controls, format characters such as
     // bidi overrides and zero-width joiners, line and paragraph separators, lone surrogates), compatibility forms fold
-    // to their plain letters, and the length is capped between characters, never inside one.
-    private static string? Clean(string? text)
+    // to their plain letters, and the length is capped between characters, never inside one. The phone remote cleans a
+    // phone's name with it too.
+    internal static string? CleanLabel(string? text, int maxLength)
     {
         if (text is null)
         {
@@ -159,9 +160,9 @@ public static class LanAdverts
         }
         string label = kept.ToString().Normalize(NormalizationForm.FormKC).Trim();
         var elements = new StringInfo(label);
-        if (elements.LengthInTextElements > MaxNameLength)
+        if (elements.LengthInTextElements > maxLength)
         {
-            label = elements.SubstringByTextElements(0, MaxNameLength).TrimEnd() + "…";
+            label = elements.SubstringByTextElements(0, maxLength).TrimEnd() + "…";
         }
         return label.Length > 0 ? label : null;
     }

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Api.Images;
 using Granary.Core.Playback;
 
 namespace Granary.Core.ViewModels;
@@ -22,12 +23,15 @@ public sealed partial class PlayerViewModel
     /// </summary>
     [RelayCommand]
     private Task PlayPreviousEpisodeAsync() =>
-        _previousEpisode is { } previous ? StartAsync(PlayRequest.ResumeWithoutRewind(previous.ContentId)) : Task.CompletedTask;
+        _previousEpisode is { } previous ? StartAsync(Following(PlayRequest.ResumeWithoutRewind(previous.ContentId))) : Task.CompletedTask;
 
     /// <summary>The episode after, as Previous starts its episode.</summary>
     [RelayCommand]
     private Task PlayNextEpisodeAsync() =>
-        _nextUp.Next is { } next ? StartAsync(PlayRequest.ResumeWithoutRewind(next.ContentId)) : Task.CompletedTask;
+        _nextUp.Next is { } next ? StartAsync(Following(PlayRequest.ResumeWithoutRewind(next.ContentId))) : Task.CompletedTask;
+
+    // An episode around the title that plays goes on with it: when a phone started that title, only for its sign-in.
+    private PlayRequest Following(PlayRequest episode) => episode.BoundAs(_request);
 
     partial void OnHasPreviousEpisodeChanged(bool value) => ShowsEpisodeSlots = value || HasNextEpisode;
 
@@ -39,12 +43,13 @@ public sealed partial class PlayerViewModel
         HasPreviousEpisode = false;
     }
 
-    private async Task ResolvePreviousAsync(IUpNextSource source, PlayingEpisode episode, CancellationToken cancellationToken)
+    // With the next episode's stills, so both share one read of the season.
+    private async Task ResolvePreviousAsync(IUpNextSource source, PlayingEpisode episode, ImageSizes? stills, CancellationToken cancellationToken)
     {
         NextEpisode? previous;
         try
         {
-            previous = await source.PreviousEpisodeAsync(episode, cancellationToken);
+            previous = await source.PreviousEpisodeAsync(episode, stills, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

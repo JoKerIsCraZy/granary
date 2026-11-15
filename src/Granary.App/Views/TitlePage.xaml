@@ -94,12 +94,17 @@
                             <StackPanel Margin="0,0,0,14" Orientation="Horizontal" Spacing="8" Visibility="{x:Bind views:TitlePage.Any(ViewModel.Ratings), Mode=OneWay}">
                                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}" VerticalAlignment="Center">
                                     <ItemsRepeater.ItemTemplate>
+                                        <!-- TMDB's approved logo, 10 high, for its mark, as the web's RatingEntry. -->
                                         <DataTemplate x:DataType="detail:DetailRating">
-                                            <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
-                                                <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                                     Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
-                                                <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
-                                            </TextBlock>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Image Height="10" VerticalAlignment="Center" Source="ms-appx:///Assets/Ratings/tmdb-logo.svg"
+                                                       Visibility="{x:Bind ShowsLogo}" AutomationProperties.AccessibilityView="Raw" />
+                                                <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}"
+                                                           FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource SiloPrimaryTint75Brush}"
+                                                           CharacterSpacing="-25" Visibility="{x:Bind ShowsMark}" AutomationProperties.AccessibilityView="Raw" />
+                                                <TextBlock Text="{x:Bind Display}" AutomationProperties.Name="{x:Bind AccessibleName}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontBold}"
+                                                           FontWeight="Bold" FontSize="15" Foreground="{StaticResource SiloPrimaryBrush}" />
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsRepeater.ItemTemplate>
                                 </ItemsRepeater>

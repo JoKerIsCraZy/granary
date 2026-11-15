@@ -156,6 +156,7 @@ public static unsafe partial class VideoDecoderProbe
     }
 
     [LibraryImport("d3d11.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int D3D11CreateDevice(
         nint adapter,
         int driverType,

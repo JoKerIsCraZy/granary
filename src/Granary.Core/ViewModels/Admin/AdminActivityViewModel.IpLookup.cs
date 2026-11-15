@@ -46,6 +46,26 @@ public sealed partial class AdminActivityViewModel
 
     public bool HasIpUsers => IpUsers.Count > 0;
 
+    /// <summary>Whether the IP lookup shows its field and results; a stream's Look up opens it.</summary>
+    [ObservableProperty]
+    public partial bool IsIpLookupOpen { get; set; }
+
+    /// <summary>
+    /// Looks up a stream's address and opens the IP lookup on it, as the web's runIPLookup (<c>pages/AdminActivity.tsx</c>).
+    /// A blank address does nothing. A second address while the first loads runs too; the first one's answer is dropped.
+    /// </summary>
+    public Task LookUpAddressAsync(string ip)
+    {
+        string address = ip.Trim();
+        if (address.Length == 0)
+        {
+            return Task.CompletedTask;
+        }
+        IpQuery = address;
+        IsIpLookupOpen = true;
+        return LookupCommand.ExecuteAsync(null);
+    }
+
     [RelayCommand(CanExecute = nameof(CanLookup))]
     private Task LookupAsync()
     {

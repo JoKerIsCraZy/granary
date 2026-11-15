@@ -32,6 +32,10 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
   `IThemeAudioOutput` plays title pages' theme music (see Theme music).
+  `IRemoteListener`, `IServiceAdvertiser` and `ILanAddressSource` give the phone remote its one listening socket, its
+  DNS-SD advertisement and the PC's LAN address; Core's stand-ins listen on nothing, advertise nothing and know no
+  address, and the App's `TcpRemoteListener`, `DnssdServiceAdvertiser` and `LanAddressSource` replace them (see Phone
+  remote, Windows).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -471,6 +475,25 @@ differently; a text only Granary has keeps its English under a key of its own. A
   minutes, so a stream on its way is not cut. An unreachable saved address keeps a route verified before.
 - Proxy-node URLs are checked as they will be sent: written without dot segments or anything encoded
   that would become one, taken in canonical form, and never on this machine or a link-local address.
+- **The one inbound port.** Granary listens on the network only for the phone remote, and only while it is switched on,
+  a profile is signed in and the PC has a private IPv4 address: one TCP port (52817, or the next free one up to 52826,
+  then any), on that one address, never on every address of the PC (see Phone remote, Windows). The loopback media
+  proxy listens on loopback only. A peer that is not on a local network, or that opened 20 connections in the last
+  minute, is closed unread. Any other peer gets an answer to one small plain frame only: a `sealed_hello` that names the
+  pairing key's id is answered with the receiver's, anything else, or another key, with a plain `close unauthorized`.
+  Only a phone with the key (the code it scanned) gets further, and every frame after is sealed under that key; a
+  phone on another server stays connected but sees and controls nothing.
+
+## Calendar airings
+
+The detail pages read the calendar (docs/api-contract.md 7.13) through `SeriesAirings`, one for the whole app: a season's
+grid and an episode's More Episodes place the episodes the season's listing lacks (`SeasonGaps`,
+`ItemDetailViewModel.Airings`), and the hero of a series', season's or episode's page names the series' next airing
+(`NextAiring`, `ItemDetailViewModel.NextAiring`). A window's answer lists every series, so `KeptAnswers` keeps it by
+server, profile, zone and window for 5 minutes and every page waiting for a window shares its one request. The hero reads
+today's two windows, which every season asks too, and `CalendarNow` gives each reader the same moment, zone and day, so
+they ask the same windows: while the answers are kept, a series, its season and an episode ask each of today's windows
+once between them. The page's load waits for neither.
 
 ## Artwork
 
@@ -591,7 +614,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
   start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
   read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
-  position), the profile's
+  position; a position handed over from outside, `PlayRequest.At`, which only a title a paired phone starts gives (see
+  "Phone remote"), is taken as it is, unrewound, while it lies before the file's end, and past it the resume point
+  decides; such a title is bound to the sign-in it was started for, `PlayRequest.OnlyFor`, and starts nothing for
+  another), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -1361,6 +1387,477 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
 - **Seams for what is not built yet.** Text fields: `PadControls.Press` returns false for them, where an on-screen
   keyboard would open. Button pictures: `GamepadReader` is where each pad's kind is known. A swap of confirm and back:
   one mapping, in `PadInterpreter.TakeButtons`.
+
+## Phone remote
+
+Silo's phone apps can control Granary's player over the local network: Granary is a receiver of the Roku type at level
+`sealed` (docs/api-contract.md, 15). The code is in `Granary.Core/Remote`. The switch is
+`IPlaybackDevicePreferences.PhoneRemote` (`phone_remote` in `playback-device.json`), off by default and kept on this PC,
+not in a profile.
+
+What the receiver requires of the code behind its ports (their XML docs say the same):
+
+- `IRemotePlayer.Apply` range-checks and clamps every number a phone sends before it reaches the player: `seconds` into
+  the title, `trackId` to a track it was sent for that the player still lists (else ignored), `speed` to the player's speeds, `volume` to 0 to
+  1, `milliseconds` to the subtitle delay's limits; a value that is not finite is ignored. Nothing before it checks them.
+- `IRemoteConnection.DisposeAsync` aborts every read and write in flight at once and never waits for the phone: a slow
+  phone's end and the receiver's stop rely on it.
+- `IRemoteListener.StopAsync` never hangs and never waits for accepted connections; it is safe to call twice.
+- A start's `onFailed` (`IRemoteListener.StartAsync`) is called when that start's listener stopped taking connections
+  by itself, and only then: a connection that fails as it is accepted never stops a listener, whatever a peer does. It
+  belongs to its start, so a failure told late is never taken for a later listener's.
+
+### Pairing
+
+- **One key per PC.** `RemotePairing` draws a 16-byte key (`RandomNumberGenerator`) the first time the receiver needs
+  one and keeps it until Reset Pairing Code: across restarts, the switch turned off and on, sign-out, and a change of
+  server or profile. A new key at every start would make every phone scan again. Reset is the only way to take a
+  phone's access away: all phones share the one key, so there is no list of phones and no removing one.
+- **Where the key lives.** In `ISecretStore` under `phone-remote/pairing-key`, in base64, which `DpapiSecretStore`
+  encrypts for the Windows user, and in memory; in no settings file, log or exception. `PairingMaterial.ToString` shows
+  the receiver id only. Sign-out and the removal of a server remove only `server/{id}/…` keys (`CredentialStore`), so
+  the key stays. When the store has no key, or none that is 16 bytes (another Windows user, a reset profile), a new one
+  is drawn and phones scan again.
+- **The receiver id** is a GUID made once per data folder, in `phone-remote.json` (`{ "receiver_id": "…" }`), written
+  whole beside the file and moved over it. It is not the device id Granary sends to servers, and not a secret: phones
+  keep the key under it and find the PC again by it. A file that holds no id is replaced by a new one; a disk that
+  fails to read throws instead, so a passing lock never changes the id. The file is read at once, not looked for first:
+  only a file or folder that is not there counts as no id, while a check whether it exists answers no for one Windows
+  could not look at, too.
+- **Why the two are kept apart.** With the id outside the secret store, a lost store means a new key under the old id: a
+  phone then says the PC's pairing code has changed, instead of keeping a dead receiver beside a new one.
+- Load, create and reset run one at a time, so two callers never draw two keys, and the material stays the same for
+  the rest of the run. Nothing here logs a value.
+- **A reset forgets the old key.** The replaced `PairingMaterial` is zeroed in memory once no handshake still reads it
+  (readers hold it through `UseKey`, so it is never zeroed under one), and nothing reads it after. `UseKey` is the only
+  way to read a key, the tests' included; a reader that lets go twice lets go once, so it cannot let go for another
+  reader, and once it let go it reads the key no more. Whether the PC's key
+  is still the one a session or the running receiver uses is asked of the material itself (`PairingMaterial.Same`),
+  never of its key id: the id is 32 bits and public.
+
+### A phone's connection
+
+`RemoteController` is one phone's connection, in the order of events of silo-roku's `ControlTask.bs`. The receiver
+decides what a message means; the controller carries it.
+
+- **The handshake.** The first frame may be at most 1 KiB and has to come within 5 seconds. Only a `sealed_hello`
+  under the key id of the pairing material *as it is at that moment* is answered, with the receiver's own `sealed_hello`
+  and a fresh random nonce; the session keys come from the key and both nonces. Anything else (another key id, a plain
+  `hello`, not JSON) gets the plain `close` with reason `unauthorized`, under the half-second close grace, and the
+  connection ends. A first frame that announces more than 1 KiB, or no frame within 5 seconds, ends the connection
+  without an answer. Because the receiver's nonce is new for every connection, a recorded session played back to it
+  does not open.
+- **Reading.** Every later frame may be at most 64 KiB and is opened as the next number from the phone, counting from
+  0. The number advances only after a frame opened; a frame that does not open (tampered, replayed, reordered, from the
+  other side, padding alone) ends the connection without an answer, and nothing ever skips ahead. A message that is
+  not JSON with a known shape ends it with a bare `close`. `ping`, `pong` and the phone's `close` are handled here;
+  every other message goes to the receiver, one at a time.
+- **The write gate.** All writes go through one gate. Inside it the next number is taken, the frame sealed and written,
+  so the frames arrive in the order of their numbers, which the phone requires. The status is not queued: the receiver
+  offers a function that makes it, a newer offer replaces one still waiting, and it is made when its turn to be sealed
+  comes, ahead of the next other frame. A slow phone gets the newest status, not every one.
+- **The heartbeat.** A ping every 3 seconds; more than 3 unanswered in a row drops the phone. A pong counts only once a
+  ping has left for the phone, as silo-roku's `pingSent` counts it, so a phone that reads nothing cannot keep itself
+  connected by sending pongs. Until the receiver marks the phone's `hello` as said, the connection closes with reason
+  `timeout` 5 seconds after the keys.
+- **What drops a phone.** One write that waits 10 seconds, or more than 128 KiB waiting for it; no answer to pings; a
+  frame over the limit or one that does not open; more frames or bytes than `FrameBudget` allows; its own `close` or
+  its going away.
+- **How much a phone may send.** Every frame is counted as it arrives, before it is opened (`FrameBudget`): 200 a
+  second with bursts of 400, and 256 KiB a second with bursts of 1 MiB. Opening a frame (the tag check, the decryption,
+  the parse) is the work a flood would make, and the heartbeat and the types Granary skips cost it as well, so they
+  count too; the command budget comes after, for what a message does. A phone sends far less, so one over it is
+  dropped. Granary's own: Silo's receivers have no such limit. A `close` from the PC carries its
+  reason only to a phone that lists `close_reason`, and waits at most half a second to leave.
+- **A reset code takes effect at the next frame.** Every frame in and out checks that the key the session was keyed
+  under is still the PC's: the same key, not merely a key with the same id. A phone on a code that was reset is dropped at its next frame even if the news of the reset
+  never reached the receiver.
+- **The end.** A connection ends by closing its stream, never by cancelling a read (see ClientWebSocket under Gotchas
+  in AGENTS.md). The end logs once, by number and reason ("Connection 3 closed: wrong pairing key"), then the session's
+  keys are zeroed. A seal or open still under way on another thread keeps them whole until it is done
+  (`SealedSessionKeys` counts its users), so no frame is sealed or opened under keys zeroed half way, and the end never
+  waits for it.
+- Every deadline runs on the `TimeProvider`; the tests move a `ManualTimeProvider` and join a `FakePhone` over a
+  `DuplexPipe` in memory. The fake phone seals with its own copy of the construction, from the phones' source.
+
+### The receiver
+
+`RemoteReceiver` is one per app. It follows silo-roku's `receiver.bs`, `policy.bs` and `AppSceneControl.bs`, without
+anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy`.
+
+- **Who may connect.** Only a private (10/8, 172.16/12, 192.168/16), link-local or loopback IPv4 address, also written
+  as an IPv4-mapped IPv6 one, and at most 20 new connections a minute from one address; anything else is closed at once,
+  unread.
+- **Connections that have proven nothing.** Until its `hello` (the first frame that opens under the key) a connection
+  has proven nothing: the key id it names in its `sealed_hello` is public in the advertisement. At most 4 such
+  connections at a time, and 2 from one address. A newcomer beyond either limit closes the oldest such connection, of
+  its own address first, unanswered; it is not the newcomer that is turned away, so one host cannot keep phones out.
+- **Admission at the `hello`.** Only a phone's `hello` takes a place among the phones, weighed against the others that
+  said theirs; a peer that has only named the key id never takes an authenticated phone's place. The phone's own older
+  connections give theirs up first (closed as `replaced`). Below 4 it is let in; at 4 a phone makes room, oldest first:
+  an unauthorized one, then a passive one. If all 4 are authorized phones that actively control, the newcomer gets
+  `error too_many_controllers` and `close too_many_controllers`. A connection closed to make room while its `hello`
+  waited its turn takes no place, replaces none of the phone's other connections and is not announced.
+- **Authorization by server.** A phone's `hello` must say `role: "phone"`, list version 2 and name a server, or it gets
+  `error version_unsupported` and `close unauthorized`. It is authorized when its server matches Granary's by id or by
+  identity (`SiloCastServerId.ServersMatch`). A phone on another server stays connected but gets no status, and every
+  command or launch gets `error unauthorized`. It stays so that its offer to start a title can be told why
+  ("This PC plays from …"), as on Silo's Roku app, rather than a bare failure; it is also the first to go when the
+  connections are full.
+- **The budget.** Messages are handled one at a time per phone, and every one but `ping`, `pong` and `close` takes from
+  one of the phone's two budgets. An offer, a launch and a command, also one that is only answered `unauthorized`, take
+  from the commands' (`CommandBudget`: 40 at once, then 20 a second, as silo-roku's). The `hello`, a `presence` and the
+  phone's own `handoff_cancel` take from a small one of their own (`CommandBudget.ForSignals`: 10 at once, then 5 a
+  second; Granary's own): a phone sends each once, when something changed, and never again, so a burst of commands
+  before one (a seek dragged along the timeline, then the app put away) must not drop it and leave the phone counted
+  as active, or passive, for good. Over a budget a message is dropped unanswered and the phone is told `rate_limited`
+  at most once a second for each budget, so a dropped signal is told even right after a command flood was; the player
+  is not asked. Unknown types and controls are skipped before
+  the budget, as they cause no more work than the frame they came in, which the connection's frame budget counts. A
+  `presence` that changes nothing changes no phone.
+- **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
+  it out with the player's own commands. Just before, on the UI thread, the phone is asked about again: a phone let go
+  while its command waited there (Disconnect Remote, a reset code, a newer connection, room made for another) is no
+  longer connected, authorized and under the PC's key, and its command is dropped. After it is done every authorized
+  phone is offered the new status. Without a player every command but `stop` gets `player_not_ready`.
+- **The status tick.** While a player is attached, one timer for the receiver posts to the UI thread every 500 ms; the
+  status is read from the player there, kept as the newest frame, and offered to every authorized phone. A change the
+  player reports, an attach and a detach do the same at once. Without a player the idle status goes to a phone once,
+  when it is authorized, and again only when it changes. Nothing is offered before authorization.
+- **What the PC sees.** `Phones` lists the phones that said `hello`, by their cleaned names (the cleaning of discovered
+  server names, cut to 64 characters); `PhonesChanged` and `PhoneConnected` (once for each phone that actively controls)
+  come on the UI thread. `DisconnectAsync` closes one phone with `tv_disconnected`, `CloseAllAsync` every one.
+- **Offers and launches** start a title on the PC ("Starting a title" below). docs/api-contract.md 15.5 and 15.6 list
+  every answer.
+
+| Limit | Value |
+|---|---|
+| Phones that said `hello` | 4; a fifth's `hello` takes an unauthorized or passive one's place, or is refused |
+| Connections that have not said `hello` | 4, and 2 from one address; a newcomer closes the oldest such |
+| New connections from one address | 20 a minute; more are closed unread |
+| Frame size | 64 KiB; the first, plain frame 1 KiB |
+| A `hello`'s texts | device id and server identity 128 characters, the phone's and the server's names 1024, the server id 2731, 32 features kept; longer ends the connection as malformed |
+| Frames from one phone, every one counted before it is opened | 200 a second, bursts of 400, and 256 KiB a second, bursts of 1 MiB; more drops the phone |
+| Time for the `sealed_hello`, and for the `hello` after it | 5 seconds each |
+| Heartbeat | a ping every 3 seconds; more than 3 unanswered drops the phone |
+| Commands, offers and launches | 20 a second, bursts of 40, per phone; `error rate_limited` at most once a second |
+| `hello`, `presence` and the phone's `handoff_cancel` | 5 a second, bursts of 10, per phone, a budget of their own; `error rate_limited` at most once a second |
+| Slow reader | dropped when one write waits 10 seconds or more than 128 KiB waits |
+| Close | at most half a second for the `close` to leave |
+
+None of these can be changed by a phone.
+
+### Lifetime
+
+The receiver exists only while all four hold: Granary runs (nothing survives the process), the switch is on, a profile
+is signed in (`SessionState.Ready` with an active server and a profile), and the PC has a private IPv4 address
+(`ILanAddressSource`). `RemoteReceiver.Start` follows the switch, the session, the address and the pairing key from
+then on; `StopAsync` ends it for good when Granary closes.
+
+- **One loop.** Every trigger (the switch, `ISessionManager.Changed`, `ILanAddressSource.Changed`,
+  `RemotePairing.KeyChanged`, a change of whether a title plays) only asks the loop to look again; the loop compares
+  what is wanted with what runs, under one gate, so starts and stops never overlap. It is started from the UI thread's
+  queue, so changes made in one turn (on, off, on) are looked at together and make one start.
+- **Start order: key, listener, advertisement, accepting.** The pairing code carries the address and port, and the
+  phones keep them; the advertisement's SRV record names the port too. So the listener is bound first and everything
+  else is written from what it got. Connections the listener hands over before the advertisement is done are closed
+  unread. A key that cannot be read (`IOException`, `UnauthorizedAccessException`, `CryptographicException`), no free
+  port, or an advertisement that throws leaves nothing listening; the status says `Failed` or `NoPort`.
+- **Ports.** 52817, or the first free one up to 52826, then any port Windows gives (`RemoteReceiver.Ports`, the rule of
+  Silo's Roku app), on the one LAN address the code names, IPv4 only. A second Granary on the same PC gets 52818.
+- **Stop order: phones, advertisement, listener.** Every phone gets `close tv_disconnected` under its half-second grace,
+  then the registration is removed, then the listener closed, each step by itself and bounded, so one that fails or
+  hangs skips none of the rest. `StopAsync` takes at most `StopBudget` (2 seconds), a phone that reads nothing
+  included, so the App can wait for it when its window closes.
+- **What each change does.**
+  - The switch off, sign-out, no profile, no LAN address: stop.
+  - Another server: stop, then start for it, with its id, name and identity in the advertisement and the code. The
+    key stays.
+  - Another profile on the same server: nothing; phones stay connected, since control is not bound to a profile.
+  - Another LAN address: the listener is bound there, on the same port when it is free, and the receiver registered
+    anew; phones on the old address end with their heartbeat. The code changes, the key does not.
+  - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
+    register once, and the status tick never does.
+  - Windows did not take the advertisement (`RegisterAsync` false): it runs on, and the advertisement is asked for
+    again after 30 seconds (`AdvertiseAgainAfter`), at most twice after a change, without waiting for another one. A
+    removal Windows refused is given up half a minute after its first refusal, so the first of these makes the new
+    registration, and the status says the PC is advertised once it is.
+  - The listener fails by itself (its start's `onFailed`): stop, and the status says `Failed`. Nothing starts again
+    until the switch, the session, the address or the key changes; a title that plays is no reason to. The changes are
+    counted, and the stop is noted under the count it was decided at, so a change that comes as the loop decides or
+    while it stops still starts the receiver again. Each listener
+    bound has a number, and only the one running counts: one stopped or replaced meanwhile (the switch off, a new
+    address) that tells of its failure late, even after the next one runs or is about to start, changes nothing. The
+    failure is kept by number in one step that only moves on to a later listener, so such news never hides the
+    failure of the one that runs either, and a change does not clear it: a session event that changes nothing, coming
+    before the loop looks, would otherwise leave the dead listener advertised as listening.
+  - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
+    not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
+    The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved
+    and the old one stays. Every handshake reads the key as it is at that moment, and every frame of a session checks
+    that its key is still the PC's, so a phone on the old code is refused even if a notice was missed.
+- **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` (a start that failed, or a listener
+  that did) or `Listening` with the address,
+  the port, whether Windows took the advertisement, and the server's address for the pairing panel's hint;
+  `StatusChanged` comes on the UI thread, also when only the code changed (a new key under the same address and port).
+  `PairingLink` exists only while it listens; it is made from the PC's key as it is now and is null between a reset and
+  the restart under the new key, so a code that was taken back is never shown.
+
+### The settings row
+
+`PhoneRemoteViewModel` is Settings → Playback → This PC's "Control Granary from your phone" and its Connect a Phone
+panel; `PlaybackSettingsViewModel.PhoneRemote` hands it to the page, which attaches it while it shows. Between `Attach`
+and `Detach` it follows `StatusChanged` and `PhonesChanged`, on the UI thread; after `Detach` it follows nothing. The
+page's view model makes it through a `Func<PhoneRemoteViewModel>` and disposes it with itself, which detaches it as a
+second net: a disposable transient resolved from the root provider would be kept until Granary exits.
+
+- The switch is `IPlaybackDevicePreferences.PhoneRemote`; the receiver follows it.
+- The row's line names the phones that actively control (as silo-roku's `AppSceneControl.bs` lists them), says "No
+  phone is connected.", or, when the receiver cannot run, "Remote control isn't available right now." with a second
+  line that says why: no local network, no port, no profile, or a start that failed.
+- **The code is read only while the panel is open.** `PairingLink` is the receiver's link, read when the panel opens
+  and again at every change of the status or the code; closing the panel, switching off, `Detach` and a receiver that
+  stops listening drop it. The last also closes the panel, so the code never comes back by itself when the receiver
+  listens again. The view draws the code from it and keeps it nowhere else.
+- Reset Pairing Code is asked first by the panel (its question's texts are the view model's), then
+  `ResetPairingAnsweredAsync` resets through the receiver and says so when a phone could not be let go or the new key
+  could not be saved (the old code then still works).
+- Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
+  with "TV" as "PC"; Silo's web has no wording for this. The description says, as design 5.8 has it, that a phone can
+  control what plays and start titles here.
+- **The App.** `PlaybackSettingsView` shows the row when the view model has one, attaches it on `Loaded` and detaches
+  it on `Unloaded`. Connect a Phone is `Controls/ConnectPhonePanel` in a `ContentDialog`: it draws the code with QRCoder
+  (error correction M) into a `BitmapImage` from memory, clears the PNG's bytes after, and drops the picture as the
+  dialog closes; the dialog closes itself when the row closes the panel. Reset Pairing Code asks in a flyout of the
+  panel and then calls `ResetPairingAnsweredAsync`, since a second `ContentDialog` cannot open over the first.
+
+### What the PC shows
+
+`RemoteIndicatorViewModel` follows `PhoneConnected` and `PhonesChanged` on the UI thread: "{name} connected" for four
+seconds on the receiver's `TimeProvider`, a newer one with its own four, and `IsActive` while a phone on Granary's server
+actively controls; `DisconnectCommand` lets every such phone go with `tv_disconnected`. The window has one for the app
+(the notice in the player's notice card over pages and player alike, and a disc beside the activity indicator, shown
+where that is); the player page makes its own for its bar's icon and disposes it with the page, so no page is kept
+alive by the receiver's events. The page also makes `PlayerRemoteControl` beside `PlayerSystemMedia` and disposes it
+where it disposes that one.
+
+### What is logged
+
+The phone remote logs events by connection number and a reason, never a value from a frame (design 6.3):
+
+- **Logged:** "Connection 3 opened", "Connection 3: a phone on this server", "Connection 3: an offer to start a title
+  was refused", "Connection 3 closed: wrong pairing key", "The phone remote listens on port 52817", "The phone remote
+  stopped: another server", and failures by their exception's type and code only (`RemoteLog.Failure`), since a
+  socket's or a file's message can name an address or a path. Every reason a connection's end, its refusal or a stop
+  names is one of `RemoteLogReasons`.
+- **Never logged:** the pairing key in any form (hex, base64, base32) and its link or QR text, either side's nonce,
+  resume tokens, frames or any part of one, server addresses and server ids (an id is an address), server names and
+  identities, profile ids and names, a phone's id and name, content ids and titles.
+- `RemoteLoggingTests` guards it, under a logger that keeps every line at every level, with three runs on fake phones:
+  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer made ready and one refused, a
+  launch and launches refused, a reset, a change of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
+  of the reset, a player that fails a command or whose status cannot be read, Windows' advertisement throwing, a
+  status that cannot be made, a message too large for a frame), each failure's message holding the key in every form,
+  a pairing link, the server's address, a phone's name and a title; and every limit and every way a connection or the
+  receiver ends. The App's accept loop runs with such messages as well. Each run finds none of the never-list and no
+  `{`; every connection's end is logged with its number and a reason of the list; and together the runs meet every
+  reason of `RemoteLogReasons`, so a reason added later needs a run that logs it. A line the test catches is fixed
+  where it is written; the test is not weakened. Every line also passes `LogRedactor`, and this list does not rely on
+  it.
+
+### The player
+
+`PlayerRemoteControl` (`ViewModels/Player`) is the open player as the receiver sees it (`IRemotePlayer`). The player
+page makes it beside `PlayerSystemMedia` and disposes it where it disposes that one; it attaches to the receiver when it
+is made and detaches when it is disposed, both on the UI thread. It is built as `PlayerSystemMedia` is: it reads the
+`PlayerViewModel`'s properties and calls the view model's own commands, never the engine, so a Watch Party's rules hold
+for a phone as for the PC's own buttons (silo-roku's `PlayerRemote.bs`: a command takes the path the viewer's own key
+takes).
+
+- **What a command becomes.** `play`, `pause` and `play_pause` are the pause button (`TogglePauseCommand`), pressed only
+  when the state differs; `seek` is `SeekTo` in the title's own time; `set_volume` sets the slider's `Volume` (0 to 1
+  becomes 0 to 100) and `set_muted` is the Mute button, so both are kept as the PC's own changes are; the tracks are
+  `SelectAudio` and `SelectSubtitle`; `set_playback_speed` is `SetSpeed`, `set_quality` `SelectQuality`,
+  `set_video_gravity` the Fill screen button, `set_subtitle_sync_ms` the subtitle delay, `play_next` the next-episode
+  button, and `stop` the player's Exit, also while a title still loads. `set_subtitle_position` is not supported.
+- **Every number is checked here** (security review 2): a seek is brought into the title (and a title of unknown length
+  is not sought); a volume into 0 to 1; a speed to the nearest of the player's speeds, none at or below zero; a subtitle
+  delay into ±10 seconds, the player's own limit; a track number has to name a track it was sent for that the player still lists. A value that is
+  not finite, a command without its argument and a name Granary does not know are ignored without an answer.
+- **When the player is not ready.** While a title loads or after it failed, only `stop`, the volume and mute are taken;
+  the rest gets `player_not_ready`. In a Watch Party, play, pause and seek go to the room as the player's own buttons'
+  requests do; a guest the room does not let gets `command_failed`, and so does a speed change, as the room plays at its
+  own. `play_next` without a next episode gets `command_failed` too.
+- **Track numbers.** The wire's `trackId` is an integer the phone only sends back. Every track's is a number of its own,
+  given in the order the control first lists it and kept for as long as the player lives, never given to another track
+  (as silo-roku names a subtitle by its plan's combined index), so it maps back to the track it was sent for also after
+  a newer status went out. A subtitle's maps back to the track's own id, Off left out (no number turns subtitles off).
+  An audio track has no id of its own, so its row stands for it (its place in the list, title, details, codec, channels
+  and default), and the player's menu is then passed that track's ordinal. A track no longer in the player's list,
+  another version's track in its place included, is ignored, so a number from an older list never picks another track.
+- **What the status leaves out.** The session id, the poster and the overview, as Silo's Roku app leaves them out: no
+  signed address belongs on this channel, and the phones look artwork up themselves from the content id. A movie's
+  year is not sent as the episode line. A file played with `--play` shows as idle and takes no command: its name is
+  nobody's business. Until a title's details are in, its status says "Loading", with its content id, as Silo's Roku
+  app's does, so a phone that started it sees it at once.
+- **When it changes.** `StateChanged` follows the properties the status is read from; the position alone is not among
+  them, since the receiver's 500 ms tick carries it.
+
+### Starting a title
+
+A phone offers its server and profile (`handoff_offer`) and then sends `launch` (`RemoteReceiver.Launch.cs`, after
+silo-roku's `AppSceneControl.bs` `controlOffer`, `controlReady` and `controlLaunch`, for the profile open on the
+receiver only). docs/api-contract.md 15.6 has every answer and its text.
+
+- **Only the PC's own profile.** An offer is ready at once when its profile is the one signed in on the PC, on the PC's
+  own sign-in: nothing is asked of the server or the session, and the PC never changes server, account or profile for a
+  phone (Stage C, borrowing the phone's sign-in, is not built). Another profile, another server, a Watch Party or a
+  phone before its `hello` get a `handoff_cancel` that says why. The offer's addresses and token are dropped by the
+  decoder, so nothing a phone names can be contacted; the profile id it names is its own claim, so the check is a
+  courtesy rule, not a second boundary: the pairing key is that.
+- **Readiness.** A ready offer is kept with its connection, with the profile it was for and the sign-in it was made
+  under: the receiver follows `ISessionManager.Changed` for as long as it lives, and another state, server or profile
+  (also the same one again later) voids every ready offer; a change that keeps all three (a token refreshed) does not.
+  Readiness is one connection's alone, as on silo-roku: a newer ready offer voids the one before; a connection on its
+  way out (replaced, closed to make room, let go) is asked about again first and readies nothing. The resume token is
+  random, made once per connection, kept in memory only, and never read back.
+- **The launch** runs on the UI thread, where the phone is asked about again (as for a command) and the checks go in
+  silo-roku's order: a ready offer under the sign-in that is still the PC's, the launch's server (by id, or by the
+  identity of the phone's `hello`), the PC's lock (`IPcLock`, the App's), a Watch Party (`WatchPartySession.IsInRoom`,
+  the room page's and the player's own source), and a launch still opening. Then `RemoteReceiverPolicy.RequestFor` makes
+  the `PlayRequest` (silo-roku's `launchIntent`: start over, `PlayRequest.At` the phone's position above 0, or resume; a
+  version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that is not one Silo
+  Server makes, 1 to 256 printable ASCII characters without the space and not `.` or `..`, refused), bound to the
+  server entry and profile of the ready offer (`PlayRequest.OnlyFor`). `Launched` is raised with the phone's cleaned
+  name and that request, and the player route opens it as a page's Play does, replacing what plays without asking. The
+  server decides, under the PC's profile, what may play.
+- **The sign-in, twice.** The receiver reads the session outside its gate and the playback reads it again as it starts,
+  so a profile switched between the launch's checks and the start would otherwise play the phone's title for the new
+  profile: `PlaybackStarter.PrepareAsync` refuses a bound request whose server or profile is no longer the session's,
+  before it asks the server anything, and again once its reads are back, right before the start goes out with the
+  profile read before them. The episode before or after that the player starts itself (its buttons, the
+  phone's `play_next`, the next episode after the credits) is bound the same (`PlayRequest.BoundAs`); an On Deck pick
+  is the viewer's own and is not. After a change of server the receiver still says the server before until its
+  lifetime has caught up; an offer or a launch then is refused as "not ready", so no phone of that server is readied
+  for the new one.
+- **The status at once.** A phone gives up 30 seconds after its launch without its title in the status, and the player
+  page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's
+  `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one
+  before may show the same title, failed or playing. The launch is opening until that player shows the title no longer
+  loading, or failed (the phone that launched it gets `launch_failed` with the player's message, as the status's `error`
+  carries it: only one of Granary's own failure texts goes out as it is, `RemoteTexts.PlayerError`; anything else, a
+  server's or an administrator's words among them, goes out as a fixed text), or closes after it
+  showed the title, or `LaunchWait` (30 seconds, silo-roku's `CONTROL_LAUNCH_WAIT_MS`) passes on the receiver's
+  `TimeProvider`; meanwhile another launch gets `launch_pending`.
+- **The log** says "an offer to start a title is ready", "was refused (another profile)", "a launch opens the player",
+  "a launch was refused (the PC is locked)" and the like, by connection number; never a profile, a title or a content id.
+
+### Windows
+
+The App implements the four ports in `Services/` (the listener, the advertiser, the address and the PC's lock) and
+registers them in `App.ConfigureServices` before `AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
+connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 seconds) for its stop.
+
+- **`LanAddressSource`** reads Windows' adapters (`NetworkInterface`) and chooses by `LanAddressRule`: of the adapters
+  that are up and neither loopback nor a tunnel, a private IPv4 address (10/8, 172.16/12, 192.168/16) or a link-local one
+  (169.254/16); first one on a wired or wireless adapter with an IPv4 default gateway (the home network), then one on
+  another kind of adapter with a gateway (a VPN's, which Windows may list first), then the same two without a gateway (a
+  static address; the virtual switches of Hyper-V and WSL, which Windows calls Ethernet, have none), and a link-local
+  address only when nothing else is there; within each, the first listed. The adapter's IPv4 index goes along for the
+  advertisement. Windows' interface metric would order them better still, but .NET does not read it. While the receiver follows it, it reads the adapters off the UI thread, once at the start and again at
+  `NetworkChange.NetworkAddressChanged` (followed with the first handler and left with the last), and raises `Changed`
+  only when the chosen address differs; `Current` answers what it read last, so the receiver's lifetime never waits on
+  the adapters. The address is never logged.
+- **`TcpRemoteListener`** is a `TcpListener` on that one address, IPv4 only and never `IPAddress.Any`, with a backlog of
+  4, on the first port of the receiver's list that binds. It does not set `ExclusiveAddressUse`: for a socket bound to
+  one address Windows answers a second bind the same with or without it (no process takes this address and port over),
+  and with it the port could not be bound again until the connections it accepted had fully ended, so a quick switch
+  off and on would move the remote off the port the phones were paired with. Its accept loop (`RemoteAcceptLoop`, apart from the socket so
+  the tests run it without one) hands each connection over at once, with Nagle off, and never waits for it. A
+  connection that fails as it is accepted is skipped, whatever a peer does, so no one on the network can stop the
+  listener; failures back to back are waited out on the `TimeProvider`, from 50 ms doubling to at most a second, so
+  none can make it spin either, and a run of them is logged once. Only a failure of the listening socket itself ends
+  the loop: an error of its own, or a shortage of sockets or buffers that lasts 30 seconds from its own first failure,
+  no connection getting through and at least 10 accepts in those 30 seconds failing for it (out of them for good); a
+  peer's resets and broken connections never end it, however long they go on, nor start, keep or hide such a shortage,
+  and a shortage now and then is none. It
+  tells the start's `onFailed`, and the receiver stops (every phone told, the advertisement removed, the listener
+  closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by itself, only
+  at the next change of the switch, the session, the PC's address or the key.
+  `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
+  handed over. A connection (`AcceptedConnection`) ends its sending first when it is disposed (`shutdown` with
+  `SD_SEND`), then closes its socket itself, not only its stream, so a read or write in flight ends at once. Closed with
+  bytes from the phone still unread, a socket would reset the connection and drop the `close` frame not sent yet; ended
+  first, what was written leaves before the end. Neither waits for the phone. Whatever fails after an accept (a peer
+  that connected and reset at once) closes that socket at once rather than leaving it to the finalizer.
+- **`DnssdServiceAdvertiser`** registers with Windows' own DNS-SD (`DnsServiceConstructInstance`,
+  `DnsServiceRegister`, `DnsServiceDeRegister` and `DnsServiceFreeInstance` from `dnsapi.dll`, `Interop/DnsService.cs`),
+  over mDNS (`unicastEnabled` false) on the adapter of the chosen address. Windows' DNS client answers the queries, so
+  Granary opens no UDP socket, and the registration ends with the process at the latest. Not a WinRT registration,
+  which is tied to a WinRT socket listener, and not an mDNS library, which would bind UDP 5353 beside Windows' own
+  responder and add a dependency. The API cannot change a registration: a new TXT value (`playing`, `kid`, the
+  server) is a removal and a new registration, and replacing one waits up to 2 seconds for Windows to confirm the
+  removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and the next
+  registration or removal first asks Windows to take it back and waits its 2 seconds, so two of one name do not overlap.
+  A registration whose removal Windows does not take, answered or not, stays the current one and is asked again at the
+  next removal or registration; a new one is not made beside it, so the receiver counts as not advertised. It is kept
+  so for at most three refusals, or until a refusal half a minute after the first (`DnssdRefusals`): Windows may never
+  take it (an adapter gone with a network change, a request it no longer knows, an answer that never comes), and kept
+  for good it would leave the PC unadvertised while Granary runs. Then it is given up, its memory kept, and a new one is
+  made, so two of one name may overlap, until Granary closes at the latest. The receiver asks again 30 seconds after
+  a registration Windows did not take, so this happens without another change. Microsoft's page for
+  `DnsServiceDeRegister` names no particular codes; `ERROR_NOT_FOUND` and `ERROR_INVALID_PARAMETER`, Windows' general
+  words for a request it does not know or will not take, give it up at once. One not answered yet is watched for 30
+  seconds more: a late success is removed then, while it is still the current one or was given up. Each
+  registration owns its native memory (the names, the TXT pairs, the address, the instance Windows built and the
+  request); the request stays at one address until
+  Windows confirmed the registration's end, since removing takes the same request, and all of it is freed a moment
+  after that. Memory Windows might still read is never freed. The completion callback is a static
+  `UnmanagedCallersOnly` function, so no delegate can be collected under Windows; its context is a registration's
+  number, so a late call finds nothing; it catches everything, frees an instance Windows hands it that is not the
+  registration's own (the callback's to free, Microsoft's page says), and only completes a task. The registration keeps
+  its instance's address after freeing it, so a call that found the registration just before cannot free it again. A
+  word says nothing of whether it is about the registration or its removal, and may come before `DnsServiceDeRegister`
+  returns, so one that comes while a removal is asked for is held (`DnssdAnswers`) until Windows says whether it took
+  the removal: taken, it is the removal's; not taken, it is the registration's own, so a registration that went through
+  just then is known to have. Taken for a registration answered before, every word is the removal's. Taken for one
+  not answered yet, a word is either, and Microsoft's pages do not say in which order the two come: one stays
+  undecided until a second comes (then the first is the registration's, the second the removal's), or counts as the
+  removal's once the 2 seconds' wait for it ends. Such a registration is never freed, so no memory is freed on a guess.
+  Only status numbers are logged.
+- **The firewall.** The first time the switch is on and Granary listens, Windows may ask to let Granary through its
+  firewall; the switch's description says so beforehand. Granary installs per user without administrator rights, so
+  it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see
+  the PC but cannot connect, which Granary cannot tell from its socket; the Connect a Phone panel always shows where to
+  allow it.
+- None of the first three has a test that touches the network: the accept loop, a connection's end and the address rule
+  are tested apart from the socket and the adapters (`RemoteAcceptLoopTests`, `LanAddressRuleTests`); binding, the
+  adapters and the DNS-SD calls are read by hand.
+- **`WindowsPcLock`** (`IPcLock`) says whether Windows is locked, so a phone starts no title on a locked PC while it
+  still controls what plays. `App.Launch` has it ask Windows for the session's notices for the main window
+  (`WTSRegisterSessionNotification`, this session only) and takes them back as the window closes; their
+  `WM_WTSSESSION_CHANGE` comes through the window's message hook (`WindowMessageHook.SessionChanged`). A PC still locked
+  as Granary starts with Windows sends no notice, so the session's state is read once as the notices begin
+  (`WTSQuerySessionInformationW` with `WTSSessionInfoEx`: `SessionFlags` `WTS_SESSIONSTATE_LOCK`, freed with
+  `WTSFreeMemory`), and read again at a connect. A lock or a disconnect (console or remote: nobody sits at the session,
+  and whoever connects again signs in first) counts as locked, an unlock as unlocked (`SessionLockState`, tested apart
+  from Windows in `SessionLockStateTests`). It fails closed: should Windows not take the window for the notices, the
+  session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. The same
+  once the window has closed and the notices ended: what they said last is not trusted any more. It reads
+  only whether the session is locked and connected, and logs only "The PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
+  depends on the lock.
+- **The "Starting" notice, and the window left where it is.** The receiver raises `Launched` with the phone's name and
+  the request just before it opens the player; the window keeps it and, when it makes the player for that very request
+  (it may wait for the player before to unload), calls `PlayerViewModel.NoteStartedFromPhone`. A phone's title changes
+  nothing about where the window is: when the window is not in front (not the focused window: minimized, behind others,
+  or visible but unfocused), no presenter is set or left on its way, since that would restore or raise it. The player
+  before leaves without leaving the mini view, a trailer's own full screen becomes the title's, `PlayerPage.Start` does
+  not set full screen, and the page goes full screen at the window's next `Activated` instead (`WindowCameToFront`),
+  unless it became the bar or the mini view; a player left before that saves no full screen choice. An `Activated` that
+  came while the player before unloaded, with no player to hear of it, is passed on as the new page starts: the window
+  is in front by then. `Expand` only lays
+  the player out inside the window. The player shows "Starting {title}" and "From {phone}" in its
+  notice card for four seconds once the title's name is known, and only for that request.
 
 ## Windows App SDK
 
