@@ -135,6 +135,138 @@ public sealed class PlayerViewModelMarkerTests
         Assert.False(viewModel.HasSkipPrompt);
     }
 
+    // Silo's design for intro skipping, ask: after its time ran out the offer comes back without a timer while the controls
+    // show, and it does not take focus as it comes (the page leaves focus where it is for IsSkipPromptWithControls).
+    [Fact]
+    public async Task AfterItsTimeRanOut_SkipIntroComesBackWithTheControls_WithoutATimer_AndGoesWithThem()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+        Assert.False(viewModel.HasSkipPrompt);
+
+        viewModel.AreControlsShown = true;
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+        Assert.Equal(0, viewModel.SkipProgress);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+
+        viewModel.AreControlsShown = false;
+        Assert.False(viewModel.HasSkipPrompt);
+        // Cleared with it, so the offer's next return is news to the page.
+        Assert.False(viewModel.IsSkipPromptWithControls);
+    }
+
+    [Fact]
+    public async Task TheTimedPill_IsNoOfferWithTheControls_UntilItsTimeRunsOutWithThemUp()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.False(viewModel.IsSkipPromptWithControls);
+
+        At(66, afterSeconds: 5);
+
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+        Assert.Equal(0, viewModel.SkipProgress);
+    }
+
+    [Fact]
+    public async Task SkipIntroBackWithTheControls_SeeksToTheIntrosEnd_AndEscLeavesIt()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+        viewModel.AreControlsShown = true;
+
+        Assert.False(viewModel.DismissSkipPrompt());
+        Assert.True(viewModel.HasSkipPrompt);
+
+        viewModel.SkipCommand.Execute(null);
+
+        Assert.Equal([120], Playback.Seeks);
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    // As the web's untimed offer answers Space while focused (silo-server #3511); every other pill, and Space without focus,
+    // keeps the full player's play and pause.
+    [Fact]
+    public async Task Space_PressesOnlyTheFocusedSkipIntroBackWithTheControls()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: false));
+
+        viewModel.AreControlsShown = false;
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+
+        At(2550);
+        Assert.Equal("Skip Credits", viewModel.SkipLabel);
+        Assert.False(viewModel.SpacePressesSkipPrompt(hasFocus: true));
+    }
+
+    [Fact]
+    public async Task TheControls_BringNoPillBack_WhilePlaybackCannotSeek_NorAfterTheEnd()
+    {
+        var viewModel = await PlayingAsync();
+        At(61);
+        At(66, afterSeconds: 5);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        viewModel.AreControlsShown = true;
+        Assert.False(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        viewModel.AreControlsShown = false;
+        viewModel.AreControlsShown = true;
+        Assert.False(viewModel.HasSkipPrompt);
+    }
+
+    [Fact]
+    public async Task AMarkerReadWhilePlaybackCannotSeek_BringsNoPillBack_UntilItCanAgain()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+        At(61);
+        At(66, afterSeconds: 5);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        Assert.False(viewModel.HasSkipPrompt);
+        Playback.RaiseMarkers([Intro with { Provenance = new MarkerProvenance("manual", null, 1) }, Credits]);
+        Assert.False(viewModel.HasSkipPrompt);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+    }
+
+    [Fact]
+    public async Task ANewTitle_StillKnowsTheControlsShow()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.AreControlsShown = true;
+
+        await viewModel.StartAsync(PlayRequest.Resume("episode-2"));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Playback.RaiseMarkers([Intro]);
+        At(61);
+        At(66, afterSeconds: 5);
+
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.True(viewModel.IsSkipPromptWithControls);
+    }
+
     [Fact]
     public async Task Always_SkipsTheIntroItself_AndOffersItBack()
     {

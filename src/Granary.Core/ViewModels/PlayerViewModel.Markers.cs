@@ -37,6 +37,25 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial double SkipProgress { get; private set; }
 
+    /// <summary>
+    /// The pill is "Skip Intro" back with the controls after its time ran out (Silo's design for intro skipping, the
+    /// untimed <c>ask</c> offer): it takes no focus as it comes, gives up the focus the timed pill had, and answers OK, Space
+    /// or a pad's A only while it has focus; Esc and Back are not its.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsSkipPromptWithControls { get; private set; }
+
+    /// <summary>The player's controls show; the page sets it. A Skip Intro whose time ran out comes and goes with them.</summary>
+    [ObservableProperty]
+    public partial bool AreControlsShown { get; set; }
+
+    /// <summary>
+    /// Whether Space presses the pill rather than playing or pausing: only the Skip Intro back with the controls, and only
+    /// while it has focus, as the web's untimed offer answers Space (silo-server #3511). Over every other pill and focused
+    /// button of the full player Space plays and pauses.
+    /// </summary>
+    public bool SpacePressesSkipPrompt(bool hasFocus) => hasFocus && HasSkipPrompt && IsSkipPromptWithControls;
+
     /// <summary>The viewer turned the intro pill away (Esc): false when none shows, so Esc does what it does otherwise.</summary>
     public bool DismissSkipPrompt()
     {
@@ -63,10 +82,18 @@ public sealed partial class PlayerViewModel
         ShowSkipPrompt();
     }
 
-    // A new playback starts with nothing resolved.
+    // While playback cannot go on the pills stay hidden until it does (ShowSkipPrompt), whatever the controls do.
+    partial void OnAreControlsShownChanged(bool value)
+    {
+        _markerPrompts.FollowControls(value);
+        ShowSkipPrompt();
+    }
+
+    // A new playback starts with nothing resolved; the controls stay as they are.
     private void ResetMarkers()
     {
         _markerPrompts = new MarkerPrompts();
+        _markerPrompts.FollowControls(AreControlsShown);
         Markers = [];
         Trickplay = null;
         ShowSkipPrompt();
@@ -118,11 +145,11 @@ public sealed partial class PlayerViewModel
     private void FollowMarkers(PlaybackSnapshot state)
     {
         var now = _time.GetElapsedTime(_created);
-        if (_playback is null || !CanSeek || Phase != PlayerPhase.Playing)
+        if (!FollowsMarkers)
         {
             // Hidden and its clock stopped until playback goes on.
             _markerPrompts.Suspend(now);
-            HasSkipPrompt = false;
+            ShowSkipPrompt();
             return;
         }
         var activity = state.IsPaused ? MarkerActivity.Paused : IsBuffering ? MarkerActivity.Stalled : MarkerActivity.Playing;
@@ -133,19 +160,25 @@ public sealed partial class PlayerViewModel
         ShowSkipPrompt();
     }
 
+    private bool FollowsMarkers => _playback is not null && CanSeek && Phase == PlayerPhase.Playing;
+
     // The texts first: whoever sees the pill appear reads them. The card and the screen of the next episode take its place,
-    // and a room's guest, who cannot seek, has none.
+    // and a room's guest, who cannot seek, has none. While playback cannot go on (a reconnect, a new plan, the end) none
+    // shows, also when a read of the markers comes meanwhile; a pause is no such time.
     private void ShowSkipPrompt()
     {
-        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None || !CanSeekInRoom)
+        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None || !CanSeekInRoom || !FollowsMarkers)
         {
             HasSkipPrompt = false;
+            // After the pill: the page reads a change of it as a pill that shows becoming another.
+            IsSkipPromptWithControls = false;
             return;
         }
         SkipLabel = prompt.Label;
         SkipCaption = prompt.Caption ?? "";
         SkipProvenance = prompt.Provenance ?? "";
         SkipProgress = prompt.Progress ?? 0;
+        IsSkipPromptWithControls = prompt.WithControls;
         HasSkipPrompt = true;
     }
 }

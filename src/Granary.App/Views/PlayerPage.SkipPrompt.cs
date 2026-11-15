@@ -39,7 +39,8 @@ public sealed partial class PlayerPage
 
     // A prompt that appears takes focus, as the intro pill of Silo's TV app does (TvIntroAutoSkipBanner's autoFocus): the
     // skip pill, or the next episode's Play Now. Enter, a remote's OK and a game controller's A then press what the viewer
-    // sees focus on. Asked a turn later, once the prompt shows.
+    // sees focus on. Asked a turn later, once the prompt shows. Never the Skip Intro that comes back with the controls after
+    // its time ran out: Silo's design for intro skipping has it take no focus, as the web's untimed offer.
     private void FocusPromptSoon() => DispatcherQueue.TryEnqueue(() => FocusPrompt(fromControls: false));
 
     // Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus, so OK
@@ -59,8 +60,20 @@ public sealed partial class PlayerPage
         {
             return false;
         }
-        ButtonBase? prompt = ViewModel.HasSkipPrompt ? SkipButton : ViewModel.IsNextUpCardShown ? NextUpPlayButton : null;
+        ButtonBase? prompt = ViewModel.HasSkipPrompt && !ViewModel.IsSkipPromptWithControls ? SkipButton
+            : ViewModel.IsNextUpCardShown ? NextUpPlayButton
+            : null;
         return prompt is not null && prompt.Focus(_lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic);
+    }
+
+    // The timed pill whose time ran out with the controls up stays as the offer without a timer, and gives up the focus it
+    // had, as the web's IntroSkipButton blurs: the next OK then shows the controls' focus, not a skip.
+    private void ReleaseExpiredPrompt()
+    {
+        if (FocusedPrompt() is { } focused && IsWithin(focused, SkipPrompt))
+        {
+            Focus(FocusState.Programmatic);
+        }
     }
 
     // The bar hides by its look alone (SetControlsVisible), so what is in it still counts as shown.

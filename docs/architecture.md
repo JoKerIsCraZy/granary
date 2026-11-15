@@ -572,7 +572,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
   `MarkerPrompts` follows the position: with `playback.intro_skip_mode` `ask` the intro offers "Skip Intro" for 5 s
-  of playing time (a pause stops the clock, a stall only after 1.5 s), `always` skips it and offers "Watch Intro";
+  of playing time (a pause stops the clock, a stall only after 1.5 s), and after that, until playback leaves the
+  intro, without a timer while the controls show (`FollowControls`, fed by the page through
+  `PlayerViewModel.AreControlsShown`; the pill says `WithControls`, so the page gives it no focus and no keys from
+  elsewhere), `always` skips it and offers "Watch Intro";
   a picked, turned away (Esc) or settled intro is not offered again in that playback. Recap, credits and preview
   get a pill that stays, and skip themselves once where `playback.auto_skip_recap` or `auto_skip_credits` say so,
   as Apple's client does. The settings are read as their own batch; an unknown mode neither prompts nor skips.
