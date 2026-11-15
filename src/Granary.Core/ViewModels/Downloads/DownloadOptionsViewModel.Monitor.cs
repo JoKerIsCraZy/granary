@@ -51,6 +51,9 @@ public sealed partial class DownloadOptionsViewModel
 
     private SeriesMonitorTarget? _monitorTarget;
 
+    // The validator of the monitor the dialog shows; null while it shows none. A save goes over this one, or over nothing.
+    private string? _shownEtag;
+
     // The newest regular season of the series as read, which Last Season starts from.
     private int? _latestSeason;
 
@@ -208,6 +211,7 @@ public sealed partial class DownloadOptionsViewModel
         StorageLimits = [.. limits.Select(bytes => new SettingChoice(Bytes(bytes), bytes == 0 ? NoLimit : MonitorRules.LimitText(bytes)))];
         SelectedStorageLimit = StorageLimits.FirstOrDefault(l => l.Value == Bytes(limit));
         HasMonitor = existing is not null;
+        _shownEtag = existing?.Etag;
         ShowMonitorSummary();
     }
 
@@ -327,6 +331,13 @@ public sealed partial class DownloadOptionsViewModel
             return false;
         }
         var existing = CurrentMonitor();
+        if (existing?.Etag != _shownEtag)
+        {
+            // A run read the monitor anew while the dialog showed it (or one came): shown as it is now, nothing sent.
+            Prefill(existing);
+            ErrorText = MonitorChanged;
+            return false;
+        }
         long limit = long.TryParse(SelectedStorageLimit?.Value, out long bytes) ? bytes : 0;
         // Only to a server that keeps a monitor's quality; without it, monitors take originals.
         string? quality = _feature.Capability?.MonitorQuality == true ? SelectedMonitorQuality?.Value : null;
@@ -344,7 +355,7 @@ public sealed partial class DownloadOptionsViewModel
             result = existing is null
                 ? await _monitors.CreateAsync(target.SeriesId, target.SeriesTitle, new MonitorChoice(rule.Mode, DeleteWatched, limit, quality), stopping)
                 : await _monitors.UpdateAsync(existing.Id, new MonitorEdit(rule.Mode == existing.Mode ? null : rule.Mode, DeleteWatched, limit,
-                    quality == storedQuality ? null : quality), stopping);
+                    quality == storedQuality ? null : quality) { Etag = _shownEtag }, stopping);
         }
         catch (OperationCanceledException) when (stopping.IsCancellationRequested)
         {

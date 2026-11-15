@@ -363,6 +363,19 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Update_OfAMonitorThatChangedSinceTheViewerSawIt_SendsNothing()
+    {
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m2\""));
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+
+        var result = await Monitors.UpdateAsync("sub_1", new MonitorEdit(null, true, 0, null) { Etag = "\"m1\"" }, Token);
+
+        Assert.Equal(MonitorResult.Changed, result);
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Patch, Monitor1Path));
+    }
+
+    [Fact]
     public async Task Update_SendsTheChoicesUnderTheValidator_AndSyncsTheMonitor()
     {
         ListMonitors(MonitorPayloads.Monitor());

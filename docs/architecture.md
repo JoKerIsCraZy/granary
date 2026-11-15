@@ -1629,7 +1629,8 @@ titles of their series as a download dialog or a download named them.
   offers, or the series has a monitor. It prefills from the series' monitor, else the Monitoring Defaults and the default
   quality; it creates through `SeriesMonitors.CreateAsync` or sends what changed through `UpdateAsync` (an unchanged mode or
   quality is never sent, as the server checks a quality's permission whenever it gets one), and shows a `Changed` monitor as
-  the server has it now. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
+  the server has it now. A save goes over the monitor the dialog showed (`MonitorEdit.Etag`): one a run read anew while it
+  showed, or that came meanwhile, is shown as it is now with the same words, and nothing is sent. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
   calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
   minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
 - **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards

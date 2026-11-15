@@ -12,7 +12,14 @@ public sealed record MonitorChoice(string Mode, bool DeleteWatched, long MaxStor
 /// A change to a monitor: <paramref name="Mode"/> and <paramref name="Quality"/> null when they stay as they are (an unchanged
 /// mode or quality is never sent again); the rest is sent as it is, and the monitor runs again (<c>active</c>).
 /// </summary>
-public sealed record MonitorEdit(string? Mode, bool DeleteWatched, long MaxStorageBytes, string? Quality);
+public sealed record MonitorEdit(string? Mode, bool DeleteWatched, long MaxStorageBytes, string? Quality)
+{
+    /// <summary>
+    /// The validator of the monitor the viewer saw and changed; null for none. When the monitor as Granary has it now carries
+    /// another (a run read it anew meanwhile), nothing is sent and the change comes back <see cref="MonitorResult.Changed"/>.
+    /// </summary>
+    public string? Etag { get; init; }
+}
 
 /// <summary>What a monitor's create, change or stop came to.</summary>
 public enum MonitorResult

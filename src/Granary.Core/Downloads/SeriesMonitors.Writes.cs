@@ -74,9 +74,13 @@ public sealed partial class SeriesMonitors
     {
         ArgumentException.ThrowIfNullOrEmpty(subscriptionId);
         ArgumentNullException.ThrowIfNull(edit);
-        return await WriteAsync(async (scope, server, token) => _book.Find(scope, subscriptionId) is { } monitor
-            ? await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false)
-            : MonitorResult.Removed, cancellationToken).ConfigureAwait(false);
+        return await WriteAsync(async (scope, server, token) => _book.Find(scope, subscriptionId) switch
+        {
+            null => MonitorResult.Removed,
+            // The viewer changed the monitor as it was, which a run read anew since: their change goes over nothing they saw.
+            { } monitor when edit.Etag is { } seen && monitor.Etag != seen => MonitorResult.Changed,
+            { } monitor => await ChangeAsync(scope, server, monitor, edit, token).ConfigureAwait(false),
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

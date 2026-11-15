@@ -155,6 +155,24 @@ public sealed class DownloadOptionsMonitorTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASaveOverAMonitorARunReadAnewWhileTheDialogShowed_SendsNothing_AndShowsItAsItIsNow()
+    {
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m3\"")));
+        var options = await SeriesDialogAsync(MonitorPayloads.Capability(), MonitorPayloads.Monitor());
+        // Another client turned Delete after watching on; a run read it while the dialog showed the monitor as it was.
+        _h.Silo.On(HttpMethod.Get, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, MonitorPayloads.Monitor(etag: "\"m2\"", deleteWatched: true))));
+        await Monitors.SyncAsync(Token);
+        options.SelectedStorageLimit = options.StorageLimits.Single(l => l.Label == "10 GB");
+
+        Assert.False(await options.StartAsync());
+
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Patch, Monitor1Path));
+        Assert.Equal(DownloadOptionsViewModel.MonitorChanged, options.ErrorText);
+        Assert.True(options.DeleteWatched);
+        Assert.Equal("None", options.SelectedStorageLimit?.Label);
+    }
+
+    [Fact]
     public async Task StopMonitoring_AsksFirst_ThenStops_AndCloses()
     {
         _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
