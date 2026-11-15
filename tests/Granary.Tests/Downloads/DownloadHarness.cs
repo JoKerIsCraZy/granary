@@ -325,7 +325,7 @@ internal sealed class DownloadHarness : IAsyncDisposable
             catch (IOException) when (tries < 20)
             {
                 // A part a cancelled transfer closes a moment later.
-                await Task.Delay(25);
+                await Task.Delay(25, Token);
             }
         }
     }

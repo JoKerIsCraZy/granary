@@ -319,7 +319,8 @@ public sealed class OfflineStartTests : IAsyncDisposable
         var store = _h.UnreadStore();
         // Not disposed: the load's thread may still be waking from it.
         var released = new ManualResetEventSlim();
-        store.Loading = () => released.Wait(TimeSpan.FromSeconds(30));
+        var token = Token;
+        store.Loading = () => released.Wait(TimeSpan.FromSeconds(30), token);
         try
         {
             var offline = Offline(store);
@@ -349,7 +350,8 @@ public sealed class OfflineStartTests : IAsyncDisposable
         var store = _h.UnreadStore();
         // Not disposed: the load's thread may still be waking from it.
         var released = new ManualResetEventSlim();
-        store.Loading = () => released.Wait(TimeSpan.FromSeconds(30));
+        var token = Token;
+        store.Loading = () => released.Wait(TimeSpan.FromSeconds(30), token);
         try
         {
             var offline = Offline(store);

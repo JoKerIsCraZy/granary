@@ -263,10 +263,11 @@ public sealed class DownloadStoreTests : IDisposable
         using var drive = new ManualResetEventSlim();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var store = Create();
+        var token = Token;
         store.Loading = () =>
         {
             reached.TrySetResult();
-            drive.Wait(TimeSpan.FromSeconds(30));
+            drive.Wait(TimeSpan.FromSeconds(30), token);
         };
         var loading = store.LoadAsync(Token);
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
@@ -298,10 +299,11 @@ public sealed class DownloadStoreTests : IDisposable
         using var drive = new ManualResetEventSlim();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var store = Create();
+        var token = Token;
         store.Loading = () =>
         {
             reached.TrySetResult();
-            drive.Wait(TimeSpan.FromSeconds(30));
+            drive.Wait(TimeSpan.FromSeconds(30), token);
         };
         var loading = store.LoadAsync(Token);
         await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);

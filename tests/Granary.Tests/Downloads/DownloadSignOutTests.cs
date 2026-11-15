@@ -1132,12 +1132,15 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly ManualResetEventSlim _released = new();
 
+        // The test's: the hold runs on the store's thread.
+        private readonly CancellationToken _token = Token;
+
         public Task Reached => _reached.Task;
 
         public void Hold()
         {
             _reached.TrySetResult();
-            _released.Wait(TimeSpan.FromSeconds(30));
+            _released.Wait(TimeSpan.FromSeconds(30), _token);
         }
 
         public void Release() => _released.Set();
