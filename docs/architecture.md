@@ -416,7 +416,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 - A card shows a title in this order: the thumbhash's blur at once, its badges, its texts, then its artwork. While a
   scroller moves fast the artwork waits (`ScrollMotion`); a card just made also waits for its first measure, so the
   artwork is decoded at the height it shows (`DecodePixelHeight`), never a guess; a card whose width then changes by
-  more than a tenth (another poster size, a breakpoint, a row's card given its width) decodes it again.
+  more than a tenth (another poster size, a breakpoint, a row's card given its width) decodes it again. Artwork that
+  fails, also such a decode after the artwork showed, leaves the blur, or without one the title, in its place.
 - A recycled card reuses what it has: badge views that draw the same badge only change their word
   (`CardBadgeViews.Reuse`), brushes are shared per colour, styles and brushes are looked up once, and its size,
   badge placement, subtitle style and caption colour are set only when they differ from the card before. Each new
@@ -489,6 +490,10 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   caption's style, which holds more than the overline.
 - A download's artwork comes from its file on this PC (`MediaCard.LocalImagePath`), read on the thread pool by
   `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name.
+  A file that cannot be read is reported once the card shows its bitmap, never before `LocalArtwork.Load` returned (the
+  read always yields), so the card counts it as failed and its next look reads it again. A hidden still (`BlursImage`)
+  is blurred from that file as a server's is (`SpoilerArtwork.LoadFileAsync`), never decoded sharp, and not kept with the
+  server's blurs; one that fails is read again with the card's next look.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the
@@ -1540,7 +1545,9 @@ client guide.
   which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
-  `StartAsync` runs (a deferral of the button's click) and when it answers false. Cancel or Esc meanwhile calls
+  `StartAsync` runs and when it answers false: the click never closes it, and the dialog hides itself once the start
+  answers true. A deferral of the click would hold Cancel and Esc back, since ContentDialog drops a button's click while
+  another's deferral is out. Cancel or Esc meanwhile calls
   `StopStarting`, which cancels the token of a season's or a series' run (checked between two episodes; each create gets
   none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
   from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
@@ -2010,7 +2017,11 @@ while the server answers.
 - **The log.** mpv names the file it plays and each file it cannot open. `MpvLogClassifier.Redact` keeps a local file's
   name and drops its folder, which lies under the Windows user's own folder and names them; a path that ends in no name
   of a file mpv reads (media, subtitles, fonts, its configuration and scripts, by their extensions) is taken for a
-  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau").
+  folder and goes whole, since a folder's name can hold a dot too ("elena.moreau"). An extension counts only where the
+  name surely ends: the line's end, a colon, a closing quote or a last full stop, which no Windows name holds or ends in.
+  A folder's name can go on after a space, a comma or a bracket ("jane.log backup"), and mpv's lines (info and above, as
+  of the pinned build) put none of these right after a file they name last, so such a path goes whole, as does
+  "elena.js.backup". mpv's "Failed to open … (not a file)." names a folder that way.
 - **Diagnosis of a player that stops following.** A tester saw the player's time stand and its buttons do nothing while
   the picture played on and Space still paused it, after a download played right after a streamed episode. It could not
   be reproduced, so the log now says more: at each press on the player and each pause, `PlayerViewModel.CheckFollowsEngine`

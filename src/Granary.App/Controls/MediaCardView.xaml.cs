@@ -1185,12 +1185,17 @@ public sealed partial class MediaCardView : UserControl
 
     // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
     // blurred, never sharp. A download's artwork comes from its file, as wide as the card: a poster for a poster, a still for
-    // a wide card.
+    // a wide card, blurred as well when it is hidden.
     private void LoadArtwork(CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
         if (_artworkPath is { } path)
         {
+            if (_blurs)
+            {
+                _ = LoadSpoilerAsync(SpoilerArtwork.LoadFileAsync(path, _artWidth, cancellationToken), cancellationToken);
+                return;
+            }
             ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3),
                 OnLocalArtworkFailed);
             return;
@@ -1201,7 +1206,7 @@ public sealed partial class MediaCardView : UserControl
         }
         if (_blurs)
         {
-            _ = LoadSpoilerAsync(url, cancellationToken);
+            _ = LoadSpoilerAsync(SpoilerArtwork.LoadAsync(url, _artWidth, cancellationToken), cancellationToken);
             return;
         }
         ArtImage.Source = _landscape
@@ -1236,11 +1241,7 @@ public sealed partial class MediaCardView : UserControl
     }
 
     // A missing or expired artwork URL leaves the blur, or without one the title, in place; the card's next look tries again.
-    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e)
-    {
-        ArtImage.Source = null;
-        _artworkFailed = true;
-    }
+    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ShowArtworkFailed();
 
     // A download's picture that could not be read (a virus scan holding the new file a moment, a file deleted by hand) fails
     // the same way: a live card's next look, as a download's progress, reads it again. Only the picture shown now; one the
@@ -1249,8 +1250,16 @@ public sealed partial class MediaCardView : UserControl
     {
         if (ReferenceEquals(ArtImage.Source, bitmap))
         {
-            ArtImage.Source = null;
-            _artworkFailed = true;
+            ShowArtworkFailed();
         }
+    }
+
+    // Also after a reread at another size, whose first picture had put the title away: without the thumbhash's blur, the
+    // title stands in again rather than an empty box.
+    private void ShowArtworkFailed()
+    {
+        ArtImage.Source = null;
+        _artworkFailed = true;
+        Placeholder.Visibility = Visible(BlurImage.Source is null);
     }
 }
