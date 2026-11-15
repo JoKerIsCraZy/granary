@@ -551,6 +551,32 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         Assert.Equal(["\"m1\"", "\"m2\""], deletes.Select(d => d.IfMatch));
     }
 
+    [Theory]
+    [InlineData(409, "conflict")]
+    [InlineData(412, "precondition_failed")]
+    public async Task AStopWhoseMonitorChangedAgainUnderItsSecondTry_StillGoes_AndTheListDoesNotBringItBackMeanwhile(int status, string code)
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.Problem(412, "precondition_failed"), ScriptedSilo.Problem(status, code),
+            ScriptedSilo.NetworkError(), ScriptedSilo.NoContent());
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")));
+
+        await Monitors.StopAsync("sub_1", Token);
+        // The server still has it, and the next run cannot reach it for the stop.
+        await Monitors.SyncAsync(Token);
+
+        Assert.Empty(Monitors.Monitors);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
+
+        ListMonitors();
+        await Monitors.SyncAsync(Token);
+
+        Assert.Equal(["\"m1\"", "\"m2\"", "\"m1\"", "\"m1\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
+        Assert.Empty(Monitors.Monitors);
+    }
+
     [Fact]
     public async Task Stop_ThatDidNotReachTheServer_GoesWithTheNextRun_AndTheListDoesNotBringItBack()
     {

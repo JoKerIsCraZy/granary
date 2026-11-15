@@ -1656,8 +1656,9 @@ titles of their series as a download dialog or a download named them.
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
   monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
   read again, as the Apple app does, also for a stop kept from before a restart: the server keeps a monitor per device, so
-  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer waits for
-  the next run, and the list does not bring the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
+  only this PC or the server itself (pausing it when the storage is revoked) changes it; one that got no answer, or whose
+  monitor changed again before that second try (409 or 412 once more), waits for the next run, and the list does not bring
+  the monitor back meanwhile. Waiting stops are kept on disk (`MonitorPendingFile`, `monitor-pending.json` in the data folder: each one's
   profile, monitor id and validator), as the Apple app keeps them, so one that never reached the server before Granary
   closed goes after it starts again, and its monitor does not come back meanwhile. The file keeps a create's choices still
   waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
