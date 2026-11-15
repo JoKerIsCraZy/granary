@@ -151,6 +151,32 @@ public sealed class AppLanguageTests
     }
 
     [Theory]
+    [InlineData("en", "English")]
+    [InlineData("es", "Español")]
+    [InlineData("de", "Deutsch")]
+    [InlineData("fr", "Français")]
+    [InlineData("pt-BR", "Português (Brasil)")]
+    [InlineData("ja", "日本語")]
+    [InlineData("zh-Hans", "简体中文")]
+    [InlineData("ar", "العربية")]
+    public void EveryShippedLanguage_IsNamedInItself_AsTheWebNamesIt(string tag, string expected)
+    {
+        // The web's SHIPPED_LANGUAGES endonyms: a fixed table, so every PC shows the same names whatever .NET's culture data
+        // says ("português (Brasil)", "中文（简体）").
+        Assert.Equal(expected, AppLanguage.Endonym(tag));
+    }
+
+    [Theory]
+    [InlineData("es-MX")]
+    [InlineData("pt")]
+    [InlineData("it")]
+    [InlineData("")]
+    public void ATagThatIsNoShippedLanguage_HasNoEndonym(string tag)
+    {
+        Assert.Null(AppLanguage.Endonym(tag));
+    }
+
+    [Theory]
     [InlineData("ar", true)]
     [InlineData("ar-SA", true)]
     [InlineData("en", false)]

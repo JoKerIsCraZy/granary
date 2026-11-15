@@ -33,8 +33,26 @@ public static class AppLanguage
         ["traditional chinese"] = "zh-Hant",
     };
 
+    // The web's SHIPPED_LANGUAGES with each language's name in itself: a fixed table, not .NET's culture names, so every PC
+    // names them alike ("Português (Brasil)", where .NET writes "português (Brasil)").
+    private static readonly (string Tag, string Endonym)[] ShippedLanguages =
+    [
+        ("en", "English"),
+        ("es", "Español"),
+        ("de", "Deutsch"),
+        ("fr", "Français"),
+        ("pt-BR", "Português (Brasil)"),
+        ("ja", "日本語"),
+        ("zh-Hans", "简体中文"),
+        ("ar", "العربية"),
+    ];
+
     /// <summary>The languages Silo's web ships and Granary has catalogs for, in the web's order (<c>SHIPPED_LANGUAGES</c>).</summary>
-    public static IReadOnlyList<string> Shipped { get; } = ["en", "es", "de", "fr", "pt-BR", "ja", "zh-Hans", "ar"];
+    public static IReadOnlyList<string> Shipped { get; } = [.. ShippedLanguages.Select(language => language.Tag)];
+
+    /// <summary>A shipped language's name in itself, for the language picker; null for any other tag.</summary>
+    public static string? Endonym(string tag) =>
+        ShippedLanguages.FirstOrDefault(language => string.Equals(language.Tag, tag, StringComparison.Ordinal)).Endonym;
 
     /// <summary>
     /// The languages a user can get. English only until every area of Granary shows its texts through the catalogs,

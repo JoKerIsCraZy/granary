@@ -401,7 +401,9 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   apps. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
   es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
-  Windows' list ends the search. Granary does not read or write the profile's setting yet.
+  Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";
+  `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
+  Granary does not read or write the profile's setting yet.
 - **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
   before its first window (`App.ApplyLanguage`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates
   and numbers; the log says which. A debug build takes `--language <tag>` to show a shipped language, enabled or not,
