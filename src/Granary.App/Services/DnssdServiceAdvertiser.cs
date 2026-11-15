@@ -24,7 +24,9 @@ namespace Granary.App.Services;
 /// freed a moment after that, at a later call, once the callback that confirmed it has long returned. Memory Windows might
 /// still read (no answer came, or a removal it did not take) is never freed: the process's end takes it. A registration
 /// Windows has not answered for is asked back (<c>DnsServiceDeRegister</c>) before the next one is made, so two of one
-/// name do not overlap; which answers are still to come for it is not known then, so its memory is never freed.</item>
+/// name do not overlap; which answers are still to come for it is not known then, so its memory is never freed. One whose
+/// removal Windows does not take stays the current one, as a registration that went through does, and nothing is made
+/// beside it.</item>
 /// <item>The completion callback is a static <c>UnmanagedCallersOnly</c> function, not a delegate, so nothing of it can
 /// be collected while Windows holds its address. Its context is a registration's number, not a handle: a late call finds
 /// the number gone and does nothing.</item>
@@ -148,13 +150,13 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
     }
 
     // Under the gate. Removes a registration and waits up to RemoveWait for Windows' word. False when Windows did not take
-    // the removal of a registration that went through: it is still advertised, and the caller keeps it to ask again.
+    // the removal of a registration that went through, or of one it has not answered for: it is advertised, or may be yet,
+    // and the caller keeps it to ask again.
     private async Task<bool> RemoveAsync(Registration registration)
     {
         if (!registration.IsAnswered)
         {
-            await RemoveUnansweredAsync(registration).ConfigureAwait(false);
-            return true;
+            return await RemoveUnansweredAsync(registration).ConfigureAwait(false);
         }
         if (!registration.WentThrough)
         {
@@ -184,8 +186,9 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
 
     // Under the gate. Windows has not answered for it yet: it is asked to take it back now, before anything registers
     // anew, so two registrations of one name do not overlap, and given RemoveWait. Which of Windows' answers are still to
-    // come is not known then, so its memory is never freed: the process's end takes it.
-    private async Task RemoveUnansweredAsync(Registration registration)
+    // come is not known then, so its memory is never freed: the process's end takes it. False when Windows did not take
+    // the request: it may still go through, so nothing new is made beside it.
+    private async Task<bool> RemoveUnansweredAsync(Registration registration)
     {
         uint status = registration.Remove();
         if (status == DnsService.RequestPending)
@@ -194,11 +197,13 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             {
                 logger.LogWarning("Windows did not confirm the removal of an unanswered advertisement of the phone remote in time");
             }
-            return;
+            return true;
         }
-        // Not taken: once Windows answers, within LateAnswerWait, a registration that went through is removed then.
+        // Not taken: the caller keeps it as the current one, and once Windows answers, within LateAnswerWait, a registration
+        // that went through is removed then.
         logger.LogWarning("Windows did not take back an unanswered advertisement of the phone remote (status {Status})", status);
         _ = RemoveOnceAnsweredAsync(registration);
+        return false;
     }
 
     private async Task RemoveOnceAnsweredAsync(Registration registration)
@@ -213,10 +218,16 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
+                // No longer the current one: a registration or removal since has taken care of it.
+                if (!ReferenceEquals(_current, registration))
+                {
+                    return;
+                }
+                _current = null;
                 if (!await RemoveAsync(registration).ConfigureAwait(false))
                 {
-                    // Asked again at the next unregistration or registration; with another one current, it ends with Granary.
-                    _current ??= registration;
+                    // Asked again at the next unregistration or registration.
+                    _current = registration;
                 }
             }
             finally
