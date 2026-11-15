@@ -520,8 +520,8 @@ calls; never to other origins (artwork CDNs, S3). Sources:
 `silo-server/internal/auth/client_device.go:14-55`, `silo-server/internal/apiv2/device_header.go:24-57`,
 `silo-server/docs/settings-api.md:724-781`.
 
-The same requests carry `Accept-Language` with one tag, the language on screen (`AppText.Language`; `en` until Granary
-enables other languages), as Silo's Android and Apple apps send it. It is a hint for text the server writes for that
+The same requests carry `Accept-Language` with one tag, the language on screen (`AppText.Language`: `en`, `es`, `de`, `fr`,
+`pt-BR`, `ja` or `zh-Hans`), as Silo's Android and Apple apps send it. It is a hint for text the server writes for that
 request: no answer depends on it yet, so the server sends no `Vary: Accept-Language`, and its plugin route proxy
 forwards it to plugins. Text the server writes for a profile rather than a request follows the profile's
 `ui.app_language` instead (`silo-server/docs/architecture/i18n.md`, "`Accept-Language`").
@@ -603,6 +603,7 @@ Profile and device settings live on the server (manifest
 | `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
 | `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
 | `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
+| `ui.app_language` | profile, profile_device (resolved device, profile, default) | `null` (follow the device) | the language Granary starts in ([6.6.5](#665-app-language)) |
 
 #### 6.6.1 Card badges
 
@@ -700,6 +701,25 @@ value.
   title pages play their theme music ([7.19](#719-theme-music)), and repeat it. Saved as the web's `useProfileDefaultWriter`
   writes them: `PUT …?scope=profile`, then `DELETE …?scope=profile_device` when the effective value came from this device.
   Only the acting profile's own read turns theme music on, never the previous profile's while the next one is read.
+
+#### 6.6.5 App language
+
+`ui.app_language` (revision 28; silo-server `docs/settings-api.md`, "App language", and `docs/architecture/i18n.md`): the
+language of a client's menus, buttons and messages, a nullable open language tag (`"de"`, `"pt-BR"`); `null` follows the
+device. A client applies a value only when it ships that language, matched as it matches the device's list, and otherwise
+acts as if it were `null`.
+
+- Read: the effective value, with `X-Silo-Device-Id`, so this PC's own row wins over the profile's. Granary reads it at
+  sign-in, with every server or profile, and each time Settings → Accessibility shows, and keeps the last value read on this PC for its next
+  start: its texts load once, as it starts. A server whose effective read refuses the key (`422`) predates it: the
+  profile follows the device.
+- Write (Settings → Accessibility → Language, as the web's `AccessibilitySettings.tsx` and the apps write it):
+  `PUT …/ui.app_language?scope=profile` with the tag, or `null` for Match device, so the choice follows the person to
+  every device; then, when the effective value came from this PC, `DELETE …?scope=profile_device` (a `404` means there was
+  nothing to clear), so it applies here too. A `DELETE` that only lands on Try again is followed by a read of the
+  effective value, as the profile's may have changed since. Both go out as the profile the choice was made for
+  (`SettingsApi.SetValueAsProfileAsync`, `ClearValueAsProfileAsync`). A stored tag Granary does not offer is shown, not
+  rewritten.
 
 ## 7. Catalog
 

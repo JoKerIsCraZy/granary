@@ -911,6 +911,12 @@
       "value": "继续播放时后退"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "应用菜单、按钮和消息使用的语言。与音频、字幕和元数据语言分开设置。"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1483,6 +1489,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "重启后生效。"
     }
   ],
   "web.admin.common.accounts.role": [
@@ -4911,6 +4923,20 @@
     {
       "type": 0,
       "value": "选择已加载项"
+    }
+  ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 0,
+      "value": "已选择"
+    },
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "项"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -13387,6 +13413,36 @@
     {
       "type": 0,
       "value": "作品"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "应用语言"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "无法保存应用语言"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "语言"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "与设备一致"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "辅助功能"
     }
   ],
   "web.settings.account.password.current": [

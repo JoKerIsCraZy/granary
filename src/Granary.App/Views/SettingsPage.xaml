@@ -61,7 +61,7 @@
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
-                <!-- How Granary looks: posters, badges and the sidebar; what a title's page shows. -->
+                <!-- How Granary looks: posters, badges and the sidebar; what a title's page shows; the language it speaks. -->
                 <TextBlock x:Name="AppearanceGroup" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                 <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False">
@@ -75,6 +75,12 @@
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE8B2;" FontSize="14" />
                             <TextBlock Text="{x:Bind t:AppText.Get('web.settings.titlePages.title')}" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="accessibility" AutomationProperties.Name="{x:Bind t:AppText.Get('web.settings.accessibility.title')}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE890;" FontSize="14" />
+                            <TextBlock Text="{x:Bind t:AppText.Get('web.settings.accessibility.title')}" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>

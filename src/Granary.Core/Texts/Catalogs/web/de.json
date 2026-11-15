@@ -919,6 +919,12 @@
       "value": "Beim Fortsetzen zurückspulen"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "Sprache der Menüs, Schaltflächen und Meldungen der App. Unabhängig von den Sprachen für Audio, Untertitel und Metadaten."
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1527,6 +1533,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "Wird nach einem Neustart wirksam."
     }
   ],
   "web.admin.common.accounts.role": [
@@ -5370,6 +5382,16 @@
     {
       "type": 0,
       "value": "Geladene auswählen"
+    }
+  ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " ausgewählt"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -14407,6 +14429,36 @@
     {
       "type": 0,
       "value": "Titel"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "App-Sprache"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "App-Sprache konnte nicht gespeichert werden"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "Sprache"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "Wie Gerät"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "Barrierefreiheit"
     }
   ],
   "web.settings.account.password.current": [

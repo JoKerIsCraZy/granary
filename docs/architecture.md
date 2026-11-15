@@ -316,11 +316,12 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
 
 ## Texts
 
-Granary is moving its texts into Silo's translation catalogs, used by key as Silo's web uses them (silo-server
-`web/src/i18n/README.md` and `docs/architecture/i18n.md`). Only English is enabled so far: the areas move behind keys one
-by one, and the other languages come on once every area has, so nobody sees a half-translated Granary. A text the web
-has for the same place takes the web's key, and with it the web's English where Granary had worded it differently; a
-text only Granary has keeps its English under a key of its own. All of it is in `src/Granary.Core/Texts`.
+Granary shows its texts from Silo's translation catalogs, used by key as Silo's web uses them (silo-server
+`web/src/i18n/README.md` and `docs/architecture/i18n.md`), in English, Spanish, German, French, Brazilian Portuguese,
+Japanese and Simplified Chinese. Arabic ships too but is held back until Granary lays out right to left (below). A text
+the web has for the same place takes the web's key, and with it the web's English where Granary had worded it
+differently; a text only Granary has keeps its English under a key of its own. All of it is in
+`src/Granary.Core/Texts`.
 
 - **Catalogs** (`Catalogs/`, embedded in Granary.Core, one file per language tag; `TextCatalog`):
   - `web/<tag>.json` holds the web's compiled catalogs (`web/src/locales/<tag>.json`), unchanged per key and trimmed
@@ -397,16 +398,45 @@ text only Granary has keeps its English under a key of its own. All of it is in 
 - **Keys** (`TextKeysTests`): every key `src` gives `AppText.Get` or `AppText.Runs` as a literal, in C# or in an x:Bind,
   must be in the English catalog, the web's or Granary's, as the web's typecheck holds its keys to `en.json`.
 - **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,
-  then English, each matched only against the enabled languages (`AppLanguage.Enabled`, English for now), as in Silo's
-  apps. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
+  then English, each matched only against the enabled languages (`AppLanguage.Enabled`), as in Silo's apps. A language is
+  enabled as the web's `hasCatalog` decides it: each shipped language whose catalogs Granary carries (`TextCatalog.Ships`),
+  except one written right to left, which is Arabic: the web sets `dir="rtl"` for it, which mirrors the whole layout, and
+  Granary lays out only left to right. A profile that chose Arabic, and an Arabic Windows, get the next language in line,
+  else English. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
   es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
-  Windows' list ends the search. Granary does not read or write the profile's setting yet.
-- **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
-  before its first window (`App.ApplyLanguage`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates
-  and numbers; the log says which. A debug build takes `--language <tag>` to show a shipped language, enabled or not,
-  for checking converted texts; it counts as a chosen language for the formats. WinUI's own control texts (a text box's menu, for
-  example) still follow Windows' display language.
+  Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";
+  `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
+- **The profile's language** (`AppLanguageSetting`): `ui.app_language` is read for every profile, as the web's
+  `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in, with every
+  server or profile, and each time Settings → Accessibility shows; a read that a choice overtook is dropped and made again
+  once the choice lands. A server from before settings contract revision 28 has no such setting: its profiles follow
+  the device. What was read is kept on this PC (`app-language.json` in the data directory,
+  `AppLanguageFile`), the last profile's language, as Silo's apps keep the language they last applied for the screens
+  before sign-in; a failed read keeps what was kept, a profile that follows the device clears it. Signing out keeps it.
+- **The picker** (Settings → Accessibility → Language, `AccessibilitySettingsViewModel`, as the web's
+  `AccessibilitySettings.tsx`): Match device, then the enabled languages by their own names, and a stored tag Granary
+  does not offer under its name, so a save never clears another app's choice. A choice writes the profile's value (Match
+  device writes `null`), then clears this PC's own value when the read came from it (a `null` row of its own too), as
+  the web and the apps write it; one choice at a time, each bound to the server and profile whose language showed when
+  it was made, so none goes out for a profile that took over meanwhile. It is kept for the next start once it applies
+  here: when saved, or, with a row of this PC's own, once that is cleared; a clear that lands only on Try again reads
+  the profile's language again, as another device may have chosen one meanwhile. A file that could not be written is
+  written by the next keep.
+- **How a change applies**: at the next start. Silo's web and apps switch at once; Granary does not, because the texts
+  are read when each element is made (x:Bind functions run once, view models word their rows as they load) and live
+  elements would keep the old language: the shell, the sidebar, cached pages and their back stack, the player (also
+  minimized, with its title playing), the taskbar buttons and Windows' media controls. Switching live would mean rebuilding
+  all of them while a title may play. So the picker says "Applies after a restart." while the next start would show
+  another language or other formats than this run (`AppLanguage.ForStart` of the value kept for the next start against
+  that of the value the run started with).
+- **At start-up** the app resolves the language from that kept value and Windows' list (`IDeviceLanguages`, read once:
+  `GlobalizationPreferences.Languages`) and applies it before its first window (`App.ApplyLanguage`,
+  `AppLanguage.ForStart`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates and numbers; the log says
+  which. The texts load once, so a language read or chosen later shows from the next start. A debug build takes
+  `--language <tag>` to show a shipped language, enabled or not, for checking converted texts; it counts as a chosen
+  language for the formats. WinUI's own control texts (a text box's menu, for example) still follow Windows' display
+  language.
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 

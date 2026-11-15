@@ -44,6 +44,14 @@ internal sealed class TextCatalog
 
     public bool TryGet(string key, [MaybeNullWhen(false)] out IReadOnlyList<MessageNode> message) => _messages.TryGetValue(key, out message);
 
+    /// <summary>Whether Granary carries both catalogs of a language tag, the web's and its own.</summary>
+    public static bool Ships(string tag)
+    {
+        var names = typeof(TextCatalog).Assembly.GetManifestResourceNames();
+        return names.Contains($"Granary.Core.Texts.Catalogs.web.{tag}.json", StringComparer.Ordinal)
+            && names.Contains($"Granary.Core.Texts.Catalogs.granary.{tag}.json", StringComparer.Ordinal);
+    }
+
     /// <summary>The catalog embedded for a language tag, read once; empty when Granary has no files for it.</summary>
     public static TextCatalog Embedded(string tag) =>
         EmbeddedCatalogs.GetOrAdd(tag, static tag => new Lazy<TextCatalog>(() => ReadEmbedded(tag))).Value;

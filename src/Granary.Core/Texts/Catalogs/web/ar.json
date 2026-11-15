@@ -911,6 +911,12 @@
       "value": "الترجيع عند الاستئناف"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "لغة قوائم التطبيق وأزراره ورسائله. منفصلة عن لغات الصوت والترجمة والبيانات الوصفية."
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1703,6 +1709,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "يُطبَّق بعد إعادة التشغيل."
     }
   ],
   "web.admin.common.accounts.role": [
@@ -7076,6 +7088,16 @@
     {
       "type": 0,
       "value": "تحديد المحمّل"
+    }
+  ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": " محدد"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -17990,6 +18012,36 @@
     {
       "type": 0,
       "value": "العناوين"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "لغة التطبيق"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر حفظ لغة التطبيق"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "اللغة"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "مطابقة الجهاز"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "إمكانية الوصول"
     }
   ],
   "web.settings.account.password.current": [

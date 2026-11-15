@@ -138,16 +138,52 @@ public sealed class AppLanguageTests
     }
 
     [Fact]
-    public void ForNow_OnlyEnglishIsEnabled_SoEveryoneGetsEnglish()
+    public void EveryLanguageWhoseCatalogsShip_IsEnabled_ButArabic_UntilGranaryLaysOutRightToLeft()
     {
-        Assert.Equal(["en"], AppLanguage.Enabled);
-        Assert.Equal("en", AppLanguage.Resolve("de", ["de-DE", "fr-FR"], AppLanguage.Enabled));
+        // The web offers a language once its catalog has shipped (appLocale.ts, hasCatalog); Granary has every one, and
+        // holds back Arabic, which the web shows right to left.
+        Assert.Equal(["en", "es", "de", "fr", "pt-BR", "ja", "zh-Hans"], AppLanguage.Enabled);
+        Assert.Equal("de", AppLanguage.Resolve("de", ["fr-FR"], AppLanguage.Enabled));
+        Assert.Equal("ja", AppLanguage.Resolve(null, ["ja-JP", "fr-FR"], AppLanguage.Enabled));
+    }
+
+    [Fact]
+    public void Arabic_ChosenOrFromWindows_FollowsTheNextLanguage()
+    {
+        Assert.Equal("fr", AppLanguage.Resolve("ar", ["ar-EG", "fr-FR"], AppLanguage.Enabled));
+        Assert.Equal("en", AppLanguage.Resolve(null, ["ar-SA"], AppLanguage.Enabled));
     }
 
     [Fact]
     public void TheShippedLanguages_AreTheWebs()
     {
         Assert.Equal(AllEnabled, AppLanguage.Shipped);
+    }
+
+    [Theory]
+    [InlineData("en", "English")]
+    [InlineData("es", "Español")]
+    [InlineData("de", "Deutsch")]
+    [InlineData("fr", "Français")]
+    [InlineData("pt-BR", "Português (Brasil)")]
+    [InlineData("ja", "日本語")]
+    [InlineData("zh-Hans", "简体中文")]
+    [InlineData("ar", "العربية")]
+    public void EveryShippedLanguage_IsNamedInItself_AsTheWebNamesIt(string tag, string expected)
+    {
+        // The web's SHIPPED_LANGUAGES endonyms: a fixed table, so every PC shows the same names whatever .NET's culture data
+        // says ("português (Brasil)", "中文（简体）").
+        Assert.Equal(expected, AppLanguage.Endonym(tag));
+    }
+
+    [Theory]
+    [InlineData("es-MX")]
+    [InlineData("pt")]
+    [InlineData("it")]
+    [InlineData("")]
+    public void ATagThatIsNoShippedLanguage_HasNoEndonym(string tag)
+    {
+        Assert.Null(AppLanguage.Endonym(tag));
     }
 
     [Theory]

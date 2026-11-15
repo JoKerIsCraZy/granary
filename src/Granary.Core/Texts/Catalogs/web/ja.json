@@ -911,6 +911,12 @@
       "value": "再開時に巻き戻す"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "アプリのメニュー、ボタン、メッセージの言語です。音声、字幕、メタデータの言語とは別に設定します。"
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1475,6 +1481,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "再起動後に適用されます。"
     }
   ],
   "web.admin.common.accounts.role": [
@@ -4927,6 +4939,16 @@
     {
       "type": 0,
       "value": "読み込み済みを選択"
+    }
+  ],
+  "web.catalog.page.selectedCount": [
+    {
+      "type": 1,
+      "value": "count"
+    },
+    {
+      "type": 0,
+      "value": "件選択中"
     }
   ],
   "web.catalog.page.titleCount": [
@@ -13311,6 +13333,36 @@
     {
       "type": 0,
       "value": "タイトル"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "アプリの言語"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "アプリの言語を保存できませんでした"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "言語"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "デバイスに合わせる"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "アクセシビリティ"
     }
   ],
   "web.settings.account.password.current": [

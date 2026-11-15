@@ -21,7 +21,7 @@ public sealed partial class SubtitlePreview : UserControl
     public static readonly DependencyProperty IsCompactProperty = DependencyProperty.Register(nameof(IsCompact), typeof(bool),
         typeof(SubtitlePreview), new PropertyMetadata(false, (sender, _) => ((SubtitlePreview)sender).ShowFrame()));
 
-    // The settings page's sample, in the web's words; the player panel's below is its own and stays in English for now.
+    // The settings page's sample and, below, the player panel's, each in the web's words for its place.
     private static string[] Lines =>
         [AppText.Get("web.settings.subtitleAppearance.preview.sampleLine1"), AppText.Get("web.settings.subtitleAppearance.preview.sampleLine2")];
 

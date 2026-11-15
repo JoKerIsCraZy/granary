@@ -357,6 +357,32 @@ public sealed partial class TitlePagesSettingsView : UserControl, IDisposable
     }
 }
 
+/// <summary>
+/// Settings → Accessibility; it reads the profile's app language again each time it is shown, coming back from another
+/// settings page too, as another device may have changed it, and lets go of it as the page leaves.
+/// </summary>
+public sealed partial class AccessibilitySettingsView : UserControl, IDisposable
+{
+    public AccessibilitySettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<AccessibilitySettingsViewModel>(App.Services);
+        InitializeComponent();
+        // Every time: the settings page keeps the view while it is open. A newer read drops an older one, and none puts back
+        // a language over a choice (AppLanguageSetting).
+        Loaded += OnLoaded;
+    }
+
+    public AccessibilitySettingsViewModel ViewModel { get; }
+
+    public void Dispose()
+    {
+        Loaded -= OnLoaded;
+        ViewModel.Dispose();
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e) => await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
+}
+
 /// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>
 public sealed partial class ServersSettingsView : UserControl, IDisposable
 {
