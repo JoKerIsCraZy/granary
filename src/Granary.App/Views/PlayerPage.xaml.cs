@@ -220,6 +220,14 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.IsNextUpCardShown) when ViewModel.IsNextUpCardShown:
                 FocusPromptSoon();
                 break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.IsSkipPromptWithControls:
+                ReleaseExpiredPrompt();
+                break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.HasSkipPrompt:
+                // The offer became another pill while one showed throughout: that one appears as any pill does.
+                AnnounceSkipCaption();
+                FocusPromptSoon();
+                break;
             case nameof(PlayerViewModel.Bar):
                 ShowBar();
                 break;

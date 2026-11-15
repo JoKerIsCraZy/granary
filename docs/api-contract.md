@@ -2463,7 +2463,10 @@ timer:
 - `never`: nothing.
 - `ask`: entering the intro shows "Skip Intro". Selecting it seeks to `end` and resolves the intro;
   Back hides and resolves it. A timeout hides the pill **without** resolving, so seeking back in
-  offers it again. Seeking out hides it; seeking back in restarts the timer.
+  offers it again. Seeking out hides it; seeking back in restarts the timer. After the timeout,
+  while still inside, "Skip Intro" returns **without a timer** whenever the controls show and hides
+  with them; it takes no focus, gives up the timed pill's, and claims Select/Back only while it
+  has focus (web: `useIntroSkipPrompt.ts` `expiredKey`, silo-server #3511).
 - `always`: entering the intro seeks to `end` immediately and shows "Intro skipped / Watch Intro".
   Selecting it seeks to `start` and resolves; the timeout resolves.
 - Shared: a resolved intro never prompts again in that session. Pause freezes the timer;

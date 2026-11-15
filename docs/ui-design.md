@@ -997,7 +997,7 @@ In the full player:
 
 | Pad | Does |
 |---|---|
-| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. The Skip Intro that comes back with the controls after its 5 s takes no focus and A only while focus is on it. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
 | X | Plays or pauses, wherever focus is. |
 | B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
 | D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
@@ -1880,7 +1880,14 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls show; 44 px high, black at 75 % with a white 20 % edge, 14 px semibold. "Skip Intro" fills from the left
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
-  stay while inside their part. Esc turns an intro pill away before it does anything else. A press is judged by where
+  stay while inside their part. Once its 5 s ran out, "Skip Intro" comes back, without the fill, whenever the controls
+  show while playback is still in that intro, and hides again with them, focus on it or not (it holds them no longer
+  than the web's does), as the web's untimed offer (Silo's design for intro skipping, `ask`); it is gone once playback
+  leaves the intro, and seeking back in offers it with its 5 s again.
+  That offer takes no focus and gives up the focus the timed pill had; Esc, a remote's Back and a pad's B are not its,
+  nor are OK, Space and A from elsewhere: only with focus on it (Tab, or the arrows from the controls) do Enter, Space,
+  OK and A press it, as on the web; without focus Space plays and pauses, and over every other pill and focused button
+  of the full player it still does. Esc turns a timed intro pill away before it does anything else. A press is judged by where
   playback is then, a seek on its way included: Skip Intro and a part's pill skip only from inside their part, Watch
   Intro goes back only from the intro's start on; otherwise the pill just goes, so a press right after seeking away
   never skips what is not marked. From before the intro, Watch Intro lets playback reach the intro, which then plays.
@@ -1894,7 +1901,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   moves the part away from where playback is (a seek on its way included) takes Skip Intro or the part's pill away
   until playback reaches it, so a pick never skips what is no longer marked (Watch Intro stays, it only goes back).
   The two switches are read as a title starts, as the other skip settings, so a change applies from the next title.
-  A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
+  A pill takes focus when it appears (all but the Skip Intro back with the controls), as the intro pill of Silo's TV
+  app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
   or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
   and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. A control of
@@ -2018,10 +2026,11 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown
-  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
+  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away; not the Skip Intro back
+  with the controls, which hides with them) or the marker editor is
   open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
   keys. A held OK does not press the button it lands on. Space wins over a
-  focused button; arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  focused button, but for the Skip Intro back with the controls, which it presses (see "Skip pill"); arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
   held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
