@@ -84,6 +84,8 @@ release's section is what its update says it changes (docs/release.md).
   every other score your Silo server shows for it.
 - The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
   screen draws it, as Silo's web does, where it came at a card's size and was stretched.
+- The Settings sidebar scrolls in a short window, as on Silo's web, so its last pages, such as About, can be reached with
+  the mouse, the keyboard and a controller.
 
 ## [0.4.0] - 2026-11-14
 
