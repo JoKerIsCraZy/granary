@@ -107,6 +107,7 @@ public sealed partial class PlayerPage : Page
         {
             _modes.SetFullScreen(true);
         }
+        TellNextUpStillWidth(XamlRoot);
         _ = ViewModel.StartAsync(request);
     }
 
@@ -150,6 +151,7 @@ public sealed partial class PlayerPage : Page
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _keepAwake ??= new PlayerKeepAwake(ViewModel, App.Services.GetRequiredService<IKeepAwake>());
         ShowSkipIntervals();
+        TellNextUpStillWidth(XamlRoot);
         QueueNextUpStill();
         Focus(FocusState.Programmatic);
         StartAutoHide();

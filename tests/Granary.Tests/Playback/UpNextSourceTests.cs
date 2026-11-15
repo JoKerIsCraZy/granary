@@ -4,6 +4,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Cards;
+using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 
@@ -25,7 +26,7 @@ public sealed class UpNextSourceTests
 
     private UpNextSource Create() => new(new CatalogApi(_silo.Http),
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" },
-        _logs.For<UpNextSource>());
+        new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _logs.For<UpNextSource>());
 
     private static string Episodes(int season, params int[] numbers) =>
         "{ \"items\": [" + string.Join(",", numbers.Select(n =>
@@ -41,7 +42,7 @@ public sealed class UpNextSourceTests
     {
         _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(1, [4, 1, 3, 2], unreadable: 3)));
 
-        var previous = await Create().PreviousEpisodeAsync(LastOfSeason1 with { EpisodeNumber = 4, ContentId = "ted-1-4" }, Token);
+        var previous = await Create().PreviousEpisodeAsync(LastOfSeason1 with { EpisodeNumber = 4, ContentId = "ted-1-4" }, null, Token);
 
         Assert.Equal("ted-1-2", previous?.ContentId);
         Assert.Single(_silo.Sent);
@@ -59,8 +60,8 @@ public sealed class UpNextSourceTests
         var source = Create();
         var current = LastOfSeason1 with { ContentId = "ted-1-2" };
 
-        var next = source.NextEpisodeAsync(current, Token);
-        var previous = source.PreviousEpisodeAsync(current, Token);
+        var next = source.NextEpisodeAsync(current, null, Token);
+        var previous = source.PreviousEpisodeAsync(current, null, Token);
         answer.SetResult();
 
         Assert.Equal("ted-1-3", (await next)?.ContentId);
@@ -73,7 +74,7 @@ public sealed class UpNextSourceTests
     {
         _silo.On(HttpMethod.Get, Season2, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(2, [1, 2])));
 
-        var previous = await Create().PreviousEpisodeAsync(new PlayingEpisode("ted-2-1", "ted", "ted", 2, 1), Token);
+        var previous = await Create().PreviousEpisodeAsync(new PlayingEpisode("ted-2-1", "ted", "ted", 2, 1), null, Token);
 
         Assert.Null(previous);
         Assert.Single(_silo.Sent);
@@ -84,7 +85,7 @@ public sealed class UpNextSourceTests
     {
         _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 3, 1, 2)));
 
-        var next = await Create().NextEpisodeAsync(LastOfSeason1 with { EpisodeNumber = 1, ContentId = "ted-1-1" }, Token);
+        var next = await Create().NextEpisodeAsync(LastOfSeason1 with { EpisodeNumber = 1, ContentId = "ted-1-1" }, null, Token);
 
         Assert.Equal(new NextEpisode("ted-1-2", 1, 2, "Episode 2") { RuntimeMinutes = 37, StillUrl = ArtworkUrl.Resolve(ScriptedSilo.Base, "/s/2.jpg") }, next);
         Assert.Single(_silo.Sent);
@@ -104,9 +105,49 @@ public sealed class UpNextSourceTests
             """));
         _silo.On(HttpMethod.Get, Season2, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(2, 2, 1)));
 
-        var next = await Create().NextEpisodeAsync(LastOfSeason1, Token);
+        var next = await Create().NextEpisodeAsync(LastOfSeason1, null, Token);
 
         Assert.Equal("ted-2-1", next?.ContentId);
+    }
+
+    [Fact]
+    public async Task TheSeason_IsReadWithStillsAsWideAsThePlayingNextScreenDrawsThem()
+    {
+        _silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
+        _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 1, 2, 3)));
+
+        var next = await Create().NextEpisodeAsync(LastOfSeason1, new ImageSizes(Still: 1067), Token);
+
+        Assert.Equal("ted-1-3", next?.ContentId);
+        var read = Assert.Single(_silo.Sent, r => r.Uri.AbsolutePath.EndsWith("/seasons/1/episodes", StringComparison.Ordinal));
+        Assert.Contains("still_width=1067", read.Uri.Query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ALaterSeason_IsReadWithTheSameWidth()
+    {
+        _silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
+        _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 1, 2)));
+        _silo.On(HttpMethod.Get, Seasons, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "content_id": "s1", "season_number": 1 }, { "content_id": "s2", "season_number": 2 } ] }"""));
+        _silo.On(HttpMethod.Get, Season2, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(2, 1)));
+
+        var next = await Create().NextEpisodeAsync(LastOfSeason1, new ImageSizes(Still: 712), Token);
+
+        Assert.Equal("ted-2-1", next?.ContentId);
+        var read = Assert.Single(_silo.Sent, r => r.Uri.AbsolutePath.EndsWith("/seasons/2/episodes", StringComparison.Ordinal));
+        Assert.Contains("still_width=712", read.Uri.Query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithoutAWidth_TheSeasonIsReadAtTheServersSizes_AndNothingElseIsAsked()
+    {
+        _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 1, 2, 3)));
+
+        var next = await Create().NextEpisodeAsync(LastOfSeason1, null, Token);
+
+        Assert.Equal("ted-1-3", next?.ContentId);
+        var read = Assert.Single(_silo.Sent);
+        Assert.DoesNotContain("width", read.Uri.Query, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -114,10 +155,10 @@ public sealed class UpNextSourceTests
     {
         _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, Episodes(1, 1, 2)));
         _silo.On(HttpMethod.Get, Seasons, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "content_id": "s1", "season_number": 1 } ] }"""));
-        Assert.Null(await Create().NextEpisodeAsync(LastOfSeason1, Token));
+        Assert.Null(await Create().NextEpisodeAsync(LastOfSeason1, null, Token));
 
         _silo.On(HttpMethod.Get, Season1, ScriptedSilo.NetworkError());
-        Assert.Null(await Create().NextEpisodeAsync(LastOfSeason1, Token));
+        Assert.Null(await Create().NextEpisodeAsync(LastOfSeason1, null, Token));
         Assert.Contains(_logs.Lines, l => l.Contains("next episode", StringComparison.Ordinal));
     }
 
