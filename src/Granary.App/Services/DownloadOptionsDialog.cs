@@ -20,6 +20,8 @@ namespace Granary.App.Services;
 /// </summary>
 internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<DownloadOptionsDialog> logger) : IDownloadOptionsDialog
 {
+    // A dialog shows. It goes false as the dialog closes, also while that dialog's start still runs (the window went with it);
+    // a dialog opened then has its own view model and its own Close, so the old start's end touches neither.
     private bool _showing;
 
     public async Task ShowAsync(DownloadOptionsViewModel options)
