@@ -102,18 +102,17 @@ public sealed class DownloadAssetsTests : IAsyncDisposable
         Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")));
     }
 
-    // Before its first transfer a download has no bytes the manifest could fail to describe: the file it fetches next is the
-    // server's current one, which that manifest names.
+    // Before its first transfer too: a newer manifest would leave the record behind the bytes the transfer fetches. The registry
+    // replaces the download first (the queue's part), and the next attempt reads a manifest of its own revision.
     [Fact]
-    public async Task AManifestOfANewerRevision_IsKeptBeforeTheFirstTransfer()
+    public async Task AManifestOfANewerRevision_IsNotKept_BeforeTheFirstTransferEither()
     {
         var stored = await _h.AddAsync("dl_1");
         _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", revision: 2)));
 
-        var fetched = await Assets().FetchAsync(ScriptedSilo.Base, stored, Token);
+        await Assert.ThrowsAsync<ManifestRevisionException>(() => Assets().FetchAsync(ScriptedSilo.Base, stored, Token));
 
-        Assert.Equal(2, fetched.Manifest.Revision);
-        Assert.Contains(DownloadPaths.Manifest, FilesIn(stored));
+        Assert.DoesNotContain(DownloadPaths.Manifest, FilesIn(stored));
     }
 
     // The registry named revision 2 already, and the manifest still describes revision 1: its size and tracks are not the

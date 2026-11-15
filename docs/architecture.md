@@ -1478,10 +1478,13 @@ client guide.
   which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). A
   replacement stops a refresh of its download that is under way and waits for it to end before the old files go, as it
   waits for the old transfer: the refresh would write the old revision's artwork and subtitles after them. Before
-  the first transfer a newer manifest is kept: the file fetched next is the server's current one. An older one than the
-  revision the record names (the registry is ahead of it) is not: its size and tracks are not the bytes fetched next, and
-  the attempt ends as one whose manifest did not come, tried again after the retry delays. The finished file is named
-  after the manifest's container.
+  the first transfer a manifest of another revision than the record's is not kept either: an older one does not describe
+  the file fetched next, and a newer one would leave the record behind the bytes it fetches (the server would refuse its
+  reports, and the registry replace the download once the file came, fetching it again). The attempt ends as one whose
+  manifest did not come and reads the registry again, whose larger revision replaces the download the usual way; the next
+  attempt, at once after a replacement and after the retry delays otherwise, reads a manifest of its own revision. So
+  the manifest beside a download is always of its record's revision. The finished file is named after the manifest's
+  container.
 - **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
   its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
   files go first. The server work looks at the folder when it is about to send, and remembers one still there until the

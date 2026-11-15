@@ -455,6 +455,27 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Empty(Directory.GetFiles(stored.Folder, "poster.*"));
     }
 
+    // The server got new bytes between the registry read and the first transfer: the manifest says revision 2 while the PC
+    // keeps revision 1. The registry is read again, which replaces the download the usual way, and the file comes once, for
+    // revision 2, with a manifest of its own revision, so it plays from this PC.
+    [Fact]
+    public async Task AManifestNewerThanTheDownloadBeforeItsFirstTransfer_HasTheRegistryReplaceIt_AndTheFileComesOnce()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        _h.ListPages(DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready", revision: 1)),
+            DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready", revision: 2)));
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", revision: 2)));
+        _h.ServeFile("dl_1", Source);
+
+        _h.StartQueue();
+        await CompletedAsync("dl_1");
+
+        Assert.Equal(2, _h.Find("dl_1")!.Record.Revision);
+        Assert.Single(_h.FileRequests("dl_1"));
+        Assert.Contains("\"revision\": 2", await System.IO.File.ReadAllTextAsync(File(stored, DownloadPaths.Manifest), Token), StringComparison.Ordinal);
+        Assert.Contains("\"revision\":2", _h.Reports("dl_1")[^1].Body, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ANewRevision_IsReportedBeforeItsFile_ThoughTheOldReportWaitsItsDelay()
     {
