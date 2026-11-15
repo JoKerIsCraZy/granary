@@ -690,6 +690,45 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task ALocalFileStartedMidwayAfterAStream_ReportsItsPositionAsItPlays()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var streamPlays = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        long local = 0;
+        var positions = new List<double>();
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true } && s.Position.TotalSeconds > 1)
+            {
+                streamPlays.TrySetResult();
+            }
+            if (s.LoadId == Volatile.Read(ref local) && s is { IsLoaded: true, HasStarted: true })
+            {
+                lock (positions)
+                {
+                    positions.Add(s.Position.TotalSeconds);
+                }
+            }
+        };
+        engine.Load(new MediaSource(server.Url("media.wav"), []));
+        await streamPlays.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        // The player leaves the stream, then the downloaded title opens where it was left.
+        engine.Stop();
+        Volatile.Write(ref local, engine.Load(MediaSource.Local(TempWav(30.0), TimeSpan.FromSeconds(10))));
+        await Task.Delay(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+
+        double[] seen;
+        lock (positions)
+        {
+            seen = [.. positions];
+        }
+        Assert.NotEmpty(seen);
+        Assert.True(seen.Max() > 12, $"positions seen: {string.Join(", ", seen.Select(p => p.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)))}");
+    }
+
+    [Fact]
     public async Task AStop_ClearsWhatTheStreamHeld()
     {
         using var engine = CreateEngine();

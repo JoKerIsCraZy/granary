@@ -68,6 +68,47 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADownload_PlayedRightAfterAStream_FollowsTheEngine()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.Resume("mv_streamed"));
+        _streams[0].Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Frame(5);
+
+        // Back to the downloaded episode in the same player, as Previous does after the next one streamed.
+        await player.StartAsync(PlayRequest.Resume("ep_5"));
+        Frame(1099);
+        Frame(1101);
+
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Equal(1101, player.PositionSeconds);
+        Assert.True(player.CanSeek);
+    }
+
+    [Fact]
+    public async Task ADownload_PlayedAgainAfterItEndedAndTheNextEpisodeStreamed_FollowsTheEngine()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.Resume("ep_5"));
+        Frame(7190);
+        Frame(7199);
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+        // Playing Next streams the next episode, and the viewer goes back to the downloaded one.
+        await player.StartAsync(PlayRequest.ResumeWithoutRewind("ep_6"));
+        _streams[0].Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Frame(5);
+        await player.StartAsync(PlayRequest.ResumeWithoutRewind("ep_5"));
+        Frame(1099);
+        Frame(1101);
+
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Equal(1101, player.PositionSeconds);
+        Assert.True(player.CanSeek);
+    }
+
+    [Fact]
     public async Task LeavingADownload_TellsThePagesOnce_WhenTheServerHasWhereTheViewerLeftOff()
     {
         await _fixture.Harness.AddPlayableAsync();
