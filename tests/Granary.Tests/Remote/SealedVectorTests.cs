@@ -91,8 +91,8 @@ public sealed class SealedVectorTests
         Assert.Equal([0x40], Base32.Decode("iA"));
 
         // Letters that only an invariant upper-casing turns into S and I.
-        Assert.Null(Base32.Decode("Å¿A"));
-        Assert.Null(Base32.Decode("Ä±A"));
+        Assert.Null(Base32.Decode("\u017FA"));
+        Assert.Null(Base32.Decode("\u0131A"));
     }
 
     [Fact]
