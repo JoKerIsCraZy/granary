@@ -285,8 +285,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
-  hides the button. Beside it, or in its place when it does not show, a quiet "Download settings" with the settings gear
-  (Reclaim Watched's size and pill, muted, with no fill or edge until the pointer is on it) opens Settings → Downloads
+  hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before
+  its label, in Reclaim Watched's outline pill, opens Settings → Downloads
   over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
   Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
   download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
