@@ -40,6 +40,9 @@ public sealed partial class RemoteReceiver
     private Running? _running;
     private CancellationTokenSource? _accepting;
     private RemoteReceiverState _failure = RemoteReceiverState.Listening;
+    // The listener stopped taking connections by itself: nothing starts again until the switch, the session, the address or
+    // the key changes.
+    private bool _listenerFailed;
     private RemoteReceiverStatus _status = RemoteReceiverStatus.Off;
     // The key the published status was made under; the lifetime loop's only.
     private PairingMaterial? _publishedMaterial;
@@ -101,6 +104,7 @@ public sealed partial class RemoteReceiver
         _session.Changed += OnLifetimeChanged;
         _addresses.Changed += OnLifetimeChanged;
         _pairing.KeyChanged += OnLifetimeChanged;
+        _listener.Failed += OnListenerFailed;
         LookAgain();
     }
 
@@ -122,6 +126,7 @@ public sealed partial class RemoteReceiver
         _session.Changed -= OnLifetimeChanged;
         _addresses.Changed -= OnLifetimeChanged;
         _pairing.KeyChanged -= OnLifetimeChanged;
+        _listener.Failed -= OnListenerFailed;
         Volatile.Read(ref _playingSettle)?.Dispose();
         try
         {
@@ -175,7 +180,19 @@ public sealed partial class RemoteReceiver
         }
     }
 
-    private void OnLifetimeChanged(object? sender, EventArgs e) => LookAgain();
+    // A change the viewer or Windows made: worth a try after a listener that failed, too.
+    private void OnLifetimeChanged(object? sender, EventArgs e)
+    {
+        Volatile.Write(ref _listenerFailed, false);
+        LookAgain();
+    }
+
+    // The listener's socket failed: the receiver stops, so no port stays advertised that nobody answers.
+    private void OnListenerFailed(object? sender, EventArgs e)
+    {
+        Volatile.Write(ref _listenerFailed, true);
+        LookAgain();
+    }
 
     // Asks the loop to look again; starts it from the UI thread's queue, so changes made in one turn of it are looked at
     // together.
@@ -247,7 +264,14 @@ public sealed partial class RemoteReceiver
             }
             if (running is null && want.State == RemoteReceiverState.Listening)
             {
-                await StartRunningAsync(want).ConfigureAwait(false);
+                if (Volatile.Read(ref _listenerFailed))
+                {
+                    _failure = RemoteReceiverState.Failed;
+                }
+                else
+                {
+                    await StartRunningAsync(want).ConfigureAwait(false);
+                }
             }
             PublishStatus(want);
         }
@@ -306,6 +330,10 @@ public sealed partial class RemoteReceiver
                 RemoteReceiverState.NotSignedIn => RemoteLogReasons.NoProfile,
                 _ => RemoteLogReasons.NoLocalNetwork,
             };
+        }
+        if (Volatile.Read(ref _listenerFailed))
+        {
+            return RemoteLogReasons.ListenerFailed;
         }
         if (!string.Equals(running.Server.Id, want.Server!.Id, StringComparison.Ordinal) || running.Server.BaseUri != want.Server.BaseUri)
         {
@@ -607,7 +635,10 @@ public enum RemoteReceiverState
     /// <summary>Windows did not give Granary a port.</summary>
     NoPort,
 
-    /// <summary>A step of the start failed (the pairing key could not be read, the advertisement threw): nothing listens.</summary>
+    /// <summary>
+    /// A step of the start failed (the pairing key could not be read, the advertisement threw), or the listener stopped
+    /// taking connections by itself: nothing listens, and nothing is advertised.
+    /// </summary>
     Failed,
 
     /// <summary>It listens.</summary>

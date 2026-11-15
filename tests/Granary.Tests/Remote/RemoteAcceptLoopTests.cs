@@ -20,9 +20,11 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     private static readonly IPAddress PhoneAddress = IPAddress.Parse("192.168.1.30");
 
     private readonly LogSink _logs = new();
+    private readonly ManualTimeProvider _time = new();
     private readonly List<DuplexPipe> _pipes = [];
     private readonly List<AcceptSource> _sources = [];
     private readonly List<RemoteAcceptLoop> _loops = [];
+    private int _failures;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -117,6 +119,8 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         source.Fail(new IOException("The phone at 192.168.1.30 went away."));
         var connection = NewConnection();
         source.Give(connection);
+        // The second failure in a row is waited out.
+        Assert.Equal(RemoteAcceptLoop.FirstBackoff, await _time.FireNextTimerAsync(Token));
 
         Assert.Same(connection, await handed.Task.WaitAsync(HangGuard, Token));
         Assert.False(loop.Running.IsCompleted);
@@ -124,24 +128,70 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
-    public async Task AListenerThatKeepsFailing_IsGivenUp_RatherThanSpun()
+    public async Task ABurstOfConnectionsThatFail_NeverStopsTheLoop_AndTheNextGoodOneIsTaken()
+    {
+        // A peer on the network that makes accept after accept fail.
+        const int Burst = 40;
+        var source = Source();
+        var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, connection =>
+        {
+            handed.TrySetResult(connection);
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        for (int i = 0; i < Burst; i++)
+        {
+            source.Fail(i % 2 == 0 ? new SocketException((int)SocketError.ConnectionReset) : new IOException("The phone at 192.168.1.30 went away."));
+        }
+        var good = NewConnection();
+        source.Give(good);
+
+        // Failures back to back are waited out, a little longer each time but never longer than a second.
+        var waits = new List<TimeSpan>();
+        while (!handed.Task.IsCompleted)
+        {
+            await Task.WhenAny(handed.Task, _time.WaitForTimerAsync(Token)).WaitAsync(HangGuard, Token);
+            if (_time.NextDue is { } due)
+            {
+                waits.Add(due);
+                _time.Advance(due);
+            }
+        }
+
+        Assert.Same(good, await handed.Task);
+        // And it goes on accepting.
+        await source.UntilAcceptingAsync(Burst + 2);
+        Assert.False(loop.Running.IsCompleted);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+        Assert.Equal(Burst - 1, waits.Count);
+        Assert.Equal(RemoteAcceptLoop.FirstBackoff, waits[0]);
+        Assert.All(waits, wait => Assert.InRange(wait, RemoteAcceptLoop.FirstBackoff, RemoteAcceptLoop.LongestBackoff));
+        Assert.Equal(RemoteAcceptLoop.LongestBackoff, waits[^1]);
+        // Logged when the run began and when it ended, not once a failure.
+        Assert.Single(_logs.Lines, line => line.Contains("ended while it was accepted", StringComparison.Ordinal));
+        Assert.Single(_logs.Lines, line => line.Contains($"{Burst} connections in a row", StringComparison.Ordinal));
+        Assert.DoesNotContain("192.168.1.30", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AStopDuringTheWaitAfterFailures_EndsTheLoop_AsNoFailure()
     {
         var source = Source();
         var loop = Loop(source, _ => Task.CompletedTask);
         loop.Start();
+        source.Fail(new SocketException((int)SocketError.ConnectionReset));
+        source.Fail(new SocketException((int)SocketError.ConnectionReset));
+        await _time.WaitForTimerAsync(Token);
 
-        for (int i = 0; i < RemoteAcceptLoop.MaxFailuresInARow; i++)
-        {
-            source.Fail(new SocketException((int)SocketError.ConnectionReset));
-        }
+        loop.Stop();
 
         await loop.Running.WaitAsync(HangGuard, Token);
-        Assert.Equal(RemoteAcceptLoop.MaxFailuresInARow, source.Accepts);
-        Assert.Contains("stopped taking connections", _logs.All, StringComparison.Ordinal);
+        Assert.Equal(0, Volatile.Read(ref _failures));
     }
 
     [Fact]
-    public async Task AFailureThatIsNotOneConnections_StopsTheLoop_AndNamesNoAddress()
+    public async Task AFailureOfTheListenerItself_EndsTheLoop_TellsItsOwner_AndNamesNoAddress()
     {
         var source = Source();
         var loop = Loop(source, _ => Task.CompletedTask);
@@ -151,9 +201,40 @@ public sealed class RemoteAcceptLoopTests : IDisposable
 
         await loop.Running.WaitAsync(HangGuard, Token);
         Assert.Equal(1, source.Accepts);
+        Assert.Equal(1, Volatile.Read(ref _failures));
         Assert.Contains("stopped taking connections", _logs.All, StringComparison.Ordinal);
         Assert.DoesNotContain("192.168.1.20", _logs.All, StringComparison.Ordinal);
         Assert.DoesNotContain("52817", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(SocketError.NotSocket)]
+    [InlineData(SocketError.InvalidArgument)]
+    [InlineData(SocketError.NetworkDown)]
+    public async Task ASocketErrorOfTheListener_EndsTheLoop_AndTellsItsOwner(SocketError error)
+    {
+        var source = Source();
+        var loop = Loop(source, _ => Task.CompletedTask);
+        loop.Start();
+
+        source.Fail(new SocketException((int)error));
+
+        await loop.Running.WaitAsync(HangGuard, Token);
+        Assert.Equal(1, Volatile.Read(ref _failures));
+    }
+
+    [Fact]
+    public async Task AStop_IsNoFailure()
+    {
+        var source = Source();
+        var loop = Loop(source, _ => Task.CompletedTask);
+        loop.Start();
+        await source.UntilAcceptingAsync(1);
+
+        loop.Stop();
+
+        await loop.Running.WaitAsync(HangGuard, Token);
+        Assert.Equal(0, Volatile.Read(ref _failures));
     }
 
     [Fact]
@@ -262,7 +343,8 @@ public sealed class RemoteAcceptLoopTests : IDisposable
 
     private RemoteAcceptLoop Loop(AcceptSource source, Func<IRemoteConnection, Task> onAccepted)
     {
-        var loop = new RemoteAcceptLoop(source.AcceptAsync, onAccepted, _logs.For<RemoteAcceptLoop>());
+        var loop = new RemoteAcceptLoop(source.AcceptAsync, onAccepted, () => Interlocked.Increment(ref _failures), _time,
+            _logs.For<RemoteAcceptLoop>());
         _loops.Add(loop);
         return loop;
     }

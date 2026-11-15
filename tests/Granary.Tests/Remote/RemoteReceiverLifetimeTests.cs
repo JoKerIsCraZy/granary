@@ -168,6 +168,51 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AListenerThatFailsByItself_StopsTheReceiver_TakesTheAdvertisementBack_AndSaysSo()
+    {
+        await _harness.StartListeningAsync();
+        var (phone, _, serving) = await _harness.ConnectThroughListenerAsync();
+        await phone.HelloAsync(RemoteHarness.ServerId, null);
+        await phone.NextAsync("state");
+
+        _harness.Listener.Fail();
+        await SettledAsync();
+
+        // No port stays advertised that nobody answers, and Settings says the remote failed.
+        Assert.Equal("""{"type":"close","v":2,"close":{"reason":"tv_disconnected"}}""", await phone.NextAsync("close"));
+        await serving.WaitAsync(HangGuard, Token);
+        Assert.Equal(["advertiser.Unregister", "listener.Stop"], _harness.Calls.All.TakeLast(2));
+        Assert.Null(_harness.Advertiser.Current);
+        Assert.Equal(RemoteReceiverState.Failed, Receiver.Status.State);
+        Assert.Null(Receiver.PairingLink);
+        Assert.Contains("The phone remote stopped: the listener stopped taking connections", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFailedListener_IsNotStartedAgainByItself_ButAtTheNextChange()
+    {
+        await _harness.StartListeningAsync();
+        _harness.Listener.Fail();
+        await SettledAsync();
+
+        // A title opening and closing is no reason to try again.
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        Time.Advance(RemoteReceiver.PlayingSettles);
+        await _harness.SettleUiAsync();
+        await SettledAsync();
+        Assert.Equal(1, _harness.Listener.Starts);
+        Assert.Equal(RemoteReceiverState.Failed, Receiver.Status.State);
+
+        // The PC's address is told again (a network change): it listens again.
+        _harness.Addresses.Set(RemoteHarness.Lan);
+        await SettledAsync();
+        Assert.Equal(2, _harness.Listener.Starts);
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+        Assert.NotNull(_harness.Advertiser.Current);
+    }
+
+    [Fact]
     public async Task SigningOut_StopsIt_AndSigningInAgain_StartsItWithTheSameKey()
     {
         await _harness.StartListeningAsync();

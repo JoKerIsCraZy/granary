@@ -71,6 +71,15 @@ internal sealed class FakeRemoteListener(RemoteCalls calls) : IRemoteListener
         return Task.CompletedTask;
     }
 
+    public event EventHandler? Failed;
+
+    /// <summary>The listener's socket failed: it takes no more connections, and says so.</summary>
+    public void Fail()
+    {
+        Volatile.Write(ref _onAccepted, null);
+        Failed?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>A phone connected: the receiver serves <paramref name="connection"/>; the task ends with the connection.</summary>
     public Task AcceptAsync(IRemoteConnection connection) =>
         (Volatile.Read(ref _onAccepted) ?? throw new InvalidOperationException("Nothing listens."))(connection);

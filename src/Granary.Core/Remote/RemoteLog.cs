@@ -34,6 +34,7 @@ public static class RemoteLogReasons
     public const string NoLocalNetwork = "no local network";
     public const string AnotherServer = "another server";
     public const string NoPortAtNewAddress = "no port at the new address";
+    public const string ListenerFailed = "the listener stopped taking connections";
     public const string AdvertisementFailed = "the advertisement failed";
     public const string NotAPairingHello = "the first frame was not a pairing hello";
     public const string WrongKey = "wrong pairing key";

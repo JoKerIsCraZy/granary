@@ -11,14 +11,18 @@ namespace Granary.App.Services;
 /// backlog of 4 (the receiver takes no more connections than that before a hello). Its accept loop
 /// (<see cref="RemoteAcceptLoop"/>) hands each connection over with Nagle off, since frames are small and a command should
 /// not wait for more. <see cref="StopAsync"/> never waits: it stops the loop and closes the listener, and connections
-/// handed over stay with the receiver. One listener at a time; a start stops the one before.
+/// handed over stay with the receiver. One listener at a time; a start stops the one before. A connection that fails as
+/// it is accepted never ends the loop; a failure of the listening socket itself does, and raises <see cref="Failed"/>, so
+/// the receiver stops and takes its advertisement back.
 /// </summary>
-public sealed class TcpRemoteListener(ILogger<TcpRemoteListener> logger) : IRemoteListener
+public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListener> logger) : IRemoteListener
 {
     private const int Backlog = 4;
 
     private readonly Lock _gate = new();
     private Listening? _listening;
+
+    public event EventHandler? Failed;
 
     public Task<int> StartAsync(IPAddress address, IReadOnlyList<int> ports, Func<IRemoteConnection, Task> onAccepted,
         CancellationToken cancellationToken)
@@ -35,13 +39,27 @@ public sealed class TcpRemoteListener(ILogger<TcpRemoteListener> logger) : IRemo
         // The message names no address or port: the receiver logs an exception by its type and code, but a message travels.
         var listener = Bind(address, ports) ?? throw new IOException("No port of the phone remote's list was free.");
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        var loop = new RemoteAcceptLoop(token => AcceptAsync(listener, token), onAccepted, logger);
+        RemoteAcceptLoop? loop = null;
+        loop = new RemoteAcceptLoop(token => AcceptAsync(listener, token), onAccepted, () => OnLoopFailed(loop!), time, logger);
         lock (_gate)
         {
             _listening = new Listening(listener, loop);
         }
         loop.Start();
         return Task.FromResult(port);
+    }
+
+    // The loop of the listener that runs now ended by itself: the receiver is told. One stopped or replaced meanwhile is not news.
+    private void OnLoopFailed(RemoteAcceptLoop loop)
+    {
+        lock (_gate)
+        {
+            if (!ReferenceEquals(_listening?.Loop, loop))
+            {
+                return;
+            }
+        }
+        Failed?.Invoke(this, EventArgs.Empty);
     }
 
     public Task StopAsync()

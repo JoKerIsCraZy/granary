@@ -6,15 +6,24 @@ namespace Granary.App.Services;
 
 /// <summary>
 /// The accept loop of <see cref="TcpRemoteListener"/>, apart from its socket so that tests run it without one: it takes
-/// one connection after another and hands each over without waiting for what becomes of it, goes on past a connection
-/// that fails while it is accepted, and stops at once, never waiting for a pending accept, a connection it handed over, or
-/// the task that connection was handed to. It logs by fixed phrases and an exception's type and code only
-/// (<see cref="RemoteLog"/>): a socket's message can name an address.
+/// one connection after another and hands each over without waiting for what becomes of it, and stops at once, never
+/// waiting for a pending accept, a connection it handed over, or the task that connection was handed to.
+/// <para>
+/// A connection that fails as it is accepted is skipped, whatever a peer does: a peer could make every accept fail, and
+/// it must neither stop the loop nor make it spin, so failures that come back to back are waited out, a little longer each
+/// time, up to <see cref="LongestBackoff"/>. Only a failure of the listener itself ends the loop, and the owner is told
+/// (<c>onFailed</c>), so no port stays open and advertised that nobody answers.
+/// </para>
+/// It logs by fixed phrases and an exception's type and code only (<see cref="RemoteLog"/>): a socket's message can name
+/// an address.
 /// </summary>
 internal sealed class RemoteAcceptLoop
 {
-    /// <summary>Failures in a row after which the loop gives up rather than spin: the listener itself is broken then.</summary>
-    public const int MaxFailuresInARow = 10;
+    /// <summary>The wait after the second failed connection in a row; it doubles with each one after.</summary>
+    public static readonly TimeSpan FirstBackoff = TimeSpan.FromMilliseconds(50);
+
+    /// <summary>The longest wait between failed connections in a row.</summary>
+    public static readonly TimeSpan LongestBackoff = TimeSpan.FromSeconds(1);
 
     private const int NotStarted = 0;
     private const int Accepting = 1;
@@ -22,20 +31,29 @@ internal sealed class RemoteAcceptLoop
 
     private readonly Func<CancellationToken, ValueTask<IRemoteConnection>> _accept;
     private readonly Func<IRemoteConnection, Task> _onAccepted;
+    private readonly Action _onFailed;
+    private readonly TimeProvider _time;
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _stop = new();
     private int _state = NotStarted;
 
     /// <param name="accept">Waits for the next connection; the token ends it when the loop stops, if it heeds it.</param>
     /// <param name="onAccepted">Takes a connection over; the task it answers runs as long as the connection and is never awaited.</param>
+    /// <param name="onFailed">The listener itself failed and the loop ended; never called for a stop.</param>
+    /// <param name="time">The clock the waits between failed connections run on.</param>
     /// <param name="logger">Fixed phrases only.</param>
-    public RemoteAcceptLoop(Func<CancellationToken, ValueTask<IRemoteConnection>> accept, Func<IRemoteConnection, Task> onAccepted, ILogger logger)
+    public RemoteAcceptLoop(Func<CancellationToken, ValueTask<IRemoteConnection>> accept, Func<IRemoteConnection, Task> onAccepted,
+        Action onFailed, TimeProvider time, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(accept);
         ArgumentNullException.ThrowIfNull(onAccepted);
+        ArgumentNullException.ThrowIfNull(onFailed);
+        ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(logger);
         _accept = accept;
         _onAccepted = onAccepted;
+        _onFailed = onFailed;
+        _time = time;
         _logger = logger;
     }
 
@@ -92,19 +110,26 @@ internal sealed class RemoteAcceptLoop
             }
             catch (Exception ex) when (IsOneConnections(ex))
             {
-                if (++failures >= MaxFailuresInARow)
+                // Logged once for a run of them: a peer that makes every accept fail must not fill the log either.
+                if (++failures == 1)
                 {
-                    _logger.LogWarning("The phone remote's listener stopped taking connections after {Count} failed in a row ({Error})",
-                        failures, RemoteLog.Failure(ex));
+                    _logger.LogDebug("A connection ended while it was accepted ({Error})", RemoteLog.Failure(ex));
+                }
+                if (failures > 1 && !await BackOffAsync(failures, stop).ConfigureAwait(false))
+                {
                     return;
                 }
-                _logger.LogDebug("A connection ended while it was accepted ({Error})", RemoteLog.Failure(ex));
                 continue;
             }
             catch (Exception ex) when (ex is not OutOfMemoryException)
             {
                 _logger.LogWarning("The phone remote's listener stopped taking connections ({Error})", RemoteLog.Failure(ex));
+                Failed();
                 return;
+            }
+            if (failures > 1)
+            {
+                _logger.LogDebug("{Count} connections in a row ended while they were accepted", failures);
             }
             failures = 0;
             if (IsStopped)
@@ -113,6 +138,33 @@ internal sealed class RemoteAcceptLoop
                 return;
             }
             HandOver(connection);
+        }
+    }
+
+    // Waits before the next accept; false when the loop was stopped meanwhile.
+    private async Task<bool> BackOffAsync(int failures, CancellationToken stop)
+    {
+        long ticks = FirstBackoff.Ticks << Math.Min(failures - 2, 10);
+        try
+        {
+            await Task.Delay(TimeSpan.FromTicks(Math.Min(ticks, LongestBackoff.Ticks)), _time, stop).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private void Failed()
+    {
+        try
+        {
+            _onFailed();
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _logger.LogError("The phone remote could not be told its listener failed ({Error})", RemoteLog.Failure(ex));
         }
     }
 
@@ -148,11 +200,14 @@ internal sealed class RemoteAcceptLoop
         }
     }
 
-    // A connection that went away between its arrival and its accept: the listener itself is fine.
+    // A connection that went away between its arrival and its accept, or a passing shortage: the listener itself is fine.
+    // TcpRemoteListener reports what fails after the accept as an IOException.
     private static bool IsOneConnections(Exception ex) => ex switch
     {
         SocketException socket => socket.SocketErrorCode is SocketError.ConnectionReset or SocketError.ConnectionAborted
-            or SocketError.NetworkReset or SocketError.TimedOut or SocketError.HostUnreachable or SocketError.NetworkUnreachable,
+            or SocketError.NetworkReset or SocketError.TimedOut or SocketError.HostUnreachable or SocketError.NetworkUnreachable
+            or SocketError.HostDown or SocketError.NoBufferSpaceAvailable or SocketError.TooManyOpenSockets
+            or SocketError.Interrupted or SocketError.TryAgain or SocketError.WouldBlock,
         IOException => true,
         _ => false,
     };

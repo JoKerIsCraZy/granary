@@ -1263,6 +1263,8 @@ What the receiver requires of the code behind its ports (their XML docs say the 
 - `IRemoteConnection.DisposeAsync` aborts every read and write in flight at once and never waits for the phone: a slow
   phone's end and the receiver's stop rely on it.
 - `IRemoteListener.StopAsync` never hangs and never waits for accepted connections; it is safe to call twice.
+- `IRemoteListener.Failed` is raised when the listener stopped taking connections by itself, and only then: a connection
+  that fails as it is accepted never stops a listener, whatever a peer does.
 
 ### Pairing
 
@@ -1433,12 +1435,15 @@ then on; `StopAsync` ends it for good when Granary closes.
     anew; phones on the old address end with their heartbeat. The code changes, the key does not.
   - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
     register once, and the status tick never does.
+  - The listener fails by itself (`IRemoteListener.Failed`): stop, and the status says `Failed`. Nothing starts again
+    until the switch, the session, the address or the key changes; a title that plays is no reason to.
   - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
     not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
     The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved
     and the old one stays. Every handshake reads the key as it is at that moment, and every frame of a session checks
     that its key is still the PC's, so a phone on the old code is refused even if a notice was missed.
-- **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` or `Listening` with the address,
+- **Status.** `Status` says `Off`, `NotSignedIn`, `NoLocalNetwork`, `NoPort`, `Failed` (a start that failed, or a listener
+  that did) or `Listening` with the address,
   the port, whether Windows took the advertisement, and the server's address for the pairing panel's hint;
   `StatusChanged` comes on the UI thread, also when only the code changed (a new key under the same address and port).
   `PairingLink` exists only while it listens; it is made from the PC's key as it is now and is null between a reset and
@@ -1537,8 +1542,13 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   the adapters. The address is never logged.
 - **`TcpRemoteListener`** is a `TcpListener` on that one address, IPv4 only and never `IPAddress.Any`, with a backlog of
   4, on the first port of the receiver's list that binds. Its accept loop (`RemoteAcceptLoop`, apart from the socket so
-  the tests run it without one) hands each connection over at once, with Nagle off, and never waits for it; a
-  connection that fails as it is accepted is skipped, and ten failures in a row stop the loop rather than spin it.
+  the tests run it without one) hands each connection over at once, with Nagle off, and never waits for it. A
+  connection that fails as it is accepted is skipped, whatever a peer does, so no one on the network can stop the
+  listener; failures back to back are waited out on the `TimeProvider`, from 50 ms doubling to at most a second, so
+  none can make it spin either, and a run of them is logged once. Only a failure of the listening socket itself ends
+  the loop; it raises `IRemoteListener.Failed`, and the receiver stops (every phone told, the advertisement removed,
+  the listener closed) and says `Failed`, so no port stays advertised that nobody answers. It does not start again by
+  itself, only at the next change of the switch, the session, the PC's address or the key.
   `StopAsync` stops the loop and closes the listener and waits for nothing: neither a pending accept nor a connection
   handed over. A connection (`AcceptedConnection`) closes its socket itself when it is disposed, not only its stream,
   so a read or write in flight ends at once; Windows sends what was written before, a `close` frame included, in the
