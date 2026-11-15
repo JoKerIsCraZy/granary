@@ -1,5 +1,6 @@
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 
 namespace Granary.Tests.Downloads;
@@ -26,7 +27,7 @@ public sealed class MonitorRulesTests
         Assert.Equal("Future episodes · 10 Mbps", MonitorRules.Summary(Monitor(quality: "10mbps")));
         Assert.Equal("Last season", MonitorRules.Summary(Monitor(SubscriptionModes.LatestSeason)));
         Assert.Equal("Last season · Season 3 on", MonitorRules.Summary(Monitor(SubscriptionModes.LatestSeason, targetSeason: 3)));
-        Assert.Equal("Seasons 1, 2, and 4", MonitorRules.Summary(Monitor(SubscriptionModes.SpecificSeasons, seasons: [4, 1, 2])));
+        Assert.Equal("Seasons 1, 2 and 4", MonitorRules.Summary(Monitor(SubscriptionModes.SpecificSeasons, seasons: [4, 1, 2])));
         Assert.Equal("Monitored", MonitorRules.Summary(Monitor("someday")));
     }
 
@@ -128,5 +129,33 @@ public sealed class MonitorRulesTests
         Assert.Equal("Episode 6 downloads Thursday", MonitorRules.Headline(new MonitorStatus.Next(Airing(1, 6, Now.AddDays(3))), Now, zone));
         Assert.Equal("Season 2 downloads tomorrow", MonitorRules.Headline(new MonitorStatus.Next(Airing(2, 1, Now.AddDays(1))), Now, zone));
         Assert.Equal("Monitoring is paused", MonitorRules.Headline(new MonitorStatus.Paused(), Now, zone));
+    }
+
+    [Fact]
+    public void TheDialogsRows_AreTheAppleAppsWords_InSentenceCase()
+    {
+        Assert.Equal(["All episodes", "Future episodes", "Last season", "Custom"],
+            new[] { SubscriptionModes.All, SubscriptionModes.Future, SubscriptionModes.LatestSeason, SubscriptionModes.SpecificSeasons }.Select(MonitorRules.ModeName));
+        Assert.Equal("Season 3 and anything newer", MonitorRules.ModeDetail(SubscriptionModes.LatestSeason, 3, []));
+        Assert.Equal("The latest season and anything newer", MonitorRules.ModeDetail(SubscriptionModes.LatestSeason, null, []));
+    }
+
+    [Fact]
+    public void InGerman_TheWordsAreTheAppleApps_AndTheDayAndSizesAreWrittenAsGermanWritesThem()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var zone = TimeZoneInfo.Utc;
+
+        Assert.Equal("Künftige Folgen", MonitorRules.ModeName(SubscriptionModes.Future));
+        Assert.Equal("Staffel 3 und alles Neuere", MonitorRules.ModeDetail(SubscriptionModes.LatestSeason, 3, []));
+        Assert.Equal("Letzte Staffel · ab Staffel 3", MonitorRules.Summary(Monitor(SubscriptionModes.LatestSeason, targetSeason: 3)));
+        Assert.Equal("Staffeln 1, 2 und 4", MonitorRules.SeasonList([4, 1, 2]));
+        Assert.Equal("1,5 GB", MonitorRules.LimitText(GB + GB / 2));
+        Assert.Equal("Kein Speicherplatz · Limit 25 GB", MonitorRules.StatusLine(new MonitorStatus.StorageLimit(25 * GB), Now, zone));
+        Assert.Equal("Folge 7 wartet auf eine nicht getaktete Verbindung",
+            MonitorRules.StatusLine(new MonitorStatus.Waiting(7, MonitorPhase.WaitingForUnmetered), Now, zone));
+        Assert.Equal("Folge 6 am Donnerstag", MonitorRules.StatusLine(new MonitorStatus.Next(Airing(1, 6, Now.AddDays(3))), Now, zone));
+        Assert.Equal("Staffel 2 startet am 30. Nov.", MonitorRules.StatusLine(new MonitorStatus.Next(Airing(2, 1, Now.AddDays(14))), Now, zone));
+        Assert.Equal("Folge 6 wird am Donnerstag heruntergeladen", MonitorRules.Headline(new MonitorStatus.Next(Airing(1, 6, Now.AddDays(3))), Now, zone));
     }
 }

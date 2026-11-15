@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -72,7 +73,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         Assert.Equal(("3.0 GB", true), (settings.UsedText, settings.CanRemoveAll));
 
         await settings.RemoveAllCommand.ExecuteAsync(null);
-        Assert.Equal(("Remove all downloaded files?", "Remove All"), (confirmation.Asked[0].Title, confirmation.Asked[0].Action));
+        Assert.Equal(("Remove all downloaded files?", "Remove all"), (confirmation.Asked[0].Title, confirmation.Asked[0].Action));
         Assert.Equal(2, _h.Store.In(Scope7).Count);
 
         confirmation.Answer = true;
@@ -243,6 +244,31 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
                 return check?.Invoke(folder) ?? true;
             },
         };
+
+    [Fact]
+    public async Task InGerman_ThePageSpeaksTheAppleAppsWords_AndItsOwnWithGermanNumbers()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability()));
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        var settings = WithDrives();
+        await settings.LoadAsync(Token);
+
+        Assert.Equal("Original bevorzugt die Qualität der Quelle und bereitet eventuell eine kompatible Datei vor, falls dieses Gerät eine "
+            + "benötigt. Bitraten-Voreinstellungen werden auf dem Server vorbereitet, wenn das Original größer ist, und zwar bis zur angezeigten "
+            + "Auflösung. Das ist die Standardeinstellung für jeden Download und jede Überwachung; im Download-Fenster kannst du sie ändern.",
+            settings.QualityDescription);
+        Assert.Equal(["C: · 120,0 GB frei", "D: · 2,0 GB frei", "E:"], settings.Drives.Select(d => d.Label));
+
+        var limits = Settings();
+        Assert.Equal(("Kein Limit", "Speicherlimit: Unbegrenzt"), (limits.StorageLimitText, limits.DefaultMonitorLimitText));
+
+        limits.StorageLimitGb = 250;
+        limits.DefaultMonitorLimitGb = 25;
+
+        Assert.Equal(("250 GB", "Speicherlimit: 25 GB"), (limits.StorageLimitText, limits.DefaultMonitorLimitText));
+        Assert.Equal("Granary kann in diesem Ordner keine Downloads speichern. Wähle einen anderen.", DownloadSettingsViewModel.FolderRefused);
+    }
 
     [Fact]
     public async Task TheDrives_AreListedWithTheirFreeSpace_TheFoldersOwnChosen()

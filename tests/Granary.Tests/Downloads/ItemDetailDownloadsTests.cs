@@ -317,7 +317,7 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await page.OpenDownloadCommand.ExecuteAsync(null);
 
         var shown = Assert.Single(_dialog.Shown);
-        Assert.Equal(("Download: Example Series · All Episodes", "4 episodes · 7.0 GB"), (shown.Title, shown.SizeText));
+        Assert.Equal(("Download: Example Series · All episodes", "4 episodes · 7.0 GB"), (shown.Title, shown.SizeText));
         Assert.Equal(["ep_1", EpisodeId, "ep_21", "sp_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         // Download series stays: the page does not know every season's episodes, and the dialog says when all are here.
         Assert.True(page.ShowsDownload);

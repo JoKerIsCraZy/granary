@@ -107,6 +107,12 @@
       "value": "Réessayer"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "Trop de demandes. Patientez un instant et réessayez."
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -701,10 +707,28 @@
       "value": "Afficher l’âge conseillé"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "Qualité de téléchargement"
+    }
+  ],
   "settingsManifest.downloads.default_quality.option.original": [
     {
       "type": 0,
       "value": "Originale"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "Ne pas proposer de libérer l’espace occupé par les téléchargements que vous avez terminés."
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "Conserver les téléchargements vus"
     }
   ],
   "settingsManifest.playback.audio_language.unsetLabel": [
@@ -10477,6 +10501,40 @@
       "value": "Version"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "Choisissez un fichier à télécharger. Vérifiez que vous disposez d’assez d’espace disque."
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "Les fichiers plus volumineux nécessitent plus d’espace de stockage."
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de démarrer le téléchargement. Vérifiez l’accès et réessayez."
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "Télécharger"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "Télécharger : "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -11260,6 +11318,24 @@
       "value": "Ajouter à la liste à voir"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "Impossible de charger les détails de l’élément."
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "Chargement…"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "Chargement des derniers détails de l’élément…"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -11276,6 +11352,12 @@
     {
       "type": 0,
       "value": "Lire depuis le début"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "Réessayez."
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -11306,6 +11388,12 @@
     {
       "type": 0,
       "value": "Afficher dans les recommandations"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "Réessayer"
     }
   ],
   "web.item.rating.label": [

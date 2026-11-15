@@ -107,6 +107,12 @@
       "value": "再試行"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "リクエストが多すぎます。しばらく待ってからもう一度お試しください。"
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 1,
@@ -701,10 +707,28 @@
       "value": "推奨年齢を表示"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "ダウンロードの画質"
+    }
+  ],
   "settingsManifest.downloads.default_quality.option.original": [
     {
       "type": 0,
       "value": "オリジナル"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "視聴し終えたダウンロードの削除による空き容量の確保を提案しません。"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "視聴済みのダウンロードを保持"
     }
   ],
   "settingsManifest.playback.audio_language.unsetLabel": [
@@ -8976,6 +9000,40 @@
       "value": "バージョン"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "ダウンロードするファイルを選択してください。ディスクの空き容量が十分にあることを確認してください。"
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "ファイルが大きいほど、多くの保存容量が必要です。"
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "ダウンロードを開始できませんでした。アクセス権を確認して、もう一度お試しください。"
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "ダウンロード"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "ダウンロード："
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -9683,6 +9741,24 @@
       "value": "ウォッチリストに追加"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "項目の詳細を読み込めませんでした。"
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "読み込み中…"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "最新の項目の詳細を読み込み中…"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -9699,6 +9775,12 @@
     {
       "type": 0,
       "value": "最初から再生"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "もう一度お試しください。"
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -9729,6 +9811,12 @@
     {
       "type": 0,
       "value": "おすすめに表示"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "再試行"
     }
   ],
   "web.item.rating.label": [

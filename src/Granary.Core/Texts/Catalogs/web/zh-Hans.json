@@ -107,6 +107,12 @@
       "value": "重试"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "请求过多。请稍等片刻后重试。"
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -701,10 +707,28 @@
       "value": "显示建议年龄"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "下载画质"
+    }
+  ],
   "settingsManifest.downloads.default_quality.option.original": [
     {
       "type": 0,
       "value": "原始"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "不建议删除已看完的下载来释放空间。"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "保留已观看的下载"
     }
   ],
   "settingsManifest.playback.audio_language.unsetLabel": [
@@ -9004,6 +9028,40 @@
       "value": "版本"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "选择要下载的文件。请确保有足够的磁盘空间。"
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "文件越大，占用的存储空间越多。"
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "无法开始下载。请检查访问权限，然后重试。"
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "下载"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "下载："
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -9719,6 +9777,24 @@
       "value": "添加到待看清单"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "无法加载项目详情。"
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "正在加载……"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "正在加载最新的项目详情……"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -9735,6 +9811,12 @@
     {
       "type": 0,
       "value": "从头播放"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "请重试。"
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -9765,6 +9847,12 @@
     {
       "type": 0,
       "value": "在推荐中显示"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "重试"
     }
   ],
   "web.item.rating.label": [

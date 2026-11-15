@@ -349,7 +349,7 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         await ChooseAsync(cards, Series);
 
         var shown = Assert.Single(_dialog.Shown);
-        Assert.Equal(("Download: Example Series · All Episodes", "3 episodes · 6.0 GB"), (shown.Title, shown.SizeText));
+        Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 6.0 GB"), (shown.Title, shown.SizeText));
         var bodies = CreateBodies();
         Assert.Equal([("ep_5", "4575"), ("ep_21", "4581"), ("sp_1", "4590")],
             bodies.Select(b => (b.GetProperty("episode_id").GetString(), b.GetProperty("media_file_id").GetString())));
@@ -389,10 +389,10 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         await ChooseAsync(cards, Series);
 
         var shown = Assert.Single(_dialog.Shown);
-        Assert.Equal(["One Time", "Monitor"], shown.Kinds.Select(k => k.Label));
+        Assert.Equal(["One time", "Monitor"], shown.Kinds.Select(k => k.Label));
         shown.SelectedKind = shown.Kinds[1];
         Assert.True(shown.CanStart);
-        Assert.Equal(("Download: Example Series", "Start Monitoring"), (shown.DialogTitle, shown.PrimaryText));
+        Assert.Equal(("Download: Example Series", "Start monitoring"), (shown.DialogTitle, shown.PrimaryText));
         // Nothing was offered to download, so no season was read: the server picks the latest itself.
         Assert.Equal("The latest season and anything newer", Assert.Single(shown.MonitorRows, r => r.Mode == SubscriptionModes.LatestSeason).Detail);
     }
