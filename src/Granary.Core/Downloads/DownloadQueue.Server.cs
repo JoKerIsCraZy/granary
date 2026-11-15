@@ -277,6 +277,7 @@ public sealed partial class DownloadQueue
     {
         var key = Key.Of(download.Record);
         Task? running = null;
+        Refreshing? refreshing;
         lock (_gate)
         {
             _resetting.Add(key);
@@ -285,6 +286,7 @@ public sealed partial class DownloadQueue
                 CancelLocked(run);
                 running = run.Task;
             }
+            _refreshing.TryGetValue(key, out refreshing);
         }
         try
         {
@@ -292,6 +294,20 @@ public sealed partial class DownloadQueue
             {
                 AwaitingReplacedTransfer?.Invoke(key.Id);
                 await running.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            }
+            // A day-old refresh of the old bytes' manifest and assets stops too, and ends before their files go: it would
+            // write the old revision's artwork and subtitles into the folder after them.
+            if (refreshing is not null)
+            {
+                try
+                {
+                    await refreshing.Stop.CancelAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // It ended meanwhile.
+                }
+                await refreshing.Done.ConfigureAwait(false);
             }
             // The record as the old transfer left it: one that finished meanwhile named its file, which goes too.
             if (_store.Find(key.Scope, key.Id) is not { } current)
@@ -398,9 +414,21 @@ public sealed partial class DownloadQueue
             && (d.Record.ManifestReadAt is not { } read || now - read >= ManifestRefresh));
         foreach (var download in due)
         {
+            var key = Key.Of(download.Record);
+            using var refresh = CancellationTokenSource.CreateLinkedTokenSource(stop);
+            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_gate)
+            {
+                // One a new revision replaces now gets the new bytes' manifest and assets with its next transfer.
+                if (_resetting.Contains(key))
+                {
+                    continue;
+                }
+                _refreshing[key] = new Refreshing(refresh, done.Task);
+            }
             try
             {
-                var fetched = await _assets.FetchAsync(server, download, stop).ConfigureAwait(false);
+                var fetched = await _assets.FetchAsync(server, download, refresh.Token).ConfigureAwait(false);
                 await UpdateAsync(download, download.Record.Revision, r => r with
                 {
                     ManifestReadAt = now,
@@ -414,6 +442,10 @@ public sealed partial class DownloadQueue
                 _logger.LogInformation("The manifest of download {DownloadId} is of another revision; the registry is read again", download.Record.DownloadId);
                 RequestReconcile();
             }
+            catch (OperationCanceledException) when (refresh.IsCancellationRequested && !stop.IsCancellationRequested)
+            {
+                _logger.LogInformation("The manifest refresh of download {DownloadId} stopped: the server has new bytes for it", download.Record.DownloadId);
+            }
             catch (Exception ex) when (IsServerFailure(ex, stop) || ex is IOException or UnauthorizedAccessException)
             {
                 _logger.LogInformation("The manifest of download {DownloadId} could not be read again ({Failure})", download.Record.DownloadId, Describe(ex));
@@ -421,6 +453,14 @@ public sealed partial class DownloadQueue
                 {
                     return;
                 }
+            }
+            finally
+            {
+                lock (_gate)
+                {
+                    _refreshing.Remove(key);
+                }
+                done.TrySetResult();
             }
         }
     }

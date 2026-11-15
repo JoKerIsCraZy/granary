@@ -423,6 +423,38 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Equal(Source, await System.IO.File.ReadAllBytesAsync(File(stored, "media.mp4"), Token));
     }
 
+    // A finished download's day-old manifest refresh fetches its poster while the server gets new bytes for it: the
+    // replacement stops that refresh and waits for it, so nothing of the old revision is written after its files went.
+    [Fact]
+    public async Task ANewRevisionWhileADailyRefreshFetchesArtwork_StopsThatRefreshBeforeTheOldFilesGo()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with
+        {
+            MediaFile = "media.mkv",
+            ManifestReadAt = ManualTimeProvider.DefaultStart - DownloadQueue.ManifestRefresh,
+        });
+        await System.IO.File.WriteAllBytesAsync(File(stored, "media.mkv"), Source, Token);
+        // A metered connection: the new revision's transfer waits, so only the refresh would write into the folder.
+        _h.Network.SetMetered(true);
+        var poster = new GatedMediaStream(DownloadHarness.PosterBytes);
+        _h.Silo.On(HttpMethod.Get, ArtworkPath("dl_1", "poster"), () =>
+        {
+            var content = new StreamContent(poster);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ArtworkPath("dl_1", "poster")).Count == 1, "the refresh asks for the poster");
+
+        _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
+        await queue.ReconcileAsync(Token).WaitAsync(TimeSpan.FromSeconds(5), Token);
+        poster.ReleaseAll();
+        await IdleAsync(queue);
+
+        Assert.Equal(2, _h.Find("dl_1")!.Record.Revision);
+        Assert.Empty(Directory.GetFiles(stored.Folder, "poster.*"));
+    }
+
     [Fact]
     public async Task ANewRevision_IsReportedBeforeItsFile_ThoughTheOldReportWaitsItsDelay()
     {

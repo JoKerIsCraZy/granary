@@ -1475,7 +1475,9 @@ client guide.
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
   folder lacks and the subtitles whose revision changed. A refresh that finds the manifest of another revision than the
   finished media keeps nothing of it, since its tracks and subtitles describe other bytes, and reads the registry again,
-  which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). Before
+  which replaces the download for the new ones (the Apple app's subtitle refresh passes such a manifest over too). A
+  replacement stops a refresh of its download that is under way and waits for it to end before the old files go, as it
+  waits for the old transfer: the refresh would write the old revision's artwork and subtitles after them. Before
   the first transfer a newer manifest is kept: the file fetched next is the server's current one. An older one than the
   revision the record names (the registry is ahead of it) is not: its size and tracks are not the bytes fetched next, and
   the attempt ends as one whose manifest did not come, tried again after the retry delays. The finished file is named
