@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Granary.App.Controls;
 using Granary.App.Services;
 using Granary.Core.Controller;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -14,11 +16,12 @@ using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 namespace Granary.App;
 
 // A game controller, Xbox or PlayStation (docs/ui-design.md, Game controller). In a desktop app a pad sends the window
-// nothing, so the window reads it: while a pad is attached and the window is in front, a timer takes its reading
-// (Services/GamepadReader.cs), PadInterpreter in Core says what the viewer asked for, and the window carries that out the
-// way the remote's keys do it: on the pages in MainWindow.Controller.Pages.cs, in the full player in
-// Views/PlayerPage.Controller.cs. Nothing is typed or clicked for the pad. With no pad, or behind another window, nothing
-// runs at all, so a game played with the same pad never moves Granary.
+// nothing, so the window reads it: while the Game controller switch is on (ControllerSetting, off by default), a pad is
+// attached and the window is in front, a timer takes its reading (Services/GamepadReader.cs), PadInterpreter in Core says
+// what the viewer asked for, and the window carries that out the way the remote's keys do it: on the pages in
+// MainWindow.Controller.Pages.cs, in the full player in Views/PlayerPage.Controller.cs. Nothing is typed or clicked for the
+// pad. With the switch off, no pad, or behind another window, nothing runs at all, so a game played with the same pad
+// never moves Granary.
 public sealed partial class MainWindow
 {
     // A frame while the pad is in use; at rest half as often, still often enough for the shortest press.
@@ -36,6 +39,7 @@ public sealed partial class MainWindow
     private const int LastPadKey = 218;
 
     private readonly PadInterpreter _pad = new(TimeProvider.System);
+    private ControllerSetting _controllers = null!;
     private GamepadReader _pads = null!;
     private DispatcherQueueTimer _padTimer = null!;
     private bool _isInFront;
@@ -51,6 +55,9 @@ public sealed partial class MainWindow
         _padTimer.Interval = PadRestPoll;
         _padTimer.IsRepeating = true;
         WeakTick.Subscribe(_padTimer, this, static window => window.ReadPad());
+        // The switch lives as long as the app, as the window does: nothing to let go of.
+        _controllers = App.Services.GetRequiredService<ControllerSetting>();
+        _controllers.PropertyChanged += OnControllerSettingChanged;
         _pads = new GamepadReader(DispatcherQueue, _logger);
         _pads.Changed += (_, _) => FollowPads(forget: true);
         Activated += (_, e) =>
@@ -66,11 +73,31 @@ public sealed partial class MainWindow
     // the window already acts on the pad's reading, and nothing happens twice.
     private void OnPadKeyDown(object sender, KeyRoutedEventArgs e) => e.Handled |= (int)e.Key is >= FirstPadKey and <= LastPadKey;
 
-    // The pad is read only while there is one and the window is in front. A pad that came or went, and a window that comes
-    // back, start afresh: what is held then is not a press, and a seek under way is dropped, never sent.
+    // The Game controller switch went on or off: reading starts or stops at once, afresh either way, so a button held or a
+    // repeat under way as it changes does nothing more, and what is still held when it is on again is no press. Told on
+    // the Settings switch's thread, the UI's.
+    private void OnControllerSettingChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ControllerSetting.IsEnabled))
+        {
+            return;
+        }
+        if (DispatcherQueue.HasThreadAccess)
+        {
+            FollowPads(forget: true);
+        }
+        else
+        {
+            DispatcherQueue.TryEnqueue(() => FollowPads(forget: true));
+        }
+    }
+
+    // The pad is read only while the switch is on, there is one and the window is in front. A pad that came or went, a
+    // window that comes back and the switch turned on or off start afresh: what is held then is not a press, and a seek
+    // under way is dropped, never sent.
     private void FollowPads(bool forget)
     {
-        bool reads = (_isInFront && _pads.HasPads) || HasDebugPad;
+        bool reads = _controllers.ReadsPads(_isInFront, _pads.HasPads) || HasDebugPad;
         if (!forget && reads == _padTimer.IsRunning)
         {
             return;
@@ -118,6 +145,12 @@ public sealed partial class MainWindow
                 if (!(_isPadSeekDropped && actions[index].Kind is PadActionKind.SeekPreview or PadActionKind.SeekCommit or PadActionKind.SeekCancel))
                 {
                     TakePad(actions[index]);
+                }
+                // Reading stopped on the way (A turned the Game controller switch off): the rest of this reading is not
+                // done either.
+                if (!_padTimer.IsRunning)
+                {
+                    return;
                 }
             }
             if (_pad.IsActive)
@@ -302,10 +335,12 @@ public sealed partial class MainWindow
         FollowPads(forget: false);
     }
 
-    // The debug pad is read behind another window too: a script may drive the remote while something else is in front.
+    // The debug pad is read behind another window too: a script may drive the remote while something else is in front. It
+    // is no controller, so it works with the Game controller switch off, which a fresh data folder has; a real pad is
+    // read beside it only while the switch is on.
     private PadReading ReadPads()
     {
-        var reading = _isInFront ? _pads.Read() : default;
+        var reading = _controllers.ReadsPads(_isInFront, _pads.HasPads) ? _pads.Read() : default;
         if (!HasDebugPad)
         {
             // Its moment is over: reading stops again unless a real pad is there.

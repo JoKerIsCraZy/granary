@@ -50,8 +50,11 @@ public sealed partial class MainWindow
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => _modes.ToggleFullScreen();
 
+    private void OnCloseClick(object sender, RoutedEventArgs e) => CloseAsWindowsDoes();
+
     // Windows' own Close sends this command: the window closes the same way, OnClosing and the player's stop included.
-    private void OnCloseClick(object sender, RoutedEventArgs e) =>
+    // Window.Close destroys the window without AppWindow.Closing, which comes only through Windows' own ways to close.
+    private void CloseAsWindowsDoes() =>
         PostMessage(Win32Interop.GetWindowFromWindowId(AppWindow.Id), WmSysCommand, ScClose, 0);
 
     // F11 on any page, the player and its bar included, before any control has the key; held down, it toggles once.

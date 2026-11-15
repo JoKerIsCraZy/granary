@@ -319,7 +319,7 @@ public sealed partial class LanguageSettingsView : UserControl
 
 /// <summary>
 /// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them,
-/// of the title preview, of the activity indicator's switch and of the sidebar as the page leaves.
+/// of the title preview, of the activity indicator's switch, of the game controller's and of the sidebar as the page leaves.
 /// </summary>
 public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 {
@@ -330,6 +330,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
         Sidebar = ActivatorUtilities.CreateInstance<SidebarSettingsViewModel>(App.Services);
         TitlePreview = ActivatorUtilities.CreateInstance<TitlePreviewSettingsViewModel>(App.Services);
         ActivityIndicator = ActivatorUtilities.CreateInstance<ActivityIndicatorSettingsViewModel>(App.Services);
+        Controller = ActivatorUtilities.CreateInstance<ControllerSettingsViewModel>(App.Services);
         InitializeComponent();
         Loaded += OnFirstLoaded;
     }
@@ -349,6 +350,9 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
     /// <summary>The administrator's activity indicator, on or off: Granary's own switch, for this profile on this PC.</summary>
     public ActivityIndicatorSettingsViewModel ActivityIndicator { get; }
 
+    /// <summary>Game controllers, on or off: Granary's own switch, for this PC, off by default.</summary>
+    public ControllerSettingsViewModel Controller { get; }
+
     public void Dispose()
     {
         Posters.Dispose();
@@ -356,6 +360,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
         Sidebar.Dispose();
         TitlePreview.Dispose();
         ActivityIndicator.Dispose();
+        Controller.Dispose();
     }
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
