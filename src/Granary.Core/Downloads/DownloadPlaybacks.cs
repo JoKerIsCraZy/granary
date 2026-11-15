@@ -89,6 +89,13 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                 logger.LogInformation("Download {DownloadId} is no longer the active profile's to play; the title streams", download.Record.DownloadId);
                 return null;
             }
+            // The read describes the bytes its record named (it may be an earlier start's): when the server's new bytes were
+            // fetched meanwhile, its manifest and its file list are the old file's, and never go with the new record.
+            if (read.Download.Record.Revision != now.Record.Revision || read.Download.Record.MediaFile != now.Record.MediaFile)
+            {
+                logger.LogInformation("Download {DownloadId} was read for other bytes than it has now; the title streams", now.Record.DownloadId);
+                return null;
+            }
             return playbacks(read with { Download = now });
         }
         catch (TimeoutException)

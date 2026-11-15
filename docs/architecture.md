@@ -1926,7 +1926,10 @@ while the server answers.
   still report the title before. The read opens the media file too: a folder that lists a file does not say it can be
   opened, and one this account may not read, or that something holds for itself, streams. After the read the download
   is looked up once more for the profile that is active then: a profile switched to during the read gets no playback
-  of the other profile's download, which would record that profile's progress.
+  of the other profile's download, which would record that profile's progress. A read of other bytes than the download
+  names by then (the server's new bytes fetched meanwhile: another revision, or a file of another name; the read may be
+  an earlier start's) never pairs its manifest and files with the new record: the title streams, and the next play reads
+  the folder again.
 - **No server session.** `LocalPlayback` implements `IServerPlayback`, so the player page and everything that follows
   the player work as for a stream: the seek bar, chapters and skip pills, the next episode, the sleep timer, the kept
   volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It

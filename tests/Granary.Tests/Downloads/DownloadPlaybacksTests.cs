@@ -272,6 +272,35 @@ public sealed class DownloadPlaybacksTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFolderReadOfTheOldBytes_DoesNotPlayAgainstTheNewRevisionsRecord()
+    {
+        var download = await _fixture.Harness.AddPlayableAsync();
+        var token = LocalPlaybackFixture.Token;
+        using var held = new ManualResetEventSlim();
+        using var reading = new ManualResetEventSlim();
+        _fixture.Playbacks.Reading = () =>
+        {
+            reading.Set();
+            held.Wait(TimeSpan.FromSeconds(10), token);
+        };
+        var answer = TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.True(reading.Wait(TimeSpan.FromSeconds(5), token));
+
+        // While the folder answers slowly, the server's new bytes for the download were fetched under the same name: the
+        // read describes the old file, its manifest and its tracks, and the record the new one.
+        await _fixture.Harness.Store.UpdateAsync(download.Record.Scope, "dl_1", r => r with { Revision = r.Revision + 1 }, token);
+        held.Set();
+
+        // Never the old manifest with the new record: the title streams, and the next play reads the folder as it is now.
+        Assert.Null(await answer.WaitAsync(TimeSpan.FromSeconds(5), token));
+        Assert.Contains("was read for other bytes", _fixture.Harness.Logs.All, StringComparison.Ordinal);
+        _fixture.Playbacks.Reading = null;
+        var played = await TryAsync(PlayRequest.Resume("ep_5"));
+        Assert.NotNull(played);
+        await played.DisposeAsync();
+    }
+
+    [Fact]
     public async Task AMediaFileThatCannotBeOpened_Streams_ThoughItsFolderListsIt()
     {
         var download = await _fixture.Harness.AddPlayableAsync();
