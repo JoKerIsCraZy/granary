@@ -80,11 +80,14 @@ internal static partial class BlankCursor
     }
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int GetSystemMetrics(int index);
 
     [LibraryImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint CreateCursor(nint instance, int hotSpotX, int hotSpotY, int width, int height, byte[] andPlane, byte[] xorPlane);
 
     [LibraryImport("kernel32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint GetModuleHandleW(string? moduleName);
 }

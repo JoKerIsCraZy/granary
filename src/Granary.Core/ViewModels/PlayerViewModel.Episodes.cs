@@ -23,12 +23,15 @@ public sealed partial class PlayerViewModel
     /// </summary>
     [RelayCommand]
     private Task PlayPreviousEpisodeAsync() =>
-        _previousEpisode is { } previous ? StartAsync(PlayRequest.ResumeWithoutRewind(previous.ContentId)) : Task.CompletedTask;
+        _previousEpisode is { } previous ? StartAsync(Following(PlayRequest.ResumeWithoutRewind(previous.ContentId))) : Task.CompletedTask;
 
     /// <summary>The episode after, as Previous starts its episode.</summary>
     [RelayCommand]
     private Task PlayNextEpisodeAsync() =>
-        _nextUp.Next is { } next ? StartAsync(PlayRequest.ResumeWithoutRewind(next.ContentId)) : Task.CompletedTask;
+        _nextUp.Next is { } next ? StartAsync(Following(PlayRequest.ResumeWithoutRewind(next.ContentId))) : Task.CompletedTask;
+
+    // An episode around the title that plays goes on with it: when a phone started that title, only for its sign-in.
+    private PlayRequest Following(PlayRequest episode) => episode.BoundAs(_request);
 
     partial void OnHasPreviousEpisodeChanged(bool value) => ShowsEpisodeSlots = value || HasNextEpisode;
 

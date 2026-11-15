@@ -119,7 +119,10 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's theme music; none unless a test sets it, so the page plays nothing.</summary>
     public Core.Playback.Themes.ThemeMusic? ThemeMusic { get; set; }
 
-    /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
+    /// <summary>
+    /// The calendar's airings a season's grid places its missing and upcoming episodes by, and the hero names the series' next
+    /// airing by; none unless a test sets them.
+    /// </summary>
     public SeriesAirings? Airings { get; set; }
 
     /// <summary>The reads of a listed episode's multi-episode file the places are checked with; none unless a test sets them.</summary>
@@ -164,12 +167,16 @@ internal sealed class ItemDetailFixture
         downloads: Downloads,
         downloadOffers: DownloadOffers);
 
-    /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
+    /// <summary>
+    /// The page once loaded, the places of a season's missing and upcoming episodes and the series' next airing included,
+    /// which come after.
+    /// </summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {
         var viewModel = Create();
         await viewModel.LoadCommand.ExecuteAsync(id);
         await viewModel.Placing;
+        await viewModel.NextAiringRead;
         return viewModel;
     }
 

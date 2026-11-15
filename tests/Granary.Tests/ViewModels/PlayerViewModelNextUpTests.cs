@@ -37,7 +37,7 @@ public sealed class PlayerViewModelNextUpTests
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
-    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode, MarkerSettings? settings = null)
+    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode, MarkerSettings? settings = null, PlayRequest? request = null)
     {
         var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
         {
@@ -53,7 +53,7 @@ public sealed class PlayerViewModelNextUpTests
         viewModel.NextUpStillWidth = _stillWidth;
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
-        await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
+        await viewModel.StartAsync(request ?? PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
         Playback.RaiseMarkers([Credits]);
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         return viewModel;
@@ -103,6 +103,35 @@ public sealed class PlayerViewModelNextUpTests
         // A change of episode is never rewound, as Android's (suppressResumeRewind).
         Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2"), Playback.Started);
         Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task TheEpisodesAroundATitleAPhoneStarted_PlayOnlyForItsSignInToo()
+    {
+        // A phone's launch plays only for the server entry and profile its offer was ready for; so do the episodes it leads to.
+        _source.Previous = Next with { ContentId = "episode-1-2", EpisodeNumber = 2 };
+        var phones = PlayRequest.At(Ted.ContentId, 120).OnlyFor("srv1", "7");
+        var viewModel = await PlayingAsync(Ted, request: phones);
+
+        await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2").OnlyFor("srv1", "7"), Playback.Started);
+        viewModel = await PlayingAsync(Ted, request: phones);
+        await viewModel.PlayNextEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-4").OnlyFor("srv1", "7"), Playback.Started);
+        viewModel = await PlayingAsync(Ted, request: phones);
+        PlayTo(2045);
+        viewModel.PlayNextNowCommand.Execute(null);
+        Assert.Equal(PlayRequest.FromStart("episode-1-4").OnlyFor("srv1", "7"), Playback.Started);
+    }
+
+    [Fact]
+    public async Task AnOnDeckPickAfterATitleAPhoneStarted_IsTheViewersOwn()
+    {
+        var viewModel = await PlayingAsync(Ted, request: PlayRequest.At(Ted.ContentId, 120).OnlyFor("srv1", "7"));
+
+        await viewModel.PlayOnDeckCommand.ExecuteAsync(new MediaCard("movie-9", CatalogItemTypes.Movie, "Alles Routine"));
+
+        Assert.Equal(PlayRequest.Resume("movie-9"), Playback.Started);
     }
 
     [Fact]

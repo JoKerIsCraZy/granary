@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Connect a Phone, the content of its dialog (Views/Settings/PlaybackSettingsView): the code Silo's phone app scans to pair
+    with this PC, as Silo's Roku app's Connect a Phone shows it, with "TV" as "PC". Its texts are PhoneRemoteViewModel's.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.ConnectPhonePanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    MaxWidth="440">
+
+    <!-- Made in code for its dialog, so it has no page's dictionaries: it brings the settings styles itself. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </UserControl.Resources>
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="{x:Bind ViewModel.ScanText}" Style="{StaticResource SiloBodyTextStyle}" TextWrapping="Wrap" />
+
+        <!-- Scanners need dark modules on a light background; the image brings its own quiet zone. -->
+        <Border Width="220" Height="220" HorizontalAlignment="Center" CornerRadius="10" Background="White">
+            <Image x:Name="QrImage" Stretch="Uniform" AutomationProperties.Name="{x:Bind QrName}" />
+        </Border>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="{x:Bind ViewModel.AddressText, Mode=OneWay}" HorizontalAlignment="Center" FontFamily="Cascadia Mono, Consolas"
+                       FontSize="16" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HelpText="This PC's address and port" />
+            <TextBlock Text="{x:Bind ViewModel.ServerHint, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" HorizontalAlignment="Center"
+                       TextAlignment="Center" Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.ServerHint), Mode=OneWay}" />
+        </StackPanel>
+
+        <TextBlock Text="{x:Bind ViewModel.PhonesText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                   AutomationProperties.LiveSetting="Polite" />
+
+        <TextBlock Text="{x:Bind NotAdvertisedText}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                   Visibility="{x:Bind ViewModel.ShowsNotAdvertised, Mode=OneWay}" />
+
+        <!-- The question is asked here, in a flyout: no second dialog can open over this one. -->
+        <StackPanel Spacing="6">
+            <Button x:Name="ResetButton" Content="{x:Bind ResetText}" Style="{StaticResource SiloSettingsOutlineButtonStyle}">
+                <Button.Flyout>
+                    <Flyout x:Name="ResetQuestion" Placement="Bottom" FlyoutPresenterStyle="{StaticResource SiloSettingsPopoverStyle}">
+                        <StackPanel Spacing="12" MaxWidth="300">
+                            <TextBlock Text="{x:Bind ResetQuestionTitle}" Style="{StaticResource SiloBodyTextStyle}" FontFamily="{StaticResource SiloFontSemiBold}"
+                                       FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind ResetQuestionText}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                <Button Content="Cancel" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnResetCancelClick" />
+                                <Button Content="{x:Bind ResetAction}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnResetClick" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <TextBlock Text="{x:Bind ResetLineText}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
+            <TextBlock Text="{x:Bind ViewModel.ResetMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                       Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.ResetMessage), Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
+        </StackPanel>
+
+        <TextBlock Text="{x:Bind FirewallText}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
+    </StackPanel>
+</UserControl>
