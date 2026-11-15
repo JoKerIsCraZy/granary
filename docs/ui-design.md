@@ -223,7 +223,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
-- Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
+- Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name,
+  which opens Home on a click and fades a little under the mouse, as the web's sidebar logo links home (for the mouse only:
+  keys, a remote and a controller have Home's entry), Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile

@@ -74,6 +74,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- The server's name or logo at the top of the sidebar opens Home, as on Silo's web.
 - A game controller now has to be switched on first, under Settings → Navigation & Cards → Controller → Game controller;
   0.4.0 read it from the start.
 - A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
