@@ -220,10 +220,19 @@ public sealed class RemoteControllerTests : IAsyncDisposable
         var (controller, phone, _, running) = await _harness.OpenAsync();
         string large = $$"""{"type":"surprise","padding":"{{new string('x', 60_000)}}","v":2}""";
 
-        // Each frame is within the 64 KiB limit; together they are more than a second's worth and the burst.
+        // Each frame is within the 64 KiB limit; together they are more than a second's worth and the burst. A write waits
+        // until the receiver has read it, and the receiver drops the phone as soon as it read the last one: that write can
+        // see the connection closed before it returns.
         for (int i = 0; i <= FrameBudget.ByteBurst / 60_000; i++)
         {
-            await phone.SendAsync(large);
+            try
+            {
+                await phone.SendAsync(large);
+            }
+            catch (IOException) when (i == FrameBudget.ByteBurst / 60_000)
+            {
+                break;
+            }
         }
 
         await running.WaitAsync(HangGuard, Token);
