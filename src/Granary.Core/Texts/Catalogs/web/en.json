@@ -17563,6 +17563,12 @@
       "value": "For You"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "Go to home"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

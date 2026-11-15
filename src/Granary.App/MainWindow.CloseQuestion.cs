@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Granary.Core.Texts;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -32,9 +33,9 @@ public sealed partial class MainWindow
             {
                 XamlRoot = root,
                 Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-                Title = "Close Granary?",
-                PrimaryButtonText = "Close",
-                CloseButtonText = "Cancel",
+                Title = AppText.Get("granary.shell.closeQuestion"),
+                PrimaryButtonText = AppText.Get("granary.shell.close"),
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             // As the keyboard's focus, so its ring shows for a remote and a controller.

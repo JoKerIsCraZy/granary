@@ -16179,6 +16179,12 @@
       "value": "おすすめ"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "ホームへ移動"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

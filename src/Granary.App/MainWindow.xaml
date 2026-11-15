@@ -86,7 +86,7 @@
                 <HyperlinkButton x:Name="BrandLink" Margin="20,4,12,12" Padding="0" MinHeight="0" HorizontalAlignment="Stretch"
                                  HorizontalContentAlignment="Left" IsTabStop="False" Click="OnBrandClick"
                                  PointerEntered="OnBrandPointerEntered" PointerExited="OnBrandPointerExited" PointerCanceled="OnBrandPointerExited"
-                                 AutomationProperties.Name="Go home">
+                                 AutomationProperties.Name="{x:Bind t:AppText.Get('web.shell.sidebar.goHome')}">
                     <HyperlinkButton.Resources>
                         <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="Transparent" />
                         <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />

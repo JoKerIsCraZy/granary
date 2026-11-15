@@ -2622,6 +2622,7 @@ web.shell.sidebar.discover
 web.shell.sidebar.expand
 web.shell.sidebar.favorites
 web.shell.sidebar.forYou
+web.shell.sidebar.goHome
 web.shell.sidebar.history
 web.shell.sidebar.home
 web.shell.sidebar.libraries

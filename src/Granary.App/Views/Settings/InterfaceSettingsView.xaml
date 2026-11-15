@@ -422,11 +422,12 @@
             Granary's own: Silo's clients have no such switch. Off by default, for the whole PC rather than a profile
             (ControllerSetting): off, Granary reads no controller at all.
         -->
-        <controls:SettingsGroup Title="Controller" Description="Xbox and PlayStation controllers. Kept on this PC.">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Game controller"
-                                  Description="On, Granary takes a game controller's input. Off, it ignores game controllers.">
+        <controls:SettingsGroup Title="{x:Bind t:AppText.Get('granary.settings.controller.title')}"
+                                Description="{x:Bind t:AppText.Get('granary.settings.controller.description')}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('granary.settings.controller.label')}"
+                                  Description="{x:Bind t:AppText.Get('granary.settings.controller.labelDescription')}">
                 <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Controller.IsEnabled, Mode=TwoWay}"
-                              AutomationProperties.Name="Game controller" />
+                              AutomationProperties.Name="{x:Bind t:AppText.Get('granary.settings.controller.label')}" />
             </controls:SettingsRow>
         </controls:SettingsGroup>
 

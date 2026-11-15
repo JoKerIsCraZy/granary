@@ -18794,6 +18794,12 @@
       "value": "Para ti"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "Ir a Inicio"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,

@@ -18876,6 +18876,12 @@
       "value": "Pour vous"
     }
   ],
+  "web.shell.sidebar.goHome": [
+    {
+      "type": 0,
+      "value": "Aller à l’Accueil"
+    }
+  ],
   "web.shell.sidebar.history": [
     {
       "type": 0,
