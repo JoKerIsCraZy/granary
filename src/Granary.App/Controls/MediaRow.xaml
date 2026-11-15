@@ -6,6 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:cards="using:Granary.Core.ViewModels.Cards"
+    xmlns:detail="using:Granary.Core.ViewModels.Detail"
     PointerEntered="OnPointerEntered"
     PointerExited="OnPointerExited">
 
@@ -36,20 +37,33 @@
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
                         controls:WheelScrollsPage.IsEnabled="True">
                 <!-- A card's width follows the profile's poster size at the window's breakpoint (MediaRow.OnElementPrepared). Cards are made
-                     half a row's width past each end, not a whole one (MediaGrid). -->
+                     half a row's width past each end, not a whole one (MediaGrid). An episode's More Episodes also holds the places of
+                     the season's missing and upcoming episodes, as wide as its cards. -->
                 <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ElementPrepared="OnElementPrepared"
                                ElementClearing="OnElementClearing" GettingFocus="OnItemsGettingFocus" HorizontalCacheLength="1">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="20" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="cards:MediaCard">
-                            <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top"
-                                    Click="OnCardClick" PointerEntered="OnCardPointerEntered" GotFocus="OnCardGotFocus"
-                                    AutomationProperties.Name="{x:Bind AccessibleName}">
-                                <controls:MediaCardView Card="{x:Bind}" />
-                            </Button>
-                        </DataTemplate>
+                        <controls:MediaRowTemplateSelector>
+                            <controls:MediaRowTemplateSelector.Card>
+                                <DataTemplate x:DataType="cards:MediaCard">
+                                    <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top"
+                                            Click="OnCardClick" PointerEntered="OnCardPointerEntered" GotFocus="OnCardGotFocus"
+                                            AutomationProperties.Name="{x:Bind AccessibleName}">
+                                        <controls:MediaCardView Card="{x:Bind}" />
+                                    </Button>
+                                </DataTemplate>
+                            </controls:MediaRowTemplateSelector.Card>
+                            <controls:MediaRowTemplateSelector.Placeholder>
+                                <DataTemplate x:DataType="detail:DetailEpisodePlaceholder">
+                                    <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                                    <Grid VerticalAlignment="Top">
+                                        <controls:DetailEpisodePlaceholderCard Placeholder="{x:Bind}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </controls:MediaRowTemplateSelector.Placeholder>
+                        </controls:MediaRowTemplateSelector>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
             </ScrollView>

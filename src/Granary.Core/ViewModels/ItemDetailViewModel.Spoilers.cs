@@ -114,13 +114,13 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // Only a season of more than one episode has a row, as on the web.
     private void ShowSiblings(IReadOnlyList<Episode> episodes)
     {
-        _siblings = episodes.Where(e => e.ContentId.Length > 0).ToList() is { Count: > 1 } siblings ? siblings : [];
+        _siblings = [.. episodes.Where(e => e.ContentId.Length > 0)];
         ShowSiblingCards();
     }
 
+    // Only a row of more than one entry shows, as the web shows a season of more than one episode; the places count.
     private void ShowSiblingCards()
     {
         if (_serverBase is not { } server)
@@ -133,10 +133,19 @@ public sealed partial class ItemDetailViewModel
         {
             CurrentMark = e.ContentId == _contentId ? CurrentMark.NowViewing : CurrentMark.None,
         })];
-        // A new list centres the row on the episode again: only for cards that changed.
+        if (SeasonGaps.Among<object>(_siblings, cards, _places, place => place).Count <= 1)
+        {
+            cards = [];
+        }
         if (!cards.SequenceEqual(MoreEpisodes))
         {
             MoreEpisodes = cards;
+        }
+        // The row holds the very cards above. A new list centres it on the episode again: only for entries that changed.
+        IReadOnlyList<object> row = MoreEpisodes.Count == 0 ? [] : SeasonGaps.Among<object>(_siblings, MoreEpisodes, _places, place => place);
+        if (!row.SequenceEqual(MoreEpisodesRow))
+        {
+            MoreEpisodesRow = row;
         }
     }
 
@@ -340,7 +349,7 @@ public sealed partial class ItemDetailViewModel
             return TryLoadAsync("episodes", () => _catalog.ListSeasonEpisodesAsync(server, seasonId, images: images, cancellationToken: cancellationToken),
                 cancellationToken);
         }
-        if (_siblings.Count > 0 && !string.IsNullOrWhiteSpace(item.SeriesId) && item.SeasonNumber is { } number)
+        if (HasMoreEpisodes && !string.IsNullOrWhiteSpace(item.SeriesId) && item.SeasonNumber is { } number)
         {
             string seriesId = item.SeriesId;
             return TryLoadAsync("episodes", () => _catalog.ListEpisodesAsync(server, seriesId, number, images: images, cancellationToken: cancellationToken),

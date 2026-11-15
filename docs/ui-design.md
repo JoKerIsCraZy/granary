@@ -743,10 +743,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
     the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
     nothing opens; Tab and a remote's arrows pass it by, and screen readers hear one line, "Episode 5, missing" or
-    "Episode 11, airs November 19". Play, Resume, the watched toggles, the spoiler blur and More Episodes know only the
-    listed episodes, and specials get no places.
+    "Episode 11, airs November 19". An episode's More Episodes holds the same places (below). Play, Resume, the watched
+    toggles and the spoiler blur know only the listed episodes, and specials get no places.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
-    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    order, the episode itself included, and among them the places the season's grid shows (above), from the same
+    calendar answers: a place of the row's card size, its dashed box 16:9 as the episode cards' stills, with the grid's
+    words. The listed episodes show at once and the places come in once the calendar answers (a failed answer leaves the
+    row as listed). A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
+    row centres on the page's own card as without places. The row shows only when it has more than one entry, places
+    included: a season of one listed episode shows it once a place joins it. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,

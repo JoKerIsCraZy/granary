@@ -136,6 +136,36 @@ internal static class SeasonGaps
         return [.. places.OrderBy(p => p.Place.EpisodeNumber).Take(MaxPlaces)];
     }
 
+    /// <summary>
+    /// The listed episodes' entries in the listing's order with the places among them, as a season's grid and an episode's
+    /// More Episodes show them: each place before the first episode numbered after it, the rest at the end, and one whose
+    /// episode the listing now has left out. Entries that do not match the listing one for one come without places.
+    /// </summary>
+    /// <param name="entries">An entry for each of <paramref name="listed"/>, in its order.</param>
+    public static List<TEntry> Among<TEntry>(IReadOnlyList<Episode> listed, IReadOnlyList<TEntry> entries,
+        IReadOnlyList<DetailEpisodePlaceholder> places, Func<DetailEpisodePlaceholder, TEntry> entryOf)
+    {
+        List<TEntry> all = new(entries.Count + places.Count);
+        if (listed.Count != entries.Count)
+        {
+            all.AddRange(entries);
+            return all;
+        }
+        var numbers = listed.Select(e => e.EpisodeNumber).ToHashSet();
+        var shown = places.Where(p => !numbers.Contains(p.EpisodeNumber)).ToList();
+        int next = 0;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            while (next < shown.Count && shown[next].EpisodeNumber < listed[i].EpisodeNumber)
+            {
+                all.Add(entryOf(shown[next++]));
+            }
+            all.Add(entries[i]);
+        }
+        all.AddRange(shown.Skip(next).Select(entryOf));
+        return all;
+    }
+
     /// <summary>A season listing that has two episodes with one file lists a double episode's second half: no gap hides one.</summary>
     public static bool ListsBothHalves(IReadOnlyList<Episode> listed) => listed
         .SelectMany(e => e.Files.Select(f => f.FileId)).Where(id => id.Length > 0)

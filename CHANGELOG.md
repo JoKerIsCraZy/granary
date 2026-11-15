@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
+  still to air among More Episodes, as the season's page does.
+
 ### Fixed
 
 - The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the

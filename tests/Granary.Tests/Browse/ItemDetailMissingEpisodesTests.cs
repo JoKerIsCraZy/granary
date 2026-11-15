@@ -7,6 +7,7 @@ using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Browse.ItemDetailFixture;
 using static Granary.Tests.Browse.ItemDetailPayloads;
+using static Granary.Tests.Browse.SeasonListing;
 
 namespace Granary.Tests.Browse;
 
@@ -16,7 +17,7 @@ namespace Granary.Tests.Browse;
 /// </summary>
 public sealed class ItemDetailMissingEpisodesTests
 {
-    private const string CalendarPath = "api/v2/calendar";
+    private const string CalendarPath = FakeCalendar.Path;
     private const string SpecialsId = "season-96677-0";
     private const string OtherSeasonId = "season-tmdb-5-1";
 
@@ -54,7 +55,7 @@ public sealed class ItemDetailMissingEpisodesTests
     {
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22"), (5, "2026-09-29")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
-        Guard(2);
+        _fixture.Guard(2);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -73,7 +74,7 @@ public sealed class ItemDetailMissingEpisodesTests
     public async Task AGapTheCalendarDoesNotKnow_ShowsTheEpisodesNumber_WithoutADate()
     {
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22"), (5, "2026-09-29")));
-        Guard(2);
+        _fixture.Guard(2);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -90,7 +91,7 @@ public sealed class ItemDetailMissingEpisodesTests
     {
         Season(Episodes((1, "2026-07-01"), (2, "2026-08-01"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-08-20");
-        Guard(2);
+        _fixture.Guard(2);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -106,7 +107,7 @@ public sealed class ItemDetailMissingEpisodesTests
         // Aired late in the evening where it was made: the calendar lists it under the viewer's next day.
         Season(Episodes((4, "2026-08-01"), (6, "2026-08-08"), (7, "2026-09-20")));
         _calendar.Airs(5, "Late Night", "2026-08-08", local: "2026-08-09");
-        Guard(4);
+        _fixture.Guard(4);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -139,7 +140,7 @@ public sealed class ItemDetailMissingEpisodesTests
         _calendar.Airs(4, "Chapter 4", "2026-09-27")
             .Airs(5, "Chapter 5", "2026-10-01", at: "2026-10-01T09:00:00Z")
             .Airs(6, "Chapter 6", "2026-10-01", at: "2026-10-01T21:00:00Z");
-        Guard(3);
+        _fixture.Guard(3);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -203,10 +204,10 @@ public sealed class ItemDetailMissingEpisodesTests
     {
         Season($$"""
             { "items": [
-              {{Episode(4, "2026-09-08")}},
-              {{Episode(5, "2026-09-15", fileId: "955")}},
-              {{Episode(6, "2026-09-15", fileId: "955")}},
-              {{Episode(7, "2026-09-22")}}
+              {{ListedEpisode(4, "2026-09-08")}},
+              {{ListedEpisode(5, "2026-09-15", fileId: "955")}},
+              {{ListedEpisode(6, "2026-09-15", fileId: "955")}},
+              {{ListedEpisode(7, "2026-09-22")}}
             ] }
             """);
         _calendar.Airs(5, "Part One", "2026-09-15").Airs(6, "Part Two", "2026-09-15");
@@ -222,10 +223,10 @@ public sealed class ItemDetailMissingEpisodesTests
     {
         Season($$"""
             { "items": [
-              {{Episode(1, "2026-09-01")}},
-              {{Episode(2, "2026-09-08", fileId: "955")}},
-              {{Episode(3, "2026-09-08", fileId: "955")}},
-              {{Episode(5, "2026-09-22")}}
+              {{ListedEpisode(1, "2026-09-01")}},
+              {{ListedEpisode(2, "2026-09-08", fileId: "955")}},
+              {{ListedEpisode(3, "2026-09-08", fileId: "955")}},
+              {{ListedEpisode(5, "2026-09-22")}}
             ] }
             """);
 
@@ -241,8 +242,8 @@ public sealed class ItemDetailMissingEpisodesTests
         // A server that lists only the first episode of a multi-episode file: its versions name the rest.
         Season(Episodes((4, "2026-09-08"), (5, "2026-09-15"), (7, "2026-09-22")));
         _calendar.Airs(6, "Part Two", "2026-09-15").Airs(8, "Finale, Part Two", "2026-09-22");
-        Guard(5, spansTo: 6);
-        Guard(7, spansTo: 8);
+        _fixture.Guard(5, spansTo: 6);
+        _fixture.Guard(7, spansTo: 8);
 
         var detail = await LoadAsync(Season3Id);
         await LoadAsync(Season3Id);
@@ -259,7 +260,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-15"), (5, "2026-09-22"), (7, "2026-09-29")));
         _calendar.Airs(3, "Chapter 3", "2026-09-12").Airs(6, "Chapter 6", "2026-09-26");
         _fixture.Get(ItemPath(EpisodeIdOf(2)), ScriptedSilo.Problem(500, "internal_error"));
-        Guard(5);
+        _fixture.Guard(5);
 
         var detail = await _fixture.LoadAsync(Season3Id);
 
@@ -275,7 +276,7 @@ public sealed class ItemDetailMissingEpisodesTests
         // Numbered on from the season before, or a stray number: not 500 missing episodes.
         Season(Episodes((11, "2026-09-01"), (12, "2026-09-08"), (513, "2026-09-15")));
         _calendar.Airs(13, "Chapter 13", "2026-09-10").Airs(14, "Chapter 14", "2026-09-12");
-        Guard(12);
+        _fixture.Guard(12);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -290,7 +291,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes([.. odd.Select(n => (n, "2026-09-01"))]));
         foreach (int number in odd.Where(n => n < 100))
         {
-            Guard(number);
+            _fixture.Guard(number);
         }
 
         var detail = await LoadAsync(Season3Id);
@@ -402,7 +403,7 @@ public sealed class ItemDetailMissingEpisodesTests
     public async Task AProfileOrSessionChange_ForgetsWhatWasKept()
     {
         Season(Episodes((4, "2026-09-08"), (5, "2026-09-15"), (7, "2026-09-22")));
-        Guard(5);
+        _fixture.Guard(5);
 
         await LoadAsync(Season3Id);
         _fixture.Session.ProfileId = "8";
@@ -462,7 +463,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
         _calendar.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        Guard(2);
+        _fixture.Guard(2);
         _fixture.Silo.On(HttpMethod.Post, "api/v2/watched/" + Season3Id, ScriptedSilo.NoContent());
         var detail = _fixture.Create();
         await detail.LoadCommand.ExecuteAsync(Season3Id);
@@ -486,7 +487,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
         _calendar.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        Guard(2);
+        _fixture.Guard(2);
         var detail = _fixture.Create();
         List<NotifyCollectionChangedAction> changes = [];
         detail.EpisodeGrid.CollectionChanged += (_, e) => changes.Add(e.Action);
@@ -512,7 +513,7 @@ public sealed class ItemDetailMissingEpisodesTests
     {
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
-        Guard(2);
+        _fixture.Guard(2);
         _fixture.Silo.On(HttpMethod.Post, "api/v2/watched/" + Season3Id, ScriptedSilo.NoContent());
         var detail = await LoadAsync(Season3Id);
         var grid = detail.EpisodeGrid;
@@ -540,7 +541,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
         _calendar.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        Guard(2);
+        _fixture.Guard(2);
         _fixture.Movie();
         var detail = _fixture.Create();
 
@@ -560,7 +561,7 @@ public sealed class ItemDetailMissingEpisodesTests
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));
         _calendar.Airs(3, "The Heist", "2026-09-15");
         _calendar.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        Guard(2);
+        _fixture.Guard(2);
         var detail = _fixture.Create();
         await detail.LoadCommand.ExecuteAsync(Season3Id);
         var placing = detail.Placing;
@@ -579,7 +580,7 @@ public sealed class ItemDetailMissingEpisodesTests
     public async Task EpisodeZero_AndAListingOutOfOrder_KeepTheServersOrder()
     {
         Season(Episodes((0, "2026-08-25"), (2, "2026-09-08"), (1, "2026-09-01"), (4, "2026-09-22")));
-        Guard(2);
+        _fixture.Guard(2);
 
         var detail = await LoadAsync(Season3Id);
 
@@ -608,7 +609,7 @@ public sealed class ItemDetailMissingEpisodesTests
         _fixture.Series(SingleSeason).Get(SeasonItemEpisodesPath("season-96677-1"),
             Ok(Episodes(1, (1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22"))));
         _calendar.Airs(3, "The Heist", "2026-09-15", season: 1);
-        Guard(2, season: 1);
+        _fixture.Guard(2, season: 1);
 
         var detail = await LoadAsync(SeriesId);
 
@@ -616,17 +617,14 @@ public sealed class ItemDetailMissingEpisodesTests
     }
 
     [Fact]
-    public async Task NothingIsPlaced_OnAMovie_OnAnEpisodesMoreEpisodes_OrAmongTheSpecials()
+    public async Task NothingIsPlaced_OnAMovie_OrAmongTheSpecials()
     {
         _fixture.Movie();
         await LoadAsync(MovieId);
-        _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(Episodes((1, "2026-09-01"), (3, "2026-09-15"))));
-        var episode = await LoadAsync(EpisodeId);
+        Assert.Empty(Windows());
         _fixture.Get(ItemPath(SpecialsId), Ok(Specials)).Get(SeasonItemEpisodesPath(SpecialsId), Ok(Episodes(0, (1, "2026-09-01"), (3, "2026-09-15"))));
         var specials = await LoadAsync(SpecialsId);
 
-        Assert.Equal([EpisodeIdOf(1), EpisodeIdOf(3)], episode.MoreEpisodes.Select(c => c.Id));
-        Assert.Empty(episode.EpisodeGrid);
         Assert.Equal(2, specials.EpisodeGrid.Count);
         Assert.Empty(specials.EpisodeGrid.OfType<DetailEpisodePlaceholder>());
         // The calendar leaves the specials out, so their season asks it nothing.
@@ -648,36 +646,6 @@ public sealed class ItemDetailMissingEpisodesTests
     private void Season(string episodes) =>
         _fixture.Get(ItemPath(Season3Id), Ok(ItemDetailPayloads.Season)).Get(SeasonItemEpisodesPath(Season3Id), Ok(episodes));
 
-    // The read of an episode's files that tells a double episode, made only on a server that lists no double episode's halves.
-    private void Guard(int number, int? spansTo = null, int season = 3) =>
-        _fixture.Get(ItemPath(EpisodeIdOf(number, season)), Ok(EpisodeItem(number, season, spansTo)));
-
-    private static string EpisodeIdOf(int number, int season = 3) => $"episode-tmdb-96677-{season}-{number}";
-
-    private static string Episodes(params (int Number, string AirDate)[] episodes) => Episodes(3, episodes);
-
-    private static string Episodes(int season, params (int Number, string AirDate)[] episodes) =>
-        $$"""{ "items": [{{string.Join(",", episodes.Select(e => Episode(e.Number, e.AirDate, season: season)))}}] }""";
-
-    private static string Episode(int number, string airDate, string? fileId = null, int season = 3) => $$"""
-        { "content_id": "{{EpisodeIdOf(number, season)}}", "season_number": {{season}}, "episode_number": {{number}}, "title": "Chapter {{number}}",
-          "air_date": "{{airDate}}", "runtime": 50, "files": [{ "file_id": "{{fileId ?? $"9{season}{number}"}}", "resolution": "1080p", "hdr": false, "file_size": 1 }] }
-        """;
-
-    private static string EpisodeItem(int number, int season, int? spansTo)
-    {
-        string span = spansTo is { } end ? $", \"multi_episode_start\": {number}, \"multi_episode_end\": {end}" : "";
-        return $$"""
-            {
-              "content_id": "{{EpisodeIdOf(number, season)}}", "type": "episode", "title": "Chapter {{number}}", "status": "matched",
-              "genres": [], "keywords": [], "series_id": "series-tmdb-96677", "season_number": {{season}}, "episode_number": {{number}},
-              "versions": [{ "file_id": "9{{season}}{{number}}", "resolution": "1080p", "codec_video": "h264", "codec_audio": "eac3", "container": "mkv",
-                "hdr": false, "file_size": 1, "duration": 3000, "bitrate": 6000{{span}} }],
-              "videos": [], "subtitles": []
-            }
-            """;
-    }
-
     // What the grid shows on each card: an episode's card title, a place's line.
     private static List<string> Titles(ItemDetailViewModel detail) =>
         [.. detail.EpisodeGrid.Select(entry => entry switch
@@ -689,62 +657,6 @@ public sealed class ItemDetailMissingEpisodesTests
 
     // The calendar windows asked, by their start.
     private List<(string Start, string End)> Windows() =>
-        [.. _fixture.Silo.SentTo(HttpMethod.Get, CalendarPath).Select(r => (Start: Query(r.Uri, "start"), End: Query(r.Uri, "end")))
+        [.. _fixture.Silo.SentTo(HttpMethod.Get, CalendarPath).Select(r => (Start: FakeCalendar.Query(r.Uri, "start"), End: FakeCalendar.Query(r.Uri, "end")))
             .OrderBy(w => w.Start, StringComparer.Ordinal)];
-
-    private static string Query(Uri uri, string name) =>
-        uri.Query.TrimStart('?').Split('&').Select(pair => pair.Split('=', 2)).Single(pair => pair[0] == name)[1];
-
-    /// <summary>
-    /// The server's calendar: each window answered with the airings listed under its days, as the server trims them to the
-    /// window it was asked for by the viewer's day.
-    /// </summary>
-    private sealed class FakeCalendar
-    {
-        private readonly List<Airing> _airings = [];
-
-        /// <summary>Answers with 503 instead.</summary>
-        public bool Fails { get; set; }
-
-        /// <summary>Held until the test sets it, when set.</summary>
-        public TaskCompletionSource? Gate { get; set; }
-
-        /// <param name="local">The viewer's day it is listed under, when it is not <paramref name="date"/>.</param>
-        public FakeCalendar Airs(int episode, string title, string date, string? at = null, int season = 3, string series = SeriesId,
-            string? local = null)
-        {
-            _airings.Add(new Airing(series, season, episode, title, date, local ?? date, at));
-            return this;
-        }
-
-        public async Task<HttpResponseMessage> RespondAsync(Uri uri, CancellationToken cancellationToken)
-        {
-            if (Gate is { } gate)
-            {
-                await gate.Task.WaitAsync(cancellationToken);
-            }
-            if (Fails)
-            {
-                return await ScriptedSilo.Problem(503, "dependency_unavailable")();
-            }
-            var start = DateOnly.ParseExact(Query(uri, "start"), "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var end = DateOnly.ParseExact(Query(uri, "end"), "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var days = _airings.Where(a => a.Day >= start && a.Day <= end).GroupBy(a => a.Local).OrderBy(day => day.Key, StringComparer.Ordinal)
-                .Select(day => $$"""{ "date": "{{day.Key}}", "items": [{{string.Join(",", day.Select(a => a.Json))}}] }""");
-            return await ScriptedSilo.Json(HttpStatusCode.OK, $$"""{ "events": [{{string.Join(",", days)}}] }""")();
-        }
-
-        private sealed record Airing(string Series, int Season, int Episode, string Title, string Date, string Local, string? At)
-        {
-            public DateOnly Day => DateOnly.ParseExact(Local, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-            public string Json => $$"""
-                {
-                  "content_id": "episode-{{Series}}-{{Season}}-{{Episode}}", "type": "episode", "title": "Lupin", "series_id": "{{Series}}",
-                  "season_number": {{Season}}, "episode_number": {{Episode}}, "episode_title": "{{Title}}", "air_date": "{{Date}}",
-                  "local_air_date": "{{Local}}"{{(At is null ? "" : $", \"air_at\": \"{At}\"")}}, "badges": [], "watched": false
-                }
-                """;
-        }
-    }
 }

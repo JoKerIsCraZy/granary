@@ -5,10 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
-// The places of the episodes a season's grid lacks, Granary's own (docs/ui-design.md, "Detail pages"): one missing between
+// The places of the episodes a season's listing lacks, Granary's own (docs/ui-design.md, "Detail pages"): one missing between
 // those the library has or aired after its last, and one still to air. Silo's season listing leaves out an episode without
-// a file; the calendar still names it (docs/api-contract.md 7.13). The places come after the load, which does not wait for
-// them, and take no part in playing, marking, spoilers or More Episodes: those work on Episodes alone.
+// a file; the calendar still names it (docs/api-contract.md 7.13). A season's grid shows them among its episodes, and an
+// episode's More Episodes among its season's. The places come after the load, which does not wait for them, and take no
+// part in playing, marking or spoilers: those work on the listed episodes alone.
 public sealed partial class ItemDetailViewModel
 {
     // The listed episodes' multi-episode files read at once, at most.
@@ -26,9 +27,11 @@ public sealed partial class ItemDetailViewModel
     /// <summary>The placing the last load started, for tests.</summary>
     internal Task Placing { get; private set; } = Task.CompletedTask;
 
-    // After the episodes show, on the UI thread. A newer load (Reset) and leaving the page (Deactivate) stop it, and so does
-    // the load's own cancellation while the load still runs. Specials have no places: the calendar leaves season 0 out.
-    private void StartPlacing(Uri server, string? seriesId, int? season, int generation, CancellationToken loadCancellation)
+    // After the episodes show, on the UI thread: the places among the season's listed episodes. A newer load (Reset) and
+    // leaving the page (Deactivate) stop it, and so does the load's own cancellation while the load still runs. Specials have
+    // no places: the calendar leaves season 0 out.
+    private void StartPlacing(Uri server, string? seriesId, int? season, IReadOnlyList<Episode> listed, int generation,
+        CancellationToken loadCancellation)
     {
         StopPlacing();
         if (_airings is null || string.IsNullOrWhiteSpace(seriesId) || season is not { } number || number <= 0)
@@ -37,7 +40,7 @@ public sealed partial class ItemDetailViewModel
         }
         var run = CancellationTokenSource.CreateLinkedTokenSource(loadCancellation);
         _placing = run;
-        Placing = PlaceAsync(server, seriesId, number, generation, run);
+        Placing = PlaceAsync(server, seriesId, number, listed, generation, run);
     }
 
     private void StopPlacing()
@@ -47,13 +50,14 @@ public sealed partial class ItemDetailViewModel
         _placing = null;
     }
 
-    private async Task PlaceAsync(Uri server, string seriesId, int season, int generation, CancellationTokenSource run)
+    private async Task PlaceAsync(Uri server, string seriesId, int season, IReadOnlyList<Episode> listed, int generation,
+        CancellationTokenSource run)
     {
         var cancellationToken = run.Token;
         IReadOnlyList<DetailEpisodePlaceholder>? places = null;
         try
         {
-            places = await PlacesAsync(server, seriesId, season, cancellationToken);
+            places = await PlacesAsync(server, seriesId, season, listed, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -77,17 +81,17 @@ public sealed partial class ItemDetailViewModel
             if (places is not null && current)
             {
                 _places = places;
-                ShowEpisodeGrid();
+                ShowPlaces();
             }
         });
     }
 
     // Null when the calendar cannot be read: the season shows as listed.
-    private async Task<IReadOnlyList<DetailEpisodePlaceholder>?> PlacesAsync(Uri server, string seriesId, int season, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<DetailEpisodePlaceholder>?> PlacesAsync(Uri server, string seriesId, int season, IReadOnlyList<Episode> listed,
+        CancellationToken cancellationToken)
     {
         // What the profile may see decides what the calendar lists, so its answers are kept per profile.
         string? profileId = _session.ProfileId;
-        var listed = _episodes;
         var last = listed.Where(e => e.EpisodeNumber > 0).MaxBy(e => e.EpisodeNumber);
         var now = _time.GetUtcNow();
         var zone = _time.LocalTimeZone;
@@ -165,6 +169,19 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
+    // A season's grid, or an episode's More Episodes.
+    private void ShowPlaces()
+    {
+        if (_listsEpisodes)
+        {
+            ShowEpisodeGrid();
+        }
+        else
+        {
+            ShowSiblingCards();
+        }
+    }
+
     // The grid changes in place, as HomeRowViewModel.Take changes a row: an entry that stays keeps its element, a changed card
     // is replaced where it is, and the places come and go around them. Each place goes before the first episode numbered
     // after it; one whose episode the listing now has is gone.
@@ -202,29 +219,7 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    private List<DetailEpisodeEntry> GridEntries()
-    {
-        var episodes = Episodes;
-        List<DetailEpisodeEntry> entries = new(episodes.Count + _places.Count);
-        if (_episodes.Count != episodes.Count)
-        {
-            entries.AddRange(episodes);
-            return entries;
-        }
-        var listed = _episodes.Select(e => e.EpisodeNumber).ToHashSet();
-        var places = _places.Where(p => !listed.Contains(p.EpisodeNumber)).ToList();
-        int next = 0;
-        for (int i = 0; i < episodes.Count; i++)
-        {
-            while (next < places.Count && places[next].EpisodeNumber < _episodes[i].EpisodeNumber)
-            {
-                entries.Add(places[next++]);
-            }
-            entries.Add(episodes[i]);
-        }
-        entries.AddRange(places.Skip(next));
-        return entries;
-    }
+    private List<DetailEpisodeEntry> GridEntries() => SeasonGaps.Among<DetailEpisodeEntry>(_episodes, Episodes, _places, place => place);
 
     private int IndexInGrid(string key, int from)
     {
