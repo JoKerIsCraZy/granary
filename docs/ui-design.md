@@ -285,8 +285,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
-  hides the button. Beside it, or in its place when it does not show, a quiet "Download settings" with the settings gear
-  (Reclaim Watched's size and pill, muted, with no fill or edge until the pointer is on it) opens Settings → Downloads
+  hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before
+  its label, in Reclaim Watched's outline pill, opens Settings → Downloads
   over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
   Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
   download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
@@ -735,7 +735,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
-    the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+    a movie's, series' or episode's scores, as the web's `ScoreRow` (`pages/ItemDetail/components/ScoreRow.tsx`) under
+    its badges: every rating the server gives, in its order, each source's mark ("IMDb", "TMDB") in 13 SemiBold at 75 %
+    beside its score in 15 Bold, both in the accent colour, 20 apart, wrapping 8 below at the overview's width (a
+    season's page has none, as the web's); the
+    tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
@@ -903,8 +907,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     new ones the next time it opens. A series or season page has no pickers: it plays an episode.
   - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios, a series' regular seasons
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as
-    its badge words it), never a file's name or path. The web's chips, ratings, credits and version lines are there
-    instead of in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
+    its badge words it), never a file's name or path. The web's chips, credits and version lines are there instead of
+    in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
     selected.
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, extras, trailers, cast and crew,
