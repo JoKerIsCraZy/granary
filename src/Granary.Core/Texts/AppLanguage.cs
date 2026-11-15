@@ -55,10 +55,12 @@ public static class AppLanguage
         ShippedLanguages.FirstOrDefault(language => string.Equals(language.Tag, tag, StringComparison.Ordinal)).Endonym;
 
     /// <summary>
-    /// The languages a user can get. English only until every area of Granary shows its texts through the catalogs,
-    /// so nobody sees a half-translated Granary; the other catalogs ship meanwhile.
+    /// The languages a user can get, as the web decides it (<c>hasCatalog</c>): each shipped language whose catalogs Granary
+    /// carries. Arabic is held back, as the web shows it right to left and Granary lays out only left to right; a debug
+    /// build still shows it with <c>--language ar</c>.
     /// </summary>
-    public static IReadOnlyList<string> Enabled { get; } = [English];
+    public static IReadOnlyList<string> Enabled { get; } =
+        [.. Shipped.Where(tag => TextCatalog.Ships(tag) && !IsRightToLeft(tag))];
 
     /// <summary>
     /// The shipped language a tag selects, or null: the one with the same language and script once both are filled in

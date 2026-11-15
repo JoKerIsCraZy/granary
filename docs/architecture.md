@@ -316,11 +316,12 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
 
 ## Texts
 
-Granary is moving its texts into Silo's translation catalogs, used by key as Silo's web uses them (silo-server
-`web/src/i18n/README.md` and `docs/architecture/i18n.md`). Only English is enabled so far: the areas move behind keys one
-by one, and the other languages come on once every area has, so nobody sees a half-translated Granary. A text the web
-has for the same place takes the web's key, and with it the web's English where Granary had worded it differently; a
-text only Granary has keeps its English under a key of its own. All of it is in `src/Granary.Core/Texts`.
+Granary shows its texts from Silo's translation catalogs, used by key as Silo's web uses them (silo-server
+`web/src/i18n/README.md` and `docs/architecture/i18n.md`), in English, Spanish, German, French, Brazilian Portuguese,
+Japanese and Simplified Chinese. Arabic ships too but is held back until Granary lays out right to left (below). A text
+the web has for the same place takes the web's key, and with it the web's English where Granary had worded it
+differently; a text only Granary has keeps its English under a key of its own. All of it is in
+`src/Granary.Core/Texts`.
 
 - **Catalogs** (`Catalogs/`, embedded in Granary.Core, one file per language tag; `TextCatalog`):
   - `web/<tag>.json` holds the web's compiled catalogs (`web/src/locales/<tag>.json`), unchanged per key and trimmed
@@ -397,8 +398,11 @@ text only Granary has keeps its English under a key of its own. All of it is in 
 - **Keys** (`TextKeysTests`): every key `src` gives `AppText.Get` or `AppText.Runs` as a literal, in C# or in an x:Bind,
   must be in the English catalog, the web's or Granary's, as the web's typecheck holds its keys to `en.json`.
 - **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,
-  then English, each matched only against the enabled languages (`AppLanguage.Enabled`, English for now), as in Silo's
-  apps. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
+  then English, each matched only against the enabled languages (`AppLanguage.Enabled`), as in Silo's apps. A language is
+  enabled as the web's `hasCatalog` decides it: each shipped language whose catalogs Granary carries (`TextCatalog.Ships`),
+  except one written right to left, which is Arabic: the web sets `dir="rtl"` for it, which mirrors the whole layout, and
+  Granary lays out only left to right. A profile that chose Arabic, and an Arabic Windows, get the next language in line,
+  else English. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
   es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";

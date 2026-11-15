@@ -1325,8 +1325,9 @@ says why above the sections.
   only its Language group, so the page's line is the settings manifest's own ("Language of the app's menus, buttons and
   messages. Separate from the audio, subtitle and metadata languages."). Language: "The language this app uses, saved for
   the active profile. Match device follows your PC's language." (the web says browser), with App language, a select of
-  Match device, then each language Granary offers by its own name, in the web's order (English for now). A language
-  another Silo app chose that Granary does not offer (one not enabled yet, or one Silo does not ship) stays listed under its name, after Match device, so saving here never clears it, with "This
+  Match device, then each language Granary offers by its own name, in the web's order: English, Español, Deutsch,
+  Français, Português (Brasil), 日本語, 简体中文. A language another Silo app chose that Granary does not offer (Arabic,
+  which needs a right-to-left layout, or one Silo does not ship) stays listed under its name, after Match device, so saving here never clears it, with "This
   language isn't available in Granary yet, so Granary follows your device." under the select. The select is off until the
   profile's choice is read, and while a choice saves. A choice saves at once for the profile, as the web's does, and this
   PC's own value is cleared after it; Granary loads its texts as it starts, so while the next start would show another
@@ -1400,7 +1401,7 @@ stream's commands on Activity.
 - **Words**: the web's admin pages', by their keys, so they come in the language on screen: the area's sidebar, the
   Dashboard's widgets, Activity with its IP lookup and a stream's commands and answers, and the activity indicator
   below. A heading the web writes in mixed case and shows in capitals is put in capitals by the language's rules
-  (MONITOR, BUILD, PLAYBACK METHOD, STREAMS). Granary's own, in English until they are translated: what only Granary
+  (MONITOR, BUILD, PLAYBACK METHOD, STREAMS). Granary's own, under keys of its own in all its languages: what only Granary
   has (Auto refresh and its "Every 10 s", the question before Terminate, "Scans may be running", the refusals of an
   account that is no administrator, Address and Look up in a stream's details) and the names a screen reader alone
   hears where the web has none (the address box, the filter box, a user's row, a method that filters). Dates, times,
@@ -1571,7 +1572,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   info, the skip pills, the Up Next card and the Playing Next screen, the sleep timer, the Watch Party panel, the
   server's notices and the minimized bar ("Return to player", "Stop playback", as the web's player bar). A heading the
   web writes in mixed case and shows in capitals is put in capitals by the language's rules ("AUDIO", "UP NEXT IN 34S").
-  Granary's own, in English until they are translated: what only Granary has (Mini view, the audio delay, End of
+  Granary's own, under keys of its own in all its languages: what only Granary has (Mini view, the audio delay, End of
   episode and End of movie, the still watching prompt, "Ends 22:41", mpv's decoding in the playback info, a time spoken
   with hours), every tooltip that names a key ("Exit (Esc)", "Subtitles (C)", "Back 10 seconds (Left arrow)"), Full
   screen as the title bar and Settings say it (the web says "Fullscreen"), the Subtitles button (the web's says

@@ -6,6 +6,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Granary in seven languages:** English, Spanish, German, French, Brazilian Portuguese, Japanese and Simplified
+  Chinese, in the words and translations of Silo's web and apps where they have the text. Granary follows the language
+  your profile chose in any Silo app, else Windows' languages, else English. Settings → Accessibility → Language
+  chooses it for your profile, as on Silo's web: Match device or a language by its own name. A new choice shows the
+  next time Granary starts. Arabic is not offered yet: it needs a layout that runs right to left, so a profile or a
+  Windows set to Arabic gets the next language in line.
+
 ### Changed
 
 - **Dates and numbers** are written as Windows' regional format writes them, as Silo's web writes them in the browser's:
