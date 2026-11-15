@@ -798,8 +798,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
     first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
-    downloads, the episodes after it are not asked for until Download is pressed again. Cancel closes it; while a start runs, Cancel and Esc wait for it, so a
-    download never starts after the dialog was closed on it.
+    downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
+    many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
+    closes it; while a start runs, Cancel and Esc wait for it, so a download never starts after the dialog was closed on it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a

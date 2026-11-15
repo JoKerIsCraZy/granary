@@ -128,7 +128,7 @@ public sealed partial class DownloadManager
             {
                 _logger.LogInformation("The server's download limit stopped a season's or series' downloads after {Count} episodes",
                     started + there + failed);
-                break;
+                return new SeasonStartResult(started, there, failed, ReachedLimit: true);
             }
         }
         return new SeasonStartResult(started, there, failed);
@@ -221,6 +221,11 @@ public sealed partial class DownloadManager
         {
             _logger.LogInformation("The server does not let this profile download it ({Status})", ex.Status);
             return (null, DownloadStartResult.Unavailable);
+        }
+        catch (SiloApiException ex) when (ex.Status == 429)
+        {
+            _logger.LogInformation("The server's download limit for the account was reached");
+            return (null, DownloadStartResult.Limited);
         }
         catch (Exception ex) when (ex is HttpRequestException or SiloApiException or ProfileChangedException or JsonException
             || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))

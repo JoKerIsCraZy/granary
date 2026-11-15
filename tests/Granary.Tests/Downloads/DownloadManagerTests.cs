@@ -208,8 +208,9 @@ public sealed class DownloadManagerTests : IAsyncDisposable
 
         var result = await manager.StartSeriesAsync(series, Token);
 
-        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 1), result);
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 1, ReachedLimit: true), result);
         Assert.Equal(2, CreatesSent.Count);
+        // The script repeats its last answer: one more create is refused for the limit alike.
         Assert.Equal(DownloadStartResult.Limited, await manager.StartAsync(Episode, Token));
     }
 
@@ -548,6 +549,19 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         var manager = _h.NewManager();
 
         Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+
+        Assert.Equal(2, CreatesSent.Count);
+        Assert.Empty(_h.Store.All);
+    }
+
+    [Fact]
+    public async Task ARevivalTheServersLimitRefuses_IsLimited()
+    {
+        Creates(ScriptedSilo.Problem(409, "conflict"), ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        _h.List(DownloadPayloads.Entry("dl_9", "revoked", revision: 3, episodeId: "ep_5"));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Limited, await manager.StartAsync(Episode, Token));
 
         Assert.Equal(2, CreatesSent.Count);
         Assert.Empty(_h.Store.All);

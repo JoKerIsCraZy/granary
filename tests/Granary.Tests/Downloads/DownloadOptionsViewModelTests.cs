@@ -383,4 +383,17 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal(["ep_1", "ep_2", "ep_3", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         Assert.Equal("", options.ErrorText);
     }
+
+    [Fact]
+    public async Task TheServersDownloadLimit_SaysSoInTheWebsWords()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")), ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+
+        Assert.False(await options.StartAsync());
+
+        Assert.Equal("Too many requests. Wait a moment and try again.", options.ErrorText);
+        Assert.Equal(["ep_1", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+    }
 }

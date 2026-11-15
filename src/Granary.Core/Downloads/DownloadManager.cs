@@ -51,8 +51,11 @@ public sealed record SeriesDownloadRequest(string SeriesId, string SeriesTitle, 
 /// <summary>A season of a series' download, by number (0 holds the specials), with its episodes to download.</summary>
 public sealed record SeriesSeason(int SeasonNumber, IReadOnlyList<SeasonEpisode> Episodes);
 
-/// <summary>How many episodes of a season or a series started, were there already, or could not start.</summary>
-public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed);
+/// <summary>
+/// How many episodes of a season or a series started, were there already, or could not start; <paramref name="ReachedLimit"/>:
+/// the server's limit of downloads stopped it (<see cref="DownloadStartResult.Limited"/>).
+/// </summary>
+public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed, bool ReachedLimit = false);
 
 /// <summary>
 /// What <see cref="DownloadManager.Changed"/> carries when only a transfer went further: the download it is, so a page can show

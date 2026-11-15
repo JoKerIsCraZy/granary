@@ -36,6 +36,12 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public const string Footer = "Larger files require more storage space.";
     public const string StartFailed = "Download could not be started. Check access and try again.";
 
+    /// <summary>
+    /// The server refused for the account's limit of downloads (429): the web's words for that problem
+    /// (<c>error.rate_limited</c>).
+    /// </summary>
+    public const string RateLimited = "Too many requests. Wait a moment and try again.";
+
     /// <summary>The web's words while a card's dialog reads its item (<c>web.item.menu.loadingDetails</c>).</summary>
     public const string LoadingDetails = "Loading the latest item details…";
 
@@ -259,23 +265,25 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 return false;
             }
-            bool started;
+            StartOutcome outcome;
             try
             {
-                started = await StartSelectionAsync();
+                outcome = await StartSelectionAsync();
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // Whatever went wrong, the dialog says it did not start, and Download can be pressed again.
                 _logger.LogWarning("A download could not be started ({Failure})", DownloadLog.Failure(ex));
-                started = false;
+                outcome = StartOutcome.Failed;
             }
             await _dispatcher.ResumeOnUi();
-            if (!started)
+            ErrorText = outcome switch
             {
-                ErrorText = StartFailed;
-            }
-            return started;
+                StartOutcome.Failed => StartFailed,
+                StartOutcome.Limited => RateLimited,
+                _ => "",
+            };
+            return outcome == StartOutcome.Started;
         }
         finally
         {
@@ -517,24 +525,41 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             : $"{Size(free)} free on this PC.";
     }
 
-    private async Task<bool> StartSelectionAsync()
+    // What a press of Download came to.
+    private enum StartOutcome
+    {
+        Started,
+        Failed,
+        Limited,
+    }
+
+    private async Task<StartOutcome> StartSelectionAsync()
     {
         string quality = SelectedQuality?.Preset ?? DownloadQualities.Original;
         if (_season is { } season)
         {
             var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
             // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
-            return result.Failed == 0 && result.Started + result.AlreadyThere == season.Episodes.Count;
+            return OutcomeOf(result, season.Episodes.Count);
         }
         if (_series is { } series)
         {
             var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
-            return result.Failed == 0 && result.Started + result.AlreadyThere == series.EpisodeCount;
+            return OutcomeOf(result, series.EpisodeCount);
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
-        return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false)
-            is DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading;
+        return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false) switch
+        {
+            DownloadStartResult.Started or DownloadStartResult.AlreadyDownloading => StartOutcome.Started,
+            DownloadStartResult.Limited => StartOutcome.Limited,
+            _ => StartOutcome.Failed,
+        };
     }
+
+    private static StartOutcome OutcomeOf(SeasonStartResult result, int episodes) =>
+        result.ReachedLimit ? StartOutcome.Limited
+        : result.Failed == 0 && result.Started + result.AlreadyThere == episodes ? StartOutcome.Started
+        : StartOutcome.Failed;
 
     // A film by its own title; an episode as "Example Series · S1 · E5", since its own title alone does not say which one it is.
     private static string TitleOf(DownloadRequest request)

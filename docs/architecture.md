@@ -1480,9 +1480,11 @@ client guide.
   or is fetching, and counts what started, what was there and what failed. `StartSeriesAsync` does the same for a whole
   series, season after season in the order its offer lists them (`DownloadOffers.ForSeries`: by number, the specials last),
   so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
-  cancelled, the profile they started for is no longer the active one, or the server refused a create for the account's
-  limit of downloads (429, `DownloadStartResult.Limited`, counted as failed): every create after it would be refused
-  alike. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
+  cancelled, the profile they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
+  of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
+  after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
+  cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
+  on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
   free space check holds back one that does not fit. However many there are, the queue runs two at a time.
