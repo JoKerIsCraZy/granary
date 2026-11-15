@@ -11,8 +11,6 @@ namespace Granary.Core.ViewModels.Detail;
 /// </summary>
 public static class DetailFacts
 {
-    public const int MaximumRatings = 3;
-
     public static bool IsVideo(string type) =>
         type is CatalogItemTypes.Movie or CatalogItemTypes.Series or CatalogItemTypes.Season or CatalogItemTypes.Episode;
 
@@ -55,13 +53,15 @@ public static class DetailFacts
         return PlayedVersion(item) is { Duration: > 0 } version ? (int)Math.Round(version.Duration / 60.0, MidpointRounding.AwayFromZero) : item.Runtime;
     }
 
-    /// <summary>The ratings as the server gives them, at most <see cref="MaximumRatings"/>.</summary>
+    /// <summary>
+    /// The ratings as the server gives them, every one in its order: the server chose the sources (the web's ScoreRow
+    /// shows them all).
+    /// </summary>
     public static IReadOnlyList<DetailRating> Ratings(CatalogItemDetail item)
     {
         ArgumentNullException.ThrowIfNull(item);
         return [.. item.Ratings
             .Where(r => r is not null && !string.IsNullOrWhiteSpace(r.Display) && !(string.IsNullOrWhiteSpace(r.Name) && string.IsNullOrWhiteSpace(r.Source)))
-            .Take(MaximumRatings)
             .Select(r => new DetailRating(string.IsNullOrWhiteSpace(r.Name) ? r.Source.Trim().ToUpperInvariant() : r.Name.Trim(), r.Display.Trim()))];
     }
 
