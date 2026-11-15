@@ -107,6 +107,12 @@
       "value": "Tentar novamente"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "Solicitações demais. Aguarde um momento e tente novamente."
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -9276,6 +9282,12 @@
       "value": "Explorar série"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "Baixar"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -10393,6 +10405,40 @@
       "value": "Versão"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "Escolha um arquivo para baixar. Verifique se há espaço suficiente em disco."
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "Arquivos maiores exigem mais espaço de armazenamento."
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível iniciar o download. Verifique o acesso e tente novamente."
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "Baixar"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "Baixar: "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -11184,6 +11230,24 @@
       "value": "Adicionar à lista para assistir"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível carregar os detalhes do item."
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "Carregando…"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "Carregando os detalhes mais recentes do item…"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -11200,6 +11264,12 @@
     {
       "type": 0,
       "value": "Reproduzir do início"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "Tente novamente."
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -11230,6 +11300,12 @@
     {
       "type": 0,
       "value": "Mostrar nas recomendações"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "Tentar novamente"
     }
   ],
   "web.item.rating.label": [

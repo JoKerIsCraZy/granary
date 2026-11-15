@@ -107,6 +107,12 @@
       "value": "Try again"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "Too many requests. Wait a moment and try again."
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -8668,6 +8674,12 @@
       "value": "Browse Series"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "Download"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -9706,6 +9718,40 @@
       "value": "Version"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "Choose a file to download. Make sure you have enough disk space."
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "Larger files require more storage space."
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "Download could not be started. Check access and try again."
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "Download"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "Download: "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -10499,6 +10545,24 @@
       "value": "Add to Watchlist"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "The item details could not be loaded."
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "Loading…"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "Loading the latest item details…"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -10515,6 +10579,12 @@
     {
       "type": 0,
       "value": "Play from Beginning"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "Please try again."
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -10545,6 +10615,12 @@
     {
       "type": 0,
       "value": "Show in Recommendations"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "Try Again"
     }
   ],
   "web.item.rating.label": [

@@ -845,7 +845,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (Components, cards above); the page adds none to them.
   - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
     Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season,
-    "Download: Example Series · All Episodes" for a series, the Apple app's name for a series' every episode), "Choose
+    "Download: Example Series · All episodes" for a series, the Apple app's name for a series' every episode), "Choose
     a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
     files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
     download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
@@ -876,10 +876,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
     download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
     never starts after the dialog was closed on it.
-  - **One Time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
-    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One Time first, with its line
+  - **One time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
+    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One time first, with its line
     under them ("Download now. Nothing else downloads later." / "Keep new episodes coming to this PC as they air."). One
-    Time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
+    time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
     Series": the rules the server offers as rows in the version rows' style, a title and its line (All episodes "Download
     every episode now, then new ones as they air", Future episodes "Only episodes that air from now on", the default, Last
     season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
@@ -888,10 +888,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring Defaults fill both in for a new
     monitor. Under them the Apple app's sentence on what comes: "Episode 6 downloads Thursday. Monitored episodes download
     at 10 Mbps." (the first part while the calendar names an airing the rule takes; "…in original quality."). The button
-    says Start Monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
-    Stop Monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
+    says Start monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
+    Stop monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
     "Episodes already on this PC stay until you delete them.", Keep and Stop; Stop closes the dialog. A save that did not
-    go says why in the error bar: "Couldn't Save Monitoring", "Monitoring for this series changed on the server. Try
+    go says why in the error bar: "Couldn't save monitoring", "Monitoring for this series changed on the server. Try
     again." (the dialog then shows the monitor as it is now), "This series is no longer monitored.", or "Granary couldn't
     confirm the monitoring change. Check this series again once you're back online."
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five

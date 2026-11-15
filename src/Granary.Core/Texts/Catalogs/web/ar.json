@@ -107,6 +107,12 @@
       "value": "إعادة المحاولة"
     }
   ],
+  "error.rate_limited": [
+    {
+      "type": 0,
+      "value": "طلبات كثيرة جدًا. انتظر قليلًا وحاول مرة أخرى."
+    }
+  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,
@@ -11060,6 +11066,12 @@
       "value": "تصفح المسلسل"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "تنزيل"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -12369,6 +12381,40 @@
       "value": "النسخة"
     }
   ],
+  "web.downloads.versionPicker.description": [
+    {
+      "type": 0,
+      "value": "اختر ملفًا لتنزيله. تأكد من توفر مساحة كافية على القرص."
+    }
+  ],
+  "web.downloads.versionPicker.sizeNote": [
+    {
+      "type": 0,
+      "value": "تتطلب الملفات الأكبر مساحة تخزين أكبر."
+    }
+  ],
+  "web.downloads.versionPicker.startFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر بدء التنزيل. تحقق من صلاحية الوصول وحاول مرة أخرى."
+    }
+  ],
+  "web.downloads.versionPicker.title": [
+    {
+      "type": 0,
+      "value": "تنزيل"
+    }
+  ],
+  "web.downloads.versionPicker.titleWithName": [
+    {
+      "type": 0,
+      "value": "تنزيل: "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
   "web.home.addRow.libraries": [
     {
       "type": 0,
@@ -13184,6 +13230,24 @@
       "value": "إضافة إلى قائمة المشاهدة"
     }
   ],
+  "web.item.menu.detailsFailed": [
+    {
+      "type": 0,
+      "value": "تعذّر تحميل تفاصيل العنصر."
+    }
+  ],
+  "web.item.menu.loading": [
+    {
+      "type": 0,
+      "value": "جارٍ التحميل…"
+    }
+  ],
+  "web.item.menu.loadingDetails": [
+    {
+      "type": 0,
+      "value": "جارٍ تحميل أحدث تفاصيل العنصر…"
+    }
+  ],
   "web.item.menu.moreActions": [
     {
       "type": 0,
@@ -13200,6 +13264,12 @@
     {
       "type": 0,
       "value": "التشغيل من البداية"
+    }
+  ],
+  "web.item.menu.pleaseTryAgain": [
+    {
+      "type": 0,
+      "value": "حاول مرة أخرى."
     }
   ],
   "web.item.menu.removeFromContinueWatching": [
@@ -13230,6 +13300,12 @@
     {
       "type": 0,
       "value": "العرض في التوصيات"
+    }
+  ],
+  "web.item.menu.tryAgain": [
+    {
+      "type": 0,
+      "value": "إعادة المحاولة"
     }
   ],
   "web.item.rating.label": [
