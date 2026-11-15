@@ -26,7 +26,8 @@ namespace Granary.App.Services;
 /// Windows has not answered for is asked back (<c>DnsServiceDeRegister</c>) before the next one is made, so two of one
 /// name do not overlap; which answers are still to come for it is not known then, so its memory is never freed. One whose
 /// removal Windows does not take stays the current one, as a registration that went through does, and nothing is made
-/// beside it.</item>
+/// beside it, for a few tries or half a minute (<see cref="DnssdRefusals"/>); then it is given up, its memory kept, and a
+/// new one is made, so the PC is not left unadvertised while Granary runs.</item>
 /// <item>The completion callback is a static <c>UnmanagedCallersOnly</c> function, not a delegate, so nothing of it can
 /// be collected while Windows holds its address. Its context is a registration's number, not a handle: a late call finds
 /// the number gone and does nothing.</item>
@@ -151,7 +152,7 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
 
     // Under the gate. Removes a registration and waits up to RemoveWait for Windows' word. False when Windows did not take
     // the removal of a registration that went through, or of one it has not answered for: it is advertised, or may be yet,
-    // and the caller keeps it to ask again.
+    // and the caller keeps it to ask again, until it is given up (GivenUp).
     private async Task<bool> RemoveAsync(Registration registration)
     {
         if (!registration.IsAnswered)
@@ -168,7 +169,7 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         {
             // Windows did not take it, so it never calls back for it: the registration stays, its memory with it.
             logger.LogWarning("Windows did not take the removal of the phone remote's advertisement (status {Status})", status);
-            return false;
+            return GivenUp(registration, status);
         }
         if (await registration.RemovedAsync(RemoveWait).ConfigureAwait(false) is not { } removed)
         {
@@ -200,10 +201,31 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             return true;
         }
         // Not taken: the caller keeps it as the current one, and once Windows answers, within LateAnswerWait, a registration
-        // that went through is removed then.
+        // that went through is removed then; given up meanwhile, it is asked back once all the same.
         logger.LogWarning("Windows did not take back an unanswered advertisement of the phone remote (status {Status})", status);
-        _ = RemoveOnceAnsweredAsync(registration);
-        return false;
+        if (!registration.IsWatched)
+        {
+            registration.IsWatched = true;
+            _ = RemoveOnceAnsweredAsync(registration);
+        }
+        return GivenUp(registration, status);
+    }
+
+    // Under the gate. Windows refused to take the registration back: true once it is given up (DnssdRefusals), so a new
+    // one is made in its place rather than none for as long as Granary runs. Its memory is kept: Windows may still read it.
+    private bool GivenUp(Registration registration, uint status)
+    {
+        if (registration.IsGivenUp)
+        {
+            return true;
+        }
+        if (!registration.Refusals.GivesUp(status, Environment.TickCount64))
+        {
+            return false;
+        }
+        registration.IsGivenUp = true;
+        logger.LogWarning("An advertisement of the phone remote that Windows would not take back is given up; it ends with Granary at the latest");
+        return true;
     }
 
     private async Task RemoveOnceAnsweredAsync(Registration registration)
@@ -218,13 +240,17 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                // No longer the current one: a registration or removal since has taken care of it.
-                if (!ReferenceEquals(_current, registration))
+                // No longer the current one: a registration or removal since has taken care of it, unless it was given up.
+                bool current = ReferenceEquals(_current, registration);
+                if (!current && !registration.IsGivenUp)
                 {
                     return;
                 }
-                _current = null;
-                if (!await RemoveAsync(registration).ConfigureAwait(false))
+                if (current)
+                {
+                    _current = null;
+                }
+                if (!await RemoveAsync(registration).ConfigureAwait(false) && current)
                 {
                     // Asked again at the next unregistration or registration.
                     _current = registration;
@@ -297,6 +323,15 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         public nint Request { get; private set; }
 
         public long EndedAt { get; set; }
+
+        /// <summary>Windows' refusals to take it back; under the gate.</summary>
+        public DnssdRefusals Refusals { get; } = new();
+
+        /// <summary>Windows would not take it back, and it is no longer kept; under the gate.</summary>
+        public bool IsGivenUp { get; set; }
+
+        /// <summary>A late answer is watched for; under the gate.</summary>
+        public bool IsWatched { get; set; }
 
         public bool IsAnswered => _answers.Registered.IsCompleted;
 

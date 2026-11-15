@@ -1654,8 +1654,14 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and the next
   registration or removal first asks Windows to take it back and waits its 2 seconds, so two of one name do not overlap.
   A registration whose removal Windows does not take, answered or not, stays the current one and is asked again at the
-  next removal or registration; a new one is not made beside it, so the receiver counts as not advertised. One not
-  answered yet is watched for 30 seconds more: a late success is removed then, while it is still the current one. Each
+  next removal or registration; a new one is not made beside it, so the receiver counts as not advertised. It is kept
+  so for at most three refusals, or until a refusal half a minute after the first (`DnssdRefusals`): Windows may never
+  take it (an adapter gone with a network change, a request it no longer knows, an answer that never comes), and kept
+  for good it would leave the PC unadvertised while Granary runs. Then it is given up, its memory kept, and a new one is
+  made, so two of one name may overlap, until Granary closes at the latest. Microsoft's page for
+  `DnsServiceDeRegister` names no particular codes; `ERROR_NOT_FOUND` and `ERROR_INVALID_PARAMETER`, Windows' general
+  words for a request it does not know or will not take, give it up at once. One not answered yet is watched for 30
+  seconds more: a late success is removed then, while it is still the current one or was given up. Each
   registration owns its native memory (the names, the TXT pairs, the address, the instance Windows built and the
   request); the request stays at one address until
   Windows confirmed the registration's end, since removing takes the same request, and all of it is freed a moment

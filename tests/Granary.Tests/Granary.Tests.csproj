@@ -34,6 +34,7 @@
   <ItemGroup>
     <Compile Include="..\..\src\Granary.App\Services\RemoteAcceptLoop.cs" Link="Remote\App\RemoteAcceptLoop.cs" />
     <Compile Include="..\..\src\Granary.App\Services\DnssdAnswers.cs" Link="Remote\App\DnssdAnswers.cs" />
+    <Compile Include="..\..\src\Granary.App\Services\DnssdRefusals.cs" Link="Remote\App\DnssdRefusals.cs" />
     <Compile Include="..\..\src\Granary.App\Services\AcceptedConnection.cs" Link="Remote\App\AcceptedConnection.cs" />
     <Compile Include="..\..\src\Granary.App\Services\LanAddressRule.cs" Link="Remote\App\LanAddressRule.cs" />
     <Compile Include="..\..\src\Granary.App\Services\SessionLockState.cs" Link="Remote\App\SessionLockState.cs" />
