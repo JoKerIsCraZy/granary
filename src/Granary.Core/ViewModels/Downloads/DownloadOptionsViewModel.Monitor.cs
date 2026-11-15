@@ -269,7 +269,7 @@ public sealed partial class DownloadOptionsViewModel
     [RelayCommand]
     private void StopMonitoring()
     {
-        if (CurrentMonitor() is not null)
+        if (!IsStarting && CurrentMonitor() is not null)
         {
             ErrorText = "";
             IsConfirmingStop = true;
@@ -288,7 +288,8 @@ public sealed partial class DownloadOptionsViewModel
     private async Task ConfirmStopAsync()
     {
         IsConfirmingStop = false;
-        if (_monitors is null || CurrentMonitor() is not { } monitor)
+        // One thing at a time: a save under way owns the dialog's Cancel.
+        if (IsStarting || _monitors is null || CurrentMonitor() is not { } monitor)
         {
             return;
         }

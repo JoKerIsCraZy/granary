@@ -138,6 +138,12 @@ public sealed partial class SeriesMonitors : IDisposable
         _session.Changed += OnSessionChanged;
         lock (_gate)
         {
+            if (_disposed)
+            {
+                // Disposed meanwhile: it unsubscribed before this subscribed, so this lets go again.
+                _session.Changed -= OnSessionChanged;
+                return;
+            }
             _following = DownloadScope.Of(_session);
             _interval = _time.CreateTimer(static self => ((SeriesMonitors)self!).SyncSoon(), this, SyncInterval, SyncInterval);
         }
