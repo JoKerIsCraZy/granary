@@ -322,6 +322,7 @@ public static class CoreServiceCollectionExtensions
     private static void AddDownloads(IServiceCollection services)
     {
         services.AddTransient<DownloadsApi>();
+        services.AddTransient<DownloadSubscriptionsApi>();
         // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
         services.AddSingleton<IDownloadPreferences>(sp =>
             new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));

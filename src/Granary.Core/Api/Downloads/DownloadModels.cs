@@ -29,7 +29,19 @@ public sealed record DownloadCapability
     /// <summary>One per preset, in the same order, with its bitrate and tallest output for a label.</summary>
     public IReadOnlyList<DownloadQualityOption> QualityOptions { get; init => field = value ?? []; } = [];
 
+    /// <summary>A series can be monitored: the server registers its new episodes for this PC when Granary syncs.</summary>
+    public bool SeriesMonitoring { get; init; }
+
+    /// <summary>The <see cref="SubscriptionModes"/> a new monitor may take; empty from a server that lists none.</summary>
+    public IReadOnlyList<string> MonitoringModes { get; init => field = value ?? []; } = [];
+
+    /// <summary>A monitor keeps a quality; without it monitors download originals.</summary>
+    public bool MonitorQuality { get; init; }
+
     public bool IsUsable => Enabled && Allowed;
+
+    /// <summary>Downloads can be used and the server monitors series.</summary>
+    public bool CanMonitorSeries => IsUsable && SeriesMonitoring;
 }
 
 /// <summary>A preset's video bitrate cap and tallest output on this server; both are absent for <c>original</c>.</summary>
