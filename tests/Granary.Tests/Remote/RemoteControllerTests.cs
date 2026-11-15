@@ -195,10 +195,14 @@ public sealed class RemoteControllerTests : IAsyncDisposable
     {
         var (controller, phone, _, _) = await _harness.OpenAsync();
 
-        for (int i = 0; i < FrameBudget.FrameBurst; i++)
+        // The whole burst, its last frame a ping: its pong says the receiver has read them all before the clock moves on,
+        // so none of them is counted in the next second.
+        for (int i = 0; i < FrameBudget.FrameBurst - 1; i++)
         {
             await phone.SendAsync("""{"type":"surprise","v":2}""");
         }
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        Assert.Equal("pong", FakePhone.TypeOf(await phone.NextAsync("pong")));
         Time.Advance(TimeSpan.FromSeconds(1));
         for (int i = 0; i < FrameBudget.FramesPerSecond - 1; i++)
         {
