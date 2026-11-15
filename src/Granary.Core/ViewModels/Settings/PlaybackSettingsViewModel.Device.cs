@@ -148,6 +148,13 @@ public sealed partial class PlaybackSettingsViewModel
         }
     }
 
+    /// <summary>
+    /// "Control Granary from your phone", below the Discord status, and its Connect a Phone panel; null where the page is
+    /// made without it, as in tests of the other rows. The view attaches it while it shows; it is the page's own, made for
+    /// it and disposed with it.
+    /// </summary>
+    public PhoneRemoteViewModel? PhoneRemote { get; }
+
     /// <summary>Discord's status shows what plays (<see cref="IPlaybackDevicePreferences.DiscordStatus"/>).</summary>
     [ObservableProperty]
     public partial bool DiscordStatus { get; set; }
@@ -219,8 +226,12 @@ public sealed partial class PlaybackSettingsViewModel
     // On the UI thread (MpvConfigChanges).
     private void OnMpvChanged(object? sender, EventArgs e) => ReadMpvConfigStatus();
 
-    /// <summary>The page left: it stops following how the file fares.</summary>
-    public void Dispose() => _mpvChanges.Changed -= OnMpvChanged;
+    /// <summary>The page left: it stops following how the file fares, and the phone remote's row lets the receiver go.</summary>
+    public void Dispose()
+    {
+        _mpvChanges.Changed -= OnMpvChanged;
+        PhoneRemote?.Dispose();
+    }
 
     // The buttons share one line: the last one pressed says how it went, and one that ends after it says nothing.
     private int StartMpvConfigRequest()

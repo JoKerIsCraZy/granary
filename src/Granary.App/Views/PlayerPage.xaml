@@ -220,6 +220,22 @@
                     -->
                     <StackPanel x:Name="RightControls" Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 LayoutUpdated="OnRightControlsLayoutUpdated">
+                        <!--
+                            While Silo's phone app controls this PC (design 5.9), one quiet icon, "Remote control active", whose menu
+                            lets the phones go, as the window's indicator does. Not one of the buttons Settings orders: it leads them.
+                        -->
+                        <Button x:Name="RemoteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Visibility="{x:Bind Remote.IsActive, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind RemoteActiveText}" ToolTipService.ToolTip="{x:Bind RemoteActiveText}">
+                            <FontIcon Glyph="&#xE8EA;" FontSize="16" />
+                            <Button.Flyout>
+                                <Flyout x:Name="RemoteMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerSmallMenuStyle}">
+                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Padding="16,8" Click="OnDisconnectRemoteClick"
+                                            AutomationProperties.Name="{x:Bind RemoteDisconnectText}">
+                                        <TextBlock Text="{x:Bind RemoteDisconnectText}" FontSize="14" />
+                                    </Button>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
                                 Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"

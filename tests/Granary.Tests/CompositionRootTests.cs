@@ -5,6 +5,7 @@ using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
+using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
@@ -59,7 +60,49 @@ public sealed class CompositionRootTests
         using var indicatorSwitch = ActivatorUtilities.CreateInstance<ActivityIndicatorSettingsViewModel>(provider);
         Assert.Same(provider.GetRequiredService<ActivityIndicatorSetting>(), provider.GetRequiredService<ActivityIndicatorSetting>());
         Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
+        // The phone remote: one receiver and one pairing key for the app; the settings row made per page, with Core's
+        // stand-ins for the App's listener, advertiser and address.
+        Assert.Same(provider.GetRequiredService<RemoteReceiver>(), provider.GetRequiredService<RemoteReceiver>());
+        Assert.Same(provider.GetRequiredService<RemotePairing>(), provider.GetRequiredService<RemotePairing>());
+        var phoneRemote = provider.GetRequiredService<Func<PhoneRemoteViewModel>>();
+        using var row = phoneRemote();
+        using var otherRow = phoneRemote();
+        Assert.NotSame(row, otherRow);
+        Assert.IsType<NoRemoteListener>(provider.GetRequiredService<IRemoteListener>());
+        Assert.IsType<NoServiceAdvertiser>(provider.GetRequiredService<IServiceAdvertiser>());
+        Assert.IsType<NoLanAddressSource>(provider.GetRequiredService<ILanAddressSource>());
+        // Never locked, until the App puts in its own that follows Windows.
+        Assert.IsType<NoPcLock>(provider.GetRequiredService<IPcLock>());
+        using var playback = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(provider);
+        Assert.NotNull(playback.PhoneRemote);
+        // The window's notice and indicator for the app; the player page makes its own.
+        Assert.Same(provider.GetRequiredService<RemoteIndicatorViewModel>(), provider.GetRequiredService<RemoteIndicatorViewModel>());
+        using var playerIndicator = ActivatorUtilities.CreateInstance<RemoteIndicatorViewModel>(provider);
     }
+
+    [Fact]
+    public void ThePhoneRemotesPorts_RegisteredBeforeCore_AreTheOnesUsed()
+    {
+        var services = new ServiceCollection();
+        var listener = new FakeRemoteListener(new RemoteCalls());
+        var advertiser = new FakeServiceAdvertiser(new RemoteCalls());
+        var addresses = new FakeLanAddressSource();
+        var pcLock = new FakePcLock();
+        services.AddSingleton<IRemoteListener>(listener);
+        services.AddSingleton<IServiceAdvertiser>(advertiser);
+        services.AddSingleton<ILanAddressSource>(addresses);
+        services.AddSingleton<IPcLock>(pcLock);
+
+        services.AddGranaryCore();
+
+        Assert.Same(listener, Single<IRemoteListener>(services));
+        Assert.Same(advertiser, Single<IServiceAdvertiser>(services));
+        Assert.Same(addresses, Single<ILanAddressSource>(services));
+        Assert.Same(pcLock, Single<IPcLock>(services));
+    }
+
+    private static object? Single<T>(ServiceCollection services) =>
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(T)).ImplementationInstance;
 
     [Fact]
     public void SiloApiException_ExposesTheProblemWithoutItsDetail()

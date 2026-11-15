@@ -38,6 +38,7 @@ to the root of the named repository.
 11. [Markers, intro skip, chapters, and trickplay](#11-markers-intro-skip-chapters-and-trickplay)
 12. [Realtime events](#12-realtime-events)
 13. [Consequences for the Windows client](#13-consequences-for-the-windows-client)
+15. [Control from Silo's phone apps (SiloCast)](#15-control-from-silos-phone-apps-silocast)
 - [Appendix: where docs and code disagree](#appendix-where-docs-and-code-disagree)
 
 ## 1. Which API: `/api/v2` only
@@ -2927,6 +2928,302 @@ signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together
   M mute, C captions, Left/Right skip by the profile intervals, Up/Down volume ±5 %; keys are
   ignored while a text field or menu has focus.
 - Enable the SMTC "Next" button only when a next episode has been resolved (10.7).
+
+## 15. Control from Silo's phone apps (SiloCast)
+
+**This is not a server endpoint.** It is a protocol on the local network between Silo's own clients, which the Android
+app calls SiloCast and the Apple app SiloControl: a phone finds a receiver (DNS-SD, or a scanned link) and connects to
+it directly, and the server takes no part. Granary is a receiver of the Roku type (`_silocast-roku._tcp`) at level
+`sealed`, the type Silo's Roku app is; it never speaks TLS or level `plain`. The reference is silo-roku's
+`docs/silocontrol.md` with `source/control/`; the phones' side is silo-android's `cast/` and `common/lan/` and
+silo-apple's `Control/`. Granary's code is in `src/Granary.Core/Remote`.
+
+### 15.1 Framing and the sealed channel
+
+- **A frame** is a 4-byte big-endian unsigned length, then that many bytes (`SiloCastFrame`). At `sealed` the length
+  counts the sealed body. Granary reads at most **64 KiB** a frame, the Roku type's own limit (the phones accept 1 MiB),
+  and at most **1 KiB** for a connection's first frame, the only one it reads from a peer that has not shown the key.
+  A longer announced length ends the connection before its body is read; the length is read unsigned, so a high bit
+  never makes it negative.
+- **How much a phone may send.** Granary's own limit, before a frame is opened: 200 frames a second with bursts of
+  400, and 256 KiB a second with bursts of 1 MiB, every frame counted, the heartbeat and types Granary skips included.
+  A phone over either is dropped without an answer. A phone sends far less: a seek dragged along the timeline is a
+  few dozen commands a second.
+- **`sealed_hello`.** Each side opens with one plain frame, the phone first:
+
+  ```json
+  {"type": "sealed_hello", "v": 1, "keyId": "<first 8 hex digits of SHA-256(key)>", "nonce": "<16 bytes, base64url>"}
+  ```
+
+  The key id is compared in lower case. A receiver that holds no key with that id answers a plain `close` with reason
+  `unauthorized` and drops the connection; a phone takes an answer with another key id as a refusal. Granary reads
+  nothing else before the key is shown: a first frame that is not a well-formed `sealed_hello` (not JSON, deeper than
+  one object, a member twice, a key id that is not 8 hex digits, a nonce that is not 16 bytes as the phones write
+  them: 22 characters of the base64url alphabet, without padding, white space or bits after the last byte) is a
+  refusal.
+- **Session keys**, HKDF-SHA256 with one output block each:
+
+  ```text
+  prk    = HMAC-SHA256(salt = phoneNonce || receiverNonce, key)
+  encKey = HMAC-SHA256(prk, "silo-cast-sealed-1 enc" || 0x01)[0..15]
+  macKey = HMAC-SHA256(prk, "silo-cast-sealed-1 mac" || 0x01)
+  ```
+
+  Silo's Roku app derives a third key, `ivKey` (`"silo-cast-sealed-1 iv"`), and makes each frame's IV from it. Any
+  IV that cannot be predicted will do for the reader; Granary draws a random one per frame and does not derive `ivKey`.
+- **A frame body** after the opening frames, `direction` being `0x01` from the phone and `0x02` from the receiver:
+
+  ```text
+  seq (8 bytes, big-endian, from 0 in each direction) || iv (16) || ciphertext || tag (32)
+  ciphertext = AES-128-CBC(encKey, iv, JSON, PKCS#7)
+  tag        = HMAC-SHA256(macKey, "silo-cast-sealed-1" || direction || seq || iv || ciphertext)
+  ```
+
+- **What closes a connection.** The reader checks the length (at least one block of ciphertext, whole blocks only), then
+  the tag in constant time, then that `seq` is exactly the next number from that side, and only then decrypts. A frame
+  that fails any check (tampered, replayed, reordered, sealed by the other side or under another key, bad padding, or
+  padding alone with no text, which silo-roku's `open` refuses too), a length over the cap, and a peer that closes
+  inside a frame all end the connection without an answer.
+- Granary meets Silo's vectors byte for byte (`tests/Granary.Tests/Remote/SealedVectorTests`): silo-roku's
+  `tests/control/sealed.spec.bs`, which silo-android's `SiloCastSealedTest.kt` and silo-apple's
+  `SiloControlSealedTests.swift` repeat.
+- The channel has no forward secrecy: the session keys come from the pairing key and two nonces that cross in the clear.
+
+### 15.2 Server ids
+
+- **A server id is the server's address**, not an opaque value: base64url without padding of the address the client
+  uses, trailing slashes trimmed. Android also lower-cases scheme and host (`AndroidServerRegistry.idFor`,
+  `normalizeUrl`); Apple and Silo's Roku app change nothing else (`ServerRegistry.serverId(for:)`). Granary's is
+  `SiloCastServerId.From(ServerEntry.BaseUri)`: `Uri.AbsoluteUri` (scheme and host already in lower case, no default
+  port) without trailing slashes.
+- **Two ids match** when they are equal, or when both decode to http or https addresses that are equal once scheme and
+  host are in lower case and a default port (80, 443) is dropped. Credentials, path, query, fragment and any other port
+  are compared as they are. An id is read as an address only when the address encodes back to exactly that id, so an
+  id of another form never passes for one; a missing or empty id matches nothing (`serverIdsMatch`, `urlForServerId`).
+- **Two servers match** when their ids match or both sides know the same deployment identity, the `server_id` of
+  `GET /api/v2/system/identity` (`serversMatch`); a blank identity matches nothing.
+- **Where the phones use which rule:**
+
+  | Place | Compared with | Rule |
+  |---|---|---|
+  | TXT `server` of an advertised receiver | the phone's active server | id, or identity when TXT has `serverIdentity` |
+  | `server` in the pairing link | the phone's active server | id only: the link carries no identity |
+  | `serverId` in the phone's `hello` and `handoff_offer` | the receiver's server | id or identity; the receiver decides |
+  | `serverId` in `handoff_ready` | the phone's own id | id only |
+  | the last receiver the phone remembers | the phone's active server | id only |
+
+- So **phone and PC have to use the same address for the server** (up to case and a default port) for a scanned code
+  to lead anywhere; a phone at another address of the same server matches only by identity, through DNS-SD. Granary
+  sends back an offer's own `serverId` in `handoff_ready`, never its own spelling. An address `Uri` spells otherwise
+  than the phone (an internationalized host name, an escaped path) gives another id and matches only by identity.
+- While the remote is on, the server's address is readable on the local network: TXT `server` carries it in base64,
+  as every Silo TV's does.
+
+### 15.3 Advertisement and pairing link
+
+- **The advertisement** is one DNS-SD instance of service type `_silocast-roku._tcp`; the service type alone tells a
+  phone how to dial (plain TCP, sealed when `sec` says so, never TLS). Granary names the instance
+  `Granary-<first 8 letters and digits of the receiver id>` and gives it a host of its own,
+  `granary-<the same>.local`, with the one LAN address it listens on (Silo's Roku app says `Silo-…`; the phones show
+  TXT `name`, not the instance). TXT pairs, in the Roku app's order (`controlTxt` in `components/AppSceneControl.bs`):
+
+  | Key | Value | Who needs it |
+  |---|---|---|
+  | `v` | `2` | both; without it a receiver counts as version 1 |
+  | `name` | the PC's name (`ClientIdentity.DeviceName`) | both show it |
+  | `id` | the receiver id | both; the pairing key is kept under it |
+  | `server` | the server id (15.2) | Apple lists nothing without it |
+  | `serverName` | the server's name | shown under the PC's name |
+  | `playing` | `1` while a title is open, else `0` | "Playing now" and the silent reattach |
+  | `serverIdentity` | the deployment identity, only when known | a phone at another address matches by it |
+  | `sec` | `sealed` | Android drops a value it does not know |
+  | `kid` | the key id (15.1) | Apple lists no sealed receiver without it; both compare it with their key |
+
+  A pair has to fit one DNS character string of 255 bytes. When one does not (a very long server address), Granary
+  advertises nothing and phones pair through the code alone (`ReceiverAdvertisement.For` gives null).
+
+  **What the whole network can read.** DNS-SD answers anyone on the local network, without a key. While the switch is
+  on, every device there can read the PC's name, the server's name, the deployment identity when known, whether a title
+  plays, the key id, and the **server id, which is the server's address in base64url** (15.2) and decodes to it. Silo's
+  Roku receiver advertises the same pairs, and Silo's Apple app lists no receiver without `server`. The key id is 32 bits
+  of the key's hash and does not help a guess of the key. Nothing else is readable without the key.
+- **The pairing link**, which the code in Connect a Phone holds:
+
+  ```text
+  silo://cast?v=2&host=<IPv4>&port=<port>&id=<receiver id>&name=<name>&server=<server id>&security=sealed&key=<base32>
+  ```
+
+  `host` and `port` are the address and port the listener is bound to; `key` is the 16-byte pairing key in RFC 4648
+  base32 without padding (26 characters). Values are percent-escaped, `+` included, since Android's `URLDecoder` reads
+  `+` as a space. Android wants exactly `v=2`, an IPv4 literal, a port, an `id` and the key
+  (`SiloCastPairingLink.parse`); Apple a private or link-local IPv4 address, a port, an `id`, a `server` and the key
+  (`SiloControlPairingLink`). Both ignore parameters they do not know and read no identity from the link. A phone keeps
+  the link's address and port, and finds the receiver again by `id` over DNS-SD or dials them.
+
+### 15.4 Messages
+
+- **Envelope.** UTF-8 JSON, `{"type": "<kind>", "v": 2, "<kindKey>": {…}}`, the payload under the kind in camelCase
+  (`handoffOffer` for `handoff_offer`); `ping` and `pong` have none, `close` an optional `{"reason": "…"}`. Members are
+  camelCase, members without a value are left out, unknown members are ignored. The phones send the payload before
+  `"v"`; order does not matter. Protocol version 2 only: Android lists `[2]`, Apple `[1, 2]`. Granary's code is
+  `SiloCastMessages` with its own source-generated `SiloCastJsonContext`; Granary escapes only what JSON must, so
+  "Elena's PC" goes out as it is.
+- **Reading** follows silo-roku's `protocol.bs` `decode`: a frame that is not a JSON object with a text `type`, nests
+  deeper than 16, names a member twice, or is a known type whose payload lacks a required member or has one of the
+  wrong kind is malformed and ends the connection. An unknown `type`, a type only a receiver sends (`state`, `error`,
+  `handoff_ready`, `handoff_challenge`) and a `control` with an unknown `name` (old phones still send
+  `set_hdr_enabled`) are skipped and the connection stays. `close` is read leniently: a payload that is not
+  `{"reason": "<text>"}` is no reason, never a broken frame.
+- **What Granary handles**, required members in bold:
+
+  | Type | Payload | What Granary keeps |
+  |---|---|---|
+  | `hello` | **`role`** (`phone` or `tv`), **`deviceName`**, **`deviceId`**, **`supportedVersions`** (integers), `serverId`, `serverName`, `serverIdentity`, `features` (text), `passive`, `clientKind` | all but `clientKind`; a `deviceId` or `serverIdentity` over 128 characters (both are UUIDs), a `deviceName` or `serverName` over 1024 (Silo Server's own limit for a server's name) or a `serverId` over 2731 (the id of a 2048-byte address, the longest Silo's Roku app keeps) makes the `hello` malformed, and only the first 32 `features` are kept |
+  | `control` | **`name`**, and one of `seconds`, `trackId` (integer), `speed`, `volume`, `value`, `enabled`, `milliseconds` (integer) | all |
+  | `launch` | **`serverId`**, **`playback`** {**`contentId`**, **`startFromBeginning`**, `fileId`, `audioTrackIndex`, `subtitleTrackIndex`, `libraryId` (integers), `resumePosition`, `pinsVersion`} | all but `libraryId`; `fileId` as text; a track index outside a 32-bit integer is dropped |
+  | `handoff_offer` | **`requestId`**, **`serverId`**, **`serverURL`**, **`profileId`**, `serverName`, `profileName`, `title`, `serverIdentity`, `serverEndpoints`, `resumeToken`, `replaceConfirmed`, `replacingContentId` | `requestId`, `serverId`, `serverIdentity`, `profileId`, `replaceConfirmed`, `replacingContentId`: the phone's addresses and token are dropped as the frame is read, so nothing later can contact them |
+  | `handoff_cancel` | **`requestId`**, **`reason`**, `message` | `requestId` |
+  | `presence` | **`passive`** | all |
+  | `ping`, `pong` | none | |
+  | `close` | `reason` | `reason` |
+
+- **Control names** (`SiloCastControls`): `play`, `pause`, `play_pause`, `seek` (`seconds`, absolute), `stop`,
+  `select_audio_track` (`trackId`), `select_subtitle_track` (`trackId`, absent for off), `set_playback_speed`
+  (`speed`), `set_quality` (`value`), `set_video_gravity` (`value`: `fit` or `fill`), `set_subtitle_sync_ms`
+  (`milliseconds`), `set_subtitle_position` (`value`: `bottom`, `lower-third`, `top`), `set_volume` (`volume`, 0 to 1),
+  `set_muted` (`enabled`), `play_next`.
+- **What Granary sends:**
+
+  | Type | Payload |
+  |---|---|
+  | `hello` | `role: "tv"` (every Silo receiver says `tv`), `deviceName` (the PC's name), `deviceId` (the receiver id), `serverId`, `serverName`, `serverIdentity` when known, `supportedVersions: [2]`, `features`: `multi_controller`, `close_reason`, `resume_token`, `replace_confirmation`, `presence`. Not the Roku app's `volume_mute_only` and `no_playback_speed`: Granary sets a level and a speed |
+  | `state` | below |
+  | `error` | `code`, `message`; the phone shows the message as it is |
+  | `handoff_ready` | `requestId`, the offer's own `serverId`, `profileId`, `sessionExpiresAt` (a day on, UTC to the second, `2026-11-14T19:17:36Z`; required, nothing reads it), `reused: true`, `resumeToken` to a phone that lists `resume_token` (15.6) |
+  | `handoff_cancel` | `requestId`, `reason`, `message` |
+  | `ping`, `pong` | none |
+  | `close` | `reason`, only to a phone that lists `close_reason`; otherwise bare |
+
+- **`state`** (`SiloCastState`). The Android phone fails to decode a `state` without any of these, and drops the
+  session: **`title`**, **`isPlaying`**, **`isLoading`**, **`isBuffering`**, **`currentTime`**, **`duration`** (seconds in
+  the title's own time), **`audioTracks`**, **`subtitleTracks`** (`{kind, trackId, title, detail?}`, `trackId` an
+  integer that is the receiver's own number), **`qualityOptions`** (`{id, label, detail?}`), **`activeQualityId`**,
+  **`isQualitySwitching`**, **`playbackSpeed`**, **`videoGravity`**, **`hdrEnabled`**, **`supportsVideoGravity`**,
+  **`supportsHDRToggle`** (always `false`), **`volume`** (0 to 1), **`isMuted`**, **`hasNextEpisode`**. Optional:
+  `contentId`, `subtitle` (the episode line), `selectedAudioTrackId`, `selectedSubtitleTrackId`, `subtitleSyncMs`,
+  `supportsSubtitleDelay`, `supportsSubtitlePosition` (always `false`), `nextEpisodeTitle`, `error`. Granary never
+  sends `sessionId`, `posterUrl` or `overview`; Silo's Roku app does not send the last two either: image addresses can
+  carry signed query strings, and the phones look artwork up by `contentId`. The idle state is `title: "Ready"`, no
+  `contentId`, empty lists, `activeQualityId: "auto"`, `videoGravity: "fit"`, volume 1.
+- **Error codes** (`SiloCastErrors`): `unauthorized`, `version_unsupported`, `server_mismatch`, `player_not_ready`,
+  `command_failed`, `rate_limited`, `too_many_controllers`, `handoff_required`, `launch_pending`, `launch_failed`,
+  `watch_party_active`. **Close reasons** (`SiloCastCloseReasons`): `replaced`, `tv_disconnected`,
+  `too_many_controllers`, `timeout`, `unauthorized`. **Cancel reasons** (`SiloCastCancelReasons`): `superseded`,
+  `replace_confirmation_required`, `watch_party_active`, `version_unsupported`, `launch_pending`, `handoff_failed`,
+  `controller_cancelled`.
+
+### 15.5 What Granary answers
+
+The phone shows an `error`'s or a `handoff_cancel`'s `message` as it is. Granary's texts are Silo's Roku app's with
+"Roku" as "PC" (`RemoteTexts`; silo-roku's `receiver.bs`, `AppSceneControl.bs`, `PlayerRemote.bs`). Texts marked
+*new* have no Silo source.
+
+| When | Granary sends | `message` |
+|---|---|---|
+| A `hello` that is not a phone's, lists no version 2 or names no server | `error version_unsupported`, then `close unauthorized` | "Update Silo on both devices to continue." |
+| A command or launch from a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
+| A command with no player open (except `stop`, which is simply done), or while a file played directly is open | `error player_not_ready` | "The PC player is not ready yet." |
+| A command other than `stop`, `set_volume` and `set_muted` while a title still loads or after it failed | `error player_not_ready` | "The PC player is not ready yet." |
+| `play_next` without a next episode | `error command_failed` | "There is no next episode." |
+| Play, pause or seek a Watch Party's rules refuse | `error command_failed` | "This Watch Party does not allow this playback action." |
+| Any other command the player refuses (a speed in a Watch Party) | `error command_failed` | "Not available on this PC." |
+| More than 40 commands, offers and launches at once, or 20 a second after that; or more than 10 of `hello`, `presence` and `handoff_cancel` at once, or 5 a second after that (the message is dropped) | `error rate_limited`, at most once a second for each of the two budgets | "Too many commands. Slow down and try again." |
+| A fifth phone's `hello` while four phones control actively | `error too_many_controllers`, `close too_many_controllers` | "Too many devices are controlling this PC. Disconnect one and try again." |
+
+Offers and launches have their answers in 15.6.
+
+Closes: `replaced` for an older connection of a phone that said `hello` again, `too_many_controllers` for a connection
+closed to make room, `timeout` without a `hello` within 5 seconds, `tv_disconnected` when the PC lets phones go
+(Disconnect Remote, the switch, a stop). A reason goes only to a phone that lists `close_reason`, except with the
+refusal of a fifth phone, as on silo-roku. A connection that has not said `hello` and is closed to make room for a
+newcomer gets no answer. An unknown type and an unknown control
+name get no answer; a known type with a malformed payload ends that connection with a bare `close`.
+
+A command that changes nothing (play while playing, the quality that is chosen), a command without its argument, a
+number that is not finite, a track number that names no track the player still lists, a speed at or below zero, a quality the
+menu does not offer and `set_subtitle_position` get no answer either. Other numbers are brought into range first: a
+seek into the title, a volume into 0 to 1, a speed to the nearest of 0.5× to 3×, a subtitle delay into ±10 seconds.
+
+### 15.6 Starting a title
+
+A phone starts a title on the PC in three steps, the same for every launch (`SiloCastController.launchOnConnectedTarget`,
+silo-roku's `AppSceneControl.bs` `controlOffer`, `controlReady`, `controlLaunch`): it connects and says `hello`, offers its
+server and profile (`handoff_offer`), and after `handoff_ready` sends `launch`. Granary builds only the case where the
+phone's profile is the one signed in on the PC (silo-roku's `silocontrol.md` section 8.1): it is ready at once, on the
+PC's own sign-in, makes no request to the server, never changes server, account or profile, and never sends
+`handoff_challenge` (stage C, a sign-in the phone approves, is not built). Code: `RemoteReceiver.Launch.cs`,
+`RemoteReceiverPolicy.RequestFor`.
+
+**The offer.** Granary reads `requestId`, `serverId`, `serverIdentity`, `profileId`, `replaceConfirmed` and
+`replacingContentId`; `serverURL`, `serverEndpoints`, `profileName`, `title` and `resumeToken` are dropped as the frame
+is read, so no address a phone names is ever contacted and a token sent back never stands in for the checks. Each offer
+is checked afresh, in this order:
+
+| When | Granary sends | `message` |
+|---|---|---|
+| Before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
+| The receiver does not run, or still runs for the server before the PC's active one (just after a change of server) | `handoff_cancel handoff_failed` | "The PC player is not ready yet." |
+| The phone's `hello` or the offer names another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
+| This profile is in a Watch Party's room | `handoff_cancel watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
+| Another profile than the one signed in on the PC, or none | `handoff_cancel handoff_failed` | "Granary is signed in with another profile. Switch profiles on the PC to play from this phone." (*new*) |
+| The profile signed in on the PC | `handoff_ready`: the offer's `requestId` and its own `serverId` text, the `profileId`, `sessionExpiresAt` a day on, `reused: true`, and a `resumeToken` to a phone that lists `resume_token` | |
+
+- **The resume token** is 32 random bytes in hex, made once per connection, kept in memory only and never compared:
+  Granary takes no token back.
+- **Readiness** is one connection's alone, as on silo-roku and Silo's TV apps: a newer ready offer, on any connection,
+  voids the one before. It is void too once the PC's profile or server changes (also when the same one comes back),
+  and it ends with its connection. A connection on its way out (a newer one of the same phone took its place while its
+  offer waited) gets no answer and is never made ready, so it cannot take the newer one's readiness away. A phone's own
+  `handoff_cancel` changes nothing, as nothing waits on an offer.
+- **Replacing a title.** The phone asks its own user before it offers another title while the PC's status shows one
+  playing, and sends `replaceConfirmed` with `replacingContentId`. Granary never answers `replace_confirmation_required`:
+  Silo's receivers do only when a title plays under another profile than the offered one, and Granary readies only its
+  own. So a launch replaces what plays at once, without a question on the PC (the owner's decision).
+
+**The launch**, in this order (silo-roku's `controlLaunch`, with the PC's lock where the Roku app checks its shell):
+
+| When | Granary sends | `message` |
+|---|---|---|
+| From a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
+| No ready offer on this connection, or one made before the profile or the server changed | `error handoff_required` | "Prepare the phone profile before playing." |
+| The receiver still runs for the server before the PC's active one | `error player_not_ready` | "The PC player is not ready yet." |
+| `serverId` names another server (by id, or by the identity the phone's `hello` named) | `error server_mismatch` | "This PC is connected to a different Silo server." |
+| Windows is locked | `error player_not_ready` | "The PC player is not ready yet." |
+| This profile is in a Watch Party's room | `error watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
+| A launched title is still opening (below) | `error launch_pending` | "A title is already starting on this PC." |
+| `contentId` is not an id Silo Server makes: 1 to 256 characters, each printable ASCII but the space, and not `.` or `..` (silo-server's `ValidContentID`) | `error launch_failed` | "This title is no longer available." (the player's words for a title the server does not have) |
+| Otherwise | the player opens the title, as a detail page's Play does; then the status | |
+
+- **What plays.** `contentId` is the title. `startFromBeginning: true` starts over; else a `resumePosition` above 0
+  starts there, in the title's own seconds and without this PC's Rewind on resume (`PlayRequest.At`; one past the end
+  of the file resumes instead); else the profile's saved point. A `fileId` is the version (`PrePlayChoice`, pinned with
+  `pinsVersion: true`) with its picks: `audioTrackIndex` as the audio ordinal (a negative one picks none), and
+  `subtitleTrackIndex` as the combined ordinal the start takes, any negative one off; both phones send this receiver
+  type that ordinal. Picks without a `fileId` are dropped, and `libraryId` is not read. The server decides, under the
+  PC's profile, whether the title may play.
+- **Only for that sign-in.** The request is bound to the server entry and the profile the offer was ready for
+  (`PlayRequest.OnlyFor`); the playback checks them again as it starts and once more after its reads, right before the
+  start, and should the PC have switched profile or server in between, it starts nothing and the player says "This title was started for a profile that is no longer
+  signed in." (*new*).
+- **The status at once.** The phone gives up 30 seconds after the launch without its `contentId` in the status. From
+  the launch on, the status shows the title loading (`title: "Loading"`, `isLoading: true`, its `contentId`), also while
+  the title before still plays, until a player that opened after the launch shows it.
+- **Opening** lasts until that player shows the title no longer loading, or shows it failed: the phone that launched
+  it then gets `error launch_failed` with the player's message, here and as the status's `error`, only when it is one of
+  Granary's own failure texts, which name nothing (`RemoteTexts.PlayerError`: a fixed set, and the server's error
+  status, a wait or mpv's error text in Granary's own wording). Any other text, such as a server's terminal message or
+  an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
+  and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
 
 ## Appendix: where docs and code disagree
 

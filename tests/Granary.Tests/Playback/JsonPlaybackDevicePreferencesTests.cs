@@ -130,6 +130,7 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         await preferences.SetDiscordStatusAsync(true);
         await preferences.SetVolumeAsync(new PlayerVolume(35, IsMuted: true));
         await preferences.SetPlayerFullScreenAsync(true);
+        await preferences.SetPhoneRemoteAsync(true);
 
         var again = Create();
         Assert.True(again.DecodesInSoftware);
@@ -140,6 +141,7 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         Assert.True(again.DiscordStatus);
         Assert.Equal(new PlayerVolume(35, IsMuted: true), again.Volume);
         Assert.True(again.PlayerFullScreen);
+        Assert.True(again.PhoneRemote);
     }
 
     [Fact]
@@ -441,6 +443,48 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
 
         Assert.Equal(2, changes);
         Assert.False(Create().DiscordStatus);
+    }
+
+    [Fact]
+    public async Task TheSwitch_IsOffByDefault_AndStaysAtTheNextStart()
+    {
+        var preferences = Create();
+        Assert.False(preferences.PhoneRemote);
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetPhoneRemoteAsync(true);
+
+        var again = Create();
+        Assert.True(again.PhoneRemote);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains("\"phone_remote\": true", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_LeavesThePhoneRemoteOff_AndKeepsTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"up_down\": \"volume\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.PhoneRemote);
+        Assert.True(preferences.DiscordStatus);
+    }
+
+    [Fact]
+    public async Task TurningThePhoneRemoteOnOrOff_SaysSo_ButTheSameChoiceAgainDoesNot()
+    {
+        var preferences = Create();
+        int changes = 0;
+        preferences.PhoneRemoteChanged += (_, _) => changes++;
+
+        await preferences.SetPhoneRemoteAsync(true);
+        await preferences.SetPhoneRemoteAsync(true);
+        await preferences.SetPhoneRemoteAsync(false);
+
+        Assert.Equal(2, changes);
+        Assert.False(Create().PhoneRemote);
     }
 
     [Fact]

@@ -289,31 +289,40 @@ internal sealed partial class RemoteWindow : Window
     }
 
     [LibraryImport("user32.dll", EntryPoint = "PostMessageW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool PostMessageW(nint hwnd, uint message, nint wParam, nint lParam);
 
     [LibraryImport("user32.dll", EntryPoint = "MapVirtualKeyW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial uint MapVirtualKeyW(uint code, uint mapType);
 
     [LibraryImport("user32.dll", EntryPoint = "FindWindowExW", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint FindWindowExW(nint parent, nint after, string? className, string? windowName);
 
     [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint GetWindowLongPtr(nint hwnd, int index);
 
     [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint SetWindowLongPtr(nint hwnd, int index, nint value);
 
     [LibraryImport("user32.dll", EntryPoint = "keybd_event")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial void KeybdEvent(byte key, byte scan, uint flags, nuint extraInfo);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial uint GetDpiForWindow(nint hwnd);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint GetForegroundWindow();
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetForegroundWindow(nint hwnd);
 

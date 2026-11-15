@@ -8,6 +8,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
+  subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
+  and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
+  phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
+  another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
+  left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
+  nothing.
 - **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
   still to air among More Episodes, as the season's page does.
 - **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
