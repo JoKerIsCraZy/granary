@@ -110,6 +110,7 @@ public sealed class TitleViewModelTests
         Assert.Equal("MOVIE · WARNER BROS. PICTURES", title.Overline);
         Assert.Equal(["1999", "R", "2H 16M"], title.Chips.Select(c => c.Text));
         Assert.Equal(("TMDB", "8.2"), (title.Ratings[0].Name, title.Ratings[0].Display));
+        Assert.True(title.Ratings[0].ShowsLogo);
         Assert.Equal("25.8K votes", title.VotesText);
         Assert.Equal("Directed by Lana Wachowski", title.CrewLine);
         Assert.Equal("Action, Science Fiction", title.Genres);

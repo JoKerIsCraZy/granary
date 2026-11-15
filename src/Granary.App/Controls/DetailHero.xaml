@@ -222,12 +222,17 @@
                     <controls:WrapLayout HorizontalSpacing="20" VerticalSpacing="8" />
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
+                    <!-- TMDB's approved logo, 10 high, for its mark, as the web's RatingEntry; every other source by its name. -->
                     <DataTemplate x:DataType="detail:DetailRating">
-                        <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" TextTrimming="CharacterEllipsis" AutomationProperties.Name="{x:Bind AccessibleName}">
-                            <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                 Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
-                            <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
-                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Image Height="10" VerticalAlignment="Center" Source="ms-appx:///Assets/Ratings/tmdb-logo.svg"
+                                   Visibility="{x:Bind ShowsLogo}" AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                       FontSize="13" Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25"
+                                       Visibility="{x:Bind ShowsMark}" AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="{x:Bind Display}" AutomationProperties.Name="{x:Bind AccessibleName}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
+                                       FontSize="15" Foreground="{StaticResource SiloPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
             </ItemsRepeater>

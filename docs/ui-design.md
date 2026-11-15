@@ -387,7 +387,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   comes into view, with Load more for the keyboard and "Couldn’t load more titles." beside Try again. The web's texts
   for a row that does not exist, TMDB not answering, and nothing matching.
 - A title from TMDB (`TitlePage`, the web's `TitleDetail.tsx` / `ExternalTitleContent.tsx`): laid out like a library
-  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes, overview, "Directed by" or
+  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes and TMDB's logo for its mark, overview, "Directed by" or
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
   state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
   watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
@@ -604,8 +604,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     a movie's, series' or episode's scores, as the web's `ScoreRow` (`pages/ItemDetail/components/ScoreRow.tsx`) under
-    its badges: every rating the server gives, in its order, each source's mark ("IMDb", "TMDB") in 13 SemiBold at 75 %
-    beside its score in 15 Bold, both in the accent colour, 20 apart, wrapping 8 below at the overview's width (a
+    its badges: every rating the server gives, in its order, each source's mark ("IMDb") in 13 SemiBold at 75 %
+    beside its score in 15 Bold, both in the accent colour, 6 apart, and TMDB's approved logo, 10 high, for TMDB's mark,
+    as the web's `RatingEntry` (no other source's logo may be used); 20 apart, wrapping 8 below at the overview's width (a
     season's page has none, as the web's); the
     tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - The series' next airing, Granary's own (no Silo client shows it on a title's page): a series' page and its seasons'

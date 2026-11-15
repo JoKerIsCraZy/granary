@@ -130,3 +130,11 @@ shipped.
 the AGPL (their `TRADEMARK.md`). Granary uses its own name and logo; the one Silo asset it includes, the
 unmodified Silo mark, only refers to Silo (`src/Granary.App/Assets/Brand/NOTICE.txt`). Granary is an
 independent client and not an official Silo product.
+
+## TMDB logo
+
+`src/Granary.App/Assets/Ratings/tmdb-logo.svg` is TMDB's approved logo, unmodified, from
+<https://www.themoviedb.org/about/logos-attribution>, as Silo's web client ships it. It is TMDB's trademark and not
+covered by Granary's license. Granary shows it only beside a TMDB score, as TMDB's terms allow
+(`src/Granary.App/Assets/Ratings/NOTICE.txt`). Granary uses TMDB's data through your Silo server and is not endorsed
+or certified by TMDB.
