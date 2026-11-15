@@ -95,10 +95,11 @@ internal static class TextFixtures
 
     /// <summary>
     /// A language made of the fixture catalogs, falling back to the English fixtures. It marks what is missing as its
-    /// build does, unless told.
+    /// build does, unless told, and writes dates and numbers as <paramref name="formats"/> does (its own tag's by default).
     /// </summary>
-    public static TextLanguage Language(string tag, ILogger? logger = null, bool? marksProblems = null) =>
-        new(Catalog(tag), EnglishCatalog(), logger, marksProblems ?? TextLanguage.MarksProblemsInThisBuild);
+    public static TextLanguage Language(string tag, ILogger? logger = null, bool? marksProblems = null, string? formats = null) =>
+        new(Catalog(tag), EnglishCatalog(), logger, marksProblems ?? TextLanguage.MarksProblemsInThisBuild,
+            formats is null ? null : FormatLocale.For(formats));
 
     private static MemoryStream? Stream(string? json) => json is null ? null : new MemoryStream(Encoding.UTF8.GetBytes(json));
 }

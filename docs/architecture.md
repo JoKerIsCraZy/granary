@@ -345,7 +345,24 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   digits on, as CLDR and the web have it); `select`; `plural`
   with CLDR's cardinal rules for the eight languages, an exact value (`=0`) first and the offset applied; and rich-text
   tags, whose children show as plain text (`AppText.Runs` keeps the tags, for inlines). In Arabic, printed values are
-  wrapped in Unicode isolates as on the web, and numbers keep Latin digits and marks for now.
+  wrapped in Unicode isolates as on the web, and numbers take the digits of the format locale (below): Arabic-Indic
+  with Arabic marks where it writes them (`ar`, `ar-EG`), Latin with Latin marks where it does not (`ar-AE`), as the
+  web's `ar-u-nu-…` locale; an English fallback keeps Latin digits. Strings are never changed.
+- **Dates and numbers** (`FormatLocale`, `DateText`, `NumberText`) follow the web's format locale (`lib/appLocale.ts`,
+  `formatLocale`): Windows' regional format, unless a language was chosen whose language Windows' format is not in,
+  then the chosen tag's own (`AppLanguage.FormatCulture`, the web's `resolveAppLocale`), so nobody who did not choose
+  sees other formats than Windows'. Tests get the language's own (`TextLanguage.Load(tag, formats: …)`).
+  - `DateText` writes a date by the fields Intl is asked for, as an ICU skeleton (`yMd`, `yMMMd`, `jmm`, `MMMEd`, …),
+    in the locale's best pattern for them, through ICU (`icu.dll`, which .NET's globalization loads too), as
+    Intl.DateTimeFormat does: .NET's own patterns differ ("05.11.2026" for Intl's "5.11.2026"). Without ICU it writes
+    .NET's nearest pattern. A value is written as it reads; callers convert to the viewer's zone first.
+  - `NumberText.Decimal` is the web's `formatDecimal` (no grouping, `toFixed`'s rounding of the binary value),
+    `NumberText.Grouped` and `AppText.Number` its `toLocaleString(formatLocale())`, and `NumberText.Digits` its
+    `numberText`, for clocks ("1:05:09") and years in the messages' digits. Codes such as "S01E05" keep Latin digits.
+  - Units and the words around numbers come from the web's catalog where it words them (`web.common.format.*`: sizes,
+    rates, runtimes); where the web writes a unit in code ("Mbps", "ms", "3d 4h"), Granary does too.
+  - What is sent, stored, compared, logged or handed to mpv stays invariant. WinUI's own controls (NumberBox, InfoBadge,
+    the media flyout's timeline) and Discord write their numbers with Windows' settings.
 - **Fallback** (`TextLanguage`): a message the language lacks comes in English with English rules. A key English lacks
   too shows as `[key]` in debug builds and as nothing in release, and each problem is logged once. A lookup never
   throws.
@@ -382,8 +399,9 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Granary does not read or write the profile's setting yet.
 - **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
-  before its first window (`App.ApplyLanguage`); the log says which. A debug build takes `--language <tag>` to show a
-  shipped language, enabled or not, for checking converted texts. WinUI's own control texts (a text box's menu, for
+  before its first window (`App.ApplyLanguage`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates
+  and numbers; the log says which. A debug build takes `--language <tag>` to show a shipped language, enabled or not,
+  for checking converted texts; it counts as a chosen language for the formats. WinUI's own control texts (a text box's menu, for
   example) still follow Windows' display language.
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).

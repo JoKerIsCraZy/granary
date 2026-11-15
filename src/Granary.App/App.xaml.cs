@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime;
 using Granary.App.Services;
 using Granary.App.Themes;
@@ -124,15 +125,19 @@ public partial class App : Application
     }
 
     // The profile's own language is not read yet and only English is enabled, so this is English for everyone until the
-    // other languages are.
+    // other languages are. Dates and numbers follow Windows' regional format (CurrentCulture, set from it at start), as
+    // the web's follow the browser's, unless a language of another was chosen.
     private void ApplyLanguage()
     {
+        string? chosen = null;
         string language = AppLanguage.Resolve(stored: null, WindowsLanguages(), AppLanguage.Enabled);
 #if DEBUG
-        language = DeveloperLanguage() ?? language;
+        chosen = DeveloperLanguage();
+        language = chosen ?? language;
 #endif
-        AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>()));
-        _logger?.LogInformation("Texts in {Language}", AppText.Language.Tag);
+        var formats = FormatLocale.For(AppLanguage.FormatCulture(language, chosen, CultureInfo.CurrentCulture));
+        AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>(), formats));
+        _logger?.LogInformation("Texts in {Language}, dates and numbers as {Formats}", AppText.Language.Tag, formats.Culture.Name);
     }
 
     // Windows' preferred languages, in the order the user put them.

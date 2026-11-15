@@ -15,16 +15,19 @@ internal sealed class MessageFormatter
 
     private readonly string _tag;
     private readonly NumberFormatInfo _numbers;
+    private readonly string? _digits;
     private readonly bool _groupsFromFiveDigits;
     private readonly bool _marksMissingValues;
 
     /// <param name="tag">The language of the messages.</param>
     /// <param name="marksMissingValues">Whether a value that was not given shows as <c>{name}</c>, else as nothing.</param>
-    public MessageFormatter(string tag, bool marksMissingValues)
+    /// <param name="digits">The digits numbers are printed in where not Latin (Arabic's on most format locales), else null.</param>
+    public MessageFormatter(string tag, bool marksMissingValues, string? digits = null)
     {
         _tag = tag;
         _marksMissingValues = marksMissingValues;
-        _numbers = Numbers(tag);
+        _digits = digits;
+        _numbers = Numbers(tag, digits is not null);
         // CLDR's minimumGroupingDigits 2: Spanish writes 1234 but 12.345, as Intl.NumberFormat does; .NET always groups.
         _groupsFromFiveDigits = AppLanguage.Match(tag) == "es";
     }
@@ -86,6 +89,9 @@ internal sealed class MessageFormatter
             null => "",
             string s => s,
             bool b => b ? "true" : "false",
+            // A number shows in the messages' digits, as the web's prepareValues prints it; a string is never changed.
+            sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal =>
+                FormatLocale.Localize(((IFormattable)value).ToString(null, _numbers), _digits),
             IFormattable formattable => formattable.ToString(null, _numbers),
             _ => value.ToString() ?? "",
         };
@@ -140,15 +146,9 @@ internal sealed class MessageFormatter
         return (plural.Options.TryGetValue(category, out var branch) ? branch : plural.Options[PluralRules.Other], counted);
     }
 
-    /// <summary>A number as the language writes it (<see cref="TextLanguage.Number"/>).</summary>
-    public string Number(decimal number) => Grouped(number);
-
     // Intl.NumberFormat's default: grouped, up to three decimals.
-    private string Grouped(decimal number)
-    {
-        bool ungrouped = _groupsFromFiveDigits && Math.Abs(decimal.Truncate(Math.Round(number, 3, MidpointRounding.AwayFromZero))) < 10_000;
-        return number.ToString(ungrouped ? "0.###" : "#,0.###", _numbers);
-    }
+    private string Grouped(decimal number) =>
+        FormatLocale.Localize(NumberText.Grouped(number, _numbers, _groupsFromFiveDigits), _digits);
 
     private string Missing(string name, Call call)
     {
@@ -232,11 +232,11 @@ internal sealed class MessageFormatter
         }
     }
 
-    // The language's grouping and decimal marks. Arabic keeps Latin ones for now: .NET writes Latin digits, and would
-    // put Arabic marks between them. Its own digits follow with Arabic (the web's Arabic digits, PR #3912).
-    private static NumberFormatInfo Numbers(string tag)
+    // The language's grouping and decimal marks. Arabic takes its Arabic marks only with Arabic-Indic digits (the web's
+    // ar-u-nu-arab); with Latin digits its marks are Latin too (ar-u-nu-latn).
+    private static NumberFormatInfo Numbers(string tag, bool nonLatinDigits)
     {
-        if (AppLanguage.Match(tag) is null or "ar")
+        if (AppLanguage.Match(tag) is null || (AppLanguage.Match(tag) == "ar" && !nonLatinDigits))
         {
             return NumberFormatInfo.InvariantInfo;
         }

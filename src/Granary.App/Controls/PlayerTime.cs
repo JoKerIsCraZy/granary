@@ -3,7 +3,10 @@ using Granary.Core.Texts;
 
 namespace Granary.App.Controls;
 
-/// <summary>Times on the player as the web player writes them ("4:05", "1:04:05"), and spoken for screen readers.</summary>
+/// <summary>
+/// Times on the player as the web player writes them ("4:05", "1:04:05"; player/utils/formatTime.ts), in the screen's
+/// digits, and spoken for screen readers. Never seek with or send what comes out.
+/// </summary>
 public static class PlayerTime
 {
     /// <summary>
@@ -13,9 +16,9 @@ public static class PlayerTime
     public static string Format(double seconds, double duration = 0)
     {
         var time = TimeSpan.FromSeconds(Math.Floor(Math.Max(0, seconds)));
-        return time.TotalHours >= 1 || duration >= 3600
+        return NumberText.Digits(time.TotalHours >= 1 || duration >= 3600
             ? string.Create(CultureInfo.InvariantCulture, $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}")
-            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}");
+            : string.Create(CultureInfo.InvariantCulture, $"{time.Minutes}:{time.Seconds:00}"));
     }
 
     /// <summary>The time left, as "-12:34".</summary>

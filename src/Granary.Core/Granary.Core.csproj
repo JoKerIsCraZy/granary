@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Granary.Core</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- LibraryImport's generated marshalling, for ICU's date patterns (Texts/IcuDates.cs). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
