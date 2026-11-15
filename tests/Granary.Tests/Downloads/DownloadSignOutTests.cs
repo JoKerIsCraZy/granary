@@ -6,6 +6,7 @@ using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -724,6 +725,18 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.Equal("1 download (1.5 GB) on this PC is deleted with it.", DownloadSignOut.Note(new(1, 1536L << 20)));
         Assert.Null(DownloadSignOut.Note(new(0, 0)));
         Assert.Equal("3 downloads (4.5 MB) on this PC are deleted with it.", DownloadSignOut.Note(everyAccount));
+    }
+
+    [Fact]
+    public void InGerman_TheNotes_SpeakTheLanguage()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+
+        Assert.Equal("2 Downloads (3,0 GB) auf diesem PC werden dabei gelöscht.", DownloadSignOut.Note(new(2, 3L << 30)));
+        Assert.Equal("1 Download auf diesem PC wird dabei gelöscht.", DownloadSignOut.Note(new(1, null)));
+        Assert.Equal("Alle Downloads auf diesem PC werden dabei gelöscht.", DownloadSignOut.Note(new(null, null)));
+        Assert.Equal("Der Fortschritt von 2 Titeln ist noch nicht auf deinem Silo-Server und geht dabei verloren.", DownloadSignOut.UnsentNote(2));
+        Assert.Equal("Downloads auf diesem PC bleiben erhalten.", DownloadSignOut.KeptNote);
     }
 
     [Fact]

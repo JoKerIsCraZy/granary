@@ -1,10 +1,10 @@
-using System.Globalization;
 using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +35,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     Playback.KeptPlaybackSettings? settings = null, OfflineProgressSync? sync = null)
 {
     /// <summary>What a question before signing out says when the account signed in is not known: its downloads stay.</summary>
-    public const string KeptNote = "Downloads on this PC are kept.";
+    public static string KeptNote => AppText.Get("granary.downloads.signOut.kept");
 
     /// <summary>The longest the server's deletes may hold a sign-out up; the files go whether it answered or not.</summary>
     public static readonly TimeSpan DeleteBudget = TimeSpan.FromSeconds(10);
@@ -107,16 +107,16 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         ArgumentNullException.ThrowIfNull(summary);
         if (summary.Count is not { } count)
         {
-            return "Any downloads on this PC are deleted with it.";
+            return AppText.Get("granary.downloads.signOut.anyDeleted");
         }
         if (count <= 0)
         {
             return null;
         }
-        string size = summary.Bytes is { } bytes ? " (" + (bytes > 0 ? PrePlayText.FileSize(bytes) : "0 B") + ")" : "";
-        return count == 1
-            ? $"1 download{size} on this PC is deleted with it."
-            : string.Create(CultureInfo.InvariantCulture, $"{count} downloads{size} on this PC are deleted with it.");
+        return summary.Bytes is { } bytes
+            ? AppText.Get("granary.downloads.signOut.deletedSized", ("count", count), ("count_text", AppText.Number(count)),
+                ("size", bytes > 0 ? PrePlayText.FileSize(bytes) : AppText.Get("web.common.format.size.bytes", ("size", 0))))
+            : AppText.Get("granary.downloads.signOut.deleted", ("count", count), ("count_text", AppText.Number(count)));
     }
 
     /// <summary>
@@ -167,12 +167,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// What a question says of progress watched from this PC that the server does not have: "Progress in 2 titles is not on
     /// your Silo server yet and is lost with it."; null for none.
     /// </summary>
-    public static string? UnsentNote(int titles) => titles switch
-    {
-        <= 0 => null,
-        1 => "Progress in 1 title is not on your Silo server yet and is lost with it.",
-        _ => string.Create(CultureInfo.InvariantCulture, $"Progress in {titles} titles is not on your Silo server yet and is lost with it."),
-    };
+    public static string? UnsentNote(int titles) =>
+        titles <= 0 ? null : AppText.Get("granary.downloads.signOut.unsent", ("count", titles), ("count_text", AppText.Number(titles)));
 
     private static string? Join(string? first, string? second) => first is null ? second : second is null ? first : first + " " + second;
 
@@ -363,7 +359,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         }
         string? downloads = Note(await SummarizeAsync(server.Id, accountId, cancellationToken));
         string? note = Join(downloads, await UnsentAfterASendAsync(server.Id, accountId, cancellationToken));
-        return note is null || await confirmation.AskAsync($"Sign out of {server.Name}?", note, "Sign out");
+        return note is null || await confirmation.AskAsync(AppText.Get("granary.downloads.signOut.title", ("name", server.Name)), note,
+            AppText.Get("common.signOut"));
     }
 
     private async Task<bool> LoadWithinAsync(TimeSpan budget, CancellationToken cancellationToken)
