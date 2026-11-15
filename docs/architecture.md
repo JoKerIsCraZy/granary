@@ -1656,7 +1656,8 @@ titles of their series as a download dialog or a download named them.
   once for each pass and each list a page reads (`LimitTally`), and a pass adds each transfer it starts at the size it comes
   to, so the episodes it weighs after it count that one and a limit is not passed by several starting together. A held
   download whose retry falls due gives the loop no time to look again (`NextWake`): only what lifts the hold wakes it. Its card says "Series storage
-  limit reached" (the Apple app's words) or "Storage limit for downloads reached". Other downloads are never held: the
+  limit reached" (the Apple app's words) or "Storage limit for downloads reached", also one that was coming when Granary
+  stopped, which then does not count as coming. Other downloads are never held: the
   download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
   dialog opens, and what the choice needs), and says so.
 - **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that

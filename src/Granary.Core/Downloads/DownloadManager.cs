@@ -301,7 +301,7 @@ public sealed partial class DownloadManager
     }
 
     private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered) =>
-        ItemOf(download, waitsForUnmetered, download.Record is { State: DownloadState.Queued, SeriesId: not null }
+        ItemOf(download, waitsForUnmetered, download.Record is { State: DownloadState.Queued or DownloadState.Downloading, SeriesId: not null }
             ? _queue.HoldOf(download.Record.Scope, download.Record.DownloadId)
             : DownloadHold.None);
 

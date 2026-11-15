@@ -127,6 +127,25 @@ public sealed class DownloadQueueLimitsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnInterruptedEpisodeTheLimitHolds_SaysSo_AndDoesNotCountAsComing()
+    {
+        Monitor(maxStorageBytes: 5000);
+        await AddEpisodeAsync("dl_1", "ep_1", DownloadState.Completed);
+        await AddEpisodeAsync("dl_2", "ep_2", DownloadState.Downloading);
+        var queue = StartQueue();
+        await SettleAsync(queue);
+        var manager = _h.NewManager(queue);
+
+        var found = manager.Find("dl_2")!;
+        var listed = manager.Items.Single(i => i.DownloadId == "dl_2");
+
+        Assert.Equal((DownloadHold.SeriesLimit, DownloadHold.SeriesLimit), (found.Hold, listed.Hold));
+        Assert.Equal("Series storage limit reached", DownloadText.Status(found));
+        Assert.False(DownloadText.IsComing(found));
+        Assert.Empty(_h.FileRequests("dl_2"));
+    }
+
+    [Fact]
     public async Task AHeldEpisode_SaysWhatHoldsIt()
     {
         Monitor(maxStorageBytes: 5000);

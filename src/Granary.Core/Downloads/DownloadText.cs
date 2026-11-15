@@ -44,8 +44,9 @@ public static class DownloadText
             { IsPausedByViewer: true } => Paused,
             { State: DownloadState.Preparing, PreparationProgress: { } progress } => $"{Preparing} {Percent(progress)}%",
             { State: DownloadState.Preparing } => Preparing,
-            { State: DownloadState.Queued, Hold: DownloadHold.SeriesLimit } => SeriesLimitReached,
-            { State: DownloadState.Queued, Hold: DownloadHold.DownloadsLimit } => DownloadsLimitReached,
+            // Also one that was coming when Granary stopped: Downloading, and held now, it waits as a queued one does.
+            { State: DownloadState.Queued or DownloadState.Downloading, Hold: DownloadHold.SeriesLimit } => SeriesLimitReached,
+            { State: DownloadState.Queued or DownloadState.Downloading, Hold: DownloadHold.DownloadsLimit } => DownloadsLimitReached,
             { State: DownloadState.Queued, WaitsForUnmetered: true } => PausedMetered,
             { State: DownloadState.Queued } => Queued,
             { State: DownloadState.Downloading } => $"{Downloading} · {PercentText(item)}",
@@ -77,11 +78,11 @@ public static class DownloadText
     public static bool IsMeasured(DownloadItem item, double? bytesPerSecond) =>
         IsComing(item) && bytesPerSecond is >= 1 && double.IsFinite(bytesPerSecond.Value);
 
-    /// <summary>The download's file comes now: it is downloading, and nothing (a pause, its files gone, the server) holds it.</summary>
+    /// <summary>The download's file comes now: it is downloading, and nothing (a pause, its files gone, the server, a storage limit) holds it.</summary>
     public static bool IsComing(DownloadItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        return item is { State: DownloadState.Downloading, FilesMissing: false, IsNoLongerAvailable: false, IsPausedByViewer: false };
+        return item is { State: DownloadState.Downloading, FilesMissing: false, IsNoLongerAvailable: false, IsPausedByViewer: false, Hold: DownloadHold.None };
     }
 
     /// <summary>"4 min left" for the bytes still to come at <paramref name="bytesPerSecond"/>; null while its size is not known.</summary>
