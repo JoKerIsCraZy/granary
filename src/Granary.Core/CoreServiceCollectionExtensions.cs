@@ -340,6 +340,8 @@ public static class CoreServiceCollectionExtensions
         // Series monitors: their list for the queue's storage limits and the pages, and the runs that sync them with the server.
         services.AddSingleton<MonitorBook>();
         services.AddSingleton<SeriesMonitors>();
+        // The airing calendar and the monitored series' titles and posters, for the Monitored list and the download dialog.
+        services.AddSingleton<ViewModels.Downloads.MonitorSchedule>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
         // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
         services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();

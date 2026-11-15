@@ -23,6 +23,8 @@ public sealed partial class DownloadOptionsPanel : UserControl
 
     public string Footer => DownloadOptionsViewModel.Footer;
 
+    public string StopMessage => DownloadOptionsViewModel.StopMessage;
+
     /// <summary>The server's qualities as the pills take them.</summary>
     public IReadOnlyList<SettingChoice> Qualities { get; }
 
@@ -45,6 +47,15 @@ public sealed partial class DownloadOptionsPanel : UserControl
     /// <summary>The free space line, red when the download does not fit.</summary>
     public static Brush SpaceForeground(bool isShortOfSpace) =>
         (Brush)Application.Current.Resources[isShortOfSpace ? "SiloDestructiveBrush" : "SiloMutedBrush"];
+
+    // A screen reader says a rule as its row shows it: "Future Episodes, Only episodes that air from now on".
+    private void OnRuleContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+    {
+        if (args.Item is MonitorRuleRow row)
+        {
+            AutomationProperties.SetName(args.ItemContainer, $"{row.Title}, {row.Detail}");
+        }
+    }
 
     // A screen reader says a version as its row shows it: "2160p · HEVC · HDR10, 38.9 GB".
     private void OnVersionContainerChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

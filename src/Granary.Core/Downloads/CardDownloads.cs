@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Downloads;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
@@ -55,7 +56,9 @@ public sealed partial class CardDownloads(DownloadActions actions, DownloadOffer
         }
         try
         {
-            await actions.OfferReadAsync(cancellationToken => offers.ReadAsync(card.Id, card.Type, cancellationToken));
+            // A series' card offers Monitor beside it, as the Apple app's series sheet.
+            var monitor = card.Type == CatalogItemTypes.Series ? new SeriesMonitorTarget(card.Id, card.Title) : null;
+            await actions.OfferReadAsync(cancellationToken => offers.ReadAsync(card.Id, card.Type, cancellationToken), monitor);
         }
         catch (Exception ex)
         {

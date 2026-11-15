@@ -1617,6 +1617,14 @@ titles of their series as a download dialog or a download named them.
   read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
   back meanwhile. Waiting stops are kept for the run, not on disk: one that never reached the server before Granary closed
   shows its monitor again at the next start.
+- **The dialog's Monitor.** `DownloadOptionsViewModel.Monitor.cs` gives a series' dialog (a `SeriesMonitorTarget` from its
+  page or its card) the Apple app's One Time | Monitor while the capability has `series_monitoring` with a mode Granary
+  offers, or the series has a monitor. It prefills from the series' monitor, else the Monitoring Defaults and the default
+  quality; it creates through `SeriesMonitors.CreateAsync` or sends what changed through `UpdateAsync` (an unchanged mode or
+  quality is never sent, as the server checks a quality's permission whenever it gets one), and shows a `Changed` monitor as
+  the server has it now. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
+  calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
+  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
 - **Delete after watching.** A monitor's `delete_watched` is the client's to carry out, as the Apple app does it
   (`retentionDeletions`): at the end of each run, once the server heard what was watched on this PC and its progress was
   read back (`OfflineProgressSync.FlushAsync`), the whole episodes of such a series that the profile watched for sure

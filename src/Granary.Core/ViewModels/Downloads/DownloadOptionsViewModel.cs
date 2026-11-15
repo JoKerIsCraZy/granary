@@ -70,6 +70,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadOptionsViewModel> _logger;
+    private readonly SeriesMonitors? _monitors;
+    private readonly MonitorSchedule? _schedule;
 
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
@@ -97,7 +99,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private CancellationTokenSource? _stopping;
 
     public DownloadOptionsViewModel(DownloadManager downloads, DownloadsFeature feature, IDownloadPreferences preferences, IDiskSpace disk,
-        IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadOptionsViewModel> logger)
+        IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadOptionsViewModel> logger, SeriesMonitors? monitors = null,
+        MonitorSchedule? schedule = null)
     {
         _downloads = downloads;
         _feature = feature;
@@ -106,6 +109,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _monitors = monitors;
+        _schedule = schedule;
     }
 
     /// <summary>
@@ -113,6 +118,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// Series · All Episodes"; "Download" while a card's dialog does not know its title yet.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DialogTitle))]
     public partial string Title { get; private set; } = PlainTitle;
 
     /// <summary>The title's files, the highest resolution first; none for a season or a series.</summary>
@@ -184,7 +190,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// Download can be pressed: there is something to download, nothing is starting and the selection fits, as far as the free
     /// space is known yet.
     /// </summary>
-    public bool CanStart => HasOffer && !IsStarting && !IsShortOfSpace;
+    public bool CanStart => IsMonitorChosen ? CanSaveMonitor : HasOffer && !IsStarting && !IsShortOfSpace;
 
     /// <summary>Why the last press of Download did not start it; empty when it did, or before.</summary>
     [ObservableProperty]
@@ -217,9 +223,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// <summary>
     /// A card's film, episode, season or series, whose files the card does not carry: the dialog opens with "Download" and the web's
     /// loading words while <paramref name="read"/> reads what to offer, then shows it as <see cref="ForTitle"/> or
-    /// <see cref="ForSeason"/> would, or why there is nothing to download, or that the read failed, with Try Again.
+    /// <see cref="ForSeason"/> would, or why there is nothing to download, or that the read failed, with Try Again. A series' dialog (<paramref name="monitor"/>) offers Monitor beside it while the series
+    /// can be monitored, and opens on it when <paramref name="startsOnMonitor"/> or the series is monitored.
     /// </summary>
-    public void ForReading(Func<CancellationToken, Task<DownloadOffer>> read)
+    public void ForReading(Func<CancellationToken, Task<DownloadOffer>> read, SeriesMonitorTarget? monitor = null, bool startsOnMonitor = false)
     {
         ArgumentNullException.ThrowIfNull(read);
         _read = read;
@@ -232,6 +239,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         Versions = [];
         HasOffer = false;
         Open(null);
+        SetUpMonitor(monitor, startsOnMonitor);
         Reading = ReadOfferAsync();
     }
 
@@ -259,6 +267,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// </summary>
     public async Task<bool> StartAsync()
     {
+        if (!IsStarting && IsMonitorChosen)
+        {
+            return await SaveMonitorAsync();
+        }
         if (IsStarting || (_title is null && _season is null && _series is null))
         {
             return false;
@@ -435,6 +447,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             return;
         }
         var version = Take(offer);
+        if (offer is SeriesDownloadOffer series)
+        {
+            NoteSeasons(series.Request);
+        }
         DescriptionText = Description;
         SelectedVersion = version;
         ShowSize();

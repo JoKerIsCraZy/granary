@@ -4,6 +4,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -50,13 +51,16 @@ public sealed class CardDownloadsTests : IAsyncDisposable
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
     // The cards' entries over the harness, once the capability was read, as the window reads it on the way to any page.
-    private async Task<CardDownloads> CardsAsync(DownloadQueue? queue = null)
+    private async Task<CardDownloads> CardsAsync(DownloadQueue? queue = null, bool monitors = false)
     {
         var feature = _h.NewFeature();
         var manager = _h.NewManager(queue, feature);
         var ui = new ImmediateDispatcher();
+        var series = monitors
+            ? new SeriesMonitors(new DownloadSubscriptionsApi(_h.Silo.Http), _h.Api, _h.Store, new MonitorBook(), manager, _h.Session, _h.Time, _h.Logs.For<SeriesMonitors>())
+            : null;
         var actions = new DownloadActions(manager, feature, _dialog, _confirmation, _navigation, ui,
-            () => new DownloadOptionsViewModel(manager, feature, _h.Preferences, _h.Disk, ui, _h.Time, _h.Logs.For<DownloadOptionsViewModel>()),
+            () => new DownloadOptionsViewModel(manager, feature, _h.Preferences, _h.Disk, ui, _h.Time, _h.Logs.For<DownloadOptionsViewModel>(), series),
             _h.Logs.For<DownloadActions>());
         await feature.RefreshAsync(Token);
         return new CardDownloads(actions, new DownloadOfferReader(new CatalogApi(_h.Silo.Http), _h.Session, manager), _h.Logs.For<CardDownloads>());
@@ -348,6 +352,28 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         var shown = Assert.Single(_dialog.Shown);
         Assert.Equal(("Every episode of this series is on this PC.", false), (shown.DescriptionText, shown.CanStart));
         Assert.Empty(CreateBodies());
+    }
+
+    [Fact]
+    public async Task ASeriesCardsDownload_OffersMonitor_AlsoWhenEveryEpisodeIsOnThisPC()
+    {
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability()));
+        foreach (string episode in new[] { "ep_1", "ep_5", "ep_21", "sp_1" })
+        {
+            await _h.AddAsync("dl_" + episode, DownloadState.Completed, mediaItemId: episode);
+        }
+        WaitForTheOffer();
+        var cards = await CardsAsync(monitors: true);
+
+        await ChooseAsync(cards, Series);
+
+        var shown = Assert.Single(_dialog.Shown);
+        Assert.Equal(["One Time", "Monitor"], shown.Kinds.Select(k => k.Label));
+        shown.SelectedKind = shown.Kinds[1];
+        Assert.True(shown.CanStart);
+        Assert.Equal(("Download: Example Series", "Start Monitoring"), (shown.DialogTitle, shown.PrimaryText));
+        // Nothing was offered to download, so no season was read: the server picks the latest itself.
+        Assert.Equal("The latest season and anything newer", Assert.Single(shown.MonitorRows, r => r.Mode == SubscriptionModes.LatestSeason).Detail);
     }
 
     [Fact]

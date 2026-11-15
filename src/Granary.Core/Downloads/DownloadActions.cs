@@ -102,13 +102,15 @@ public sealed class DownloadActions
 
     /// <summary>
     /// The download dialog for a card's film, episode or season, whose files the card does not carry: it opens at once and
-    /// reads what to offer while it shows (<paramref name="read"/>), and the read stops once it closes.
+    /// reads what to offer while it shows (<paramref name="read"/>), and the read stops once it closes. A series'
+    /// (<paramref name="monitor"/>) offers Monitor beside One Time while it can be monitored, first when
+    /// <paramref name="startsOnMonitor"/>.
     /// </summary>
-    public async Task OfferReadAsync(Func<CancellationToken, Task<DownloadOffer>> read)
+    public async Task OfferReadAsync(Func<CancellationToken, Task<DownloadOffer>> read, SeriesMonitorTarget? monitor = null, bool startsOnMonitor = false)
     {
         ArgumentNullException.ThrowIfNull(read);
         var options = _options();
-        options.ForReading(read);
+        options.ForReading(read, monitor, startsOnMonitor);
         try
         {
             await _dialog.ShowAsync(options);

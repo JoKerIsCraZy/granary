@@ -832,6 +832,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
     download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
     never starts after the dialog was closed on it.
+  - **One Time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
+    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One Time first, with its line
+    under them ("Download now. Nothing else downloads later." / "Keep new episodes coming to this PC as they air."). One
+    Time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
+    Series": the rules the server offers as rows in the version rows' style, a title and its line (All Episodes "Download
+    every episode now, then new ones as they air", Future Episodes "Only episodes that air from now on", the default, Last
+    Season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
+    client's Custom, "Seasons 2 and 3", only for its own monitor); the qualities as pills when the server keeps a monitor's
+    quality (else none, and monitors download originals); Delete after watching, a switch; Storage limit, a select of None,
+    10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring Defaults fill both in for a new
+    monitor. Under them the Apple app's sentence on what comes: "Episode 6 downloads Thursday. Monitored episodes download
+    at 10 Mbps." (the first part while the calendar names an airing the rule takes; "…in original quality."). The button
+    says Start Monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
+    Stop Monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
+    "Episodes already on this PC stay until you delete them.", Keep and Stop; Stop closes the dialog. A save that did not
+    go says why in the error bar: "Couldn't Save Monitoring", "Monitoring for this series changed on the server. Try
+    again." (the dialog then shows the monitor as it is now), "This series is no longer monitored.", or "Granary couldn't
+    confirm the monitoring change. Check this series again once you're back online."
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a

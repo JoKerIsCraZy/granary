@@ -42,9 +42,25 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
             {
                 dialog.IsPrimaryButtonEnabled = options.CanStart;
             }
-            else if (e.PropertyName == nameof(DownloadOptionsViewModel.Title))
+            else if (e.PropertyName == nameof(DownloadOptionsViewModel.DialogTitle))
             {
-                dialog.Title = options.Title;
+                dialog.Title = options.DialogTitle;
+            }
+            else if (e.PropertyName == nameof(DownloadOptionsViewModel.PrimaryText))
+            {
+                dialog.PrimaryButtonText = options.PrimaryText;
+            }
+        }
+        // A monitor stopped from the dialog closes it.
+        void CloseWhenDone(object? sender, EventArgs e)
+        {
+            try
+            {
+                dialog?.Hide();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or COMException)
+            {
+                logger.LogDebug("The download dialog was gone as it was to close ({Failure})", ex.GetType().Name);
             }
         }
         // Download starts what the dialog shows; a start that did not happen keeps it open with the reason.
@@ -84,14 +100,15 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
             }
         }
         options.PropertyChanged += FollowOptions;
+        options.CloseRequested += CloseWhenDone;
         try
         {
             dialog = new ContentDialog
             {
                 XamlRoot = root,
-                Title = options.Title,
+                Title = options.DialogTitle,
                 Content = new DownloadOptionsPanel(options),
-                PrimaryButtonText = "Download",
+                PrimaryButtonText = options.PrimaryText,
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
                 IsPrimaryButtonEnabled = options.CanStart,
@@ -108,6 +125,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
         finally
         {
             options.PropertyChanged -= FollowOptions;
+            options.CloseRequested -= CloseWhenDone;
             if (dialog is not null)
             {
                 dialog.PrimaryButtonClick -= OnDownloadClick;
