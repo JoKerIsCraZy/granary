@@ -105,10 +105,11 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.ViewModel.PropertyChanged -= OnPlayerChanged;
         StopDockSlide();
         page.Leave();
-        // Unloaded, the page lets go of its view model and the engine's picture; one never loaded lets go of it here.
+        // Unloaded, the page lets go of its view model, its indicator and the engine's picture; one never loaded lets go of
+        // the first two here.
         if (!page.IsLoaded)
         {
-            page.ViewModel.Dispose();
+            page.DisposeOwn();
         }
         PlayerHost.Child = null;
         PlayerHost.Visibility = Visibility.Collapsed;

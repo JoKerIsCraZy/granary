@@ -197,6 +197,16 @@ public sealed partial class PlayerPage : Page
         _keepAwake = null;
         _remoteControl?.Dispose();
         _remoteControl = null;
+        DisposeOwn();
+    }
+
+    /// <summary>
+    /// What the page made itself and holds from its start, before it is loaded: the phone remote's indicator, which follows
+    /// the receiver at once, and the view model. Unloaded lets go of them; a page closed before it ever loaded has the
+    /// window call this instead.
+    /// </summary>
+    public void DisposeOwn()
+    {
         Remote.Dispose();
         ViewModel.Dispose();
     }
