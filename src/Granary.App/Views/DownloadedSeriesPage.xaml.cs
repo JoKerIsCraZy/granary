@@ -57,13 +57,9 @@ public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost, IPadSect
 
     private void OnSeasonGotFocus(object sender, RoutedEventArgs e)
     {
-        for (var element = e.OriginalSource as DependencyObject; element is not null; element = VisualTreeHelper.GetParent(element))
+        if (e.OriginalSource is DependencyObject element && SeasonIndexOf(element) is var season and >= 0)
         {
-            if (element is UIElement season && ReferenceEquals(VisualTreeHelper.GetParent(season), SeasonsRepeater))
-            {
-                _focusedSeason = SeasonsRepeater.GetElementIndex(season);
-                return;
-            }
+            _focusedSeason = season;
         }
     }
 
@@ -106,19 +102,49 @@ public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost, IPadSect
     void IPadSections.StepSection(int by)
     {
         var focused = XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
-        int at = focused is not null && MediaGrid.IsWithin(focused, SeasonsRepeater) ? _focusedSeason : -1;
+        int at = focused is null ? -1 : SeasonIndexOf(focused);
         int next = at + by;
         if ((at < 0 && by < 0) || next < 0 || next >= ViewModel.Seasons.Count)
         {
             return;
         }
-        var season = SeasonsRepeater.GetOrCreateElement(next);
-        season.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
-        if (FindGrid(season) is { } grid && !grid.FocusCardAt(0, FocusState.Keyboard))
+        SeasonsRepeater.GetOrCreateElement(next).StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+        FocusSeasonCard(next, SeasonFocusTries);
+    }
+
+    // How many layout passes a bumper's season gets to come into view and make its grid.
+    private const int SeasonFocusTries = 3;
+
+    // The season's first card takes the focus; a season not laid out yet is asked for again after the next pass, a few
+    // times, while the page still shows. The season is looked up each time: the repeater may have used its element for
+    // another one meanwhile.
+    private void FocusSeasonCard(int place, int tries)
+    {
+        if (!IsLoaded || !ReferenceEquals(Frame?.Content, this) || place >= ViewModel.Seasons.Count)
         {
-            // Not laid out yet: once it is.
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => grid.FocusCardAt(0, FocusState.Keyboard));
+            return;
         }
+        if (FindGrid(SeasonsRepeater.GetOrCreateElement(place)) is { } grid && grid.FocusCardAt(0, FocusState.Keyboard))
+        {
+            return;
+        }
+        if (tries > 1)
+        {
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusSeasonCard(place, tries - 1));
+        }
+    }
+
+    // The place of the season an element is in; -1 outside the seasons.
+    private int SeasonIndexOf(DependencyObject element)
+    {
+        for (var at = element; at is not null; at = VisualTreeHelper.GetParent(at))
+        {
+            if (at is UIElement season && ReferenceEquals(VisualTreeHelper.GetParent(season), SeasonsRepeater))
+            {
+                return SeasonsRepeater.GetElementIndex(season);
+            }
+        }
+        return -1;
     }
 
     private static MediaGrid? FindGrid(DependencyObject element)
