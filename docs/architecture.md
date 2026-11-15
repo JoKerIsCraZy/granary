@@ -1667,9 +1667,13 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
 - **`WindowsPcLock`** (`IPcLock`) says whether Windows is locked, so a phone starts no title on a locked PC while it
   still controls what plays. `App.Launch` has it ask Windows for the session's notices for the main window
   (`WTSRegisterSessionNotification`, this session only) and takes them back as the window closes; their
-  `WM_WTSSESSION_CHANGE` lock and unlock come through the window's message hook (`WindowMessageHook.SessionLockChanged`).
-  It is unlocked until Windows says otherwise, reads nothing else of the session, and logs only "The PC locked" and "The
-  PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
+  `WM_WTSSESSION_CHANGE` comes through the window's message hook (`WindowMessageHook.SessionChanged`). A PC still locked
+  as Granary starts with Windows sends no notice, so the session's state is read once as the notices begin
+  (`WTSQuerySessionInformationW` with `WTSSessionInfoEx`: `SessionFlags` `WTS_SESSIONSTATE_LOCK`, freed with
+  `WTSFreeMemory`), and read again at a connect. A lock or a disconnect (console or remote: nobody sits at the session,
+  and whoever connects again signs in first) counts as locked, an unlock as unlocked (`SessionLockState`, tested apart
+  from Windows in `SessionLockStateTests`). It reads only whether the session is locked and connected, and logs only "The
+  PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
   depends on the lock.
 - **The "Starting" notice.** The receiver raises `Launched` with the phone's name and the request just before it opens
   the player; the window keeps it and, when it makes the player for that very request (it may wait for the player before

@@ -12,8 +12,8 @@ namespace Granary.App.Interop;
 /// commands to the media session.</item>
 /// <item>The taskbar's, for the buttons in its preview (<c>WindowsTaskbarToolbar</c>): Explorer's TaskbarButtonCreated, a
 /// thumbnail toolbar button's click, and the window's DPI changing.</item>
-/// <item>WM_WTSSESSION_CHANGE's lock and unlock, once <c>WindowsPcLock</c> asked Windows for them, so a phone starts nothing
-/// on a locked PC.</item>
+/// <item>WM_WTSSESSION_CHANGE (a lock, an unlock, a disconnect), once <c>WindowsPcLock</c> asked Windows for them, so a
+/// phone starts nothing on a locked PC.</item>
 /// </list>
 /// The events are raised inside the window's message, on the UI thread: nothing may escape a handler.
 /// </summary>
@@ -26,9 +26,6 @@ internal static unsafe partial class WindowMessageHook
     private const uint WmAppCommand = 0x0319;
     private const uint WmDpiChanged = 0x02E0;
     private const uint WmWtsSessionChange = 0x02B1;
-    // WTS_SESSION_LOCK and WTS_SESSION_UNLOCK, in WM_WTSSESSION_CHANGE's wParam.
-    private const int WtsSessionLock = 0x7;
-    private const int WtsSessionUnlock = 0x8;
     private const int DeviceMask = 0xF000;
     // THBN_CLICKED, in WM_COMMAND's high word of wParam; the low word is the button's id.
     private const int ThumbButtonClick = 0x1800;
@@ -49,8 +46,11 @@ internal static unsafe partial class WindowMessageHook
     /// <summary>The window moved to a display of another scale, or the scale changed.</summary>
     public static event Action? DpiChanged;
 
-    /// <summary>Windows locked (true) or unlocked (false) this session, for a window registered for the session's notices.</summary>
-    public static event Action<bool>? SessionLockChanged;
+    /// <summary>
+    /// This session changed (WM_WTSSESSION_CHANGE), with the reason in its wParam (a lock, an unlock, a connect or a
+    /// disconnect), for a window registered for the session's notices.
+    /// </summary>
+    public static event Action<int>? SessionChanged;
 
     /// <summary>The window has a taskbar button, so its preview can take buttons.</summary>
     public static bool HasTaskbarButton { get; private set; }
@@ -100,9 +100,9 @@ internal static unsafe partial class WindowMessageHook
             {
                 DpiChanged?.Invoke();
             }
-            else if (message == WmWtsSessionChange && (int)wParam is WtsSessionLock or WtsSessionUnlock)
+            else if (message == WmWtsSessionChange)
             {
-                SessionLockChanged?.Invoke((int)wParam == WtsSessionLock);
+                SessionChanged?.Invoke((int)wParam);
             }
         }
         catch (Exception ex)
