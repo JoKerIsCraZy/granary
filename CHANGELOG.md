@@ -10,6 +10,8 @@ release's section is what its update says it changes (docs/release.md).
 
 - **Missing and upcoming episodes in More Episodes:** an episode's page shows its season's missing episodes and the ones
   still to air among More Episodes, as the season's page does.
+- **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
+  on Thursday" or "Season 4 starts tomorrow".
 
 ### Fixed
 

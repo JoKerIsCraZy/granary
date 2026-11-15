@@ -1116,6 +1116,13 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   otherwise that episode is read (`GET /api/v2/catalog/items/{id}`, three at a time) for its versions'
   `multi_episode_start`/`multi_episode_end`, so a double episode an older server lists by its first number only is never
   a gap. One that cannot be read keeps the places it checks out.
+- The hero's next airing (`ItemDetailViewModel.NextAiring.cs`, `NextAiring`, Granary's own; the choice and the words are
+  Apple's `AutoDownloadSchedule` and `AutoDownloadRules` for a monitored series): a series', season's or episode's page
+  reads today's two windows, the season grid's own keys, for the series. It takes `episode` events and `season_premiere`
+  ones, a premiere standing for the season's episode 1 (the grid places nothing by those); not season 0. The next is the
+  first with `air_at` after now, or with only a date (`local_air_date`, else `air_date`) from the day after that date
+  on, ordered by moment (a date alone is its day's start), then season and episode. Nothing in the 62 days, or a failed
+  request, shows nothing.
 - The calendar's answer for a window lists every series, so it is asked once per server, profile, zone and window, kept
   by series for 5 minutes (`SeriesAirings`) and shared by every page waiting for it; an episode's files are kept as long
   (`EpisodeSpans`). A request goes out as whichever profile acts then, so an answer that came while another profile acts

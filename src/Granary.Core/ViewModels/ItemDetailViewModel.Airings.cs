@@ -93,17 +93,13 @@ public sealed partial class ItemDetailViewModel
         // What the profile may see decides what the calendar lists, so its answers are kept per profile.
         string? profileId = _session.ProfileId;
         var last = listed.Where(e => e.EpisodeNumber > 0).MaxBy(e => e.EpisodeNumber);
-        var now = _time.GetUtcNow();
-        var zone = _time.LocalTimeZone;
-        string? ianaZone = CalendarText.IanaZone(zone, now);
-        // Without a zone name the server reckons the days in UTC, and so must the windows.
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, ianaZone is null ? TimeZoneInfo.Utc : zone).DateTime);
+        var clock = CalendarNow.Of(_time);
         var gaps = last is null ? [] : SeasonGaps.Find(listed);
         List<EpisodeAiring> airings = [];
         try
         {
-            var reads = SeasonGaps.Windows(gaps, last, today)
-                .Select(w => _airings!.GetAsync(server, profileId, seriesId, w.Start, w.End, ianaZone, cancellationToken)).ToList();
+            var reads = SeasonGaps.Windows(gaps, last, clock.Today)
+                .Select(w => _airings!.GetAsync(server, profileId, seriesId, w.Start, w.End, clock.TimeZone, cancellationToken)).ToList();
             foreach (var read in await Task.WhenAll(reads))
             {
                 airings.AddRange(read);
@@ -114,7 +110,7 @@ public sealed partial class ItemDetailViewModel
             _logger.LogWarning("Placing the missing and upcoming episodes of item {ItemId} failed: {Failure}", ItemId, ApiFailureText.Describe(ex));
             return null;
         }
-        var planned = SeasonGaps.Places(season, gaps, last, airings, now, today, zone);
+        var planned = SeasonGaps.Places(season, gaps, last, airings, clock.Now, clock.Today, clock.Zone);
         // A server that lists a double episode's second half has no gap hiding one; for another, the episode before a place is
         // read, and one that cannot be read keeps its places out.
         if (SeasonGaps.ListsBothHalves(listed))

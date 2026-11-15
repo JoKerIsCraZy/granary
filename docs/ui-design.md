@@ -598,12 +598,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    breadcrumbs; the series' next airing (below); the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
     whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - The series' next airing, Granary's own (no Silo client shows it on a title's page): a series' page and its seasons'
+    and episodes' pages name when the series' next episode airs, the same on each, in a neutral chip (`SiloChipStyle`, a
+    12 px calendar mark in muted grey 7 before 13 px text) between the breadcrumbs and the logo or title. Its words are
+    those Silo's Apple app gives a monitored series' next download: "Episode 6 on Thursday", "Episode 6 today",
+    "Episode 6 tomorrow", and for a season's first episode "Season 4 starts on Oct 15", "… starts today", "… starts
+    tomorrow". The day is the viewer's: today, tomorrow, the weekday within a week, else the month and day. It is the
+    first airing of the calendar's next 62 days ([7.13](api-contract.md#713-calendar)) still to come, from any season but
+    the specials: one with its time until that time, one with only its date from the day after on (today's may have
+    aired). The page does not wait for it; with nothing to come in those days, or a calendar that does not answer, there
+    is no chip. It changes when the page reads its data again (opening it, or the reading after the player or a mark),
+    not with the clock; a later reading the calendar does not answer keeps the chip as it was. A screen reader reads its
+    text.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",

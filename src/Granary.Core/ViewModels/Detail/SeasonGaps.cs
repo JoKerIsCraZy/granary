@@ -91,14 +91,18 @@ internal static class SeasonGaps
             var end = aired.AddDays(CalendarApi.MaxDays);
             wanted.Add(new Window(aired, end < yesterday ? end : yesterday));
         }
-        Window[] todays = [new(today, today.AddDays(CalendarApi.MaxDays)), new(today.AddDays(CalendarApi.MaxDays + 1), today.AddDays(2 * CalendarApi.MaxDays + 1))];
+        var todays = TodaysWindows(today);
 
         // Today's windows span the most a request may, so they only take in windows they hold and stay as they are.
         var merged = Merge([.. wanted, .. todays]);
         return [.. merged.Where(todays.Contains)
-            .Concat(merged.Where(w => !todays.Contains(w)).OrderByDescending(w => w.Start).Take(MaxWindows - todays.Length))
+            .Concat(merged.Where(w => !todays.Contains(w)).OrderByDescending(w => w.Start).Take(MaxWindows - todays.Count))
             .OrderBy(w => w.Start)];
     }
+
+    /// <summary>Today's 62 days as two requests, which every season asks and the hero's next airing is read from.</summary>
+    public static IReadOnlyList<Window> TodaysWindows(DateOnly today) =>
+        [new(today, today.AddDays(CalendarApi.MaxDays)), new(today.AddDays(CalendarApi.MaxDays + 1), today.AddDays(2 * CalendarApi.MaxDays + 1))];
 
     /// <summary>The numbers the episode's multi-episode files hold, its own included.</summary>
     public static IReadOnlyCollection<int> Spanned(CatalogItemDetail episode) => episode.Versions
@@ -109,14 +113,14 @@ internal static class SeasonGaps
     /// <summary>
     /// The places by number, at most <see cref="MaxPlaces"/>: a gap's numbers as the calendar names them, and in a narrow gap
     /// those it does not name too; then the calendar's episodes after the last listed one. An episode aired is missing, one
-    /// still to air upcoming.
+    /// still to air upcoming. A season the calendar lists by itself names no episode.
     /// </summary>
     /// <param name="today">The day in the zone the calendar was asked for.</param>
     /// <param name="zone">The viewer's zone, which an airing's instant is shown in.</param>
     public static IReadOnlyList<Planned> Places(int season, IReadOnlyList<Gap> gaps, Episode? last, IEnumerable<EpisodeAiring> airings,
         DateTimeOffset now, DateOnly today, TimeZoneInfo zone)
     {
-        var named = airings.Where(a => a.SeasonNumber == season).GroupBy(a => a.EpisodeNumber).ToDictionary(g => g.Key, g => g.First());
+        var named = airings.Where(a => a.SeasonNumber == season && !a.IsSeasonPremiere).GroupBy(a => a.EpisodeNumber).ToDictionary(g => g.Key, g => g.First());
         List<Planned> places = [];
         foreach (var gap in gaps)
         {
@@ -195,8 +199,8 @@ internal static class SeasonGaps
     private static string Code(int season, int number, EpisodeAiring airing) =>
         airing.Title?.Trim() is { Length: > 0 } title ? $"S{season:00}E{number:00} · {title}" : $"S{season:00}E{number:00}";
 
-    // The viewer's day: the instant's in the viewer's zone, else the day the calendar listed it under, else the source's.
-    private static DateOnly? Day(EpisodeAiring airing, TimeZoneInfo zone) => airing.AirAt is { } at
+    /// <summary>The viewer's day: the instant's in the viewer's zone, else the day the calendar listed it under, else the source's.</summary>
+    public static DateOnly? Day(EpisodeAiring airing, TimeZoneInfo zone) => airing.AirAt is { } at
         ? DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(at, zone).DateTime)
         : DateOf(airing.LocalAirDate) ?? DateOf(airing.AirDate);
 

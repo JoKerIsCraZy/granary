@@ -627,8 +627,21 @@ public sealed class ItemDetailMissingEpisodesTests
 
         Assert.Equal(2, specials.EpisodeGrid.Count);
         Assert.Empty(specials.EpisodeGrid.OfType<DetailEpisodePlaceholder>());
-        // The calendar leaves the specials out, so their season asks it nothing.
-        Assert.Empty(Windows());
+        // The calendar leaves the specials out, so their season asks it only today's windows, for the series' next airing.
+        Assert.Equal(TodaysWindows, Windows());
+    }
+
+    [Fact]
+    public async Task ASeasonPremiere_MakesNoPlace()
+    {
+        // The calendar lists the season by itself when its first episode has no air date: there is no episode to place.
+        Season(NoEpisodes);
+        _calendar.Premieres(3, "2026-10-08");
+
+        var detail = await LoadAsync(Season3Id);
+
+        Assert.True(detail.ShowsNoEpisodes);
+        Assert.Empty(detail.EpisodeGrid);
     }
 
     // The page loaded, its places included, without a warning on the way: an unexpected request or a mistake of the placing

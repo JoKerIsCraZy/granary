@@ -59,10 +59,14 @@ public sealed partial class ItemDetailViewModel
         FollowTitlePage();
     }
 
-    /// <summary>The page left: stop following, and drop a read of the state, and the placing of missing episodes, on its way.</summary>
+    /// <summary>
+    /// The page left: stop following, and drop a read of the state, the placing of missing episodes and the read of the next
+    /// airing on their way.
+    /// </summary>
     public void Deactivate()
     {
         StopPlacing();
+        StopNextAiring();
         if (!_isActive)
         {
             return;
@@ -235,7 +239,7 @@ public sealed partial class ItemDetailViewModel
 
     // A watched mark, a start or a stop: the item's own state (where Play resumes, a series' or season's next episode), its
     // listed episodes, a series' season cards and an episode's siblings, read again with the image sizes the page loaded
-    // with, so their stills stay the ones shown. The reads count as one: if any fails, the page keeps what it shows and
+    // with, so their stills stay the ones shown; then the series' next airing. The reads count as one: if any fails, the page keeps what it shows and
     // stays stale, so a row never sits beside an older Play.
     private async Task RefreshWatchStateAsync()
     {
@@ -312,6 +316,7 @@ public sealed partial class ItemDetailViewModel
             }
             ShowPlayAction();
             ShowOverview();
+            StartNextAiring(server, generation, CancellationToken.None);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

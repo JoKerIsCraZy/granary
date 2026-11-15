@@ -397,6 +397,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             }
             Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
+            StartNextAiring(server.BaseUri, generation, cancellationToken);
             await LoadSectionsAsync(item, server.BaseUri, profileId, images, generation, cancellationToken);
             if (generation == _generation)
             {
@@ -500,6 +501,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         StopPlacing();
         _places = [];
         EpisodeGrid.Clear();
+        StopNextAiring();
+        NextAiringText = "";
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
         MoreEpisodesRow = [];

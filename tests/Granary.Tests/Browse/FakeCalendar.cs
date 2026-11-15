@@ -28,6 +28,13 @@ internal sealed class FakeCalendar
         return this;
     }
 
+    /// <summary>A season the calendar lists by itself, as the server does when its first episode has no air date.</summary>
+    public FakeCalendar Premieres(int season, string date, string? at = null, string series = ItemDetailPayloads.SeriesId)
+    {
+        _airings.Add(new Airing(series, season, null, $"Season {season}", date, date, at, "season_premiere"));
+        return this;
+    }
+
     public async Task<HttpResponseMessage> RespondAsync(Uri uri, CancellationToken cancellationToken)
     {
         if (Gate is { } gate)
