@@ -57,6 +57,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private readonly DownloadManager? _downloads;
     private readonly IConfirmation? _confirmation;
 
+    // Between Attach and Detach: Storage follows the downloads. One refresh is posted to the UI thread at a time.
+    private bool _attached;
+    private int _storagePosted;
+
     // Set while a select shows the saved quality or the folder's drive, so showing it saves nothing.
     private bool _showing;
 
@@ -536,6 +540,48 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         }
         await _dispatcher.ResumeOnUi();
         ShowStorage();
+    }
+
+    /// <summary>
+    /// The view shows, on the UI thread: Storage follows the downloads from now on (one a monitoring run kept, one deleted from
+    /// the Downloads page) until <see cref="Detach"/>, which lets go of the downloads so they never hold the view.
+    /// </summary>
+    public void Attach()
+    {
+        if (_attached || _downloads is null)
+        {
+            return;
+        }
+        _attached = true;
+        _downloads.Changed += OnDownloadsChanged;
+        ShowStorage();
+    }
+
+    /// <summary>The view was left: Storage stops following the downloads.</summary>
+    public void Detach()
+    {
+        if (!_attached || _downloads is null)
+        {
+            return;
+        }
+        _attached = false;
+        _downloads.Changed -= OnDownloadsChanged;
+    }
+
+    // Any thread, as often as a transfer goes further: one refresh at a time is posted to the UI thread.
+    private void OnDownloadsChanged(object? sender, EventArgs e)
+    {
+        if (Interlocked.Exchange(ref _storagePosted, 1) == 0)
+        {
+            _dispatcher.Post(() =>
+            {
+                Volatile.Write(ref _storagePosted, 0);
+                if (_attached)
+                {
+                    ShowStorage();
+                }
+            });
+        }
     }
 
     // The space the profile's downloads use, as the queue and the store know it: no disk is read.

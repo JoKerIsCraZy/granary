@@ -1568,7 +1568,8 @@ client guide.
   starts with, held to the Apple app's stepper: 0 to 1000 GB in fives) as they change, and the storage limit for downloads
   once its slider rests for `SliderRest` (half a second), on the `TimeProvider`, so a drag is one save. The Default
   quality's line is the Apple app's footer for the capability read at `LoadAsync`; Storage's Used is
-  `DownloadManager.BytesUsed`, and Remove All Downloads, after asking, `DeleteAllAsync` over the downloads the question
+  `DownloadManager.BytesUsed`, followed between `Attach` and `Detach` (the view's Loaded and Unloaded) through the
+  manager's `Changed`, one refresh posted to the UI thread at a time, and Remove All Downloads, after asking, `DeleteAllAsync` over the downloads the question
   counted, in the profile it was asked in. It takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no

@@ -403,6 +403,9 @@ public sealed partial class DownloadsSettingsView : UserControl
         InitializeComponent();
         // Once: the page keeps the view.
         Loaded += OnFirstLoaded;
+        // Storage follows the downloads only while the view shows: the downloads live as long as the app.
+        Loaded += (_, _) => ViewModel.Attach();
+        Unloaded += (_, _) => ViewModel.Detach();
     }
 
     public DownloadSettingsViewModel ViewModel { get; }

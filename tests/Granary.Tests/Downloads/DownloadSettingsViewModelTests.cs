@@ -83,6 +83,25 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Storage_FollowsTheDownloadsWhileItShows_AndNoLongerOnceItIsLeft()
+    {
+        var settings = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher(), _h.Time,
+            downloads: _h.NewManager(), confirmation: new FakeConfirmation()) { DriveList = () => [] };
+        settings.Attach();
+        Assert.Equal(("0 B", false), (settings.UsedText, settings.CanRemoveAll));
+
+        // A monitoring run kept the first download while Settings showed.
+        await _h.AddAsync("dl_1", DownloadState.Completed, size: GB, mediaItemId: "mv_1");
+
+        Assert.Equal(("1.0 GB", true), (settings.UsedText, settings.CanRemoveAll));
+
+        settings.Detach();
+        await _h.AddAsync("dl_2", DownloadState.Completed, size: GB, mediaItemId: "mv_2");
+
+        Assert.Equal("1.0 GB", settings.UsedText);
+    }
+
+    [Fact]
     public void MonitoringDefaults_SaveDeleteAfterWatching_AndAStorageLimitInStepsOfFive()
     {
         var settings = Settings();
