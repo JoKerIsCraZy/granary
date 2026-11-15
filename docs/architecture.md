@@ -1540,7 +1540,9 @@ client guide.
   which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
-  `StartAsync` runs (a deferral of the button's click) and when it answers false. Cancel or Esc meanwhile calls
+  `StartAsync` runs and when it answers false: the click never closes it, and the dialog hides itself once the start
+  answers true. A deferral of the click would hold Cancel and Esc back, since ContentDialog drops a button's click while
+  another's deferral is out. Cancel or Esc meanwhile calls
   `StopStarting`, which cancels the token of a season's or a series' run (checked between two episodes; each create gets
   none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
   from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left

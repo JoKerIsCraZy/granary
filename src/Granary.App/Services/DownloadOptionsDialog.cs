@@ -14,8 +14,9 @@ namespace Granary.App.Services;
 /// and Granary's qualities and free space (<see cref="DownloadOptionsPanel"/>). Download stays pressable while there is
 /// something to download and the selection fits (off while a card's dialog reads the title's files); the dialog stays open
 /// while the start runs and when it did not start, which the panel says, and closes once it did. Cancel closes it; while a
-/// start runs, it stops a season's or a series' episodes after the one under way and closes once that one ended. One at a
-/// time, as <see cref="DialogConfirmation"/> asks.
+/// start runs, it stops a season's or a series' episodes after the one under way and closes once that one ended. Download's
+/// click takes no deferral for the start: ContentDialog drops a button's click while another's deferral is out, so Cancel and
+/// Esc would not reach the dialog until the whole run ended. One at a time, as <see cref="DialogConfirmation"/> asks.
 /// </summary>
 internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<DownloadOptionsDialog> logger) : IDownloadOptionsDialog
 {
@@ -51,8 +52,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 dialog.PrimaryButtonText = options.PrimaryText;
             }
         }
-        // A monitor stopped from the dialog closes it.
-        void CloseWhenDone(object? sender, EventArgs e)
+        void Close()
         {
             try
             {
@@ -63,34 +63,31 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 logger.LogDebug("The download dialog was gone as it was to close ({Failure})", ex.GetType().Name);
             }
         }
-        // Download starts what the dialog shows; a start that did not happen keeps it open with the reason.
+        // A monitor stopped from the dialog closes it.
+        void CloseWhenDone(object? sender, EventArgs e) => Close();
+        // Download starts what the dialog shows; a start that did not happen keeps it open with the reason. The click itself
+        // never closes the dialog, which closes once the start answers that it started (or was stopped).
         async void OnDownloadClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-            var deferral = args.GetDeferral();
-            bool keepOpen = true;
+            args.Cancel = true;
+            bool started = false;
             try
             {
-                keepOpen = !await options.StartAsync();
+                started = await options.StartAsync();
             }
             catch (Exception ex)
             {
                 // async void: nothing may escape. The dialog stays, so Download can be pressed again.
                 logger.LogError("The download could not be started ({Failure})", ex.GetType().Name);
             }
-            try
+            if (started)
             {
-                args.Cancel = keepOpen;
-                deferral.Complete();
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or COMException)
-            {
-                // The dialog went meanwhile, with the window: there is nothing left to keep open.
-                logger.LogDebug("The download dialog was gone as its start ended ({Failure})", ex.GetType().Name);
+                Close();
             }
         }
         // A start under way finishes before the dialog goes: Cancel or Esc then would close it with the download starting
         // all the same, and nothing saying so. They stop a season's or a series' run after the episode under way instead, and
-        // the dialog closes once that one ended (Download's click, above).
+        // the dialog closes once that one ended (Download's click, above), when nothing starts any more.
         void HoldWhileStarting(ContentDialog sender, ContentDialogClosingEventArgs args)
         {
             if (options.IsStarting && args.Result == ContentDialogResult.None)
