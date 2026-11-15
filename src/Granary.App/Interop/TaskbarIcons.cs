@@ -235,25 +235,32 @@ internal sealed unsafe partial class TaskbarIcons : IDisposable
     }
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial uint GetDpiForWindow(nint hwnd);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int GetSystemMetricsForDpi(int index, uint dpi);
 
     [LibraryImport("gdi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint CreateDIBSection(nint dc, BitmapInfoHeader* header, uint usage, out void* bits, nint section, uint offset);
 
     [LibraryImport("gdi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint CreateBitmap(int width, int height, uint planes, uint bitsPerPixel, byte* bits);
 
     [LibraryImport("gdi32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool DeleteObject(nint handle);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint CreateIconIndirect(IconInfo* info);
 
     [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool DestroyIcon(nint icon);
 }

@@ -1,0 +1,170 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+using Granary.Core.Playback;
+using Granary.Core.Servers;
+using Granary.Core.ViewModels;
+
+namespace Granary.Core.Remote;
+
+/// <summary>
+/// The texts Granary sends to a phone, which the phone shows as they are. They follow Silo's Roku app's, with "Roku" as
+/// "PC" (docs/api-contract.md 15.5 lists them). Silo's receivers write them in English.
+/// </summary>
+public static partial class RemoteTexts
+{
+    /// <summary>The longest name of a phone Granary shows.</summary>
+    public const int MaxNameLength = 64;
+
+    /// <summary><c>error unauthorized</c>: silo-roku's <c>receiver.bs</c> <c>frame</c>.</summary>
+    public const string Unauthorized = "Connect with a matching Silo account first.";
+
+    /// <summary><c>error</c> and <c>handoff_cancel</c> <c>version_unsupported</c>: <c>receiver.bs</c> <c>hello</c>.</summary>
+    public const string VersionUnsupported = "Update Silo on both devices to continue.";
+
+    /// <summary><c>error player_not_ready</c>: <c>AppSceneControl.bs</c> <c>controlApply</c>.</summary>
+    public const string PlayerNotReady = "The PC player is not ready yet.";
+
+    /// <summary><c>error handoff_required</c>: <c>AppSceneControl.bs</c>, a launch without a ready offer.</summary>
+    public const string HandoffRequired = "Prepare the phone profile before playing.";
+
+    /// <summary><c>error server_mismatch</c>: <c>AppSceneControl.bs</c>, a launch for another server.</summary>
+    public const string ServerMismatch = "This PC is connected to a different Silo server.";
+
+    /// <summary><c>error launch_pending</c>: <c>AppSceneControl.bs</c>, a second launch while one opens.</summary>
+    public const string LaunchPending = "A title is already starting on this PC.";
+
+    /// <summary><c>error too_many_controllers</c>: <c>receiver.bs</c> <c>accepted</c>.</summary>
+    public const string TooManyControllers = "Too many devices are controlling this PC. Disconnect one and try again.";
+
+    /// <summary><c>error rate_limited</c>: <c>receiver.bs</c> <c>frame</c>.</summary>
+    public const string RateLimited = "Too many commands. Slow down and try again.";
+
+    /// <summary><c>error command_failed</c> for <c>play_next</c> without one: <c>PlayerRemote.bs</c>.</summary>
+    public const string NoNextEpisode = "There is no next episode.";
+
+    /// <summary>
+    /// <c>error command_failed</c> for play, pause or seek that a Watch Party's rules refuse: the Roku app's
+    /// <c>watchParty.player.notAllowed</c>.
+    /// </summary>
+    public const string NotAllowedInWatchParty = "This Watch Party does not allow this playback action.";
+
+    /// <summary><c>error command_failed</c> for any other command the player refused: <c>PlayerRemote.bs</c>'s "Not available on Roku.".</summary>
+    public const string NotAvailable = "Not available on this PC.";
+
+    /// <summary>
+    /// <c>handoff_cancel handoff_failed</c> for an offer for another profile than the one signed in on the PC: Granary
+    /// plays only for its own (design 5.8). New: Silo's Roku app says "This Roku can play only for the profile open on it".
+    /// </summary>
+    public const string AnotherProfile = "Granary is signed in with another profile. Switch profiles on the PC to play from this phone.";
+
+    /// <summary><c>handoff_cancel</c> and <c>error</c> <c>watch_party_active</c>: the PC is in a Watch Party's room (design 5.8). New.</summary>
+    public const string LeaveWatchParty = "Leave the Watch Party on the PC first.";
+
+    /// <summary>
+    /// <c>error launch_failed</c> for a launch whose content id can name no title (blank, "." or ".."): the player's own words
+    /// for a title the server does not have (<c>PlaybackStarter.Describe</c>).
+    /// </summary>
+    public const string NoSuchTitle = "This title is no longer available.";
+
+    /// <summary>
+    /// The player's failure as a phone is told it, in the status and with <c>launch_failed</c>, when the player's text is
+    /// not one of Granary's own: a server's or an administrator's message comes as they wrote it. New.
+    /// </summary>
+    public const string CouldNotPlay = "This title could not be played on this PC.";
+
+    // The player's own failure texts, which name nothing (ServerPlayback, ServerPlayback.Recovery, PlaybackStarter,
+    // MediaAuthorization, PlayerViewModel). A text added there later and not here goes to a phone as CouldNotPlay.
+    private static readonly HashSet<string> PlayerFailures = new(StringComparer.Ordinal)
+    {
+        "Sign in to play from this server.",
+        "Choose a profile to play from this server.",
+        "Choose a server to play from.",
+        "The server ended the session. Sign in again to play.",
+        "The server could not renew the sign-in. Try again in a moment.",
+        "The server keeps rejecting the sign-in. Try again in a moment.",
+        "The server rejected the credentials.",
+        "This title has no file to play.",
+        "The room's file is not available here.",
+        "This server does not offer playback to this app.",
+        "This title is no longer available.",
+        "This title cannot be played right now.",
+        "This title could not be played. Try again later.",
+        "The server answered with a playback protocol this app does not support.",
+        "The server sent a stream address this app does not trust.",
+        "The connection to the server was lost.",
+        "Playback stopped because of an unexpected problem.",
+        "The server ended this playback session.",
+        ServerPlayback.AdminEndedText,
+        ServerPlayback.AdminStoppedText,
+        PlaybackUnavailableException.StartedForAnotherProfile,
+        ApiFailureText.Busy,
+        ApiFailureText.Unreachable,
+        ApiFailureText.Unexpected,
+    };
+
+    /// <summary>A phone that gave no usable name. New.</summary>
+    public const string UnnamedPhone = "A phone";
+
+    /// <summary><c>handoff_cancel handoff_failed</c> for an offer from another server: <c>AppSceneControl.bs</c> <c>controlOffer</c>.</summary>
+    public static string PlaysFrom(string serverName) => string.Format(CultureInfo.InvariantCulture, "This PC plays from {0}.", serverName);
+
+    // What follows "Playback failed: " when the engine ends a title by itself: mpv's own error texts, as mpv_error_string
+    // gives them for an end-file error (LibMpv.Error; checked against the pinned libmpv-2.dll), and Granary's details
+    // (MpvPlaybackEngine, ServerPlayback). Nothing else follows it, so no server's words can.
+    private static readonly HashSet<string> PlaybackEndDetails = new(StringComparer.Ordinal)
+    {
+        "event queue full",
+        "memory allocation failed",
+        "core not initialized",
+        "invalid parameter",
+        "option not found",
+        "unsupported format for accessing option",
+        "error setting option",
+        "property not found",
+        "unsupported format for accessing property",
+        "property unavailable",
+        "error accessing property",
+        "error running command",
+        "loading failed",
+        "audio output initialization failed",
+        "video output initialization failed",
+        "no audio or video data played",
+        "unrecognized file format",
+        "not supported",
+        "operation not implemented",
+        "something happened",
+        "unknown error",
+        "Granary could not open the title",
+        "Granary could not start the player without your mpv.conf",
+        "Granary stopped using your mpv.conf",
+        "No picture within the start timeout.",
+        "No data within the stall timeout.",
+    };
+
+    private const string PlaybackFailed = "Playback failed: ";
+
+    /// <summary>
+    /// The player's failure as a phone may read it: the player's text only when it is one of Granary's own, which name
+    /// nothing, else <see cref="CouldNotPlay"/>. A terminal decision's message and an administrator's stop message are the
+    /// server's words and could name a host or an address, as could any text that came from elsewhere.
+    /// </summary>
+    public static string? PlayerError(string? message) =>
+        message is null ? null : IsGranarysOwnFailure(message) ? message : CouldNotPlay;
+
+    private static bool IsGranarysOwnFailure(string message) =>
+        PlayerFailures.Contains(message)
+        || (message.StartsWith(PlaybackFailed, StringComparison.Ordinal) && PlaybackEndDetails.Contains(message[PlaybackFailed.Length..]))
+        || GranarysNumberedFailure().IsMatch(message);
+
+    // The player's own texts with a number in them: the server's error status, and how long to wait.
+    [GeneratedRegex(@"^(?:The server could not start playback \(error \d{3}\)\."
+        + @"|The server is receiving too many requests\. Try again in (?:a few minutes|1 minute|\d{1,6} minutes)\.)\z",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex GranarysNumberedFailure();
+
+    /// <summary>
+    /// A name a phone sent, as Granary shows it: cleaned as a discovered server's name is (no control, format or separator
+    /// characters, compatibility forms folded), at most <see cref="MaxNameLength"/> characters.
+    /// </summary>
+    public static string CleanName(string? text) => LanAdverts.CleanLabel(text, MaxNameLength) ?? UnnamedPhone;
+}

@@ -32,6 +32,12 @@ public sealed record PlayRequest
     /// <summary>A resume lands on the resume point itself, whatever this PC's Rewind on resume (Android's <c>suppressResumeRewind</c>).</summary>
     public bool SuppressesResumeRewind { get; private init; }
 
+    /// <summary>
+    /// Where another device left the title, in its own seconds (<see cref="At"/>): the start goes there instead of the
+    /// profile's saved point, unrewound. Null for every other way in.
+    /// </summary>
+    public double? StartSeconds { get; private init; }
+
     /// <summary>A local path or URL played without the server (developer shortcut <c>--play</c>).</summary>
     public string? DirectSource { get; private init; }
 
@@ -46,6 +52,15 @@ public sealed record PlayRequest
 
     /// <summary>The file and tracks picked on the detail page; null lets playback choose (every other way in).</summary>
     public PrePlayChoice? Choice { get; private init; }
+
+    /// <summary>
+    /// The saved server, by its entry id, the title may play from (<see cref="OnlyFor"/>): a title Silo's phone app started
+    /// was checked against the PC's sign-in, and plays only while that still holds. Null for every other way in.
+    /// </summary>
+    public string? OnlyForServer { get; private init; }
+
+    /// <summary>The profile the title may play for, with <see cref="OnlyForServer"/>; null for every other way in.</summary>
+    public string? OnlyForProfile { get; private init; }
 
     /// <summary>Plays <paramref name="contentId"/> from where the profile left off, or from the start.</summary>
     public static PlayRequest Resume(string contentId, PrePlayChoice? choice = null)
@@ -71,6 +86,22 @@ public sealed record PlayRequest
     }
 
     /// <summary>
+    /// Plays <paramref name="contentId"/> from <paramref name="startSeconds"/> of its own time, where another device (Silo's
+    /// phone app) left it: whatever the profile's saved point and this PC's Rewind on resume. A position past the title's
+    /// end starts as a resume would.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="startSeconds"/> is not a finite number of at least 0.</exception>
+    public static PlayRequest At(string contentId, double startSeconds, PrePlayChoice? choice = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
+        if (!double.IsFinite(startSeconds) || startSeconds < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(startSeconds), "A start position is a finite number of seconds of at least 0.");
+        }
+        return new PlayRequest { ContentId = contentId, StartSeconds = startSeconds, Choice = choice };
+    }
+
+    /// <summary>
     /// The Watch Party's title: from the start, file <paramref name="fileId"/> for everyone (no other version), while the
     /// room's commands play, pause and seek it.
     /// </summary>
@@ -86,6 +117,24 @@ public sealed record PlayRequest
             SelectionRevision = selectionRevision,
         };
     }
+
+    /// <summary>
+    /// This request, played only while <paramref name="serverEntryId"/> is the active server and <paramref name="profileId"/>
+    /// its profile: a phone's launch was checked against that sign-in, and a profile switched since must not play it.
+    /// </summary>
+    public PlayRequest OnlyFor(string serverEntryId, string profileId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serverEntryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        return this with { OnlyForServer = serverEntryId, OnlyForProfile = profileId };
+    }
+
+    /// <summary>
+    /// This request, bound as <paramref name="before"/> is (<see cref="OnlyFor"/>): the episode before or after a title a
+    /// phone started plays only for that sign-in too. Unbound when <paramref name="before"/> is.
+    /// </summary>
+    public PlayRequest BoundAs(PlayRequest? before) =>
+        before is { OnlyForServer: { } server, OnlyForProfile: { } profile } ? OnlyFor(server, profile) : this;
 
     public static PlayRequest Direct(string pathOrUrl)
     {

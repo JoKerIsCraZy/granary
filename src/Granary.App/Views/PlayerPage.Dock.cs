@@ -126,6 +126,7 @@ public sealed partial class PlayerPage
         ChaptersMenu.Hide();
         SubtitleMenu.Hide();
         SettingsMenu.Hide();
+        RemoteMenu.Hide();
     }
 
     private bool _isPointerOverDockVideo;

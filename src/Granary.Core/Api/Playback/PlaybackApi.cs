@@ -18,7 +18,7 @@ public sealed class PlaybackApi(SiloHttp http)
     private const int MaxDiagnostics = 32;
 
     /// <summary>The largest start and replan position the server accepts (a year in seconds).</summary>
-    private const double MaxRequestedPosition = 31_536_000;
+    internal const double MaxRequestedPosition = 31_536_000;
 
     /// <summary>The installation id, features and deliveries; gate on <see cref="PlaybackCapabilities.IsUsable"/>.</summary>
     public Task<PlaybackCapabilities> GetCapabilitiesAsync(Uri server, CancellationToken cancellationToken = default) =>

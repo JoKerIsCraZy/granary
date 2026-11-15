@@ -10,6 +10,9 @@ namespace Granary.Core.Playback;
 /// <summary>Why a title cannot be played, worded for the viewer.</summary>
 public sealed class PlaybackUnavailableException(string message, bool canRetry) : Exception(message)
 {
+    /// <summary>A title a phone started for a sign-in the PC no longer has (<see cref="PlayRequest.OnlyFor"/>). New.</summary>
+    public const string StartedForAnotherProfile = "This title was started for a profile that is no longer signed in.";
+
     public bool CanRetry { get; } = canRetry;
 }
 
@@ -77,6 +80,7 @@ public sealed class PlaybackStarter(
         var choice = request.IsWatchParty ? null : request.Choice;
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
         string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
+        RequireSignIn(request, server.Id, profileId);
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
         // Read alongside the watch detail; when that fails first, nobody waits for the settings any more.
         _ = settings.ContinueWith(static read => _ = read.Exception, CancellationToken.None,
@@ -106,7 +110,11 @@ public sealed class PlaybackStarter(
         bool versionPicked = picked?.IsVersionPicked == true;
         bool software = devicePreferences.DecodesInSoftware;
         var report = Report(OffersMediaOrigins(capabilities), software, HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, report,
+        var read = await settings.ConfigureAwait(false);
+        // Again after the reads: the profile or the server may have changed while they were on their way, and the start
+        // goes out with the profile read before them.
+        RequireSignIn(request, session.ActiveServer?.Id, session.ProfileId);
+        return new PlaybackContext(server, profileId, detail, version, read, capabilities.InstallationId!, report,
             picked?.SubtitleTrack)
         {
             ContentId = contentId,
@@ -114,6 +122,17 @@ public sealed class PlaybackStarter(
             VersionPicked = versionPicked,
             DecodesInSoftware = software,
         };
+    }
+
+    // A title a phone started plays only for the sign-in its launch was checked against (PlayRequest.OnlyFor), whatever
+    // came since.
+    private static void RequireSignIn(PlayRequest request, string? serverEntryId, string? profileId)
+    {
+        if ((request.OnlyForServer is { } onlyServer && !string.Equals(onlyServer, serverEntryId, StringComparison.Ordinal))
+            || (request.OnlyForProfile is { } onlyProfile && !string.Equals(onlyProfile, profileId, StringComparison.Ordinal)))
+        {
+            throw new PlaybackUnavailableException(PlaybackUnavailableException.StartedForAnotherProfile, canRetry: false);
+        }
     }
 
     // The detail page's file with its picked audio as the one it starts with, and its picked subtitle; null when the title
@@ -279,18 +298,24 @@ public sealed class PlaybackStarter(
     }
 
     /// <summary>
-    /// The start's <c>start_position</c> for <paramref name="request"/>: 0 to start over, the resume point to resume,
+    /// The start's <c>start_position</c> for <paramref name="request"/>: 0 to start over, the position another device
+    /// handed over (<see cref="PlayRequest.At"/>) while it lies before the title's end, the resume point to resume,
     /// rewound by this PC's Rewind on resume as it is now (<see cref="ResumeRewind"/>) unless the request suppresses it,
     /// null without one. It is sent explicitly because the server starts a watched title at 0 even during a rewatch
     /// (docs/api-contract.md, 10.5).
     /// </summary>
-    public double? StartPosition(WatchDetail detail, PlayRequest request)
+    /// <param name="fileSeconds">The length of the file that starts; 0 when it is not known.</param>
+    public double? StartPosition(WatchDetail detail, PlayRequest request, double fileSeconds = 0)
     {
         ArgumentNullException.ThrowIfNull(detail);
         ArgumentNullException.ThrowIfNull(request);
         if (request.FromBeginning)
         {
             return 0;
+        }
+        if (request.StartSeconds is { } given && IsWithinTitle(given, fileSeconds > 0 ? fileSeconds : detail.UserData?.DurationSeconds ?? 0))
+        {
+            return given;
         }
         double position = detail.UserData?.PositionSeconds ?? 0;
         if (position <= 0 || !double.IsFinite(position))
@@ -299,6 +324,12 @@ public sealed class PlaybackStarter(
         }
         return request.SuppressesResumeRewind ? position : ResumeRewind.Apply(position, devicePreferences.ResumeRewindSeconds);
     }
+
+    // Before the end of a title of known length; without one, within what the server takes as a start.
+    private static bool IsWithinTitle(double seconds, double lengthSeconds) =>
+        double.IsFinite(seconds) && seconds >= 0 && (lengthSeconds > 0 && double.IsFinite(lengthSeconds)
+            ? seconds < lengthSeconds
+            : seconds <= PlaybackApi.MaxRequestedPosition);
 
     /// <summary>
     /// The player's title line and the line under it, as Silo's web player writes them: the movie and its year, or
