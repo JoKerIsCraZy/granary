@@ -422,7 +422,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void TogglePause()
     {
-        CheckFollowsEngine();
         if (IsPlaying)
         {
             _streak.Reset();
@@ -458,6 +457,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     // A pause also stops the next-up card's countdown.
     private void Pause()
     {
+        // Before the engine pauses: while it still plays, its time can be held against the player's.
+        CheckFollowsEngine();
         _nextUp.Paused(Now);
         ShowNextUp();
         _engine.SetPaused(true);

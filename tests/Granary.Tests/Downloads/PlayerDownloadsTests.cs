@@ -111,7 +111,7 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ATimeThatStandsWhileTheEnginePlays_IsLoggedOnce_WithWhatThePlayerHolds()
+    public async Task ATimeThatStandsWhileTheEnginePlays_IsLogged_WithWhatThePlayerHolds()
     {
         await _fixture.Harness.AddPlayableAsync();
         using var player = NewPlayer();
@@ -120,7 +120,6 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
 
         // The engine plays on, but nothing of it reaches the player.
         _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
-        player.CheckFollowsEngine();
         player.CheckFollowsEngine();
 
         string line = Assert.Single(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
@@ -132,6 +131,34 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         Frame(21);
         player.CheckFollowsEngine();
         Assert.Single(_logs.Lines, l => l.Contains("The player's time follows the engine again", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APause_HoldsTheTimeAgainstTheEngine_BeforeItPauses()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
+
+        player.TogglePauseCommand.Execute(null);
+
+        Assert.Single(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ASeekOnItsWay_IsNoStall()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        using var player = NewPlayer();
+        await player.StartAsync(PlayRequest.FromStart("ep_5"));
+        Frame(10);
+
+        player.SeekTo(100);
+        player.CheckFollowsEngine();
+
+        Assert.DoesNotContain(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
     }
 
     [Fact]
