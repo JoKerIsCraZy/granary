@@ -722,6 +722,14 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // The server's name or wordmark opens Home, as Home's entry does.
+    private void OnBrandClick(object sender, RoutedEventArgs e) => _navigation.ShowSection(AppRoute.Home);
+
+    // A little faded under the pointer, as the web's logo (hover:opacity-85).
+    private void OnBrandPointerEntered(object sender, PointerRoutedEventArgs e) => BrandLink.Opacity = 0.85;
+
+    private void OnBrandPointerExited(object sender, PointerRoutedEventArgs e) => BrandLink.Opacity = 1;
+
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
         if (ReferenceEquals(args.InvokedItemContainer, ProfileItem))
