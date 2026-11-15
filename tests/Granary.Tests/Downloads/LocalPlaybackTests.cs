@@ -293,6 +293,47 @@ public sealed class LocalPlaybackTests : IAsyncDisposable
         Assert.Null(_fixture.Harness.Find("dl_1")!.Record.SubtitlePreference);
     }
 
+    // The other profile watches at 1.5x.
+    private const string FasterSettings = """{ "items": [ { "key": "player.playback_speed", "value": 1.5, "source": "profile_device" } ], "revision": 2 }""";
+
+    [Theory]
+    [InlineData("8", "1")]
+    [InlineData("7", "2")]
+    public async Task AnotherProfileOrAccountActiveBeforeTheStart_LendsTheDownloadNoneOfItsSettings(string profile, string account)
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, ScriptedSilo.Json(System.Net.HttpStatusCode.OK, FasterSettings));
+        var request = PlayRequest.Resume(LocalPlaybackFixture.EpisodeId);
+        var playback = Assert.IsType<LocalPlayback>(await _fixture.Playbacks.TryCreateAsync(request, LocalPlaybackFixture.Token));
+        // Before the start, another profile of the same server becomes the active one, or another account whose profile has the same id.
+        _fixture.Harness.Session.ProfileId = profile;
+        _fixture.Harness.Session.Account = _fixture.Harness.Session.Account! with { Id = account };
+
+        await playback.StartAsync(request, LocalPlaybackFixture.Token);
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.SettingsPath));
+        Assert.Equal((1d, 1d), (playback.Speed, _fixture.Engine.Speed));
+        Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    [Fact]
+    public async Task AnotherProfileActiveWhileTheSettingsAreRead_LendsTheDownloadNoneOfItsSettings()
+    {
+        await _fixture.Harness.AddPlayableAsync();
+        var faster = ScriptedSilo.Json(System.Net.HttpStatusCode.OK, FasterSettings);
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.SettingsPath, () =>
+        {
+            // The viewer switches profile while the settings are on their way; they answer for the one active now.
+            _fixture.Harness.Session.ProfileId = "8";
+            return faster();
+        });
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(PlaybackPreferences.Default, playback!.Preferences);
+        Assert.Equal((1d, 1d), (playback.Speed, _fixture.Engine.Speed));
+    }
+
     [Fact]
     public async Task AnotherServerActiveAsTheDownloadStarts_IsAskedNothingForIt()
     {

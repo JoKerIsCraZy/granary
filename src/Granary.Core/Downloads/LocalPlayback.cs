@@ -183,6 +183,9 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     private string OwnTitle => _manifest.Title is { Length: > 0 } title ? title : _download.Record.Title;
 
+    // The server, account and profile the download belongs to are the active ones.
+    private bool IsOwnScope => DownloadScope.Of(_session) == _download.Record.Scope;
+
     public async Task StartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -203,12 +206,21 @@ public sealed partial class LocalPlayback : IServerPlayback
     {
         // Before the settings are read: a save of the audio delay done while they are is newer than what they say.
         long audioDelayRead = _audioDelay?.StartRead() ?? 0;
-        // The download's own server only: account and profile ids are each server's, so another one's may carry the same.
-        _server = _session.ActiveServer is { } active && active.Id == _download.Record.Scope.ServerEntryId ? active.BaseUri : null;
+        // Only while the download's own server, account and profile are the active ones: another profile's settings are not this
+        // download's, and account and profile ids are each server's, so another server's may carry the same.
+        _server = IsOwnScope && _session.ActiveServer is { } active ? active.BaseUri : null;
         var (preferences, detail) = await ReadFromServerAsync();
         if (_stopping)
         {
             return;
+        }
+        if (!IsOwnScope)
+        {
+            // Another profile became the active one while they were read: they answered as that one (the title's state did not,
+            // it is bound to the download's profile).
+            _logger.LogInformation("Another profile became the active one as download {DownloadId} started; it plays with the default settings",
+                _download.Record.DownloadId);
+            preferences = PlaybackPreferences.Default;
         }
         KeepSubtitlePreference(detail);
         Preferences = preferences;

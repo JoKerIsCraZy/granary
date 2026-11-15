@@ -1946,8 +1946,11 @@ while the server answers.
   left the title. Since the subtitle preference is kept in the download and the resume point is where it starts, the
   watch detail is read as the download's account and profile only (`WatchApi.GetWatchAsAccountProfileAsync`, bound as the
   settings saves are): once another profile, or another account whose profile has the same id, acts on the server, the
-  read is refused unsent and the download starts with what this PC knows. A server that is not the download's own (another
-  saved one became active meanwhile) is asked nothing, since its ids may be the same.
+  read is refused unsent and the download starts with what this PC knows. The settings' read is the active profile's, as
+  a stream's, and `DownloadPlaybacks` makes the playback only for the active scope; so when the download's own server,
+  account and profile are no longer the active ones as it starts (another became active between the two), nothing is
+  asked, since another server's ids may be the same too, and settings that answered for another profile that became
+  active during the read are not taken: the download plays with the defaults.
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
   `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
   `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys
