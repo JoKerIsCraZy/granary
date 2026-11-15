@@ -483,7 +483,7 @@ public sealed partial class TitleViewModel : ObservableObject
         PosterUrl = TmdbImages.Poster(detail.PosterPath, "w500");
         Chips = ChipsOf(detail, isSeries);
         Ratings = detail.VoteAverage is double score and > 0 and <= 10
-            ? [new DetailRating("TMDB", score.ToString("0.0", CultureInfo.InvariantCulture))]
+            ? [new DetailRating("TMDB", score.ToString("0.0", CultureInfo.InvariantCulture), "tmdb")]
             : [];
         VotesText = Ratings.Count > 0 && detail.VoteCount is int votes and > 0 ? TitleText.Votes(votes) : "";
         IReadOnlyList<string> crew = isSeries ? detail.Creators : detail.Director is { Length: > 0 } director ? [director] : [];

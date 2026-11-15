@@ -20,6 +20,10 @@ release's section is what its update says it changes (docs/release.md).
 - **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
   on Thursday" or "Season 4 starts tomorrow".
 
+### Changed
+
+- A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
+
 ### Fixed
 
 - A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and

@@ -5,10 +5,18 @@ namespace Granary.Core.ViewModels.Detail;
 /// <summary>A metadata chip under the title: "2026", "R", "1H 49M"; accent chips carry the technical facts ("1080P", "EAC3").</summary>
 public sealed record DetailChip(string Text, bool IsAccent = false);
 
-/// <summary>An external rating as the server words it: "IMDb" and "8.7".</summary>
-public sealed record DetailRating(string Name, string Display)
+/// <summary>An external rating as the server words it: "IMDb" and "8.7", and its source ("imdb", "tmdb"), when known.</summary>
+public sealed record DetailRating(string Name, string Display, string? Source = null)
 {
     public string AccessibleName => $"{Name} {Display}";
+
+    /// <summary>
+    /// TMDB's score shows TMDB's approved logo for its mark, as the web's RatingEntry draws it (TMDB's terms allow it); every
+    /// other source shows its name, as no other source's logo may be used.
+    /// </summary>
+    public bool ShowsLogo => string.Equals(Source, "tmdb", StringComparison.OrdinalIgnoreCase);
+
+    public bool ShowsMark => !ShowsLogo;
 }
 
 /// <summary>An entry of the "Cast &amp; Crew" row: a person's card, or the separator before a group.</summary>
