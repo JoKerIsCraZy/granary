@@ -20,6 +20,8 @@ public sealed class AccessibilitySettingsViewModelTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly LibraryHarness _harness = new();
     private readonly List<AccessibilitySettingsViewModel> _pages = [];
+    private readonly QueuedDispatcher _queued = new();
+    private AppLanguageSetting? _setting;
 
     public AccessibilitySettingsViewModelTests()
     {
@@ -47,13 +49,15 @@ public sealed class AccessibilitySettingsViewModelTests : IDisposable
 
     private AppLanguageFile KeptFile() => new(Path.Combine(_directory, "app-language.json"), _harness.Logs.For<AppLanguageFile>());
 
-    private async Task<AccessibilitySettingsViewModel> OpenAsync(string[]? windows = null, string regional = "en-US", AppLanguageFile? file = null)
+    private async Task<AccessibilitySettingsViewModel> OpenAsync(string[]? windows = null, string regional = "en-US", AppLanguageFile? file = null,
+        Core.Abstractions.IUiDispatcher? pageDispatcher = null)
     {
         var api = new SettingsApi(_harness.Silo.Http);
         file ??= KeptFile();
-        var setting = new AppLanguageSetting(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), api,
+        var setting = _setting = new AppLanguageSetting(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), api,
             file, new ImmediateDispatcher(), _harness.Logs.For<AppLanguageSetting>());
-        var page = new AccessibilitySettingsViewModel(setting, file, new FakeDeviceLanguages(windows ?? ["en-US"], regional), new ImmediateDispatcher());
+        var page = new AccessibilitySettingsViewModel(setting, file, new FakeDeviceLanguages(windows ?? ["en-US"], regional),
+            pageDispatcher ?? new ImmediateDispatcher());
         _pages.Add(page);
         await page.LoadAsync();
         return page;
@@ -266,5 +270,22 @@ public sealed class AccessibilitySettingsViewModelTests : IDisposable
 
         Assert.True(page.OffersTryAgain);
         Assert.Empty(page.RestartNote);
+    }
+
+    [Fact]
+    public async Task AChoiceMadeForOneProfile_IsNotSavedForTheNext_ThatTookOverBeforeItWent()
+    {
+        // The choice goes out after the select's own change; another profile took over and was read meanwhile.
+        var page = await OpenAsync(pageDispatcher: _queued);
+        page.SelectedChoice = page.Choices.Single(c => c.Value == "en");
+
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        await _setting!.Working;
+        Assert.Equal(AppLanguageState.Ready, _setting.State);
+        _queued.RunAll();
+        await page.Working;
+
+        Assert.Empty(Saved());
     }
 }

@@ -426,6 +426,18 @@ public sealed class AppLanguageSettingTests : IDisposable
         Assert.Equal("de", KeptFile().AtStart);
     }
 
+    [Fact]
+    public async Task AChoiceAfterAnotherProfileTookOver_IsNotSaved_BeforeThatProfileIsRead()
+    {
+        // The session changed, and its change has not reached the setting yet: what shows is still the earlier profile's.
+        var setting = await ReadyAsync();
+        _harness.Session.ProfileId = "8";
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Empty(Writes());
+    }
+
     private static Func<Task<HttpResponseMessage>> Json(string body) => ScriptedSilo.Json(System.Net.HttpStatusCode.OK, body);
 
     [Fact]

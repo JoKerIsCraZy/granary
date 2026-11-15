@@ -48,10 +48,12 @@ public sealed partial class AccessibilitySettingsViewModel : ObservableObject, I
             {
                 return;
             }
-            // After the select's own change: a choice can change the list, which the select must not see mid-change.
+            // After the select's own change: a choice can change the list, which the select must not see mid-change. It is
+            // the profile's that shows now, so it does not go out for one that took over meanwhile.
+            var madeFor = _setting.ReadFor;
             _dispatcher.Post(() =>
             {
-                Working = _setting.ChooseAsync(value.Value.Length == 0 ? null : value.Value);
+                Working = _setting.ChooseAsync(value.Value.Length == 0 ? null : value.Value, madeFor);
                 if (SelectedChoice?.Value != value.Value)
                 {
                     // Not taken, as one is on its way (the web's one save at a time): the select goes back.

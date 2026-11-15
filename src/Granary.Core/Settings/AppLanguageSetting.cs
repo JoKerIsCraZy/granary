@@ -100,6 +100,12 @@ public sealed partial class AppLanguageSetting : ObservableObject
     // The last choice, while this PC's own value still outranks it here: whose it is, where it goes, and the language.
     private PendingClear? _clearPending;
 
+    /// <summary>
+    /// The server and profile <see cref="Stored"/> was read for; null while none is known. A choice made on the page
+    /// names it, so it is not saved for a profile that took over before it went out.
+    /// </summary>
+    public (string? ServerId, string? ProfileId)? ReadFor => _readFor;
+
     /// <summary>What the next start follows, as kept on this PC (<see cref="AppLanguageFile.Kept"/>).</summary>
     [ObservableProperty]
     public partial string? KeptForNextStart { get; private set; }
@@ -127,12 +133,14 @@ public sealed partial class AppLanguageSetting : ObservableObject
 
     /// <summary>
     /// Saves <paramref name="tag"/> as the profile's app language, null to match the device; shown at once, back again if the
-    /// server refuses it. One choice at a time: another while one saves is not taken.
+    /// server refuses it. One choice at a time: another while one saves is not taken. It goes out only for the profile whose
+    /// language shows (<see cref="ReadFor"/>), and, with <paramref name="madeFor"/>, only while that profile still acts.
     /// </summary>
-    public async Task ChooseAsync(string? tag)
+    public async Task ChooseAsync(string? tag, (string? ServerId, string? ProfileId)? madeFor = null)
     {
         if (State != AppLanguageState.Ready || IsSaving || tag == Stored
-            || _session is not { ActiveServer: { } server, ProfileId: { } profileId })
+            || _session is not { ActiveServer: { } server, ProfileId: { } profileId }
+            || Owner() != _readFor || (madeFor is { } expected && expected != Owner()))
         {
             return;
         }

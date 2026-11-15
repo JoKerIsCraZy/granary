@@ -417,11 +417,12 @@ differently; a text only Granary has keeps its English under a key of its own. A
 - **The picker** (Settings → Accessibility → Language, `AccessibilitySettingsViewModel`, as the web's
   `AccessibilitySettings.tsx`): Match device, then the enabled languages by their own names, and a stored tag Granary
   does not offer under its name, so a save never clears another app's choice. A choice writes the profile's value (Match
-  device writes `null`), then clears this PC's own value when the read came from it (a `null` row of its own too), as the
-  web and the apps write it; one choice at a time, each bound to the server and profile it was made for. It is kept for
-  the next start once it applies here: when saved, or, with a row of this PC's own, once that is cleared; a clear that
-  lands only on Try again reads the profile's language again, as another device may have chosen one meanwhile. A file
-  that could not be written is written by the next keep.
+  device writes `null`), then clears this PC's own value when the read came from it (a `null` row of its own too), as
+  the web and the apps write it; one choice at a time, each bound to the server and profile whose language showed when
+  it was made, so none goes out for a profile that took over meanwhile. It is kept for the next start once it applies
+  here: when saved, or, with a row of this PC's own, once that is cleared; a clear that lands only on Try again reads
+  the profile's language again, as another device may have chosen one meanwhile. A file that could not be written is
+  written by the next keep.
 - **How a change applies**: at the next start. Silo's web and apps switch at once; Granary does not, because the texts
   are read when each element is made (x:Bind functions run once, view models word their rows as they load) and live
   elements would keep the old language: the shell, the sidebar, cached pages and their back stack, the player (also
