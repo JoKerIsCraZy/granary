@@ -172,6 +172,30 @@ public sealed class ItemDetailMoreEpisodesPlacesTests
     }
 
     [Fact]
+    public async Task AListingThatChanges_WhenThePageReadsItAgain_IsPlacedAgain()
+    {
+        _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22"))));
+        _calendar.Airs(3, "Chapter 3", "2026-09-15").Airs(4, "Chapter 4", "2026-09-22").Airs(5, "Chapter 5", "2026-09-29");
+        _fixture.Guard(2).Guard(4);
+        var detail = _fixture.Create();
+        await detail.LoadCommand.ExecuteAsync(EpisodeId);
+        detail.Activate();
+        await detail.Placing;
+        Assert.Equal([3, 5], detail.MoreEpisodesRow.OfType<DetailEpisodePlaceholder>().Select(p => p.EpisodeNumber));
+        // Episode 4's file went and episode 5's came while the page was open; a stop reads the season again.
+        _fixture.Get(SeriesEpisodesPath(SeriesId, 3), Ok(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (5, "2026-09-29"))));
+
+        _fixture.Stops.Track(Task.CompletedTask);
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        await detail.Placing;
+
+        Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2", "S03E03 · Chapter 3", "S03E04 · Chapter 4", "S03E05 · Chapter 5"], Titles(detail));
+        Assert.Equal([3, 4], detail.MoreEpisodesRow.OfType<DetailEpisodePlaceholder>().Select(p => p.EpisodeNumber));
+        AssertQuiet();
+    }
+
+    [Fact]
     public async Task AnotherTitleLoadedMeanwhile_GetsNoneOfTheEpisodesPlaces()
     {
         _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(Listing));

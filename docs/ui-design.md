@@ -765,7 +765,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     order, the episode itself included, and among them the places the season's grid shows (above), from the same
     calendar answers: a place of the row's card size, its dashed box 16:9 as the episode cards' stills, with the grid's
     words. The listed episodes show at once and the places come in once the calendar answers (a failed answer leaves the
-    row as listed). A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
+    row as listed). When the page reads the season again (after a stop, a start or a watched mark) and its episodes
+    changed, the places are made again, here and in the season's grid. A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
     row centres on the page's own card as without places. The row shows only when it has more than one entry, places
     included: a season of one listed episode shows it once a place joins it. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel

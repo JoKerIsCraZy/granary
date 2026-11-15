@@ -511,6 +511,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Episodes = [];
         StopPlacing();
         _places = [];
+        _placedAt = null;
         EpisodeGrid.Clear();
         StopNextAiring();
         NextAiringText = "";

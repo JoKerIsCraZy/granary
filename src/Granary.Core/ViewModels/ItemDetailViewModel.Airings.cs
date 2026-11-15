@@ -17,6 +17,8 @@ public sealed partial class ItemDetailViewModel
 
     private IReadOnlyList<DetailEpisodePlaceholder> _places = [];
     private CancellationTokenSource? _placing;
+    // Where the last placing looked, so a listing read again can be placed again.
+    private (Uri Server, string SeriesId, int Season)? _placedAt;
 
     /// <summary>
     /// The season's grid: <see cref="Episodes"/>, with the places of missing and upcoming episodes among them. It changes in
@@ -38,9 +40,23 @@ public sealed partial class ItemDetailViewModel
         {
             return;
         }
+        _placedAt = (server, seriesId, number);
         var run = CancellationTokenSource.CreateLinkedTokenSource(loadCancellation);
         _placing = run;
         Placing = PlaceAsync(server, seriesId, number, listed, generation, run);
+    }
+
+    // A listing read again (a watched mark, a start or a stop) whose episodes changed is placed again, and a placing still on
+    // its way for the one before is dropped: its places would leave out a gap the new listing has. Until the new places come,
+    // the old ones stay, but none beside a listed episode of its number (SeasonGaps.Among).
+    private void PlaceAgainIfChanged(IReadOnlyList<Episode> before, IReadOnlyList<Episode> now, int generation)
+    {
+        if (_placedAt is not { } at
+            || before.Select(e => (e.EpisodeNumber, e.ContentId)).SequenceEqual(now.Select(e => (e.EpisodeNumber, e.ContentId))))
+        {
+            return;
+        }
+        StartPlacing(at.Server, at.SeriesId, at.Season, now, generation, CancellationToken.None);
     }
 
     private void StopPlacing()

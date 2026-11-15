@@ -302,12 +302,15 @@ public sealed partial class ItemDetailViewModel
             IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
             if (list is not null && _listsEpisodes)
             {
+                PlaceAgainIfChanged(_episodes, list.Items, generation);
                 _episodes = list.Items;
                 ShowEpisodeCards();
             }
             else if (list is not null)
             {
+                var before = _siblings;
                 ShowSiblings(list.Items);
+                PlaceAgainIfChanged(before, _siblings, generation);
             }
             if (seasons is not null)
             {
