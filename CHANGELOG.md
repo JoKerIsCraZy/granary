@@ -22,6 +22,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
+  Added Movies" itself.
 - A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.
 
 ### Fixed
