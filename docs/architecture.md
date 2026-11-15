@@ -1937,7 +1937,8 @@ while the server answers.
   of the other profile's download, which would record that profile's progress. A read of other bytes than the download
   names by then (the server's new bytes fetched meanwhile: another revision, or a file of another name; the read may be
   an earlier start's) never pairs its manifest and files with the new record: the title streams, and the next play reads
-  the folder again.
+  the folder again. Nor does a manifest of another revision than its record (an earlier build's day-old refresh could
+  leave one beside the media): its length and tracks describe other bytes, and the title streams.
 - **No server session.** `LocalPlayback` implements `IServerPlayback`, so the player page and everything that follows
   the player work as for a stream: the seek bar, chapters and skip pills, the next episode, the sleep timer, the kept
   volume, full screen kept for the next title, Windows' media controls, the taskbar's buttons and the Discord status. It
