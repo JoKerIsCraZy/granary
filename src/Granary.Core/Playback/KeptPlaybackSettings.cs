@@ -125,14 +125,28 @@ public sealed class KeptPlaybackSettings
         }
     }
 
-    /// <summary>The answer last kept for <paramref name="owner"/>'s batch of keys; null when none was.</summary>
+    /// <summary>
+    /// The answer last kept for <paramref name="owner"/>'s batch of keys; null when none was. A file that could not be read
+    /// before is read again here: without the server nothing is kept, so no write would read it.
+    /// </summary>
     public EffectiveSettings? Find(string owner, IReadOnlyList<string> keys)
     {
         ArgumentException.ThrowIfNullOrEmpty(owner);
         ArgumentNullException.ThrowIfNull(keys);
         lock (_gate)
         {
-            return Loaded().TryGetValue(owner, out var batches) && batches.TryGetValue(string.Join(',', keys), out var kept) ? kept.Values : null;
+            bool triedBefore = _loadTried;
+            var owners = Loaded();
+            if (triedBefore && !_loaded)
+            {
+                TryLoad();
+                // A note an earlier run left goes once the file is written without what it names.
+                if (_loaded && _note.Waits)
+                {
+                    Save();
+                }
+            }
+            return owners.TryGetValue(owner, out var batches) && batches.TryGetValue(string.Join(',', keys), out var kept) ? kept.Values : null;
         }
     }
 
@@ -170,7 +184,8 @@ public sealed class KeptPlaybackSettings
         _downloads is not null && owner.Split('/') is [var server, var account, var profile]
         && _downloads.IsClearPending(new DownloadScope(server, account, profile));
 
-    // Under the lock. The file is read at the first use; one that could not be read then is read again by the next write.
+    // Under the lock. The file is read at the first use; one that could not be read then is read again by the next write
+    // and the next Find.
     private Dictionary<string, Dictionary<string, Kept>> Loaded()
     {
         if (!_loadTried)

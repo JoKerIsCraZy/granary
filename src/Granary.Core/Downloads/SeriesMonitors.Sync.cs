@@ -86,7 +86,7 @@ public sealed partial class SeriesMonitors
         IReadOnlyList<DownloadSubscription> listed;
         try
         {
-            listed = await _api.ListAsync(server, scope.ProfileId, cancellationToken).ConfigureAwait(false);
+            listed = await _api.ListAsync(server, scope.AccountId, scope.ProfileId, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (IsServerFailure(ex, cancellationToken))
         {
@@ -168,7 +168,8 @@ public sealed partial class SeriesMonitors
         {
             try
             {
-                var page = await _api.SyncPageAsync(server, scope.ProfileId, monitor.Id, etag, cursor, cancellationToken).ConfigureAwait(false);
+                var page = await _api.SyncPageAsync(server, scope.AccountId, scope.ProfileId, monitor.Id, etag, cursor, cancellationToken)
+                    .ConfigureAwait(false);
                 pages++;
                 retries = 0;
                 if (page.Page is not { HasMore: true })
@@ -238,7 +239,7 @@ public sealed partial class SeriesMonitors
     {
         try
         {
-            var reread = await _api.GetAsync(server, scope.ProfileId, subscriptionId, cancellationToken).ConfigureAwait(false);
+            var reread = await _api.GetAsync(server, scope.AccountId, scope.ProfileId, subscriptionId, cancellationToken).ConfigureAwait(false);
             if (IsStill(scope))
             {
                 _book.Put(scope, reread);

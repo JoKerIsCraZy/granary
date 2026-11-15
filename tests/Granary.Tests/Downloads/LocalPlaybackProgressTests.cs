@@ -73,6 +73,23 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AReturnToTheStart_IsWhereTheViewerLeftTheTitle()
+    {
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(600);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        Assert.Equal(600_000, Entry.PositionMs);
+
+        // The viewer goes back to the very start and leaves there, as the Apple app records a position of 0.
+        playback.Seek(0);
+        await playback.StopAsync();
+
+        Assert.Equal(0, Entry.PositionMs);
+        Assert.Equal(0, Record.ResumeMs);
+    }
+
+    [Fact]
     public async Task ATitleLeftPaused_DoesNotGrowNewerByItself()
     {
         _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
@@ -368,6 +385,126 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
         answer.SetException(new HttpRequestException(HttpRequestError.ConnectionError, "connection refused"));
         await _fixture.Sync.LatestRun;
         Assert.Equal(OfflineProgressState.Pending, Entry.State);
+    }
+
+    [Fact]
+    public async Task TheStop_DoesNotWaitLongerThanItsBudget_ForADriveThatDoesNotAnswer_AndStillSendsThePosition()
+    {
+        // The server answers that the title is watched now: taking that into the download is a write too.
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.ProgressPath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "items": [ { "media_item_id": "ep_5", "position_seconds": 0, "duration_seconds": 7200, "completed": true, "updated_at": "2027-01-01T12:00:00Z" } ],
+              "page": { "has_more": false } }
+            """));
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+        // Another change to the downloads is being written as the drive stops answering: the position's write waits behind it.
+        using var entered = new ManualResetEventSlim();
+        using var drive = new ManualResetEventSlim();
+        _fixture.Harness.Store.WritingIndex = () =>
+        {
+            entered.Set();
+            drive.Wait();
+        };
+        var other = _fixture.Harness.AddAsync("dl_2");
+        try
+        {
+            await Until(() => entered.IsSet, "the other change's write began");
+
+            var stop = playback.StopAsync();
+            Assert.False(stop.IsCompleted);
+            _fixture.Harness.Time.Advance(LocalPlayback.StopWriteBudget);
+            // The send goes, and so does the read back, whose write waits behind the drive as well.
+            await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, LocalPlaybackFixture.ProgressPath).Count == 1, "the server's progress was read back");
+            _fixture.Harness.Time.Advance(LocalPlayback.StopSendBudget);
+            await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+            // Let go right after its stop, as the player does: no second wait.
+            await playback.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+            // The server heard where the viewer left off all the same.
+            var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+            Assert.Contains("\"position_ms\":120000", sent.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            // The drive answers again; whatever was written meanwhile is through before the test's folder goes.
+            _fixture.Harness.Store.WritingIndex = null;
+            drive.Set();
+            await other;
+            await _fixture.Sync.LatestRun;
+            await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", record => record, LocalPlaybackFixture.Token);
+        }
+    }
+
+    [Fact]
+    public async Task APlaybackLetGoWithoutAStop_DoesNotWaitLongerThanItsBudget_ForADriveThatDoesNotAnswer()
+    {
+        // The server names the title's subtitle preference, which the download keeps: a write to its folder.
+        _fixture.Silo.On(HttpMethod.Get, LocalPlaybackFixture.WatchPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            LocalPlaybackFixture.Watch(preferences: """, "effective_subtitle_language": "en", "effective_subtitle_mode": "always" """)));
+        await _fixture.Harness.AddPlayableAsync();
+        using var entered = new ManualResetEventSlim();
+        using var drive = new ManualResetEventSlim();
+        _fixture.Harness.Store.WritingIndex = () =>
+        {
+            entered.Set();
+            drive.Wait();
+        };
+        var other = _fixture.Harness.AddAsync("dl_2");
+        try
+        {
+            await Until(() => entered.IsSet, "the other change's write began");
+            var playback = await _fixture.StartAsync();
+
+            // Let go before it ever played, as when a newer start takes the player's place: no stop comes first.
+            var letGo = playback!.DisposeAsync().AsTask();
+            Assert.False(letGo.IsCompleted);
+            _fixture.Harness.Time.Advance(LocalPlayback.StopWriteBudget);
+            await letGo.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+        }
+        finally
+        {
+            _fixture.Harness.Store.WritingIndex = null;
+            drive.Set();
+            await other;
+            await _fixture.Harness.Store.UpdateAsync(Scope7, "dl_1", record => record, LocalPlaybackFixture.Token);
+        }
+        // Once the drive answers, the download has it.
+        Assert.Equal("en", Record.SubtitlePreference?.Language);
+    }
+
+    [Fact]
+    public async Task TheStop_DoesNotWaitForSettingsSavesLongerThanItsBudget_SentOneAfterAnotherToAServerThatDoesNotAnswer()
+    {
+        // The server takes each save and never answers; each would wait its own ten seconds, one after another.
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        string[] keys = ["playback.auto_play_next", "player.subtitle_sync_ms", "player.playback_speed"];
+        foreach (string key in keys)
+        {
+            _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + key, () => answer.Task);
+        }
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+        playback.SetAutoPlayNext(false);
+        playback.SetSubtitleDelay(300);
+        playback.SetSpeed(1.5);
+        try
+        {
+            var stop = playback.StopAsync();
+            _fixture.Harness.Time.Advance(LocalPlayback.StopSendBudget);
+            await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+            // Let go right after its stop, as the player does: no second wait.
+            await playback.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+            // The position went to the server all the same.
+            var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+            Assert.Contains("\"position_ms\":120000", sent.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            // The saves go on by themselves: they fail once the connection does, and are through before the test ends.
+            answer.SetException(new HttpRequestException(HttpRequestError.ConnectionError, "connection refused"));
+            await Until(() => keys.All(key => _fixture.Silo.SentTo(HttpMethod.Put, "api/v2/settings/values/" + key).Count == 1), "every save was sent");
+        }
     }
 
     [Fact]

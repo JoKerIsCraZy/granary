@@ -32,6 +32,23 @@ public sealed class MpvLogClassifierTests
     [InlineData("Watching directory C:\\Users\\elena.moreau", "Watching directory …")]
     [InlineData("Watching directory \\\\nas\\home\\e.moreau", "Watching directory …")]
     [InlineData("Reading config file C:\\Users\\elena.moreau\\AppData\\Local\\Granary\\mpv\\mpv.conf", "Reading config file …\\mpv.conf")]
+    // A file's ending inside a folder's name does not make it a file: the name goes on after it.
+    [InlineData("Watching directory C:\\Users\\elena.js.backup", "Watching directory …")]
+    [InlineData("Watching directory C:\\Users\\elena.js-old", "Watching directory …")]
+    [InlineData("Watching directory C:\\Users\\elena.mkv_files", "Watching directory …")]
+    // Nor does one before a space or punctuation a Windows name can hold: only the line's end, a colon, a closing quote or a
+    // last full stop end a name for sure.
+    [InlineData("Watching directory C:\\Users\\jane.log backup", "Watching directory …")]
+    [InlineData("Cannot open C:\\Users\\elena.mp4, fallback x.mkv", "Cannot open … x.mkv")]
+    [InlineData("Watching directory C:\\Users\\elena.js (old)", "Watching directory …")]
+    // mpv's own line for a folder it was asked to read as a file.
+    [InlineData("Failed to open C:\\Users\\elena.mkv (not a file).", "Failed to open …")]
+    // mpv's lines that quote a file: the quote ends its name.
+    [InlineData("EDL: Could not open source file 'C:\\Users\\elena\\dl_1\\media.mkv'.", "EDL: Could not open source file '…\\media.mkv'.")]
+    [InlineData("Not opening 'C:\\Users\\elena\\dl_1\\media.mkv' due to --access-references=no.",
+        "Not opening '…\\media.mkv' due to --access-references=no.")]
+    // A file's last ending counts: a part of a download keeps its name.
+    [InlineData("Playing: C:\\Users\\elena\\dl_1\\media.mkv.part", "Playing: …\\media.mkv.part")]
     // What follows a folder on the line can end like a file: the folder's name is not taken for the start of one.
     [InlineData("Cannot open C:\\Users\\elena fail a.mkv", "Cannot open … a.mkv")]
     [InlineData("Cannot open C:\\Users\\elena.moreau, fallback x.mkv", "Cannot open … x.mkv")]

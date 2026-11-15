@@ -17,13 +17,16 @@ public sealed record LocalMedia(StoredDownload Download, OfflineManifest Manifes
 /// viewer picked on the title page that is not the one downloaded.
 /// </summary>
 public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager session, Func<LocalMedia, LocalPlayback> playbacks, TimeProvider time,
-    ILogger<DownloadPlaybacks> logger)
+    ILogger<DownloadPlaybacks> logger, PlayingDownloads? playing = null)
 {
     /// <summary>How long the folder may take to answer before the title streams instead: a share that does not answer holds no play up.</summary>
     public static readonly TimeSpan ReadBudget = TimeSpan.FromSeconds(3);
 
     /// <summary>For tests: runs on the read's thread before the folder is read, as a drive that does not answer holds it.</summary>
     internal Action? Reading { get; set; }
+
+    /// <summary>For tests: runs once the download was looked up the last time, right before its playback is made.</summary>
+    internal Action? Creating { get; set; }
 
     // The reads of download folders under way, by folder. A read the budget gave up on runs on until the drive answers or
     // fails: the next Play or Retry of that title waits for the same read instead of holding one more thread.
@@ -82,6 +85,9 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             {
                 return null;
             }
+            // Marked as playing before it is looked up the last time, until its playback marks it itself: a delete of the
+            // watched downloads on another thread either took it before this look, or sees the mark and leaves it.
+            using var claim = playing?.Enter(download.Record.Scope, download.Record.DownloadId);
             // The read can take seconds, and a profile can be switched to in them: the download plays only for the profile it
             // was found for, as it is now (the read may be one an earlier start began).
             if (Find(request) is not { } now || now.Record.Scope != download.Record.Scope || now.Record.DownloadId != download.Record.DownloadId)
@@ -89,6 +95,14 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
                 logger.LogInformation("Download {DownloadId} is no longer the active profile's to play; the title streams", download.Record.DownloadId);
                 return null;
             }
+            // The read describes the bytes its record named (it may be an earlier start's): when the server's new bytes were
+            // fetched meanwhile, its manifest and its file list are the old file's, and never go with the new record.
+            if (read.Download.Record.Revision != now.Record.Revision || read.Download.Record.MediaFile != now.Record.MediaFile)
+            {
+                logger.LogInformation("Download {DownloadId} was read for other bytes than it has now; the title streams", now.Record.DownloadId);
+                return null;
+            }
+            Creating?.Invoke();
             return playbacks(read with { Download = now });
         }
         catch (TimeoutException)
@@ -162,6 +176,13 @@ public sealed class DownloadPlaybacks(DownloadStore store, ISessionManager sessi
             if (manifest.DownloadId != id)
             {
                 logger.LogWarning("The manifest of download {DownloadId} is another download's; the title streams", id);
+                return null;
+            }
+            // Its length and tracks describe the bytes of its own revision: one of another revision than the record (as an
+            // earlier build's day-old refresh could leave beside the media) is not taken for them.
+            if (manifest.Revision != download.Record.Revision)
+            {
+                logger.LogWarning("The manifest of download {DownloadId} is of another revision; the title streams", id);
                 return null;
             }
             return new LocalMedia(download, manifest, files);

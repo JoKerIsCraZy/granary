@@ -135,8 +135,11 @@ public sealed partial class DownloadQueue
         bool activated = scope != _activeScope || resumed;
         if (scope is null || server is null || stopped)
         {
+            // A failed activation's retry goes with it: once due it would have the loop look again at once, pass after pass,
+            // for a scope that does not activate here. The scope is activated anew when it can run again.
             _activeScope = scope;
             _runnable = false;
+            _activationRetry = null;
             return;
         }
         if (cleared)
@@ -145,6 +148,7 @@ public sealed partial class DownloadQueue
             // is activated anew once it is the current scope again after the sign-out.
             _activeScope = null;
             _runnable = false;
+            _activationRetry = null;
             return;
         }
         if (activated)

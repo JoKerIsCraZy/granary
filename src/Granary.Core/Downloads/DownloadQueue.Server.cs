@@ -18,6 +18,12 @@ public sealed partial class DownloadQueue
     /// <summary>How old a completed download's manifest gets before a scope activation reads it again.</summary>
     public static readonly TimeSpan ManifestRefresh = TimeSpan.FromHours(24);
 
+    /// <summary>
+    /// How long a replacement waits for a manifest refresh of its download it stopped: one stuck in a write that does not
+    /// observe its token (a file written whole on a disk that does not answer) holds the new revision this long at most.
+    /// </summary>
+    public static readonly TimeSpan RefreshStopBudget = TimeSpan.FromSeconds(5);
+
     // The most pages a reconcile reads; a registry that goes on is not judged.
     private const int MaxPages = 1000;
 
@@ -181,7 +187,13 @@ public sealed partial class DownloadQueue
                 {
                     entries.TryAdd(entry.Id, entry);
                 }
-                if (read.Page is not { HasMore: true })
+                // Whole only when a page says no more follow: one without its paging may hold back later entries, which
+                // would then count as gone (Silo always writes it).
+                if (read.Page is null)
+                {
+                    break;
+                }
+                if (!read.Page.HasMore)
                 {
                     return (entries, true);
                 }
@@ -271,6 +283,7 @@ public sealed partial class DownloadQueue
     {
         var key = Key.Of(download.Record);
         Task? running = null;
+        Refreshing? refreshing;
         lock (_gate)
         {
             _resetting.Add(key);
@@ -279,12 +292,38 @@ public sealed partial class DownloadQueue
                 CancelLocked(run);
                 running = run.Task;
             }
+            _refreshing.TryGetValue(key, out refreshing);
         }
         try
         {
             if (running is not null)
             {
+                AwaitingReplacedTransfer?.Invoke(key.Id);
                 await running.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            }
+            // A day-old refresh of the old bytes' manifest and assets stops too, and ends before their files go: it would
+            // write the old revision's artwork and subtitles into the folder after them.
+            if (refreshing is not null)
+            {
+                try
+                {
+                    await refreshing.Stop.CancelAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // It ended meanwhile.
+                }
+                // A refresh stuck in a write that does not observe its token holds the replacement for RefreshStopBudget at
+                // most. After that it can still finish the one file it was writing: an old manifest is not taken for the new
+                // bytes (the new transfer reads its own manifest before its file, and a play compares the revisions), and an
+                // old subtitle at most stays until its revision changes.
+                var stopped = refreshing.Done.WaitAsync(RefreshStopBudget, _time);
+                AwaitingReplacedRefresh?.Invoke(key.Id);
+                await stopped.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                if (!refreshing.Done.IsCompleted)
+                {
+                    _logger.LogWarning("The manifest refresh of download {DownloadId} did not stop in time; its files are replaced all the same", key.Id);
+                }
             }
             // The record as the old transfer left it: one that finished meanwhile named its file, which goes too.
             if (_store.Find(key.Scope, key.Id) is not { } current)
@@ -382,7 +421,8 @@ public sealed partial class DownloadQueue
     }
 
     // A completed download's manifest a day old is read again at a scope activation, with the artwork it lacks and the
-    // subtitles whose revision changed. One that does not come is tried at the next activation.
+    // subtitles whose revision changed. One that does not come is tried at the next activation; one of another revision than
+    // the media is not kept, and the registry is read again, which replaces the download for the server's new bytes.
     private async Task RefreshManifestsAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         var now = _time.GetUtcNow();
@@ -390,9 +430,21 @@ public sealed partial class DownloadQueue
             && (d.Record.ManifestReadAt is not { } read || now - read >= ManifestRefresh));
         foreach (var download in due)
         {
+            var key = Key.Of(download.Record);
+            using var refresh = CancellationTokenSource.CreateLinkedTokenSource(stop);
+            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_gate)
+            {
+                // One a new revision replaces now gets the new bytes' manifest and assets with its next transfer.
+                if (_resetting.Contains(key))
+                {
+                    continue;
+                }
+                _refreshing[key] = new Refreshing(refresh, done.Task);
+            }
             try
             {
-                var fetched = await _assets.FetchAsync(server, download, stop).ConfigureAwait(false);
+                var fetched = await _assets.FetchAsync(server, download, refresh.Token).ConfigureAwait(false);
                 await UpdateAsync(download, download.Record.Revision, r => r with
                 {
                     ManifestReadAt = now,
@@ -401,6 +453,15 @@ public sealed partial class DownloadQueue
                     SubtitleRevisions = fetched.SubtitleRevisions,
                 }).ConfigureAwait(false);
             }
+            catch (ManifestRevisionException)
+            {
+                _logger.LogInformation("The manifest of download {DownloadId} is of another revision; the registry is read again", download.Record.DownloadId);
+                RequestReconcile();
+            }
+            catch (OperationCanceledException) when (refresh.IsCancellationRequested && !stop.IsCancellationRequested)
+            {
+                _logger.LogInformation("The manifest refresh of download {DownloadId} stopped: the server has new bytes for it", download.Record.DownloadId);
+            }
             catch (Exception ex) when (IsServerFailure(ex, stop) || ex is IOException or UnauthorizedAccessException)
             {
                 _logger.LogInformation("The manifest of download {DownloadId} could not be read again ({Failure})", download.Record.DownloadId, Describe(ex));
@@ -408,6 +469,14 @@ public sealed partial class DownloadQueue
                 {
                     return;
                 }
+            }
+            finally
+            {
+                lock (_gate)
+                {
+                    _refreshing.Remove(key);
+                }
+                done.TrySetResult();
             }
         }
     }

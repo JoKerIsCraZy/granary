@@ -52,29 +52,18 @@ public sealed partial class DownloadedSeriesPage : Page, ICardMenuHost, IPadSect
         base.OnNavigatedFrom(e);
     }
 
-    // The season whose card has the focus, by its place.
-    private int _focusedSeason = -1;
-
-    private void OnSeasonGotFocus(object sender, RoutedEventArgs e)
-    {
-        if (e.OriginalSource is DependencyObject element && SeasonIndexOf(element) is var season and >= 0)
-        {
-            _focusedSeason = season;
-        }
-    }
-
     // A season goes with its last episode. Had one of its cards the focus, the next season's first card takes it (the one
     // before, when it was the last), so a keyboard, a controller or a remote carries on through the page; with no season
-    // left, the page goes back by itself.
+    // left, the page goes back by itself. The season's place is the repeater's while it clears the season, which seasons
+    // before it that came or went have moved.
     private void OnSeasonClearing(ItemsRepeater sender, ItemsRepeaterElementClearingEventArgs args)
     {
-        if (_focusedSeason < 0 || XamlRoot is not { } root || FocusManager.GetFocusedElement(root) is not DependencyObject focused
-            || !MediaGrid.IsWithin(focused, args.Element))
+        if (XamlRoot is not { } root || FocusManager.GetFocusedElement(root) is not DependencyObject focused
+            || !MediaGrid.IsWithin(focused, args.Element) || sender.GetElementIndex(args.Element) is not (>= 0 and var place))
         {
             return;
         }
         var state = focused is Control { FocusState: FocusState.Keyboard } ? FocusState.Keyboard : FocusState.Programmatic;
-        int place = _focusedSeason;
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusSeasonAt(root, place, state));
     }
 

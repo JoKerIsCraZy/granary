@@ -1,4 +1,5 @@
 using Granary.Core.Api.Downloads;
+using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Downloads;
 
 namespace Granary.Tests.Downloads;
@@ -55,10 +56,36 @@ public sealed class MonitorRulesTests
 
         Assert.Equal(new MonitorStatus.Paused(), MonitorRules.StatusOf(Monitor(active: false), activity, [], [], true, Now));
         Assert.Equal(new MonitorStatus.StorageLimit(25 * GB), MonitorRules.StatusOf(Monitor(maxBytes: 25 * GB),
-            [.. activity, new(1, 8, MonitorPhase.StorageLimit, 0)], [], [], true, Now));
+            [.. activity, new(1, 8, MonitorPhase.SeriesLimit, 0)], [], [], true, Now));
         Assert.Equal(new MonitorStatus.Downloading(6, 0.42), MonitorRules.StatusOf(Monitor(), activity, [], [], true, Now));
         Assert.Equal(new MonitorStatus.Waiting(7, MonitorPhase.Queued), MonitorRules.StatusOf(Monitor(), [activity[0]], [], [], true, Now));
     }
+
+    [Fact]
+    public void Status_NamesTheLimitThatHoldsTheEpisode_TheSeriesOrAllDownloads()
+    {
+        // 100 GB for the series and 10 GB for every download on this PC, 9 GB of it taken: a 2 GB episode is held by the PC's.
+        var monitor = Monitor(maxBytes: 100 * GB);
+
+        var status = MonitorRules.StatusOf(monitor, MonitorCards.ActivityOf([Held(8, DownloadHold.DownloadsLimit)], "sr_1"), [], [], true, Now,
+            downloadsLimit: 10 * GB);
+
+        Assert.Equal("Out of space · 10 GB limit", MonitorRules.StatusLine(status, Now, TimeZoneInfo.Utc));
+        // The series' own limit names the monitor's.
+        Assert.Equal(new MonitorStatus.StorageLimit(100 * GB), MonitorRules.StatusOf(monitor,
+            MonitorCards.ActivityOf([Held(8, DownloadHold.SeriesLimit)], "sr_1"), [], [], true, Now, 10 * GB));
+        // Episodes held by each: the first of them names its limit.
+        Assert.Equal(new MonitorStatus.StorageLimit(10 * GB), MonitorRules.StatusOf(monitor,
+            MonitorCards.ActivityOf([Held(9, DownloadHold.SeriesLimit), Held(7, DownloadHold.DownloadsLimit)], "sr_1"), [], [], true, Now, 10 * GB));
+        Assert.Equal(new MonitorStatus.StorageLimit(100 * GB), MonitorRules.StatusOf(monitor,
+            MonitorCards.ActivityOf([Held(9, DownloadHold.DownloadsLimit), Held(7, DownloadHold.SeriesLimit)], "sr_1"), [], [], true, Now, 10 * GB));
+    }
+
+    // Episode <paramref name="episode"/> of sr_1, queued, 2 GB, held by <paramref name="hold"/>.
+    private static DownloadItem Held(int episode, DownloadHold hold) =>
+        new("dl_" + episode, "ep_" + episode, "Episode " + episode, "sr_1", "Example Series", 1, episode, DownloadState.Queued, DownloadFailure.None,
+            IsPausedByViewer: false, IsNoLongerAvailable: false, FilesMissing: false, WaitsForUnmetered: false, ExpectedBytes: 2 * GB, BytesDone: 0,
+            PreparationProgress: null, PosterPath: null, MediaFileId: null, Hold: hold);
 
     [Fact]
     public void Status_WithNothingUnderWay_NamesTheNextAiringItTakes_ElseUpToDate()

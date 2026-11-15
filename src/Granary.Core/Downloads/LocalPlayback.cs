@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
@@ -30,6 +31,12 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     /// <summary>How long the stop waits for the server to take the last position; a slower send goes on by itself.</summary>
     public static readonly TimeSpan StopSendBudget = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// How long the stop waits for the last position to be written on this PC (the download's record, the queue's file); a drive
+    /// or share that does not answer gets it once it does.
+    /// </summary>
+    public static readonly TimeSpan StopWriteBudget = TimeSpan.FromSeconds(3);
 
     /// <summary>What the player says, beside Retry, when the file on this PC will not play.</summary>
     public const string CannotPlay = "This download can't be played. Try again, or delete it and download it again.";
@@ -176,6 +183,9 @@ public sealed partial class LocalPlayback : IServerPlayback
 
     private string OwnTitle => _manifest.Title is { Length: > 0 } title ? title : _download.Record.Title;
 
+    // The server, account and profile the download belongs to are the active ones.
+    private bool IsOwnScope => DownloadScope.Of(_session) == _download.Record.Scope;
+
     public async Task StartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -196,11 +206,21 @@ public sealed partial class LocalPlayback : IServerPlayback
     {
         // Before the settings are read: a save of the audio delay done while they are is newer than what they say.
         long audioDelayRead = _audioDelay?.StartRead() ?? 0;
-        _server = _session.ActiveServer?.BaseUri;
+        // Only while the download's own server, account and profile are the active ones: another profile's settings are not this
+        // download's, and account and profile ids are each server's, so another server's may carry the same.
+        _server = IsOwnScope && _session.ActiveServer is { } active ? active.BaseUri : null;
         var (preferences, detail) = await ReadFromServerAsync();
         if (_stopping)
         {
             return;
+        }
+        if (!IsOwnScope)
+        {
+            // Another profile became the active one while they were read: they answered as that one (the title's state did not,
+            // it is bound to the download's profile).
+            _logger.LogInformation("Another profile became the active one as download {DownloadId} started; it plays with the default settings",
+                _download.Record.DownloadId);
+            preferences = PlaybackPreferences.Default;
         }
         KeepSubtitlePreference(detail);
         Preferences = preferences;
@@ -255,11 +275,19 @@ public sealed partial class LocalPlayback : IServerPlayback
         }
     }
 
+    // As the download's account and profile only, as its settings are saved: the resume point and the subtitle preference that
+    // come back go into this download, so another profile's, or another account's whose profile has the same id, never do.
     private async Task<WatchDetail?> ReadDetailAsync(Uri server, CancellationToken cancellationToken)
     {
+        var owner = _download.Record.Scope;
         try
         {
-            return await _watch.GetWatchAsync(server, _download.Record.MediaItemId, cancellationToken: cancellationToken);
+            return await _watch.GetWatchAsAccountProfileAsync(server, owner.AccountId, owner.ProfileId, _download.Record.MediaItemId, cancellationToken);
+        }
+        catch (ProfileChangedException)
+        {
+            _logger.LogInformation("The title's state was not read: the server acts for another profile now; the download plays with what this PC knows");
+            return null;
         }
         catch (Exception ex) when (ex is OperationCanceledException or ArgumentException || ApiFailureText.IsRequestFailure(ex))
         {
@@ -327,28 +355,30 @@ public sealed partial class LocalPlayback : IServerPlayback
         return EndStopAsync();
     }
 
-    // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then. While
-    // the server answers, it has the position by then too, as after a stream's stop: the pages that reload when a playback
-    // stops (ViewerStateChanges) read where the viewer left off, not where they were before. Without the server the send
-    // fails at once and the position waits; a send slower than the budget goes on by itself, and tells the pages when it
-    // is through (OfflineProgressSync).
+    // Closing the app waits for the stop: the last position is in the queue's file and the download's record by then, unless
+    // the drive did not answer within StopWriteBudget. While the server answers, it has the position by then too, as after a
+    // stream's stop: the pages that reload when a playback stops (ViewerStateChanges) read where the viewer left off, not where
+    // they were before. Without the server the send fails at once and the position waits; a send slower than the budget goes
+    // on by itself, and tells the pages when it is through (OfflineProgressSync). The settings' saves go beside it, within
+    // StopSendBudget too, and never hold the position's send back.
     private async Task EndStopAsync()
     {
-        await Task.WhenAll(_saves, _records, _progress?.LatestSave ?? Task.CompletedTask).ConfigureAwait(false);
-        if (_sync is not { } sync || !_played)
+        var saves = WaitForSavesAsync();
+        await WaitForWritesAsync().ConfigureAwait(false);
+        if (_sync is { } sync && _played)
         {
-            return;
+            using var budget = new CancellationTokenSource(StopSendBudget, _time);
+            try
+            {
+                await sync.FlushAsync(readBack: true, budget.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("The last position of download {DownloadId} was not sent within {Seconds} s; the send goes on by itself",
+                    _download.Record.DownloadId, StopSendBudget.TotalSeconds);
+            }
         }
-        using var budget = new CancellationTokenSource(StopSendBudget, _time);
-        try
-        {
-            await sync.FlushAsync(readBack: true, budget.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation("The last position of download {DownloadId} was not sent within {Seconds} s; the send goes on by itself",
-                _download.Record.DownloadId, StopSendBudget.TotalSeconds);
-        }
+        await saves.ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync()
@@ -362,8 +392,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
         _playingMark?.Dispose();
-        await _saves.ConfigureAwait(false);
-        await _records.ConfigureAwait(false);
+        await Task.WhenAll(WaitForSavesAsync(), WaitForWritesAsync()).ConfigureAwait(false);
     }
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));

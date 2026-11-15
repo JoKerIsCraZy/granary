@@ -22,12 +22,14 @@
         </Grid.ColumnDefinitions>
 
         <Border Background="#FF111113" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,1,0">
-            <Grid Padding="12,20,12,20">
+            <!-- As the web's: the head and the build stay, and the pages between them scroll in a window too short for them. -->
+            <Grid Padding="0,20,0,20" RowSpacing="4">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <StackPanel Spacing="4">
+                <StackPanel Padding="12,0" Spacing="4">
                     <Button Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="8,4" Click="OnBackClick"
                             AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.sidebar.backToApp')}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -37,39 +39,45 @@
                     </Button>
                     <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.mobileHeader.eyebrow')}" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}"
                                FontWeight="Bold" FontSize="22" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
-                    <!-- The web's section name, in capitals as its CSS shows it. -->
-                    <TextBlock Text="{x:Bind MonitorHeading}" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
-                               CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
-                    <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
-                              AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.sidebar.navigation')}">
-                        <ListViewItem Tag="dashboard" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}">
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <FontIcon Glyph="&#xF246;" FontSize="14" />
-                                <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}" FontSize="14" />
-                            </StackPanel>
-                        </ListViewItem>
-                        <ListViewItem Tag="activity" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Glyph="&#xE93E;" FontSize="14" />
-                                <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}" FontSize="14" />
-                                <!-- The web's live badge: how many streams run now. -->
-                                <Border Grid.Column="2" Visibility="{x:Bind Sidebar.HasLive, Mode=OneWay}" Padding="7,1" CornerRadius="8"
-                                        Background="#26EF4444" VerticalAlignment="Center">
-                                    <TextBlock Text="{x:Bind Sidebar.LiveText, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10"
-                                               Foreground="#FFEF4444" />
-                                </Border>
-                            </Grid>
-                        </ListViewItem>
-                    </ListView>
                 </StackPanel>
+                <ScrollViewer x:Name="PagesScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <!-- An arrow moves the focus on here, before the scroller would take it to scroll a line. -->
+                    <StackPanel Padding="12,0,12,4" Spacing="4" XYFocusKeyboardNavigation="Enabled">
+                        <!-- The web's section name, in capitals as its CSS shows it. -->
+                        <TextBlock Text="{x:Bind MonitorHeading}" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                                   CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                        <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                                  AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.sidebar.navigation')}">
+                            <ListViewItem Tag="dashboard" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xF246;" FontSize="14" />
+                                    <TextBlock Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.dashboard.label')}" FontSize="14" />
+                                </StackPanel>
+                            </ListViewItem>
+                            <ListViewItem Tag="activity" AutomationProperties.Name="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE93E;" FontSize="14" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind t:AppText.Get('web.admin.shell.nav.page.activity.label')}" FontSize="14" />
+                                    <!-- The web's live badge: how many streams run now. -->
+                                    <Border Grid.Column="2" Visibility="{x:Bind Sidebar.HasLive, Mode=OneWay}" Padding="7,1" CornerRadius="8"
+                                            Background="#26EF4444" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Sidebar.LiveText, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10"
+                                                   Foreground="#FFEF4444" />
+                                    </Border>
+                                </Grid>
+                            </ListViewItem>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- The server's build, as the web's admin sidebar shows it at its foot. -->
-                <Border Grid.Row="1" Margin="0,16,0,0" Padding="12,8" CornerRadius="12" Background="#66232328"
+                <Border Grid.Row="2" Margin="12,16,12,0" Padding="12,8" CornerRadius="12" Background="#66232328"
                         BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="1">
                     <StackPanel Spacing="2">
                         <TextBlock Text="{x:Bind BuildHeading}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" CharacterSpacing="180"

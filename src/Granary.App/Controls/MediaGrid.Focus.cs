@@ -13,9 +13,6 @@ namespace Granary.App.Controls;
 // focus the viewer moved elsewhere stays there.
 public sealed partial class MediaGrid
 {
-    // The place of the card that last took the focus.
-    private int _focusedIndex = -1;
-
     /// <summary>Focuses the card at <paramref name="index"/> (the last one past the end); false when the grid has none.</summary>
     public bool FocusCardAt(int index, FocusState state)
     {
@@ -27,23 +24,16 @@ public sealed partial class MediaGrid
         return Items.GetOrCreateElement(Math.Clamp(index, 0, count - 1)) is Control card && card.Focus(state);
     }
 
-    private void NoteFocusedCard(object sender)
-    {
-        if (sender is UIElement element)
-        {
-            _focusedIndex = Items.GetElementIndex(element);
-        }
-    }
-
+    // The card's place is the repeater's while it clears the card: cards before it that came or went since it took the focus
+    // have moved it, and the repeater moved its index with them.
     private void OnElementClearing(ItemsRepeater sender, ItemsRepeaterElementClearingEventArgs args)
     {
-        if (_focusedIndex < 0 || XamlRoot is not { } root || FocusManager.GetFocusedElement(root) is not DependencyObject focused
-            || !IsWithin(focused, args.Element))
+        if (XamlRoot is not { } root || FocusManager.GetFocusedElement(root) is not DependencyObject focused
+            || !IsWithin(focused, args.Element) || sender.GetElementIndex(args.Element) is not (>= 0 and var place))
         {
             return;
         }
         var state = focused is Control { FocusState: FocusState.Keyboard } ? FocusState.Keyboard : FocusState.Programmatic;
-        int place = _focusedIndex;
         // Found now, while the grid is still in its page.
         var host = FocusHostOf(this);
         // After the list's change is laid out.

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Controls;
 
@@ -41,11 +42,22 @@ public sealed partial class MediaCardView
         }
     }
 
-    // As the artwork shows: at once when it came at once, else fading in over the thumbhash's blur.
-    private async Task LoadSpoilerAsync(Uri url, CancellationToken cancellationToken)
+    // As the artwork shows: at once when it came at once, else fading in over the thumbhash's blur. One that did not come is
+    // tried again with the card's next look, as a sharp picture is; a download's file read again, never shown sharp.
+    private async Task LoadSpoilerAsync(Task<ImageSource?> loading, CancellationToken cancellationToken)
     {
-        var picture = await SpoilerArtwork.LoadAsync(url, _artWidth, cancellationToken);
-        if (cancellationToken.IsCancellationRequested || picture is null || SpoilerImage is not { } image)
+        var picture = await loading;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        if (picture is null)
+        {
+            // A blur made again at another size that failed leaves the one before in place: still blurred, never empty.
+            _artworkFailed = true;
+            return;
+        }
+        if (SpoilerImage is not { } image)
         {
             return;
         }
