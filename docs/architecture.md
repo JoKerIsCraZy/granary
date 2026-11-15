@@ -1443,8 +1443,8 @@ then on; `StopAsync` ends it for good when Granary closes.
     register once, and the status tick never does.
   - The listener fails by itself (its start's `onFailed`): stop, and the status says `Failed`. Nothing starts again
     until the switch, the session, the address or the key changes; a title that plays is no reason to. Each listener
-    bound has a number, and only the last one bound counts: one stopped or replaced meanwhile (a new address) that
-    tells of its failure late, even after its replacement runs, changes nothing.
+    bound has a number, and only the one running counts: one stopped or replaced meanwhile (the switch off, a new
+    address) that tells of its failure late, even after the next one runs or is about to start, changes nothing.
   - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
     not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
     The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved

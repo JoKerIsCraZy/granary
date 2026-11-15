@@ -230,6 +230,27 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFailureOfAListenerThatWasStopped_DoesNotKeepTheNextStartFromListening()
+    {
+        await _harness.StartListeningAsync();
+        await _harness.Preferences.SetPhoneRemoteAsync(false);
+        await SettledAsync();
+
+        // Switched on again, and in the same turn the first listener's loop, which failed just as it was stopped, says so.
+        await _harness.Dispatcher.InvokeAsync(() =>
+        {
+            _ = _harness.Preferences.SetPhoneRemoteAsync(true);
+            _harness.Listener.FailLate(start: 1);
+            return true;
+        });
+        await SettledAsync();
+
+        Assert.Equal(2, _harness.Listener.Starts);
+        Assert.True(_harness.Listener.IsListening);
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+    }
+
+    [Fact]
     public async Task SigningOut_StopsIt_AndSigningInAgain_StartsItWithTheSameKey()
     {
         await _harness.StartListeningAsync();

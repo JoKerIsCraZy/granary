@@ -49,8 +49,8 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
     }
 
     // The loop of the listener that runs now ended by itself: its start is told. One stopped or replaced meanwhile is not
-    // news; should it be told all the same (it failed just as it was replaced), it is told as its own start, which the
-    // receiver no longer counts.
+    // news; should it be told all the same (it failed just as it was stopped or replaced), it is told as its own start,
+    // which the receiver no longer counts.
     private void OnLoopFailed(RemoteAcceptLoop loop, Action onFailed)
     {
         lock (_gate)

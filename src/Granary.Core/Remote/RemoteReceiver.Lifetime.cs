@@ -40,12 +40,14 @@ public sealed partial class RemoteReceiver
     private Running? _running;
     private CancellationTokenSource? _accepting;
     private RemoteReceiverState _failure = RemoteReceiverState.Listening;
-    // Each listener the receiver binds gets a number. The last one bound stopped taking connections by itself when it said
-    // so: nothing starts again until the switch, the session, the address or the key changes. One stopped or replaced
-    // meanwhile is no news, however late it tells.
+    // Each listener the receiver binds gets a number: the one running, none (0) once it is stopped. Its failure counts
+    // only while it runs: one stopped or replaced meanwhile is no news, however late it tells.
     private int _listenerNumbers;
-    private int _lastListener;
+    private int _runningListener;
     private int _failedListener;
+    // The receiver stopped because its listener failed by itself: nothing starts again until the switch, the session, the
+    // address or the key changes.
+    private bool _listenerFailed;
     private RemoteReceiverStatus _status = RemoteReceiverStatus.Off;
     // The key the published status was made under; the lifetime loop's only.
     private PairingMaterial? _publishedMaterial;
@@ -185,14 +187,15 @@ public sealed partial class RemoteReceiver
     private void OnLifetimeChanged(object? sender, EventArgs e)
     {
         Volatile.Write(ref _failedListener, 0);
+        Volatile.Write(ref _listenerFailed, false);
         LookAgain();
     }
 
-    // A listener's socket failed: when it is the last one bound, the receiver stops, so no port stays advertised that
-    // nobody answers. A listener bound since makes it no news, whether that one was bound before the news came or after.
+    // A listener's socket failed: when it is the one running, the receiver stops, so no port stays advertised that nobody
+    // answers. One stopped or replaced since makes it no news, whether that happened before the news came or after.
     private void OnListenerFailed(int listener)
     {
-        if (listener != Volatile.Read(ref _lastListener))
+        if (listener != Volatile.Read(ref _runningListener))
         {
             return;
         }
@@ -200,13 +203,13 @@ public sealed partial class RemoteReceiver
         LookAgain();
     }
 
-    // The last listener bound said it failed, and nothing changed since.
+    // The listener running said it failed, and nothing changed since.
     private bool ListenerFailed
     {
         get
         {
             int failed = Volatile.Read(ref _failedListener);
-            return failed != 0 && failed == Volatile.Read(ref _lastListener);
+            return failed != 0 && failed == Volatile.Read(ref _runningListener);
         }
     }
 
@@ -274,13 +277,18 @@ public sealed partial class RemoteReceiver
             var running = Volatile.Read(ref _running);
             if (running is not null)
             {
-                running = WhyStop(running, want) is { } why
+                string? why = WhyStop(running, want);
+                if (why == RemoteLogReasons.ListenerFailed)
+                {
+                    Volatile.Write(ref _listenerFailed, true);
+                }
+                running = why is not null
                     ? await StopRunningAsync(running, why).ConfigureAwait(false)
                     : await KeepRunningAsync(running, want).ConfigureAwait(false);
             }
             if (running is null && want.State == RemoteReceiverState.Listening)
             {
-                if (ListenerFailed)
+                if (Volatile.Read(ref _listenerFailed))
                 {
                     _failure = RemoteReceiverState.Failed;
                 }
@@ -477,12 +485,12 @@ public sealed partial class RemoteReceiver
         return null;
     }
 
-    // The port bound, or null with the reason kept for the status. The listener is the last one bound before it starts, so
-    // it may fail as soon as it runs.
+    // The port bound, or null with the reason kept for the status. The listener counts as the one running before it starts,
+    // so it may fail as soon as it runs.
     private async Task<int?> BindAsync(LanAddress address, IReadOnlyList<int> ports, CancellationTokenSource stop)
     {
         int listener = Interlocked.Increment(ref _listenerNumbers);
-        Volatile.Write(ref _lastListener, listener);
+        Volatile.Write(ref _runningListener, listener);
         try
         {
             return await _listener.StartAsync(address.Address, ports, connection => AcceptAsync(connection, stop),
@@ -503,8 +511,10 @@ public sealed partial class RemoteReceiver
         }
     }
 
+    // Once it is stopped, nothing it says counts: its loop may tell of a failure just as it stops.
     private async Task StopListenerAsync()
     {
+        Volatile.Write(ref _runningListener, 0);
         try
         {
             await _listener.StopAsync().WaitAsync(StepBudget, _time).ConfigureAwait(false);
