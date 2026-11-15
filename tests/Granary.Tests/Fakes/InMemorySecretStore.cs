@@ -18,8 +18,15 @@ internal sealed class InMemorySecretStore : ISecretStore
     public async Task<string?> GetAsync(string key, CancellationToken cancellationToken = default)
     {
         await ReadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (FailReads is { } failure)
+        {
+            throw failure;
+        }
         return Values.TryGetValue(key, out var value) ? value : null;
     }
+
+    /// <summary>What every read throws, if a test makes the store fail.</summary>
+    public Exception? FailReads { get; set; }
 
     /// <summary>What every write throws, if a test makes the store fail.</summary>
     public Exception? FailWrites { get; set; }

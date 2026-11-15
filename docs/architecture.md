@@ -1482,11 +1482,17 @@ The phone remote logs events by connection number and a reason, never a value fr
 - **Never logged:** the pairing key in any form (hex, base64, base32) and its link or QR text, either side's nonce,
   resume tokens, frames or any part of one, server addresses and server ids (an id is an address), server names and
   identities, profile ids and names, a phone's id and name, content ids and titles.
-- `RemoteLoggingTests` guards it: it runs pairing, a wrong key, the hello, the status, commands, an offer, a launch, a
-  reset, a change of server and the stop with fake phones under a logger that keeps every line at every level, then
-  finds none of the never-list and no `{`, and checks that every connection's end is logged with its number and a
-  reason of the list. A line the test catches is fixed where it is written; the test is not weakened. Every line also
-  passes `LogRedactor`, and this list does not rely on it.
+- `RemoteLoggingTests` guards it, under a logger that keeps every line at every level, with three runs on fake phones:
+  everything a phone does (pairing, a wrong key, the hello, the status, commands, an offer, a launch, a reset, a change
+  of server, the stop); everything that can fail (a key that cannot be read, a reset that cannot be saved, a listener
+  of the reset, a player that fails a command or whose status cannot be read, Windows' advertisement throwing, a
+  status that cannot be made, a message too large for a frame), each failure's message holding the key in every form,
+  a pairing link, the server's address, a phone's name and a title; and every limit and every way a connection or the
+  receiver ends. The App's accept loop runs with such messages as well. Each run finds none of the never-list and no
+  `{`; every connection's end is logged with its number and a reason of the list; and together the runs meet every
+  reason of `RemoteLogReasons`, so a reason added later needs a run that logs it. A line the test catches is fixed
+  where it is written; the test is not weakened. Every line also passes `LogRedactor`, and this list does not rely on
+  it.
 
 ### The player
 
