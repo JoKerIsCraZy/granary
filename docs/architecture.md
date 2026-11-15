@@ -1741,7 +1741,8 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   `InfoBadge`, as Notifications' unread count, and its name for a screen reader (`EntryName`: "Downloads, 3 downloads in
   progress", the Apple app's words).
 - **The pulse.** `IsTransferring` while one download comes now (`DownloadText.IsComing`: downloading, nothing pausing or
-  holding it). The window shows a 6 px dot in the accent before the count and has it breathe on the compositor
+  holding it, a metered connection Settings → Downloads does not allow included: a download Granary stopped in the middle
+  stays Downloading until it comes again, and says "Paused · metered connection" meanwhile). The window shows a 6 px dot in the accent before the count and has it breathe on the compositor
   (`MainWindow.Downloads.cs`, as `ServerActivityButton`'s count breathes): no timer, nothing on the UI thread. With
   Windows' animation effects off (`UISettings.AnimationsEnabled`, followed through `AnimationsEnabledChanged`) the dot
   stands still. The window lives as long as the app and lets go of Windows' settings as it closes.

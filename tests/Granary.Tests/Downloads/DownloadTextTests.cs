@@ -20,7 +20,8 @@ public sealed class DownloadTextTests
     [InlineData(DownloadState.Downloading, null, 999, DownloadFailure.None, false, false, false, false, "Downloading · 99%")]
     [InlineData(DownloadState.Downloading, null, 500, DownloadFailure.None, true, false, false, false, "Paused")]
     [InlineData(DownloadState.Queued, null, 0, DownloadFailure.None, false, false, false, true, "Paused · metered connection")]
-    [InlineData(DownloadState.Downloading, null, 0, DownloadFailure.None, false, false, false, true, "Downloading · 0%")]
+    // One that was coming when Granary stopped stays Downloading until it comes again, which a metered connection holds.
+    [InlineData(DownloadState.Downloading, null, 420, DownloadFailure.None, false, false, false, true, "Paused · metered connection")]
     [InlineData(DownloadState.Completed, null, 1000, DownloadFailure.None, false, false, false, false, "Downloaded")]
     [InlineData(DownloadState.Failed, null, 0, DownloadFailure.Server, false, false, false, false, "Failed")]
     [InlineData(DownloadState.Failed, null, 0, DownloadFailure.Integrity, false, false, false, false, "Failed")]
@@ -85,5 +86,16 @@ public sealed class DownloadTextTests
         // Only a download that comes has a speed.
         Assert.Equal("Paused", DownloadText.Status(Item(DownloadState.Downloading, bytesDone: 420, paused: true), bytesPerSecond: 2));
         Assert.Equal("Queued", DownloadText.Status(Item(DownloadState.Queued, bytesDone: 420), bytesPerSecond: 2));
+    }
+
+    // A download left Downloading when Granary stopped does not come while the connection is metered: no pulse, no speed.
+    [Fact]
+    public void ADownloadThatWaitsForAnUnmeteredConnection_IsNotComing()
+    {
+        var waiting = Item(DownloadState.Downloading, bytesDone: 420, metered: true);
+
+        Assert.False(DownloadText.IsComing(waiting));
+        Assert.Equal("Paused · metered connection", DownloadText.Status(waiting, bytesPerSecond: 2));
+        Assert.True(DownloadText.IsComing(Item(DownloadState.Downloading, bytesDone: 420)));
     }
 }
