@@ -22,10 +22,10 @@
                 <!--
                     The title opens what Explore all opens, as the web's MediaCarousel links it (titleHref, the accent on hover):
                     for the mouse only. Keys, a remote and a controller have Explore all, so the row's stops stay as they were,
-                    and a screen reader still reads the heading. Without Explore all it is the plain heading.
+                    and a screen reader still reads the heading. Without Explore all it is the plain heading (MediaRow.ApplyExploreAll).
                 -->
                 <HyperlinkButton x:Name="TitleLink" Padding="0" MinHeight="0" VerticalAlignment="Center" IsTabStop="False"
-                                 Command="{x:Bind ExploreAllCommand, Mode=OneWay}" IsHitTestVisible="{x:Bind LinksTitle(ExploreAllCommand), Mode=OneWay}"
+                                 Command="{x:Bind ExploreAllCommand, Mode=OneWay}" IsHitTestVisible="False"
                                  PointerEntered="OnTitlePointerEntered" PointerExited="OnTitlePointerExited" PointerCanceled="OnTitlePointerExited"
                                  AutomationProperties.AccessibilityView="Raw">
                     <HyperlinkButton.Resources>
@@ -41,9 +41,8 @@
                                Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
                 </Border>
             </StackPanel>
-            <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}"
-                             Content="{x:Bind ExploreAllText}" Command="{x:Bind ExploreAllCommand, Mode=OneWay}"
-                             Visibility="{x:Bind HasCommand(ExploreAllCommand), Mode=OneWay}"
+            <HyperlinkButton x:Name="ExploreAllLink" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}"
+                             Content="{x:Bind ExploreAllText}" Command="{x:Bind ExploreAllCommand, Mode=OneWay}" Visibility="Collapsed"
                              AutomationProperties.Name="{x:Bind ExploreAllName(Title), Mode=OneWay}" />
         </Grid>
 

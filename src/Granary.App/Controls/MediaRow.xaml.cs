@@ -35,7 +35,8 @@ public sealed partial class MediaRow : UserControl
             new PropertyMetadata(null, (sender, e) => ((MediaRow)sender).TitleText.Style = e.NewValue as Style ?? (Style)Application.Current.Resources["SiloRowTitleTextStyle"]));
 
     public static readonly DependencyProperty ExploreAllCommandProperty =
-        DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow),
+            new PropertyMetadata(null, (sender, _) => ((MediaRow)sender).ApplyExploreAll()));
 
     public static readonly DependencyProperty CardPointedCommandProperty =
         DependencyProperty.Register(nameof(CardPointedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
@@ -147,11 +148,18 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(TitleBadgeProperty, value);
     }
 
-    // Instance helpers because x:Bind function bindings call them.
-    public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
-
-    // The title takes the mouse only while it opens something; a bool of its own, as one function must not feed two types.
-    public bool LinksTitle(ICommand? command) => command is not null;
+    // Explore all and the title's link show only while the row opens something. Set here, not by x:Bind functions: those
+    // are skipped when their argument is null, and a repeater hands a row on to another that may have no Explore all.
+    private void ApplyExploreAll()
+    {
+        bool explores = ExploreAllCommand is not null;
+        ExploreAllLink.Visibility = explores ? Visibility.Visible : Visibility.Collapsed;
+        TitleLink.IsHitTestVisible = explores;
+        if (!explores)
+        {
+            TitleText.ClearValue(TextBlock.ForegroundProperty);
+        }
+    }
 
     // The accent under the pointer, as the web's title link (hover:text-primary); the style's colour again once it leaves.
     private void OnTitlePointerEntered(object sender, PointerRoutedEventArgs e) =>
@@ -159,6 +167,7 @@ public sealed partial class MediaRow : UserControl
 
     private void OnTitlePointerExited(object sender, PointerRoutedEventArgs e) => TitleText.ClearValue(TextBlock.ForegroundProperty);
 
+    // Instance helpers because x:Bind function bindings call them.
     public string ExploreAllName(string title) => AppText.Get("web.catalog.carousel.exploreAllLabel", ("title", title));
 
     /// <summary>The web's "Explore all", in capitals as Granary's row shows it.</summary>
