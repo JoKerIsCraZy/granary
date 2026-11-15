@@ -27,6 +27,21 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     private const string MovieId = "mv_1";
     private const string SeasonId = "se_1";
     private const string EpisodeId = "ep_5";
+    private const string LooseEpisodeId = "ep_9";
+
+    // An episode whose page names no series: Granary cannot ask the server to download it.
+    private const string LooseEpisode = """
+        {
+          "content_id": "ep_9", "type": "episode", "title": "Chapter Nine", "status": "matched", "genres": [], "keywords": [],
+          "season_number": 1, "episode_number": 9, "runtime": 50,
+          "user_state": { "played": false, "is_favorite": false, "in_watchlist": false, "not_interested": false },
+          "versions": [
+            { "file_id": "4579", "resolution": "1080p", "codec_video": "h264", "codec_audio": "eac3", "container": "mkv", "hdr": false,
+              "file_size": 2147483648, "duration": 3000, "bitrate": 5000 }
+          ],
+          "videos": [], "subtitles": []
+        }
+        """;
 
     private readonly DownloadHarness _h = new();
     private readonly ItemDetailFixture _detail;
@@ -168,6 +183,30 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await Until(() => page.DownloadLabel == "Downloaded", "the item said it is downloaded");
         Assert.True(page.ShowsDownload);
         Assert.True(page.CanDeleteDownload);
+    }
+
+    [Fact]
+    public async Task ADownloadedEpisode_KeepsItsStatusAndDelete_WhenItsPageNamesNoSeries()
+    {
+        _detail.Get(ItemDetailFixture.ItemPath(LooseEpisodeId), ItemDetailFixture.Ok(LooseEpisode));
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: LooseEpisodeId);
+
+        var page = await FollowedAsync(LooseEpisodeId);
+
+        await Until(() => page.DownloadLabel == "Downloaded", "the item said it is downloaded");
+        Assert.True(page.ShowsDownload);
+        Assert.True(page.CanDeleteDownload);
+    }
+
+    [Fact]
+    public async Task AnEpisodePageThatNamesNoSeries_OffersNoDownload()
+    {
+        _detail.Get(ItemDetailFixture.ItemPath(LooseEpisodeId), ItemDetailFixture.Ok(LooseEpisode));
+
+        var page = await FollowedAsync(LooseEpisodeId);
+
+        Assert.False(page.ShowsDownload);
+        Assert.False(page.CanDeleteDownload);
     }
 
     [Fact]

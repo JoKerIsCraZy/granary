@@ -144,13 +144,18 @@ public sealed partial class ItemDetailViewModel
                 ? new TitleDownloadState(true, DownloadActions.DownloadSeriesLabel, OpensDownloads: false, CanDelete: false)
                 : TitleDownloadState.Hidden;
         }
-        if (TitleRequest(item) is null)
+        if (_contentId.Length == 0)
         {
             return TitleDownloadState.Hidden;
         }
+        // One on this PC keeps its items whatever its page says now, also without the series Granary would ask the server for.
         var state = downloads.StateOf(_contentId);
-        // A title without files has nothing to download, as on the web; one on this PC keeps its items.
-        return state.OpensDownloads || _prePlayItem is not null ? state : TitleDownloadState.Hidden;
+        if (state.OpensDownloads)
+        {
+            return state;
+        }
+        // A title without files has nothing to download, as on the web.
+        return TitleRequest(item) is not null && _prePlayItem is not null ? state : TitleDownloadState.Hidden;
     }
 
     // A film, or an episode of its series, with the version under the buttons; the dialog sets the quality.
