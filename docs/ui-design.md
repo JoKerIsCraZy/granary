@@ -1188,9 +1188,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Game controller
 
-An Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`; what a reading means is
-decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A** is the bottom face
-button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
+A game controller works once Settings → Navigation & Cards → Controller → Game controller is on. It is off by default and
+kept on this PC, not in a profile (`ControllerSetting`, `controller.json`); off, Granary reads no controller at all (see
+Always, below). Switched on, an Xbox or PlayStation pad drives the whole app from the sofa (`MainWindow.Controller.cs`;
+what a reading means is decided in Core's `PadInterpreter`). Buttons count by where they sit, not by their letter: **A**
+is the bottom face button (Cross), **B** the right one (Circle), **X** the left one (Square) and **Y** the top one (Triangle); **View** is
 Share or Create, **Menu** is Options, the bumpers are L1 and R1 and the triggers L2 and R2. The pad goes the way the
 remote's keys go, through the same code, so what the TV remote does at a page's edges, in the sidebar and on the way
 back holds for the pad too. Focus the pad moves shows its ring, as the keyboard's.
@@ -1239,6 +1241,10 @@ when the page shows or was let go just before.
 
 Always:
 
+- Only while the Game controller switch is on. Off, no controller is read at all, so a pad, a wheel or a tool that
+  presents a pad to Windows does nothing in Granary; keys such a tool sends from a pad still arrive as keys. Turned off
+  while a button is held, what it was doing stops at once (a repeat, a scrub, a seek being made, dropped unsent); turned
+  on again, it reads at once, without a restart, and a button still held then is no press.
 - Only while Granary's window is in front. Behind another window the pad is not even read, so a game played with the same
   pad never moves Granary. Coming back, a button still held is not a press.
 - A stick inside its dead zone is at rest (24 % of the left stick's way, 26.5 % of the right one's, 12 % of a trigger's)
@@ -1517,8 +1523,9 @@ says why above the sections.
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
 - **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
-  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel` and `SidebarSettingsViewModel`, the web's
-  page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
+  `TitlePreviewSettingsViewModel`, `ActivityIndicatorSettingsViewModel`, `ControllerSettingsViewModel` and
+  `SidebarSettingsViewModel`, the web's page of that name): Posters first, with Reset beside the title while the desktop
+  apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
   and grid at once and saves for the desktop apps. While it loads the group says "Loading…"; a failed read or an older
@@ -1543,7 +1550,11 @@ says why above the sections.
   `ActivityIndicatorSetting`): "What your Silo server is doing, for its administrators. Kept for this profile on this
   PC.", with Activity indicator ("A button at the top right shows the streams, tasks, scans and downloads being
   prepared. Off, it never shows."), on by default; the indicator follows it at once (Activity indicator, under Admin).
-  The group comes and goes with the account's role while the page is open. Then Sidebar, with
+  The group comes and goes with the account's role while the page is open. Then Controller, Granary's own, as Silo's
+  clients have no such switch (`ControllerSettingsViewModel` on `ControllerSetting`): "Xbox and PlayStation
+  controllers. Kept on this PC.", with Game controller ("On, Granary takes a game controller's input. Off, it ignores
+  game controllers."), off by default, for the whole PC rather than a profile; the window starts or stops reading at
+  once (Game controller, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
