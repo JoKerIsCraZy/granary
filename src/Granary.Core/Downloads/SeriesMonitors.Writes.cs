@@ -93,7 +93,7 @@ public sealed partial class SeriesMonitors
 
     /// <summary>
     /// Stops monitoring: the monitor leaves the list at once, and its delete goes under its validator, now or, while the server
-    /// cannot be reached, with a later run, also after Granary starts again (<see cref="MonitorStopsFile"/>); the list does not
+    /// cannot be reached, with a later run, also after Granary starts again (<see cref="MonitorPendingFile"/>); the list does not
     /// bring it back meanwhile. The downloads it registered stay.
     /// </summary>
     public async Task<MonitorResult> StopAsync(string subscriptionId, CancellationToken cancellationToken)
@@ -113,7 +113,7 @@ public sealed partial class SeriesMonitors
                 }
                 stops[monitor.Id] = monitor.Etag;
             }
-            SaveStops();
+            SavePending();
             _book.Remove(scope, monitor.Id);
             Confirm(scope, monitor.Id);
             await SendStopsAsync(scope, server, token).ConfigureAwait(false);
@@ -133,7 +133,7 @@ public sealed partial class SeriesMonitors
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
-            await LoadStopsAsync().ConfigureAwait(false);
+            await LoadPendingAsync().ConfigureAwait(false);
             return IsStill(scope) ? await write(scope, server, _stop.Token).ConfigureAwait(false) : MonitorResult.Unavailable;
         }
         finally
@@ -164,16 +164,19 @@ public sealed partial class SeriesMonitors
             }
             choices[subscriptionId] = choice;
         }
+        SavePending();
     }
 
     private void Confirm(DownloadScope scope, string subscriptionId)
     {
+        bool confirmed;
         lock (_gate)
         {
-            if (_unconfirmed.TryGetValue(scope, out var choices))
-            {
-                choices.Remove(subscriptionId);
-            }
+            confirmed = _unconfirmed.TryGetValue(scope, out var choices) && choices.Remove(subscriptionId);
+        }
+        if (confirmed)
+        {
+            SavePending();
         }
     }
 
@@ -191,6 +194,7 @@ public sealed partial class SeriesMonitors
     // move a validator: its pages all name the one read before the first.
     private void ConfirmListed(DownloadScope scope, IReadOnlyList<DownloadSubscription> listed)
     {
+        bool confirmed = false;
         lock (_gate)
         {
             if (!_unconfirmed.TryGetValue(scope, out var choices))
@@ -201,9 +205,13 @@ public sealed partial class SeriesMonitors
             {
                 if (listed.FirstOrDefault(m => m.Id == id) is not { } monitor || Matches(monitor, waiting.Choice) || monitor.Etag != waiting.Etag)
                 {
-                    choices.Remove(id);
+                    confirmed |= choices.Remove(id);
                 }
             }
+        }
+        if (confirmed)
+        {
+            SavePending();
         }
     }
 
@@ -323,34 +331,38 @@ public sealed partial class SeriesMonitors
         }
         if (forgot)
         {
-            SaveStops();
+            SavePending();
         }
     }
 
-    /// <summary>For tests: the latest write of the stops still to send; done once it is on disk, or failed and logged.</summary>
-    internal Task StopsSaved
+    /// <summary>For tests: the latest write of the writes still to send; done once it is on disk, or failed and logged.</summary>
+    internal Task PendingSaved
     {
         get
         {
             lock (_gate)
             {
-                return _stopsSave;
+                return _pendingSave;
             }
         }
     }
 
-    // Under _one, once: the stops a run before this one could not send, read off the caller's thread. A stop made since stays.
-    private async Task LoadStopsAsync()
+    // Under _one: the stops and the choices a run before this one could not send, read off the caller's thread, once it could
+    // be read; what this run made meanwhile stays. A file that cannot be read now is read again with the next run or write.
+    private async Task LoadPendingAsync()
     {
-        if (_stopsLoaded || _stopsFile is not { } file)
+        if (_pendingLoaded || _pendingFile is not { } file)
         {
             return;
         }
-        var kept = await Task.Run(file.Load).ConfigureAwait(false);
+        if (await Task.Run(file.Load).ConfigureAwait(false) is not { } kept)
+        {
+            return;
+        }
         lock (_gate)
         {
-            _stopsLoaded = true;
-            foreach (var stop in kept)
+            _pendingLoaded = true;
+            foreach (var stop in kept.Stops)
             {
                 if (!_pendingStops.TryGetValue(stop.Scope, out var stops))
                 {
@@ -358,27 +370,43 @@ public sealed partial class SeriesMonitors
                 }
                 stops.TryAdd(stop.SubscriptionId, stop.Etag);
             }
+            foreach (var choice in kept.Choices)
+            {
+                if (!_unconfirmed.TryGetValue(choice.Scope, out var choices))
+                {
+                    _unconfirmed[choice.Scope] = choices = new Dictionary<string, UnconfirmedChoice>(StringComparer.Ordinal);
+                }
+                choices.TryAdd(choice.SubscriptionId, choice.Choice);
+            }
         }
+        // What this run made before the file could be read goes in with it.
+        SavePending();
     }
 
-    // Every scope's stops as they are now, written one save after another on the thread pool, so the last written is the latest;
-    // it never throws, so the chain never breaks.
-    private void SaveStops()
+    // Every scope's stops and choices as they are now, written one save after another on the thread pool, so the last written is
+    // the latest; it never throws, so the chain never breaks. Not before the file was read: what it holds is not written over.
+    private void SavePending()
     {
-        if (_stopsFile is not { } file)
+        if (_pendingFile is not { } file)
         {
             return;
         }
         lock (_gate)
         {
-            _stopsSave = _stopsSave.ContinueWith(_ =>
+            _pendingSave = _pendingSave.ContinueWith(_ =>
             {
-                List<PendingStop> stops;
+                MonitorPending pending;
                 lock (_gate)
                 {
-                    stops = [.. _pendingStops.SelectMany(scope => scope.Value.Select(stop => new PendingStop(scope.Key, stop.Key, stop.Value)))];
+                    if (!_pendingLoaded)
+                    {
+                        return;
+                    }
+                    pending = new MonitorPending(
+                        [.. _pendingStops.SelectMany(scope => scope.Value.Select(stop => new PendingStop(scope.Key, stop.Key, stop.Value)))],
+                        [.. _unconfirmed.SelectMany(scope => scope.Value.Select(choice => new PendingChoice(scope.Key, choice.Key, choice.Value)))]);
                 }
-                file.Save(stops);
+                file.Save(pending);
             }, CancellationToken.None, TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default);
         }
     }

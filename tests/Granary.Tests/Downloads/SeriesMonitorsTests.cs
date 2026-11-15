@@ -35,8 +35,12 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
 
     private SeriesMonitors Monitors => _monitors ??= NewMonitors();
 
-    private SeriesMonitors NewMonitors(MonitorStopsFile? stops = null) => new(new DownloadSubscriptionsApi(_h.Silo.Http), _h.Api, _h.Store, _book,
-        _h.NewManager(), _h.Session, _h.Time, _h.Logs.For<SeriesMonitors>(), stops: stops);
+    private SeriesMonitors NewMonitors(MonitorPendingFile? pending = null) => new(new DownloadSubscriptionsApi(_h.Silo.Http), _h.Api, _h.Store, _book,
+        _h.NewManager(), _h.Session, _h.Time, _h.Logs.For<SeriesMonitors>(), pending: pending);
+
+    private string PendingPath => Path.Combine(_h.Directory, "data", "monitor-pending.json");
+
+    private MonitorPendingFile PendingFile() => new(PendingPath, _h.Logs.For<MonitorPendingFile>());
 
     private void ListMonitors(params string[] monitors) =>
         _h.Silo.On(HttpMethod.Get, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, monitors)));
@@ -506,18 +510,18 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     [Fact]
     public async Task AStopThatDidNotReachTheServer_IsSentAfterARestart_AndTheListDoesNotBringItBackMeanwhile()
     {
-        string path = Path.Combine(_h.Directory, "data", "monitor-stops.json");
+        string path = PendingPath;
         ListMonitors(MonitorPayloads.Monitor());
         SyncAnswers(MonitorPayloads.Sync());
-        _monitors = NewMonitors(new MonitorStopsFile(path, _h.Logs.For<MonitorStopsFile>()));
+        _monitors = NewMonitors(PendingFile());
         await Monitors.SyncAsync(Token);
         _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
         await Monitors.StopAsync("sub_1", Token);
-        await Monitors.StopsSaved;
+        await Monitors.PendingSaved;
         Monitors.Dispose();
 
         // Granary starts again, still without reaching the server for the stop: the list does not bring the monitor back.
-        _monitors = NewMonitors(new MonitorStopsFile(path, _h.Logs.For<MonitorStopsFile>()));
+        _monitors = NewMonitors(PendingFile());
         await Monitors.SyncAsync(Token);
         Assert.Empty(Monitors.Monitors);
         Assert.Single(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
@@ -526,11 +530,62 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
         ListMonitors();
         await Monitors.SyncAsync(Token);
-        await Monitors.StopsSaved;
+        await Monitors.PendingSaved;
 
         Assert.Equal("\"m1\"", _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path)[^1].IfMatch);
         // None is left to send: the file goes.
         Assert.False(File.Exists(path));
+    }
+
+    [Fact]
+    public async Task AChoiceTheServerDidNotTake_StillHoldsAfterARestart()
+    {
+        ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));
+        SyncAnswers(MonitorPayloads.Sync());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(deleteWatched: true)));
+        _h.Silo.On(HttpMethod.Patch, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+
+        // Granary starts again while the server still says Delete after watching: what the viewer turned off stays off.
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.SyncAsync(Token);
+
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
+    public async Task AFileOfWritesStillToSendThatCouldNotBeReadAtTheStart_IsReadWithALaterRun()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+
+        // Granary starts again while another program holds the file.
+        _monitors = NewMonitors(PendingFile());
+        using (new FileStream(PendingPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await Monitors.SyncAsync(Token);
+            await Monitors.PendingSaved;
+        }
+
+        // The next run reads it: the stop goes under the validator it was made with.
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
+        ListMonitors();
+        await Monitors.SyncAsync(Token);
+        await Monitors.PendingSaved;
+
+        Assert.Equal("\"m1\"", _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path)[^1].IfMatch);
+        Assert.Empty(Monitors.Monitors);
+        Assert.False(File.Exists(PendingPath));
     }
 
     [Fact]
