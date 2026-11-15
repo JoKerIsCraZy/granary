@@ -1336,8 +1336,9 @@ deleted here; every result but Completed keeps what was written.
 
 `DownloadQueue` (a singleton the app starts in `App.Launch`, after the local route, and stops when the window closes,
 waiting `StopBudget` for it) runs the active profile's downloads, as many at once as Settings → Downloads' Simultaneous
-Downloads says (`IDownloadPreferences.SimultaneousDownloads`, 1 to 4, two by default as Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
-missing their folder.
+Downloads says (`IDownloadPreferences.SimultaneousDownloads`, 1 to 4, two by default as Silo's Apple app), oldest first:
+those queued or under way, not paused by the viewer, not gone from the server and not missing their folder, passing over
+a monitored series' episode a storage limit holds ("Series monitoring").
 
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
   settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
@@ -1563,7 +1564,8 @@ client guide.
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
   downloads, Notify when downloads finish) and each select as it is chosen (Simultaneous Downloads, which the queue reads
-  at every pass and whose change wakes it) and takes a folder only below a drive's or a share's root and once it
+  at every pass and whose change wakes it), and the storage limit for downloads once its slider rests for `SliderRest`
+  (half a second), on the `TimeProvider`, so a drag is one save and takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
@@ -1613,6 +1615,17 @@ titles of their series as a download dialog or a download named them.
   read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
   back meanwhile. Waiting stops are kept for the run, not on disk: one that never reached the server before Granary closed
   shows its monitor again at the next start.
+- **Storage limits.** A monitor's `max_storage_bytes` is the client's to keep (the server only roughly holds registration
+  back), as the Apple app keeps it (`exceedsStorageCap`), and Settings → Downloads has Granary's own limit for every
+  download on this PC (`IDownloadPreferences.StorageLimitGb`, in GiB, none by default). The queue starts no episode of a
+  monitored series (paused or not) whose size, or its bytes so far when more, would take its series' downloads past the
+  monitor's limit, or all downloads past Granary's (`DownloadQueue.HoldOf`, `DownloadHold`): whole files count their size,
+  a transfer under way the size it comes to, the rest the bytes they have, and missing files nothing. It starts once
+  there is room, as a delete, a raised limit (the book's `Changed` and the settings' wake the queue) or another monitor
+  makes; a transfer under way is never stopped for a limit, and nothing is deleted for one. Its card says "Series storage
+  limit reached" (the Apple app's words) or "Storage limit for downloads reached". Other downloads are never held: the
+  download dialog does not start what would take the downloads past Granary's limit (`DownloadManager.BytesTaken` as the
+  dialog opens, and what the choice needs), and says so.
 - **One at a time.** A run, a create, a change and a stop wait for each other (`_one`), so a list never misses a write that
   landed while it was read, which the Apple app keeps a ledger of; a save made during a long run waits for it. Everything
   runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it

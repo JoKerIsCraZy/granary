@@ -299,8 +299,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   title stands in, as on any card. Every card has three lines, the two under the title in the caption's style (12 px,
   also on a poster, where a library's poster has its overline: they say more than an overline holds): the size ("8.0 GB",
   a series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status
-  in the apps' words ("Preparing…", "Queued", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
-  not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
+  in the apps' words ("Preparing…", "Queued", "Paused", "Paused · metered connection", "Series storage limit reached" (the
+  Apple app's, for a monitored series' episode its monitor's limit holds), "Storage limit for downloads reached" (Granary's,
+  for one the limit in Settings → Downloads holds), "Downloaded", "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
   hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed one, missing
   files and one the server no longer has. While the file comes, its status takes both lines, each short enough for a
   compact poster in a 1920 px window (about 141 px of text; `DownloadCardsTests` measures them in the app's font):
@@ -818,7 +819,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,
     the one it asks for; the episodes alone for a preset) and under it the free space where
     downloads go, "200.0 GB free on this PC.", or in red "Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.",
-    which keeps Download off. The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
+    which keeps Download off, as does "Over your storage limit for downloads: 8.0 GB needed, 5.0 GB left of 10.0 GB." when
+    what starts would take the downloads on this PC past the limit in Settings → Downloads (Granary's own words). The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
     Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
     the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
     Check access and try again." in an error bar, until another version or quality is picked; a season or a series
@@ -1532,7 +1534,10 @@ says why above the sections.
   above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
   phone's hotspot."). Simultaneous Downloads, the Apple app's select of 1 to 4, two by default ("How many downloads come
-  at once."): more start at once when it goes up, and the ones under way finish when it goes down. Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  at once."): more start at once when it goes up, and the ones under way finish when it goes down. Storage limit for downloads, Granary's own (no
+  Silo client has one): a slider from 0 to 4000 GB in steps of 10 with its value beside it ("No limit", "250 GB"), saved once
+  it rests for half a second ("Downloads don't start past it, and a monitored series' new episodes wait at it. Nothing is
+  deleted to make room."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
   your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
   settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have

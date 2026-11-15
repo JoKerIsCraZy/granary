@@ -74,6 +74,22 @@ public sealed class JsonDownloadPreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task TheStorageLimitForDownloads_IsOffByDefault_AndStays()
+    {
+        var preferences = Create();
+        Assert.Equal(0, preferences.StorageLimitGb);
+
+        await preferences.SetStorageLimitGbAsync(250);
+
+        Assert.Contains("\"storage_limit_gb\": 250", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.Equal(250, Create().StorageLimitGb);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => preferences.SetStorageLimitGbAsync(-1));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => preferences.SetStorageLimitGbAsync(DownloadPreferenceLimits.MaxStorageLimitGb + 1));
+        await File.WriteAllTextAsync(FilePath, "{ \"storage_limit_gb\": -5 }", Token);
+        Assert.Equal(0, Create().StorageLimitGb);
+    }
+
+    [Fact]
     public async Task NotifyWhenFinished_IsOnByDefault_AlsoForAFileFromBefore_AndStays()
     {
         var preferences = Create();

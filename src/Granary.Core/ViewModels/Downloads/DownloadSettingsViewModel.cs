@@ -21,7 +21,8 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// download dialog starts on, labelled as the apps label presets; Keep watched downloads, off by default as both apps have
 /// it, which only hides the Downloads page's suggestion to free up space; whether Granary says when downloads finish or
 /// fail, on by default; and how many downloads come at once, the Apple app's Simultaneous Downloads (1 to 4, two by
-/// default). A folder is taken only when Granary can write there,
+/// default); and Granary's own storage limit for downloads, a slider saved once it rests (<see cref="SliderRest"/>). A folder is
+/// taken only when Granary can write there,
 /// which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
 public sealed partial class DownloadSettingsViewModel : ObservableObject
@@ -33,6 +34,15 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
 
     /// <summary>Where a drive's choice puts new downloads on any drive but the default folder's: <c>D:\Granary\Downloads</c>.</summary>
     public static readonly string DriveFolder = Path.Combine("Granary", "Downloads");
+
+    /// <summary>How long a slider rests before its value is saved: a drag is one save, not one for every step.</summary>
+    public static readonly TimeSpan SliderRest = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>The storage limit slider's step, in GB.</summary>
+    public const int StorageLimitStepGb = 10;
+
+    // The slider's save, once it rests; on the UI thread.
+    private ITimer? _limitSave;
 
     private readonly IDownloadPreferences _preferences;
     private readonly DownloadsFeature _feature;
@@ -63,6 +73,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         DownloadsOnMetered = preferences.DownloadsOnMetered;
         KeepWatched = preferences.KeepWatched;
         NotifyWhenFinished = preferences.NotifyWhenFinished;
+        StorageLimitGb = preferences.StorageLimitGb;
         _showing = true;
         try
         {
@@ -90,6 +101,20 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     /// <summary>Granary says when downloads finish or fail: in its window, or as a Windows notification while it is not in front.</summary>
     [ObservableProperty]
     public partial bool NotifyWhenFinished { get; set; }
+
+    /// <summary>
+    /// Granary's storage limit for downloads, in GB, 0 for none: the slider's value, saved once it rests. The download dialog
+    /// does not start what would pass it, and a monitored series' episodes wait at it.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StorageLimitText))]
+    public partial double StorageLimitGb { get; set; }
+
+    /// <summary>"No limit", or "250 GB".</summary>
+    public string StorageLimitText => LimitGb(StorageLimitGb) is var gb and > 0 ? gb.ToString(CultureInfo.InvariantCulture) + " GB" : "No limit";
+
+    /// <summary>The highest limit the slider offers, in GB.</summary>
+    public double StorageLimitMaxGb => DownloadPreferenceLimits.MaxStorageLimitGb;
 
     /// <summary>The Apple app's Simultaneous Downloads: 1 to 4.</summary>
     public IReadOnlyList<SettingChoice> SimultaneousChoices { get; } =
@@ -268,6 +293,32 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             _ = _preferences.SetNotifyWhenFinishedAsync(value);
         }
     }
+
+    // A drag moves the value many times: it is saved once the slider rests, as its last value.
+    partial void OnStorageLimitGbChanged(double value)
+    {
+        _limitSave?.Dispose();
+        _limitSave = null;
+        if (LimitGb(value) == _preferences.StorageLimitGb)
+        {
+            return;
+        }
+        _limitSave = _time.CreateTimer(static state => ((DownloadSettingsViewModel)state!).SaveLimit(), this, SliderRest, Timeout.InfiniteTimeSpan);
+    }
+
+    // On the timer's thread: the setting's own save goes off it anyway, and its change event is read on any thread.
+    private void SaveLimit() => _dispatcher.Post(() =>
+    {
+        int limit = LimitGb(StorageLimitGb);
+        if (limit != _preferences.StorageLimitGb)
+        {
+            _ = _preferences.SetStorageLimitGbAsync(limit);
+        }
+    });
+
+    // The slider's value in whole steps, within its range.
+    private static int LimitGb(double value) =>
+        (int)Math.Clamp(Math.Round(value / StorageLimitStepGb, MidpointRounding.AwayFromZero) * StorageLimitStepGb, 0, DownloadPreferenceLimits.MaxStorageLimitGb);
 
     partial void OnSelectedSimultaneousChanged(SettingChoice? value)
     {

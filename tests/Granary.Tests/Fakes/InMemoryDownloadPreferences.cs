@@ -18,6 +18,17 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
 
     public int SimultaneousDownloads { get; private set; } = DownloadPreferenceLimits.DefaultSimultaneous;
 
+    public int StorageLimitGb { get; private set; }
+
+    public Task SetStorageLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxStorageLimitGb);
+        StorageLimitGb = gigabytes;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
     public Task SetSimultaneousDownloadsAsync(int count)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(count, DownloadPreferenceLimits.MinSimultaneous);

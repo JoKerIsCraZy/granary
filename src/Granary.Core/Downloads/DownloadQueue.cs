@@ -56,6 +56,7 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly IDownloadPreferences _preferences;
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadQueue> _logger;
+    private readonly MonitorBook? _monitors;
 
     // Guards every field below; the store and the handlers' callers are never called while it is held, except the store's
     // reads, which take only the store's own lock.
@@ -131,7 +132,7 @@ public sealed partial class DownloadQueue : IDisposable
     private ActivationRetry? _activationRetry;
 
     public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadAssets assets, DownloadsApi api, ISessionManager session,
-        INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
+        INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger, MonitorBook? monitors = null)
     {
         _store = store;
         _transfer = transfer;
@@ -142,6 +143,7 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences = preferences;
         _time = time;
         _logger = logger;
+        _monitors = monitors;
         _stopToken = _stop.Token;
     }
 
@@ -216,6 +218,10 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences.Changed += OnConditionsChanged;
         _store.Changed += OnStoreChanged;
         _store.ClearEnded += OnClearEnded;
+        if (_monitors is not null)
+        {
+            _monitors.Changed += OnMonitorsChanged;
+        }
         var scope = DownloadScope.Of(_session);
         var server = _session.ActiveServer?.BaseUri;
         lock (_gate)
@@ -344,6 +350,10 @@ public sealed partial class DownloadQueue : IDisposable
         _preferences.Changed -= OnConditionsChanged;
         _store.Changed -= OnStoreChanged;
         _store.ClearEnded -= OnClearEnded;
+        if (_monitors is not null)
+        {
+            _monitors.Changed -= OnMonitorsChanged;
+        }
     }
 
     // Raised on the UI thread: the new scope is taken here, and the other scopes' transfers stop. A scope that comes back after

@@ -20,12 +20,19 @@ public static class DownloadText
     public const string Downloading = "Downloading";
     public const string Failed = "Failed";
     public const string FailedNoSpace = "Failed · not enough space";
+
+    /// <summary>A monitored series' storage limit holds it: the Apple app's words (<c>downloads.wait.storageLimit</c>).</summary>
+    public const string SeriesLimitReached = "Series storage limit reached";
+
+    /// <summary>Granary's storage limit for downloads holds it; Granary's own words, as the limit is.</summary>
+    public const string DownloadsLimitReached = "Storage limit for downloads reached";
     public const string Original = "Original";
 
     /// <summary>
     /// The status a row and the title page's menu show. Missing files come first (a folder that is gone, or a finished
     /// download whose media file was deleted: the Android app's "Missing file"), then a download the server no longer has,
-    /// then the viewer's pause, then where it stands.
+    /// then the viewer's pause, then a storage limit that holds it (the Apple app says it before the connection's wait), then
+    /// where it stands.
     /// </summary>
     public static string Status(DownloadItem item)
     {
@@ -37,6 +44,8 @@ public static class DownloadText
             { IsPausedByViewer: true } => Paused,
             { State: DownloadState.Preparing, PreparationProgress: { } progress } => $"{Preparing} {Percent(progress)}%",
             { State: DownloadState.Preparing } => Preparing,
+            { State: DownloadState.Queued, Hold: DownloadHold.SeriesLimit } => SeriesLimitReached,
+            { State: DownloadState.Queued, Hold: DownloadHold.DownloadsLimit } => DownloadsLimitReached,
             { State: DownloadState.Queued, WaitsForUnmetered: true } => PausedMetered,
             { State: DownloadState.Queued } => Queued,
             { State: DownloadState.Downloading } => $"{Downloading} · {PercentText(item)}",

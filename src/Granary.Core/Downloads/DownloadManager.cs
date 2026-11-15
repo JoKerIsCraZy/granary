@@ -179,6 +179,9 @@ public sealed partial class DownloadManager
             ? _store.In(scope).Where(d => !d.FilesMissing && !d.MediaMissing).Sum(d => BytesDone(scope, d.Record))
             : 0;
 
+    /// <summary>What the downloads on this PC take, every profile's, as the storage limit for downloads counts it (<see cref="DownloadQueue.BytesTaken"/>).</summary>
+    public long BytesTaken() => _queue.BytesTaken();
+
     /// <summary>
     /// Has the downloads' folders looked at again soon, off the caller's thread: a page that lists them shows a file that was
     /// deleted by hand, or a drive that came back, without waiting for the queue's next look.
@@ -304,7 +307,8 @@ public sealed partial class DownloadManager
             download.FilesMissing || download.MediaMissing,
             waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
             record.MediaFileId, ArtworkPath(download, "series_poster"), record.IsWatched,
-            _playing?.Contains(record.Scope, record.DownloadId) == true, record.ResumeMs, record.DurationMs);
+            _playing?.Contains(record.Scope, record.DownloadId) == true, record.ResumeMs, record.DurationMs,
+            record is { State: DownloadState.Queued, SeriesId: not null } ? _queue.HoldOf(record.Scope, record.DownloadId) : DownloadHold.None);
     }
 
     // The record names its artwork, so nothing is read from the disk; none while the folder is missing.

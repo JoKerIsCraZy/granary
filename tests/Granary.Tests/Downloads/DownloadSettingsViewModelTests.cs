@@ -25,7 +25,7 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 
     // This PC's own drives are never read: the tests that list drives give their own.
     private DownloadSettingsViewModel Settings(IDownloadPreferences? preferences = null, IUiDispatcher? dispatcher = null) =>
-        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher()) { DriveList = () => [] };
+        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher(), _h.Time) { DriveList = () => [] };
 
     [Fact]
     public void SimultaneousDownloads_OffersOneToFour_AndSavesTheChoice()
@@ -38,6 +38,21 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         settings.SelectedSimultaneous = settings.SimultaneousChoices[2];
 
         Assert.Equal(3, _h.Preferences.SimultaneousDownloads);
+    }
+
+    [Fact]
+    public void TheStorageLimitForDownloads_SaysItsLimit_AndIsSavedOnceTheSliderRests()
+    {
+        var settings = Settings();
+        Assert.Equal((0d, "No limit"), (settings.StorageLimitGb, settings.StorageLimitText));
+
+        settings.StorageLimitGb = 120;
+        settings.StorageLimitGb = 250;
+
+        Assert.Equal("250 GB", settings.StorageLimitText);
+        Assert.Equal(0, _h.Preferences.StorageLimitGb);
+        _h.Time.Advance(DownloadSettingsViewModel.SliderRest);
+        Assert.Equal(250, _h.Preferences.StorageLimitGb);
     }
 
     [Fact]
@@ -407,6 +422,10 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public bool NotifyWhenFinished => true;
 
         public int SimultaneousDownloads => 2;
+
+        public int StorageLimitGb => 0;
+
+        public Task SetStorageLimitGbAsync(int gigabytes) => Task.CompletedTask;
 
         public event EventHandler? Changed
         {

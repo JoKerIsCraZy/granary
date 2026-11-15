@@ -58,6 +58,19 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SimultaneousChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedSimultaneous, Mode=TwoWay}" AutomationProperties.Name="Simultaneous Downloads" />
                 </controls:SettingsRow>
+                <!--
+                    Granary's own: no Silo client has an overall limit. The slider says its value beside it and saves once it
+                    rests; 0 is no limit.
+                -->
+                <controls:SettingsRow Label="Storage limit for downloads"
+                                      Description="Downloads don't start past it, and a monitored series' new episodes wait at it. Nothing is deleted to make room.">
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                        <Slider Width="220" Minimum="0" Maximum="{x:Bind ViewModel.StorageLimitMaxGb}" StepFrequency="10" SmallChange="10" LargeChange="100"
+                                Value="{x:Bind ViewModel.StorageLimitGb, Mode=TwoWay}" AutomationProperties.Name="Storage limit for downloads" />
+                        <TextBlock Text="{x:Bind ViewModel.StorageLimitText, Mode=OneWay}" MinWidth="72" VerticalAlignment="Center"
+                                   Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                    </StackPanel>
+                </controls:SettingsRow>
                 <!-- The list is labelled again once the server said what it offers: the select takes its items before its pick. -->
                 <controls:SettingsRow Label="Default quality"
                                       Description="The quality a download starts on when your Silo server offers it, else Original.">

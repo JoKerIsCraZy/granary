@@ -277,11 +277,12 @@ public sealed partial class DownloadQueue
     }
 
     // Starts the scope's transfers, while it is still the active one: a session change since the pass took it has the next pass
-    // start the new scope's, and none of this one's.
+    // start the new scope's, and none of this one's. A monitored series' episode that a storage limit holds is passed over.
     private void StartTransfers(DownloadScope scope, Uri server, long generation)
     {
         var now = _time.GetUtcNow();
-        foreach (var download in _store.In(scope).Where(IsWanted).OrderBy(d => d.Record.CreatedAt))
+        var all = _store.All;
+        foreach (var download in all.Where(d => d.Record.Scope == scope && IsWanted(d)).OrderBy(d => d.Record.CreatedAt))
         {
             var key = Key.Of(download.Record);
             lock (_gate)
@@ -290,7 +291,8 @@ public sealed partial class DownloadQueue
                 {
                     return;
                 }
-                if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now))
+                if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now)
+                    || HoldLocked(download, all) != DownloadHold.None)
                 {
                     continue;
                 }

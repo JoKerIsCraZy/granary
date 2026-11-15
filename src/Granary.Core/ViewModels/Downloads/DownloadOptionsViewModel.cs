@@ -83,6 +83,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     // The bytes the selection needs, 0 when not known; the free bytes once read, null until then or when the drive is not there.
     private long _needed;
     private long? _free;
+
+    // What the downloads on this PC take, as the dialog opened: the storage limit for downloads counts it.
+    private long _taken;
     private int _reads;
 
     // A card's read of what to offer, and the one under way (Try Again starts another, the dialog's close stops it).
@@ -448,6 +451,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         SelectedQuality = Qualities.FirstOrDefault(q => q.Preset == _preferences.DefaultQuality)
             ?? Qualities.FirstOrDefault(q => q.Preset == DownloadQualities.Original)
             ?? Qualities[0];
+        _taken = _downloads.BytesTaken();
         ShowSize();
         ReadSpace();
     }
@@ -533,9 +537,17 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
     }
 
-    // The transfer stops at its reserve (DownloadTransfer.SpaceReserve), so a download that would reach it does not start.
+    // The transfer stops at its reserve (DownloadTransfer.SpaceReserve), so a download that would reach it does not start; nor
+    // does one that would take the downloads past the storage limit for downloads in Settings → Downloads.
     private void ShowSpace()
     {
+        long limit = _preferences.StorageLimitGb * DownloadPreferenceLimits.BytesPerGb;
+        if (limit > 0 && _needed > 0 && _taken + _needed > limit)
+        {
+            IsShortOfSpace = true;
+            SpaceText = $"Over your storage limit for downloads: {Size(_needed)} needed, {Size(Math.Max(0, limit - _taken))} left of {Size(limit)}.";
+            return;
+        }
         if (_free is not { } free)
         {
             IsShortOfSpace = false;

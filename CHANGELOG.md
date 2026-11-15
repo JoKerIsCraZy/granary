@@ -26,8 +26,9 @@ release's section is what its update says it changes (docs/release.md).
   removing it deletes its downloads after asking. Your Silo server has to allow downloads.
 - **Monitored series:** a series your Silo server monitors for this PC brings its new episodes by itself: Granary asks the
   server for them when it starts, when you switch profiles and every four hours, and downloads what the server registered
-  like any other download, in episode order. Signing out leaves your monitors on
-  the server.
+  like any other download, in episode order. A monitor's storage limit holds back the episodes that would pass it, and so
+  does Settings → Downloads → Storage limit for downloads, a slider, which the download dialog keeps to as well; nothing
+  is deleted to make room. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server

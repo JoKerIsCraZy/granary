@@ -36,6 +36,12 @@ public interface IDownloadPreferences
     /// </summary>
     int SimultaneousDownloads { get; }
 
+    /// <summary>
+    /// Granary's own limit for what downloads take on this PC, in GB (GiB); 0 for none, the default. The download dialog does
+    /// not start what would pass it, and a monitored series' episodes wait at it; nothing is deleted for it.
+    /// </summary>
+    int StorageLimitGb { get; }
+
     /// <summary>Raised on the caller's thread after any of them changed.</summary>
     event EventHandler? Changed;
 
@@ -54,6 +60,9 @@ public interface IDownloadPreferences
 
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is outside 1 to 4.</exception>
     Task SetSimultaneousDownloadsAsync(int count);
+
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="gigabytes"/> is outside 0 to <see cref="DownloadPreferenceLimits.MaxStorageLimitGb"/>.</exception>
+    Task SetStorageLimitGbAsync(int gigabytes);
 }
 
 /// <summary>The ranges of this PC's download settings, as Silo's Apple app has them (<c>DownloadSettings.swift</c>).</summary>
@@ -64,14 +73,20 @@ public static class DownloadPreferenceLimits
     public const int MaxSimultaneous = 4;
 
     public const int DefaultSimultaneous = 2;
+
+    /// <summary>The highest storage limit for downloads the slider offers, in GB.</summary>
+    public const int MaxStorageLimitGb = 4000;
+
+    /// <summary>A gigabyte as the limits count it, and as the apps' storage limits do: 2^30 bytes.</summary>
+    public const long BytesPerGb = 1L << 30;
 }
 
 /// <summary>
 /// <see cref="IDownloadPreferences"/> in <c>download-settings.json</c> in the data directory
 /// (<c>{ "folder": "D:\\Granary", "downloads_on_metered": true, "default_quality": "10mbps", "keep_watched": true,
-/// "notify_when_finished": false, "simultaneous_downloads": 3 }</c>). Without the file, or with one that cannot be read,
+/// "notify_when_finished": false, "simultaneous_downloads": 3, "storage_limit_gb": 500 }</c>). Without the file, or with one that cannot be read,
 /// downloads go to <see cref="DownloadPaths.DefaultRoot"/>, wait on metered connections, start on Original, are suggested
-/// for deletion once watched, are said when they finish and come two at a time; a value it does not know, or one a file from
+/// for deletion once watched, are said when they finish, come two at a time and have no storage limit; a value it does not know, or one a file from
 /// before its setting lacks, is the default, and a number outside its range is held to it. One that cannot be written is logged, and the choice still holds for this run. Files are written off the caller's
 /// thread, which is the UI's.
 /// </summary>
@@ -89,6 +104,7 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
     private volatile bool _keepWatched;
     private volatile bool _notifyWhenFinished;
     private volatile int _simultaneousDownloads;
+    private volatile int _storageLimitGb;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonDownloadPreferences(string filePath, ILogger<JsonDownloadPreferences> logger)
@@ -107,6 +123,7 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
         _notifyWhenFinished = file?.NotifyWhenFinished != false;
         _simultaneousDownloads = Math.Clamp(file?.SimultaneousDownloads ?? DownloadPreferenceLimits.DefaultSimultaneous,
             DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous);
+        _storageLimitGb = Math.Clamp(file?.StorageLimitGb ?? 0, 0, DownloadPreferenceLimits.MaxStorageLimitGb);
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "download-settings.json");
@@ -122,6 +139,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
     public bool NotifyWhenFinished => _notifyWhenFinished;
 
     public int SimultaneousDownloads => _simultaneousDownloads;
+
+    public int StorageLimitGb => _storageLimitGb;
 
     public event EventHandler? Changed;
 
@@ -206,6 +225,14 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
         return SaveAndRaise();
     }
 
+    public Task SetStorageLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxStorageLimitGb);
+        _storageLimitGb = gigabytes;
+        return SaveAndRaise();
+    }
+
     private Task SaveAndRaise()
     {
         var save = QueueSave();
@@ -259,7 +286,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
-            var file = new DownloadSettingsFile(_folder, _downloadsOnMetered, _defaultQuality, _keepWatched, _notifyWhenFinished, _simultaneousDownloads);
+            var file = new DownloadSettingsFile(_folder, _downloadsOnMetered, _defaultQuality, _keepWatched, _notifyWhenFinished, _simultaneousDownloads,
+                _storageLimitGb);
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(file, DownloadSettingsJsonContext.Default.DownloadSettingsFile);
             SafeFile.WriteWhole(_filePath, temp => File.WriteAllBytes(temp, json));
         }
@@ -273,7 +301,7 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
 
 /// <summary><c>download-settings.json</c>.</summary>
 internal sealed record DownloadSettingsFile(string? Folder, bool? DownloadsOnMetered, string? DefaultQuality, bool? KeepWatched = null,
-    bool? NotifyWhenFinished = null, int? SimultaneousDownloads = null);
+    bool? NotifyWhenFinished = null, int? SimultaneousDownloads = null, int? StorageLimitGb = null);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
 [JsonSerializable(typeof(DownloadSettingsFile))]
