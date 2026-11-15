@@ -1649,6 +1649,8 @@ titles of their series as a download dialog or a download named them.
   server's sync, for its part, registers no episode the profile finished and none this PC deleted while the monitor was
   there, so a deleted episode does not come back. A monitor that changed under its sync (409) and could not be read
   again, or kept changing past the restarts, deletes nothing that run: what changed may be Delete after watching itself.
+  As what goes is a series' episodes, a series is deleted from only when every monitor of it the book holds deletes watched
+  ones and none of them is one the run could not be sure of.
   Nothing else deletes for a monitor.
 - **Storage limits.** A monitor's `max_storage_bytes` is the client's to keep (the server only roughly holds registration
   back), as the Apple app keeps it (`exceedsStorageCap`), and Settings → Downloads has Granary's own limit for every

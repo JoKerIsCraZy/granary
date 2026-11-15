@@ -269,6 +269,19 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeriesWithAMonitorTheRunCouldNotBeSureOf_DeletesNothing_WhateverItsOtherMonitorsSay()
+    {
+        ListMonitors(MonitorPayloads.Monitor("sub_1", "sr_1", deleteWatched: true), MonitorPayloads.Monitor("sub_2", "sr_1", etag: "\"n1\"", deleteWatched: true));
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Problem(409, "conflict"), ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Sync("sub_2")));
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.NetworkError());
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+
+        await Monitors.SyncAsync(Token);
+
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
     public async Task Create_ThatCouldNotConnect_SentNothing_AndFails()
     {
         _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.NetworkError());
