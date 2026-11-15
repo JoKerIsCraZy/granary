@@ -506,6 +506,29 @@ public sealed class ItemDetailMissingEpisodesTests
     }
 
     [Fact]
+    public async Task AListingWhoseAirDatesChange_WhenThePageReadsItAgain_IsPlacedAgain()
+    {
+        // The last episode's date was wrong, so the days after it that were asked held nothing.
+        Season(Episodes((1, "2026-09-01"), (2, "2026-05-01")));
+        _calendar.Airs(3, "Chapter 3", "2026-09-15");
+        _fixture.Guard(2);
+        var detail = _fixture.Create();
+        await detail.LoadCommand.ExecuteAsync(Season3Id);
+        detail.Activate();
+        await detail.Placing;
+        Assert.Empty(detail.EpisodeGrid.OfType<DetailEpisodePlaceholder>());
+        _fixture.Get(SeasonItemEpisodesPath(Season3Id), Ok(Episodes((1, "2026-09-01"), (2, "2026-09-08"))));
+
+        _fixture.Stops.Track(Task.CompletedTask);
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        await detail.Placing;
+
+        Assert.Equal([3], detail.EpisodeGrid.OfType<DetailEpisodePlaceholder>().Select(p => p.EpisodeNumber));
+        AssertQuiet();
+    }
+
+    [Fact]
     public async Task TheLoad_DoesNotWaitForTheCalendar_AndThePlacesComeInAmongTheSameCards()
     {
         Season(Episodes((1, "2026-09-01"), (2, "2026-09-08"), (4, "2026-09-22")));

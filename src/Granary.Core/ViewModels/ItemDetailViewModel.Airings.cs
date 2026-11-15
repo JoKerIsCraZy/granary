@@ -46,13 +46,14 @@ public sealed partial class ItemDetailViewModel
         Placing = PlaceAsync(server, seriesId, number, listed, generation, run);
     }
 
-    // A listing read again (a watched mark, a start or a stop) whose episodes changed is placed again, and a placing still on
-    // its way for the one before is dropped: its places would leave out a gap the new listing has. Until the new places come,
-    // the old ones stay, but none beside a listed episode of its number (SeasonGaps.Among).
+    // A listing read again (a watched mark, a start or a stop) whose episodes changed is placed again: their numbers, ids or
+    // air dates, which decide the days the calendar is asked about. A placing still on its way for the one before is dropped,
+    // as its places would leave out a gap the new listing has. Until the new places come, the old ones stay, but none beside a
+    // listed episode of its number (SeasonGaps.Among).
     private void PlaceAgainIfChanged(IReadOnlyList<Episode> before, IReadOnlyList<Episode> now, int generation)
     {
         if (_placedAt is not { } at
-            || before.Select(e => (e.EpisodeNumber, e.ContentId)).SequenceEqual(now.Select(e => (e.EpisodeNumber, e.ContentId))))
+            || before.Select(e => (e.EpisodeNumber, e.ContentId, e.AirDate)).SequenceEqual(now.Select(e => (e.EpisodeNumber, e.ContentId, e.AirDate))))
         {
             return;
         }
