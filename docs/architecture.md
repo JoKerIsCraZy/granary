@@ -1705,10 +1705,14 @@ titles of their series as a download dialog or a download named them.
   the server has it now. A save goes over the monitor the dialog showed (`MonitorEdit.Etag`): one a run read anew while it
   showed, or that came meanwhile, is shown as it is now with the same words, and nothing is sent. Its sentence names the next airing the rule takes from `MonitorSchedule`, which reads the airing
   calendar (30 days, every airing, the viewer's zone) and each monitored series' title and poster, at most every 15
-  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`.
+  minutes and only while something is monitored, as the Apple app's `AutoDownloadSchedule`. Those reads are bound to the
+  account and profile the refresh began for (`CalendarApi.GetAsAccountProfileAsync`,
+  `CatalogApi.GetItemAsAccountProfileAsync`), so a switch before they go out sends nothing and keeps no other profile's
+  airings or titles for this one; nothing counts as failed, and the next refresh asks again.
 - **The Monitored cards.** The Downloads page lists the active profile's monitors (`SeriesMonitors.Monitors`) as cards
   (`MonitorCards`), running ones first: the rule (`MonitorRules.Summary`) and the status the Apple app computes
-  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode; one under way; one waiting; the next airing the rule
+  (`MonitorRules.StatusOf`: paused; a storage limit holding an episode, the one that holds the first held episode, its
+  monitor's or Granary's, as the queue says (`DownloadHold`); one under way; one waiting; the next airing the rule
   takes that this PC does not have; up to date once the calendar was read), from the page's downloads and
   `MonitorSchedule`, which the page asks to read as it shows and whenever the monitors change while it shows (a run at the
   start fills them a moment later; the calendar itself is read only when due); the monitors' and the schedule's `Changed`
@@ -1749,7 +1753,11 @@ titles of their series as a download dialog or a download named them.
   dialog's Cancel ends that wait (nothing is sent) but never a write that began. The book counts a monitor as changed when
   its id or validator did, which changes with every change to it. Everything
   runs on the thread pool, bound to the profile it began for: once another server, account or profile is the active one, it
-  applies nothing more. The log names no series, title or profile.
+  applies nothing more. For a sign-in between that look and the send, the run's list, syncs and reads again are bound to
+  the account as well as the profile (`SiloRequestOptions.Account`; profile ids need not differ between accounts): the
+  authentication handler sends none for another account (`ProfileChangedException`), and the run ends as when the server
+  cannot be reached. A create, a change and a stop, and a stop's read of the monitor after a conflict, are bound the same
+  way. The log names no series, title or profile.
 
 ### Downloads in the shell
 

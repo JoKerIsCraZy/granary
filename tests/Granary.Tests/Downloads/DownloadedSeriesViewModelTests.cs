@@ -4,9 +4,11 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
+using Granary.Tests.Settings;
 using static Granary.Tests.Downloads.DownloadHarness;
 
 namespace Granary.Tests.Downloads;
@@ -31,8 +33,8 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
-    private DownloadedSeriesViewModel Page(DownloadManager? downloads = null, IUiDispatcher? dispatcher = null) =>
-        new(downloads ?? _h.NewManager(), _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher(), _h.Time);
+    private DownloadedSeriesViewModel Page(DownloadManager? downloads = null, IUiDispatcher? dispatcher = null, EpisodeSpoilerSettings? spoilers = null) =>
+        new(downloads ?? _h.NewManager(), _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher(), _h.Time, spoilers);
 
     private DownloadedSeriesViewModel Shown(string seriesId = "sr_1")
     {
@@ -66,6 +68,24 @@ public sealed class DownloadedSeriesViewModelTests : IAsyncDisposable
         {
             entry.Command.Execute(card);
         }
+    }
+
+    [Fact]
+    public async Task AnUnwatchedEpisodesStill_IsBlurred_AsTheProfilesSwitchSays_AndFollowsItsChange()
+    {
+        await AddEpisodeAsync("dl_11", 1, 1, "Pilot", change: r => r with { IsWatched = true });
+        await AddEpisodeAsync("dl_12", 1, 2, "Chapter Two");
+        var spoilers = await SpoilerSwitches.StartedAsync(images: true, overviews: false);
+        var page = Page(spoilers: spoilers);
+        page.Open("sr_1");
+        page.Attach();
+
+        Assert.Equal((false, true), (Card(page, "dl_11").BlursImage, Card(page, "dl_12").BlursImage));
+
+        await spoilers.SetHidesImagesAsync(false);
+
+        Assert.False(Card(page, "dl_12").BlursImage);
+        page.Detach();
     }
 
     [Fact]

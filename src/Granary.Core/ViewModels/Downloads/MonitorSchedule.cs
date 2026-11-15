@@ -16,7 +16,8 @@ public sealed record MonitoredSeriesInfo(string Title, Uri? Poster, string? Post
 /// that air in the next month (<c>GET /api/v2/calendar</c>, every airing, in the viewer's zone) by series, and each monitored
 /// series' title and poster (<c>GET /api/v2/catalog/items/{id}</c>). Read again at most every <see cref="RefreshInterval"/>,
 /// unless asked to, and only while something is monitored; held for one server, account and profile, and dropped for
-/// another. <see cref="Changed"/> comes on any thread once something new was read.
+/// another. Its reads go only as the account and profile they began for, so another profile's airings and titles are never
+/// kept for this one. <see cref="Changed"/> comes on any thread once something new was read.
 /// </summary>
 public sealed class MonitorSchedule
 {
@@ -104,6 +105,11 @@ public sealed class MonitorSchedule
         await _one.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (DownloadScope.Of(_session) != scope)
+            {
+                // Another profile acts since this refresh began: what was read for that one stays, and this asks nothing.
+                return;
+            }
             var now = _time.GetUtcNow();
             bool due;
             lock (_gate)
@@ -118,8 +124,18 @@ public sealed class MonitorSchedule
                 }
                 due = force || _loadedAt is not { } loaded || now - loaded >= RefreshInterval;
             }
-            bool changed = due && await ReadCalendarAsync(scope, server, now, cancellationToken).ConfigureAwait(false);
-            changed |= await ReadInfoAsync(scope, server, series, now, cancellationToken).ConfigureAwait(false);
+            bool changed = false;
+            try
+            {
+                changed = due && await ReadCalendarAsync(scope, server, now, cancellationToken).ConfigureAwait(false);
+                changed |= await ReadInfoAsync(scope, server, series, now, cancellationToken).ConfigureAwait(false);
+            }
+            catch (ProfileChangedException)
+            {
+                // Another profile or account acts now: the read was not sent, nor is the rest. Nothing failed, so the next
+                // refresh for this profile asks again.
+                _logger.LogDebug("The monitored series' schedule was not read: another profile acts now");
+            }
             if (changed)
             {
                 Changed?.Invoke(this, EventArgs.Empty);
@@ -182,8 +198,8 @@ public sealed class MonitorSchedule
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
         try
         {
-            var week = await _calendar.GetAsync(server, today, today.AddDays(WindowDays), CalendarFilters.Everything, CalendarText.IanaZone(zone, now),
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+            var week = await _calendar.GetAsAccountProfileAsync(server, scope.AccountId, scope.ProfileId, today, today.AddDays(WindowDays),
+                CalendarFilters.Everything, CalendarText.IanaZone(zone, now), cancellationToken).ConfigureAwait(false);
             var upcoming = UpcomingOf(week, now, zone);
             lock (_gate)
             {
@@ -221,7 +237,8 @@ public sealed class MonitorSchedule
             }
             try
             {
-                var item = await _catalog.GetItemAsync(server, seriesId, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var item = await _catalog.GetItemAsAccountProfileAsync(server, scope.AccountId, scope.ProfileId, seriesId, cancellationToken)
+                    .ConfigureAwait(false);
                 lock (_gate)
                 {
                     if (_scope == scope)

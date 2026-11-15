@@ -301,8 +301,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   app's rule line ("Future episodes", "All episodes", "Last season · Season 3 on", "Seasons 2 and 3", with " · 10 Mbps" for
   a quality that is not original), and what it does next, the Apple app's status line ("Episode 6 on Thursday", "Season 2
   starts tomorrow", "Downloading Episode 6 · 42%", "Episode 7 is next", "Preparing Episode 7", "Episode 7 waits for an
-  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber, "Paused", "Up to date", or
-  "Monitoring" before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
+  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber (the limit that holds its first
+  held episode: the monitor's, or Settings → Downloads' for every download), "Paused", "Up to date", or "Monitoring"
+  before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
   has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
   downloads shows no empty box. Then "Films" and
   "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
@@ -365,7 +366,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;
   "Specials" last) with its episodes in a grid of 16:9 stills (`MediaGrid`'s landscape cards, as a season's page shows
   them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
-  status and the Downloads page's click and menu. It has the Back disc; Back, a controller's B and a remote's Back lead
+  status and the Downloads page's click and menu. The still of an episode the profile has neither watched nor started is
+  blurred while its spoiler switch hides those (`MediaCard.BlursImage`, as the apps' download rows), and follows the switch
+  while the page shows; the switches are read from the server, so offline, before they were read, nothing is blurred.
+  It has the Back disc; Back, a controller's B and a remote's Back lead
   to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
   focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
   season to season, to its first card. Once the series has no downloads

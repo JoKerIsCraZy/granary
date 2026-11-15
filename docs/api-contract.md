@@ -1131,6 +1131,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
   page's load does not wait for any of it. A failed calendar request leaves the season, or More Episodes, as listed,
   with a warning in the log.
+- The monitored series' schedule (`MonitorSchedule`, as Apple's `AutoDownloadSchedule`) asks the next 30 days with
+  `filter=everything` and the viewer's zone, and each monitored series' item (7.6) for its title and poster, bound to the
+  account and profile the read began for (`SiloRequestOptions.Account`, `.Profile`): once another acts, neither goes out
+  (`ProfileChangedException`), and the next refresh for that profile asks again.
 
 ### 7.14 Notifications
 
@@ -3438,8 +3442,9 @@ A monitor keeps a series downloaded on this PC (`silo-server/docs/downloads-api.
 account, the profile and the PC (`X-Silo-Device-Id`). The server has no worker of its own: the client syncs each monitor,
 which registers the episodes it takes, and then takes those new entries from the registry (14.3). Every call goes through
 `Api/Downloads/DownloadSubscriptionsApi`, bound to its profile, as Silo's Apple app calls them
-(`APIv2Client+DownloadSubscriptions.swift`). Only the Apple app monitors series; the Android app has unused plumbing, the web
-none.
+(`APIv2Client+DownloadSubscriptions.swift`), and to its account as well (`SiloRequestOptions.Account`: profile ids need not
+differ between accounts): every list, sync, read, create, change and stop.
+Only the Apple app monitors series; the Android app has unused plumbing, the web none.
 
 - Capability (14.1): `series_monitoring` (monitors can be made), `monitoring_modes` (the modes a new monitor may take:
   `all`, `future`, `latest_season`, `specific_seasons`) and `monitor_quality` (a monitor keeps a `quality`; without it,

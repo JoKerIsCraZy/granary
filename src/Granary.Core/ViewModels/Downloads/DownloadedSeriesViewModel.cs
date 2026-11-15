@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 
 namespace Granary.Core.ViewModels.Downloads;
@@ -38,7 +39,9 @@ public sealed class DownloadSeason
 /// the Apple app opens a series' downloads on a screen of their own: the series' name, how many episodes and the space they
 /// take, then the episodes' cards by season, by number, with Specials last, as the Downloads page listed them. The cards and
 /// their menus are the Downloads page's (<see cref="DownloadCards"/>, <see cref="DownloadCardActions"/>), and they follow the
-/// downloads the same way while the page shows. Once the series has no downloads left on this PC, the page goes back.
+/// downloads the same way while the page shows. An unwatched episode's still is blurred while the profile's spoiler switch
+/// hides them (<see cref="EpisodeSpoilerSettings"/>), and follows the switch while the page shows. Once the series has no
+/// downloads left on this PC, the page goes back.
 /// </summary>
 public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDisposable
 {
@@ -47,6 +50,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     private readonly DownloadManager _downloads;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
+    private readonly EpisodeSpoilerSettings? _spoilers;
     private readonly DownloadsFollower _follow;
     private readonly ObservableCollection<DownloadSeason> _seasons = [];
 
@@ -60,11 +64,12 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     private int _leftIn = -1;
 
     public DownloadedSeriesViewModel(DownloadManager downloads, INavigationService navigation, IConfirmation confirmation, IUiDispatcher dispatcher,
-        TimeProvider time)
+        TimeProvider time, EpisodeSpoilerSettings? spoilers = null)
     {
         _downloads = downloads;
         _navigation = navigation;
         _dispatcher = dispatcher;
+        _spoilers = spoilers;
         _follow = new DownloadsFollower(downloads, dispatcher, time, Refresh);
         Actions = new DownloadCardActions(downloads, navigation, confirmation);
         Seasons = new ReadOnlyObservableCollection<DownloadSeason>(_seasons);
@@ -112,12 +117,17 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
         if (_follow.Attach())
         {
             _showing++;
+            _spoilers?.PropertyChanged += OnSpoilersChanged;
         }
         Show();
     }
 
     /// <summary>The page was left: it stops following the downloads, which hold it no longer.</summary>
-    public void Detach() => _follow.Detach();
+    public void Detach()
+    {
+        _follow.Detach();
+        _spoilers?.PropertyChanged -= OnSpoilersChanged;
+    }
 
     public void Dispose() => Detach();
 
@@ -128,6 +138,15 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
         if (card is not null)
         {
             Actions.Invoke(card);
+        }
+    }
+
+    // The profile's spoiler switches changed (or were read): the stills show as they say now.
+    private void OnSpoilersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(EpisodeSpoilerSettings.Shown))
+        {
+            _follow.Poke();
         }
     }
 
@@ -171,6 +190,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
     private void ShowCards()
     {
         var episodes = _items.Values.ToList();
+        var spoilers = _spoilers?.Shown ?? EpisodeSpoilers.Off;
         if (episodes.Count > 0)
         {
             Title = DownloadCards.SeriesTitleOf(episodes.OrderBy(i => i.DownloadId, StringComparer.Ordinal).First());
@@ -181,7 +201,7 @@ public sealed partial class DownloadedSeriesViewModel : ObservableObject, IDispo
         var wanted = episodes.GroupBy(i => i.SeasonNumber is int number and > 0 ? number : 0)
             .OrderBy(g => g.Key == 0 ? int.MaxValue : g.Key)
             .Select(g => (Number: g.Key, Cards: g.OrderBy(i => i.EpisodeNumber ?? int.MaxValue).ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase)
-                .Select(i => DownloadCards.Download(i, _follow.RateOf(i.DownloadId))).ToList()))
+                .Select(i => DownloadCards.Download(i, _follow.RateOf(i.DownloadId), spoilers)).ToList()))
             .ToList();
         for (int i = _seasons.Count - 1; i >= 0; i--)
         {
