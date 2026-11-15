@@ -109,8 +109,10 @@
                             <ColumnDefinition Width="*" MaxWidth="360" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+                        <!-- WinUI's template keeps the text at the top of a box taller than 32 px, so the field takes the sign-in fields'
+                             padding (SiloAuthTextBoxStyle), which centres the address at Lookup's 36 px. -->
                         <TextBox Text="{x:Bind ViewModel.IpQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="IP lookup (e.g. 203.0.113.50)"
-                                 AutomationProperties.Name="IP address" KeyDown="OnIpKeyDown" />
+                                 Padding="12,8,8,7" VerticalAlignment="Center" AutomationProperties.Name="IP address" KeyDown="OnIpKeyDown" />
                         <Button Grid.Column="1" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.LookupCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE721;" FontSize="12" />
