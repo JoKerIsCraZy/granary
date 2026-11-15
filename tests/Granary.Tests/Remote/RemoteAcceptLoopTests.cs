@@ -194,6 +194,33 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
+    public async Task PeersWhoseConnectionsFailForMoreThanHalfAMinute_NeverStopTheLoop()
+    {
+        // Resets and broken connections are the peers', however long they go on: a phone that comes after them still gets in.
+        var source = Source();
+        var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, connection =>
+        {
+            handed.TrySetResult(connection);
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        for (int i = 0; i < 100; i++)
+        {
+            source.Fail(i % 2 == 0 ? new SocketException((int)SocketError.ConnectionReset) : new IOException("The peer went away."));
+        }
+        var good = NewConnection();
+        source.Give(good);
+
+        await FireTimersUntilAsync(handed.Task);
+
+        Assert.Same(good, await handed.Task);
+        Assert.True(_time.Elapsed > RemoteAcceptLoop.GiveUpAfter);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+        Assert.False(loop.Running.IsCompleted);
+    }
+
+    [Fact]
     public async Task AGoodConnection_StartsTheHalfMinuteAnew()
     {
         var source = Source();
@@ -213,7 +240,7 @@ public sealed class RemoteAcceptLoopTests : IDisposable
         {
             for (int i = 0; i < 25; i++)
             {
-                source.Fail(new SocketException((int)SocketError.ConnectionReset));
+                source.Fail(new SocketException((int)SocketError.TooManyOpenSockets));
             }
             source.Give(NewConnection());
         }
