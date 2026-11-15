@@ -217,6 +217,32 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AResetAnsweredInThePanel_ResetsWithoutAskingAgain()
+    {
+        await ShownAsync();
+        await SwitchOnAsync();
+        await OnUiAsync(() => _viewModel.OpenPanelCommand.Execute(null));
+        string before = Read(vm => vm.PairingLink)!;
+        string keyId = _harness.PairingStore.Current!.KeyId;
+
+        await _harness.Dispatcher.RunAsync(_viewModel.ResetPairingAnsweredAsync);
+        await SettleAsync();
+
+        Assert.Empty(_confirmation.Asked);
+        Assert.NotEqual(keyId, _harness.PairingStore.Current!.KeyId);
+        Assert.NotEqual(before, Read(vm => vm.PairingLink));
+        Assert.Equal(Receiver.PairingLink, Read(vm => vm.PairingLink));
+    }
+
+    [Fact]
+    public void TheRow_SaysWhatAPhoneDoes_AndWhatTheNetworkSees()
+    {
+        // Starting titles from the phone comes with Part 2; the description says only what a phone does now.
+        Assert.Equal("Silo's phone app on this network can control what plays on this PC. Windows may ask to let Granary through its firewall.\n"
+            + "While this is on, devices on this network can see this PC's name and your server's address.", PhoneRemoteViewModel.RowDescription);
+    }
+
+    [Fact]
     public async Task ARefusedReset_ChangesNothing()
     {
         _confirmation.Answer = false;

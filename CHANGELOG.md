@@ -6,6 +6,14 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
+  subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
+  and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
+  phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
+  another kind of device. Tested with Silo's Android app; Silo's Apple app could not be tested.
+
 ## [0.4.0] - 2026-11-14
 
 ### Added

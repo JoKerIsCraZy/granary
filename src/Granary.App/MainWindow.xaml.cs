@@ -59,10 +59,12 @@ public sealed partial class MainWindow : Window
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
         Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger,
-        Granary.Core.Theme.ServerAccent brand, Granary.Core.ViewModels.Admin.ServerActivityViewModel activity)
+        Granary.Core.Theme.ServerAccent brand, Granary.Core.ViewModels.Admin.ServerActivityViewModel activity,
+        Granary.Core.ViewModels.RemoteIndicatorViewModel remote)
     {
         Layout = layout;
         Activity = activity;
+        Remote = remote;
         _modes = modes;
         Trailers = trailers;
         Updates = updates;
@@ -105,6 +107,7 @@ public sealed partial class MainWindow : Window
         InitializeRemote();
         InitializeController();
         InitializeActivity();
+        InitializePhoneRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
         // Where it was closed last, as it was; the first time where Windows places it.
@@ -600,6 +603,7 @@ public sealed partial class MainWindow : Window
         // As the web: always there on the admin area's pages, elsewhere only while something is going on.
         Activity.ShowsWhenIdle = route == AppRoute.Admin;
         ShowActivity();
+        ShowRemoteIndicator();
     }
 
     private void SetPaneMode(NavigationViewPaneDisplayMode mode)

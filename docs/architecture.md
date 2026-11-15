@@ -1468,7 +1468,23 @@ second net: a disposable transient resolved from the root provider would be kept
 - Reset Pairing Code asks first (`IConfirmation`), then resets through the receiver and says so when a phone could not
   be let go or the new key could not be saved (the old code then still works).
 - Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
-  with "TV" as "PC"; Silo's web has no wording for this.
+  with "TV" as "PC"; Silo's web has no wording for this. The description leaves out that a phone can start titles here
+  until it can.
+- **The App.** `PlaybackSettingsView` shows the row when the view model has one, attaches it on `Loaded` and detaches
+  it on `Unloaded`. Connect a Phone is `Controls/ConnectPhonePanel` in a `ContentDialog`: it draws the code with QRCoder
+  (error correction M) into a `BitmapImage` from memory, clears the PNG's bytes after, and drops the picture as the
+  dialog closes; the dialog closes itself when the row closes the panel. Reset Pairing Code asks in a flyout of the
+  panel and then calls `ResetPairingAnsweredAsync`, since a second `ContentDialog` cannot open over the first.
+
+### What the PC shows
+
+`RemoteIndicatorViewModel` follows `PhoneConnected` and `PhonesChanged` on the UI thread: "{name} connected" for four
+seconds on the receiver's `TimeProvider`, a newer one with its own four, and `IsActive` while a phone on Granary's server
+actively controls; `DisconnectCommand` lets every such phone go with `tv_disconnected`. The window has one for the app
+(the notice in the player's notice card over pages and player alike, and a disc beside the activity indicator, shown
+where that is); the player page makes its own for its bar's icon and disposes it with the page, so no page is kept
+alive by the receiver's events. The page also makes `PlayerRemoteControl` beside `PlayerSystemMedia` and disposes it
+where it disposes that one.
 
 ### What is logged
 

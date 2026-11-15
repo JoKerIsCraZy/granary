@@ -73,6 +73,9 @@ public sealed class CompositionRootTests
         Assert.IsType<NoLanAddressSource>(provider.GetRequiredService<ILanAddressSource>());
         using var playback = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(provider);
         Assert.NotNull(playback.PhoneRemote);
+        // The window's notice and indicator for the app; the player page makes its own.
+        Assert.Same(provider.GetRequiredService<RemoteIndicatorViewModel>(), provider.GetRequiredService<RemoteIndicatorViewModel>());
+        using var playerIndicator = ActivatorUtilities.CreateInstance<RemoteIndicatorViewModel>(provider);
     }
 
     [Fact]

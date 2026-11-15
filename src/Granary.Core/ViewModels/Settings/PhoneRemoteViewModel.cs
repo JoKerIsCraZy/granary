@@ -22,12 +22,18 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
     /// <summary>The switch: the Roku app's <c>connect.headline</c> "Control Silo from your phone", with Granary as what is controlled.</summary>
     public const string SwitchLabel = "Control Granary from your phone";
 
-    /// <summary>Under the switch. New.</summary>
+    /// <summary>
+    /// Under the switch. New. The design's sentence also says the phone can "start titles here", which comes with starting
+    /// a title from the phone; until then it says only what a phone can do now.
+    /// </summary>
     public const string DescriptionText =
-        "Silo's phone app on this network can control what plays on this PC and start titles here. Windows may ask to let Granary through its firewall.";
+        "Silo's phone app on this network can control what plays on this PC. Windows may ask to let Granary through its firewall.";
 
     /// <summary>Under the description: what the network sees while it is on. New.</summary>
     public const string VisibilityText = "While this is on, devices on this network can see this PC's name and your server's address.";
+
+    /// <summary>The row's description: what a phone can do, then what the network sees, on a line of its own.</summary>
+    public const string RowDescription = DescriptionText + "\n" + VisibilityText;
 
     /// <summary>The button and the panel's title: the Roku app's screen, which the phones' messages name.</summary>
     public const string ConnectAPhoneText = "Connect a Phone";
@@ -230,6 +236,13 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
         ResetMessage = "";
     }
 
+    /// <summary>
+    /// Reset Pairing Code once the viewer said yes where the question was asked: the Connect a Phone panel asks it itself,
+    /// with <see cref="ResetQuestionTitle"/>, <see cref="ResetQuestionText"/> and <see cref="ResetAction"/>, since no second
+    /// dialog can open over the panel's. On the UI thread.
+    /// </summary>
+    public Task ResetPairingAnsweredAsync() => ResetAsync();
+
     // Asked first: every phone has to scan again. The code shown changes once the receiver runs under the new key.
     [RelayCommand]
     private async Task ResetPairingAsync()
@@ -238,6 +251,11 @@ public sealed partial class PhoneRemoteViewModel : ObservableObject, IDisposable
         {
             return;
         }
+        await ResetAsync();
+    }
+
+    private async Task ResetAsync()
+    {
         var outcome = await _receiver.ResetPairingAsync();
         OnUiThread(() =>
         {

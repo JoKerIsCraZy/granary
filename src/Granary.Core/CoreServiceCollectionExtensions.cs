@@ -239,6 +239,8 @@ public static class CoreServiceCollectionExtensions
         // Settings → Playback → This PC's phone remote row, one per page that shows it, made and disposed by the page: a
         // transient disposable resolved from the root provider would be kept until the app exits.
         services.AddSingleton<Func<PhoneRemoteViewModel>>(sp => () => ActivatorUtilities.CreateInstance<PhoneRemoteViewModel>(sp));
+        // The shell's "connected" notice and indicator while a phone controls this PC; the player page makes its own.
+        services.AddSingleton<RemoteIndicatorViewModel>();
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
         services.AddSingleton<AdminSidebarViewModel>();
