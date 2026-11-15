@@ -1586,8 +1586,9 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   which is tied to a WinRT socket listener, and not an mDNS library, which would bind UDP 5353 beside Windows' own
   responder and add a dependency. The API cannot change a registration: a new TXT value (`playing`, `kid`, the
   server) is a removal and a new registration, and replacing one waits up to 2 seconds for Windows to confirm the
-  removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and if it
-  goes through later it is removed once a newer one replaces it. Each registration owns its native memory (the names,
+  removal. A registration waits up to 5 seconds for Windows' word; without it, it counts as not advertised, and the next
+  registration or removal first asks Windows to take it back and waits its 2 seconds, so two of one name do not overlap
+  (should Windows not take that request, a late success is still removed, for up to 30 seconds after). Each registration owns its native memory (the names,
   the TXT pairs, the address, the instance Windows built and the request); the request stays at one address until
   Windows confirmed the registration's end, since removing takes the same request, and all of it is freed a moment
   after that. Memory Windows might still read is never freed. The completion callback is a static

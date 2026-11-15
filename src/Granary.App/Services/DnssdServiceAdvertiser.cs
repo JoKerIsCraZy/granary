@@ -22,7 +22,9 @@ namespace Granary.App.Services;
 /// them into an instance it allocates. All of it, the instance included, stays where it is until Windows confirmed the end
 /// of the registration (its refusal, or its removal), because removing takes the same request at the same address; it is
 /// freed a moment after that, at a later call, once the callback that confirmed it has long returned. Memory Windows might
-/// still read (no answer came, or a removal it did not take) is never freed: the process's end takes it.</item>
+/// still read (no answer came, or a removal it did not take) is never freed: the process's end takes it. A registration
+/// Windows has not answered for is asked back (<c>DnsServiceDeRegister</c>) before the next one is made, so two of one
+/// name do not overlap; which answers are still to come for it is not known then, so its memory is never freed.</item>
 /// <item>The completion callback is a static <c>UnmanagedCallersOnly</c> function, not a delegate, so nothing of it can
 /// be collected while Windows holds its address. Its context is a registration's number, not a handle: a late call finds
 /// the number gone and does nothing.</item>
@@ -41,6 +43,9 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
 
     // How long after Windows' last word a registration's memory is kept, so its callback has surely returned.
     private static readonly TimeSpan FreeAfter = TimeSpan.FromSeconds(1);
+
+    // How long a registration Windows took neither back nor answered for is watched for a late answer.
+    private static readonly TimeSpan LateAnswerWait = TimeSpan.FromSeconds(30);
 
     // The registrations Windows may still call back for, by the number each request carries as the callback's context.
     private static readonly ConcurrentDictionary<nint, Registration> s_live = new();
@@ -117,7 +122,7 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         uint? answer = await made.AnsweredAsync(RegisterWait).ConfigureAwait(false);
         if (answer is null)
         {
-            // Kept: a removal takes it back, and if it went through by then, it is removed as soon as Windows says so.
+            // Kept: the next registration or removal asks Windows to take it back first.
             logger.LogWarning("Windows did not confirm the phone remote's advertisement in time");
             return false;
         }
@@ -137,8 +142,7 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
     {
         if (!registration.IsAnswered)
         {
-            // Windows has not answered yet: once it does, a registration that went through is removed too.
-            _ = RemoveOnceAnsweredAsync(registration);
+            await RemoveUnansweredAsync(registration).ConfigureAwait(false);
             return;
         }
         if (!registration.WentThrough)
@@ -165,11 +169,34 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         Ended(registration);
     }
 
+    // Under the gate. Windows has not answered for it yet: it is asked to take it back now, before anything registers
+    // anew, so two registrations of one name do not overlap, and given RemoveWait. Which of Windows' answers are still to
+    // come is not known then, so its memory is never freed: the process's end takes it.
+    private async Task RemoveUnansweredAsync(Registration registration)
+    {
+        uint status = registration.Remove();
+        if (status == DnsService.RequestPending)
+        {
+            if (await registration.RemovedAsync(RemoveWait).ConfigureAwait(false) is null)
+            {
+                logger.LogWarning("Windows did not confirm the removal of an unanswered advertisement of the phone remote in time");
+            }
+            return;
+        }
+        // Not taken: once Windows answers, within LateAnswerWait, a registration that went through is removed then.
+        logger.LogWarning("Windows did not take back an unanswered advertisement of the phone remote (status {Status})", status);
+        _ = RemoveOnceAnsweredAsync(registration);
+    }
+
     private async Task RemoveOnceAnsweredAsync(Registration registration)
     {
         try
         {
-            await registration.AnsweredAsync(Timeout.InfiniteTimeSpan).ConfigureAwait(false);
+            if (await registration.AnsweredAsync(LateAnswerWait).ConfigureAwait(false) is null)
+            {
+                logger.LogWarning("Windows never answered for an advertisement of the phone remote; it ends with Granary");
+                return;
+            }
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
@@ -287,7 +314,13 @@ public sealed class DnssdServiceAdvertiser(ILogger<DnssdServiceAdvertiser> logge
         public uint Remove()
         {
             Volatile.Write(ref _removing, 1);
-            return DnsService.DnsServiceDeRegister(Request, 0);
+            uint status = DnsService.DnsServiceDeRegister(Request, 0);
+            if (status != DnsService.RequestPending)
+            {
+                // Not taken: no word on a removal comes, and a late word is the registration's own.
+                Volatile.Write(ref _removing, 0);
+            }
+            return status;
         }
 
         /// <summary>On Windows' thread: its word on the registration, or on its removal once that was asked.</summary>
