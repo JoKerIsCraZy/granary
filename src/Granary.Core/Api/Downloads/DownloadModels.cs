@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Granary.Core.Api.Playback;
 
 namespace Granary.Core.Api.Downloads;
@@ -141,8 +142,12 @@ public sealed record DownloadEntryPage(IReadOnlyList<DownloadEntry> Items, Downl
     public IReadOnlyList<DownloadEntry> Items { get; init; } = Items ?? [];
 }
 
-/// <summary>Whether more pages follow, and the cursor that reads the next one.</summary>
-public sealed record DownloadPageInfo(bool HasMore, string? NextCursor);
+/// <summary>
+/// Whether more pages follow, and the cursor that reads the next one. The server always says <c>has_more</c>; a page that
+/// leaves it out is no Silo answer (<see cref="HttpRequestException"/> with <see cref="HttpRequestError.InvalidResponse"/>),
+/// never a last page: the registry, the monitors and the progress listing take a last page as the end of the whole list.
+/// </summary>
+public sealed record DownloadPageInfo([property: JsonRequired] bool HasMore, string? NextCursor);
 
 /// <summary>
 /// <c>PATCH /api/v2/downloads/{id}</c>: what the PC holds now (<c>downloading</c> or <c>completed</c>) for one revision's bytes.

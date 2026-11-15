@@ -209,6 +209,19 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APageThatDoesNotSayWhetherMoreFollow_IsNoWholeRegistry_AndJudgesNothing()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Preparing);
+        _h.ListPages(DownloadPayloads.Page("next-1"), "{ \"items\": [], \"skipped\": [], \"page\": {} }");
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count == 2, "both pages were read");
+        await IdleAsync(queue);
+
+        Assert.False(_h.Find("dl_1")!.Record.IsNoLongerAvailable);
+    }
+
+    [Fact]
     public async Task AListThatFails_JudgesNothing()
     {
         await _h.AddAsync("dl_1", DownloadState.Preparing);

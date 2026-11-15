@@ -1447,7 +1447,8 @@ client guide.
 - **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
   counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
   for gone. A registry that does not end (no cursor, a cursor that comes back, over 1000 pages) is not whole: nothing
-  counts as gone from it. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
+  counts as gone from it. A page whose `page` does not say `has_more` is no answer at all (`DownloadPageInfo`), never the
+  last page, here as for the monitor list and the progress listing. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
   `ready`, `downloading` or `completed` queues a preparing one, and takes the entry's size, which is exact once it is
   ready (a preparing entry's is an estimate, and a transfer against it would fail its integrity); a larger `revision`
   stops the transfer, deletes the media, the part and the manifest and queues the download again for the new bytes, with
