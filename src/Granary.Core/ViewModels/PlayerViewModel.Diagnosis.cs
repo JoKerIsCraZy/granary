@@ -20,7 +20,7 @@ public sealed partial class PlayerViewModel
     public void CheckFollowsEngine()
     {
         var engine = _engine.Current;
-        if (HasLeft || Phase != PlayerPhase.Playing || _awaitsPlayback || _seekTarget is not null
+        if (HasLeft || Phase != PlayerPhase.Playing || _awaitsPlayback || PendingSeek is not null
             || engine is not { IsLoaded: true, HasStarted: true, IsPaused: false, IsBuffering: false })
         {
             return;

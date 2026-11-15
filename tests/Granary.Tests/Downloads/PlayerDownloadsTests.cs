@@ -156,6 +156,8 @@ public sealed class PlayerDownloadsTests : IAsyncDisposable
         Frame(10);
 
         player.SeekTo(100);
+        // The engine is somewhere else than the player shows while the seek is on its way: that is the seek, not a stall.
+        _fixture.Engine.Current = LocalPlaybackFixture.Frame(20) with { LoadId = _fixture.Engine.LoadId, Sequence = 99 };
         player.CheckFollowsEngine();
 
         Assert.DoesNotContain(_logs.Lines, l => l.Contains("The player's time stands", StringComparison.Ordinal));
