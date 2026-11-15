@@ -129,6 +129,18 @@ public static class AppLanguage
         }
     }
 
+    /// <summary>
+    /// What a start shows for <paramref name="stored"/> (the profile's <c>ui.app_language</c>, null to follow the device) on
+    /// <paramref name="device"/>: the language (<see cref="Resolve"/>) and the culture of its dates and numbers
+    /// (<see cref="FormatCulture"/>).
+    /// </summary>
+    public static (string Language, CultureInfo Formats) ForStart(string? stored, IDeviceLanguages device, IReadOnlyCollection<string> enabled)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        string language = Resolve(stored, device.Preferred, enabled);
+        return (language, FormatCulture(language, stored, device.RegionalFormat));
+    }
+
     /// <summary>Whether a tag's language is written right to left, among the shipped ones (the web's <c>interfaceDirection</c>).</summary>
     public static bool IsRightToLeft(string tag) => Match(tag) == "ar";
 

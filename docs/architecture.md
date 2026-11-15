@@ -403,12 +403,19 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";
   `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
-  Granary does not read or write the profile's setting yet.
-- **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
-  before its first window (`App.ApplyLanguage`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates
-  and numbers; the log says which. A debug build takes `--language <tag>` to show a shipped language, enabled or not,
-  for checking converted texts; it counts as a chosen language for the formats. WinUI's own control texts (a text box's menu, for
-  example) still follow Windows' display language.
+- **The profile's language** (`AppLanguageSetting`): `ui.app_language` is read for every profile, as the web's
+  `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in and with every
+  server or profile. A server from before settings contract revision 28 has no such setting: its
+  profiles follow the device. What was read is kept on this PC (`app-language.json` in the data directory,
+  `AppLanguageFile`), the last profile's language, as Silo's apps keep the language they last applied for the screens
+  before sign-in; a failed read keeps what was kept, a profile that follows the device clears it. Signing out keeps it.
+- **At start-up** the app resolves the language from that kept value and Windows' list (`IDeviceLanguages`, read once:
+  `GlobalizationPreferences.Languages`) and applies it before its first window (`App.ApplyLanguage`,
+  `AppLanguage.ForStart`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates and numbers; the log says
+  which. The texts load once, so a language read or chosen later shows from the next start. A debug build takes
+  `--language <tag>` to show a shipped language, enabled or not, for checking converted texts; it counts as a chosen
+  language for the formats. WinUI's own control texts (a text box's menu, for example) still follow Windows' display
+  language.
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 

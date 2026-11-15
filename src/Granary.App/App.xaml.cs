@@ -111,6 +111,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
         // And the rest of its Title Pages settings.
         _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
+        // Its app language, kept on this PC for the next start.
+        _ = Services.GetRequiredService<AppLanguageSetting>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
@@ -124,35 +126,25 @@ public partial class App : Application
         StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started);
     }
 
-    // The profile's own language is not read yet and only English is enabled, so this is English for everyone until the
-    // other languages are. Dates and numbers follow Windows' regional format (CurrentCulture, which .NET takes from it),
-    // as the web's follow the browser's, unless a language of another was chosen.
+    // The language the profile chose, as kept on this PC when it was last read, else Windows' (docs/architecture.md, "Texts").
+    // Dates and numbers follow Windows' regional format (CurrentCulture, which .NET takes from it), as the web's follow the
+    // browser's, unless a language of another was chosen. The texts load once: a language chosen later applies from the next
+    // start.
     private void ApplyLanguage()
     {
-        string? chosen = null;
-        string language = AppLanguage.Resolve(stored: null, WindowsLanguages(), AppLanguage.Enabled);
+        string? stored = Services.GetRequiredService<AppLanguageFile>().AtStart;
+        var device = Services.GetRequiredService<IDeviceLanguages>();
+        var (language, culture) = AppLanguage.ForStart(stored, device, AppLanguage.Enabled);
 #if DEBUG
-        chosen = DeveloperLanguage();
-        language = chosen ?? language;
+        if (DeveloperLanguage() is { } developer)
+        {
+            language = developer;
+            culture = AppLanguage.FormatCulture(language, developer, device.RegionalFormat);
+        }
 #endif
-        var formats = FormatLocale.For(AppLanguage.FormatCulture(language, chosen, CultureInfo.CurrentCulture));
+        var formats = FormatLocale.For(culture);
         AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>(), formats));
         _logger?.LogInformation("Texts in {Language}, dates and numbers as {Formats}", AppText.Language.Tag, formats.Culture.Name);
-    }
-
-    // Windows' preferred languages, in the order the user put them.
-    private IReadOnlyList<string> WindowsLanguages()
-    {
-        try
-        {
-            return [.. global::Windows.System.UserProfile.GlobalizationPreferences.Languages];
-        }
-        catch (Exception ex)
-        {
-            // Without them Granary shows English, as it would for a language it does not ship.
-            _logger?.LogWarning(ex, "Windows' languages could not be read");
-            return [];
-        }
     }
 
 #if DEBUG
@@ -223,6 +215,8 @@ public partial class App : Application
         services.AddSingleton<DiscordStatus>();
         services.AddSingleton<IRichPresence>(sp => sp.GetRequiredService<DiscordStatus>());
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
+        // Windows' languages and regional format as Granary starts, which "Match device" follows.
+        services.AddSingleton<IDeviceLanguages, WindowsDeviceLanguages>();
         // The main window's full screen and mini view, shared by the app, the player and a trailer; and where the window
         // opens, where it was closed (window.json).
         services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
