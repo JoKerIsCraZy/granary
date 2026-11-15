@@ -800,7 +800,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
     downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
     many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
-    closes it; while a start runs, Cancel and Esc wait for it, so a download never starts after the dialog was closed on it.
+    closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
+    download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
+    never starts after the dialog was closed on it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a

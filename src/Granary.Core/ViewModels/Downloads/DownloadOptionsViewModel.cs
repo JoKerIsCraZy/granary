@@ -90,6 +90,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private CancellationTokenSource? _reading;
     private int _offerReads;
 
+    // The run Download started, which the viewer's Cancel stops (StopStarting); null while nothing starts.
+    private CancellationTokenSource? _stopping;
+
     public DownloadOptionsViewModel(DownloadManager downloads, DownloadsFeature feature, IDownloadPreferences preferences, IDiskSpace disk,
         IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadOptionsViewModel> logger)
     {
@@ -247,7 +250,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     /// <summary>
     /// Starts what the dialog shows in the selected version and quality, once the free space is known: true when it started
     /// (or was on this PC already) and the dialog closes, false when it does not fit or <see cref="ErrorText"/> says why. A
-    /// season or a series whose episodes did not all start is false; pressing again sends only the ones still missing.
+    /// season or a series whose episodes did not all start is false; pressing again sends only the ones still missing. Also
+    /// true once the viewer stopped it (<see cref="StopStarting"/>), whatever the last create came to: the dialog closes with
+    /// what started so far, since the viewer chose to leave it.
     /// </summary>
     public async Task<bool> StartAsync()
     {
@@ -257,10 +262,16 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
         IsStarting = true;
         ErrorText = "";
+        using var stopping = new CancellationTokenSource();
+        _stopping = stopping;
         try
         {
             await SpaceRead;
             await _dispatcher.ResumeOnUi();
+            if (stopping.IsCancellationRequested)
+            {
+                return true;
+            }
             if (IsShortOfSpace)
             {
                 return false;
@@ -268,7 +279,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             StartOutcome outcome;
             try
             {
-                outcome = await StartSelectionAsync();
+                outcome = await StartSelectionAsync(stopping.Token);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -277,6 +288,10 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                 outcome = StartOutcome.Failed;
             }
             await _dispatcher.ResumeOnUi();
+            if (stopping.IsCancellationRequested)
+            {
+                return true;
+            }
             ErrorText = outcome switch
             {
                 StartOutcome.Failed => StartFailed,
@@ -287,9 +302,17 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
         finally
         {
+            _stopping = null;
             IsStarting = false;
         }
     }
+
+    /// <summary>
+    /// The viewer's Cancel while Download runs: a season's or a series' run stops after the episode under way, whose create
+    /// is kept, and <see cref="StartAsync"/> then ends as stopped, so the dialog closes with no download starting after it.
+    /// A film's or an episode's single create ends as it would. Nothing while nothing starts.
+    /// </summary>
+    public void StopStarting() => _stopping?.Cancel();
 
     // Another choice is another start: the last one's error no longer says anything about it.
     partial void OnSelectedVersionChanged(DownloadVersionRow? value)
@@ -533,18 +556,20 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         Limited,
     }
 
-    private async Task<StartOutcome> StartSelectionAsync()
+    // A season's or a series' run stops between two episodes once the viewer stops it; a film's or an episode's one create is
+    // never cut off.
+    private async Task<StartOutcome> StartSelectionAsync(CancellationToken stopping)
     {
         string quality = SelectedQuality?.Preset ?? DownloadQualities.Original;
         if (_season is { } season)
         {
-            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
+            var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, stopping).ConfigureAwait(false);
             // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
             return OutcomeOf(result, season.Episodes.Count);
         }
         if (_series is { } series)
         {
-            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
+            var result = await _downloads.StartSeriesAsync(series with { Quality = quality }, stopping).ConfigureAwait(false);
             return OutcomeOf(result, series.EpisodeCount);
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };

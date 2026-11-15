@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Downloads;
+using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
@@ -395,5 +396,26 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
 
         Assert.Equal("Too many requests. Wait a moment and try again.", options.ErrorText);
         Assert.Equal(["ep_1", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+    }
+
+    // A long season or series takes a while: Cancel stops it after the episode under way, whose download is kept, and the
+    // dialog closes once that one ended.
+    [Fact]
+    public async Task CancelWhileASeasonStarts_StopsAfterTheEpisodeUnderWay_AndCloses()
+    {
+        var (held, gate) = ItemDetailFixture.Held();
+        Creates(held);
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+
+        var start = options.StartAsync();
+        await Until(() => CreateBodies().Count == 1, "the first episode's create was sent");
+        options.StopStarting();
+        gate.SetResult(await Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1"))());
+
+        Assert.True(await start);
+        Assert.Equal(("", false), (options.ErrorText, options.IsStarting));
+        Assert.Equal(["ep_1"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        Assert.NotNull(_h.Find("dl_1"));
     }
 }

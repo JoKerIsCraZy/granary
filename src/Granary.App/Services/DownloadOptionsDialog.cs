@@ -13,7 +13,8 @@ namespace Granary.App.Services;
 /// The download dialog over the main window: the web's <c>components/DownloadVersionPicker.tsx</c> with its title and texts,
 /// and Granary's qualities and free space (<see cref="DownloadOptionsPanel"/>). Download stays pressable while there is
 /// something to download and the selection fits (off while a card's dialog reads the title's files); the dialog stays open
-/// while the start runs and when it did not start, which the panel says, and closes once it did. Cancel closes it. One at a
+/// while the start runs and when it did not start, which the panel says, and closes once it did. Cancel closes it; while a
+/// start runs, it stops a season's or a series' episodes after the one under way and closes once that one ended. One at a
 /// time, as <see cref="DialogConfirmation"/> asks.
 /// </summary>
 internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<DownloadOptionsDialog> logger) : IDownloadOptionsDialog
@@ -72,12 +73,14 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
             }
         }
         // A start under way finishes before the dialog goes: Cancel or Esc then would close it with the download starting
-        // all the same, and nothing saying so.
+        // all the same, and nothing saying so. They stop a season's or a series' run after the episode under way instead, and
+        // the dialog closes once that one ended (Download's click, above).
         void HoldWhileStarting(ContentDialog sender, ContentDialogClosingEventArgs args)
         {
             if (options.IsStarting && args.Result == ContentDialogResult.None)
             {
                 args.Cancel = true;
+                options.StopStarting();
             }
         }
         options.PropertyChanged += FollowOptions;

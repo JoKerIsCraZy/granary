@@ -32,8 +32,8 @@ release's section is what its update says it changes (docs/release.md).
 - **Download from any card:** the ⋯ menu of a film's, an episode's, a season's or a series' card has Download wherever the
   card shows, on Home, in a library, in search, in a collection and on a title's page. Download series takes every
   season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need
-  before it starts. A title on this PC shows how its
-  download stands there instead, which opens the Downloads page, with Delete download beside it.
+  before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
+  its download stands there instead, which opens the Downloads page, with Delete download beside it.
 
 ### Fixed
 

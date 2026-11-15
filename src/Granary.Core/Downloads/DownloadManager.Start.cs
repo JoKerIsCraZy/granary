@@ -67,7 +67,8 @@ public sealed partial class DownloadManager
     /// A season's episodes one create each, in order, passing over the ones this PC has or is fetching. It stops, with what it
     /// counted so far, when it is cancelled, the profile it started for is no longer the active one or the server's limit of
     /// downloads was reached (<see cref="DownloadStartResult.Limited"/>, counted as failed): the episodes after that are in
-    /// none of the counts.
+    /// none of the counts. A cancel stops it between two episodes: the create under way is not cut off, since one the server
+    /// made is kept (a create is never sent again).
     /// </summary>
     public Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, CancellationToken cancellationToken)
     {
@@ -102,16 +103,8 @@ public sealed partial class DownloadManager
                 _logger.LogInformation("A season's or series' downloads stopped after {Count} episodes", started + there + failed);
                 break;
             }
-            DownloadStartResult result;
-            try
-            {
-                result = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
-                    seriesTitle, season, episode.EpisodeNumber), cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
+            var result = await StartAsync(new DownloadRequest(episode.EpisodeId, seriesId, episode.MediaFileId, quality, episode.Title,
+                seriesTitle, season, episode.EpisodeNumber), CancellationToken.None).ConfigureAwait(false);
             switch (result)
             {
                 case DownloadStartResult.Started:

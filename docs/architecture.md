@@ -1480,7 +1480,8 @@ client guide.
   or is fetching, and counts what started, what was there and what failed. `StartSeriesAsync` does the same for a whole
   series, season after season in the order its offer lists them (`DownloadOffers.ForSeries`: by number, the specials last),
   so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
-  cancelled, the profile they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
+  cancelled (between two episodes: a create under way is not cut off, since one the server made is kept), the profile
+  they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
   of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
   after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
   cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
@@ -1510,8 +1511,10 @@ client guide.
   which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
   shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
-  `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
-  `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
+  `StartAsync` runs (a deferral of the button's click) and when it answers false. Cancel or Esc meanwhile calls
+  `StopStarting`, which cancels the token of a season's or a series' run (checked between two episodes; each create gets
+  none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
+  from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
   version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
   series' page lists one season's episodes at most, so its Download series reads them as a card does
