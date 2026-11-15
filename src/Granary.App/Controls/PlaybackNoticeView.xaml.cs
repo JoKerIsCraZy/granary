@@ -5,7 +5,10 @@ using Windows.UI;
 
 namespace Granary.App.Controls;
 
-/// <summary>A playback notice: over the full player below its top bar, or above the minimized player's bar.</summary>
+/// <summary>
+/// A playback notice: over the full player below its top bar, or above the minimized player's bar; and the window's
+/// short notice that a phone connected.
+/// </summary>
 public sealed partial class PlaybackNoticeView : UserControl
 {
     public static readonly DependencyProperty NoticeTitleProperty = DependencyProperty.Register(
@@ -50,6 +53,8 @@ public sealed partial class PlaybackNoticeView : UserControl
     private void Show()
     {
         TitleText.Text = NoticeTitle ?? "";
+        // A notice of one line has no title (the phone remote's "connected").
+        TitleText.Visibility = string.IsNullOrEmpty(NoticeTitle) ? Visibility.Collapsed : Visibility.Visible;
         MessageText.Text = Message ?? "";
         Frame.Background = IsWarning ? WarningTint : InfoTint;
         Frame.BorderBrush = IsWarning ? WarningEdge : InfoEdge;

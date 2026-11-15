@@ -12,6 +12,7 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 {
     private readonly BlockingCollection<Action> _work = [];
     private readonly Thread _thread;
+    private TaskCompletionSource _posted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public SerialDispatcher()
     {
@@ -24,7 +25,25 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 
     public bool HasThreadAccess => Thread.CurrentThread == _thread;
 
-    public void Post(Action action) => _work.Add(action);
+    public void Post(Action action)
+    {
+        _work.Add(action);
+        Interlocked.Exchange(ref _posted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
+    /// <summary>Completes once <paramref name="count"/> posts wait their turn, the work that runs now not counted.</summary>
+    public async Task UntilWaitingAsync(int count, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            var posted = Volatile.Read(ref _posted);
+            if (_work.Count >= count)
+            {
+                return;
+            }
+            await posted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+    }
 
     /// <summary>Runs <paramref name="work"/> on the UI thread and answers what it returned.</summary>
     public Task<T> InvokeAsync<T>(Func<T> work)

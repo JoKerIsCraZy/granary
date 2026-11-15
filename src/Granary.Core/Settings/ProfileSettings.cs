@@ -13,6 +13,8 @@ public static class SettingKeys
     public const string MaxBitrateKbps = "playback.max_bitrate_kbps";
     public const string BufferingQualityMode = "playback.buffering_quality_mode";
     public const string IntroSkipMode = "playback.intro_skip_mode";
+    public const string ShowMarkerConfidence = "playback.show_marker_confidence";
+    public const string ShowMarkerSource = "playback.show_marker_source";
     public const string AutoSkipRecap = "playback.auto_skip_recap";
     public const string AutoSkipCredits = "playback.auto_skip_credits";
     public const string AutoPlayNextPreview = "playback.auto_play_next_preview";
@@ -29,8 +31,8 @@ public static class SettingKeys
     // Keys a device can keep a value of its own for; the others are the profile's alone.
     private static readonly HashSet<string> DeviceOverridable =
     [
-        PreferredQuality, MaxBitrateKbps, BufferingQualityMode, IntroSkipMode, AutoSkipRecap, AutoSkipCredits,
-        AutoPlayNextPreview, AutoPlayNext, AudioLanguage, SubtitleLanguage, SubtitleMode, ShowForcedSubtitles,
+        PreferredQuality, MaxBitrateKbps, BufferingQualityMode, IntroSkipMode, ShowMarkerConfidence, ShowMarkerSource, AutoSkipRecap,
+        AutoSkipCredits, AutoPlayNextPreview, AutoPlayNext, AudioLanguage, SubtitleLanguage, SubtitleMode, ShowForcedSubtitles,
         SubtitleAppearance, SubtitleSyncMs,
     ];
 

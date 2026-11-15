@@ -220,6 +220,22 @@
                     -->
                     <StackPanel x:Name="RightControls" Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 LayoutUpdated="OnRightControlsLayoutUpdated">
+                        <!--
+                            While Silo's phone app controls this PC (design 5.9), one quiet icon, "Remote control active", whose menu
+                            lets the phones go, as the window's indicator does. Not one of the buttons Settings orders: it leads them.
+                        -->
+                        <Button x:Name="RemoteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Visibility="{x:Bind Remote.IsActive, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind RemoteActiveText}" ToolTipService.ToolTip="{x:Bind RemoteActiveText}">
+                            <FontIcon Glyph="&#xE8EA;" FontSize="16" />
+                            <Button.Flyout>
+                                <Flyout x:Name="RemoteMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerSmallMenuStyle}">
+                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Padding="16,8" Click="OnDisconnectRemoteClick"
+                                            AutomationProperties.Name="{x:Bind RemoteDisconnectText}">
+                                        <TextBlock Text="{x:Bind RemoteDisconnectText}" FontSize="14" />
+                                    </Button>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
                                 Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"
@@ -724,7 +740,8 @@
 
         <!--
             The skip pill of Silo's web player: bottom right, above the controls while they show (PlaceSkipPrompt). An intro
-            pill fills from the left with its 5 s; above an automatic skip's pill, "Intro skipped" confirms it.
+            pill fills from the left with its 5 s, and once they ran out comes back without the fill while the controls show;
+            above an automatic skip's pill, "Intro skipped" confirms it.
         -->
         <!--
             The web player's Playback info: under Exit, 320 px wide, scrolling above the bottom bar; it stays while the
@@ -947,6 +964,15 @@
             <StackPanel.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </StackPanel.TranslationTransition>
+            <!--
+                Where the profile asks (Settings → Playback): how confident the marker's source is and where it came from, as
+                the web's IntroSkipButton puts it, above the caption, so the caption stays next to its pill. None takes no room.
+            -->
+            <Grid Margin="0,0,12,0" HorizontalAlignment="Right" Visibility="{x:Bind Shows(ViewModel.SkipProvenance), Mode=OneWay}">
+                <Canvas x:Name="SkipProvenanceShade" IsHitTestVisible="False" />
+                <TextBlock x:Name="SkipProvenanceText" Text="{x:Bind ViewModel.SkipProvenance, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
+                           FontWeight="Medium" FontSize="12" Foreground="#BFFFFFFF" />
+            </Grid>
             <Grid Margin="0,0,12,0" HorizontalAlignment="Right" Visibility="{x:Bind Shows(ViewModel.SkipCaption), Mode=OneWay}">
                 <Canvas x:Name="SkipCaptionShade" IsHitTestVisible="False" />
                 <TextBlock x:Name="SkipCaptionText" Text="{x:Bind ViewModel.SkipCaption, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"

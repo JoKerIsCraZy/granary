@@ -7,12 +7,14 @@ using Granary.Core.Api.Requests;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Remote;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Granary.Core.WatchParty;
 using Granary.Tests.Fakes;
 using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
+using Granary.Tests.Remote;
 
 namespace Granary.Tests.WatchParty;
 
@@ -50,7 +52,8 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     // In the room, with a player that has not started yet.
-    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null, IPlaybackDevicePreferences? devicePreferences = null)
+    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null, IPlaybackDevicePreferences? devicePreferences = null,
+        IUpNextSource? upNext = null)
     {
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
         await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
@@ -64,7 +67,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation, devicePreferences: devicePreferences);
+        }, new PlaybackStops(), _time, upNext: upNext, watchParty: _party, confirmation: _confirmation, devicePreferences: devicePreferences);
     }
 
     private Task Marked() => ServerPlaybackFixture.Until(
@@ -431,6 +434,70 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task InAWatchParty_APhonesPlayPauseAndSeek_GoThroughTheRoomsRules()
+    {
+        var viewModel = await PlayingAsync();
+        using var remote = new PlayerRemoteControl(viewModel, RemoteHarness.StandAlone(new ImmediateDispatcher(), _time), new ImmediateDispatcher());
+
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(PhoneCommand(SiloCastControls.Pause)));
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(PhoneCommand(SiloCastControls.Seek, seconds: 600)));
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Empty(Playback.Seeks);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the pause request");
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"seek\"", StringComparison.Ordinal)), "the seek request");
+    }
+
+    [Fact]
+    public async Task InAWatchParty_AGuestsPhone_MayNotPlayPauseSeekOrChangeTheSpeed()
+    {
+        var viewModel = await PlayingAsync(role: "guest", transport: false);
+        using var remote = new PlayerRemoteControl(viewModel, RemoteHarness.StandAlone(new ImmediateDispatcher(), _time), new ImmediateDispatcher());
+        int pauses = _engine.PauseRequests.Count;
+
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.Pause)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.PlayPause)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.Seek, seconds: 600)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.SetPlaybackSpeed, speed: 1.5)));
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Equal(pauses, _engine.PauseRequests.Count);
+        Assert.Empty(_engine.Seeks);
+        Assert.Empty(Playback.Seeks);
+        Assert.Empty(Playback.SpeedRequests);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task InAWatchParty_EvenTheHostsPhone_ChangesNeitherTheSpeedNorTheEpisode()
+    {
+        // The series has a next episode, but the room decides what plays next and at what speed.
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "host",
+            selected: "episode:example-1-3"), upNext: new NextEpisodeAround(new NextEpisode("episode:example-1-4", 1, 4, "The Next One")));
+        await viewModel.StartAsync(PlayRequest.WatchParty("episode:example-1-3", "77", 1));
+        Playback.Episode = new PlayingEpisode("episode:example-1-3", "series:example", "Example Series", 1, 3);
+        Playback.MediaInfo = new PlaybackMediaInfo("Pilot", "Example Series — S1 · E3", null) { Kind = PlaybackMediaKind.Episode };
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromHours(2), null, HasStarted: true));
+        using var remote = new PlayerRemoteControl(viewModel, RemoteHarness.StandAlone(new ImmediateDispatcher(), _time), new ImmediateDispatcher());
+        int pauses = _engine.PauseRequests.Count;
+
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.SetPlaybackSpeed, speed: 1.5)));
+        Assert.Equal(RemoteCommandResult.Failed, remote.Apply(PhoneCommand(SiloCastControls.PlayNext)));
+
+        Assert.False(remote.State.HasNextEpisode);
+        Assert.Single(_playbacks);
+        Assert.Empty(Playback.SpeedRequests);
+        Assert.Equal(pauses, _engine.PauseRequests.Count);
+        Assert.Empty(_engine.Seeks);
+        Assert.Equal(PlayRequest.WatchParty("episode:example-1-3", "77", 1), Playback.Started);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    private static SiloCastMessage.Control PhoneCommand(string name, double? seconds = null, double? speed = null) =>
+        new(name, seconds, TrackId: null, speed, Volume: null, Value: null, Enabled: null, Milliseconds: null);
+
+    [Fact]
     public async Task AGuestTheRoomDoesNotLetPause_HasNeitherPlayPauseNorSeekingOnWindowsMediaControls_AndTheirKeysDoNothing()
     {
         var viewModel = await PlayingAsync(role: "guest", transport: false);
@@ -606,4 +673,16 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();
+
+    /// <summary>A series whose next episode is known, as the player would ask it outside a room.</summary>
+    private sealed class NextEpisodeAround(NextEpisode next) : IUpNextSource
+    {
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) => Task.FromResult<NextEpisode?>(next);
+
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
+            Task.FromResult<NextEpisode?>(null);
+
+        public Task<IReadOnlyList<Granary.Core.ViewModels.Cards.MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Granary.Core.ViewModels.Cards.MediaCard>>([]);
+    }
 }

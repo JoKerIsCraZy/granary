@@ -985,7 +985,7 @@ In the full player:
 
 | Pad | Does |
 |---|---|
-| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
+| A | On the picture: plays or pauses, and the bar shows. While Skip Intro (or Recap, Credits, Preview) or the next episode's card shows: that, rather than pausing; the prompt has focus from the moment it appears (Player, "Skip pill"), and A takes it also when it could not get focus. The Skip Intro that comes back with the controls after its 5 s takes no focus and A only while focus is on it. Left and Right still seek then, and Up and Down bring the bar. On a control: presses it. |
 | X | Plays or pauses, wherever focus is. |
 | B | An open menu or panel closes, then the shown bar hides, then the player closes, as a remote's Back (so paused, where a hidden bar would leave a still picture, it closes at once). |
 | D-pad left and right, left stick | On the picture: a seek. Each press adds the profile's skip step; held, the steps grow (half a minute after 1.5 s, a minute after 3 s, three after 5 s, five after 8 s). The seek bar shows where it would land, as during a drag, and one seek is sent half a second after the last step. A seek stops at the title's start and at its end: held on, it stays there, and a step the other way counts from there at once, not after all that was pressed beyond it. On a control: move focus; on the seek bar, seek. |
@@ -1119,10 +1119,10 @@ says why above the sections.
   point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
   Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; mpv configuration, see below; Show what's playing in Discord, a switch, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
-  on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
-  the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
+  on this PC."), which a title that plays follows at once (the Discord status, under Player); and Control Granary from
+  your phone at the group's end, see below. Granary's own and kept on the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
   sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
   web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
@@ -1131,8 +1131,12 @@ says why above the sections.
   follows a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as
   the app closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is
   0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
-  intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
-  fast-forward intervals).
+  intros; Show marker confidence, "Show how confident the source is above the Skip Intro button. Each source rates on
+  its own scale, so the percentage is only comparable within one source; turn the source line on to see which one it
+  is.", and Show marker source, "Show where the skip came from above the Skip Intro button: Silo's own detection, a
+  person, or the provider that supplied the marker.", both switches off by default and left out on a server from before
+  settings contract 24, as on the web; auto-skip recaps and credits), Next episode (start next at preview, auto-play),
+  Seek controls (rewind and fast-forward intervals).
 - **Player buttons** (`PlayerButtonsSettingsViewModel` on `PlayerButtonsLayout`; Granary's own, Silo's clients have no
   such editor): which buttons the right of the player's bar shows, and in which order, laid out as Navigation & Cards →
   Sidebar, with Reset beside the title while the bar is not today's: "Which buttons the player shows on the right of its
@@ -1234,6 +1238,37 @@ says why above the sections.
   "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
   the button stay), "There's nothing from before the preset to go back to, so your mpv.conf stays as it is." (the backup was gone; the preset is no longer named) or
   "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
+- **This PC → Control Granary from your phone** (`PhoneRemoteViewModel`; docs/architecture.md, "Phone remote"), the
+  group's last row: Silo's phone app on the local network as a remote for this PC. Silo's web has no wording for this, so
+  the texts follow Silo's Roku app's Connect a Phone (`locale/en_US/strings.json`, `connect.*`) with "TV" as "PC"; the
+  ones marked *new* have no Silo source. The label is "Control Granary from your phone" (the Roku app's "Control Silo
+  from your phone"), the switch off by default and kept on this PC (`phone_remote` in `playback-device.json`). The
+  description, *new*: "Silo's phone app on this network can control what plays on this PC. Windows may ask to let
+  Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
+  name and your server's address." While it is on, a 13 px muted line under the row says what it does: "No phone is
+  connected." or "Connected: Elena's phone, Elena's tablet" (the phones that actively control, as the Roku app lists
+  them), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
+  isn't available right now." (the Roku app's) with a second line why (*new*): "This PC is not on a local network.",
+  "Windows did not give Granary a port.", "No profile is signed in on this PC." or "Granary couldn't start it. The log has
+  the details." (the pairing key could not be read, Windows' advertisement failed, or the listener stopped). The row
+  follows the receiver only while the view shows.
+- **This PC → Connect a Phone** (`ConnectPhonePanel`), a dialog over the window titled "Connect a Phone" (the Roku
+  app's screen, which the phones' messages name) with **Done** to close it. In it, top to bottom: "Scan this code with
+  your phone's camera and open it in Silo. Then choose Elena's PC under Remote Control." (*new*, with this PC's name; the
+  Roku app's "Scan this code in the Silo app" would mislead, as the Android app has no scanner of its own); the code,
+  220 px on white with its own quiet zone (named "Code to connect a phone. Scan it with your phone's camera." for a screen
+  reader); the address and port, "192.168.1.20:52817", 16 px monospace (shown as on the Roku app), and under it "The phone
+  has to be on this network and signed in to https://silo.example." (*new*); the connected phones, as under the row;
+  "Phones can connect through this code only: Windows did not advertise this PC." (*new*) when Windows did not take the
+  advertisement; **Reset Pairing Code** (the Roku app's) with "Every phone has to scan the new code." (*new*) under it;
+  and "Phone can't connect? Allow Granary under Windows Security → Firewall & network protection → Allow an app through
+  firewall." (*new*), always. Reset Pairing Code asks first in a flyout under the button, as no second dialog can open
+  over this one: "Reset Pairing Code?" / "Every phone has to scan the new code. Phones that are connected now are
+  disconnected." with Cancel and Reset; afterwards the code shows the new key, or a muted line says "The new code is in
+  place, but a phone could not be disconnected. It can no longer control this PC." or "Couldn't reset the pairing code.
+  The old code still works." The code holds the pairing key: it is drawn only while the dialog is open, from the link the
+  receiver gives then, and goes as it closes; it is never saved, logged or copied. The dialog closes by itself when the
+  receiver stops listening or the switch goes off, and the code never comes back by itself.
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
@@ -1477,6 +1512,21 @@ by `MainWindow.Activity.cs`.
   scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
   web shows too for a task it has no translation for).
 
+## Phone remote
+
+While Silo's phone app controls this PC (Settings → Playback → This PC → Control Granary from your phone;
+`RemoteIndicatorViewModel`), as Silo's TV apps show it, but with no standby screen: a PC is used for other things.
+
+- **The notice.** When a phone starts to control, "Elena's phone connected" (Silo's Roku app's "{name} connected"),
+  for four seconds, in the player's notice card (16 px corners, sky blue at 15 %), at the top in the middle of the
+  window, 80 px down, over the pages and over the full player alike. A phone that only watches (passive) gets none.
+- **The indicator.** While a phone actively controls, a quiet glass disc with a phone icon left of the activity
+  indicator at the top right of the page (20 px from the edge, 8 px from the activity disc when that shows), named and
+  tooltipped "Remote control active" (the TV apps'). Its menu has one item, **Disconnect Remote**, which lets every
+  phone that controls go; the phone then says it can't reach the PC and keeps it in its list. It shows where the activity
+  indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
+  icon and menu (under Player).
+
 ## Full screen
 
 The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state
@@ -1566,7 +1616,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
   full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
-  it close up). By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  it close up). While Silo's phone app controls this PC, a phone icon leads them, "Remote control active", with a menu
+  of one item, Disconnect Remote (see Phone remote); it is none of the buttons Settings orders. By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
   track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
@@ -1840,8 +1891,29 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls show; 44 px high, black at 75 % with a white 20 % edge, 14 px semibold. "Skip Intro" fills from the left
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
-  stay while inside their part. Esc turns an intro pill away before it does anything else.
-  A pill takes focus when it appears, as the intro pill of Silo's TV app (`TvIntroAutoSkipBanner`), and so does Play Now
+  stay while inside their part. Once its 5 s ran out, "Skip Intro" comes back, without the fill, whenever the controls
+  show while playback is still in that intro, and hides again with them, focus on it or not (it holds them no longer
+  than the web's does), as the web's untimed offer (Silo's design for intro skipping, `ask`); it is gone once playback
+  leaves the intro, and seeking back in offers it with its 5 s again.
+  That offer takes no focus and gives up the focus the timed pill had; Esc, a remote's Back and a pad's B are not its,
+  nor are OK, Space and A from elsewhere: only with focus on it (Tab, or the arrows from the controls) do Enter, Space,
+  OK and A press it, as on the web; without focus Space plays and pauses, and over every other pill and focused button
+  of the full player it still does. Esc turns a timed intro pill away before it does anything else. A press is judged by where
+  playback is then, a seek on its way included: Skip Intro and a part's pill skip only from inside their part, Watch
+  Intro goes back only from the intro's start on; otherwise the pill just goes, so a press right after seeking away
+  never skips what is not marked. From before the intro, Watch Intro lets playback reach the intro, which then plays.
+  Where the profile turned on Show marker confidence or Show marker source (Settings → Playback), every pill (Watch Intro
+  too) has a line above it, and above "Intro skipped", 6 px apart, in the same 12 px white 75 %, shaded: the confidence
+  as a whole percentage, where the marker came from, or both, "20% · Detected" (the web's `lib/markerProvenance.ts`).
+  The source reads "Detected" for Silo's own detection, "Edited" for a person, and a provider by the name the web gives
+  it (a plugin's by its capability, not its installation), else its own id; "Online" for an online source that names
+  none. An unrated marker has no percentage, never 0 %; with nothing to say there is no line, and the pill keeps its
+  shape. A later read of the markers that names another source changes the line of a showing pill at once; one that
+  moves the part away from where playback is (a seek on its way included) takes Skip Intro or the part's pill away
+  until playback reaches it, so a pick never skips what is no longer marked (Watch Intro stays, it only goes back).
+  The two switches are read as a title starts, as the other skip settings, so a change applies from the next title.
+  A pill takes focus when it appears (all but the Skip Intro back with the controls), as the intro pill of Silo's TV
+  app (`TvIntroAutoSkipBanner`), and so does Play Now
   of the next episode's card: Enter, a remote's OK and a game controller's A press what shows, with its ring after a key
   or the pad. Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus,
   and so does a seek being made (a drag, a pad's seek); the prompt then gets focus when the controls hide. A control of
@@ -1965,10 +2037,11 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown
-  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
+  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away; not the Skip Intro back
+  with the controls, which hides with them) or the marker editor is
   open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
   keys. A held OK does not press the button it lands on. Space wins over a
-  focused button; arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  focused button, but for the Skip Intro back with the controls, which it presses (see "Skip pill"); arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
   held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through

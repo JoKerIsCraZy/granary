@@ -43,10 +43,13 @@ public sealed partial class PlayerPage
         ViewModel.DurationSeconds);
 
     // Skip Intro (or Recap, Credits, Preview) and the next episode's card: A takes them rather than pausing. They take focus
-    // as they appear (FocusPrompt), and focus on one of them counts as on the picture, as for the arrow keys.
+    // as they appear (FocusPrompt), and focus on one of them counts as on the picture, as for the arrow keys. The Skip Intro
+    // back with the controls after its time ran out takes no focus, and A only while focus is on it.
     private bool HasPadPrompt =>
         !IsCompact && !ShowsNextUpScreen
-        && ((ViewModel.HasSkipPrompt && ViewModel.SkipCommand.CanExecute(null)) || ViewModel.IsNextUpCardShown);
+        && ((ViewModel.HasSkipPrompt && ViewModel.SkipCommand.CanExecute(null)
+                && (!ViewModel.IsSkipPromptWithControls || SkipButton.FocusState != FocusState.Unfocused))
+            || ViewModel.IsNextUpCardShown);
 
     internal void TakePad(PadAction action)
     {

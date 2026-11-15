@@ -9,30 +9,38 @@ using Microsoft.UI.Xaml.Input;
 
 namespace Granary.App.Views;
 
-// The skip pill's confirmation ("Intro skipped"): read out when its pill appears, and shaded so that it stays readable
-// where the picture behind it is bright. The web player's drop shadow is fainter; on a white corner its line disappears.
+// The skip pill's confirmation ("Intro skipped"), read out when its pill appears, and the line above it ("20% ·
+// Detected"): both shaded so that they stay readable where the picture behind them is bright. The web player's drop
+// shadow is fainter; on a white corner its line disappears.
 public sealed partial class PlayerPage
 {
     private void InitializeSkipPrompt()
     {
-        var compositor = ElementCompositionPreview.GetElementVisual(SkipCaptionText).Compositor;
+        Shade(SkipProvenanceText, SkipProvenanceShade);
+        Shade(SkipCaptionText, SkipCaptionShade);
+    }
+
+    private static void Shade(TextBlock text, Canvas shade)
+    {
+        var compositor = ElementCompositionPreview.GetElementVisual(text).Compositor;
         var shadow = compositor.CreateDropShadow();
-        shadow.Mask = SkipCaptionText.GetAlphaMask();
+        shadow.Mask = text.GetAlphaMask();
         shadow.Color = Colors.Black;
         shadow.Opacity = 0.85f;
         shadow.BlurRadius = 6;
         shadow.Offset = new Vector3(0, 1, 0);
         var visual = compositor.CreateSpriteVisual();
         visual.Shadow = shadow;
-        SkipCaptionText.SizeChanged += (_, e) => visual.Size = e.NewSize.ToVector2();
-        ElementCompositionPreview.SetElementChildVisual(SkipCaptionShade, visual);
+        text.SizeChanged += (_, e) => visual.Size = e.NewSize.ToVector2();
+        ElementCompositionPreview.SetElementChildVisual(shade, visual);
     }
 
     private void AnnounceSkipCaption() => Announcer.Announce(this, ViewModel.SkipCaption, "SkipPrompt");
 
     // A prompt that appears takes focus, as the intro pill of Silo's TV app does (TvIntroAutoSkipBanner's autoFocus): the
     // skip pill, or the next episode's Play Now. Enter, a remote's OK and a game controller's A then press what the viewer
-    // sees focus on. Asked a turn later, once the prompt shows.
+    // sees focus on. Asked a turn later, once the prompt shows. Never the Skip Intro that comes back with the controls after
+    // its time ran out: Silo's design for intro skipping has it take no focus, as the web's untimed offer.
     private void FocusPromptSoon() => DispatcherQueue.TryEnqueue(() => FocusPrompt(fromControls: false));
 
     // Only from the picture: a control the viewer is on, an open menu, a panel and the marker editor keep focus, so OK
@@ -52,8 +60,20 @@ public sealed partial class PlayerPage
         {
             return false;
         }
-        ButtonBase? prompt = ViewModel.HasSkipPrompt ? SkipButton : ViewModel.IsNextUpCardShown ? NextUpPlayButton : null;
+        ButtonBase? prompt = ViewModel.HasSkipPrompt && !ViewModel.IsSkipPromptWithControls ? SkipButton
+            : ViewModel.IsNextUpCardShown ? NextUpPlayButton
+            : null;
         return prompt is not null && prompt.Focus(_lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic);
+    }
+
+    // The timed pill whose time ran out with the controls up stays as the offer without a timer, and gives up the focus it
+    // had, as the web's IntroSkipButton blurs: the next OK then shows the controls' focus, not a skip.
+    private void ReleaseExpiredPrompt()
+    {
+        if (FocusedPrompt() is { } focused && IsWithin(focused, SkipPrompt))
+        {
+            Focus(FocusState.Programmatic);
+        }
     }
 
     // The bar hides by its look alone (SetControlsVisible), so what is in it still counts as shown.

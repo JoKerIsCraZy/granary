@@ -86,6 +86,9 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     // Asked on its own: a server from before it refuses a batch with it, and the marker settings must not go with it.
     internal static readonly string[] PreviewKeys = ["playback.auto_play_next_preview"];
 
+    // The skip pill's line (settings contract 24), the same way: an older server leaves it off.
+    internal static readonly string[] ProvenanceKeys = ["playback.show_marker_confidence", "playback.show_marker_source"];
+
     // The same for the sleep timer's duration.
     internal static readonly string[] SleepTimerKeys = ["player.sleep_timer_default_minutes"];
 
@@ -110,6 +113,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", cancellationToken);
         var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
         var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", cancellationToken);
+        var provenance = ReadBatchAsync(server, ProvenanceKeys, "Marker provenance", cancellationToken);
         var sleepTimer = ReadBatchAsync(server, SleepTimerKeys, "Sleep timer", cancellationToken);
         var audioDelay = ReadAudioDelayAsync(server, cancellationToken);
         var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
@@ -131,6 +135,18 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         if (await preview.ConfigureAwait(false) is { } previewValues && Bool(previewValues.Find(PreviewKeys[0])) is { } fromPreview)
         {
             preferences = preferences with { Markers = preferences.Markers with { AutoPlayNextPreview = fromPreview } };
+        }
+        if (await provenance.ConfigureAwait(false) is { } provenanceValues)
+        {
+            // Both are off unless the profile turned them on, as on the web.
+            preferences = preferences with
+            {
+                Markers = preferences.Markers with
+                {
+                    ShowMarkerConfidence = Bool(provenanceValues.Find(ProvenanceKeys[0])) ?? false,
+                    ShowMarkerSource = Bool(provenanceValues.Find(ProvenanceKeys[1])) ?? false,
+                },
+            };
         }
         if (await sleepTimer.ConfigureAwait(false) is { } sleepValues
             && Number(sleepValues.Find(SleepTimerKeys[0])) is { } minutes && minutes is >= 0 and <= MaxSleepTimerMinutes)

@@ -155,6 +155,32 @@
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DiscordStatus, Mode=TwoWay}"
                                   AutomationProperties.Name="Show what's playing in Discord" />
                 </controls:SettingsRow>
+                <!--
+                    Silo's phone app as a remote for this PC (docs/architecture.md, "Phone remote"), its texts after Silo's Roku
+                    app's Connect a Phone (PhoneRemoteViewModel). Kept on this PC; hidden where the page has no row for it.
+                -->
+                <StackPanel Visibility="{x:Bind HasPhoneRemote}">
+                    <controls:SettingsRow Label="{x:Bind PhoneRemoteLabel}" Description="{x:Bind PhoneRemoteDescription}">
+                        <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind PhoneRemote.IsOn, Mode=TwoWay, FallbackValue=False}"
+                                      AutomationProperties.Name="{x:Bind PhoneRemoteLabel}" />
+                    </controls:SettingsRow>
+                    <!-- What it does now: the phones that control, or that it cannot run and why; and while it listens, Connect a Phone. -->
+                    <Grid Margin="0,12,0,0" ColumnSpacing="12" Visibility="{x:Bind controls:SettingsText.Shows(PhoneRemote.StatusText), Mode=OneWay, FallbackValue=Collapsed}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{x:Bind PhoneRemote.StatusText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <TextBlock Text="{x:Bind PhoneRemote.ReasonText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                       Visibility="{x:Bind controls:SettingsText.Shows(PhoneRemote.ReasonText), Mode=OneWay, FallbackValue=Collapsed}" />
+                        </StackPanel>
+                        <Button x:Name="ConnectAPhoneButton" Grid.Column="1" Content="{x:Bind ConnectAPhoneText}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                VerticalAlignment="Center" Click="OnConnectAPhoneClick"
+                                Visibility="{x:Bind PhoneRemote.CanConnectAPhone, Mode=OneWay, FallbackValue=Collapsed}" />
+                    </Grid>
+                </StackPanel>
             </StackPanel>
         </controls:SettingsGroup>
 
@@ -280,6 +306,15 @@
                                       Description="Leave intros alone, offer a Skip Intro button, or skip automatically with an undo.">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.IntroSkipChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedIntroSkip, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowsIntroSkip, Mode=OneWay}" />
+                </controls:SettingsRow>
+                <!-- Settings contract 24, as the web's PlaybackSettings.tsx: left out on a server that does not know them. -->
+                <controls:SettingsRow Label="Show marker confidence" Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}"
+                                      Description="Show how confident the source is above the Skip Intro button. Each source rates on its own scale, so the percentage is only comparable within one source; turn the source line on to see which one it is.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerConfidence, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Show marker source" Visibility="{x:Bind ViewModel.ShowsMarkerProvenance, Mode=OneWay}"
+                                      Description="Show where the skip came from above the Skip Intro button: Silo's own detection, a person, or the provider that supplied the marker.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowMarkerSource, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Auto-skip recaps" Description="Skip 'previously on…' recaps automatically when Silo can detect them.">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipRecaps, Mode=TwoWay}" />

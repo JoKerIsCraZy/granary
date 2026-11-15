@@ -1,0 +1,366 @@
+using System.Net;
+using Granary.Core.Abstractions;
+using Granary.Core.Auth;
+using Granary.Core.Playback;
+using Microsoft.Extensions.Logging;
+
+namespace Granary.Core.Remote;
+
+/// <summary>
+/// Granary as a receiver of Silo's phone remote, of the Roku type at level <c>sealed</c>: one per app. It decides who
+/// may connect and who is authorized, holds the limits, carries commands to the open player on the UI thread and sends
+/// every authorized phone the status (silo-roku's <c>receiver.bs</c>, <c>policy.bs</c> and <c>AppSceneControl.bs</c>).
+/// Each phone's connection is a <see cref="RemoteController"/>; nothing here logs a value a phone sent.
+/// </summary>
+public sealed partial class RemoteReceiver
+{
+    private static readonly TimeSpan RateWindow = TimeSpan.FromMinutes(1);
+
+    private readonly IRemoteListener _listener;
+    private readonly IServiceAdvertiser _advertiser;
+    private readonly ILanAddressSource _addresses;
+    private readonly RemotePairing _pairing;
+    private readonly IPlaybackDevicePreferences _preferences;
+    private readonly ISessionManager _session;
+    private readonly string _name;
+    private readonly IUiDispatcher _dispatcher;
+    private readonly TimeProvider _time;
+    private readonly ILogger<RemoteReceiver> _logger;
+    private readonly Lock _gate = new();
+    private readonly List<Session> _sessions = [];
+    private readonly Dictionary<IPAddress, Queue<long>> _recentByPeer = [];
+    private readonly Func<byte[]?> _currentState;
+    private int _numbers;
+
+    /// <param name="listener">Listens on the PC's LAN address (the App's <c>TcpListener</c>).</param>
+    /// <param name="advertiser">Registers the receiver with DNS-SD (the App's <c>DnsServiceRegister</c>).</param>
+    /// <param name="addresses">The PC's LAN address.</param>
+    /// <param name="pairing">The receiver's id and its one pairing key.</param>
+    /// <param name="preferences">The switch, kept on this PC.</param>
+    /// <param name="session">Who is signed in, where: the receiver runs only with a profile.</param>
+    /// <param name="client">This PC's name, which the phones show.</param>
+    /// <param name="dispatcher">The UI thread: the player is only touched there, and events are raised there.</param>
+    /// <param name="time">The clock every deadline runs on.</param>
+    /// <param name="logger">Events by connection number and reason only.</param>
+    public RemoteReceiver(IRemoteListener listener, IServiceAdvertiser advertiser, ILanAddressSource addresses, RemotePairing pairing,
+        IPlaybackDevicePreferences preferences, ISessionManager session, ClientIdentity client, IUiDispatcher dispatcher, TimeProvider time,
+        ILogger<RemoteReceiver> logger)
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+        ArgumentNullException.ThrowIfNull(advertiser);
+        ArgumentNullException.ThrowIfNull(addresses);
+        ArgumentNullException.ThrowIfNull(pairing);
+        ArgumentNullException.ThrowIfNull(preferences);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(dispatcher);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _listener = listener;
+        _advertiser = advertiser;
+        _addresses = addresses;
+        _pairing = pairing;
+        _preferences = preferences;
+        _session = session;
+        _name = client.DeviceName;
+        _dispatcher = dispatcher;
+        _time = time;
+        _logger = logger;
+        _currentState = () => Volatile.Read(ref _stateFrame);
+        Identity = () => Volatile.Read(ref _running)?.Identity;
+        Pairing = () => _pairing.Current;
+    }
+
+    /// <summary>The phones that said hello, in name order, with their names as Granary shows them.</summary>
+    public IReadOnlyList<ConnectedPhone> Phones
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _sessions.Where(IsShownLocked).Select(Shown).OrderBy(phone => phone.Name, StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(phone => phone.Number)];
+            }
+        }
+    }
+
+    /// <summary>Raised on the UI thread after a phone came, went, or became active or passive.</summary>
+    public event EventHandler? PhonesChanged;
+
+    /// <summary>Raised on the UI thread once for each phone that actively controls, at its hello or when it stops being passive.</summary>
+    public event EventHandler<ConnectedPhone>? PhoneConnected;
+
+    /// <summary>What the receiver says about itself at each hello: what it runs as now, or null while it does not run.</summary>
+    internal Func<ReceiverIdentity?> Identity { get; set; }
+
+    /// <summary>The pairing material as it is now, read at every handshake and every frame (<see cref="RemotePairing.Current"/>).</summary>
+    internal Func<PairingMaterial?> Pairing { get; set; }
+
+    internal RemoteTimings Timings { get; set; } = RemoteTimings.Default;
+
+    /// <summary>
+    /// Serves one accepted connection to its end. A peer that is not local and an address that opened more than
+    /// <see cref="RemoteReceiverPolicy.MaxNewConnectionsPerMinute"/> connections in the last minute are closed unread.
+    /// Connections that have not said <c>hello</c> are few at a time: a newcomer beyond them closes the oldest such,
+    /// from its own address first, rather than being turned away, so no one host can keep phones out. Every connection
+    /// let in gets its handshake, the receiver's <c>hello</c>, and then its messages; its place among the phones is
+    /// decided at its own <c>hello</c>, the first frame that proves the key.
+    /// </summary>
+    public async Task ServeAsync(IRemoteConnection connection, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        int number = Interlocked.Increment(ref _numbers);
+        string? refusal = null;
+        Session? session = null;
+        List<Session> madeRoom = [];
+        var peer = connection.Peer.IsIPv4MappedToIPv6 ? connection.Peer.MapToIPv4() : connection.Peer;
+        if (!RemoteReceiverPolicy.IsLocalPeer(peer))
+        {
+            refusal = RemoteLogReasons.NotLocal;
+        }
+        else
+        {
+            lock (_gate)
+            {
+                if (!TakeConnectionLocked(peer))
+                {
+                    refusal = RemoteLogReasons.TooManyNewConnections;
+                }
+                else
+                {
+                    madeRoom = MakeRoomLocked(peer);
+                    var controller = new RemoteController(number, connection, () => Pairing(), Timings, _time, _logger);
+                    session = new Session(controller, new CommandBudget(_time), CommandBudget.ForSignals(_time), peer);
+                    _sessions.Add(session);
+                }
+            }
+        }
+        foreach (var leaving in madeRoom)
+        {
+            leaving.Controller.Drop(RemoteLogReasons.MadeRoom);
+        }
+        if (session is null)
+        {
+            _logger.LogInformation("Connection {Number} refused: {Reason}", number, refusal);
+            await CloseUnreadAsync(connection).ConfigureAwait(false);
+            return;
+        }
+
+        try
+        {
+            await RunAsync(session, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            await session.Controller.DisposeAsync().ConfigureAwait(false);
+            Remove(session);
+        }
+    }
+
+    /// <summary>Lets the phone on connection <paramref name="number"/> go, with reason <c>tv_disconnected</c> (Disconnect Remote).</summary>
+    public async Task DisconnectAsync(int number)
+    {
+        Session? session;
+        lock (_gate)
+        {
+            session = _sessions.FirstOrDefault(other => other.Controller.Number == number && other.Controller.IsOpen);
+        }
+        if (session is not null)
+        {
+            await session.Controller.CloseAsync(SiloCastCloseReasons.TvDisconnected, RemoteLogReasons.DisconnectedHere).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Closes every connection with <paramref name="reason"/>, each under its close grace, and answers whether none is
+    /// left open afterwards.
+    /// </summary>
+    public Task<bool> CloseAllAsync(string reason) => CloseAllAsync(reason, RemoteLogReasons.Stopped);
+
+    internal async Task<bool> CloseAllAsync(string reason, string logReason)
+    {
+        List<Session> open;
+        lock (_gate)
+        {
+            open = [.. _sessions.Where(session => session.Controller.IsOpen)];
+        }
+        await Task.WhenAll(open.Select(session => session.Controller.CloseAsync(reason, logReason))).ConfigureAwait(false);
+        lock (_gate)
+        {
+            return !_sessions.Any(session => session.Controller.IsOpen);
+        }
+    }
+
+    private async Task RunAsync(Session session, CancellationToken cancellationToken)
+    {
+        var controller = session.Controller;
+        if (!await controller.OpenAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return;
+        }
+        if (Identity() is not { } identity)
+        {
+            await controller.CloseAsync(SiloCastCloseReasons.TvDisconnected, RemoteLogReasons.Stopped).ConfigureAwait(false);
+            return;
+        }
+        // The receiver speaks first once the session is keyed (silo-roku's receiver.bs accepted).
+        await controller.SendAsync(SiloCastMessages.Hello(identity)).ConfigureAwait(false);
+        await controller.RunAsync(message => OnMessageAsync(session, message), cancellationToken).ConfigureAwait(false);
+    }
+
+    // Room for a newcomer among the connections that have not said hello: at the per-address limit that address's oldest
+    // goes, at the overall limit the oldest of all. They have proven nothing, so the newcomer is not the one turned away.
+    private List<Session> MakeRoomLocked(IPAddress peer)
+    {
+        var waiting = _sessions.Where(IsUnauthenticatedLocked).OrderBy(session => session.Controller.ConnectedAt)
+            .ThenBy(session => session.Controller.Number).ToList();
+        var leaving = new List<Session>();
+        if (waiting.Where(session => session.Peer.Equals(peer)).ToList() is { Count: >= RemoteReceiverPolicy.MaxUnauthenticatedPerAddress } ownAddress)
+        {
+            leaving.Add(ownAddress[0]);
+            waiting.Remove(ownAddress[0]);
+        }
+        if (waiting.Count >= RemoteReceiverPolicy.MaxUnauthenticated)
+        {
+            leaving.Add(waiting[0]);
+        }
+        foreach (var session in leaving)
+        {
+            session.Leaving = true;
+        }
+        return leaving;
+    }
+
+    private static bool IsUnauthenticatedLocked(Session session) =>
+        session.Controller.IsOpen && !session.Leaving && !session.Controller.SaidHello;
+
+    // Within the minute's window, the connections one address opened; old ones of every address are forgotten, so the
+    // table never outgrows the addresses that connected in the last minute.
+    private bool TakeConnectionLocked(IPAddress peer)
+    {
+        var address = peer.IsIPv4MappedToIPv6 ? peer.MapToIPv4() : peer;
+        long now = _time.GetTimestamp();
+        foreach (var (known, times) in _recentByPeer.ToList())
+        {
+            while (times.Count > 0 && _time.GetElapsedTime(times.Peek(), now) >= RateWindow)
+            {
+                times.Dequeue();
+            }
+            if (times.Count == 0)
+            {
+                _recentByPeer.Remove(known);
+            }
+        }
+        if (!_recentByPeer.TryGetValue(address, out var recent))
+        {
+            recent = new Queue<long>();
+            _recentByPeer[address] = recent;
+        }
+        if (recent.Count >= RemoteReceiverPolicy.MaxNewConnectionsPerMinute)
+        {
+            return false;
+        }
+        recent.Enqueue(now);
+        return true;
+    }
+
+    private void Remove(Session session)
+    {
+        bool shown;
+        lock (_gate)
+        {
+            shown = _sessions.Remove(session) && session.Controller.SaidHello;
+        }
+        if (shown)
+        {
+            RaisePhonesChanged();
+        }
+    }
+
+    // The other phones that said hello: the ones a newcomer's hello is weighed against.
+    private IEnumerable<Session> PhonesLocked(Session session) =>
+        _sessions.Where(other => !ReferenceEquals(other, session) && other.Controller.IsOpen && !other.Leaving && other.Controller.SaidHello);
+
+    private List<Session> AuthorizedSessions()
+    {
+        lock (_gate)
+        {
+            return [.. _sessions.Where(session => session.Controller.IsOpen && session.Controller.IsAuthorized && !session.Leaving)];
+        }
+    }
+
+    private void RaisePhonesChanged() => _dispatcher.Post(() => PhonesChanged?.Invoke(this, EventArgs.Empty));
+
+    // Once for each phone that actively controls.
+    private void Announce(Session session)
+    {
+        ConnectedPhone phone;
+        lock (_gate)
+        {
+            if (session.Announced)
+            {
+                return;
+            }
+            session.Announced = true;
+            phone = Shown(session);
+        }
+        _dispatcher.Post(() => PhoneConnected?.Invoke(this, phone));
+    }
+
+    private static bool IsShownLocked(Session session) => session.Controller.SaidHello && session.Controller.IsOpen && !session.Leaving;
+
+    private static ConnectedPhone Shown(Session session) =>
+        new(session.Controller.Number, session.Name, session.Controller.IsAuthorized && !session.Controller.IsPassive);
+
+    private static ControllerFacts Facts(Session session)
+    {
+        var controller = session.Controller;
+        return new ControllerFacts(controller.Number, controller.SaidHello, controller.IsAuthorized, controller.IsPassive,
+            controller.ConnectedAt, controller.DeviceId);
+    }
+
+    private async Task CloseUnreadAsync(IRemoteConnection connection)
+    {
+        try
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+            _logger.LogDebug("A refused connection did not close cleanly ({Error})", RemoteLog.Failure(ex));
+        }
+    }
+
+    // One connection and what the receiver keeps for it beside the controller's own facts.
+    private sealed class Session(RemoteController controller, CommandBudget budget, CommandBudget signals, IPAddress peer)
+    {
+        public RemoteController Controller { get; } = controller;
+
+        /// <summary>For commands, offers and launches.</summary>
+        public CommandBudget Budget { get; } = budget;
+
+        /// <summary>For the hello, a presence and a phone's cancel; its rate limit is reported apart from the commands'.</summary>
+        public CommandBudget Signals { get; } = signals;
+
+        /// <summary>The address it came from, as IPv4.</summary>
+        public IPAddress Peer { get; } = peer;
+
+        /// <summary>The phone's name as Granary shows it, cleaned at its hello.</summary>
+        public string Name { get; set; } = "";
+
+        /// <summary>PhoneConnected was raised for it.</summary>
+        public bool Announced { get; set; }
+
+        /// <summary>It is being closed to make room or as replaced, and no longer counts.</summary>
+        public bool Leaving { get; set; }
+    }
+}
+
+/// <summary>A phone connected to the receiver, as the PC shows it.</summary>
+/// <param name="Number">The connection's number, to let it go with <see cref="RemoteReceiver.DisconnectAsync"/>.</param>
+/// <param name="Name">The phone's name, cleaned.</param>
+/// <param name="IsActive">The phone is on Granary's server and actively controls (not passive).</param>
+public sealed record ConnectedPhone(int Number, string Name, bool IsActive)
+{
+    public override string ToString() => $"{nameof(ConnectedPhone)} {Number}";
+}

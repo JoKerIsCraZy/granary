@@ -5,10 +5,12 @@ using Granary.App.Controls;
 using Granary.App.Services;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Remote;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -45,6 +47,8 @@ public sealed partial class PlayerPage : Page
     private PlayerRichPresence? _richPresence;
     // The display kept on while a title plays, likewise; the bar and the mini view are this page too.
     private PlayerKeepAwake? _keepAwake;
+    // What Silo's phone app sees of this player and does with it, likewise (docs/architecture.md, "Phone remote").
+    private PlayerRemoteControl? _remoteControl;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
     // Whether a title opens the player in full screen, as it was last left on this PC.
@@ -55,6 +59,8 @@ public sealed partial class PlayerPage : Page
     {
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
+        // The page's own, disposed with it: the window's lives as long as the app.
+        Remote = ActivatorUtilities.CreateInstance<RemoteIndicatorViewModel>(App.Services);
         _modes = App.Services.GetRequiredService<WindowModeService>();
         _fullScreen = App.Services.GetRequiredService<PlayerFullScreen>();
         _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
@@ -80,6 +86,13 @@ public sealed partial class PlayerPage : Page
     }
 
     public PlayerViewModel ViewModel { get; }
+
+    /// <summary>Whether Silo's phone app controls this PC, for the bar's icon and its Disconnect Remote.</summary>
+    public RemoteIndicatorViewModel Remote { get; }
+
+    public string RemoteActiveText => RemoteIndicatorViewModel.ActiveText;
+
+    public string RemoteDisconnectText => RemoteIndicatorViewModel.DisconnectText;
 
     /// <summary>The window is full screen (<see cref="WindowModeService"/>).</summary>
     public bool IsFullScreen
@@ -149,6 +162,9 @@ public sealed partial class PlayerPage : Page
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _keepAwake ??= new PlayerKeepAwake(ViewModel, App.Services.GetRequiredService<IKeepAwake>());
+        // On the UI thread, as it must be made: it attaches to the receiver at once.
+        _remoteControl ??= new PlayerRemoteControl(ViewModel, App.Services.GetRequiredService<RemoteReceiver>(),
+            App.Services.GetRequiredService<IUiDispatcher>());
         ShowSkipIntervals();
         QueueNextUpStill();
         Focus(FocusState.Programmatic);
@@ -179,7 +195,36 @@ public sealed partial class PlayerPage : Page
         _richPresence = null;
         _keepAwake?.Dispose();
         _keepAwake = null;
+        _remoteControl?.Dispose();
+        _remoteControl = null;
+        DisposeOwn();
+    }
+
+    /// <summary>
+    /// What the page made itself and holds from its start, before it is loaded: the phone remote's indicator, which follows
+    /// the receiver at once, and the view model. Unloaded lets go of them; a page closed before it ever loaded has the
+    /// window call this instead.
+    /// </summary>
+    public void DisposeOwn()
+    {
+        Remote.Dispose();
         ViewModel.Dispose();
+    }
+
+    // Disconnect Remote: every phone that controls this PC is let go.
+    private async void OnDisconnectRemoteClick(object sender, RoutedEventArgs e)
+    {
+        RemoteMenu.Hide();
+        try
+        {
+            await Remote.DisconnectCommand.ExecuteAsync(null);
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape. The receiver logs a connection's end itself.
+            App.Services.GetRequiredService<ILogger<PlayerPage>>().LogWarning("Disconnect Remote failed ({Error})", ex.GetType().Name);
+        }
+        KeepFocusInPage();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -216,6 +261,14 @@ public sealed partial class PlayerPage : Page
                 FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.IsNextUpCardShown) when ViewModel.IsNextUpCardShown:
+                FocusPromptSoon();
+                break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.IsSkipPromptWithControls:
+                ReleaseExpiredPrompt();
+                break;
+            case nameof(PlayerViewModel.IsSkipPromptWithControls) when ViewModel.HasSkipPrompt:
+                // The offer became another pill while one showed throughout: that one appears as any pill does.
+                AnnounceSkipCaption();
                 FocusPromptSoon();
                 break;
             case nameof(PlayerViewModel.Bar):
@@ -357,7 +410,8 @@ public sealed partial class PlayerPage : Page
     private void ArrangeBarButtons()
     {
         var children = RightControls.Children;
-        int index = 0;
+        // The phone remote's icon leads the bar's right side; the buttons Settings orders come after it.
+        int index = children.IndexOf(RemoteButton) + 1;
         foreach (var button in ViewModel.Bar.Order)
         {
             foreach (var element in ElementsOf(button))
