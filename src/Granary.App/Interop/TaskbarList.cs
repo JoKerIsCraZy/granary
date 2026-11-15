@@ -136,5 +136,6 @@ internal sealed unsafe partial class TaskbarList : IDisposable
     }
 
     [LibraryImport("ole32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int CoCreateInstance(Guid* classId, nint outer, uint context, Guid* interfaceId, out nint instance);
 }

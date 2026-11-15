@@ -210,5 +210,6 @@ public sealed partial class MpvVideoHost : UserControl
     }
 
     [LibraryImport("dwmapi.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int DwmFlush();
 }

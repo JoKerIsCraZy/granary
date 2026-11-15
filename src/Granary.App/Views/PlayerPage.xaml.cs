@@ -5,10 +5,12 @@ using Granary.App.Controls;
 using Granary.App.Services;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Remote;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -45,16 +47,25 @@ public sealed partial class PlayerPage : Page
     private PlayerRichPresence? _richPresence;
     // The display kept on while a title plays, likewise; the bar and the mini view are this page too.
     private PlayerKeepAwake? _keepAwake;
+    // What Silo's phone app sees of this player and does with it, likewise (docs/architecture.md, "Phone remote").
+    private PlayerRemoteControl? _remoteControl;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
     // Whether a title opens the player in full screen, as it was last left on this PC.
     private readonly PlayerFullScreen _fullScreen;
     private readonly IPlaybackDevicePreferences _devicePreferences;
+    // A title a phone started while the window was not in front: nothing about the window changed for it, and full screen
+    // waits until the viewer brings the window to the front, so the window is not raised or restored for them (design
+    // 5.9). Until then the viewer has not seen the window as the player left it, so no full screen choice is kept.
+    private bool _waitsForFront;
+    private bool _fullScreenWhenInFront;
 
     public PlayerPage()
     {
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
+        // The page's own, disposed with it: the window's lives as long as the app.
+        Remote = ActivatorUtilities.CreateInstance<RemoteIndicatorViewModel>(App.Services);
         _modes = App.Services.GetRequiredService<WindowModeService>();
         _fullScreen = App.Services.GetRequiredService<PlayerFullScreen>();
         _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
@@ -68,6 +79,7 @@ public sealed partial class PlayerPage : Page
         InitializeDock();
         InitializeNotices();
         InitializePartyPanel();
+        InitializeDiagnosis();
         ArrangeBarButtons();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
@@ -80,6 +92,13 @@ public sealed partial class PlayerPage : Page
     }
 
     public PlayerViewModel ViewModel { get; }
+
+    /// <summary>Whether Silo's phone app controls this PC, for the bar's icon and its Disconnect Remote.</summary>
+    public RemoteIndicatorViewModel Remote { get; }
+
+    public string RemoteActiveText => RemoteIndicatorViewModel.ActiveText;
+
+    public string RemoteDisconnectText => RemoteIndicatorViewModel.DisconnectText;
 
     /// <summary>The window is full screen (<see cref="WindowModeService"/>).</summary>
     public bool IsFullScreen
@@ -98,14 +117,25 @@ public sealed partial class PlayerPage : Page
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
 
     /// <summary>
-    /// Plays <paramref name="request"/>, a title opened from the app (a page, a Watch Party, <c>--play</c>); the window shows
-    /// the page over everything first, and goes full screen when the player was in full screen as it was last left.
+    /// Plays <paramref name="request"/>, a title opened from the app (a page, a Watch Party, <c>--play</c>) or from a phone;
+    /// the window shows the page over everything first, and goes full screen when the player was in full screen as it was
+    /// last left. Without <paramref name="mayChangeWindow"/> (a phone's title while the window is minimized or behind
+    /// others) full screen waits for the viewer to bring the window to the front (<see cref="WindowCameToFront"/>): a
+    /// change of presenter would restore or raise it.
     /// </summary>
-    public void Start(PlayRequest request)
+    public void Start(PlayRequest request, bool mayChangeWindow = true)
     {
+        _waitsForFront = !mayChangeWindow;
         if (_fullScreen.OpensInFullScreen)
         {
-            _modes.SetFullScreen(true);
+            if (mayChangeWindow)
+            {
+                _modes.SetFullScreen(true);
+            }
+            else
+            {
+                _fullScreenWhenInFront = true;
+            }
         }
         // The page may not be in the window yet: the window's own scale then, so the first episode's read has it.
         TellNextUpStillWidth(XamlRoot ?? App.Services.GetRequiredService<MainWindow>().Content?.XamlRoot);
@@ -117,12 +147,39 @@ public sealed partial class PlayerPage : Page
     /// change; the sound must not go on behind another page nor the server session stay open. The mini view ends with
     /// it; full screen is the window's and stays as the viewer set it, and the next title opens as the player is left.
     /// </summary>
-    public void Leave()
+    /// <param name="keepsWindow">A phone's title takes the player's place while the window is not in front: the mini view
+    /// stays, since leaving it would set another presenter and bring the window back.</param>
+    public void Leave(bool keepsWindow = false)
     {
-        SetMiniView(false);
-        // Saved as Granary goes on; closing it later waits for this PC's choices anyway.
-        _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
+        if (!keepsWindow)
+        {
+            SetMiniView(false);
+        }
+        // Saved as Granary goes on; closing it later waits for this PC's choices anyway. A title whose window still waited
+        // for the viewer was never seen as it was left: the choice stays.
+        if (!_waitsForFront)
+        {
+            _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
+        }
         ViewModel.Leave();
+    }
+
+    /// <summary>
+    /// The viewer brought the window to the front: a phone's title that waited for it goes full screen now, as it would
+    /// have opened, unless the player has become the bar or the mini view meanwhile.
+    /// </summary>
+    public void WindowCameToFront()
+    {
+        _waitsForFront = false;
+        if (!_fullScreenWhenInFront)
+        {
+            return;
+        }
+        _fullScreenWhenInFront = false;
+        if (!IsDocked && !IsMiniView)
+        {
+            _modes.SetFullScreen(true);
+        }
     }
 
     /// <summary>
@@ -132,7 +189,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public Task LeaveWithWindow()
     {
-        var save = _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
+        var save = _waitsForFront ? Task.CompletedTask : _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
         ViewModel.Leave();
         return save;
     }
@@ -151,6 +208,9 @@ public sealed partial class PlayerPage : Page
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _keepAwake ??= new PlayerKeepAwake(ViewModel, App.Services.GetRequiredService<IKeepAwake>());
+        // On the UI thread, as it must be made: it attaches to the receiver at once.
+        _remoteControl ??= new PlayerRemoteControl(ViewModel, App.Services.GetRequiredService<RemoteReceiver>(),
+            App.Services.GetRequiredService<IUiDispatcher>());
         ShowSkipIntervals();
         FollowNextUpStillWidth();
         QueueNextUpStill();
@@ -183,7 +243,36 @@ public sealed partial class PlayerPage : Page
         _richPresence = null;
         _keepAwake?.Dispose();
         _keepAwake = null;
+        _remoteControl?.Dispose();
+        _remoteControl = null;
+        DisposeOwn();
+    }
+
+    /// <summary>
+    /// What the page made itself and holds from its start, before it is loaded: the phone remote's indicator, which follows
+    /// the receiver at once, and the view model. Unloaded lets go of them; a page closed before it ever loaded has the
+    /// window call this instead.
+    /// </summary>
+    public void DisposeOwn()
+    {
+        Remote.Dispose();
         ViewModel.Dispose();
+    }
+
+    // Disconnect Remote: every phone that controls this PC is let go.
+    private async void OnDisconnectRemoteClick(object sender, RoutedEventArgs e)
+    {
+        RemoteMenu.Hide();
+        try
+        {
+            await Remote.DisconnectCommand.ExecuteAsync(null);
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape. The receiver logs a connection's end itself.
+            App.Services.GetRequiredService<ILogger<PlayerPage>>().LogWarning("Disconnect Remote failed ({Error})", ex.GetType().Name);
+        }
+        KeepFocusInPage();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -369,7 +458,8 @@ public sealed partial class PlayerPage : Page
     private void ArrangeBarButtons()
     {
         var children = RightControls.Children;
-        int index = 0;
+        // The phone remote's icon leads the bar's right side; the buttons Settings orders come after it.
+        int index = children.IndexOf(RemoteButton) + 1;
         foreach (var button in ViewModel.Bar.Order)
         {
             foreach (var element in ElementsOf(button))

@@ -690,6 +690,36 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task ALocalFileStartedMidwayAfterAStream_ReportsItsPositionAsItPlays()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var streamPlays = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var localMovedOn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        long local = 0;
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true } && s.Position.TotalSeconds > 1)
+            {
+                streamPlays.TrySetResult();
+            }
+            // Started at 10 s: two seconds played on, reported as it plays.
+            if (s.LoadId == Volatile.Read(ref local) && s is { IsLoaded: true, HasStarted: true } && s.Position.TotalSeconds > 12)
+            {
+                localMovedOn.TrySetResult();
+            }
+        };
+        engine.Load(new MediaSource(server.Url("media.wav"), []));
+        await streamPlays.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        // The player leaves the stream, then the downloaded title opens where it was left.
+        engine.Stop();
+        Volatile.Write(ref local, engine.Load(MediaSource.Local(TempWav(30.0), TimeSpan.FromSeconds(10))));
+
+        await localMovedOn.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task AStop_ClearsWhatTheStreamHeld()
     {
         using var engine = CreateEngine();

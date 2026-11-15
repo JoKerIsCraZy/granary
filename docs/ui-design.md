@@ -519,7 +519,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   comes into view, with Load more for the keyboard and "Couldn’t load more titles." beside Try again. The web's texts
   for a row that does not exist, TMDB not answering, and nothing matching.
 - A title from TMDB (`TitlePage`, the web's `TitleDetail.tsx` / `ExternalTitleContent.tsx`): laid out like a library
-  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes, overview, "Directed by" or
+  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes and TMDB's logo for its mark, overview, "Directed by" or
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
   state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
   watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
@@ -730,16 +730,29 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    breadcrumbs; the series' next airing (below); the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
     whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     a movie's, series' or episode's scores, as the web's `ScoreRow` (`pages/ItemDetail/components/ScoreRow.tsx`) under
-    its badges: every rating the server gives, in its order, each source's mark ("IMDb", "TMDB") in 13 SemiBold at 75 %
-    beside its score in 15 Bold, both in the accent colour, 20 apart, wrapping 8 below at the overview's width (a
+    its badges: every rating the server gives, in its order, each source's mark ("IMDb") in 13 SemiBold at 75 %
+    beside its score in 15 Bold, both in the accent colour, 6 apart, and TMDB's approved logo, 10 high, for TMDB's mark,
+    as the web's `RatingEntry` (no other source's logo may be used); 20 apart, wrapping 8 below at the overview's width (a
     season's page has none, as the web's); the
     tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - The series' next airing, Granary's own (no Silo client shows it on a title's page): a series' page and its seasons'
+    and episodes' pages name when the series' next episode airs, the same on each, in a neutral chip (`SiloChipStyle`, a
+    12 px calendar mark in muted grey 7 before 13 px text) between the breadcrumbs and the logo or title. Its words are
+    those Silo's Apple app gives a monitored series' next download: "Episode 6 on Thursday", "Episode 6 today",
+    "Episode 6 tomorrow", and for a season's first episode "Season 4 starts on Oct 15", "… starts today", "… starts
+    tomorrow". The day is the viewer's: today, tomorrow, the weekday within a week, else the month and day. It is the
+    first airing of the calendar's next 62 days ([7.13](api-contract.md#713-calendar)) still to come, from any season but
+    the specials: one with its time until that time, one with only its date from the day after on (today's may have
+    aired). The page does not wait for it; with nothing to come in those days, or a calendar that does not answer, there
+    is no chip. It changes when the page reads its data again (opening it, or the reading after the player or a mark),
+    not with the clock; a later reading the calendar does not answer keeps the chip as it was. A screen reader reads its
+    text.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
@@ -943,10 +956,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
     the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
     nothing opens; Tab and a remote's arrows pass it by, and screen readers hear one line, "Episode 5, missing" or
-    "Episode 11, airs November 19". Play, Resume, the watched toggles, the spoiler blur and More Episodes know only the
-    listed episodes, and specials get no places.
+    "Episode 11, airs November 19". An episode's More Episodes holds the same places (below). Play, Resume, the watched
+    toggles and the spoiler blur know only the listed episodes, and specials get no places.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
-    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    order, the episode itself included, and among them the places the season's grid shows (above), from the same
+    calendar answers: a place of the row's card size, its dashed box 16:9 as the episode cards' stills, with the grid's
+    words. The listed episodes show at once and the places come in once the calendar answers (a failed answer leaves the
+    row as listed). When the page reads the season again (after a stop, a start or a watched mark) and its episodes
+    changed, the places are made again, here and in the season's grid. A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
+    row centres on the page's own card as without places. The row shows only when it has more than one entry, places
+    included: a season of one listed episode shows it once a place joins it. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
@@ -1322,10 +1341,10 @@ says why above the sections.
   point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
   Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; mpv configuration, see below; Show what's playing in Discord, a switch, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
-  on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
-  the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
+  on this PC."), which a title that plays follows at once (the Discord status, under Player); and Control Granary from
+  your phone at the group's end, see below. Granary's own and kept on the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
   sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
   web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
@@ -1441,6 +1460,37 @@ says why above the sections.
   "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
   the button stay), "There's nothing from before the preset to go back to, so your mpv.conf stays as it is." (the backup was gone; the preset is no longer named) or
   "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
+- **This PC → Control Granary from your phone** (`PhoneRemoteViewModel`; docs/architecture.md, "Phone remote"), the
+  group's last row: Silo's phone app on the local network as a remote for this PC. Silo's web has no wording for this, so
+  the texts follow Silo's Roku app's Connect a Phone (`locale/en_US/strings.json`, `connect.*`) with "TV" as "PC"; the
+  ones marked *new* have no Silo source. The label is "Control Granary from your phone" (the Roku app's "Control Silo
+  from your phone"), the switch off by default and kept on this PC (`phone_remote` in `playback-device.json`). The
+  description, *new*: "Silo's phone app on this network can control what plays on this PC and start titles here.
+  Windows may ask to let Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
+  name and your server's address." While it is on, a 13 px muted line under the row says what it does: "No phone is
+  connected." or "Connected: Elena's phone, Elena's tablet" (the phones that actively control, as the Roku app lists
+  them), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
+  isn't available right now." (the Roku app's) with a second line why (*new*): "This PC is not on a local network.",
+  "Windows did not give Granary a port.", "No profile is signed in on this PC." or "Granary couldn't start it. The log has
+  the details." (the pairing key could not be read, Windows' advertisement failed, or the listener stopped). The row
+  follows the receiver only while the view shows.
+- **This PC → Connect a Phone** (`ConnectPhonePanel`), a dialog over the window titled "Connect a Phone" (the Roku
+  app's screen, which the phones' messages name) with **Done** to close it. In it, top to bottom: "Scan this code with
+  your phone's camera and open it in Silo. Then choose Elena's PC under Remote Control." (*new*, with this PC's name; the
+  Roku app's "Scan this code in the Silo app" would mislead, as the Android app has no scanner of its own); the code,
+  220 px on white with its own quiet zone (named "Code to connect a phone. Scan it with your phone's camera." for a screen
+  reader); the address and port, "192.168.1.20:52817", 16 px monospace (shown as on the Roku app), and under it "The phone
+  has to be on this network and signed in to https://silo.example." (*new*); the connected phones, as under the row;
+  "Phones can connect through this code only: Windows did not advertise this PC." (*new*) when Windows did not take the
+  advertisement; **Reset Pairing Code** (the Roku app's) with "Every phone has to scan the new code." (*new*) under it;
+  and "Phone can't connect? Allow Granary under Windows Security → Firewall & network protection → Allow an app through
+  firewall." (*new*), always. Reset Pairing Code asks first in a flyout under the button, as no second dialog can open
+  over this one: "Reset Pairing Code?" / "Every phone has to scan the new code. Phones that are connected now are
+  disconnected." with Cancel and Reset; afterwards the code shows the new key, or a muted line says "The new code is in
+  place, but a phone could not be disconnected. It can no longer control this PC." or "Couldn't reset the pairing code.
+  The old code still works." The code holds the pairing key: it is drawn only while the dialog is open, from the link the
+  receiver gives then, and goes as it closes; it is never saved, logged or copied. The dialog closes by itself when the
+  receiver stops listening or the switch goes off, and the code never comes back by itself.
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
@@ -1736,6 +1786,32 @@ by `MainWindow.Activity.cs`.
   scans or the preparation queue), and the web's localized task names (Granary shows the server's English, which the
   web shows too for a task it has no translation for).
 
+## Phone remote
+
+While Silo's phone app controls this PC (Settings → Playback → This PC → Control Granary from your phone;
+`RemoteIndicatorViewModel`), as Silo's TV apps show it, but with no standby screen: a PC is used for other things.
+
+- **The notice.** When a phone starts to control, "Elena's phone connected" (Silo's Roku app's "{name} connected"),
+  for four seconds, in the player's notice card (16 px corners, sky blue at 15 %), at the top in the middle of the
+  window, 80 px down, over the pages and over the full player alike. A phone that only watches (passive) gets none.
+- **The indicator.** While a phone actively controls, a quiet glass disc with a phone icon left of the activity
+  indicator at the top right of the page (20 px from the edge, 8 px from the activity disc when that shows), named and
+  tooltipped "Remote control active" (the TV apps'). Its menu has one item, **Disconnect Remote**, which lets every
+  phone that controls go; the phone then says it can't reach the PC and keeps it in its list. It shows where the activity
+  indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
+  icon and menu (under Player).
+- **A title a phone starts** opens as a page's Play opens it, in place of what plays, without a question on the PC; the
+  window is not brought to the front. Unless the window is the one in front (focused), it stays as it is, minimized,
+  behind other windows or visible but unfocused on another display alike: the player opens inside it, a mini view stays
+  the mini view, a trailer's full screen stays full screen, and when the player opens in full screen (as it was last
+  left), it opens windowed and goes full screen only once the viewer brings the window to the front (clicks it, or
+  brings it back from the taskbar); left before that, the player keeps its full screen choice as it was. The player's notice card (under Player, Notices) then says "Starting Example
+  Movie" and, under it, "From Elena's phone" (Silo's own `cast_standby_starting` and `cast_standby_from`, which its TV
+  apps show when a phone started a title), for four seconds, once the title's name is known; a series' title is its
+  name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then. Should the
+  PC switch profile or server between the phone's Play and the start, the player's failed screen says "This title was
+  started for a profile that is no longer signed in." (*new*), without Try again.
+
 ## Full screen
 
 The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state
@@ -1801,7 +1877,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
   semibold and the message 14 px white at 85 %, over black where the web blurs the picture (`PlaybackNoticeView`). It goes
-  after eight seconds, a newer one in its place. Minimized, the window shows it above the bar at the bar's left edge, 12 px
+  after eight seconds, a newer one in its place. The same card says "Starting {title}" and "From {phone}" for four
+  seconds when Silo's phone app started the title (see Phone remote). Minimized, the window shows it above the bar at the bar's left edge, 12 px
   up, where the web keeps it until the player opens again (Granary's bar still plays the picture); the mini view keeps it. An administrator's stop or terminate ends playback with their
   words on the failed screen ("An administrator ended this playback session.").
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
@@ -1835,7 +1912,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
   full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
-  it close up). By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  it close up). While Silo's phone app controls this PC, a phone icon leads them, "Remote control active", with a menu
+  of one item, Disconnect Remote (see Phone remote); it is none of the buttons Settings orders. By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
   track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
@@ -2176,8 +2254,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   web; the cursor goes with them while it is over the picture, however they hide (the wait, a remote's Back, a tap).
   They stay while paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle
   panel is open, the markers are edited, a control in them has keyboard focus, or the mouse is over the mini view
-  (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
-  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
+  (`PlayerControlsIdle`; the log names the hold once). A real move of the pointer (the cursor's own test, below) or any
+  key brings them back: the noise of a mouse lying still wakes neither the cursor nor the controls. The cursor
+  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (5 view pixels or more within 300 ms, more screen pixels at a display scale above 100 %, so a mouse lying still
+  that reports a knock or its sensor's noise of a few pixels does not wake it,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
   still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
   brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never

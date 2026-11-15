@@ -213,6 +213,8 @@ public sealed partial class MainWindow
     }
 
     // A bumper on a card of a sideways row moves on by as many cards as show, less one, so the last one seen stays in view.
+    // A place among the cards (an episode's More Episodes) takes no focus: the first card past it does, else the last one
+    // before it.
     private void PagePadRow(int by)
     {
         if (FocusedElement() is not Button card || !IsCard(card)
@@ -229,7 +231,20 @@ public sealed partial class MainWindow
         double shown = ShownWidthOf(row);
         int cards = Math.Max(1, (int)(shown / Math.Max(1, card.ActualWidth + layout.Spacing)) - 1);
         int target = Math.Clamp(index + (by * cards), 0, items.Count - 1);
-        if (index < 0 || target == index || CardWithin(row.GetOrCreateElement(target)) is not { } next)
+        if (index < 0 || target == index)
+        {
+            return;
+        }
+        Control? next = null;
+        for (int at = target; next is null && at >= 0 && at < items.Count; at += by)
+        {
+            next = CardWithin(row.GetOrCreateElement(at));
+        }
+        for (int at = target - by; next is null && at != index; at -= by)
+        {
+            next = CardWithin(row.GetOrCreateElement(at));
+        }
+        if (next is null)
         {
             return;
         }

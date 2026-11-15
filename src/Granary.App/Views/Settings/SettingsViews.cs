@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Granary.App.Controls;
 using Granary.Core;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
@@ -28,7 +29,21 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
+        // The phone remote's row follows the receiver only while the view shows; an open Connect a Phone closes with it.
+        Loaded += (_, _) => PhoneRemote?.Attach();
+        Unloaded += (_, _) => PhoneRemote?.Detach();
     }
+
+    /// <summary>"Control Granary from your phone" and Connect a Phone; null where the view model was made without it.</summary>
+    public PhoneRemoteViewModel? PhoneRemote => ViewModel.PhoneRemote;
+
+    public bool HasPhoneRemote => ViewModel.PhoneRemote is not null;
+
+    public string PhoneRemoteLabel => PhoneRemoteViewModel.SwitchLabel;
+
+    public string PhoneRemoteDescription => PhoneRemoteViewModel.RowDescription;
+
+    public string ConnectAPhoneText => PhoneRemoteViewModel.ConnectAPhoneText;
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
@@ -75,6 +90,50 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     }
 
     private void OnEditMpvConfigClick(object sender, RoutedEventArgs e) => EditMpvConfigRequested?.Invoke(this, EventArgs.Empty);
+
+    // Connect a Phone, in a dialog over the window. The code is read while it is open, and goes when it closes; the dialog
+    // closes by itself when the row closes the panel (the receiver stopped listening, the switch went off, the view left).
+    private async void OnConnectAPhoneClick(object sender, RoutedEventArgs e)
+    {
+        if (PhoneRemote is not { CanConnectAPhone: true } remote || XamlRoot is null || remote.IsPanelOpen)
+        {
+            return;
+        }
+        var panel = new ConnectPhonePanel(remote);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+            Title = PhoneRemoteViewModel.ConnectAPhoneText,
+            Content = panel,
+            CloseButtonText = PhoneRemoteViewModel.DoneText,
+            DefaultButton = ContentDialogButton.Close,
+        };
+        void OnPanelChanged(object? s, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(PhoneRemoteViewModel.IsPanelOpen) && !remote.IsPanelOpen)
+            {
+                dialog.Hide();
+            }
+        }
+        remote.OpenPanelCommand.Execute(null);
+        remote.PropertyChanged += OnPanelChanged;
+        try
+        {
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            // Another dialog is open: the panel stays shut.
+            App.Services.GetRequiredService<ILogger<PlaybackSettingsView>>().LogWarning("Connect a Phone could not open ({Error})", ex.GetType().Name);
+        }
+        finally
+        {
+            remote.PropertyChanged -= OnPanelChanged;
+            remote.ClosePanelCommand.Execute(null);
+            panel.Close();
+        }
+    }
 
     // The row moves at once; the keyboard goes with it, on the button pressed, or on the other one once the row has come to
     // the end, so a remote can go on moving it.

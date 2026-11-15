@@ -9,6 +9,7 @@ using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
+using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
 using Granary.Core.Theme;
@@ -149,6 +150,15 @@ public partial class App : Application
         realtime.NotificationArrived += (_, _) => monitors.SyncSoon();
         realtime.Start();
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
+        // The phone remote follows its switch, the session and the PC's address from now on (Settings → Playback → This PC).
+        // Closing lets every phone go, takes the advertisement back and closes the port, within its budget.
+        // A phone starts no title on a locked PC: the window hears of the lock until it closes.
+        var pcLock = Services.GetRequiredService<WindowsPcLock>();
+        pcLock.Follow(WinRT.Interop.WindowNative.GetWindowHandle(_window));
+        _window.Closed += (_, _) => pcLock.Dispose();
+        var remote = Services.GetRequiredService<RemoteReceiver>();
+        remote.Start();
+        _window.Closed += (_, _) => remote.StopAsync().Wait(RemoteReceiver.StopBudget);
         // The Discord status goes with the app.
         _window.Closed += (_, _) => Services.GetRequiredService<DiscordStatus>().Dispose();
 
@@ -239,6 +249,14 @@ public partial class App : Application
         services.AddSingleton<IFolderPicker, WindowsFolderPicker>();
         // A title's Download: the web's download dialog over the main window. Core's own shows nothing.
         services.AddSingleton<IDownloadOptionsDialog, DownloadOptionsDialog>();
+        // The phone remote's ports: a TcpListener on the PC's LAN address, Windows' own DNS-SD registration, and that
+        // address from Windows' adapters. Before Core, whose do-nothing stand-ins they replace.
+        services.AddSingleton<IRemoteListener, TcpRemoteListener>();
+        services.AddSingleton<IServiceAdvertiser, DnssdServiceAdvertiser>();
+        services.AddSingleton<ILanAddressSource, LanAddressSource>();
+        // Whether Windows is locked, from the session's notices for the main window: a phone starts no title then.
+        services.AddSingleton<WindowsPcLock>();
+        services.AddSingleton<IPcLock>(sp => sp.GetRequiredService<WindowsPcLock>());
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

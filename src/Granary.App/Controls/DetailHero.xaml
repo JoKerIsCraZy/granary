@@ -158,6 +158,19 @@
             </ItemsRepeater>
 
             <!--
+                When the series' next episode airs (ItemDetailViewModel.NextAiring.cs), on the series' page and its seasons' and
+                episodes' alike, in the Apple app's words: a neutral chip with a calendar mark; a screen reader reads its text.
+            -->
+            <Border Style="{StaticResource SiloChipStyle}" HorizontalAlignment="Left" Visibility="{x:Bind ViewModel.HasNextAiring, Mode=OneWay}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                    <FontIcon Glyph="&#xE787;" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}"
+                              AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Bind ViewModel.NextAiringText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
+                               Foreground="{StaticResource DetailTextBrush}" />
+                </StackPanel>
+            </Border>
+
+            <!--
                 The logo stands in for the title, at most 170 high and 70 % of the text's width, and takes no room until it is
                 in (or when it fails and the title takes its place); screen readers still get the title.
             -->
@@ -209,12 +222,17 @@
                     <controls:WrapLayout HorizontalSpacing="20" VerticalSpacing="8" />
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
+                    <!-- TMDB's approved logo, 10 high, for its mark, as the web's RatingEntry; every other source by its name. -->
                     <DataTemplate x:DataType="detail:DetailRating">
-                        <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" TextTrimming="CharacterEllipsis" AutomationProperties.Name="{x:Bind AccessibleName}">
-                            <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                 Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
-                            <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
-                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Image Height="10" VerticalAlignment="Center" Source="ms-appx:///Assets/Ratings/tmdb-logo.svg"
+                                   Visibility="{x:Bind ShowsLogo}" AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                       FontSize="13" Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25"
+                                       Visibility="{x:Bind ShowsMark}" AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="{x:Bind Display}" AutomationProperties.Name="{x:Bind AccessibleName}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
+                                       FontSize="15" Foreground="{StaticResource SiloPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
             </ItemsRepeater>

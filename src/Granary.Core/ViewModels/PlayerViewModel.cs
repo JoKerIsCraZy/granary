@@ -128,6 +128,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial bool HasLeft { get; private set; }
 
+    /// <summary>The server title the player was last started with; null before a start and for a file or URL played directly.</summary>
+    public string? ContentId => _request?.ContentId;
+
     /// <summary>The movie, or the series of an episode.</summary>
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
@@ -250,6 +253,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         // Back only now that the title before is cleared, so what follows the player (the taskbar, Windows' media
         // controls, the Discord status) does not show that one again for a moment.
         HasLeft = false;
+        _stallLogged = false;
         LeavePlayback();
         ResetFill();
         ResetLook();
@@ -456,6 +460,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     // A pause also stops the next-up card's countdown.
     private void Pause()
     {
+        // Before the engine pauses: while it still plays, its time can be held against the player's.
+        CheckFollowsEngine();
         _nextUp.Paused(Now);
         ShowNextUp();
         _engine.SetPaused(true);

@@ -10,8 +10,12 @@ namespace Granary.Core.ViewModels.Player;
 /// </summary>
 public sealed class PlayerCursor(TimeProvider time)
 {
-    /// <summary>Moves shorter than this, in view pixels, are jitter, or the framework testing a still pointer again.</summary>
-    public const double MoveThreshold = 2;
+    /// <summary>
+    /// Moves shorter than this, in view pixels, are jitter, a knock on the desk, or the framework testing a still pointer
+    /// again. A tester's mouse lying still reported moves of 2 to 2.8 px now and then, and a hand goes far past this within
+    /// <see cref="MoveWindow"/>.
+    /// </summary>
+    public const double MoveThreshold = 5;
 
     /// <summary>
     /// Small moves count once they add up to <see cref="MoveThreshold"/> within this time; drift, or a knock on the desk now
