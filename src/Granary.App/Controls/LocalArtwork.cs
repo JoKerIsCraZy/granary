@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 
@@ -24,7 +23,7 @@ internal static class LocalArtwork
     /// <summary>
     /// A bitmap of the file at <paramref name="path"/>, filled once it is read; null without a path. A file that cannot be read
     /// or decoded leaves it empty, which raises no ImageFailed: <paramref name="failed"/> hears of it instead, with the bitmap,
-    /// on the UI thread, never before the caller has shown the bitmap.
+    /// on the UI thread.
     /// </summary>
     public static BitmapImage? Load(string? path, int decodeWidth, Action<BitmapImage>? failed = null)
     {
@@ -33,9 +32,7 @@ internal static class LocalArtwork
             return null;
         }
         var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
-        // Read after this returns: a read that fails at once would otherwise report the bitmap before the caller shows it, and
-        // the caller, finding another picture shown, would not take it for a failure to try again.
-        DispatcherQueue.GetForCurrentThread().TryEnqueue(() => Fill(bitmap, path, failed));
+        Fill(bitmap, path, failed);
         return bitmap;
     }
 
@@ -59,7 +56,10 @@ internal static class LocalArtwork
     /// <summary>The file at <paramref name="path"/> in memory, read on the thread pool.</summary>
     public static async Task<InMemoryRandomAccessStream> ReadAsync(string path)
     {
-        byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path));
+        // Always yields, back on the UI thread: a read that failed at once (a file that is gone) would otherwise report
+        // before Load returned, while the caller had not shown the bitmap yet, and so would never be tried again.
+        byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path))
+            .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.ForceYielding);
         var stream = new InMemoryRandomAccessStream();
         try
         {

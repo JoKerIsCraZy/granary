@@ -488,9 +488,11 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   whole status where its lines show it in parts, and `MediaCard.PlainSubtitle` sets a poster's second line in the
   caption's style, which holds more than the overline.
 - A download's artwork comes from its file on this PC (`MediaCard.LocalImagePath`), read on the thread pool by
-  `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name. A
-  hidden still (`BlursImage`) is blurred from that file as a server's is (`SpoilerArtwork.LoadFileAsync`), never decoded
-  sharp, and not kept with the server's blurs; one that fails is read again with the card's next look.
+  `LocalArtwork` and decoded as wide as the card, never through a URI, which could misread a `#` in a folder's name.
+  A file that cannot be read is reported once the card shows its bitmap, never before `LocalArtwork.Load` returned (the
+  read always yields), so the card counts it as failed and its next look reads it again. A hidden still (`BlursImage`)
+  is blurred from that file as a server's is (`SpoilerArtwork.LoadFileAsync`), never decoded sharp, and not kept with the
+  server's blurs; one that fails is read again with the card's next look.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the
