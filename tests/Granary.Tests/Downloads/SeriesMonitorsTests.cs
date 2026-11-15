@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
 
@@ -40,7 +41,7 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
 
     private string PendingPath => Path.Combine(_h.Directory, "data", "monitor-pending.json");
 
-    private MonitorPendingFile PendingFile() => new(PendingPath, _h.Logs.For<MonitorPendingFile>());
+    private MonitorPendingFile PendingFile(string? path = null) => new(path ?? PendingPath, _h.Logs.For<MonitorPendingFile>());
 
     private void ListMonitors(params string[] monitors) =>
         _h.Silo.On(HttpMethod.Get, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, monitors)));
@@ -705,6 +706,42 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         Assert.Equal("\"m1\"", _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path)[^1].IfMatch);
         Assert.Empty(Monitors.Monitors);
         Assert.False(File.Exists(PendingPath));
+    }
+
+    [Fact]
+    public async Task AFileOfWritesStillToSendThatCannotEvenBeLookedAt_IsNotTakenForNone()
+    {
+        // In a folder of its own: this user may not list it while the file is denied.
+        string path = Path.Combine(_h.Directory, "pending", "monitor-pending.json");
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        _monitors = NewMonitors(PendingFile(path));
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+
+        // Granary starts again while this user may not even look at the file, so Windows says it is not there.
+        _monitors = NewMonitors(PendingFile(path));
+        using (new DeniedRead(path))
+        {
+            await Monitors.SyncAsync(Token);
+            await Monitors.PendingSaved;
+        }
+
+        // The stop it holds is not lost: the monitor does not come back, and nothing ran meanwhile.
+        Assert.Empty(Monitors.Monitors);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
+
+        // Once it can be read, the stop goes under the validator it was made with.
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
+        ListMonitors();
+        await Monitors.SyncAsync(Token);
+        await Monitors.PendingSaved;
+
+        Assert.Equal("\"m1\"", _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path)[^1].IfMatch);
+        Assert.False(File.Exists(path));
     }
 
     [Fact]

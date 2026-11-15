@@ -32,18 +32,20 @@ public sealed class MonitorPendingFile(string path, ILogger<MonitorPendingFile> 
 
     /// <summary>
     /// What the file keeps; nothing without it, or for a file that is not one (damaged, logged). Null when it is there but cannot
-    /// be read now (another program holds it): it is read again later, and never written over meanwhile. Never throws.
+    /// be read now (another program holds it, or this user may not look at it): it is read again later, and never written over
+    /// meanwhile. Never throws.
     /// </summary>
     public MonitorPending? Load()
     {
         string json;
         try
         {
-            if (!File.Exists(_path))
-            {
-                return MonitorPending.None;
-            }
+            // Read straight away: File.Exists says false also for a file this user may not look at, which is not "none".
             json = File.ReadAllText(_path);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return MonitorPending.None;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

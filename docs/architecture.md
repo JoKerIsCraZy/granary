@@ -1662,7 +1662,8 @@ titles of their series as a download dialog or a download named them.
   closed goes after it starts again, and its monitor does not come back meanwhile. The file keeps a create's choices still
   waiting too (each one's profile, monitor id, validator and choice), so a restart does not let the monitor's old Delete
   after watching delete what the viewer chose to keep. It is read before the first run or write, written one save after
-  another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it)
+  another off the caller's thread and deleted once nothing is left; one that cannot be read now (another program holds it,
+  or this user may not look at it, which `File.Exists` answers as no file, so the file is read without asking first)
   is read again with the next run or write, and never written over before; until then no run goes (as one that could not
   read the monitors) and a write fails, so nothing deletes on a monitor's old word, brings back a stopped one or is undone
   by what the file holds.
