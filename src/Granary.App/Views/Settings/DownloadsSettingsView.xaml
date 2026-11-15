@@ -38,6 +38,16 @@
                         </StackPanel>
                     </StackPanel>
                 </controls:SettingsRow>
+                <!--
+                    The PC's drives, with their free space, while it has more than one. Windows' folder picker is a window of its
+                    own that takes no controller and that Granary does not read the controller for, so this list is where a
+                    controller chooses: a drive puts new downloads in a Granary folder there (the default folder on its drive).
+                -->
+                <controls:SettingsRow Label="Drive" Description="New downloads go to a Granary folder on the drive you choose. Change picks any folder."
+                                      Visibility="{x:Bind ViewModel.ShowsDrives, Mode=OneWay}">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.Drives, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedDrive, Mode=TwoWay}" AutomationProperties.Name="Drive for new downloads" />
+                </controls:SettingsRow>
                 <controls:SettingsRow Label="Download on metered connections"
                                       Description="Off: downloads wait while Windows says the connection is metered, such as a phone's hotspot.">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DownloadsOnMetered, Mode=TwoWay}"

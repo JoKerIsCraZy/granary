@@ -10,19 +10,22 @@ using static Granary.Tests.Downloads.DownloadHarness;
 namespace Granary.Tests.Downloads;
 
 /// <summary>
-/// Settings → Downloads: the folder new downloads go to (a folder Granary can write, never a drive's root), downloads on
-/// metered connections, and the default quality with the apps' labels.
+/// Settings → Downloads: the folder new downloads go to (a folder Granary can write, never a drive's root), also by drive for
+/// a controller, downloads on metered connections, and the default quality with the apps' labels.
 /// </summary>
 public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
 {
+    private const long GB = 1024L * 1024 * 1024;
+
     private readonly DownloadHarness _h = new();
     private readonly FakeFolderPicker _picker = new();
     private readonly RecordingFileLauncher _launcher = new();
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
 
+    // This PC's own drives are never read: the tests that list drives give their own.
     private DownloadSettingsViewModel Settings(IDownloadPreferences? preferences = null, IUiDispatcher? dispatcher = null) =>
-        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher());
+        new(preferences ?? _h.Preferences, _h.NewFeature(), _picker, _launcher, dispatcher ?? new ImmediateDispatcher()) { DriveList = () => [] };
 
     [Fact]
     public async Task ChangeFolder_TakesAWritableFolder()
@@ -116,6 +119,88 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         Assert.Equal([false], checkedOnUi);
         Assert.Equal(picked, ui.Read(() => settings.Folder));
         Assert.Empty(ui.Failures);
+    }
+
+    // Windows' folder picker takes no controller, so the drives come as a list a controller can pick from as well.
+    private const string DefaultFolder = @"C:\Users\Elena\AppData\Local\Granary\downloads";
+
+    private DownloadSettingsViewModel WithDrives(List<string>? checkedFolders = null, Func<string, bool>? check = null) =>
+        new(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher())
+        {
+            DriveList = () => [new(@"C:\", 120 * GB), new(@"D:\", 2 * GB), new(@"E:\", null)],
+            DefaultFolder = DefaultFolder,
+            FolderCheck = folder =>
+            {
+                checkedFolders?.Add(folder);
+                return check?.Invoke(folder) ?? true;
+            },
+        };
+
+    [Fact]
+    public async Task TheDrives_AreListedWithTheirFreeSpace_TheFoldersOwnChosen()
+    {
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        var settings = WithDrives();
+
+        await settings.LoadAsync(Token);
+
+        Assert.True(settings.ShowsDrives);
+        Assert.Equal(["C: · 120.0 GB free", "D: · 2.0 GB free", "E:"], settings.Drives.Select(d => d.Label));
+        Assert.Equal(@"D:\", settings.SelectedDrive?.Value);
+    }
+
+    [Fact]
+    public async Task ChoosingADrive_PutsNewDownloadsInAGranaryFolderThere_TheDefaultFoldersDriveItsDefaultFolder()
+    {
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        var checkedFolders = new List<string>();
+        var settings = WithDrives(checkedFolders);
+        await settings.LoadAsync(Token);
+
+        settings.SelectedDrive = settings.Drives[2];
+        await settings.DriveChoice;
+
+        Assert.Equal((@"E:\Granary\Downloads", @"E:\Granary\Downloads", ""), (settings.Folder, _h.Preferences.Folder, settings.Status));
+
+        settings.SelectedDrive = settings.Drives[0];
+        await settings.DriveChoice;
+
+        Assert.Equal((DefaultFolder, @"C:\"), (_h.Preferences.Folder, settings.SelectedDrive?.Value));
+        Assert.Equal([@"E:\Granary\Downloads", DefaultFolder], checkedFolders);
+    }
+
+    [Fact]
+    public async Task ADriveThatTakesNoDownloads_IsRefused_AndTheChoiceGoesBack()
+    {
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        var settings = WithDrives(check: _ => false);
+        await settings.LoadAsync(Token);
+
+        settings.SelectedDrive = settings.Drives[2];
+        await settings.DriveChoice;
+
+        Assert.Equal(DownloadSettingsViewModel.FolderRefused, settings.Status);
+        Assert.Equal((@"D:\Media\Downloads", @"D:\"), (_h.Preferences.Folder, settings.SelectedDrive?.Value));
+    }
+
+    [Fact]
+    public async Task OneDrive_OffersNoChoice_AndAFolderChangedElsewhereMovesTheChoice()
+    {
+        var single = new DownloadSettingsViewModel(_h.Preferences, _h.NewFeature(), _picker, _launcher, new ImmediateDispatcher())
+        {
+            DriveList = () => [new(@"C:\", 120 * GB)],
+        };
+        await single.LoadAsync(Token);
+        Assert.False(single.ShowsDrives);
+
+        await _h.Preferences.SetFolderAsync(@"D:\Media\Downloads");
+        var settings = WithDrives();
+        await settings.LoadAsync(Token);
+        _picker.Picked = @"E:\Elena\Downloads";
+
+        await settings.ChangeFolderCommand.ExecuteAsync(null);
+
+        Assert.Equal(@"E:\", settings.SelectedDrive?.Value);
     }
 
     [Fact]

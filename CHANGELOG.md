@@ -15,7 +15,8 @@ release's section is what its update says it changes (docs/release.md).
   take; a download you delete while it still comes leaves this PC at once. Downloads wait on a metered connection unless
   Settings → Downloads allows them, and carry on where they stopped when Granary starts again. X on a controller plays a
   downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
-  and Series, and between a series' seasons. Signing out of a server or
+  and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
+  controller, which Windows' folder picker behind Change does not take. Signing out of a server or
   removing it deletes its downloads after asking. Your Silo server has to allow downloads.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last

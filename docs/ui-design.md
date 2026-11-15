@@ -1164,7 +1164,9 @@ Always:
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
 pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
 seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
-order and Filters are menus, not a row to step through: A opens them.
+order and Filters are menus, not a row to step through: A opens them. Windows' folder picker (Settings → Downloads →
+Change) is a window of its own that takes no controller, and Granary reads none while it is in front; the Drive select
+beside it chooses where downloads go with a controller.
 
 ## Signed-out screens
 
@@ -1488,7 +1490,15 @@ says why above the sections.
   (selectable, wrapping at 360 px) over Open, a link that shows the folder in File Explorer (made first when nothing went
   there yet), and Change (outline), Windows' folder picker starting in Downloads; a folder Granary can't write to, or a
   drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
-  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Download on metered
+  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Drive, while the
+  PC has more than one ("New downloads go to a Granary folder on the drive you choose. Change picks any folder."), a
+  select of its disks, removable and mapped network drives with their free space ("D: · 200.0 GB free", the letter alone
+  when Windows gives none; the list is read for 5 s at most, and without it the row stays away), the folder's own drive
+  chosen (none for a share): another one takes
+  `Granary\Downloads` on it, or the default folder on the default folder's drive, refused as Change refuses. It is how a
+  controller chooses where downloads go: Windows' folder picker is a window of its own, which takes a mouse, a keyboard
+  or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
+  above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
   connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
   phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
