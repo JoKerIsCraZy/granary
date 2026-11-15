@@ -1,5 +1,6 @@
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 
 namespace Granary.Tests.Downloads;
 
@@ -12,7 +13,7 @@ public sealed class DownloadTextTests
             BytesDone: bytesDone, PreparationProgress: preparing, PosterPath: null, MediaFileId: "4567");
 
     [Theory]
-    [InlineData(DownloadState.Preparing, 0.42, 0, DownloadFailure.None, false, false, false, false, "Preparing… 42%")]
+    [InlineData(DownloadState.Preparing, 0.42, 0, DownloadFailure.None, false, false, false, false, "Preparing · 42%")]
     [InlineData(DownloadState.Preparing, null, 0, DownloadFailure.None, false, false, false, false, "Preparing…")]
     [InlineData(DownloadState.Queued, null, 0, DownloadFailure.None, false, false, false, false, "Queued")]
     [InlineData(DownloadState.Downloading, null, 500, DownloadFailure.None, false, false, false, false, "Downloading · 50%")]
@@ -97,5 +98,26 @@ public sealed class DownloadTextTests
         Assert.False(DownloadText.IsComing(waiting));
         Assert.Equal("Paused · metered connection", DownloadText.Status(waiting, bytesPerSecond: 2));
         Assert.True(DownloadText.IsComing(Item(DownloadState.Downloading, bytesDone: 420)));
+    }
+
+    [Fact]
+    public void InGerman_TheStatusQualityAndTimeLeft_AreTheApps()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        var downloading = Item(DownloadState.Downloading, bytesDone: 420);
+
+        Assert.Equal("Wird heruntergeladen · 42 % · 2 B/s · noch 5 Min.", DownloadText.Status(downloading, bytesPerSecond: 2));
+        Assert.Equal("Wird vorbereitet · 42 %", DownloadText.Status(Item(DownloadState.Preparing, preparing: 0.42)));
+        Assert.Equal("In der Warteschlange", DownloadText.Status(Item(DownloadState.Queued)));
+        Assert.Equal("Pausiert · getaktete Verbindung", DownloadText.Status(Item(DownloadState.Queued, metered: true)));
+        Assert.Equal("Heruntergeladen", DownloadText.Status(Item(DownloadState.Completed, bytesDone: 1000)));
+        Assert.Equal("Datei fehlt", DownloadText.Status(Item(DownloadState.Completed, bytesDone: 1000, missing: true)));
+        Assert.Equal("noch unter 1 Min.", DownloadText.TimeLeft(TimeSpan.FromSeconds(29)));
+        Assert.Equal("noch 1 Std.", DownloadText.TimeLeft(TimeSpan.FromMinutes(60)));
+        Assert.Equal("noch 2 Std. 30 Min.", DownloadText.TimeLeft(TimeSpan.FromMinutes(150)));
+        Assert.Equal("12,3 MB/s", DownloadText.Speed(12_897_484));
+        Assert.Equal("Original", DownloadText.QualityLabel(new DownloadQualityOption("original", null, null)));
+        Assert.Equal("1,5 Mbps · bis 720p", DownloadText.QualityLabel(new DownloadQualityOption("2mbps", 1500, 720)));
+        Assert.Equal("10 Mbps", DownloadText.QualityLabel(new DownloadQualityOption("10mbps", null, null)));
     }
 }
