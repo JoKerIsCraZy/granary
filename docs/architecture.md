@@ -1948,7 +1948,8 @@ while the server answers.
   the skips, the marker settings and the sleep timer's duration are the profile's; a batch the server refuses (`422`,
   a key it does not know) is its answer, and a profile whose settings were never read here gets the defaults. A
   stream's read never takes a kept batch. The file is never written before it was read: one that cannot be read
-  now is read again before each write, so one profile's start does not write the other profiles' settings away. The
+  now is read again before each write, so one profile's start does not write the other profiles' settings away, and
+  before each look a start takes at it (`Find`), since a play without the server keeps nothing and so writes nothing. The
   title's subtitle preference is the title's own, since the server resolves
   it from the profile's preference and what the profile chose for the series: each start with the server keeps it in
   the download's record (`DownloadRecord.SubtitlePreference`), and a start without the server uses that. A sign-out
