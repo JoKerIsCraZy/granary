@@ -538,6 +538,31 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AStopFromBeforeARestart_WhoseMonitorChangedSince_IsDropped_NotSentOverTheChange()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        await Monitors.PendingSaved;
+        Monitors.Dispose();
+
+        // Meanwhile the series was set up again on another client: the monitor changed.
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.Problem(412, "precondition_failed"), ScriptedSilo.NoContent());
+        _h.Silo.On(HttpMethod.Get, Monitor1Path, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"")));
+        ListMonitors(MonitorPayloads.Monitor(etag: "\"m2\""));
+        _monitors = NewMonitors(PendingFile());
+        await Monitors.SyncAsync(Token);
+        await Monitors.PendingSaved;
+
+        Assert.Equal(["\"m1\"", "\"m1\""], _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Select(d => d.IfMatch));
+        Assert.Equal("sub_1", Monitors.For("sr_1")?.Id);
+        Assert.False(File.Exists(PendingPath));
+    }
+
+    [Fact]
     public async Task AChoiceTheServerDidNotTake_StillHoldsAfterARestart()
     {
         ListMonitors(MonitorPayloads.Monitor(deleteWatched: true));

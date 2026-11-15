@@ -112,6 +112,7 @@ public sealed partial class SeriesMonitors
                     _pendingStops[scope] = stops = new Dictionary<string, string>(StringComparer.Ordinal);
                 }
                 stops[monitor.Id] = monitor.Etag;
+                _stopsFromBefore.Remove((scope, monitor.Id));
             }
             SavePending();
             _book.Remove(scope, monitor.Id);
@@ -274,8 +275,9 @@ public sealed partial class SeriesMonitors
 
     // The stops still to go for the scope, each under the validator its monitor was last read with. One whose monitor changed
     // since (412, or 409 while the server applied another change) goes once more under its validator read again, as the Apple
-    // app's: a stop does not depend on what changed. One the server will not take is dropped (the list shows the monitor again);
-    // one that got no answer waits for the next run.
+    // app's: a stop does not depend on what changed. Not one kept from before this start: what changed since (someone set the
+    // monitor up again, maybe long after) is newer than the stop, which is dropped. One the server will not take is dropped (the
+    // list shows the monitor again); one that got no answer waits for the next run.
     private async Task SendStopsAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken)
     {
         foreach (var (id, etag) in StopsOf(scope))
@@ -289,6 +291,10 @@ public sealed partial class SeriesMonitors
                 try
                 {
                     await _api.DeleteAsync(server, scope.ProfileId, id, etag, cancellationToken).ConfigureAwait(false);
+                }
+                catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict && IsFromBefore(scope, id))
+                {
+                    _logger.LogInformation("A monitor stopped before this start changed since; its stop is dropped");
                 }
                 catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
                 {
@@ -328,10 +334,19 @@ public sealed partial class SeriesMonitors
         lock (_gate)
         {
             forgot = _pendingStops.TryGetValue(scope, out var stops) && stops.Remove(subscriptionId);
+            _stopsFromBefore.Remove((scope, subscriptionId));
         }
         if (forgot)
         {
             SavePending();
+        }
+    }
+
+    private bool IsFromBefore(DownloadScope scope, string subscriptionId)
+    {
+        lock (_gate)
+        {
+            return _stopsFromBefore.Contains((scope, subscriptionId));
         }
     }
 
@@ -368,7 +383,10 @@ public sealed partial class SeriesMonitors
                 {
                     _pendingStops[stop.Scope] = stops = new Dictionary<string, string>(StringComparer.Ordinal);
                 }
-                stops.TryAdd(stop.SubscriptionId, stop.Etag);
+                if (stops.TryAdd(stop.SubscriptionId, stop.Etag))
+                {
+                    _stopsFromBefore.Add((stop.Scope, stop.SubscriptionId));
+                }
             }
             foreach (var choice in kept.Choices)
             {
