@@ -1625,8 +1625,10 @@ titles of their series as a download dialog or a download named them.
   under the new validator; Granary leaves that to the viewer, who sees what changed), a 404 `Removed`. `StopAsync` takes the
   monitor off the list at once and sends its delete under its validator; a 412 or 409 sends it once more under the validator
   read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
-  back meanwhile. Waiting stops are kept for the run, not on disk: one that never reached the server before Granary closed
-  shows its monitor again at the next start.
+  back meanwhile. Waiting stops are kept on disk (`MonitorStopsFile`, `monitor-stops.json` in the data folder: each one's
+  profile, monitor id and validator, read once before the first run or write, written one save after another off the
+  caller's thread, deleted once none is left), as the Apple app keeps them, so one that never reached the server before
+  Granary closed goes after it starts again, and its monitor does not come back meanwhile.
 - **The dialog's Monitor.** `DownloadOptionsViewModel.Monitor.cs` gives a series' dialog (a `SeriesMonitorTarget` from its
   page or its card) the Apple app's One Time | Monitor while the capability has `series_monitoring` with a mode Granary
   offers, or the series has a monitor. It prefills from the series' monitor, else the Monitoring Defaults and the default

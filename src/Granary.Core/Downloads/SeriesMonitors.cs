@@ -73,6 +73,7 @@ public sealed partial class SeriesMonitors : IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger<SeriesMonitors> _logger;
     private readonly OfflineProgressSync? _progress;
+    private readonly MonitorStopsFile? _stopsFile;
     private readonly SemaphoreSlim _one = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
 
@@ -91,9 +92,11 @@ public sealed partial class SeriesMonitors : IDisposable
     private bool _running;
     private bool _runAgain;
     private Task _latestRun = Task.CompletedTask;
+    private Task _stopsSave = Task.CompletedTask;
+    private bool _stopsLoaded;
 
     public SeriesMonitors(DownloadSubscriptionsApi api, DownloadsApi downloads, DownloadStore store, MonitorBook book, DownloadManager manager,
-        ISessionManager session, TimeProvider time, ILogger<SeriesMonitors> logger, OfflineProgressSync? progress = null)
+        ISessionManager session, TimeProvider time, ILogger<SeriesMonitors> logger, OfflineProgressSync? progress = null, MonitorStopsFile? stops = null)
     {
         _api = api;
         _downloads = downloads;
@@ -104,6 +107,7 @@ public sealed partial class SeriesMonitors : IDisposable
         _time = time;
         _logger = logger;
         _progress = progress;
+        _stopsFile = stops;
     }
 
     /// <summary>Raised on any thread when the active profile's monitors may have changed.</summary>
@@ -184,6 +188,7 @@ public sealed partial class SeriesMonitors : IDisposable
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
+            await LoadStopsAsync().ConfigureAwait(false);
             await RunOnceAsync(linked.Token).ConfigureAwait(false);
         }
         finally

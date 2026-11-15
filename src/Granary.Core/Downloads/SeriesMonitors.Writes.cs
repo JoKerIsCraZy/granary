@@ -93,8 +93,8 @@ public sealed partial class SeriesMonitors
 
     /// <summary>
     /// Stops monitoring: the monitor leaves the list at once, and its delete goes under its validator, now or, while the server
-    /// cannot be reached, with a later run while Granary runs (it is not kept on disk); the list does not bring it back
-    /// meanwhile. The downloads it registered stay.
+    /// cannot be reached, with a later run, also after Granary starts again (<see cref="MonitorStopsFile"/>); the list does not
+    /// bring it back meanwhile. The downloads it registered stay.
     /// </summary>
     public async Task<MonitorResult> StopAsync(string subscriptionId, CancellationToken cancellationToken)
     {
@@ -113,6 +113,7 @@ public sealed partial class SeriesMonitors
                 }
                 stops[monitor.Id] = monitor.Etag;
             }
+            SaveStops();
             _book.Remove(scope, monitor.Id);
             Confirm(scope, monitor.Id);
             await SendStopsAsync(scope, server, token).ConfigureAwait(false);
@@ -132,6 +133,7 @@ public sealed partial class SeriesMonitors
         await _one.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
+            await LoadStopsAsync().ConfigureAwait(false);
             return IsStill(scope) ? await write(scope, server, _stop.Token).ConfigureAwait(false) : MonitorResult.Unavailable;
         }
         finally
@@ -312,12 +314,70 @@ public sealed partial class SeriesMonitors
 
     private void ForgetStop(DownloadScope scope, string subscriptionId)
     {
+        bool forgot;
         lock (_gate)
         {
-            if (_pendingStops.TryGetValue(scope, out var stops))
+            forgot = _pendingStops.TryGetValue(scope, out var stops) && stops.Remove(subscriptionId);
+        }
+        if (forgot)
+        {
+            SaveStops();
+        }
+    }
+
+    /// <summary>For tests: the latest write of the stops still to send; done once it is on disk, or failed and logged.</summary>
+    internal Task StopsSaved
+    {
+        get
+        {
+            lock (_gate)
             {
-                stops.Remove(subscriptionId);
+                return _stopsSave;
             }
+        }
+    }
+
+    // Under _one, once: the stops a run before this one could not send, read off the caller's thread. A stop made since stays.
+    private async Task LoadStopsAsync()
+    {
+        if (_stopsLoaded || _stopsFile is not { } file)
+        {
+            return;
+        }
+        var kept = await Task.Run(file.Load).ConfigureAwait(false);
+        lock (_gate)
+        {
+            _stopsLoaded = true;
+            foreach (var stop in kept)
+            {
+                if (!_pendingStops.TryGetValue(stop.Scope, out var stops))
+                {
+                    _pendingStops[stop.Scope] = stops = new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+                stops.TryAdd(stop.SubscriptionId, stop.Etag);
+            }
+        }
+    }
+
+    // Every scope's stops as they are now, written one save after another on the thread pool, so the last written is the latest;
+    // it never throws, so the chain never breaks.
+    private void SaveStops()
+    {
+        if (_stopsFile is not { } file)
+        {
+            return;
+        }
+        lock (_gate)
+        {
+            _stopsSave = _stopsSave.ContinueWith(_ =>
+            {
+                List<PendingStop> stops;
+                lock (_gate)
+                {
+                    stops = [.. _pendingStops.SelectMany(scope => scope.Value.Select(stop => new PendingStop(scope.Key, stop.Key, stop.Value)))];
+                }
+                file.Save(stops);
+            }, CancellationToken.None, TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default);
         }
     }
 

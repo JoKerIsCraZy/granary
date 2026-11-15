@@ -33,8 +33,10 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
         await _h.DisposeAsync();
     }
 
-    private SeriesMonitors Monitors => _monitors ??= new SeriesMonitors(new DownloadSubscriptionsApi(_h.Silo.Http), _h.Api, _h.Store, _book,
-        _h.NewManager(), _h.Session, _h.Time, _h.Logs.For<SeriesMonitors>());
+    private SeriesMonitors Monitors => _monitors ??= NewMonitors();
+
+    private SeriesMonitors NewMonitors(MonitorStopsFile? stops = null) => new(new DownloadSubscriptionsApi(_h.Silo.Http), _h.Api, _h.Store, _book,
+        _h.NewManager(), _h.Session, _h.Time, _h.Logs.For<SeriesMonitors>(), stops: stops);
 
     private void ListMonitors(params string[] monitors) =>
         _h.Silo.On(HttpMethod.Get, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Page(null, monitors)));
@@ -482,6 +484,36 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
 
         Assert.Equal(3, _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path).Count);
         Assert.Empty(Monitors.Monitors);
+    }
+
+    [Fact]
+    public async Task AStopThatDidNotReachTheServer_IsSentAfterARestart_AndTheListDoesNotBringItBackMeanwhile()
+    {
+        string path = Path.Combine(_h.Directory, "data", "monitor-stops.json");
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync());
+        _monitors = NewMonitors(new MonitorStopsFile(path, _h.Logs.For<MonitorStopsFile>()));
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NetworkError());
+        await Monitors.StopAsync("sub_1", Token);
+        await Monitors.StopsSaved;
+        Monitors.Dispose();
+
+        // Granary starts again, still without reaching the server for the stop: the list does not bring the monitor back.
+        _monitors = NewMonitors(new MonitorStopsFile(path, _h.Logs.For<MonitorStopsFile>()));
+        await Monitors.SyncAsync(Token);
+        Assert.Empty(Monitors.Monitors);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Post, SyncPath));
+
+        // Then it reaches it: the stop goes under the validator it was made with, and is forgotten on disk too.
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
+        ListMonitors();
+        await Monitors.SyncAsync(Token);
+        await Monitors.StopsSaved;
+
+        Assert.Equal("\"m1\"", _h.Silo.SentTo(HttpMethod.Delete, Monitor1Path)[^1].IfMatch);
+        // None is left to send: the file goes.
+        Assert.False(File.Exists(path));
     }
 
     [Fact]

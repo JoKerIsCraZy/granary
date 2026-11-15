@@ -339,6 +339,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadManager>();
         // Series monitors: their list for the queue's storage limits and the pages, and the runs that sync them with the server.
         services.AddSingleton<MonitorBook>();
+        // The monitor stops that have not reached the server yet, kept across starts.
+        services.AddSingleton(sp => new MonitorStopsFile(MonitorStopsFile.DefaultPath, sp.GetRequiredService<ILogger<MonitorStopsFile>>()));
         services.AddSingleton<SeriesMonitors>();
         // The airing calendar and the monitored series' titles and posters, for the Monitored list and the download dialog.
         services.AddSingleton<ViewModels.Downloads.MonitorSchedule>();
