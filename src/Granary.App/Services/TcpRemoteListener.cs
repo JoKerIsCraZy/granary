@@ -119,11 +119,14 @@ public sealed class TcpRemoteListener(TimeProvider time, ILogger<TcpRemoteListen
         {
             socket.NoDelay = true;
             var peer = (socket.RemoteEndPoint as IPEndPoint)?.Address ?? throw new SocketException((int)SocketError.NotConnected);
+            // Throws IOException for a socket that is no longer connected: a peer that connected and reset at once.
             return new AcceptedConnection(new NetworkStream(socket, ownsSocket: true), peer, socket);
         }
-        catch (Exception ex) when (ex is SocketException or ObjectDisposedException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            // A peer that went away as it was accepted: that connection failed, not the listener.
+            // Whatever failed after the accept, the socket is closed here and now, not left to the finalizer: a host on the
+            // network that connects and resets again and again must not pile up handles. The listener is fine: that one
+            // connection failed.
             socket.Dispose();
             throw new IOException("A connection ended as it was accepted.", ex);
         }
