@@ -1672,8 +1672,9 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   (`WTSQuerySessionInformationW` with `WTSSessionInfoEx`: `SessionFlags` `WTS_SESSIONSTATE_LOCK`, freed with
   `WTSFreeMemory`), and read again at a connect. A lock or a disconnect (console or remote: nobody sits at the session,
   and whoever connects again signs in first) counts as locked, an unlock as unlocked (`SessionLockState`, tested apart
-  from Windows in `SessionLockStateTests`). It reads only whether the session is locked and connected, and logs only "The
-  PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
+  from Windows in `SessionLockStateTests`). It fails closed: should Windows not take the window for the notices, the
+  session is read at each launch, and what Windows cannot say counts as locked, asked again at the next launch. It reads
+  only whether the session is locked and connected, and logs only "The PC locked" and "The PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
   depends on the lock.
 - **The "Starting" notice.** The receiver raises `Launched` with the phone's name and the request just before it opens
   the player; the window keeps it and, when it makes the player for that very request (it may wait for the player before

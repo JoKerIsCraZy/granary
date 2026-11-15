@@ -86,6 +86,32 @@ public sealed class SessionLockStateTests
         Assert.False(state.IsLocked);
     }
 
+    [Fact]
+    public void WithoutTheNotices_EveryAnswerIsReadAnew()
+    {
+        // Windows did not take the window for the session's notices: each launch asks it.
+        var state = new SessionLockState(Read);
+
+        _read = false;
+        Assert.False(state.IsLocked);
+        _read = true;
+        Assert.True(state.IsLocked);
+        Assert.Equal(2, _reads);
+    }
+
+    [Fact]
+    public void WhatWindowsCannotSay_CountsAsLocked()
+    {
+        _read = null;
+
+        Assert.True(new SessionLockState(Read).IsLocked);
+        var followed = Following();
+        Assert.True(followed.IsLocked);
+        // It is asked again until it can say.
+        _read = false;
+        Assert.False(followed.IsLocked);
+    }
+
     [Theory]
     [InlineData(SessionLock.Active, SessionLock.FlagLocked, true)]
     [InlineData(SessionLock.Active, SessionLock.FlagUnlocked, false)]

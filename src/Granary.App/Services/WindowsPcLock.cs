@@ -10,8 +10,9 @@ namespace Granary.App.Services;
 /// for the session's notices for the main window (<c>WTSRegisterSessionNotification</c>), reads the session's state once
 /// as they begin (<c>WTSQuerySessionInformationW</c>, <c>WTSSessionInfoEx</c>), since a PC still locked as Granary starts
 /// with Windows sends no notice, and then follows the notices through the window's message hook
-/// (<see cref="WindowMessageHook"/>); <see cref="SessionLockState"/> decides. It reads only whether the session is locked
-/// and connected, and logs only that the PC locked or unlocked.
+/// (<see cref="WindowMessageHook"/>); <see cref="SessionLockState"/> decides. It fails closed: should Windows not take the
+/// window for the notices, the session is read at each question, and what Windows cannot say counts as locked. It reads
+/// only whether the session is locked and connected, and logs only that the PC locked or unlocked.
 /// </summary>
 internal sealed partial class WindowsPcLock : IPcLock, IDisposable
 {
@@ -49,7 +50,8 @@ internal sealed partial class WindowsPcLock : IPcLock, IDisposable
         if (!WTSRegisterSessionNotification(hwnd, ThisSession))
         {
             WindowMessageHook.SessionChanged -= OnSessionChanged;
-            _logger.LogWarning("The PC's lock cannot be followed (error {Error})", Marshal.GetLastPInvokeError());
+            _logger.LogWarning("The PC's lock cannot be followed (error {Error}); it is read at each launch from a phone",
+                Marshal.GetLastPInvokeError());
             return;
         }
         _hwnd = hwnd;
@@ -91,10 +93,19 @@ internal sealed partial class WindowsPcLock : IPcLock, IDisposable
         }
     }
 
-    // Whether this session is locked or disconnected now; null when Windows does not say.
+    // Whether this session is locked or disconnected now; null when Windows does not say, which counts as locked.
     private static bool? ReadSession()
     {
-        if (!WTSQuerySessionInformationW(CurrentServer, CurrentSession, SessionInfoEx, out nint buffer, out uint bytes))
+        nint buffer;
+        uint bytes;
+        try
+        {
+            if (!WTSQuerySessionInformationW(CurrentServer, CurrentSession, SessionInfoEx, out buffer, out bytes))
+            {
+                return null;
+            }
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
             return null;
         }

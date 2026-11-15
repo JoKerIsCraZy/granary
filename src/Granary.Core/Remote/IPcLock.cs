@@ -6,7 +6,7 @@ namespace Granary.Core.Remote;
 /// </summary>
 public interface IPcLock
 {
-    /// <summary>The PC is locked now; false until Windows says otherwise.</summary>
+    /// <summary>The PC is locked now, or it cannot be told whether it is: a launch is refused either way.</summary>
     bool IsLocked { get; }
 }
 
