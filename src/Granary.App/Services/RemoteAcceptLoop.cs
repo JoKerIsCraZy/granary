@@ -12,9 +12,9 @@ namespace Granary.App.Services;
 /// A connection that fails as it is accepted is skipped, whatever a peer does: a peer could make every accept fail, and
 /// it must neither stop the loop nor make it spin, so failures that come back to back are waited out, a little longer each
 /// time, up to <see cref="LongestBackoff"/>. Only a failure of the listener itself ends the loop: an error of its own, or
-/// accepts that go on failing for want of sockets or buffers for <see cref="GiveUpAfter"/> without one getting through,
-/// <see cref="ShortagesToGiveUp"/> of them at least (out of sockets for good). A peer's resets and broken connections
-/// never end it, however long they go on, nor hide such a shortage.
+/// no connection getting through for <see cref="GiveUpAfter"/> while <see cref="ShortagesToGiveUp"/> accepts or more in
+/// that time failed for want of sockets or buffers (out of them for good). A peer's resets and broken connections never
+/// end it, however long they go on, nor hide such a shortage; a shortage now and then is none.
 /// The owner is told (<c>onFailed</c>), so no port stays open and advertised that nobody answers.
 /// </para>
 /// It logs by fixed phrases and an exception's type and code only (<see cref="RemoteLog"/>): a socket's message can name
@@ -35,8 +35,9 @@ internal sealed class RemoteAcceptLoop
     public static readonly TimeSpan GiveUpAfter = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// How many accepts must have failed for want of sockets or buffers within that time: a few among a peer's resets are
-    /// no lasting shortage. A lasting one fails at least once a second (<see cref="LongestBackoff"/>), far more than this.
+    /// How many accepts must have failed for want of sockets or buffers within the last <see cref="GiveUpAfter"/>: a few
+    /// among a peer's resets, or now and then over minutes, are no lasting shortage. A lasting one fails at least once a
+    /// second (<see cref="LongestBackoff"/>), and every other second with a peer's resets among it: more than this.
     /// </summary>
     public const int ShortagesToGiveUp = 10;
 
@@ -119,10 +120,11 @@ internal sealed class RemoteAcceptLoop
     private async Task LoopAsync(CancellationToken stop)
     {
         int failures = 0;
-        // Since the first accept failed for want of sockets or buffers, and how many have since; both start anew only when a
-        // connection gets through. A peer's resets among them neither hide a lasting shortage nor make one of a few.
-        long? shortSince = null;
-        int shortages = 0;
+        // Since when no connection has got through, and when accepts failed for want of sockets or buffers within the last
+        // GiveUpAfter: a lasting shortage fills that window, a few far apart never do, and a peer's resets among them change
+        // neither. Both start anew when a connection gets through.
+        long? failingSince = null;
+        var shortages = new Queue<long>();
         while (!IsStopped)
         {
             IRemoteConnection connection;
@@ -143,14 +145,20 @@ internal sealed class RemoteAcceptLoop
                     _logger.LogDebug("A connection ended while it was accepted ({Error})", RemoteLog.Failure(ex));
                 }
                 // Only a shortage on this PC can last: a peer's resets and broken connections never end the loop, however
-                // long they go on. A shortage that went on for the half minute, with enough of them, does.
+                // long they go on. Nothing got through for the half minute, and its accepts kept failing for want of
+                // sockets or buffers: that does.
+                long now = _time.GetTimestamp();
+                failingSince ??= now;
                 if (IsShortage(ex))
                 {
-                    shortSince ??= _time.GetTimestamp();
-                    shortages++;
+                    shortages.Enqueue(now);
                 }
-                if (IsShortage(ex) && shortages >= ShortagesToGiveUp && shortSince is { } since
-                    && _time.GetElapsedTime(since) >= GiveUpAfter)
+                while (shortages.TryPeek(out long oldest) && _time.GetElapsedTime(oldest, now) > GiveUpAfter)
+                {
+                    shortages.Dequeue();
+                }
+                if (IsShortage(ex) && shortages.Count >= ShortagesToGiveUp
+                    && _time.GetElapsedTime(failingSince.Value, now) >= GiveUpAfter)
                 {
                     _logger.LogWarning("The phone remote's listener stopped taking connections: {Count} failed in a row, none got through ({Error})",
                         failures, RemoteLog.Failure(ex));
@@ -174,8 +182,8 @@ internal sealed class RemoteAcceptLoop
                 _logger.LogDebug("{Count} connections in a row ended while they were accepted", failures);
             }
             failures = 0;
-            shortSince = null;
-            shortages = 0;
+            failingSince = null;
+            shortages.Clear();
             if (IsStopped)
             {
                 await CloseAsync(connection).ConfigureAwait(false);

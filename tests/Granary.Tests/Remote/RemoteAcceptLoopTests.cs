@@ -267,6 +267,35 @@ public sealed class RemoteAcceptLoopTests : IDisposable
     }
 
     [Fact]
+    public async Task ShortagesFarApart_AmongAPeersResets_NeverStopTheLoop()
+    {
+        // A shortage now and then over minutes is no lasting one, however many come together in the end.
+        var source = Source();
+        var handed = new TaskCompletionSource<IRemoteConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var loop = Loop(source, connection =>
+        {
+            handed.TrySetResult(connection);
+            return Task.CompletedTask;
+        });
+        loop.Start();
+        for (int run = 0; run < 2 * RemoteAcceptLoop.ShortagesToGiveUp; run++)
+        {
+            source.Fail(new SocketException((int)SocketError.TooManyOpenSockets));
+            for (int i = 0; i < 40; i++)
+            {
+                source.Fail(new SocketException((int)SocketError.ConnectionReset));
+            }
+        }
+        var good = NewConnection();
+        source.Give(good);
+
+        await FireTimersUntilAsync(handed.Task);
+
+        Assert.Same(good, await handed.Task);
+        Assert.Equal(0, Volatile.Read(ref _failures));
+    }
+
+    [Fact]
     public async Task AGoodConnection_StartsTheHalfMinuteAnew()
     {
         var source = Source();
