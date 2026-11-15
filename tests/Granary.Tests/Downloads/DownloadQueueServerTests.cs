@@ -452,6 +452,24 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnActivationThatFailed_ForAProfileSignedOutSince_DoesNotKeepTheQueueLooking()
+    {
+        await _h.AddAsync("dl_1");
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => throw new InvalidOperationException("The test's server broke."));
+        var queue = _h.StartQueue();
+        await Until(() => _h.Logs.All.Contains("A pass of the download queue failed", StringComparison.Ordinal), "the activation failed");
+        _h.SignOut();
+        await IdleAsync(queue);
+
+        // The minute the failed activation waits passes with nobody signed in: the queue looks and goes idle again (settling
+        // waits for that), instead of looking again at once, pass after pass.
+        await _h.AdvanceAsync(DownloadQueue.RetryDelays[^1], queue);
+        await _h.AdvanceAsync(DownloadQueue.RetryDelays[^1], queue);
+
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, CapabilityPath));
+    }
+
+    [Fact]
     public async Task ARefusalWhoseRegistryReadFails_IsLookedUpAgainLater()
     {
         await _h.AddAsync("dl_1");

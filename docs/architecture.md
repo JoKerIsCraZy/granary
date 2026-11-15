@@ -1441,7 +1441,8 @@ client guide.
   reconciles, both before the scope's first transfer starts, and the server work reads completed downloads' manifests again
   that are a day old (`ManifestRefresh`). The scope counts as active only once that went through: an activation that
   failed is done again a minute later, or at once for another profile or a new session; a wake before then does not ask
-  the server again. A pass takes the scope, its server and the session's
+  the server again. A pass that finds no scope to run (signed out, a sign-in that failed, a sign-out under way) drops that
+  retry, so its time never has the loop look again pass after pass; the scope activates anew once it can run. A pass takes the scope, its server and the session's
   generation together, and starts no transfer once another scope is the active one.
 - **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
   counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
