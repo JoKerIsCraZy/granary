@@ -74,6 +74,24 @@ public sealed class JsonDownloadPreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task TheMonitoringDefaults_AreKeepWatchedAndUnlimited_AndStay()
+    {
+        var preferences = Create();
+        Assert.Equal((false, 0), (preferences.DefaultDeleteWatched, preferences.DefaultMonitorLimitGb));
+
+        await preferences.SetDefaultDeleteWatchedAsync(true);
+        await preferences.SetDefaultMonitorLimitGbAsync(25);
+
+        string file = await File.ReadAllTextAsync(FilePath, Token);
+        Assert.Contains("\"default_delete_watched\": true", file, StringComparison.Ordinal);
+        Assert.Contains("\"default_monitor_limit_gb\": 25", file, StringComparison.Ordinal);
+        Assert.Equal((true, 25), (Create().DefaultDeleteWatched, Create().DefaultMonitorLimitGb));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => preferences.SetDefaultMonitorLimitGbAsync(1001));
+        await File.WriteAllTextAsync(FilePath, "{ \"default_monitor_limit_gb\": 5000 }", Token);
+        Assert.Equal(1000, Create().DefaultMonitorLimitGb);
+    }
+
+    [Fact]
     public async Task TheStorageLimitForDownloads_IsOffByDefault_AndStays()
     {
         var preferences = Create();

@@ -90,5 +90,23 @@
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
+
+        <!--
+            The Apple app's Monitoring Defaults: what a new monitor starts with in the download dialog's Monitor. Its stepper is
+            a number box with spin buttons, 0 to 1000 GB in steps of 5, named as the Apple app names it.
+        -->
+        <controls:SettingsGroup Title="Monitoring Defaults" Description="What a new monitored series starts with. Each one keeps its own.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Delete after watching">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DefaultDeleteWatched, Mode=TwoWay}"
+                                  AutomationProperties.Name="Delete after watching" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{x:Bind ViewModel.DefaultMonitorLimitText, Mode=OneWay}">
+                    <NumberBox Minimum="0" Maximum="{x:Bind ViewModel.DefaultMonitorLimitMaxGb}" SmallChange="{x:Bind ViewModel.DefaultMonitorLimitStepGb}"
+                               LargeChange="50" SpinButtonPlacementMode="Inline" Width="160"
+                               Value="{x:Bind ViewModel.DefaultMonitorLimitGb, Mode=TwoWay}" AutomationProperties.Name="Storage limit in GB" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
     </StackPanel>
 </UserControl>

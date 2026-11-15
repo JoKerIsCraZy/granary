@@ -29,7 +29,8 @@ release's section is what its update says it changes (docs/release.md).
   like any other download, in episode order. A monitor with Delete after watching deletes the episodes you finished at
   the end of each of these runs, never the one that plays. A monitor's storage limit holds back the episodes that would pass it, and so
   does Settings → Downloads → Storage limit for downloads, a slider, which the download dialog keeps to as well; nothing
-  is deleted to make room. Signing out leaves your monitors on the server.
+  is deleted to make room. Settings → Downloads → Monitoring Defaults says what a new monitor starts with: Delete after
+  watching, and a storage limit. Signing out leaves your monitors on the server.
 - **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
   tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
   read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server

@@ -1544,7 +1544,12 @@ says why above the sections.
   finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
   own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
   Granary is in the background."): off, neither the notice nor the notification comes (Downloads outside their page,
-  Layout above). Each saves on this PC at once (`download-settings.json`).
+  Layout above). Then Monitoring Defaults, the Apple app's section ("What a new monitored series starts with. Each one
+  keeps its own.", Granary's words): Delete after watching, a switch, off by default; and the storage limit, the Apple
+  app's stepper as a number box with spin buttons, 0 to 1000 GB in steps of 5 (a number typed in is held to them), its
+  row named as the Apple app names it ("Storage limit: 25 GB", "Storage limit: Unlimited" at 0). They only fill in the
+  download dialog's Monitor for a series not monitored yet. Each saves on this PC at once (`download-settings.json`; the
+  storage limit for downloads once its slider rests).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

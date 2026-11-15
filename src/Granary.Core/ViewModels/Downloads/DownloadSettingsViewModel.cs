@@ -21,7 +21,8 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// download dialog starts on, labelled as the apps label presets; Keep watched downloads, off by default as both apps have
 /// it, which only hides the Downloads page's suggestion to free up space; whether Granary says when downloads finish or
 /// fail, on by default; and how many downloads come at once, the Apple app's Simultaneous Downloads (1 to 4, two by
-/// default); and Granary's own storage limit for downloads, a slider saved once it rests (<see cref="SliderRest"/>). A folder is
+/// default); the Apple app's Monitoring Defaults, which fill in a new monitor (Delete after watching, and a storage limit in
+/// its stepper's steps of 5 GB up to 1000); and Granary's own storage limit for downloads, a slider saved once it rests (<see cref="SliderRest"/>). A folder is
 /// taken only when Granary can write there,
 /// which is tried off the UI thread, and never a drive's or a share's root.
 /// </summary>
@@ -74,6 +75,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         KeepWatched = preferences.KeepWatched;
         NotifyWhenFinished = preferences.NotifyWhenFinished;
         StorageLimitGb = preferences.StorageLimitGb;
+        DefaultDeleteWatched = preferences.DefaultDeleteWatched;
+        DefaultMonitorLimitGb = preferences.DefaultMonitorLimitGb;
         _showing = true;
         try
         {
@@ -115,6 +118,26 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
 
     /// <summary>The highest limit the slider offers, in GB.</summary>
     public double StorageLimitMaxGb => DownloadPreferenceLimits.MaxStorageLimitGb;
+
+    /// <summary>Monitoring Defaults: a new monitor starts with Delete after watching.</summary>
+    [ObservableProperty]
+    public partial bool DefaultDeleteWatched { get; set; }
+
+    /// <summary>Monitoring Defaults: the storage limit a new monitor starts with, in GB; 0 for none. The stepper's value.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DefaultMonitorLimitText))]
+    public partial double DefaultMonitorLimitGb { get; set; }
+
+    /// <summary>The Apple app's words: "Storage limit: 25 GB", "Storage limit: Unlimited".</summary>
+    public string DefaultMonitorLimitText => MonitorLimitGb(DefaultMonitorLimitGb) is var gb and > 0
+        ? $"Storage limit: {gb.ToString(CultureInfo.InvariantCulture)} GB"
+        : "Storage limit: Unlimited";
+
+    /// <summary>The highest limit the stepper offers, in GB.</summary>
+    public double DefaultMonitorLimitMaxGb => DownloadPreferenceLimits.MaxMonitorLimitGb;
+
+    /// <summary>The stepper's step, in GB.</summary>
+    public double DefaultMonitorLimitStepGb => DownloadPreferenceLimits.MonitorLimitStepGb;
 
     /// <summary>The Apple app's Simultaneous Downloads: 1 to 4.</summary>
     public IReadOnlyList<SettingChoice> SimultaneousChoices { get; } =
@@ -293,6 +316,34 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             _ = _preferences.SetNotifyWhenFinishedAsync(value);
         }
     }
+
+    partial void OnDefaultDeleteWatchedChanged(bool value)
+    {
+        if (value != _preferences.DefaultDeleteWatched)
+        {
+            _ = _preferences.SetDefaultDeleteWatchedAsync(value);
+        }
+    }
+
+    // A stepper's step is saved as it is made; a number typed in is held to the steps and the range first, and shown so.
+    partial void OnDefaultMonitorLimitGbChanged(double value)
+    {
+        int limit = MonitorLimitGb(value);
+        if (limit != value)
+        {
+            DefaultMonitorLimitGb = limit;
+            return;
+        }
+        if (limit != _preferences.DefaultMonitorLimitGb)
+        {
+            _ = _preferences.SetDefaultMonitorLimitGbAsync(limit);
+        }
+    }
+
+    private static int MonitorLimitGb(double value) => double.IsFinite(value)
+        ? (int)Math.Clamp(Math.Round(value / DownloadPreferenceLimits.MonitorLimitStepGb, MidpointRounding.AwayFromZero) * DownloadPreferenceLimits.MonitorLimitStepGb,
+            0, DownloadPreferenceLimits.MaxMonitorLimitGb)
+        : 0;
 
     // A drag moves the value many times: it is saved once the slider rests, as its last value.
     partial void OnStorageLimitGbChanged(double value)

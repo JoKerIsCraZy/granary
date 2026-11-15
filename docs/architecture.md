@@ -1564,7 +1564,9 @@ client guide.
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
   downloads, Notify when downloads finish) and each select as it is chosen (Simultaneous Downloads, which the queue reads
-  at every pass and whose change wakes it), and the storage limit for downloads once its slider rests for `SliderRest`
+  at every pass and whose change wakes it), Monitoring Defaults (Delete after watching, and the storage limit a new monitor
+  starts with, held to the Apple app's stepper: 0 to 1000 GB in fives) as they change, and the storage limit for downloads
+  once its slider rests for `SliderRest`
   (half a second), on the `TimeProvider`, so a drag is one save and takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no

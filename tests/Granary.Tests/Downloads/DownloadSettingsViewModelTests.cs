@@ -41,6 +41,25 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public void MonitoringDefaults_SaveDeleteAfterWatching_AndAStorageLimitInStepsOfFive()
+    {
+        var settings = Settings();
+        Assert.Equal((false, 0d, "Storage limit: Unlimited"), (settings.DefaultDeleteWatched, settings.DefaultMonitorLimitGb, settings.DefaultMonitorLimitText));
+
+        settings.DefaultDeleteWatched = true;
+        settings.DefaultMonitorLimitGb = 25;
+
+        Assert.Equal((true, 25), (_h.Preferences.DefaultDeleteWatched, _h.Preferences.DefaultMonitorLimitGb));
+        Assert.Equal("Storage limit: 25 GB", settings.DefaultMonitorLimitText);
+
+        // A number typed in is held to the stepper's steps and range.
+        settings.DefaultMonitorLimitGb = 23;
+        Assert.Equal(25, _h.Preferences.DefaultMonitorLimitGb);
+        settings.DefaultMonitorLimitGb = 4000;
+        Assert.Equal(1000, _h.Preferences.DefaultMonitorLimitGb);
+    }
+
+    [Fact]
     public void TheStorageLimitForDownloads_SaysItsLimit_AndIsSavedOnceTheSliderRests()
     {
         var settings = Settings();
@@ -424,6 +443,14 @@ public sealed class DownloadSettingsViewModelTests : IAsyncDisposable
         public int SimultaneousDownloads => 2;
 
         public int StorageLimitGb => 0;
+
+        public bool DefaultDeleteWatched => false;
+
+        public int DefaultMonitorLimitGb => 0;
+
+        public Task SetDefaultDeleteWatchedAsync(bool delete) => Task.CompletedTask;
+
+        public Task SetDefaultMonitorLimitGbAsync(int gigabytes) => Task.CompletedTask;
 
         public Task SetStorageLimitGbAsync(int gigabytes) => Task.CompletedTask;
 
