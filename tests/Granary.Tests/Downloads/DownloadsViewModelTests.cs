@@ -344,7 +344,7 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         await PickAsync(page, "dl_1", "Delete download");
 
-        Assert.Equal(("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
+        Assert.Equal(("Delete this download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
             Assert.Single(_confirmation.Asked));
         Assert.NotNull(_h.Find("dl_1"));
         Assert.Single(Cards(page));

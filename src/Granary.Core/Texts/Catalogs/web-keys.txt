@@ -1281,6 +1281,11 @@ web.detail.actions.addToFavorites
 web.detail.actions.addToWatchlist
 web.detail.actions.browseSeries
 
+# A title's Download item, as the web's ActionBar.tsx names it: the title page's and the cards' (src/Granary.Core/Downloads/
+# DownloadActions.cs and CardDownloads.cs), and the reason the download dialog gives for a title without a file
+# (DownloadOffers.cs), as the web's MediaInfoDialog.tsx says it.
+web.detail.actions.download
+
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
 web.detail.actions.markSeasonUnwatched
 web.detail.actions.markSeasonWatched
@@ -1382,6 +1387,11 @@ web.detail.mediaInfo.embedded
 web.detail.mediaInfo.external
 web.detail.mediaInfo.forced
 web.detail.mediaInfo.hearingImpairedShort
+
+# More of a title's Download words, as above under web.detail.actions.download.
+web.detail.mediaInfo.noFiles
+
+# More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.
 web.detail.mediaInfo.row.bitrate
 web.detail.mediaInfo.row.container
 web.detail.mediaInfo.row.duration

@@ -166,7 +166,7 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         _confirmation.Answer = true;
         await page.DeleteDownloadCommand.ExecuteAsync(null);
 
-        Assert.Equal(("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
+        Assert.Equal(("Delete this download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
             _confirmation.Asked[0]);
         Assert.Null(_h.Find("dl_1"));
         await Until(() => page.DownloadLabel == "Download" && !page.CanDeleteDownload, "the item offered Download again");

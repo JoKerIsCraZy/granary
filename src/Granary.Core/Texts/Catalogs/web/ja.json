@@ -7987,6 +7987,12 @@
       "value": "シリーズを見る"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "ダウンロード"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -8576,6 +8582,12 @@
     {
       "type": 0,
       "value": "SDH"
+    }
+  ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "このアイテムにはメディアファイルがありません。"
     }
   ],
   "web.detail.mediaInfo.row.bitrate": [

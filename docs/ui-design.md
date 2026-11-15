@@ -837,12 +837,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     every season's episodes with a file that are not on this PC yet. The page lists one season's episodes at most, so the
     item stays once all are here, and its dialog reads them as a card's does and says so. A title on
     this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
-    available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
-    page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
-    server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
-    downloads: the title's progress, and its episodes' on a season's page. Its cards (the episodes of a season's grid,
-    More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as every card does
-    (Components, cards above); the page adds none to them.
+    available"), which opens the Downloads page, and the Apple app's "Delete download" (the bin) under it, which asks first
+    as the Downloads page does (the Apple app's "Delete this download?", "This removes the downloaded copy from this PC.
+    Nothing is deleted from your Silo server.", Delete and Cancel); both stay whatever the server says now. While the page
+    shows, the items follow the downloads: the title's progress, and its episodes' on a season's page. Its cards (the
+    episodes of a season's grid, More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as
+    every card does (Components, cards above); the page adds none to them.
   - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
     Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season,
     "Download: Example Series · All Episodes" for a series, the Apple app's name for a series' every episode), "Choose

@@ -6,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Downloads;
@@ -182,10 +183,30 @@ public sealed class CardDownloadsTests : IAsyncDisposable
         _confirmation.Answer = true;
         await ChooseAsync(cards, Episode, entry: 1);
 
-        Assert.Equal(("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
+        Assert.Equal(("Delete this download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo server.", "Delete"),
             _confirmation.Asked[0]);
         Assert.Null(_h.Find("dl_5"));
         Assert.Equal(["Download"], Labels(cards, Episode));
+    }
+
+    [Fact]
+    public async Task InGerman_TheCardsDownloadItemsAndTheirQuestion_AreTheWebsAndTheApps()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        await _h.AddAsync("dl_5", DownloadState.Completed, mediaItemId: "ep_5");
+        var cards = await CardsAsync();
+
+        Assert.Equal(["Herunterladen"], Labels(cards, Movie));
+        Assert.Equal(["Staffel herunterladen"], Labels(cards, Season));
+        Assert.Equal(["Serie herunterladen"], Labels(cards, Series));
+        Assert.Equal(["Heruntergeladen", "Download löschen"], Labels(cards, Episode));
+
+        _confirmation.Answer = false;
+        await ChooseAsync(cards, Episode, entry: 1);
+
+        Assert.Equal(("Diesen Download löschen?",
+            "Dadurch wird die heruntergeladene Kopie von diesem PC entfernt. Auf deinem Silo-Server wird nichts gelöscht.", "Löschen"),
+            _confirmation.Asked[0]);
     }
 
     // Another profile becomes active while the question is open: the download it asked about still goes.

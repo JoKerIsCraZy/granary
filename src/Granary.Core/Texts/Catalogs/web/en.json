@@ -8668,6 +8668,12 @@
       "value": "Browse Series"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "Download"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -9284,6 +9290,12 @@
     {
       "type": 0,
       "value": "HI"
+    }
+  ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "No media files for this item."
     }
   ],
   "web.detail.mediaInfo.row.bitrate": [

@@ -11060,6 +11060,12 @@
       "value": "تصفح المسلسل"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "تنزيل"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -11799,6 +11805,12 @@
     {
       "type": 0,
       "value": "لضعاف السمع"
+    }
+  ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "لا توجد ملفات وسائط لهذا العنصر."
     }
   ],
   "web.detail.mediaInfo.row.bitrate": [

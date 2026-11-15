@@ -9342,6 +9342,12 @@
       "value": "Parcourir la série"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "Télécharger"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -9993,6 +9999,12 @@
     {
       "type": 0,
       "value": "SME"
+    }
+  ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "Aucun fichier multimédia pour cet élément."
     }
   ],
   "web.detail.mediaInfo.row.bitrate": [

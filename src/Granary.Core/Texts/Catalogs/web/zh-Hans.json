@@ -8003,6 +8003,12 @@
       "value": "浏览剧集"
     }
   ],
+  "web.detail.actions.download": [
+    {
+      "type": 0,
+      "value": "下载"
+    }
+  ],
   "web.detail.actions.markSeasonUnwatched": [
     {
       "type": 0,
@@ -8596,6 +8602,12 @@
     {
       "type": 0,
       "value": "听障"
+    }
+  ],
+  "web.detail.mediaInfo.noFiles": [
+    {
+      "type": 0,
+      "value": "此项目没有媒体文件。"
     }
   ],
   "web.detail.mediaInfo.row.bitrate": [
