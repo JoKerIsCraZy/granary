@@ -3203,8 +3203,8 @@ is checked afresh, in this order:
   type that ordinal. Picks without a `fileId` are dropped, and `libraryId` is not read. The server decides, under the
   PC's profile, whether the title may play.
 - **Only for that sign-in.** The request is bound to the server entry and the profile the offer was ready for
-  (`PlayRequest.OnlyFor`); the playback checks them again as it starts, and should the PC have switched profile or
-  server in between, it starts nothing and the player says "This title was started for a profile that is no longer
+  (`PlayRequest.OnlyFor`); the playback checks them again as it starts and once more after its reads, right before the
+  start, and should the PC have switched profile or server in between, it starts nothing and the player says "This title was started for a profile that is no longer
   signed in." (*new*).
 - **The status at once.** The phone gives up 30 seconds after the launch without its `contentId` in the status. From
   the launch on, the status shows the title loading (`title: "Loading"`, `isLoading: true`, its `contentId`), also while

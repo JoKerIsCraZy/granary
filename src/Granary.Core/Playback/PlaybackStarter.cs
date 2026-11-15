@@ -80,12 +80,7 @@ public sealed class PlaybackStarter(
         var choice = request.IsWatchParty ? null : request.Choice;
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
         string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
-        // A title a phone started plays only for the sign-in its launch was checked against, whatever came since.
-        if ((request.OnlyForServer is { } onlyServer && !string.Equals(onlyServer, server.Id, StringComparison.Ordinal))
-            || (request.OnlyForProfile is { } onlyProfile && !string.Equals(onlyProfile, profileId, StringComparison.Ordinal)))
-        {
-            throw new PlaybackUnavailableException(PlaybackUnavailableException.StartedForAnotherProfile, canRetry: false);
-        }
+        RequireSignIn(request, server.Id, profileId);
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
         // Read alongside the watch detail; when that fails first, nobody waits for the settings any more.
         _ = settings.ContinueWith(static read => _ = read.Exception, CancellationToken.None,
@@ -115,7 +110,11 @@ public sealed class PlaybackStarter(
         bool versionPicked = picked?.IsVersionPicked == true;
         bool software = devicePreferences.DecodesInSoftware;
         var report = Report(OffersMediaOrigins(capabilities), software, HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, report,
+        var read = await settings.ConfigureAwait(false);
+        // Again after the reads: the profile or the server may have changed while they were on their way, and the start
+        // goes out with the profile read before them.
+        RequireSignIn(request, session.ActiveServer?.Id, session.ProfileId);
+        return new PlaybackContext(server, profileId, detail, version, read, capabilities.InstallationId!, report,
             picked?.SubtitleTrack)
         {
             ContentId = contentId,
@@ -123,6 +122,17 @@ public sealed class PlaybackStarter(
             VersionPicked = versionPicked,
             DecodesInSoftware = software,
         };
+    }
+
+    // A title a phone started plays only for the sign-in its launch was checked against (PlayRequest.OnlyFor), whatever
+    // came since.
+    private static void RequireSignIn(PlayRequest request, string? serverEntryId, string? profileId)
+    {
+        if ((request.OnlyForServer is { } onlyServer && !string.Equals(onlyServer, serverEntryId, StringComparison.Ordinal))
+            || (request.OnlyForProfile is { } onlyProfile && !string.Equals(onlyProfile, profileId, StringComparison.Ordinal)))
+        {
+            throw new PlaybackUnavailableException(PlaybackUnavailableException.StartedForAnotherProfile, canRetry: false);
+        }
     }
 
     // The detail page's file with its picked audio as the one it starts with, and its picked subtitle; null when the title

@@ -1585,7 +1585,8 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
 - **The sign-in, twice.** The receiver reads the session outside its gate and the playback reads it again as it starts,
   so a profile switched between the launch's checks and the start would otherwise play the phone's title for the new
   profile: `PlaybackStarter.PrepareAsync` refuses a bound request whose server or profile is no longer the session's,
-  before it asks the server anything. The episode before or after that the player starts itself (its buttons, the
+  before it asks the server anything, and again once its reads are back, right before the start goes out with the
+  profile read before them. The episode before or after that the player starts itself (its buttons, the
   phone's `play_next`, the next episode after the credits) is bound the same (`PlayRequest.BoundAs`); an On Deck pick
   is the viewer's own and is not. After a change of server the receiver still says the server before until its
   lifetime has caught up; an offer or a launch then is refused as "not ready", so no phone of that server is readied
