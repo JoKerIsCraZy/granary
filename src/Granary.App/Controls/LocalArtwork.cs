@@ -15,8 +15,8 @@ internal static class LocalArtwork
 {
     private static ILogger Logger => field ??= App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(LocalArtwork));
 
-    // The files the log named once: a downloading card reads its picture again with each look, twice a second, so a file
-    // deleted by hand during a download would otherwise fill the log.
+    // The files the log named once while they fail: a downloading card reads its picture again with each look, twice a
+    // second, so a file deleted by hand during a download would otherwise fill the log. A file shown whole leaves it.
     private static readonly Lock SaidGate = new();
     private static readonly HashSet<string> Said = new(StringComparer.OrdinalIgnoreCase);
 
@@ -43,6 +43,7 @@ internal static class LocalArtwork
         {
             using var stream = await ReadAsync(path);
             await bitmap.SetSourceAsync(stream);
+            Forget(path);
             return;
         }
         catch (Exception ex)
@@ -84,5 +85,14 @@ internal static class LocalArtwork
         }
         // Only the kind: a file system error's message holds the full path, with the Windows user name.
         Logger.Log(first ? LogLevel.Information : LogLevel.Debug, "A download's artwork could not be shown ({Failure})", failure.GetType().Name);
+    }
+
+    /// <summary>A picture shown whole: a later failure of its file is said again.</summary>
+    public static void Forget(string path)
+    {
+        lock (SaidGate)
+        {
+            Said.Remove(path);
+        }
     }
 }

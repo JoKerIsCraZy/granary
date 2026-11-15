@@ -65,6 +65,10 @@ internal static class SpoilerArtwork
                 return null;
             }
             var pixels = await Task.Run(() => DecodeAsync(stream, shownWidth), CancellationToken.None);
+            if (pixels is not null)
+            {
+                LocalArtwork.Forget(path);
+            }
             return pixels is null || cancellationToken.IsCancellationRequested ? null : Bitmap(pixels);
         }
         catch (Exception ex)
