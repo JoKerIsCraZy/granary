@@ -87,6 +87,7 @@ public static class RemoteTexts
         "granary.player.error.adminStopped",
         "granary.player.error.credentialsRejected",
         "granary.player.error.signInRejected",
+        "granary.player.error.networkPath",
         "web.player.session.endedByAdmin",
         "granary.apiFailure.busy",
         "granary.apiFailure.unreachable",
@@ -154,8 +155,12 @@ public static class RemoteTexts
     // The largest number a numbered text is checked for; more digits are no status and no wait in minutes.
     private const long MaxNumber = 100_000_000;
 
-    // Text that is sent stays English, as Silo's rule is and as Silo's receivers write theirs.
-    private static readonly Lazy<TextLanguage> English = new(() => TextLanguage.Load(AppLanguage.English));
+    // Longer than any of the player's own texts in any language, numbers included: a longer text is not one of them, and
+    // is not searched, so a server's long message costs nothing.
+    private const int MaxOwnFailureLength = 1000;
+
+    // A numbered text holds one number, which a grouped one makes three candidates at most ("1,234": 1, 234 and 1234).
+    private const int MaxNumberCandidates = 4;
 
     /// <summary>
     /// The player's failure as a phone may read it: when it is one of Granary's own, which name nothing, the same text in
@@ -166,8 +171,13 @@ public static class RemoteTexts
         message is null ? null : GranarysOwnFailureInEnglish(message) ?? CouldNotPlay;
 
     // The player's texts are compared in the language on screen, as it worded them; a numbered one by the numbers in it.
+    // Text that is sent stays English, as Silo's rule is and as Silo's receivers write theirs.
     private static string? GranarysOwnFailureInEnglish(string message)
     {
+        if (message.Length > MaxOwnFailureLength)
+        {
+            return null;
+        }
         if (EnglishPlayerFailures.Contains(message))
         {
             return message;
@@ -176,25 +186,30 @@ public static class RemoteTexts
         {
             if (AppText.Get(key) == message)
             {
-                return English.Value.Get(key);
+                return AppText.English.Get(key);
             }
         }
         foreach (string detail in PlaybackEndDetails)
         {
             if (AppText.Get(PlaybackErrorKey, ("message", detail)) == message)
             {
-                return English.Value.Get(PlaybackErrorKey, [("message", detail)]);
+                return AppText.English.Get(PlaybackErrorKey, [("message", detail)]);
             }
         }
-        foreach (long number in NumbersIn(message))
+        var numbers = NumbersIn(message);
+        if (numbers.Count > MaxNumberCandidates)
+        {
+            return null;
+        }
+        foreach (long number in numbers)
         {
             if (AppText.Get(StartFailedKey, ("status", number)) == message)
             {
-                return English.Value.Get(StartFailedKey, [("status", number)]);
+                return AppText.English.Get(StartFailedKey, [("status", number)]);
             }
             if (AppText.Get(TooManyRequestsKey, ("count", number)) == message)
             {
-                return English.Value.Get(TooManyRequestsKey, [("count", number)]);
+                return AppText.English.Get(TooManyRequestsKey, [("count", number)]);
             }
         }
         return null;

@@ -3480,8 +3480,9 @@ is checked afresh, in this order:
   it then gets `error launch_failed` with the player's message, here and as the status's `error`, only when it is one of
   Granary's own failure texts, which name nothing (`RemoteTexts.PlayerError`: a fixed set, and the server's error
   status, a wait or mpv's error text in Granary's own wording), and then in English whatever language the PC shows, as
-  every text Granary sends a phone and as Silo's receivers send theirs. Any other text, such as a server's terminal message or
-  an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
+  every text Granary sends a phone and as Silo's receivers send theirs. Any other text, such as a server's terminal
+  message or an administrator's stop message as they wrote them, goes out as "This title could not be played on this
+  PC." (*new*). A player that showed it and closed before it loaded,
   and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
 
 ### 14.8 Series monitoring

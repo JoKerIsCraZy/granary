@@ -96,9 +96,26 @@ public sealed class RemoteTextsTests
     [InlineData("Playback error: no such host mediaserver")]
     [InlineData("Playback error: error loading file")]
     [InlineData("Playback error: ")]
+    [InlineData("The server could not start playback (error 1000000000).")]
+    [InlineData("The server could not start playback (error ⁵⁰³).")]
+    [InlineData("The server could not start playback (error ⁨503⁩).")]
     [InlineData("")]
     public void AnyOtherText_GoesAsAFixedOne(string message) =>
         Assert.Equal("This title could not be played on this PC.", RemoteTexts.PlayerError(message));
+
+    [Fact]
+    public void ALongTextFullOfNumbers_GoesAsAFixedOne()
+    {
+        string flood = string.Join("a", Enumerable.Range(0, 20_000));
+
+        Assert.Equal("This title could not be played on this PC.", RemoteTexts.PlayerError(flood));
+        Assert.Equal("This title could not be played on this PC.", RemoteTexts.PlayerError("Error 1, 2, 3, 4, 5 and 503."));
+    }
+
+    [Fact]
+    public void ANetworkPathTheLocalPlayerRefuses_GoesAsItIs() =>
+        Assert.Equal("Network paths cannot be played; copy the file to this computer.",
+            RemoteTexts.PlayerError("Network paths cannot be played; copy the file to this computer."));
 
     [Fact]
     public void NoFailure_IsNone() => Assert.Null(RemoteTexts.PlayerError(null));
