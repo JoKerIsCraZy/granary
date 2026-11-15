@@ -73,6 +73,23 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AReturnToTheStart_IsWhereTheViewerLeftTheTitle()
+    {
+        _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(600);
+        _fixture.Harness.Time.Advance(LocalPlayback.ProgressInterval);
+        Assert.Equal(600_000, Entry.PositionMs);
+
+        // The viewer goes back to the very start and leaves there, as the Apple app records a position of 0.
+        playback.Seek(0);
+        await playback.StopAsync();
+
+        Assert.Equal(0, Entry.PositionMs);
+        Assert.Equal(0, Record.ResumeMs);
+    }
+
+    [Fact]
     public async Task ATitleLeftPaused_DoesNotGrowNewerByItself()
     {
         _fixture.Silo.On(HttpMethod.Post, LocalPlaybackFixture.SyncPath, ScriptedSilo.NetworkError());

@@ -2039,7 +2039,9 @@ device.
   since the last record: a title left paused does not grow newer by itself and so cannot beat a position made on another
   device meanwhile. One record is made though the position stands: a file that breaks off where its position was just
   recorded as one left past nine tenths (Watched), since that record would have Retry start over. Nothing is recorded
-  before the first frame. A title's times never go backwards: a position is
+  before the first frame; after it, 0 is a position too, as the Apple app records it: a viewer who goes back to the start
+  and leaves there is left at 0, and the server takes a 0 (only a position above 0 and under its
+  `playback.min_resume_threshold` is passed over, `userstore.ResolveProgressState`). A title's times never go backwards: a position is
   stamped in a later whole second than the one it replaces in the queue, than the last one this play recorded, and
   than the download's `ResumeAt`, which is what this PC last recorded or read from the server. What the viewer watches
   now is later than all of those, whatever the clock reads, so a clock that was set back, or runs behind, does not get

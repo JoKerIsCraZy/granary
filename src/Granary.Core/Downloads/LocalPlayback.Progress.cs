@@ -75,7 +75,8 @@ public sealed partial class LocalPlayback
         // Nothing new while the position stands, but for the title's end, and for a file that breaks off where its position
         // was just recorded as one left near the end: that record would have the next play start over.
         bool stands = _recorded is { } last && Math.Abs(position - last) < 1 && !playedToTheEnd && !(brokeOff && _recordedStartsOver);
-        if (!double.IsFinite(position) || position <= 0 || stands)
+        // 0 is a position too once a frame showed, as the Apple app records it: the viewer went back to the start and left there.
+        if (!double.IsFinite(position) || position < 0 || stands)
         {
             return;
         }
