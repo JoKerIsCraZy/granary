@@ -202,10 +202,11 @@ public sealed partial class RemoteReceiver
         }
     }
 
-    // A change the viewer or Windows made: worth a try after a listener that failed, too.
+    // A change the viewer or Windows made: worth a try after a listener that failed, too (the count makes the stop for its
+    // failure stale). The failure itself stays: it counts only while its listener runs, and a change that changes nothing
+    // must not hide that the running one stopped.
     private void OnLifetimeChanged(object? sender, EventArgs e)
     {
-        Volatile.Write(ref _failedListener, 0);
         Interlocked.Increment(ref _lifetimeChanges);
         LookAgain();
     }

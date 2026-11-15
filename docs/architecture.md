@@ -1452,7 +1452,8 @@ then on; `StopAsync` ends it for good when Granary closes.
     bound has a number, and only the one running counts: one stopped or replaced meanwhile (the switch off, a new
     address) that tells of its failure late, even after the next one runs or is about to start, changes nothing. The
     failure is kept by number in one step that only moves on to a later listener, so such news never hides the
-    failure of the one that runs either.
+    failure of the one that runs either, and a change does not clear it: a session event that changes nothing, coming
+    before the loop looks, would otherwise leave the dead listener advertised as listening.
   - Reset Pairing Code (`ResetPairingAsync`): a new key, then the loop is asked to look again by the receiver itself,
     not only through `KeyChanged`; it stops (every phone gets `close tv_disconnected`) and starts under the new `kid`.
     The outcome says whether every phone on the old code could be let go, or whether the new key could not be saved

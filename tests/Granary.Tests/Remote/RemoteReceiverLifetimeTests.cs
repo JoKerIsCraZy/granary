@@ -225,6 +225,25 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFailure_IsNotWipedOut_ByASessionEventThatChangesNothing()
+    {
+        await _harness.StartListeningAsync();
+
+        // The listener fails, and a session event that changes nothing comes before the receiver looks.
+        await _harness.Dispatcher.InvokeAsync(() =>
+        {
+            _harness.Listener.Fail();
+            _harness.Session.RaiseChanged();
+            return true;
+        });
+        await SettledAsync();
+
+        // The dead listener is not kept as if it listened: the advertisement goes, and the change starts a new one.
+        Assert.Contains("listener.Stop", _harness.Calls.All);
+        Assert.Contains("The phone remote stopped: the listener stopped taking connections", _harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AFailedListener_IsNotStartedAgainByItself_ButAtTheNextChange()
     {
         await _harness.StartListeningAsync();
