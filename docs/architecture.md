@@ -1642,10 +1642,11 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   COM activator whose `LocalServer32` is the exe with `----AppNotificationActivated:`. Velopack keeps the exe at the same
   path (`current\Granary.exe`) across updates; an installed and a portable copy share the id, and the one started last is
   the one a click starts. A click while Granary is closed starts the exe that way: after `Register`, `AppInstance.GetActivatedEventArgs()`
-  is an `AppNotification` activation with the click's arguments, and `App.StartShell` runs them through `Act` once the
-  shell has started and routed (to Home, the offline Downloads page or sign-in, where `Act` does nothing). A click while
-  Granary runs comes on a COM thread and is posted to the UI thread, which restores a minimized window, brings it to the
-  front and runs `Act`. `TryShow` builds the notification with `AppNotificationBuilder` (the text, Play with the
+  is an `AppNotification` activation with the click's arguments, which go to `Act` at once. `Act` holds a click until
+  `App.StartShell` calls `ShellStarted`, once the shell has started and routed (to Home, the offline Downloads page or
+  sign-in, where it does nothing); of several held, the last is followed. A click while Granary runs comes on a COM thread
+  and is posted to the UI thread, which restores a minimized window, brings it to the front and runs `Act`; one that comes
+  while Granary still restores its sign-in waits for the shell the same way. `TryShow` builds the notification with `AppNotificationBuilder` (the text, Play with the
   download's id when something finished, Open Downloads; the body opens Downloads too) and shows it only while
   `AppNotificationManager.Setting` is `Enabled`; a notification Windows took has an id. As the window closes, `Unregister`
   lets go of the activator, so a later click starts Granary again. Uninstalling runs Velopack's

@@ -39,6 +39,8 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     private ITimer? _noticeTimer;
     private int _notices;
     private bool _disposed;
+    private bool _shellStarted;
+    private (string? Action, string? DownloadId)? _heldClick;
 
     public DownloadNotices(DownloadActivity activity, IAppNotifications notifications, IDownloadPreferences preferences, DownloadManager downloads,
         INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time)
@@ -69,11 +71,42 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     /// <summary>
     /// A notification's click, on the UI thread: Play (<see cref="PlayAction"/>) plays the download from this PC when the active
     /// profile still has it whole; anything else, or a download no longer here, opens the Downloads page. Nothing without a
-    /// profile signed in: the notification may be older than a sign-out.
+    /// profile signed in: the notification may be older than a sign-out. A click before the shell has started (the one that
+    /// started Granary, or one on an older notification while Granary restores its sign-in) waits for
+    /// <see cref="ShellStarted"/>; of several, the last.
     /// </summary>
     public void Act(string? action, string? downloadId)
     {
-        if (_disposed || _downloads.ActiveScope is null)
+        if (_disposed)
+        {
+            return;
+        }
+        if (!_shellStarted)
+        {
+            _heldClick = (action, downloadId);
+            return;
+        }
+        Follow(action, downloadId);
+    }
+
+    /// <summary>The shell has started and routed, on the UI thread: a click held until then is followed now.</summary>
+    public void ShellStarted()
+    {
+        if (_disposed || _shellStarted)
+        {
+            return;
+        }
+        _shellStarted = true;
+        if (_heldClick is { } click)
+        {
+            _heldClick = null;
+            Follow(click.Action, click.DownloadId);
+        }
+    }
+
+    private void Follow(string? action, string? downloadId)
+    {
+        if (_downloads.ActiveScope is null)
         {
             return;
         }

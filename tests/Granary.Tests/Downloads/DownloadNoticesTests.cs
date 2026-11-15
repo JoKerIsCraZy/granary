@@ -29,6 +29,14 @@ public sealed class DownloadNoticesTests : IAsyncDisposable
 
     private async Task<DownloadNotices> NoticesAsync(params (string Id, DownloadState State)[] downloads)
     {
+        var notices = await NoticesBeforeTheShellAsync(downloads);
+        notices.ShellStarted();
+        return notices;
+    }
+
+    // As Granary starts: the shell has not routed yet.
+    private async Task<DownloadNotices> NoticesBeforeTheShellAsync(params (string Id, DownloadState State)[] downloads)
+    {
         foreach (var (id, state) in downloads)
         {
             await _h.AddAsync(id, state, mediaItemId: "mv_" + id);
@@ -151,6 +159,32 @@ public sealed class DownloadNoticesTests : IAsyncDisposable
         notices.Act("something else", "dl_1");
 
         Assert.Equal([AppRoute.Downloads, AppRoute.Downloads, AppRoute.Downloads, AppRoute.Downloads], _navigation.Sections);
+        Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.Player);
+    }
+
+    [Fact]
+    public async Task AClickBeforeTheShellStarted_IsFollowedOnceItHas_AndOnlyOnce()
+    {
+        var notices = await NoticesBeforeTheShellAsync(("dl_1", DownloadState.Completed));
+
+        notices.Act(DownloadNotices.PlayAction, "dl_1");
+        Assert.Empty(_navigation.Navigations);
+        notices.ShellStarted();
+        notices.ShellStarted();
+
+        Assert.Equal([(AppRoute.Player, (object?)PlayRequest.Resume("mv_dl_1"))], _navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task OfClicksBeforeTheShellStarted_TheLastIsFollowed()
+    {
+        var notices = await NoticesBeforeTheShellAsync(("dl_1", DownloadState.Completed));
+
+        notices.Act(DownloadNotices.PlayAction, "dl_1");
+        notices.Act(DownloadNotices.OpenAction, null);
+        notices.ShellStarted();
+
+        Assert.Equal([AppRoute.Downloads], _navigation.Sections);
         Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.Player);
     }
 

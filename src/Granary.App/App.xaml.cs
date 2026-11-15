@@ -85,6 +85,11 @@ public partial class App : Application
         _window.Closed += (_, _) => notices.Dispose();
         var startedByClick = Services.GetRequiredService<WindowsAppNotifications>()
             .Register(_window, click => notices.Act(click.Action, click.DownloadId));
+        // Held until the shell has started, as any click that comes while Granary restores its sign-in.
+        if (startedByClick is { } click)
+        {
+            notices.Act(click.Action, click.DownloadId);
+        }
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
         // Activated, and maximized at once if it was closed so.
@@ -143,7 +148,7 @@ public partial class App : Application
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.
         StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started,
-            startedByClick is { } click ? () => notices.Act(click.Action, click.DownloadId) : null);
+            notices.ShellStarted);
     }
 
     private static PlayRequest? DeveloperPlayRequest()
@@ -158,8 +163,8 @@ public partial class App : Application
         return item >= 0 && item + 1 < arguments.Length ? PlayRequest.Resume(arguments[item + 1]) : null;
     }
 
-    // Tells the start screen when the shell has started (or failed to), so it can make way; then does what the click on a
-    // notification that started Granary asked for, over the page the shell routed to.
+    // Tells the start screen when the shell has started (or failed to), so it can make way; then does what a notification's
+    // click held until now asked for (the one that started Granary, or one while it started), over the page the shell routed to.
     private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started, Action? then)
     {
         try
