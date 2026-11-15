@@ -14,6 +14,8 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
 
     public bool KeepWatched { get; private set; }
 
+    public bool NotifyWhenFinished { get; private set; } = true;
+
     public event EventHandler? Changed;
 
     public Task LatestSave => Task.CompletedTask;
@@ -35,6 +37,13 @@ internal sealed class InMemoryDownloadPreferences(string folder) : IDownloadPref
     public Task SetKeepWatchedAsync(bool keep)
     {
         KeepWatched = keep;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    public Task SetNotifyWhenFinishedAsync(bool notify)
+    {
+        NotifyWhenFinished = notify;
         Changed?.Invoke(this, EventArgs.Empty);
         return Task.CompletedTask;
     }

@@ -1065,7 +1065,9 @@ hidden, disabled or enabled, and Play/Pause's paused), hide them all, and a pres
   and hides them (`THBF_HIDDEN`) and greys them (`THBF_DISABLED`). The icons (`Interop/TaskbarIcons.cs`: ⏮, ▶, ⏸, ⏭)
   are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with `CreateIconIndirect`; the taskbar
   copies them, and Granary destroys its own when they are replaced and when the window closes, with the COM object. A
-  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on.
+  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on. Between
+  the player's `Show` and its `Hide` it is `IsInUse` (`InUseChanged`), and the downloads' progress leaves the taskbar
+  button alone meanwhile (Downloads, "Downloads in the shell").
 
 ## Watch Party
 
@@ -1559,7 +1561,8 @@ client guide.
   (`DownloadsViewModelTests`, `DownloadedSeriesViewModelTests`). The sidebar's entry follows `DownloadsFeature.IsOffered`,
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
-- **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
+- **Settings → Downloads.** `DownloadSettingsViewModel` saves each switch as it turns (metered connections, Keep watched
+  downloads, Notify when downloads finish) and takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
   Windows' folder picker (`WindowsFolderPicker`) is a window of its own, so the window is not in front and reads no
   controller while it shows, and it takes none itself; the drives are a select a controller can work instead. They are
@@ -1572,6 +1575,84 @@ client guide.
   as refused, and the select goes back. The
   App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
   which reads the capability for the quality labels.
+
+### Downloads in the shell
+
+`DownloadActivity` (a singleton the app starts in `App.Launch` and disposes as the window closes) follows the active
+profile's downloads for the whole run, outside their page: `DownloadManager.Changed` and the session's `Changed`, on any
+thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burst, which reads `Items` and makes a
+`DownloadTally` of them. A burst of transfers that only went further (`DownloadProgressedEventArgs`) reads just their bytes
+(`BytesDone(id)`) into the downloads as last read, as the Downloads page does.
+
+- **The sidebar's count.** `PendingCount` counts the downloads coming or waiting (`DownloadTally.IsPending`): preparing,
+  queued or downloading, not paused by the viewer, their folder there and still on the server. One that waits for a
+  connection that is not metered counts, since it comes by itself. The window binds it to the Downloads entry's
+  `InfoBadge`, as Notifications' unread count, and its name for a screen reader (`EntryName`: "Downloads, 3 downloads in
+  progress", the Apple app's words).
+- **The pulse.** `IsTransferring` while one download comes now (`DownloadText.IsComing`: downloading, nothing pausing or
+  holding it). The window shows a 6 px dot in the accent before the count and has it breathe on the compositor
+  (`MainWindow.Downloads.cs`, as `ServerActivityButton`'s count breathes): no timer, nothing on the UI thread. With
+  Windows' animation effects off (`UISettings.AnimationsEnabled`, followed through `AnimationsEnabledChanged`) the dot
+  stands still. The window lives as long as the app and lets go of Windows' settings as it closes.
+- **The taskbar button.** `Progress` (`DownloadProgress`) is the downloads to come (preparing, queued or downloading, their
+  folder there and still on the server, paused or not) as one bar: none without any; `Normal` while any is not paused by
+  the viewer and does not wait for an unmetered connection, over those alone, so a paused download does not hold the bar
+  back; `Paused` once every one is, over all of them. Done and total are their bytes so far (within each file) and their
+  sizes; a size not known yet (a preparing copy) counts in neither. `WindowsTaskbarProgress` (App, started in
+  `App.Launch`) sends it to the main window's taskbar button through `ITaskbarList3` (`Interop/TaskbarList.cs`:
+  `SetProgressValue` in thousandths, then `SetProgressState` `TBPF_NORMAL` or `TBPF_PAUSED`; `TBPF_NOPROGRESS` for none),
+  only when it changes by a thousandth or its state does, and only once Explorer made the taskbar button
+  (`WindowMessageHook.HasTaskbarButton`); a new taskbar button (Explorer restarted) gets it again, with a COM object made
+  again. While the player has its buttons in the preview (`WindowsTaskbarToolbar.IsInUse`, from `Show` until `Hide`), the
+  downloads leave the taskbar button alone and show no bar; it comes back as the player is left. A send that fails drops
+  the COM object, is logged once by its kind until one gets through, and the next change tries again. Explorer's side has
+  no unit tests; `DownloadTallyTests` and `DownloadActivityTests` hold what the bar shows.
+- **What finished or failed.** Each full refresh hands the downloads to `DownloadAnnouncements.Look` with the scope, read
+  after them (a profile switched to in between then reads as a new scope). A download is news when it turned Completed or
+  Failed since the look before; the first look, another scope's first look, and a download that shows up done (its
+  folder came back) are not. A film is said at once; an episode waits while another episode of its series is still to
+  come (`IsPending`), so a season or a series that finishes together is one `DownloadAnnouncement`, its failures counted
+  in it, and an episode paused or deleted does not hold the others back. The words are the Apple app's
+  (`DownloadNotifications.swift`): "Example Movie is ready to watch offline", an episode "Example Series (S2E8)", "… didn't
+  download: Not enough storage on this PC" with its reasons (storage, an incomplete file, no longer on the server), and
+  none when Granary knows no reason; the Apple app says each episode alone, so a group's are Granary's after them ("8
+  episodes of Example Series are ready to watch offline", "…; 1 didn't download", "2 episodes of Example Series didn't
+  download"). `PlayDownloadId` is the first episode that finished by season and number, the specials last.
+  `DownloadActivity.Announced` raises each on the UI thread.
+- **Where it is said.** `DownloadNotices` (a singleton, made with the window) shows an announcement in the window while
+  Granary is in front (`IAppNotifications.IsAppInFront`), unless Settings → Downloads turned them off
+  (`IDownloadPreferences.NotifyWhenFinished`, on by default and for a `download-settings.json` from before it, saved as
+  `notify_when_finished`; off, nothing is said either way), `NoticeText` for `NoticeShowsFor` (5 s, a newer one taking the
+  place with its own time, on the `TimeProvider`), bound to a `PlaybackNoticeView` at the top of the window over the pages
+  and the player, amber for a failure. Behind another window or minimized it goes to `IAppNotifications.TryShow`; when that
+  answers false (no registration, notifications off in Windows' settings, a failure), it shows in the window all the same.
+  `Act` is a click on a notification: Play plays the download from this PC (`PlayRequest.Resume` of its title, which the
+  player plays locally) while the active profile has it whole; anything else, or a download no longer here, opens the
+  Downloads page; nothing without a signed-in profile. Core's `NoAppNotifications` (in front, takes none) keeps every
+  message in the window until the app registers its own.
+- **Windows' notifications** (`WindowsAppNotifications`, App; `Microsoft.Windows.AppNotifications` of the Windows App SDK's
+  Foundation part, which Granary ships already). The app is unpackaged, so it has no manifest entry for notification
+  activation: `Register` runs at every start in `App.Launch`, once the window is made and before anything reads how Granary
+  was started. It is skipped when `AppNotificationManager.IsSupported()` is false (Granary run as an administrator). It adds
+  the `NotificationInvoked` handler first, which has a click while Granary runs come to this process, then
+  `AppNotificationManager.Default.Register()`. For an unpackaged process that writes, per user under HKCU, the
+  notification id (the process's AppUserModelID, which `VelopackApp.Run` sets to `velopack.GranaryApp`, the Start menu
+  shortcut's, for the installed and the portable copy alike; a build Velopack did not lay out, such as a developer's, gets
+  a GUID kept for its exe's path), its display name and icon (from that shortcut, else "Granary" and the exe's icon) and a
+  COM activator whose `LocalServer32` is the exe with `----AppNotificationActivated:`. Velopack keeps the exe at the same
+  path (`current\Granary.exe`) across updates; an installed and a portable copy share the id, and the one started last is
+  the one a click starts. A click while Granary is closed starts the exe that way: after `Register`, `AppInstance.GetActivatedEventArgs()`
+  is an `AppNotification` activation with the click's arguments, which go to `Act` at once. `Act` holds a click until
+  `App.StartShell` calls `ShellStarted`, once the shell has started and routed (to Home, the offline Downloads page or
+  sign-in, where it does nothing); of several held, the last is followed. A click while Granary runs comes on a COM thread
+  and is posted to the UI thread, which restores a minimized window, brings it to the front and runs `Act`; one that comes
+  while Granary still restores its sign-in waits for the shell the same way. `TryShow` builds the notification with `AppNotificationBuilder` (the text, Play with the
+  download's id when something finished, Open Downloads; the body opens Downloads too) and shows it only while
+  `AppNotificationManager.Setting` is `Enabled`; a notification Windows took has an id. As the window closes, `Unregister`
+  lets go of the activator, so a later click starts Granary again. Uninstalling runs Velopack's
+  `OnBeforeUninstallFastCallback`, which calls `UnregisterAll` (the registry entries and the cached icon). There is no
+  single-instance handling: a click goes to the running Granary through the activator it serves. Windows' side has no
+  unit tests (`DownloadAnnouncementsTests`, `DownloadNoticesTests` hold what is said, where, and what a click does).
 
 ### Signing out
 

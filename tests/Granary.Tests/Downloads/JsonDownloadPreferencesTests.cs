@@ -56,6 +56,24 @@ public sealed class JsonDownloadPreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task NotifyWhenFinished_IsOnByDefault_AlsoForAFileFromBefore_AndStays()
+    {
+        var preferences = Create();
+        Assert.True(preferences.NotifyWhenFinished);
+        int changes = 0;
+        preferences.Changed += (_, _) => changes++;
+
+        await preferences.SetNotifyWhenFinishedAsync(false);
+
+        Assert.Equal(1, changes);
+        Assert.Contains("\"notify_when_finished\": false", await File.ReadAllTextAsync(FilePath, Token), StringComparison.Ordinal);
+        Assert.False(Create().NotifyWhenFinished);
+        // A file from before the setting says nothing of it: the messages are on.
+        await File.WriteAllTextAsync(FilePath, "{ \"keep_watched\": true }", Token);
+        Assert.True(Create().NotifyWhenFinished);
+    }
+
+    [Fact]
     public async Task Changes_StayAtTheNextStart()
     {
         var preferences = Create();

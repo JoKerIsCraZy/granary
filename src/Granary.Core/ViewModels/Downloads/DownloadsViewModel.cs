@@ -24,7 +24,8 @@ namespace Granary.Core.ViewModels.Downloads;
 /// the cards it offers to delete the watched downloads to free up space, as both apps do, in the Android app's words
 /// throughout (its Reclaim Watched button, the dialog of that name, its question and its Reclaim), unless Settings →
 /// Downloads keeps watched downloads; nothing is deleted without the question. After a start that could not reach the server
-/// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>).
+/// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>). Beside Reclaim
+/// Watched, Download settings opens Settings → Downloads.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -41,6 +42,9 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 
     /// <summary>What the page says after a start without the server, beside its Retry.</summary>
     public const string OfflineNote = "Can't reach your Silo server. Downloads on this PC still play.";
+
+    /// <summary>The page's way to Settings → Downloads (<see cref="OpenSettingsCommand"/>).</summary>
+    public const string SettingsTitle = "Download settings";
 
     private static readonly StringComparer TitleOrder = StringComparer.CurrentCultureIgnoreCase;
 
@@ -158,6 +162,13 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         // A media file deleted by hand since the last look: its card says "Missing file" once the disk was read.
         _downloads.LookAtFiles();
     }
+
+    /// <summary>
+    /// Settings → Downloads, over the page as Settings always opens, so Back leads here again. Neither of Silo's apps has a way
+    /// there from its Downloads screen; it is Granary's.
+    /// </summary>
+    [RelayCommand]
+    private void OpenSettings() => _navigation.NavigateTo(AppRoute.Settings, "downloads");
 
     /// <summary>A card's click: a whole download plays, any other opens its page, a series' card opens its downloads.</summary>
     [RelayCommand]

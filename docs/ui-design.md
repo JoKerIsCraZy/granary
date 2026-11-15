@@ -224,7 +224,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
-  has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). The profile menu holds Switch
+  has downloads on this PC, with the count of its downloads coming or waiting in the accent as Notifications' count, and
+  while one comes a 6 px dot in the accent before the count that slowly fades to a third and back every three seconds, and
+  stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
+  dot); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). The profile menu holds Switch
   profile and Sign out. While a sign-out runs, which can take about 20 s when a drive or the server does not answer, the
   profile's entry reads "Signing out…" with a 16 px ring at its right and takes no clicks, as Granary's busy buttons do
   ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under the name until the next Sign out or another profile shows. The
@@ -282,8 +285,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
   being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
   one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
-  hides the button. The space left is the downloads folder's: when Settings → Downloads names another folder
-  while the page is in memory, the line shows only the space used until the new folder's is read. Then "Films" and
+  hides the button. Beside it, or in its place when it does not show, a quiet "Download settings" with the settings gear
+  (Reclaim Watched's size and pill, muted, with no fill or edge until the pointer is on it) opens Settings → Downloads
+  over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
+  Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
+  download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
+  is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
+  only the space used until the new folder's is read. Then "Films" and
   "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
   gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
   each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
@@ -326,8 +334,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
-  film, and with neither left Reclaim Watched when it shows. A controller's bumpers go between Films and Series, to the
-  first card of the other (Game controller, below). The sidebar's page has no Back disc.
+  film, and with neither left Reclaim Watched when it shows, else Download settings. A controller's bumpers go between
+  Films and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
   When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
   instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
   the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
@@ -348,6 +356,25 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
   season to season, to its first card. Once the series has no downloads
   left on this PC (its last episode deleted), the page goes back by itself.
+- Downloads outside their page (Granary's own, for a PC's taskbar and notifications): the sidebar's count (above), and Granary's taskbar button
+  shows how far the downloads to come are, as one bar over their bytes: green while any of them is not paused, also while
+  it waits its turn or for the server, then over those alone; yellow once every one is paused or waits for a connection
+  that is not metered, over all of them; none once nothing comes (finished, failed or deleted). A size the server has not
+  said yet adds nothing. While the player has its buttons in the preview, the taskbar button shows no bar.
+  When downloads finish or fail, Granary says so in the Apple app's words: "Example Movie is ready to watch offline",
+  "Example Series (S2E8) is ready to watch offline", "Example Movie didn't download: Not enough storage on this PC" (also
+  "The file arrived incomplete" and "No longer available on the server"; "Example Movie didn't download" when the reason
+  is not known). A season or a series that finishes together is one message, Granary's after them: "8 episodes of Example
+  Series are ready to watch offline", "7 episodes of Example Series are ready to watch offline; 1 didn't download", "2
+  episodes of Example Series didn't download". While Granary is in front, it is the player's notice card without a title
+  (opaque near-black, sky blue at 15 % with its edge at 50 %, amber when something did not download), 576 px wide at most,
+  at the top in the middle of the window, 80 px down, over the pages and the player alike, for five seconds; a newer one
+  takes its place. Behind another window or minimized, it is a Windows notification from Granary with the same sentence,
+  Play (when something finished: it plays that download from this PC, a season's or a series' first episode, specials
+  last) and Open Downloads (the Downloads page), and its body opens the Downloads page too; either brings Granary to the
+  front, and starts it when it was closed. A download that is no longer here opens the Downloads page instead. With
+  notifications off for Granary in Windows' settings, the notice shows in the window instead. Settings → Downloads →
+  Notify when downloads finish turns both off.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -1508,7 +1535,10 @@ says why above the sections.
   to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
   your Silo server offers it, else Original.". Keep watched downloads, a switch, off by default as in both apps, with the
   settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
-  finished."): on, the Downloads page suggests nothing. Each saves on this PC at once (`download-settings.json`).
+  finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
+  own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
+  Granary is in the background."): off, neither the notice nor the notification comes (Downloads outside their page,
+  Layout above). Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
@@ -1963,6 +1993,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     it, and Play/Pause in a Watch Party asks the room. A press while a button is off does nothing.
   - Leaving the player hides all three at once: Windows keeps buttons once added, so they are hidden, not removed. They
     change only with what they show, never as the position moves on.
+  - While the player has them, the taskbar button shows no downloads' progress (Downloads, Layout above); it comes back
+    once the player is left.
 - **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
   bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the

@@ -54,11 +54,28 @@ internal sealed class WindowsTaskbarToolbar : ITaskbarToolbar, IDisposable
 
     public event EventHandler<TaskbarButton>? Pressed;
 
+    /// <summary>
+    /// The player has its buttons in the preview: from a title's load until the player is left. The downloads' progress leaves the
+    /// taskbar button alone meanwhile (<see cref="WindowsTaskbarProgress"/>).
+    /// </summary>
+    public bool IsInUse { get; private set; }
+
+    /// <summary><see cref="IsInUse"/> turned; raised on the UI thread.</summary>
+    public event EventHandler? InUseChanged;
+
     // Called from the player's changes and its page's unload: the sender keeps a failure from ending the app or keeping the
     // page from letting go of the player.
-    public void Show(TaskbarToolbarState state) => _sender.Send(state);
+    public void Show(TaskbarToolbarState state)
+    {
+        _sender.Send(state);
+        SetInUse(true);
+    }
 
-    public void Hide() => _sender.Send(null);
+    public void Hide()
+    {
+        _sender.Send(null);
+        SetInUse(false);
+    }
 
     public void Dispose()
     {
@@ -78,6 +95,15 @@ internal sealed class WindowsTaskbarToolbar : ITaskbarToolbar, IDisposable
     }
 
     private nint Hwnd => WinRT.Interop.WindowNative.GetWindowHandle(_window);
+
+    private void SetInUse(bool inUse)
+    {
+        if (IsInUse != inUse)
+        {
+            IsInUse = inUse;
+            InUseChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     // Added once there is a taskbar button and something to show, changed after; throws when Explorer did not take it.
     private void Send(TaskbarToolbarState? state)

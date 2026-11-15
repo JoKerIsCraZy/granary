@@ -61,7 +61,8 @@ public sealed partial class MainWindow : Window
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
         Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger,
         Granary.Core.Theme.ServerAccent brand, Granary.Core.ViewModels.Admin.ServerActivityViewModel activity,
-        Granary.Core.Downloads.DownloadsFeature downloads, IUiDispatcher dispatcher)
+        Granary.Core.Downloads.DownloadsFeature downloads, Granary.Core.ViewModels.Downloads.DownloadActivity downloadActivity,
+        Granary.Core.ViewModels.Downloads.DownloadNotices downloadNotices, IUiDispatcher dispatcher)
     {
         Layout = layout;
         Activity = activity;
@@ -81,6 +82,8 @@ public sealed partial class MainWindow : Window
         Requests = requests;
         WatchParty = watchParty;
         Downloads = downloads;
+        DownloadsActivity = downloadActivity;
+        DownloadNotices = downloadNotices;
         InitializeComponent();
         InitializeTrailers();
         InitializeThemeMusic();
@@ -109,6 +112,7 @@ public sealed partial class MainWindow : Window
         InitializeRemote();
         InitializeController();
         InitializeActivity();
+        InitializeDownloads();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
         // Where it was closed last, as it was; the first time where Windows places it.

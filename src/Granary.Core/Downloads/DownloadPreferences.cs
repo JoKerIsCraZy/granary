@@ -24,6 +24,12 @@ public interface IDownloadPreferences
     /// </summary>
     bool KeepWatched { get; }
 
+    /// <summary>
+    /// Granary says when downloads finish or fail: a notice in its window while it is in front, a Windows notification while
+    /// it is not. On by default.
+    /// </summary>
+    bool NotifyWhenFinished { get; }
+
     /// <summary>Raised on the caller's thread after any of them changed.</summary>
     event EventHandler? Changed;
 
@@ -37,14 +43,18 @@ public interface IDownloadPreferences
     Task SetDefaultQualityAsync(string quality);
 
     Task SetKeepWatchedAsync(bool keep);
+
+    Task SetNotifyWhenFinishedAsync(bool notify);
 }
 
 /// <summary>
 /// <see cref="IDownloadPreferences"/> in <c>download-settings.json</c> in the data directory
-/// (<c>{ "folder": "D:\\Granary", "downloads_on_metered": true, "default_quality": "10mbps", "keep_watched": true }</c>).
-/// Without the file, or with one that cannot be read, downloads go to <see cref="DownloadPaths.DefaultRoot"/>, wait on metered
-/// connections, start on Original and are suggested for deletion once watched; a value it does not know is the default. One that cannot be written is logged, and the choice still holds for this
-/// run. Files are written off the caller's thread, which is the UI's.
+/// (<c>{ "folder": "D:\\Granary", "downloads_on_metered": true, "default_quality": "10mbps", "keep_watched": true,
+/// "notify_when_finished": false }</c>). Without the file, or with one that cannot be read, downloads go to
+/// <see cref="DownloadPaths.DefaultRoot"/>, wait on metered connections, start on Original, are suggested for deletion once
+/// watched and are said when they finish; a value it does not know, or one a file from before its setting lacks, is the
+/// default. One that cannot be written is logged, and the choice still holds for this run. Files are written off the caller's
+/// thread, which is the UI's.
 /// </summary>
 public sealed class JsonDownloadPreferences : IDownloadPreferences
 {
@@ -58,6 +68,7 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
     private volatile bool _downloadsOnMetered;
     private volatile string _defaultQuality;
     private volatile bool _keepWatched;
+    private volatile bool _notifyWhenFinished;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonDownloadPreferences(string filePath, ILogger<JsonDownloadPreferences> logger)
@@ -72,6 +83,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
             ? quality
             : DownloadQualities.Original;
         _keepWatched = file?.KeepWatched == true;
+        // Absent from a file written before the setting: on.
+        _notifyWhenFinished = file?.NotifyWhenFinished != false;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "download-settings.json");
@@ -83,6 +96,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
     public string DefaultQuality => _defaultQuality;
 
     public bool KeepWatched => _keepWatched;
+
+    public bool NotifyWhenFinished => _notifyWhenFinished;
 
     public event EventHandler? Changed;
 
@@ -153,6 +168,12 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
         return SaveAndRaise();
     }
 
+    public Task SetNotifyWhenFinishedAsync(bool notify)
+    {
+        _notifyWhenFinished = notify;
+        return SaveAndRaise();
+    }
+
     private Task SaveAndRaise()
     {
         var save = QueueSave();
@@ -206,7 +227,7 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
-            var file = new DownloadSettingsFile(_folder, _downloadsOnMetered, _defaultQuality, _keepWatched);
+            var file = new DownloadSettingsFile(_folder, _downloadsOnMetered, _defaultQuality, _keepWatched, _notifyWhenFinished);
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(file, DownloadSettingsJsonContext.Default.DownloadSettingsFile);
             SafeFile.WriteWhole(_filePath, temp => File.WriteAllBytes(temp, json));
         }
@@ -219,7 +240,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
 }
 
 /// <summary><c>download-settings.json</c>.</summary>
-internal sealed record DownloadSettingsFile(string? Folder, bool? DownloadsOnMetered, string? DefaultQuality, bool? KeepWatched = null);
+internal sealed record DownloadSettingsFile(string? Folder, bool? DownloadsOnMetered, string? DefaultQuality, bool? KeepWatched = null,
+    bool? NotifyWhenFinished = null);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
 [JsonSerializable(typeof(DownloadSettingsFile))]

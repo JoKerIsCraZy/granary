@@ -14,6 +14,7 @@ using Granary.Core.Settings;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -77,6 +78,18 @@ public partial class App : Application
         _logger = Services.GetRequiredService<ILogger<App>>();
         _logger.LogInformation("Granary {Version} starting", typeof(App).Assembly.GetName().Version);
         _window = Services.GetRequiredService<MainWindow>();
+        // Windows' notifications for downloads that finish or fail while Granary is not in front, registered at every start
+        // before anything reads how Granary was started: a click on one while Granary was closed started it, and its Play or
+        // Open Downloads runs once the shell is up (docs/architecture.md, "Downloads in the shell").
+        var notices = Services.GetRequiredService<DownloadNotices>();
+        _window.Closed += (_, _) => notices.Dispose();
+        var startedByClick = Services.GetRequiredService<WindowsAppNotifications>()
+            .Register(_window, click => notices.Act(click.Action, click.DownloadId));
+        // Held until the shell has started, as any click that comes while Granary restores its sign-in.
+        if (startedByClick is { } click)
+        {
+            notices.Act(click.Action, click.DownloadId);
+        }
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
         // Activated, and maximized at once if it was closed so.
@@ -95,6 +108,11 @@ public partial class App : Application
         var downloads = Services.GetRequiredService<DownloadQueue>();
         downloads.Start();
         _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
+        // The sidebar and the taskbar button follow them for the whole run (docs/architecture.md, "Downloads in the shell").
+        var activity = Services.GetRequiredService<DownloadActivity>();
+        activity.Start();
+        _window.Closed += (_, _) => activity.Dispose();
+        Services.GetRequiredService<WindowsTaskbarProgress>().Start();
         // What was watched from this PC goes to the server once it can be reached, and its progress comes back
         // (docs/architecture.md, "Offline progress"). The last position of a title that plays as Granary closes is kept
         // with its stop, which the window waits for.
@@ -129,7 +147,8 @@ public partial class App : Application
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.
-        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started);
+        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started,
+            notices.ShellStarted);
     }
 
     private static PlayRequest? DeveloperPlayRequest()
@@ -144,8 +163,9 @@ public partial class App : Application
         return item >= 0 && item + 1 < arguments.Length ? PlayRequest.Resume(arguments[item + 1]) : null;
     }
 
-    // Tells the start screen when the shell has started (or failed to), so it can make way.
-    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started)
+    // Tells the start screen when the shell has started (or failed to), so it can make way; then does what a notification's
+    // click held until now asked for (the one that started Granary, or one while it started), over the page the shell routed to.
+    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started, Action? then)
     {
         try
         {
@@ -159,6 +179,15 @@ public partial class App : Application
         finally
         {
             started.TrySetResult();
+        }
+        try
+        {
+            then?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape; the app is up all the same.
+            _logger?.LogWarning("A notification's click could not be followed at the start ({Failure})", ex.GetType().Name);
         }
     }
 
@@ -185,10 +214,16 @@ public partial class App : Application
         // opens, where it was closed (window.json).
         services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
         services.AddSingleton<WindowModeService>();
-        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
-        services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
+        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays, and the
+        // downloads' progress on its taskbar button while none does.
+        services.AddSingleton<WindowsTaskbarToolbar>();
+        services.AddSingleton<ITaskbarToolbar>(sp => sp.GetRequiredService<WindowsTaskbarToolbar>());
+        services.AddSingleton<WindowsTaskbarProgress>();
         // Keeps the display on while a title plays.
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
+        // Windows' notifications for downloads that finish or fail while Granary is not in front; the app registers them.
+        services.AddSingleton<WindowsAppNotifications>();
+        services.AddSingleton<IAppNotifications>(sp => sp.GetRequiredService<WindowsAppNotifications>());
         // Title pages' theme music, through Windows' own media player beside mpv.
         services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
         // The free space where downloads go, as Windows counts it, network shares included; Core's own count knows only drives.

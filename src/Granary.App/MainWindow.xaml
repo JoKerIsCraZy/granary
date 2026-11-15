@@ -171,11 +171,30 @@
                         <FontIcon Glyph="&#xE81C;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <!-- Only while the server lets the profile download, or while the profile has downloads on this PC. -->
-                <NavigationViewItem Content="Downloads" Tag="Downloads">
+                <!--
+                    Only while the server lets the profile download, or while the profile has downloads on this PC. Beside it, as
+                    Notifications' unread count, the count of the downloads coming or waiting (DownloadActivity); while one comes, a
+                    small dot before the count breathes slowly (MainWindow.Downloads.cs). The icon-only rail shows the count on the
+                    icon, without the dot.
+                -->
+                <NavigationViewItem Tag="Downloads" AutomationProperties.Name="{x:Bind DownloadsActivity.EntryName, Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE896;" />
                     </NavigationViewItem.Icon>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Downloads" VerticalAlignment="Center" />
+                        <Ellipse x:Name="DownloadsPulse" Grid.Column="1" Width="6" Height="6" Margin="0,0,4,0" VerticalAlignment="Center"
+                                 Fill="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind DownloadsActivity.IsTransferring, Mode=OneWay}"
+                                 AutomationProperties.AccessibilityView="Raw" />
+                    </Grid>
+                    <NavigationViewItem.InfoBadge>
+                        <InfoBadge Value="{x:Bind DownloadsActivity.PendingCount, Mode=OneWay}" Visibility="{x:Bind DownloadsActivity.HasPending, Mode=OneWay}"
+                                   Background="{StaticResource SiloPrimaryBrush}" Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
+                    </NavigationViewItem.InfoBadge>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
@@ -298,6 +317,16 @@
         <!-- A notice for the minimized player: above its bar, at its left edge (MainWindow.Player.cs, ShowDockNotice). -->
         <controls:PlaybackNoticeView x:Name="DockNotice" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" MaxWidth="576"
                                      Visibility="Collapsed" />
+
+        <!--
+            Downloads that finished or failed while Granary is in front, "Example Movie is ready to watch offline" for five
+            seconds (DownloadNotices): the player's notice card without a title, amber when something did not download, at the
+            top in the middle, over the pages and the player alike, where the player shows its own below its top bar. Behind
+            another window or minimized, Granary says it as a Windows notification instead.
+        -->
+        <controls:PlaybackNoticeView Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,80,16,0" MaxWidth="576"
+                                     Message="{x:Bind DownloadNotices.NoticeText, Mode=OneWay}" IsWarning="{x:Bind DownloadNotices.IsWarning, Mode=OneWay}"
+                                     Visibility="{x:Bind DownloadNotices.HasNotice, Mode=OneWay}" />
 
         <!--
             A trailer, over everything but the start screen, title bar included, as a dialog: YouTube's player on a scrim

@@ -246,6 +246,21 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task DownloadSettings_OpensSettingsDownloads_OverThePage_SoBackLeadsHere()
+    {
+        _navigation.ShowSection(AppRoute.Downloads);
+        var page = await AttachedAsync();
+
+        page.OpenSettingsCommand.Execute(null);
+
+        Assert.Equal((AppRoute.Settings, (object?)"downloads"), _navigation.Navigations[^1]);
+        Assert.Equal([AppRoute.Downloads], _navigation.Sections);
+        _navigation.GoBack();
+        Assert.Equal(AppRoute.Downloads, _navigation.Current);
+        Assert.Equal("Download settings", DownloadsViewModel.SettingsTitle);
+    }
+
+    [Fact]
     public async Task Progress_UpdatesTheCardInPlace()
     {
         // A UI thread of its own, as the app's: the refreshes a running transfer posts run one after another, never side by side.
