@@ -406,14 +406,15 @@ public sealed partial class DownloadStore
     // Every download.json at <root>\<server>\acct-<account>\<profile>\<download>\ under the downloads folder and the default one,
     // which is "downloads" in the data folder the index is in (DownloadPaths.DefaultRoot for the app's own index), except in the
     // folders already known. The downloads folder can be any folder, a media library among them: the look goes only into names
-    // Granary's layout makes, and finds at most ScanLimit such folders, so it lists and reads no more than that.
+    // Granary's layout makes, and finds at most ScanLimit such folders, so it lists and reads no more than that. A download's
+    // folder the index knows is passed over uncounted: it is not read, and many of them never keep a lost one from being found.
     private List<StoredDownload> FindFolders(HashSet<string> known)
     {
         var found = new List<StoredDownload>();
         var scan = new Scan(ScanLimit);
         foreach (string root in Roots())
         {
-            foreach (string folder in DownloadFolders(root, scan).Where(f => !known.Contains(f)))
+            foreach (string folder in DownloadFolders(root, scan, known))
             {
                 scan.Records++;
                 var (record, _) = ReadRecord(folder, null, null);
@@ -434,8 +435,8 @@ public sealed partial class DownloadStore
     }
 
     // The folders four levels under root whose names Granary's layout makes: a server's, "acct-" and an account's, a profile's
-    // and a download's.
-    private List<string> DownloadFolders(string root, Scan scan)
+    // and a download's, except the downloads' folders in known.
+    private List<string> DownloadFolders(string root, Scan scan, HashSet<string> known)
     {
         List<string> level = [root];
         for (int depth = 1; depth <= 4; depth++)
@@ -443,7 +444,7 @@ public sealed partial class DownloadStore
             var next = new List<string>();
             foreach (string folder in level)
             {
-                LayoutFoldersIn(folder, depth, scan, next);
+                LayoutFoldersIn(folder, depth, scan, depth == 4 ? known : null, next);
             }
             level = next;
         }
@@ -472,10 +473,10 @@ public sealed partial class DownloadStore
         return roots.Distinct(StringComparer.OrdinalIgnoreCase);
     }
 
-    // The subfolders of a folder whose names the layout makes at that depth, each counted against the scan's limit as it is
-    // found; none once the limit is reached. The listing is read as it goes, so a folder of many others (a media library's)
-    // is never held whole.
-    private void LayoutFoldersIn(string folder, int depth, Scan scan, List<string> found)
+    // The subfolders of a folder whose names the layout makes at that depth, except those in known, each counted against the
+    // scan's limit as it is found; none once the limit is reached. The listing is read as it goes, so a folder of many others
+    // (a media library's) is never held whole.
+    private void LayoutFoldersIn(string folder, int depth, Scan scan, HashSet<string>? known, List<string> found)
     {
         try
         {
@@ -485,7 +486,7 @@ public sealed partial class DownloadStore
             }
             foreach (string subfolder in Directory.EnumerateDirectories(folder))
             {
-                if (!IsLayoutName(Path.GetFileName(subfolder), depth))
+                if (!IsLayoutName(Path.GetFileName(subfolder), depth) || known?.Contains(subfolder) == true)
                 {
                     continue;
                 }

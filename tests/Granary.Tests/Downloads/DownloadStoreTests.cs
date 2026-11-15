@@ -775,6 +775,29 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Equal(2, store.All.Count);
     }
 
+    // The folders the index knows are not looked into, and do not use up the limit: a download it lost after them is found.
+    [Fact]
+    public async Task TheStartScan_DoesNotCountTheFoldersTheIndexKnows_AgainstItsLimit()
+    {
+        var first = await LoadedAsync();
+        for (int i = 1; i <= 5; i++)
+        {
+            await first.AddAsync(Record("dl_" + i), Token);
+        }
+        // The index lost dl_5, the last of the profile's folders.
+        var index = JsonNode.Parse(await File.ReadAllTextAsync(IndexPath, Token))!;
+        var downloads = index["downloads"]!.AsArray();
+        downloads.Remove(downloads.Single(e => (string?)e!["download_id"] == "dl_5"));
+        await File.WriteAllTextAsync(IndexPath, index.ToJsonString(), Token);
+        var store = new DownloadStore(IndexPath, _preferences, _time, _logs.For<DownloadStore>()) { ScanLimit = 4 };
+
+        await store.LoadAsync(Token);
+
+        // srv1, acct-1 and 7, then dl_5 alone.
+        Assert.Equal(new DownloadStore.ScanCount(4, 1, false), store.LastScan);
+        Assert.NotNull(store.Find(Scope7, "dl_5"));
+    }
+
     [Fact]
     public async Task AFolderDeleteUnderAnotherRoot_StaysWhenTheIdIsAddedAgain()
     {
