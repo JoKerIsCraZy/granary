@@ -71,13 +71,26 @@ public sealed partial class RemoteIndicatorViewModel : ObservableObject, IDispos
         _noticeTimer = null;
     }
 
-    // Every phone that controls, each with tv_disconnected; a phone that only watches stays.
+    // Every phone that controls, each with tv_disconnected; a phone that only watches stays. One that cannot be let go
+    // keeps none of the others connected; the first failure is handed on once every phone was tried.
     [RelayCommand]
     private async Task DisconnectAsync()
     {
+        Exception? failure = null;
         foreach (var phone in _receiver.Phones.Where(phone => phone.IsActive).ToList())
         {
-            await _receiver.DisconnectAsync(phone.Number);
+            try
+            {
+                await _receiver.DisconnectAsync(phone.Number);
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                failure ??= ex;
+            }
+        }
+        if (failure is not null)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(failure);
         }
     }
 

@@ -42,6 +42,8 @@ internal sealed class RemoteAcceptLoop
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _stop = new();
+    // Taken once: the source is disposed at the stop, and a cancelled token is read safely after that.
+    private readonly CancellationToken _stopToken;
     private int _state = NotStarted;
 
     /// <param name="accept">Waits for the next connection; the token ends it when the loop stops, if it heeds it.</param>
@@ -62,6 +64,7 @@ internal sealed class RemoteAcceptLoop
         _onFailed = onFailed;
         _time = time;
         _logger = logger;
+        _stopToken = _stop.Token;
     }
 
     /// <summary>Ends when the loop does. Nothing waits for it.</summary>
@@ -72,7 +75,7 @@ internal sealed class RemoteAcceptLoop
     {
         if (Interlocked.CompareExchange(ref _state, Accepting, NotStarted) == NotStarted)
         {
-            var stop = _stop.Token;
+            var stop = _stopToken;
             Running = Task.Run(() => LoopAsync(stop), CancellationToken.None);
         }
     }
@@ -95,6 +98,11 @@ internal sealed class RemoteAcceptLoop
         {
             // What an accept registered on the stop failed; the stop holds all the same.
             _logger.LogDebug("Stopping the phone remote's accepts failed ({Error})", RemoteLog.Failure(ex.InnerException ?? ex));
+        }
+        finally
+        {
+            // Once, after the cancel: every registration has run, and whatever reads the token later finds it cancelled.
+            _stop.Dispose();
         }
     }
 
