@@ -333,6 +333,75 @@ public sealed class SidebarViewModelTests
     }
 
     [Fact]
+    public async Task ReadsThatFail_LogTheirKind_NeverTheErrorsText()
+    {
+        Ready();
+        _profiles = () => throw new HttpRequestException(HttpRequestError.ConnectionError, "No answer from nas.example:8096");
+        _libraries = () => throw new HttpRequestException(HttpRequestError.ConnectionError, "No answer from nas.example:8096");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("Could not load the acting profile for the sidebar", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("Could not load the libraries for the sidebar", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("ConnectionError", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("nas.example", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ASignOutThatFails_SaysSo_WithoutTheErrorsOwnText()
+    {
+        using var sidebar = Create();
+        _session.FailWith = new InvalidOperationException(@"C:\Users\elena\AppData secret detail");
+
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("Couldn't sign out. Try again.", sidebar.SignOutError);
+        Assert.DoesNotContain("secret detail", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("Signing out failed", _logs.All, StringComparison.Ordinal);
+
+        _session.FailWith = null;
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("", sidebar.SignOutError);
+    }
+
+    [Fact]
+    public async Task AFailedSignOut_IsNotShownUnderTheNextProfile()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        _session.FailWith = new InvalidOperationException("no");
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+        Assert.Equal("Couldn't sign out. Try again.", sidebar.SignOutError);
+
+        _session.ProfileId = "8";
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("", sidebar.SignOutError);
+    }
+
+    // The profile menu shows the sign-out as under way while the command runs, and offers it once at a time.
+    [Fact]
+    public async Task ASignOutUnderWay_IsRunning_AndCannotBeStartedAgain()
+    {
+        using var sidebar = Create();
+        var held = new TaskCompletionSource();
+        _session.SignOutHeld = held.Task;
+
+        var signingOut = sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.True(sidebar.SignOutCommand.IsRunning);
+        Assert.False(sidebar.SignOutCommand.CanExecute(null));
+        held.SetResult();
+        await signingOut;
+        Assert.False(sidebar.SignOutCommand.IsRunning);
+        Assert.True(sidebar.SignOutCommand.CanExecute(null));
+        Assert.Equal(["sign-out:active"], _session.Calls);
+    }
+
+    [Fact]
     public async Task AnAudioDelaySaveThatDoesNotAnswer_HoldsSwitchProfileTwoSecondsAtMost()
     {
         var silo = new Profiles.ScriptedSilo();

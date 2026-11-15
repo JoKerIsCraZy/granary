@@ -1,0 +1,98 @@
+using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Storage.Streams;
+
+namespace Granary.App.Controls;
+
+/// <summary>
+/// Artwork kept on this PC with a download (a poster, a still), decoded only as wide as the view shows it. The file is read on
+/// the thread pool, so a downloads folder on a share that does not answer holds no page up, and from its path, which a URI
+/// could misread (a <c>#</c> in a folder's name).
+/// </summary>
+internal static class LocalArtwork
+{
+    private static ILogger Logger => field ??= App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(LocalArtwork));
+
+    // The files the log named once while they fail: a downloading card reads its picture again with each look, twice a
+    // second, so a file deleted by hand during a download would otherwise fill the log. A file shown whole leaves it.
+    private static readonly Lock SaidGate = new();
+    private static readonly HashSet<string> Said = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A bitmap of the file at <paramref name="path"/>, filled once it is read; null without a path. A file that cannot be read
+    /// or decoded leaves it empty, which raises no ImageFailed: <paramref name="failed"/> hears of it instead, with the bitmap,
+    /// on the UI thread.
+    /// </summary>
+    public static BitmapImage? Load(string? path, int decodeWidth, Action<BitmapImage>? failed = null)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return null;
+        }
+        var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
+        Fill(bitmap, path, failed);
+        return bitmap;
+    }
+
+    // async void: whatever escapes would end the app over one image. A file that is gone or does not decode shows nothing.
+    private static async void Fill(BitmapImage bitmap, string path, Action<BitmapImage>? failed)
+    {
+        try
+        {
+            using var stream = await ReadAsync(path);
+            await bitmap.SetSourceAsync(stream);
+            Forget(path);
+            return;
+        }
+        catch (Exception ex)
+        {
+            SayFailed(path, ex);
+        }
+        // Back on the UI thread, where each await above came back to.
+        failed?.Invoke(bitmap);
+    }
+
+    /// <summary>The file at <paramref name="path"/> in memory, read on the thread pool.</summary>
+    public static async Task<InMemoryRandomAccessStream> ReadAsync(string path)
+    {
+        // Always yields, back on the UI thread: a read that failed at once (a file that is gone) would otherwise report
+        // before Load returned, while the caller had not shown the bitmap yet, and so would never be tried again.
+        byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path))
+            .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.ForceYielding);
+        var stream = new InMemoryRandomAccessStream();
+        try
+        {
+            await stream.WriteAsync(bytes.AsBuffer());
+            stream.Seek(0);
+            return stream;
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>Says in the log that a download's picture could not be shown: once a file, then only while debugging.</summary>
+    public static void SayFailed(string path, Exception failure)
+    {
+        bool first;
+        lock (SaidGate)
+        {
+            first = Said.Add(path);
+        }
+        // Only the kind: a file system error's message holds the full path, with the Windows user name.
+        Logger.Log(first ? LogLevel.Information : LogLevel.Debug, "A download's artwork could not be shown ({Failure})", failure.GetType().Name);
+    }
+
+    /// <summary>A picture shown whole: a later failure of its file is said again.</summary>
+    public static void Forget(string path)
+    {
+        lock (SaidGate)
+        {
+            Said.Remove(path);
+        }
+    }
+}

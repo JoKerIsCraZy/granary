@@ -1,8 +1,11 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Granary.App.Controls;
 using Granary.Core;
+using Granary.Core.Downloads;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +31,21 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
+        // The phone remote's row follows the receiver only while the view shows; an open Connect a Phone closes with it.
+        Loaded += (_, _) => PhoneRemote?.Attach();
+        Unloaded += (_, _) => PhoneRemote?.Detach();
     }
+
+    /// <summary>"Control Granary from your phone" and Connect a Phone; null where the view model was made without it.</summary>
+    public PhoneRemoteViewModel? PhoneRemote => ViewModel.PhoneRemote;
+
+    public bool HasPhoneRemote => ViewModel.PhoneRemote is not null;
+
+    public string PhoneRemoteLabel => PhoneRemoteViewModel.SwitchLabel;
+
+    public string PhoneRemoteDescription => PhoneRemoteViewModel.RowDescription;
+
+    public string ConnectAPhoneText => PhoneRemoteViewModel.ConnectAPhoneText;
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
@@ -75,6 +92,50 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     }
 
     private void OnEditMpvConfigClick(object sender, RoutedEventArgs e) => EditMpvConfigRequested?.Invoke(this, EventArgs.Empty);
+
+    // Connect a Phone, in a dialog over the window. The code is read while it is open, and goes when it closes; the dialog
+    // closes by itself when the row closes the panel (the receiver stopped listening, the switch went off, the view left).
+    private async void OnConnectAPhoneClick(object sender, RoutedEventArgs e)
+    {
+        if (PhoneRemote is not { CanConnectAPhone: true } remote || XamlRoot is null || remote.IsPanelOpen)
+        {
+            return;
+        }
+        var panel = new ConnectPhonePanel(remote);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+            Title = PhoneRemoteViewModel.ConnectAPhoneText,
+            Content = panel,
+            CloseButtonText = PhoneRemoteViewModel.DoneText,
+            DefaultButton = ContentDialogButton.Close,
+        };
+        void OnPanelChanged(object? s, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(PhoneRemoteViewModel.IsPanelOpen) && !remote.IsPanelOpen)
+            {
+                dialog.Hide();
+            }
+        }
+        remote.OpenPanelCommand.Execute(null);
+        remote.PropertyChanged += OnPanelChanged;
+        try
+        {
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            // Another dialog is open: the panel stays shut.
+            App.Services.GetRequiredService<ILogger<PlaybackSettingsView>>().LogWarning("Connect a Phone could not open ({Error})", ex.GetType().Name);
+        }
+        finally
+        {
+            remote.PropertyChanged -= OnPanelChanged;
+            remote.ClosePanelCommand.Execute(null);
+            panel.Close();
+        }
+    }
 
     // The row moves at once; the keyboard goes with it, on the button pressed, or on the other one once the row has come to
     // the end, so a remote can go on moving it.
@@ -423,6 +484,44 @@ public sealed partial class ServersSettingsView : UserControl, IDisposable
 }
 
 /// <summary>
+/// Settings → Downloads, this PC's own: the folder new downloads go to, downloads on metered connections and the quality the
+/// download dialog starts on. It reads what the server offers the profile once it is shown, for the quality labels.
+/// </summary>
+public sealed partial class DownloadsSettingsView : UserControl
+{
+    public DownloadsSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(App.Services);
+        InitializeComponent();
+        // Once: the page keeps the view.
+        Loaded += OnFirstLoaded;
+        // Storage follows the downloads only while the view shows: the downloads live as long as the app.
+        Loaded += (_, _) => ViewModel.Attach();
+        Unloaded += (_, _) => ViewModel.Detach();
+    }
+
+    public DownloadSettingsViewModel ViewModel { get; }
+
+    // A file error reading the downloads names the folder, the Windows user's name in it: only its kind goes into the log.
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(async cancellationToken =>
+        {
+            try
+            {
+                await ViewModel.LoadAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                App.Services.GetRequiredService<ILogger<DownloadsSettingsView>>()
+                    .LogWarning("Settings → Downloads could not read this PC's downloads ({Failure})", ex.GetType().Name);
+            }
+        });
+    }
+}
+
+/// <summary>
 /// Settings → Devices; it reads the account's sign-ins and the profile's devices when it is shown, and the page disposes it
 /// as it leaves, so it stops following the server and profile in use.
 /// </summary>
@@ -621,23 +720,52 @@ internal static class ServerDialogs
         _ => null,
     };
 
+    /// <summary>
+    /// "Remove NAS?": Granary signs out and forgets the server, and its downloads on this PC, of every account there, go with
+    /// it, which the question says with their count and size as far as they could be read in time.
+    /// </summary>
     public static async Task<bool> ConfirmRemoveAsync(XamlRoot? root, ServerItemViewModel server)
     {
         if (root is null)
         {
             return false;
         }
+        string message = AppText.Get("granary.servers.removeDialog.body");
+        if (await DownloadsNoteAsync(server.Id) is { } note)
+        {
+            message += Environment.NewLine + Environment.NewLine + note;
+        }
         var dialog = new ContentDialog
         {
             XamlRoot = root,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = AppText.Get("granary.servers.removeDialog.title", ("name", server.Name)),
-            Content = AppText.Get("granary.servers.removeDialog.body"),
+            Content = message,
             PrimaryButtonText = AppText.Get("granary.servers.removeDialog.confirm"),
             CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
+    // "2 downloads (3.0 GB) on this PC are deleted with it.", and how many titles' progress is not on the server yet; null for
+    // none. The removal takes them whatever the read gave, so a read that failed says they go without a count.
+    private static async Task<string?> DownloadsNoteAsync(string serverId)
+    {
+        if (App.Services.GetService<DownloadSignOut>() is not { } downloads)
+        {
+            return null;
+        }
+        try
+        {
+            return await downloads.RemoveNoteAsync(serverId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ServerDialogs))
+                .LogWarning("The downloads of a server to remove could not be read ({Failure})", ex.GetType().Name);
+            return DownloadSignOut.Note(new DownloadSummary(null, null));
+        }
     }
 }
 

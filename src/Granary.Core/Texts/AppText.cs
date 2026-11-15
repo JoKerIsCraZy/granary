@@ -15,12 +15,15 @@ namespace Granary.Core.Texts;
 /// </summary>
 public static class AppText
 {
-    private static readonly Lazy<TextLanguage> English = new(() => TextLanguage.Load(AppLanguage.English));
+    private static readonly Lazy<TextLanguage> EnglishTexts = new(() => TextLanguage.Load(AppLanguage.English));
     private static readonly AsyncLocal<TextLanguage?> InThisFlow = new();
     private static TextLanguage? _applied;
 
     /// <summary>The language texts come in now.</summary>
-    public static TextLanguage Language => InThisFlow.Value ?? Volatile.Read(ref _applied) ?? English.Value;
+    public static TextLanguage Language => InThisFlow.Value ?? Volatile.Read(ref _applied) ?? EnglishTexts.Value;
+
+    /// <summary>English, whatever language is on screen: for text that is sent and so stays English.</summary>
+    public static TextLanguage English => EnglishTexts.Value;
 
     /// <summary>Makes a language the process's, for every text from now on. The app does this at start-up.</summary>
     public static void Apply(TextLanguage language) => Volatile.Write(ref _applied, language);

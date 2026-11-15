@@ -3,10 +3,13 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
+using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Granary.Player;
 using Granary.Tests.Fakes;
@@ -27,6 +30,8 @@ public sealed class CompositionRootTests
         services.AddSingleton<INavigationService, RecordingNavigation>();
         services.AddSingleton<IConfirmation, FakeConfirmation>();
         services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
+        services.AddSingleton<IDownloadOptionsDialog, FakeDownloadOptionsDialog>();
+        services.AddSingleton<IFolderPicker, FakeFolderPicker>();
         services.AddGranaryCore();
         services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
 
@@ -59,7 +64,96 @@ public sealed class CompositionRootTests
         using var indicatorSwitch = ActivatorUtilities.CreateInstance<ActivityIndicatorSettingsViewModel>(provider);
         Assert.Same(provider.GetRequiredService<ActivityIndicatorSetting>(), provider.GetRequiredService<ActivityIndicatorSetting>());
         Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
+        // One queue runs every transfer, and the pages and the title pages share one manager.
+        Assert.Same(provider.GetRequiredService<DownloadQueue>(), provider.GetRequiredService<DownloadQueue>());
+        Assert.Same(provider.GetRequiredService<DownloadManager>(), provider.GetRequiredService<DownloadManager>());
+        // The Downloads page and Settings → Downloads make theirs outside the container, which would keep a disposable one.
+        using var downloads = ActivatorUtilities.CreateInstance<DownloadsViewModel>(provider);
+        using var seriesDownloads = ActivatorUtilities.CreateInstance<DownloadedSeriesViewModel>(provider);
+        Assert.NotNull(ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(provider));
+        // A title on this PC plays from it, and the next episode can come from this PC too.
+        Assert.Same(provider.GetRequiredService<DownloadPlaybacks>(), provider.GetRequiredService<DownloadPlaybacks>());
+        Assert.IsType<DownloadUpNext>(provider.GetRequiredService<IUpNextSource>());
+        // One queue keeps what was watched from this PC, and one sync sends it.
+        Assert.Same(provider.GetRequiredService<OfflineProgressQueue>(), provider.GetRequiredService<OfflineProgressQueue>());
+        Assert.Same(provider.GetRequiredService<OfflineProgressSync>(), provider.GetRequiredService<OfflineProgressSync>());
+        // The shell asks at the start whether the server is there, and the Downloads page shows what it found.
+        Assert.Same(provider.GetRequiredService<OfflineStart>(), provider.GetRequiredService<OfflineStart>());
+        // Every card's Download entries come from one place for the app, which the cards ask as their menus open.
+        Assert.Same(provider.GetRequiredService<CardDownloads>(), provider.GetRequiredService<CardDownloads>());
+        var record = new DownloadRecord
+        {
+            DownloadId = "dl_1", Scope = new DownloadScope("srv1", "1", "7"), MediaItemId = "mv_1", Title = "Example Movie", Quality = "original",
+            State = DownloadState.Completed, MediaFile = "media.mkv",
+        };
+        var media = new LocalMedia(new StoredDownload(record, Path.Combine(Path.GetTempPath(), "granary-tests", "none"), FilesMissing: false),
+            Granary.Core.Api.Downloads.OfflineManifest.Read("""{ "download_id": "dl_1", "content_id": "mv_1" }"""u8), new HashSet<string>());
+        Assert.NotNull(provider.GetRequiredService<Func<LocalMedia, LocalPlayback>>()(media));
     }
+
+    [Fact]
+    public void WithoutTheAppsDownloadDialog_TheServicesStillResolve()
+    {
+        Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
+            "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
+        services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
+        services.AddGranaryCore();
+        services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+
+        Assert.NotNull(provider.GetRequiredService<DownloadActions>());
+        Assert.IsType<NoDownloadOptionsDialog>(provider.GetRequiredService<IDownloadOptionsDialog>());
+        // The sign-out paths' view models take it, so a sign-out asks about the downloads and takes them along.
+        Assert.Same(provider.GetRequiredService<DownloadSignOut>(), provider.GetRequiredService<DownloadSignOut>());
+        // The phone remote: one receiver and one pairing key for the app; the settings row made per page, with Core's
+        // stand-ins for the App's listener, advertiser and address.
+        Assert.Same(provider.GetRequiredService<RemoteReceiver>(), provider.GetRequiredService<RemoteReceiver>());
+        Assert.Same(provider.GetRequiredService<RemotePairing>(), provider.GetRequiredService<RemotePairing>());
+        var phoneRemote = provider.GetRequiredService<Func<PhoneRemoteViewModel>>();
+        using var row = phoneRemote();
+        using var otherRow = phoneRemote();
+        Assert.NotSame(row, otherRow);
+        Assert.IsType<NoRemoteListener>(provider.GetRequiredService<IRemoteListener>());
+        Assert.IsType<NoServiceAdvertiser>(provider.GetRequiredService<IServiceAdvertiser>());
+        Assert.IsType<NoLanAddressSource>(provider.GetRequiredService<ILanAddressSource>());
+        // Never locked, until the App puts in its own that follows Windows.
+        Assert.IsType<NoPcLock>(provider.GetRequiredService<IPcLock>());
+        using var playback = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(provider);
+        Assert.NotNull(playback.PhoneRemote);
+        // The window's notice and indicator for the app; the player page makes its own.
+        Assert.Same(provider.GetRequiredService<RemoteIndicatorViewModel>(), provider.GetRequiredService<RemoteIndicatorViewModel>());
+        using var playerIndicator = ActivatorUtilities.CreateInstance<RemoteIndicatorViewModel>(provider);
+    }
+
+    [Fact]
+    public void ThePhoneRemotesPorts_RegisteredBeforeCore_AreTheOnesUsed()
+    {
+        var services = new ServiceCollection();
+        var listener = new FakeRemoteListener(new RemoteCalls());
+        var advertiser = new FakeServiceAdvertiser(new RemoteCalls());
+        var addresses = new FakeLanAddressSource();
+        var pcLock = new FakePcLock();
+        services.AddSingleton<IRemoteListener>(listener);
+        services.AddSingleton<IServiceAdvertiser>(advertiser);
+        services.AddSingleton<ILanAddressSource>(addresses);
+        services.AddSingleton<IPcLock>(pcLock);
+
+        services.AddGranaryCore();
+
+        Assert.Same(listener, Single<IRemoteListener>(services));
+        Assert.Same(advertiser, Single<IServiceAdvertiser>(services));
+        Assert.Same(addresses, Single<ILanAddressSource>(services));
+        Assert.Same(pcLock, Single<IPcLock>(services));
+    }
+
+    private static object? Single<T>(ServiceCollection services) =>
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(T)).ImplementationInstance;
 
     [Fact]
     public void SiloApiException_ExposesTheProblemWithoutItsDetail()
@@ -72,5 +166,8 @@ public sealed class CompositionRootTests
         Assert.Equal(ProblemCodes.RateLimited, exception.Code);
         Assert.Equal(TimeSpan.FromSeconds(5), exception.RetryAfter);
         Assert.Equal("Silo API returned 429 rate_limited", exception.Message);
+        // A problem the server wrote names its type; a status alone can be anyone's answer.
+        Assert.True(exception.HasProblem);
+        Assert.False(new SiloApiException(403, ApiProblem.FromStatus(403)).HasProblem);
     }
 }

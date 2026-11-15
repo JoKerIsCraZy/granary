@@ -56,10 +56,14 @@ public sealed partial class ItemDetailViewModel
         FollowTitlePage();
     }
 
-    /// <summary>The page left: stop following, and drop a read of the state, and the placing of missing episodes, on its way.</summary>
+    /// <summary>
+    /// The page left: stop following, and drop a read of the state, the placing of missing episodes and the read of the next
+    /// airing on their way.
+    /// </summary>
     public void Deactivate()
     {
         StopPlacing();
+        StopNextAiring();
         if (!_isActive)
         {
             return;
@@ -111,13 +115,13 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // Only a season of more than one episode has a row, as on the web.
     private void ShowSiblings(IReadOnlyList<Episode> episodes)
     {
-        _siblings = episodes.Where(e => e.ContentId.Length > 0).ToList() is { Count: > 1 } siblings ? siblings : [];
+        _siblings = [.. episodes.Where(e => e.ContentId.Length > 0)];
         ShowSiblingCards();
     }
 
+    // Only a row of more than one entry shows, as the web shows a season of more than one episode; the places count.
     private void ShowSiblingCards()
     {
         if (_serverBase is not { } server)
@@ -130,10 +134,19 @@ public sealed partial class ItemDetailViewModel
         {
             CurrentMark = e.ContentId == _contentId ? CurrentMark.NowViewing : CurrentMark.None,
         })];
-        // A new list centres the row on the episode again: only for cards that changed.
+        if (SeasonGaps.Among<object>(_siblings, cards, _places, place => place).Count <= 1)
+        {
+            cards = [];
+        }
         if (!cards.SequenceEqual(MoreEpisodes))
         {
             MoreEpisodes = cards;
+        }
+        // The row holds the very cards above. A new list centres it on the episode again: only for entries that changed.
+        IReadOnlyList<object> row = MoreEpisodes.Count == 0 ? [] : SeasonGaps.Among<object>(_siblings, MoreEpisodes, _places, place => place);
+        if (!row.SequenceEqual(MoreEpisodesRow))
+        {
+            MoreEpisodesRow = row;
         }
     }
 
@@ -223,7 +236,7 @@ public sealed partial class ItemDetailViewModel
 
     // A watched mark, a start or a stop: the item's own state (where Play resumes, a series' or season's next episode), its
     // listed episodes, a series' season cards and an episode's siblings, read again with the image sizes the page loaded
-    // with, so their stills stay the ones shown. The reads count as one: if any fails, the page keeps what it shows and
+    // with, so their stills stay the ones shown; then the series' next airing. The reads count as one: if any fails, the page keeps what it shows and
     // stays stale, so a row never sits beside an older Play.
     private async Task RefreshWatchStateAsync()
     {
@@ -286,12 +299,15 @@ public sealed partial class ItemDetailViewModel
             IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
             if (list is not null && _listsEpisodes)
             {
+                PlaceAgainIfChanged(_episodes, list.Items, generation);
                 _episodes = list.Items;
                 ShowEpisodeCards();
             }
             else if (list is not null)
             {
+                var before = _siblings;
                 ShowSiblings(list.Items);
+                PlaceAgainIfChanged(before, _siblings, generation);
             }
             if (seasons is not null)
             {
@@ -300,6 +316,9 @@ public sealed partial class ItemDetailViewModel
             }
             ShowPlayAction();
             ShowOverview();
+            // The episodes read again are the ones the Download items offer and follow.
+            ShowDownloads();
+            StartNextAiring(server, generation, CancellationToken.None);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -329,7 +348,8 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // The list the page shows, or null when it shows none.
+    // The list the page shows or keeps, or null when it has none. An episode's season is kept even while More Episodes is
+    // hidden: a place that comes later shows the row with its cards.
     private Task<EpisodeCollection?>? ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
     {
         if (_listsEpisodes && _episodesSeasonId is { } seasonId)

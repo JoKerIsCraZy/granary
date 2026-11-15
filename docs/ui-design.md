@@ -146,7 +146,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   first box set card only.
 - `MediaRow`: row title (a title Silo wrote in the language on screen, from its `title_key`, as the web's
   `lib/sectionTitle.ts`; a typed one as typed), optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
-  already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
+  already holds all of it; For You and Requests rows only when a page lists more), and with it the title opens the same
+  page on a click, in the accent under the mouse, as the web's `MediaCarousel` links its title (`titleHref`); for the mouse
+  only, so keys, a remote and a controller keep Explore all as the row's one stop. Horizontally scrolling cards 20 px apart
   as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
   1024 px; wide cards 260 px, 315 from 640), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
   people) are `ScrollView`s that ignore the mouse wheel (`WheelScrollsPage`): the wheel scrolls the page, Shift or a
@@ -179,9 +181,18 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   Enter opens the card itself. A card's ⋮ menu is the web's
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
-  Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
-  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
-  same menu. The web's admin entries (play history, metadata) are not there yet.
+  Watchlist, Download, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
+  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Download is Granary's: the web's card menu has none,
+  so it stands where the title page's ⋮ has it among the web's items (after the watchlist and Add to Collection, before
+  Not Interested; on an episode, after Reset Progress). Every film's and episode's card has it wherever cards show
+  (Home's rows, Continue Watching and Next Up, the libraries, search, collections, a title page's rows and episodes),
+  with the title page's entries and rules (Detail pages, below): "Download" while your Silo server lets the profile
+  download, or the download's status in the Downloads page's words, which opens the Downloads page, and "Delete download"
+  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`). They come from what this PC
+  knows, so opening the menu asks the server nothing. Below a line come the entries of the list a card is in, from the
+  nearest grid above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a collection's own.
+  Right-click, Shift+F10, the menu key and a controller's Menu open the same menu. The web's admin entries (play
+  history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter in the accent with its label; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
@@ -203,7 +214,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
-  controls that show optional parts set them in code when their item changes (`MediaCardView`).
+  controls that show optional parts set them in code when their item changes (`MediaCardView`, and `MediaRow`'s Explore
+  all and title link when its command changes).
 - Artwork goes through `Artwork.Load`, which fills the bitmap from the app's artwork cache
   (docs/architecture.md, Artwork). `MediaRow` and `MediaGrid` prefetch their cards' artwork; a grid asks
   for the next page four rows ahead of its last realized card.
@@ -215,7 +227,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
-  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout, in the web's words; the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
+  has downloads on this PC, with the count of its downloads coming or waiting in the accent as Notifications' count, and
+  while one comes a 6 px dot in the accent before the count that slowly fades to a third and back every three seconds, and
+  stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
+  dot); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout,
+  in the web's words; the servers are in Settings → Servers). While a sign-out runs, which can take about 20 s when a drive
+  or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its right and takes no
+  clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under
+  the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
+  are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
@@ -255,6 +276,125 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
   the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
   squeezing while the pane moved and the new one sliding in after it.
+- Downloads (`DownloadsPage`, Granary's own after the list pages, since the web has no such page; the apps' words): the
+  active profile's downloads on this PC. The padding of the list pages (48, 32, 48, 48); "Downloads" in the display style
+  and under it, muted, the space they use and the space left on the drive of the downloads folder ("12.0 GB used · 200.0 GB
+  free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
+  download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
+  without your Silo server.". While the profile has watched downloads that are whole on this PC, an outline
+  button "Reclaim Watched" (History's outline button, at the left) stands above the list. The words are the Android
+  app's throughout: the button and the title of its question ("Reclaim Watched"), the question ("Delete 2 watched
+  downloads and free 3.0 GB?", "Delete 1 watched download and free 2.0 GB?" for one) and its yes ("Reclaim"). The size is
+  the media files', as both apps count it. A yes deletes the downloads the question counted that are still watched, as
+  Delete deletes one. Watched is the server's word, as its progress was last read, or a play that reached the title's end
+  on this PC; a play left past nine tenths does not count until the server says so, and neither does a title that is
+  being watched again. A download the server no longer has is never counted: it could not be downloaded again. Nor is the
+  one that plays now, as during its credits under the minimized player. Settings → Downloads → Keep watched downloads
+  hides the button. Beside it, or in its place when it does not show, "Download settings" with the settings gear before
+  its label, in Reclaim Watched's outline pill, opens Settings → Downloads
+  over the page, as Settings always opens, so Back, a controller's B and a remote's Back lead here again. It comes after
+  Retry and Reclaim Watched and before the cards, for Tab and the arrows alike. Neither of Silo's apps has a way to its
+  download settings on its Downloads screen (both keep them in Settings only), so this one is Granary's. The space left
+  is the downloads folder's: when Settings → Downloads names another folder while the page is in memory, the line shows
+  only the space used until the new folder's is read. Then, while the profile monitors a series, "Monitored" (the Apple app's
+  title for its list, `downloads.monitored.title`): a poster card for each monitored series in the same grid, running ones
+  first, then by title; its poster and title are the series' page's (read as the page shows, and every 15 minutes at most),
+  else the title a download dialog or a download named. Under the title, in the caption's style: what it takes, the Apple
+  app's rule line ("Future episodes", "All episodes", "Last season · Season 3 on", "Seasons 2 and 3", with " · 10 Mbps" for
+  a quality that is not original), and what it does next, the Apple app's status line ("Episode 6 on Thursday", "Season 2
+  starts tomorrow", "Downloading Episode 6 · 42%", "Episode 7 is next", "Preparing Episode 7", "Episode 7 waits for an
+  unmetered connection" (its Wi-Fi line on a PC), "Out of space · 25 GB limit" in amber (the limit that holds its first
+  held episode: the monitor's, or Settings → Downloads' for every download), "Paused", "Up to date", or "Monitoring"
+  before the airing calendar was read). A click opens the series' download dialog on Monitor; its ⋮ menu
+  has the Apple app's Go to Series (the series' page) and Options (that dialog). A page with monitored series and no
+  downloads shows no empty box. Then "Films" and
+  "Series" (the row titles' 20 px semibold), each a library's grid of Granary's own cards (`MediaGrid`, its columns and
+  gaps for the profile's poster size), whose lines show whatever the profile chose under posters, since they say where
+  each download stands: the films by title as posters, then a poster for each series by title. Artwork comes from the
+  files on this PC (a film's poster, the series' poster), so the page works without the server; until it is there, the
+  title stands in, as on any card. Every card has three lines, the two under the title in the caption's style (12 px,
+  also on a poster, where a library's poster has its overline: they say more than an overline holds): the size ("8.0 GB",
+  a series' all its episodes'; kept empty while the server has not said it, so the grid's rows stay even) and the status
+  in the apps' words ("Preparing…", "Queued", "Paused", "Paused · metered connection", "Series storage limit reached" (the
+  Apple app's, for a monitored series' episode its monitor's limit holds), "Storage limit for downloads reached" (Granary's,
+  for one the limit in Settings → Downloads holds), "Downloaded", "Failed", "Failed · not enough space", "No longer available", "Missing file": also a finished download whose media file was deleted by
+  hand, which then does not play; the page has the folders looked at as it shows), in amber for a failed one, missing
+  files and one the server no longer has. While the file comes, its status takes both lines, each short enough for a
+  compact poster in a 1920 px window (about 141 px of text; `DownloadCardsTests` measures them in the app's font):
+  "Downloading · 42%" over the size until the speed can be measured, then the time left and the speed, as the Apple app's
+  row says them, "42% · 4 min left" over "12.3 MB/s" ("under 1 min left", "1 hr 5 min left"), read once a second and gone
+  again when no bytes came for 3 s. The pointer's tip on a card that is not whole says its whole status in one line:
+  "Downloading · 42% · 12.3 MB/s · 4 min left". A whole download says instead how much of it was watched, as a
+  Continue Watching card does: the bar at how far in and "18 min left" (to the nearest minute, as Continue Watching
+  rounds it), or the watched mark (the green check of season and episode cards) and "Watched", or "Downloaded" before it
+  was started; one whose files are gone or that the server no longer has says that first, and keeps its bar. The
+  position is the newest this PC knows: where a play from this PC left it, or the server's progress once read back when
+  that is newer, so it shows without the server and moves as a download plays; the length is the manifest's, or the
+  play's for a download kept before Granary kept it. A series' card has the watched mark once every episode here is
+  watched. A series' card says how many episodes it has here ("3 episodes",
+  "1 episode"; "2 of 3 episodes" while some are not whole yet, the Android app's words). The card's bar (3 px, the
+  accent) shows how much of the file is here while it comes or waits with bytes on this PC, and on a series' card how
+  much of its episodes is once any of it came. Screen readers hear the card's title, size and status, "Example Movie, 8.0
+  GB, Downloading", the same while it comes: the percentage is the bar's value (in percent, on every card).
+  A click on a card: a whole download plays from this PC, from where the profile left it (the apps' tap on a download),
+  as the card's play disc does under the pointer; any other opens the film's or the episode's page, as the list's row
+  did. A series' card opens its downloads (below). Play on a card (its play disc under the pointer, a remote's Play, a
+  controller's X) plays a whole download as the click does, and on a series' card its next episode here: the first whole
+  one not watched, by season and episode with the specials last, else the first, as a series' card elsewhere plays its
+  next episode; a card with nothing whole has no play disc and Play does nothing there. The card's ⋮ menu, also on right-click, Shift+F10, the menu key and a
+  remote's or a controller's Menu, holds what the list's buttons did: Play (whole downloads; then Play from Beginning
+  too, the web's card menu's, once it was started or watched), Pause, Resume or Retry
+  (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
+  download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete All
+  Episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
+  from your Silo server." with "Delete 3 Downloads" ("Delete Download" for one). Cards change in place as their
+  downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
+  was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
+  remote carries on through the grid; after the last film the first series takes it, after the last series the last
+  film, and with neither left Reclaim Watched when it shows, else Download settings. A controller's bumpers go between
+  Films and Series, to the first card of the other (Game controller, below). The sidebar's page has no Back disc.
+  When Granary starts and can't reach the server while the remembered profile has downloads on this PC, this page opens
+  instead of Home (docs/architecture.md, "Offline start"), with the sidebar as ever and Downloads picked in it. Under
+  the header, above Reclaim Watched and the cards, an informational `InfoBar` that cannot be closed says "Can't reach
+  your Silo server. Downloads on this PC still play." (Granary's own words: the web has no such page) with a "Retry"
+  button. Retry asks the server again, for at most 5 s: the button stays as it is, so the focus stays on it, a 16 px
+  ring shows in it before its word, and a second press asks nothing more. Once the server answers, the note goes and
+  Home opens as from the sidebar, so a download that plays in the minimized player plays on, and what was watched offline
+  goes to the server a moment later (docs/architecture.md, "Offline progress"); while it still can't be
+  reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
+  "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
+- A series' downloads (`DownloadedSeriesPage`, `AppRoute.DownloadedSeries`, opened from its card on the Downloads page, as
+  the Apple app opens a series' downloads on a screen of their own): the page's padding, the series' name in the display
+  style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;
+  "Specials" last) with its episodes in a grid of 16:9 stills (`MediaGrid`'s landscape cards, as a season's page shows
+  them, from the stills on this PC), each named "S01E05 · Chapter Five" as a season's page names it, with its size and
+  status and the Downloads page's click and menu. The still of an episode the profile has neither watched nor started is
+  blurred while its spoiler switch hides those (`MediaCard.BlursImage`, as the apps' download rows), and follows the switch
+  while the page shows; the switches are read from the server, so offline, before they were read, nothing is blurred.
+  It has the Back disc; Back, a controller's B and a remote's Back lead
+  to the Downloads page, which stays picked in the sidebar. A season goes with its last episode; had one of its cards the
+  focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
+  season to season, to its first card. Once the series has no downloads
+  left on this PC (its last episode deleted), the page goes back by itself.
+- Downloads outside their page (Granary's own, for a PC's taskbar and notifications): the sidebar's count (above), and Granary's taskbar button
+  shows how far the downloads to come are, as one bar over their bytes: green while any of them is not paused, also while
+  it waits its turn or for the server, then over those alone; yellow once every one is paused or waits for a connection
+  that is not metered, over all of them; none once nothing comes (finished, failed or deleted). A size the server has not
+  said yet adds nothing. While the player has its buttons in the preview, the taskbar button shows no bar.
+  When downloads finish or fail, Granary says so in the Apple app's words: "Example Movie is ready to watch offline",
+  "Example Series (S2E8) is ready to watch offline", "Example Movie didn't download: Not enough storage on this PC" (also
+  "The file arrived incomplete" and "No longer available on the server"; "Example Movie didn't download" when the reason
+  is not known). A season or a series that finishes together is one message, Granary's after them: "8 episodes of Example
+  Series are ready to watch offline", "7 episodes of Example Series are ready to watch offline; 1 didn't download", "2
+  episodes of Example Series didn't download". While Granary is in front, it is the player's notice card without a title
+  (opaque near-black, sky blue at 15 % with its edge at 50 %, amber when something did not download), 576 px wide at most,
+  at the top in the middle of the window, 80 px down, over the pages and the player alike, for five seconds; a newer one
+  takes its place. Behind another window or minimized, it is a Windows notification from Granary with the same sentence,
+  Play (when something finished: it plays that download from this PC, a season's or a series' first episode, specials
+  last) and Open Downloads (the Downloads page), and its body opens the Downloads page too; either brings Granary to the
+  front, and starts it when it was closed. A download that is no longer here opens the Downloads page instead. With
+  notifications off for Granary in Windows' settings, the notice shows in the window instead. Settings → Downloads →
+  Notify when downloads finish turns both off.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -392,7 +532,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   comes into view, with Load more for the keyboard and "Couldn’t load more titles." beside Try again. The web's texts
   for a row that does not exist, TMDB not answering, and nothing matching.
 - A title from TMDB (`TitlePage`, the web's `TitleDetail.tsx` / `ExternalTitleContent.tsx`): laid out like a library
-  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes, overview, "Directed by" or
+  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes and TMDB's logo for its mark, overview, "Directed by" or
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
   state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
   watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
@@ -606,12 +746,29 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    breadcrumbs; the series' next airing (below); the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
     whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
     for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · Oct 30, 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
-    the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+    a movie's, series' or episode's scores, as the web's `ScoreRow` (`pages/ItemDetail/components/ScoreRow.tsx`) under
+    its badges: every rating the server gives, in its order, each source's mark ("IMDb") in 13 SemiBold at 75 %
+    beside its score in 15 Bold, both in the accent colour, 6 apart, and TMDB's approved logo, 10 high, for TMDB's mark,
+    as the web's `RatingEntry` (no other source's logo may be used); 20 apart, wrapping 8 below at the overview's width (a
+    season's page has none, as the web's); the
+    tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
+  - The series' next airing, Granary's own (no Silo client shows it on a title's page): a series' page and its seasons'
+    and episodes' pages name when the series' next episode airs, the same on each, in a neutral chip (`SiloChipStyle`, a
+    12 px calendar mark in muted grey 7 before 13 px text) between the breadcrumbs and the logo or title. Its words are
+    those Silo's Apple app gives a monitored series' next download: "Episode 6 on Thursday", "Episode 6 today",
+    "Episode 6 tomorrow", and for a season's first episode "Season 4 starts on Oct 15", "… starts today", "… starts
+    tomorrow". The day is the viewer's: today, tomorrow, the weekday within a week, else the month and day. It is the
+    first airing of the calendar's next 62 days ([7.13](api-contract.md#713-calendar)) still to come, from any season but
+    the specials: one with its time until that time, one with only its date from the day after on (today's may have
+    aired). The page does not wait for it; with nothing to come in those days, or a calendar that does not answer, there
+    is no chip. It changes when the page reads its data again (opening it, or the reading after the player or a mark),
+    not with the clock; a later reading the calendar does not answer keeps the chip as it was. A screen reader reads its
+    text.
   - Quality badges after a movie's or episode's meta line, the web's `QualityBadges` after its `MetadataBadges`
     (`MovieContent.tsx`, `EpisodeContent.tsx`): up to three accent badges (`SiloQualityBadgeStyle`) for the file Play plays
     (the Version picker's, where a title has several), in the web's order and words: its resolution ("1080P", "2160P"), its range ("DV", "DV HDR10",
@@ -625,11 +782,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's own buttons one size up: the Play pill in the accent ("Play", an episode's "Play Episode", or "Resume at
     1:02:33" for a movie or episode in the web's words: the saved point, which is also where playback starts unless
     Settings → Playback → This PC → Rewind on resume sets a lead-in), Play from Beginning (a round button),
-    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
-    line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
-    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a
-    line of Granary's own (the web has none), kept beside the quality badges for the video codec and the size they do not
-    say.
+    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, Download and Delete download, then
+    Start a Watch Party below a line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode has ⋮ with
+    Download and Start a Watch Party, a season with Download season and Start a Watch Party, a series with Watchlist, Add
+    to Collection, Download series and Start a Watch Party; ⋮ shows while any of its items does. Under a single file's
+    buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white: a line of Granary's own (the web has
+    none), kept beside the quality badges for the video codec and the size they do not say.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
     playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
@@ -672,6 +830,70 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     word, and nothing more is sent. A title playing in the minimized
     player plays on in the lobby until the host starts the room's, which takes its place, as from the hub. Keyboard
     focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
+  - Download, the web's overflow item (ActionBar.tsx, its download arrow), in ⋮ after Add to Collection: on a movie or an
+    episode with a file while your Silo server lets the profile download (downloads on and allowed). A season has
+    "Download season" instead, for its episodes with a file that are not on this PC yet, and none once all are. A series has
+    the Android app's "Download series" (its series page's download menu) while your Silo server lets the profile download:
+    every season's episodes with a file that are not on this PC yet. The page lists one season's episodes at most, so the
+    item stays once all are here, and its dialog reads them as a card's does and says so. A title on
+    this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
+    available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
+    page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
+    server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
+    downloads: the title's progress, and its episodes' on a season's page. Its cards (the episodes of a season's grid,
+    More Episodes, More Like This, the seasons) carry their own Download in their ⋮ menu, as every card does
+    (Components, cards above); the page adds none to them.
+  - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
+    Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season,
+    "Download: Example Series · All Episodes" for a series, the Apple app's name for a series' every episode), "Choose
+    a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
+    files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
+    download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
+    picked under the buttons chosen (from a card, the one Play would take), and the web's "Larger files require
+    more storage space." at the foot. A card does not carry its files, so its dialog opens at once with the title
+    "Download" and reads the title as its page does, as the web's card menu reads an item for its dialogs: "Loading the
+    latest item details…" in place of the description and a 16 px ring with "Loading…", Download off; then the dialog as
+    from the title page. A read that failed says "The item details could not be loaded." with "Please try again." and
+    Try Again; a title without a file (or a season none of whose episodes has one) says the web's "No media files for this
+    item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
+    episode of this series is on this PC."), and Download stays
+    off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
+    size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
+    more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,
+    the one it asks for; the episodes alone for a preset) and under it the free space where
+    downloads go, "200.0 GB free on this PC.", or in red "Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.",
+    which keeps Download off, as does "Over your storage limit for downloads: 8.0 GB needed, 5.0 GB left of 10.0 GB." when
+    what starts would take the downloads on this PC past the limit in Settings → Downloads (Granary's own words). The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
+    Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
+    the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
+    Check access and try again." in an error bar, until another version or quality is picked; a season or a series
+    pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
+    first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
+    whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
+    downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
+    many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
+    closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
+    download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
+    never starts after the dialog was closed on it.
+  - **One Time | Monitor** (a series' Download, from its page or its card): while your Silo server monitors series, or the
+    series is monitored already, Silo's Apple app's choice heads the dialog as two pills, One Time first, with its line
+    under them ("Download now. Nothing else downloads later." / "Keep new episodes coming to this PC as they air."). One
+    Time is the dialog above; it opens on Monitor for a monitored series. Monitor, with the title "Download: Example
+    Series": the rules the server offers as rows in the version rows' style, a title and its line (All Episodes "Download
+    every episode now, then new ones as they air", Future Episodes "Only episodes that air from now on", the default, Last
+    Season "Season 3 and anything newer", or "The latest season and anything newer" before the seasons were read; another
+    client's Custom, "Seasons 2 and 3", only for its own monitor); the qualities as pills when the server keeps a monitor's
+    quality (else none, and monitors download originals); Delete after watching, a switch; Storage limit, a select of None,
+    10, 25, 50 and 100 GB (and the monitor's own limit when it is another); the Monitoring Defaults fill both in for a new
+    monitor. Under them the Apple app's sentence on what comes: "Episode 6 downloads Thursday. Monitored episodes download
+    at 10 Mbps." (the first part while the calendar names an airing the rule takes; "…in original quality."). The button
+    says Start Monitoring, or Save for a monitored series, which sends only what changed and only closes when nothing did.
+    Stop Monitoring, in red, asks in place, since a dialog cannot open over this one: "Stop monitoring Example Series?",
+    "Episodes already on this PC stay until you delete them.", Keep and Stop; Stop closes the dialog. A save that did not
+    go says why in the error bar: "Couldn't Save Monitoring", "Monitoring for this series changed on the server. Try
+    again." (the dialog then shows the monitor as it is now), "This series is no longer monitored.", or "Granary couldn't
+    confirm the monitoring change. Check this series again once you're back online."
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
@@ -717,7 +939,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as
     its badge words it; "File", or "Version 1", "Version 2" as the web's Media Info numbers several), never a file's name
     or path. The labels are the web's for the same fields where it has them ("Original Title", "Content Rating", "File
-    Size"). The web's chips, ratings, credits and version lines are there
+    Size"). The web's chips, credits and version lines are there
     instead of in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
     selected.
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
@@ -753,10 +975,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
     the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
     nothing opens; Tab and a remote's arrows pass it by, and screen readers hear one line, "Episode 5, missing" or
-    "Episode 11, airs November 19". Play, Resume, the watched toggles, the spoiler blur and More Episodes know only the
-    listed episodes, and specials get no places.
+    "Episode 11, airs November 19". An episode's More Episodes holds the same places (below). Play, Resume, the watched
+    toggles and the spoiler blur know only the listed episodes, and specials get no places.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
-    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    order, the episode itself included, and among them the places the season's grid shows (above), from the same
+    calendar answers: a place of the row's card size, its dashed box 16:9 as the episode cards' stills, with the grid's
+    words. The listed episodes show at once and the places come in once the calendar answers (a failed answer leaves the
+    row as listed). When the page reads the season again (after a stop, a start or a watched mark) and its episodes
+    changed, the places are made again, here and in the season's grid. A place is not a stop: Tab, the arrows, a controller and Up or Down into the row pass it by, and the
+    row centres on the page's own card as without places. The row shows only when it has more than one entry, places
+    included: a season of one listed episode shows it once a place joins it. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
     inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
     0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
@@ -984,11 +1212,11 @@ On the pages, and in the minimized player's bar:
 | D-pad, left stick | Move focus, as the arrows. Held, they step again after 0.4 s and then about nine times a second. Left and Right on a slider set it. |
 | A | Presses what has focus, as OK, a link in a text too (Notifications' Preferences in the Series view). Held for half a second it opens a card's menu instead, so A acts when it is let go. A text field does nothing yet (see below). |
 | B | Back, as the remote's: a menu, flyout or dialog closes first; a page opened within a section goes back; a section's page moves focus to the sidebar; Home does nothing. The app never quits. |
-| X | Plays or resumes the focused card, as a remote's Play. With the player minimized it plays or pauses that. |
+| X | Plays or resumes the focused card, as a remote's Play: on the Downloads pages a whole download from this PC, and a series' card its next episode there. With the player minimized it plays or pauses that. |
 | Y | Search. |
 | Menu | The focused card's menu. |
 | View | To the sidebar, on the section's entry, and back to where focus was. Beside a title's page the rail opens for it and closes again. |
-| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
+| LB, RB | The tab or pill before or after the chosen one, focus with it, stopping at the ends: the row focus is on, else the page's own sections (Settings' and Admin's pages in their sidebar, through all its lists; Search's Movies & Series, Movies and Series; the Downloads page's Films and Series and a series' downloads' seasons, where focus goes to the section's first card, a section without cards stepped over, and RB from above them or the sidebar goes to the first), else the page's first row of tabs (a library's Recommended, Library and Collections). On a page without any the row of cards moves on by as many cards as the row shows, less one. |
 | LT, RT | Page up and down: focus goes on row by row until most of what showed has gone by, and the page follows. Where nothing takes focus, and where nothing more lies that way (a long text under the page's last button), the page itself scrolls and focus stays. Held, they page again; both held, the way of the one pulled last, and once that one is let go the other's. |
 | Right stick | Scrolls the page, faster the further it is pushed. Focus stays. While a menu or dialog is open, the stick and the triggers scroll what it shows, never the page behind it. |
 | Right stick's click | Full screen on and off. |
@@ -1040,7 +1268,9 @@ Always:
 Not yet: a keyboard on screen for the search box and other text fields (A on a text field does nothing), button
 pictures that match the pad, and a way to swap A and B. The bumpers do not go from one season to the next: a series'
 seasons are cards that each open a page, and a season's page does not know the seasons beside it. A library's Sort,
-order and Filters are menus, not a row to step through: A opens them.
+order and Filters are menus, not a row to step through: A opens them. Windows' folder picker (Settings → Downloads →
+Change) is a window of its own that takes no controller, and Granary reads none while it is in front; the Drive select
+beside it chooses where downloads go with a controller.
 
 ## Signed-out screens
 
@@ -1081,7 +1311,8 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms), focus on
-the first page's start (TV remote, above). The
+the first page's start (TV remote, above). A profile with downloads on this PC also waits here, for at most 5 s, for
+the server's first answer, and its Downloads page comes when there is none (Downloads, above). The
 player shows the loading loop (a stretch of the ring runs clockwise round at an even pace, unseen across the G's opening,
 so it slips out at the upper end as it comes back in at the lower one; play breathes; 1.4 s a round) on a dark disc
 while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
@@ -1111,8 +1342,10 @@ off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with text and a
-mark in the accent. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
+mark in the accent. As on the web, the head stays and the groups scroll below it in a window too short for them all, so
+Downloads and About stay reachable; an arrow key or a controller's D-pad or bumper moves the focus from page to page
+across the groups and scrolls the one it reaches into view. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
 description 13 px muted, the control on the right, hairlines between rows). Selects are 220 px and 36 px high on the
@@ -1131,10 +1364,10 @@ says why above the sections.
   point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
   Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; mpv configuration, see below; Show what's playing in Discord, a switch, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
-  on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
-  the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
+  on this PC."), which a title that plays follows at once (the Discord status, under Player); and Control Granary from
+  your phone at the group's end, see below. Granary's own and kept on the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
   sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
   web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
@@ -1250,6 +1483,37 @@ says why above the sections.
   "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
   the button stay), "There's nothing from before the preset to go back to, so your mpv.conf stays as it is." (the backup was gone; the preset is no longer named) or
   "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
+- **This PC → Control Granary from your phone** (`PhoneRemoteViewModel`; docs/architecture.md, "Phone remote"), the
+  group's last row: Silo's phone app on the local network as a remote for this PC. Silo's web has no wording for this, so
+  the texts follow Silo's Roku app's Connect a Phone (`locale/en_US/strings.json`, `connect.*`) with "TV" as "PC"; the
+  ones marked *new* have no Silo source. The label is "Control Granary from your phone" (the Roku app's "Control Silo
+  from your phone"), the switch off by default and kept on this PC (`phone_remote` in `playback-device.json`). The
+  description, *new*: "Silo's phone app on this network can control what plays on this PC and start titles here.
+  Windows may ask to let Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
+  name and your server's address." While it is on, a 13 px muted line under the row says what it does: "No phone is
+  connected." or "Connected: Elena's phone, Elena's tablet" (the phones that actively control, as the Roku app lists
+  them), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
+  isn't available right now." (the Roku app's) with a second line why (*new*): "This PC is not on a local network.",
+  "Windows did not give Granary a port.", "No profile is signed in on this PC." or "Granary couldn't start it. The log has
+  the details." (the pairing key could not be read, Windows' advertisement failed, or the listener stopped). The row
+  follows the receiver only while the view shows.
+- **This PC → Connect a Phone** (`ConnectPhonePanel`), a dialog over the window titled "Connect a Phone" (the Roku
+  app's screen, which the phones' messages name) with **Done** to close it. In it, top to bottom: "Scan this code with
+  your phone's camera and open it in Silo. Then choose Elena's PC under Remote Control." (*new*, with this PC's name; the
+  Roku app's "Scan this code in the Silo app" would mislead, as the Android app has no scanner of its own); the code,
+  220 px on white with its own quiet zone (named "Code to connect a phone. Scan it with your phone's camera." for a screen
+  reader); the address and port, "192.168.1.20:52817", 16 px monospace (shown as on the Roku app), and under it "The phone
+  has to be on this network and signed in to https://silo.example." (*new*); the connected phones, as under the row;
+  "Phones can connect through this code only: Windows did not advertise this PC." (*new*) when Windows did not take the
+  advertisement; **Reset Pairing Code** (the Roku app's) with "Every phone has to scan the new code." (*new*) under it;
+  and "Phone can't connect? Allow Granary under Windows Security → Firewall & network protection → Allow an app through
+  firewall." (*new*), always. Reset Pairing Code asks first in a flyout under the button, as no second dialog can open
+  over this one: "Reset Pairing Code?" / "Every phone has to scan the new code. Phones that are connected now are
+  disconnected." with Cancel and Reset; afterwards the code shows the new key, or a muted line says "The new code is in
+  place, but a phone could not be disconnected. It can no longer control this PC." or "Couldn't reset the pairing code.
+  The old code still works." The code holds the pairing key: it is drawn only while the dialog is open, from the link the
+  receiver gives then, and goes as it closes; it is never saved, logged or copied. The dialog closes by itself when the
+  receiver stops listening or the switch goes off, and the code never comes back by itself.
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
@@ -1293,7 +1557,7 @@ says why above the sections.
   The group comes and goes with the account's role while the page is open. Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
-  hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
+  hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
 - **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name and its groups
@@ -1352,7 +1616,9 @@ says why above the sections.
   on the right Sign out (outline; "Sign out this device" on Granary's own) and Details with a chevron, which opens the
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
-  it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
+  it signs Granary out of the server and back to sign-in, and the question ends with the downloads that go along when the
+  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."), and of progress watched from this
+  PC that could not be sent ("Progress in 2 titles is not on your Silo server yet and is lost with it."). "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
   management says "Signed-in session management is unavailable on this server."; a failed read "Couldn’t load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
@@ -1368,8 +1634,58 @@ says why above the sections.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
-  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Change server" (the apps' words)
-  still opens the standalone servers page, which shares the question before removing.
+  Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
+  asks first only when the account has downloads on this PC, which go with it, or progress watched here that could not
+  be sent: "Sign out of NAS?", "2 downloads
+  (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
+  server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
+  line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
+  "Any downloads on this PC are deleted with it." when not even they can be read in time), then, when progress watched
+  from this PC could not be sent to the server, "Progress in 2 titles is not on your Silo server yet and is lost with
+  it." (the sign-out's question ends with the same sentence), Remove and Cancel. The sign-in screen's "Change server" (the apps' words) still
+  opens the standalone servers page, which shares the question before removing.
+- **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
+  keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in
+  your profile."): Folder ("New downloads go here. Downloads you have stay where they are."), the full path in 13 px
+  (selectable, wrapping at 360 px) over Open, a link that shows the folder in File Explorer (made first when nothing went
+  there yet), and Change (outline), Windows' folder picker starting in Downloads; a folder Granary can't write to, or a
+  drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
+  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Drive, while the
+  PC has more than one ("New downloads go to a Granary folder on the drive you choose. Change picks any folder."), a
+  select of its disks and removable drives with their free space ("D: · 200.0 GB free") and its mapped network drives by
+  letter alone ("Z:": asking a share that went away keeps Windows waiting), read for 5 s at most once the qualities show,
+  and without them the row stays away; the folder's own drive chosen (none for a share), and a drive chosen while
+  another is still being checked wins over it: another one takes
+  `Granary\Downloads` on it, or the default folder on the default folder's drive, refused as Change refuses. It is how a
+  controller chooses where downloads go: Windows' folder picker is a window of its own, which takes a mouse, a keyboard
+  or touch but no controller, and Granary reads no controller while another window is in front (Game controller,
+  above), so a controller's A on Change opens a picker only a keyboard or a mouse can close. Download on metered
+  connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
+  phone's hotspot."). Simultaneous Downloads, the Apple app's select of 1 to 4, two by default ("How many downloads come
+  at once."): more start at once when it goes up, and the ones under way finish when it goes down. Storage limit for downloads, Granary's own (no
+  Silo client has one): a slider from 0 to 4000 GB in steps of 10 with its value beside it ("No limit", "250 GB"), saved once
+  it rests for half a second ("Downloads don't start past it, and a monitored series' new episodes wait at it. Nothing is
+  deleted to make room."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  to 1080p", with the tallest output your server names, else the server guide's), its line the Apple app's footer for what
+  your server offers ("Original prefers source quality and may prepare a compatibility file if this device needs one.
+  Bitrate presets are prepared on the server when the original is larger, at up to the resolution shown. This is the
+  default for every download and monitor; the download dialog can change it.", its last sentence "This is the default for
+  every download; the download dialog can change it. Monitored series download in original quality." on a server whose
+  monitors keep no quality; the Apple app's "Download sheet" is the download dialog here). Keep watched downloads, a switch, off by default as in both apps, with the
+  settings contract's own words for `downloads.keep_watched` ("Do not suggest reclaiming space from downloads you have
+  finished."): on, the Downloads page suggests nothing. Notify when downloads finish, a switch, on by default, Granary's
+  own ("A short message when a download finishes or fails: in Granary's window, or as a Windows notification while
+  Granary is in the background."): off, neither the notice nor the notification comes (Downloads outside their page,
+  Layout above). Then Monitoring Defaults, the Apple app's section ("What a new monitored series starts with. Each one
+  keeps its own.", Granary's words): Delete after watching, a switch, off by default; and the storage limit, the Apple
+  app's stepper as a number box with spin buttons, 0 to 1000 GB in steps of 5 (a number typed in is held to them), its
+  row named as the Apple app names it ("Storage limit: 25 GB", "Storage limit: Unlimited" at 0). They only fill in the
+  download dialog's Monitor for a series not monitored yet. Each saves on this PC at once (`download-settings.json`; the
+  storage limit for downloads once its slider rests). Last, the Apple app's Storage: Used, what this profile's downloads
+  take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove All Downloads ("Deletes this
+  profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
+  All in red, which asks the Apple app's "Remove all downloaded files?" with Remove All and Cancel, then deletes each as
+  Delete does.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
@@ -1396,7 +1712,8 @@ says why above the sections.
 For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
 sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
 Activity (the web's "2 live" in red beside it while streams run), and BUILD at its foot ("1715 · 13ad7a74", "dev build",
-"load failed"). Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
+"load failed"); as in Settings, the head and BUILD stay and the pages between them scroll in a window too short for
+them. Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
 the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
 1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
 stream's commands on Activity.
@@ -1438,8 +1755,8 @@ stream's commands on Activity.
   account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
   Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
   5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
-  route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
-  when nothing shows.
+  route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
+  the web's. "No active streams" or "No streams match your filters" when nothing shows.
 
 ### Activity indicator
 
@@ -1526,6 +1843,32 @@ by `MainWindow.Activity.cs`.
 - **Left out for now:** the web's "View all" of the other sections and its row links (Granary has no pages for tasks,
   scans or the preparation queue).
 
+## Phone remote
+
+While Silo's phone app controls this PC (Settings → Playback → This PC → Control Granary from your phone;
+`RemoteIndicatorViewModel`), as Silo's TV apps show it, but with no standby screen: a PC is used for other things.
+
+- **The notice.** When a phone starts to control, "Elena's phone connected" (Silo's Roku app's "{name} connected"),
+  for four seconds, in the player's notice card (16 px corners, sky blue at 15 %), at the top in the middle of the
+  window, 80 px down, over the pages and over the full player alike. A phone that only watches (passive) gets none.
+- **The indicator.** While a phone actively controls, a quiet glass disc with a phone icon left of the activity
+  indicator at the top right of the page (20 px from the edge, 8 px from the activity disc when that shows), named and
+  tooltipped "Remote control active" (the TV apps'). Its menu has one item, **Disconnect Remote**, which lets every
+  phone that controls go; the phone then says it can't reach the PC and keeps it in its list. It shows where the activity
+  indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
+  icon and menu (under Player).
+- **A title a phone starts** opens as a page's Play opens it, in place of what plays, without a question on the PC; the
+  window is not brought to the front. Unless the window is the one in front (focused), it stays as it is, minimized,
+  behind other windows or visible but unfocused on another display alike: the player opens inside it, a mini view stays
+  the mini view, a trailer's full screen stays full screen, and when the player opens in full screen (as it was last
+  left), it opens windowed and goes full screen only once the viewer brings the window to the front (clicks it, or
+  brings it back from the taskbar); left before that, the player keeps its full screen choice as it was. The player's notice card (under Player, Notices) then says "Starting Example
+  Movie" and, under it, "From Elena's phone" (Silo's own `cast_standby_starting` and `cast_standby_from`, which its TV
+  apps show when a phone started a title), for four seconds, once the title's name is known; a series' title is its
+  name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then. Should the
+  PC switch profile or server between the phone's Play and the start, the player's failed screen says "This title was
+  started for a profile that is no longer signed in." (*new*), without Try again.
+
 ## Full screen
 
 The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state
@@ -1590,11 +1933,22 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   from. Full screen is the whole window's (see Full screen): leaving the player stops playback and ends the mini view,
   whichever way it is left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change), but keeps full screen;
   the page under it shows again, and the next title opens in full screen too (see Full screen, The next title).
+- **A download** plays in the same player, from the file on this PC (docs/architecture.md, "Playing a download"): the
+  title, the seek bar with its chapters and marked parts, the skip pills, the audio and subtitle menus (the subtitle files
+  kept with the download, then the tracks inside the file), the speed, both delays, the sleep timer and the next episode
+  are as for a stream. What needs the server's own stream is not there: the settings gear has no Quality and no Version
+  rows, the subtitle menu has no Add Subtitles, there is no Edit markers button, no seek-bar previews and no subtitle
+  sync. The playback info says "Play method: Local file" and "Protocol:
+  file" under Player, has no Playback Stream Info, and shows the file under Current Source File as the download's
+  manifest describes it: Container, Size, Video codec, Video range type (HDR or SDR), and the codec and channels of the
+  audio track that plays. A file that will not play shows the failed screen with Granary's own "This download can't be played. Try
+  again, or delete it and download it again." and Retry: the words name what the button beside them does.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
   semibold and the message 14 px white at 85 %, over black where the web blurs the picture (`PlaybackNoticeView`). It goes
-  after eight seconds, a newer one in its place. Minimized, the window shows it above the bar at the bar's left edge, 12 px
+  after eight seconds, a newer one in its place. The same card says "Starting {title}" and "From {phone}" for four
+  seconds when Silo's phone app started the title (see Phone remote). Minimized, the window shows it above the bar at the bar's left edge, 12 px
   up, where the web keeps it until the player opens again (Granary's bar still plays the picture); the mini view keeps it. An administrator's stop or terminate ends playback with their
   words on the failed screen ("An administrator ended this playback session.").
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
@@ -1628,7 +1982,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
   full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
-  it close up). By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  it close up). While Silo's phone app controls this PC, a phone icon leads them, "Remote control active", with a menu
+  of one item, Disconnect Remote (see Phone remote); it is none of the buttons Settings orders. By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
   track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
@@ -1838,6 +2193,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     it, and Play/Pause in a Watch Party asks the room. A press while a button is off does nothing.
   - Leaving the player hides all three at once: Windows keeps buttons once added, so they are hidden, not removed. They
     change only with what they show, never as the position moves on.
+  - While the player has them, the taskbar button shows no downloads' progress (Downloads, Layout above); it comes back
+    once the player is left.
 - **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
   bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the
@@ -1949,7 +2306,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
     playback left, as the apps do.
   - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
-    "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
+    "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high, 400 px at most; asked of the server as wide as it can be drawn, as the web's `upNext` widths), the
     series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview (left out for an episode not
     started while the profile hides descriptions, and its still blurred while it hides images, as on cards), the Play Now pill in
     the accent, and
@@ -1968,8 +2325,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   web; the cursor goes with them while it is over the picture, however they hide (the wait, a remote's Back, a tap).
   They stay while paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle
   panel is open, the markers are edited, a control in them has keyboard focus, or the mouse is over the mini view
-  (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
-  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
+  (`PlayerControlsIdle`; the log names the hold once). A real move of the pointer (the cursor's own test, below) or any
+  key brings them back: the noise of a mouse lying still wakes neither the cursor nor the controls. The cursor
+  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (5 view pixels or more within 300 ms, more screen pixels at a display scale above 100 %, so a mouse lying still
+  that reports a knock or its sensor's noise of a few pixels does not wake it,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
   still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
   brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never

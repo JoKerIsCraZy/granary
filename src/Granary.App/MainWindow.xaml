@@ -175,6 +175,31 @@
                         <FontIcon Glyph="&#xE81C;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!--
+                    Only while the server lets the profile download, or while the profile has downloads on this PC. Beside it, as
+                    Notifications' unread count, the count of the downloads coming or waiting (DownloadActivity); while one comes, a
+                    small dot before the count breathes slowly (MainWindow.Downloads.cs). The icon-only rail shows the count on the
+                    icon, without the dot.
+                -->
+                <NavigationViewItem Tag="Downloads" AutomationProperties.Name="{x:Bind DownloadsActivity.EntryName, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE896;" />
+                    </NavigationViewItem.Icon>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Downloads" VerticalAlignment="Center" />
+                        <Ellipse x:Name="DownloadsPulse" Grid.Column="1" Width="6" Height="6" Margin="0,0,4,0" VerticalAlignment="Center"
+                                 Fill="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind DownloadsActivity.IsTransferring, Mode=OneWay}"
+                                 AutomationProperties.AccessibilityView="Raw" />
+                    </Grid>
+                    <NavigationViewItem.InfoBadge>
+                        <InfoBadge Value="{x:Bind DownloadsActivity.PendingCount, Mode=OneWay}" Visibility="{x:Bind DownloadsActivity.HasPending, Mode=OneWay}"
+                                   Background="{StaticResource SiloPrimaryBrush}" Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
+                    </NavigationViewItem.InfoBadge>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -189,12 +214,34 @@
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!--
+                    The profile and its menu. A sign-out can wait up to about 20 s for a drive or a server that does not answer:
+                    meanwhile the entry reads "Signing out…" with a ring and takes no clicks, as Granary's busy buttons do
+                    ("Signing in…"), also while the question about this PC's downloads is open over it. One that failed says so
+                    under the name until the next Sign out or another profile. The web's menu has neither.
+                -->
                 <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
-                                    Content="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName), Mode=OneWay}">
+                                    IsEnabled="{x:Bind IsIdle(Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning, Sidebar.SignOutError), Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;" />
                     </NavigationViewItem.Icon>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind Sidebar.SignOutError, Mode=OneWay}" Visibility="{x:Bind HasText(Sidebar.SignOutError), Mode=OneWay}"
+                                       FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloDestructiveBrush}"
+                                       AutomationProperties.LiveSetting="Assertive" />
+                        </StackPanel>
+                        <ProgressRing Grid.Column="1" Width="16" Height="16" Margin="0,0,8,0" IsActive="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}"
+                                      Visibility="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                    </Grid>
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout Placement="TopEdgeAlignedLeft">
                             <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.shell.sidebar.switchProfile')}" Command="{x:Bind Sidebar.SwitchProfileCommand}">
@@ -228,13 +275,28 @@
             <FontIcon Glyph="&#xE76B;" FontSize="14" />
         </Button>
 
-        <!--
-            What the server does, for an acting administrator, as the web's ServerActivity: a glass disc at the top right of
-            the page, where the web has it (20 px from the edge), level with the way back. Shown and hidden by
-            MainWindow.Activity.cs; after the page in the tab order, so it is never a page's first focus.
-        -->
-        <controls:ServerActivityButton x:Name="ActivityButton" Grid.Row="1" Margin="0,12,20,0" HorizontalAlignment="Right"
-                                       VerticalAlignment="Top" Visibility="Collapsed" />
+        <StackPanel Grid.Row="1" Margin="0,12,20,0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <!--
+                While Silo's phone app controls this PC (design 5.9): a quiet disc beside the activity indicator, "Remote control
+                active", whose menu lets the phones go. Shown and hidden by MainWindow.PhoneRemote.cs; the full player has its own
+                in its bar.
+            -->
+            <Button x:Name="RemoteIndicator" Style="{StaticResource SiloPageBackButtonStyle}" Visibility="Collapsed"
+                    AutomationProperties.Name="{x:Bind RemoteActiveText}" ToolTipService.ToolTip="{x:Bind RemoteActiveText}">
+                <FontIcon Glyph="&#xE8EA;" FontSize="14" />
+                <Button.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                        <MenuFlyoutItem Text="{x:Bind RemoteDisconnectText}" Click="OnDisconnectRemoteClick" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+            <!--
+                What the server does, for an acting administrator, as the web's ServerActivity: a glass disc at the top right of
+                the page, where the web has it (20 px from the edge), level with the way back. Shown and hidden by
+                MainWindow.Activity.cs; after the page in the tab order, so it is never a page's first focus.
+            -->
+            <controls:ServerActivityButton x:Name="ActivityButton" VerticalAlignment="Top" Visibility="Collapsed" />
+        </StackPanel>
 
         <!--
             A downloaded update of Granary itself: restart into it, or it installs when Granary closes (AppUpdatesViewModel,
@@ -275,6 +337,24 @@
         <!-- A notice for the minimized player: above its bar, at its left edge (MainWindow.Player.cs, ShowDockNotice). -->
         <controls:PlaybackNoticeView x:Name="DockNotice" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" MaxWidth="576"
                                      Visibility="Collapsed" />
+
+        <!--
+            Downloads that finished or failed while Granary is in front, "Example Movie is ready to watch offline" for five
+            seconds (DownloadNotices): the player's notice card without a title, amber when something did not download, at the
+            top in the middle, over the pages and the player alike, where the player shows its own below its top bar. Behind
+            another window or minimized, Granary says it as a Windows notification instead.
+        -->
+        <controls:PlaybackNoticeView Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,80,16,0" MaxWidth="576"
+                                     Message="{x:Bind DownloadNotices.NoticeText, Mode=OneWay}" IsWarning="{x:Bind DownloadNotices.IsWarning, Mode=OneWay}"
+                                     Visibility="{x:Bind DownloadNotices.HasNotice, Mode=OneWay}" />
+
+        <!--
+            "Elena's phone connected" for four seconds when a phone starts to control this PC, as Silo's Roku app says it
+            (RemoteIndicatorViewModel): the notice card of the player's, over the pages and the player alike, where the player
+            shows its own, below its top bar.
+        -->
+        <controls:PlaybackNoticeView Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,80,16,0" MaxWidth="576"
+                                     Message="{x:Bind Remote.NoticeText, Mode=OneWay}" Visibility="{x:Bind Remote.HasNotice, Mode=OneWay}" />
 
         <!--
             A trailer, over everything but the start screen, title bar included, as a dialog: YouTube's player on a scrim

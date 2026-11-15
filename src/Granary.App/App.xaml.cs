@@ -5,16 +5,19 @@ using Granary.App.Themes;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
+using Granary.Core.Downloads;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
+using Granary.Core.Remote;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
 using Granary.Core.Texts;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -80,6 +83,18 @@ public partial class App : Application
         // The language texts come in, before the first window shows any (docs/architecture.md, "Texts").
         ApplyLanguage();
         _window = Services.GetRequiredService<MainWindow>();
+        // Windows' notifications for downloads that finish or fail while Granary is not in front, registered at every start
+        // before anything reads how Granary was started: a click on one while Granary was closed started it, and its Play or
+        // Open Downloads runs once the shell is up (docs/architecture.md, "Downloads in the shell").
+        var notices = Services.GetRequiredService<DownloadNotices>();
+        _window.Closed += (_, _) => notices.Dispose();
+        var startedByClick = Services.GetRequiredService<WindowsAppNotifications>()
+            .Register(_window, click => notices.Act(click.Action, click.DownloadId));
+        // Held until the shell has started, as any click that comes while Granary restores its sign-in.
+        if (startedByClick is { } click)
+        {
+            notices.Act(click.Action, click.DownloadId);
+        }
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
         // Activated, and maximized at once if it was closed so.
@@ -93,6 +108,27 @@ public partial class App : Application
 #endif
         // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
         Services.GetRequiredService<LocalRouteMonitor>().Start();
+        // Downloads carry on where they stopped, for the profile in use (docs/architecture.md, "The queue"). Closing stops
+        // them and waits a moment for their files to be let go; a part file is resumed at the next start.
+        var downloads = Services.GetRequiredService<DownloadQueue>();
+        downloads.Start();
+        _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
+        // The sidebar and the taskbar button follow them for the whole run (docs/architecture.md, "Downloads in the shell").
+        var activity = Services.GetRequiredService<DownloadActivity>();
+        activity.Start();
+        _window.Closed += (_, _) => activity.Dispose();
+        Services.GetRequiredService<WindowsTaskbarProgress>().Start();
+        // What was watched from this PC goes to the server once it can be reached, and its progress comes back
+        // (docs/architecture.md, "Offline progress"). The last position of a title that plays as Granary closes is kept
+        // with its stop, which the window waits for.
+        var progress = Services.GetRequiredService<OfflineProgressSync>();
+        progress.Start();
+        _window.Closed += (_, _) => progress.Dispose();
+        // Monitored series bring their new episodes: at the start, with each profile, every four hours and after a change
+        // (docs/architecture.md, "Series monitoring").
+        var monitors = Services.GetRequiredService<SeriesMonitors>();
+        monitors.Start();
+        _window.Closed += (_, _) => monitors.Dispose();
         // The server's accent recolours Granary as it arrives, and with every other server.
         var accent = Services.GetRequiredService<ServerAccent>();
         accent.PropertyChanged += (_, e) =>
@@ -116,14 +152,26 @@ public partial class App : Application
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
+        // A new notification syncs the monitored series, as a push does in Silo's Apple app: it may be a new episode's.
+        realtime.NotificationArrived += (_, _) => monitors.SyncSoon();
         realtime.Start();
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
+        // The phone remote follows its switch, the session and the PC's address from now on (Settings → Playback → This PC).
+        // Closing lets every phone go, takes the advertisement back and closes the port, within its budget.
+        // A phone starts no title on a locked PC: the window hears of the lock until it closes.
+        var pcLock = Services.GetRequiredService<WindowsPcLock>();
+        pcLock.Follow(WinRT.Interop.WindowNative.GetWindowHandle(_window));
+        _window.Closed += (_, _) => pcLock.Dispose();
+        var remote = Services.GetRequiredService<RemoteReceiver>();
+        remote.Start();
+        _window.Closed += (_, _) => remote.StopAsync().Wait(RemoteReceiver.StopBudget);
         // The Discord status goes with the app.
         _window.Closed += (_, _) => Services.GetRequiredService<DiscordStatus>().Dispose();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.
-        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started);
+        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started,
+            notices.ShellStarted);
     }
 
     // The language the profile chose, as kept on this PC when it was last read, else Windows' (docs/architecture.md, "Texts").
@@ -178,8 +226,9 @@ public partial class App : Application
         return item >= 0 && item + 1 < arguments.Length ? PlayRequest.Resume(arguments[item + 1]) : null;
     }
 
-    // Tells the start screen when the shell has started (or failed to), so it can make way.
-    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started)
+    // Tells the start screen when the shell has started (or failed to), so it can make way; then does what a notification's
+    // click held until now asked for (the one that started Granary, or one while it started), over the page the shell routed to.
+    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started, Action? then)
     {
         try
         {
@@ -193,6 +242,15 @@ public partial class App : Application
         finally
         {
             started.TrySetResult();
+        }
+        try
+        {
+            then?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape; the app is up all the same.
+            _logger?.LogWarning("A notification's click could not be followed at the start ({Failure})", ex.GetType().Name);
         }
     }
 
@@ -221,12 +279,32 @@ public partial class App : Application
         // opens, where it was closed (window.json).
         services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
         services.AddSingleton<WindowModeService>();
-        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
-        services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
+        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays, and the
+        // downloads' progress on its taskbar button while none does.
+        services.AddSingleton<WindowsTaskbarToolbar>();
+        services.AddSingleton<ITaskbarToolbar>(sp => sp.GetRequiredService<WindowsTaskbarToolbar>());
+        services.AddSingleton<WindowsTaskbarProgress>();
         // Keeps the display on while a title plays.
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
+        // Windows' notifications for downloads that finish or fail while Granary is not in front; the app registers them.
+        services.AddSingleton<WindowsAppNotifications>();
+        services.AddSingleton<IAppNotifications>(sp => sp.GetRequiredService<WindowsAppNotifications>());
         // Title pages' theme music, through Windows' own media player beside mpv.
         services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
+        // The free space where downloads go, as Windows counts it, network shares included; Core's own count knows only drives.
+        services.AddSingleton<IDiskSpace, WindowsDiskSpace>();
+        // Settings → Downloads' Change: Windows' folder picker over the main window.
+        services.AddSingleton<IFolderPicker, WindowsFolderPicker>();
+        // A title's Download: the web's download dialog over the main window. Core's own shows nothing.
+        services.AddSingleton<IDownloadOptionsDialog, DownloadOptionsDialog>();
+        // The phone remote's ports: a TcpListener on the PC's LAN address, Windows' own DNS-SD registration, and that
+        // address from Windows' adapters. Before Core, whose do-nothing stand-ins they replace.
+        services.AddSingleton<IRemoteListener, TcpRemoteListener>();
+        services.AddSingleton<IServiceAdvertiser, DnssdServiceAdvertiser>();
+        services.AddSingleton<ILanAddressSource, LanAddressSource>();
+        // Whether Windows is locked, from the session's notices for the main window: a phone starts no title then.
+        services.AddSingleton<WindowsPcLock>();
+        services.AddSingleton<IPcLock>(sp => sp.GetRequiredService<WindowsPcLock>());
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

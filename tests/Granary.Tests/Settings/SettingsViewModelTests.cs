@@ -75,10 +75,40 @@ public sealed class SettingsViewModelTests : IDisposable
         }
     }
 
-    private PlaybackSettingsViewModel Playback(IProfileSettings? settings = null) => new(settings ?? _settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
+    private PlaybackSettingsViewModel Playback(IProfileSettings? settings = null, Func<PhoneRemoteViewModel>? phoneRemote = null) => new(
+        settings ?? _settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus, _mpvChanges);
+        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus, _mpvChanges, phoneRemote);
+
+    [Fact]
+    public async Task ThePhoneRemoteRow_IsMadeForThePage_AndGoesWithIt()
+    {
+        await using var harness = new Remote.RemoteHarness(lifetime: true);
+        await harness.StartListeningAsync();
+        PhoneRemoteViewModel? made = null;
+        var page = Playback(phoneRemote: () => made = new PhoneRemoteViewModel(harness.Receiver, harness.Preferences, harness.Dispatcher,
+            Remote.RemoteHarness.Client));
+        Assert.Same(made, page.PhoneRemote);
+        await harness.Dispatcher.InvokeAsync(() =>
+        {
+            made!.Attach();
+            made.OpenPanelCommand.Execute(null);
+            return true;
+        });
+        Assert.NotNull(harness.Dispatcher.Read(() => made!.PairingLink));
+
+        await harness.Dispatcher.InvokeAsync(() =>
+        {
+            page.Dispose();
+            return true;
+        });
+
+        Assert.Equal((false, (string?)null), harness.Dispatcher.Read(() => (made!.IsPanelOpen, made.PairingLink)));
+    }
+
+    [Fact]
+    public void WithoutThePhoneRemote_ThePageHasNoRowForIt() => Assert.Null(Playback().PhoneRemote);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 

@@ -130,8 +130,9 @@ classes in `tests/Granary.Tests/Fakes`.
   XAML object, so a handler holding its control is a cycle the collector cannot see through, and the page stays in
   memory for good (`TimerTickTests`).
 - **Replacing a file:** `File.Move(..., overwrite: true)` fails while anything has the target open, even a read that shares
-  delete. A read Granary starts by itself can be in the way of its next write, so the mpv folder's writes try again for a
-  moment (`MpvConfigFolder.MoveOver`), unless the file changed meanwhile: that is someone's save, which stays.
+  delete. A read Granary starts by itself can be in the way of its next write, so `SafeFile.WriteWhole` (`IO/SafeFile.cs`;
+  mpv.conf, the downloads' JSON files) writes beside the file and tries the move again for a moment (`SafeFile.MoveOver`),
+  unless the file changed meanwhile: that is someone's save, which stays.
 - **ClientWebSocket:** a `ReceiveAsync` cancelled through its token aborts the socket. Close it through a token
   registration and `CloseAsync` instead, as `WebSocketRealtimeSocket` (`IRealtimeSocket`, in
   `src/Granary.Core/Realtime/RealtimeSocket.cs`) does for both the playback control lane and the events lane.
@@ -140,6 +141,9 @@ classes in `tests/Granary.Tests/Fakes`.
   `CollectionCapabilities.Artwork` and `TakesArtwork`).
 - **DI lifetimes:** a transient `IAsyncDisposable` resolved from the root provider lives until exit and breaks a
   synchronous container dispose. Register a `Func<T>` factory instead (see `Func<PlaybackControlLane>`).
+- **SVG assets:** an `Image` draws an `.svg` through Direct2D, which ignores a `<style>` sheet and `class`: a shape styled
+  only through them is drawn black. Give every shape its paint as an attribute (`fill="…"`); `RatingLogoTests` checks the
+  TMDB logo so.
 - **Writes with a version:** writes that carry a version send it back as `If-Match` (`SiloHttp.SendIfMatchAsync`).
   A 412 means the data changed elsewhere: read it again, never just overwrite.
 

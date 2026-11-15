@@ -144,3 +144,11 @@ translations, as Silo publishes them for its web client. They are not translatio
 | Changes | Trimmed to the keys Granary uses (`src/Granary.Core/Texts/Catalogs/web-keys.txt`); each message is unchanged |
 | Copyright | Copyright (C) 2026 Silo Media L.L.C. and contributors |
 | License | AGPL-3.0-or-later with Silo's platform library exception (`PLATFORM-EXCEPTION.md` of silo-server), as Granary is |
+## TMDB logo
+
+`src/Granary.App/Assets/Ratings/tmdb-logo.svg` is TMDB's approved logo from
+<https://www.themoviedb.org/about/logos-attribution>, as Silo's web client ships it, its look unmodified (its gradient
+is set as an attribute rather than through a stylesheet, which Windows' SVG renderer does not read). It is TMDB's trademark and not
+covered by Granary's license. Granary shows it only beside a TMDB score, as TMDB's terms allow
+(`src/Granary.App/Assets/Ratings/NOTICE.txt`). Granary uses TMDB's data through your Silo server and is not endorsed
+or certified by TMDB.

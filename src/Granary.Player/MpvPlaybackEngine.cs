@@ -275,7 +275,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     public Task<int?> AddSubtitleAsync(Uri url, long loadId)
     {
         ArgumentNullException.ThrowIfNull(url);
-        string target = url.IsFile ? url.LocalPath : url.OriginalString;
+        string target = url.IsFile ? ExtendedPath(url.LocalPath) : url.OriginalString;
         return Task.Run(() =>
         {
             if (!IsCurrentLoad(loadId))
@@ -291,6 +291,23 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             int? added = after.Where(id => !before.Contains(id)).Select(id => (int?)id).Max();
             return added ?? (after.Count > 0 ? after.Max() : null);
         });
+    }
+
+    /// <summary>
+    /// A local path as <c>sub-add</c> can open it. mpv puts a long path of the file it plays into Windows' extended form
+    /// itself, but opens a subtitle file as given, and Windows refuses a plain path of 260 characters or more unless both the
+    /// system and the app allow long paths. So such a path goes in the extended form (<c>\\?\</c>, <c>\\?\UNC\</c> for a
+    /// share), as a download's folder under a deep downloads folder needs (docs/architecture.md, "Long paths"); a shorter one,
+    /// and one already in that form, stays as it is.
+    /// </summary>
+    internal static string ExtendedPath(string path)
+    {
+        const int MaxPlainPath = 260;
+        if (path.Length < MaxPlainPath || path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal))
+        {
+            return path;
+        }
+        return path.StartsWith(@"\\", StringComparison.Ordinal) ? @"\\?\UNC\" + path[2..] : @"\\?\" + path;
     }
 
     // The ids of the subtitle tracks read in from target.
@@ -329,6 +346,30 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             }
         }
         return null;
+    }
+
+    // mpv's track-list entries of type sub. Read while a file loads or ends, an entry can be gone between its fields: one
+    // without an id is left out.
+    public IReadOnlyList<EngineSubtitleTrack> ReadSubtitleTracks()
+    {
+        var tracks = new List<EngineSubtitleTrack>();
+        long count = _mpv.GetInt64("track-list/count") ?? 0;
+        for (long i = 0; i < count; i++)
+        {
+            if (_mpv.GetString($"track-list/{i}/type") != "sub" || _mpv.GetInt64($"track-list/{i}/id") is not { } id)
+            {
+                continue;
+            }
+            tracks.Add(new EngineSubtitleTrack((int)id, _mpv.GetString($"track-list/{i}/lang"), _mpv.GetString($"track-list/{i}/title"),
+                _mpv.GetString($"track-list/{i}/codec"), Flag(i, "forced"), Flag(i, "external"))
+            {
+                IsHearingImpaired = Flag(i, "hearing-impaired"),
+                IsDefault = Flag(i, "default"),
+            });
+        }
+        return tracks;
+
+        bool Flag(long index, string name) => _mpv.GetString($"track-list/{index}/{name}") == "yes";
     }
 
     public bool SetSubtitleStream(int stream)

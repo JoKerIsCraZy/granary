@@ -4,6 +4,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels;
@@ -22,19 +23,28 @@ namespace Granary.Tests.Browse;
 internal sealed class ItemDetailFixture
 {
     public ItemDetailFixture()
+        : this(new ScriptedSilo(), new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" })
     {
+    }
+
+    /// <summary>The detail page on <paramref name="silo"/> for <paramref name="session"/>, as the downloads tests share them with their harness.</summary>
+    public ItemDetailFixture(ScriptedSilo silo, FakeSessionManager session)
+    {
+        Silo = silo;
+        Session = session;
         Changes = new(Stops);
         Silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
     }
 
-    public ScriptedSilo Silo { get; } = new();
+    public ScriptedSilo Silo { get; }
 
-    public FakeSessionManager Session { get; } = new()
-    {
-        State = SessionState.Ready,
-        ActiveServer = ScriptedSilo.Server,
-        ProfileId = "7",
-    };
+    public FakeSessionManager Session { get; }
+
+    /// <summary>The title page's Download items; without them the page offers none.</summary>
+    public DownloadActions? Downloads { get; set; }
+
+    /// <summary>What a series' Download series reads as its dialog opens; without it the page offers none.</summary>
+    public DownloadOfferReader? DownloadOffers { get; set; }
 
     public RecordingNavigation Navigation { get; } = new();
 
@@ -109,7 +119,10 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's theme music; none unless a test sets it, so the page plays nothing.</summary>
     public Core.Playback.Themes.ThemeMusic? ThemeMusic { get; set; }
 
-    /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
+    /// <summary>
+    /// The calendar's airings a season's grid places its missing and upcoming episodes by, and the hero names the series' next
+    /// airing by; none unless a test sets them.
+    /// </summary>
     public SeriesAirings? Airings { get; set; }
 
     /// <summary>The reads of a listed episode's multi-episode file the places are checked with; none unless a test sets them.</summary>
@@ -150,14 +163,20 @@ internal sealed class ItemDetailFixture
         airings: Airings,
         spans: Spans,
         boxSets: BoxSets,
-        boxSetLibraries: BoxSetLibraries);
+        boxSetLibraries: BoxSetLibraries,
+        downloads: Downloads,
+        downloadOffers: DownloadOffers);
 
-    /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
+    /// <summary>
+    /// The page once loaded, the places of a season's missing and upcoming episodes and the series' next airing included,
+    /// which come after.
+    /// </summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {
         var viewModel = Create();
         await viewModel.LoadCommand.ExecuteAsync(id);
         await viewModel.Placing;
+        await viewModel.NextAiringRead;
         return viewModel;
     }
 

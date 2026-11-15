@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using Granary.Core.Texts;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Detail;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,9 @@ namespace Granary.App.Controls;
 /// <summary>
 /// A titled row of cards, as wide as the web's for the profile's poster size at the window's breakpoint.
 /// <see cref="CardInvokedCommand"/> gets the <see cref="MediaCard"/>; "Explore all" shows only when
-/// <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the row shows images at once.
+/// <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the row shows images at once. Among
+/// an episode's More Episodes stand the places of its season's missing and upcoming episodes
+/// (<see cref="DetailEpisodePlaceholder"/>), as wide as its cards and passed by the keyboard.
 /// </summary>
 public sealed partial class MediaRow : UserControl
 {
@@ -32,7 +35,8 @@ public sealed partial class MediaRow : UserControl
             new PropertyMetadata(null, (sender, e) => ((MediaRow)sender).TitleText.Style = e.NewValue as Style ?? (Style)Application.Current.Resources["SiloRowTitleTextStyle"]));
 
     public static readonly DependencyProperty ExploreAllCommandProperty =
-        DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow),
+            new PropertyMetadata(null, (sender, _) => ((MediaRow)sender).ApplyExploreAll()));
 
     public static readonly DependencyProperty CardPointedCommandProperty =
         DependencyProperty.Register(nameof(CardPointedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
@@ -97,7 +101,7 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(TitleStyleProperty, value);
     }
 
-    /// <summary>The cards: any enumerable of <see cref="MediaCard"/>.</summary>
+    /// <summary>The cards: any enumerable of <see cref="MediaCard"/>, with <see cref="DetailEpisodePlaceholder"/> places among them.</summary>
     public object? ItemsSource
     {
         get => GetValue(ItemsSourceProperty);
@@ -144,9 +148,26 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(TitleBadgeProperty, value);
     }
 
-    // Instance helpers because x:Bind function bindings call them.
-    public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
+    // Explore all and the title's link show only while the row opens something. Set here, not by x:Bind functions: those
+    // are skipped when their argument is null, and a repeater hands a row on to another that may have no Explore all.
+    private void ApplyExploreAll()
+    {
+        bool explores = ExploreAllCommand is not null;
+        ExploreAllLink.Visibility = explores ? Visibility.Visible : Visibility.Collapsed;
+        TitleLink.IsHitTestVisible = explores;
+        if (!explores)
+        {
+            TitleText.ClearValue(TextBlock.ForegroundProperty);
+        }
+    }
 
+    // The accent under the pointer, as the web's title link (hover:text-primary); the style's colour again once it leaves.
+    private void OnTitlePointerEntered(object sender, PointerRoutedEventArgs e) =>
+        TitleText.Foreground = (Brush)Application.Current.Resources["SiloPrimaryBrush"];
+
+    private void OnTitlePointerExited(object sender, PointerRoutedEventArgs e) => TitleText.ClearValue(TextBlock.ForegroundProperty);
+
+    // Instance helpers because x:Bind function bindings call them.
     public string ExploreAllName(string title) => AppText.Get("web.catalog.carousel.exploreAllLabel", ("title", title));
 
     /// <summary>The web's "Explore all", in capitals as Granary's row shows it.</summary>
@@ -163,9 +184,14 @@ public sealed partial class MediaRow : UserControl
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
             {
-                if (VisualTreeHelper.GetChild(Items, i) is Button { Content: MediaCardView view } button)
+                switch (VisualTreeHelper.GetChild(Items, i))
                 {
-                    ShowLook(button, view, view.Card?.Shape ?? MediaCardShape.Poster);
+                    case Button { Content: MediaCardView view } button:
+                        ShowLook(button, view, view.Card?.Shape ?? MediaCardShape.Poster);
+                        break;
+                    case Grid { Children: [DetailEpisodePlaceholderCard] } place:
+                        ShowPlaceLook(place);
+                        break;
                 }
             }
         }
@@ -179,6 +205,10 @@ public sealed partial class MediaRow : UserControl
             var shape = sender.ItemsSourceView?.GetAt(args.Index) is MediaCard card ? card.Shape : MediaCardShape.Poster;
             ShowLook(button, view, shape);
             view.IsParked = false;
+        }
+        else if (args.Element is Grid { Children: [DetailEpisodePlaceholderCard] } place)
+        {
+            ShowPlaceLook(place);
         }
     }
 
@@ -197,6 +227,9 @@ public sealed partial class MediaRow : UserControl
         button.Width = _look.Presentation.RowCardWidth(shape, _look.Breakpoint);
         view.Caption = _look.Presentation.Caption;
     }
+
+    // A place is as wide as the episode cards around it, which centring and paging the row count on (RowBleed).
+    private void ShowPlaceLook(Grid place) => place.Width = _look.Presentation.RowCardWidth(MediaCardShape.Landscape, _look.Breakpoint);
 
     private ScrollViewer? PageScroller()
     {

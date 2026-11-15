@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Core.Texts;
@@ -763,10 +764,10 @@ public sealed class PlayerViewModelSleepTimerTests
         // The episode after the third is the fourth; after that, while set, the fourth again.
         public bool HasNext { get; set; }
 
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) =>
             Task.FromResult<NextEpisode?>(current == Ted || HasNext ? Next : null);
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken) =>
             Task.FromResult<NextEpisode?>(null);
 
         public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken) =>

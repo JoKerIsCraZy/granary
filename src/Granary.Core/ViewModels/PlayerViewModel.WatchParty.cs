@@ -124,15 +124,7 @@ public sealed partial class PlayerViewModel
         }
     }
 
-    private void ShowPartyNotice(PlaybackNotice notice)
-    {
-        Notice = notice;
-        StopNoticeTimer();
-        if (!_noticesHeld)
-        {
-            StartNoticeTimer();
-        }
-    }
+    private void ShowPartyNotice(PlaybackNotice notice) => ShowNotice(notice);
 
     // The room left this title (stopped, finished, another title, ended): the player gives way to the room page.
     private void OnPartyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

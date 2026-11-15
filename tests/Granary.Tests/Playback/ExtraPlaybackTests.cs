@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Images;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -90,13 +91,13 @@ public sealed class ExtraPlaybackTests
     {
         public int EpisodesAsked { get; private set; }
 
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
         {
             EpisodesAsked++;
             return Task.FromResult<NextEpisode?>(null);
         }
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
         {
             EpisodesAsked++;
             return Task.FromResult<NextEpisode?>(null);

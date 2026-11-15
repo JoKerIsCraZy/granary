@@ -71,6 +71,24 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public bool PhoneRemote { get; set; }
+
+    public List<bool> SavedPhoneRemote { get; } = [];
+
+    public event EventHandler? PhoneRemoteChanged;
+
+    public Task SetPhoneRemoteAsync(bool enabled)
+    {
+        bool changed = enabled != PhoneRemote;
+        PhoneRemote = enabled;
+        SavedPhoneRemote.Add(enabled);
+        if (changed)
+        {
+            PhoneRemoteChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return Task.CompletedTask;
+    }
+
     public PlayerVolume? Volume { get; set; }
 
     public List<PlayerVolume> SavedVolume { get; } = [];

@@ -6,12 +6,14 @@ namespace Granary.Tests.Fakes;
 /// <summary>
 /// A UI thread of its own, as the app's DispatcherQueue is: posted work runs there one item at a time, in order. It sets
 /// no SynchronizationContext, so code that only relies on <c>await</c> coming back to the UI thread leaves it, which
-/// <see cref="HasThreadAccess"/> shows.
+/// <see cref="HasThreadAccess"/> shows. Once disposed it runs what was posted before and drops what is posted after, as
+/// the app's <c>TryEnqueue</c> does once its queue shut down: a page a test left attached can still be told of a change.
 /// </summary>
 internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 {
     private readonly BlockingCollection<Action> _work = [];
     private readonly Thread _thread;
+    private TaskCompletionSource _posted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public SerialDispatcher()
     {
@@ -24,7 +26,33 @@ internal sealed class SerialDispatcher : IUiDispatcher, IDisposable
 
     public bool HasThreadAccess => Thread.CurrentThread == _thread;
 
-    public void Post(Action action) => _work.Add(action);
+    public void Post(Action action)
+    {
+        try
+        {
+            _work.Add(action);
+        }
+        catch (InvalidOperationException) when (_work.IsAddingCompleted)
+        {
+            // Disposed meanwhile: checking first would leave a dispose between the check and the add.
+            return;
+        }
+        Interlocked.Exchange(ref _posted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
+    /// <summary>Completes once <paramref name="count"/> posts wait their turn, the work that runs now not counted.</summary>
+    public async Task UntilWaitingAsync(int count, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            var posted = Volatile.Read(ref _posted);
+            if (_work.Count >= count)
+            {
+                return;
+            }
+            await posted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+    }
 
     /// <summary>Runs <paramref name="work"/> on the UI thread and answers what it returned.</summary>
     public Task<T> InvokeAsync<T>(Func<T> work)
