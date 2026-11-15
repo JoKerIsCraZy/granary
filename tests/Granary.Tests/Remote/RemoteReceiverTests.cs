@@ -449,6 +449,48 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ACommandThatWaitedForTheUiThread_IsNotCarriedOut_WhenItsPhoneWasLetGoMeanwhile()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, serving) = await _harness.HelloAsync();
+        await HelloHandledAsync(phone);
+        int number = Assert.Single(Receiver.Phones).Number;
+
+        // The UI thread is busy while the command comes, and Disconnect Remote lets the phone go before it gets to it.
+        await WhileTheUiThreadIsBusyAsync(async () =>
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"pause"},"v":2}""");
+            await _harness.Dispatcher.UntilWaitingAsync(1, Token);
+            await Receiver.DisconnectAsync(number);
+            await serving.WaitAsync(HangGuard, Token);
+        });
+        await _harness.SettleUiAsync();
+
+        Assert.Empty(player.Applied);
+    }
+
+    [Fact]
+    public async Task ACommandThatWaitedForTheUiThread_IsNotCarriedOut_WhenThePairingCodeWasResetMeanwhile()
+    {
+        var player = new FakeRemotePlayer(_harness.Dispatcher);
+        await _harness.AttachAsync(player);
+        var (phone, _) = await _harness.HelloAsync();
+        await HelloHandledAsync(phone);
+
+        // The phone's connection learns of the new code only at its next frame, which it does not read while its command waits.
+        await WhileTheUiThreadIsBusyAsync(async () =>
+        {
+            await phone.SendAsync("""{"type":"control","control":{"name":"pause"},"v":2}""");
+            await _harness.Dispatcher.UntilWaitingAsync(1, Token);
+            _harness.Pairing = new PairingMaterial(RemoteHarness.ReceiverId, RemoteHarness.OtherKey);
+        });
+        await _harness.SettleUiAsync();
+
+        Assert.Empty(player.Applied);
+    }
+
+    [Fact]
     public async Task WithNoPlayerOpen_AControlGetsPlayerNotReady_AndStopIsSimplyDone()
     {
         var (phone, _) = await _harness.HelloAsync();
@@ -885,6 +927,37 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
         Assert.Contains("Example Movie", await again.NextAsync("state"), StringComparison.Ordinal);
         Assert.Equal(0, phone.OpenFailures + again.OpenFailures);
         Assert.Equal(SiloCastControls.Seek, Assert.Single(player.Applied).Name);
+    }
+
+    // The hello is handled and what it gave the UI thread has run: a phone's messages are handled one at a time, so the
+    // answer to a ping after it comes once the hello's are done.
+    private async Task HelloHandledAsync(FakePhone phone)
+    {
+        await phone.NextAsync("state");
+        await phone.SendAsync("""{"type":"ping","v":2}""");
+        await phone.NextAsync("pong");
+        await _harness.SettleUiAsync();
+    }
+
+    // Runs <paramref name="work"/> while the UI thread is busy with something else, then lets it go on.
+    private async Task WhileTheUiThreadIsBusyAsync(Func<Task> work)
+    {
+        var busy = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Dispatcher.Post(() =>
+        {
+            started.SetResult();
+            busy.Task.Wait(HangGuard, CancellationToken.None);
+        });
+        await started.Task.WaitAsync(HangGuard, Token);
+        try
+        {
+            await work();
+        }
+        finally
+        {
+            busy.SetResult();
+        }
     }
 
     // Nothing waits for the phone: the answer to its ping is the next thing it reads.

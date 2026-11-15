@@ -234,11 +234,12 @@ public sealed partial class RemoteReceiver
     }
 
     // A command (within the phone's budget, OnMessageAsync) goes to the player on the UI thread; after it is done every
-    // authorized phone gets the new status.
+    // authorized phone gets the new status. The phone is asked about again there, just before the player: it may have been
+    // let go (Disconnect Remote, a reset code, a newer connection) while its command waited behind other work.
     private async Task OnControlAsync(Session session, SiloCastMessage.Control control)
     {
         var controller = session.Controller;
-        var applying = OnUiThreadAsync(() => Apply(controller.Number, control));
+        var applying = OnUiThreadAsync(() => StillControls(session) ? Apply(controller.Number, control) : RemoteCommandResult.Ignored);
         if (await Task.WhenAny(applying, controller.Ended).ConfigureAwait(false) != applying)
         {
             return;
@@ -252,6 +253,20 @@ public sealed partial class RemoteReceiver
                 await controller.SendAsync(SiloCastMessages.Error(SiloCastErrors.CommandFailed, FailureText(control))).ConfigureAwait(false);
                 break;
         }
+    }
+
+    // The phone is still connected, authorized and not on its way out, and its session is still under the PC's key: the same
+    // key, not merely one with the same id.
+    private bool StillControls(Session session)
+    {
+        var controller = session.Controller;
+        bool leaving;
+        lock (_gate)
+        {
+            leaving = session.Leaving;
+        }
+        return controller.IsOpen && controller.IsAuthorized && !leaving && controller.SessionMaterial is { } material
+            && PairingMaterial.Same(Pairing(), material);
     }
 
     // On the UI thread. Without a player only stop is done: there is nothing to stop.

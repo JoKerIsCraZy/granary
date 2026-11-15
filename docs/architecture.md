@@ -1361,8 +1361,10 @@ anything about borrowed identities; the pure decisions are `RemoteReceiverPolicy
   the budget, as they cause no more work than the frame they came in, which the connection's frame budget counts. A
   `presence` that changes nothing changes no phone.
 - **Commands.** A command is posted to the UI thread and given to the open player (`IRemotePlayer.Apply`), which carries
-  it out with the player's own commands. After it is done every authorized phone is offered the new status. Without a
-  player every command but `stop` gets `player_not_ready`.
+  it out with the player's own commands. Just before, on the UI thread, the phone is asked about again: a phone let go
+  while its command waited there (Disconnect Remote, a reset code, a newer connection, room made for another) is no
+  longer connected, authorized and under the PC's key, and its command is dropped. After it is done every authorized
+  phone is offered the new status. Without a player every command but `stop` gets `player_not_ready`.
 - **The status tick.** While a player is attached, one timer for the receiver posts to the UI thread every 500 ms; the
   status is read from the player there, kept as the newest frame, and offered to every authorized phone. A change the
   player reports, an attach and a detach do the same at once. Without a player the idle status goes to a phone once,
