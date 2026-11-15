@@ -24,10 +24,13 @@ public sealed class RatingLogoTests
     }
 
     [Fact]
-    public void EveryShapeOfTheTmdbLogo_IsPaintedWithItsGradient()
+    public void EveryShapeOfTheTmdbLogo_IsPaintedWithItsGradient_InTmdbsColours()
     {
         var logo = TmdbLogo();
-        string gradient = Assert.Single(logo.Descendants(Svg + "linearGradient")).Attribute("id")!.Value;
+        var gradientElement = Assert.Single(logo.Descendants(Svg + "linearGradient"));
+        string gradient = gradientElement.Attribute("id")!.Value;
+        // TMDB's green to blue, each stop's colour as an attribute, which Windows reads.
+        Assert.Equal(["#90cea1", "#3cbec9", "#00b3e5"], gradientElement.Elements(Svg + "stop").Select(s => s.Attribute("stop-color")?.Value));
 
         var shapes = logo.Descendants(Svg + "path").ToList();
         Assert.NotEmpty(shapes);
