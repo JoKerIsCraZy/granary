@@ -223,8 +223,8 @@ public sealed class PhoneRemoteViewModelTests : IAsyncDisposable
     [Fact]
     public void TheRow_SaysWhatAPhoneDoes_AndWhatTheNetworkSees()
     {
-        // Starting titles from the phone comes with Part 2; the description says only what a phone does now.
-        Assert.Equal("Silo's phone app on this network can control what plays on this PC. Windows may ask to let Granary through its firewall.\n"
+        Assert.Equal("Silo's phone app on this network can control what plays on this PC and start titles here. Windows may ask to let "
+            + "Granary through its firewall.\n"
             + "While this is on, devices on this network can see this PC's name and your server's address.", PhoneRemoteViewModel.RowDescription);
     }
 

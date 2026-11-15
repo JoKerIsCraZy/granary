@@ -60,11 +60,12 @@ public sealed partial class MainWindow : Window
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
         Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger,
         Granary.Core.Theme.ServerAccent brand, Granary.Core.ViewModels.Admin.ServerActivityViewModel activity,
-        Granary.Core.ViewModels.RemoteIndicatorViewModel remote)
+        Granary.Core.ViewModels.RemoteIndicatorViewModel remote, Granary.Core.Remote.RemoteReceiver receiver)
     {
         Layout = layout;
         Activity = activity;
         Remote = remote;
+        _receiver = receiver;
         _modes = modes;
         Trailers = trailers;
         Updates = updates;

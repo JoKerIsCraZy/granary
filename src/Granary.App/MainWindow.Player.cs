@@ -90,6 +90,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         PlayerHost.Visibility = Visibility.Visible;
         Expand();
         page.Start(play);
+        TellStartedFromPhone(page, play);
     }
 
     public void ClosePlayer()

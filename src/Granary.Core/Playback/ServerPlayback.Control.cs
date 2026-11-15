@@ -2,9 +2,16 @@ using Granary.Core.Api.Playback;
 
 namespace Granary.Core.Playback;
 
-/// <summary>A notice the player shows over the picture for a while: a message from the server or its administrator.</summary>
+/// <summary>
+/// A notice the player shows over the picture for a while: a message from the server or its administrator, from a Watch
+/// Party, or who started the title from a phone.
+/// </summary>
 /// <param name="IsWarning">Amber, for a server going away; blue otherwise, as the web's PlaybackNoticeOverlay.</param>
-public sealed record PlaybackNotice(string Title, string Message, bool IsWarning = false);
+public sealed record PlaybackNotice(string Title, string Message, bool IsWarning = false)
+{
+    /// <summary>How long it shows; null for the player's usual eight seconds.</summary>
+    public TimeSpan? ShowsFor { get; init; }
+}
 
 // The session's control lane (PlaybackControlLane): what the server or an administrator asks of the player, carried out
 // as Silo's web player does (VideoPlayer.tsx executeRealtimeCommand).

@@ -13,7 +13,8 @@ release's section is what its update says it changes (docs/release.md).
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
   phones that scanned the code; Reset Pairing Code takes that back. The phone's app words some of its messages for
   another kind of device. Press Play on the phone while it is connected and the title starts on the PC where the phone
-  left off, for the profile that is signed in on the PC.
+  left off, for the profile that is signed in on the PC; the player says which phone started it. A locked PC starts
+  nothing.
 
 ### Fixed
 

@@ -1471,8 +1471,8 @@ second net: a disposable transient resolved from the root provider would be kept
   `ResetPairingAnsweredAsync` resets through the receiver and says so when a phone could not be let go or the new key
   could not be saved (the old code then still works).
 - Its texts are constants on the view model, each naming its source: the Roku app's Connect a Phone where it has one,
-  with "TV" as "PC"; Silo's web has no wording for this. The description leaves out that a phone can start titles here
-  until it can.
+  with "TV" as "PC"; Silo's web has no wording for this. The description says, as design 5.8 has it, that a phone can
+  control what plays and start titles here.
 - **The App.** `PlaybackSettingsView` shows the row when the view model has one, attaches it on `Loaded` and detaches
   it on `Unloaded`. Connect a Phone is `Controls/ConnectPhonePanel` in a `ContentDialog`: it draws the code with QRCoder
   (error correction M) into a `BitmapImage` from memory, clears the PNG's bytes after, and drops the picture as the
@@ -1590,8 +1590,8 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
 
 ### Windows
 
-The App implements the three ports in `Services/` and registers them in `App.ConfigureServices` before
-`AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
+The App implements the four ports in `Services/` (the listener, the advertiser, the address and the PC's lock) and
+registers them in `App.ConfigureServices` before `AddGranaryCore`, whose do-nothing stand-ins they replace. `App.Launch` starts the receiver after the events
 connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 seconds) for its stop.
 
 - **`LanAddressSource`** reads Windows' adapters (`NetworkInterface`) and chooses by `LanAddressRule`: of the adapters
@@ -1650,9 +1650,20 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   it cannot add the rule itself, and it does not read the firewall's rules. If the prompt was refused, phones still see
   the PC but cannot connect, which Granary cannot tell from its socket; the Connect a Phone panel always shows where to
   allow it.
-- None of these three has a test that touches the network: the accept loop, a connection's end and the address rule
+- None of the first three has a test that touches the network: the accept loop, a connection's end and the address rule
   are tested apart from the socket and the adapters (`RemoteAcceptLoopTests`, `LanAddressRuleTests`); binding, the
   adapters and the DNS-SD calls are read by hand.
+- **`WindowsPcLock`** (`IPcLock`) says whether Windows is locked, so a phone starts no title on a locked PC while it
+  still controls what plays. `App.Launch` has it ask Windows for the session's notices for the main window
+  (`WTSRegisterSessionNotification`, this session only) and takes them back as the window closes; their
+  `WM_WTSSESSION_CHANGE` lock and unlock come through the window's message hook (`WindowMessageHook.SessionLockChanged`).
+  It is unlocked until Windows says otherwise, reads nothing else of the session, and logs only "The PC locked" and "The
+  PC unlocked". Core's `NoPcLock` is never locked. It depends on no window: the window depends on the receiver, which
+  depends on the lock.
+- **The "Starting" notice.** The receiver raises `Launched` with the phone's name and the request just before it opens
+  the player; the window keeps it and, when it makes the player for that very request (it may wait for the player before
+  to unload), calls `PlayerViewModel.NoteStartedFromPhone`. The player shows "Starting {title}" and "From {phone}" in its
+  notice card for four seconds once the title's name is known, and only for that request.
 
 ## Windows App SDK
 

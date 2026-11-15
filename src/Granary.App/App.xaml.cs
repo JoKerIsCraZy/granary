@@ -115,6 +115,10 @@ public partial class App : Application
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
         // The phone remote follows its switch, the session and the PC's address from now on (Settings → Playback → This PC).
         // Closing lets every phone go, takes the advertisement back and closes the port, within its budget.
+        // A phone starts no title on a locked PC: the window hears of the lock until it closes.
+        var pcLock = Services.GetRequiredService<WindowsPcLock>();
+        pcLock.Follow(WinRT.Interop.WindowNative.GetWindowHandle(_window));
+        _window.Closed += (_, _) => pcLock.Dispose();
         var remote = Services.GetRequiredService<RemoteReceiver>();
         remote.Start();
         _window.Closed += (_, _) => remote.StopAsync().Wait(RemoteReceiver.StopBudget);
@@ -190,6 +194,9 @@ public partial class App : Application
         services.AddSingleton<IRemoteListener, TcpRemoteListener>();
         services.AddSingleton<IServiceAdvertiser, DnssdServiceAdvertiser>();
         services.AddSingleton<ILanAddressSource, LanAddressSource>();
+        // Whether Windows is locked, from the session's notices for the main window: a phone starts no title then.
+        services.AddSingleton<WindowsPcLock>();
+        services.AddSingleton<IPcLock>(sp => sp.GetRequiredService<WindowsPcLock>());
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

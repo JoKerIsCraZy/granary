@@ -1243,8 +1243,8 @@ says why above the sections.
   the texts follow Silo's Roku app's Connect a Phone (`locale/en_US/strings.json`, `connect.*`) with "TV" as "PC"; the
   ones marked *new* have no Silo source. The label is "Control Granary from your phone" (the Roku app's "Control Silo
   from your phone"), the switch off by default and kept on this PC (`phone_remote` in `playback-device.json`). The
-  description, *new*: "Silo's phone app on this network can control what plays on this PC. Windows may ask to let
-  Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
+  description, *new*: "Silo's phone app on this network can control what plays on this PC and start titles here.
+  Windows may ask to let Granary through its firewall." and, on a line of its own, "While this is on, devices on this network can see this PC's
   name and your server's address." While it is on, a 13 px muted line under the row says what it does: "No phone is
   connected." or "Connected: Elena's phone, Elena's tablet" (the phones that actively control, as the Roku app lists
   them), and **Connect a Phone** as an outline button at its right while it listens. When it cannot run: "Remote control
@@ -1526,6 +1526,11 @@ While Silo's phone app controls this PC (Settings → Playback → This PC → C
   phone that controls go; the phone then says it can't reach the PC and keeps it in its list. It shows where the activity
   indicator does: over the pages, also while the player is its bar, never over the full player, whose bar has the same
   icon and menu (under Player).
+- **A title a phone starts** opens as a page's Play opens it, in place of what plays, without a question on the PC; the
+  window is not brought to the front. The player's notice card (under Player, Notices) then says "Starting Example
+  Movie" and, under it, "From Elena's phone" (Silo's own `cast_standby_starting` and `cast_standby_from`, which its TV
+  apps show when a phone started a title), for four seconds, once the title's name is known; a series' title is its
+  name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then.
 
 ## Full screen
 
@@ -1582,7 +1587,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
   semibold and the message 14 px white at 85 %, over black where the web blurs the picture (`PlaybackNoticeView`). It goes
-  after eight seconds, a newer one in its place. Minimized, the window shows it above the bar at the bar's left edge, 12 px
+  after eight seconds, a newer one in its place. The same card says "Starting {title}" and "From {phone}" for four
+  seconds when Silo's phone app started the title (see Phone remote). Minimized, the window shows it above the bar at the bar's left edge, 12 px
   up, where the web keeps it until the player opens again (Granary's bar still plays the picture); the mini view keeps it. An administrator's stop or terminate ends playback with their
   words on the failed screen ("An administrator ended this playback session.").
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
