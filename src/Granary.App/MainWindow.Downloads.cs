@@ -10,7 +10,8 @@ namespace Granary.App;
 // The sidebar's Downloads entry (DownloadActivity): its count, bound in MainWindow.xaml, and while a download comes the dot
 // beside it, which breathes slowly on the compositor, so it costs the UI thread nothing: down to a third and back every three
 // seconds, slower and fainter than the activity indicator's count. With Windows' "Animation effects" off it stands still. The
-// window lives as long as the app; it lets go of Windows' settings as it closes.
+// window lives as long as the app; it lets go of Windows' settings as it closes. The notice of downloads that finished or
+// failed (DownloadNotices) is bound in MainWindow.xaml.
 public sealed partial class MainWindow
 {
     private const float PulseDimmed = 0.3f;
@@ -21,6 +22,9 @@ public sealed partial class MainWindow
 
     /// <summary>The sidebar's count of downloads coming or waiting, and whether one comes now.</summary>
     public DownloadActivity DownloadsActivity { get; }
+
+    /// <summary>The notice in the window of downloads that finished or failed while Granary is in front.</summary>
+    public DownloadNotices DownloadNotices { get; }
 
     private void InitializeDownloads()
     {

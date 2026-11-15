@@ -347,8 +347,12 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<CardDownloads>();
         // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
-        // The downloads outside their page, for the app's whole run: the sidebar's count; the app starts it.
+        // The downloads outside their page, for the app's whole run: the sidebar's count and the taskbar's bar; the app starts
+        // it. What finished or failed is said in the window, or as a Windows notification once the app registers its own
+        // (IAppNotifications; until then everything shows in the window).
         services.AddSingleton<ViewModels.Downloads.DownloadActivity>();
+        services.TryAddSingleton<IAppNotifications, NoAppNotifications>();
+        services.AddSingleton<ViewModels.Downloads.DownloadNotices>();
         // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
         services.AddSingleton<DownloadSignOut>();
         // What a download played from this PC recorded, kept in the data directory until the server took it, and the sync

@@ -168,4 +168,19 @@ public sealed class DownloadActivityTests : IAsyncDisposable
         await manager.DeleteAsync("dl_1", Token);
         Assert.Equal(DownloadProgress.None, activity.Progress);
     }
+
+    [Fact]
+    public async Task AFinishedDownload_IsAnnounced_OnceOnTheUiThread_AndWhatWasDoneAtTheStartIsNot()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Downloading);
+        await _h.AddAsync("dl_2", DownloadState.Completed, mediaItemId: "mv_2", change: r => r with { Title = "Another Movie" });
+        var activity = Started();
+        var announced = new List<DownloadAnnouncement>();
+        activity.Announced += (_, a) => announced.Add(a);
+
+        await ChangeAsync("dl_1", r => r with { State = DownloadState.Completed });
+        await ChangeAsync("dl_1", r => r with { IsWatched = true });
+
+        Assert.Equal([new DownloadAnnouncement("Example Movie is ready to watch offline", false, "dl_1")], announced);
+    }
 }

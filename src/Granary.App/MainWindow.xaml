@@ -319,6 +319,16 @@
                                      Visibility="Collapsed" />
 
         <!--
+            Downloads that finished or failed while Granary is in front, "Example Movie is ready to watch offline" for five
+            seconds (DownloadNotices): the player's notice card without a title, amber when something did not download, at the
+            top in the middle, over the pages and the player alike, where the player shows its own below its top bar. Behind
+            another window or minimized, Granary says it as a Windows notification instead.
+        -->
+        <controls:PlaybackNoticeView Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,80,16,0" MaxWidth="576"
+                                     Message="{x:Bind DownloadNotices.NoticeText, Mode=OneWay}" IsWarning="{x:Bind DownloadNotices.IsWarning, Mode=OneWay}"
+                                     Visibility="{x:Bind DownloadNotices.HasNotice, Mode=OneWay}" />
+
+        <!--
             A trailer, over everything but the start screen, title bar included, as a dialog: YouTube's player on a scrim
             (Controls/TrailerOverlay, MainWindow.Trailer.cs).
         -->

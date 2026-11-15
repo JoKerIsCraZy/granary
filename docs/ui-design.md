@@ -351,11 +351,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   focus, the next season's first card takes it (the one before, after the last season). A controller's bumpers go from
   season to season, to its first card. Once the series has no downloads
   left on this PC (its last episode deleted), the page goes back by itself.
-- Downloads outside their page (Granary's own: a PC's taskbar): the sidebar's count (above), and Granary's taskbar button
+- Downloads outside their page (Granary's own, for a PC's taskbar and notifications): the sidebar's count (above), and Granary's taskbar button
   shows how far the downloads to come are, as one bar over their bytes: green while any of them is not paused, also while
   it waits its turn or for the server, then over those alone; yellow once every one is paused or waits for a connection
   that is not metered, over all of them; none once nothing comes (finished, failed or deleted). A size the server has not
   said yet adds nothing. While the player has its buttons in the preview, the taskbar button shows no bar.
+  When downloads finish or fail, Granary says so in the Apple app's words: "Example Movie is ready to watch offline",
+  "Example Series (S2E8) is ready to watch offline", "Example Movie didn't download: Not enough storage on this PC" (also
+  "The file arrived incomplete" and "No longer available on the server"; "Example Movie didn't download" when the reason
+  is not known). A season or a series that finishes together is one message, Granary's after them: "8 episodes of Example
+  Series are ready to watch offline", "7 episodes of Example Series are ready to watch offline; 1 didn't download", "2
+  episodes of Example Series didn't download". While Granary is in front, it is the player's notice card without a title
+  (opaque near-black, sky blue at 15 % with its edge at 50 %, amber when something did not download), 576 px wide at most,
+  at the top in the middle of the window, 80 px down, over the pages and the player alike, for five seconds; a newer one
+  takes its place. Behind another window or minimized, it is a Windows notification from Granary with the same sentence,
+  Play (when something finished: it plays that download from this PC, a season's or a series' first episode, specials
+  last) and Open Downloads (the Downloads page), and its body opens the Downloads page too; either brings Granary to the
+  front, and starts it when it was closed. A download that is no longer here opens the Downloads page instead. With
+  notifications off for Granary in Windows' settings, the notice shows in the window instead.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row

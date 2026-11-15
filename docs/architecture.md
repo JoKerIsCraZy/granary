@@ -1606,6 +1606,49 @@ thread, are shown on the UI thread through `IUiDispatcher`, one refresh per burs
   downloads leave the taskbar button alone and show no bar; it comes back as the player is left. A send that fails drops
   the COM object, is logged once by its kind until one gets through, and the next change tries again. Explorer's side has
   no unit tests; `DownloadTallyTests` and `DownloadActivityTests` hold what the bar shows.
+- **What finished or failed.** Each full refresh hands the downloads to `DownloadAnnouncements.Look` with the scope, read
+  after them (a profile switched to in between then reads as a new scope). A download is news when it turned Completed or
+  Failed since the look before; the first look, another scope's first look, and a download that shows up done (its
+  folder came back) are not. A film is said at once; an episode waits while another episode of its series is still to
+  come (`IsPending`), so a season or a series that finishes together is one `DownloadAnnouncement`, its failures counted
+  in it, and an episode paused or deleted does not hold the others back. The words are the Apple app's
+  (`DownloadNotifications.swift`): "Example Movie is ready to watch offline", an episode "Example Series (S2E8)", "… didn't
+  download: Not enough storage on this PC" with its reasons (storage, an incomplete file, no longer on the server), and
+  none when Granary knows no reason; the Apple app says each episode alone, so a group's are Granary's after them ("8
+  episodes of Example Series are ready to watch offline", "…; 1 didn't download", "2 episodes of Example Series didn't
+  download"). `PlayDownloadId` is the first episode that finished by season and number, the specials last.
+  `DownloadActivity.Announced` raises each on the UI thread.
+- **Where it is said.** `DownloadNotices` (a singleton, made with the window) shows an announcement in the window while
+  Granary is in front (`IAppNotifications.IsAppInFront`), `NoticeText` for `NoticeShowsFor` (5 s, a newer one taking the
+  place with its own time, on the `TimeProvider`), bound to a `PlaybackNoticeView` at the top of the window over the pages
+  and the player, amber for a failure. Behind another window or minimized it goes to `IAppNotifications.TryShow`; when that
+  answers false (no registration, notifications off in Windows' settings, a failure), it shows in the window all the same.
+  `Act` is a click on a notification: Play plays the download from this PC (`PlayRequest.Resume` of its title, which the
+  player plays locally) while the active profile has it whole; anything else, or a download no longer here, opens the
+  Downloads page; nothing without a signed-in profile. Core's `NoAppNotifications` (in front, takes none) keeps every
+  message in the window until the app registers its own.
+- **Windows' notifications** (`WindowsAppNotifications`, App; `Microsoft.Windows.AppNotifications` of the Windows App SDK's
+  Foundation part, which Granary ships already). The app is unpackaged, so it has no manifest entry for notification
+  activation: `Register` runs at every start in `App.Launch`, once the window is made and before anything reads how Granary
+  was started. It is skipped when `AppNotificationManager.IsSupported()` is false (Granary run as an administrator). It adds
+  the `NotificationInvoked` handler first, which has a click while Granary runs come to this process, then
+  `AppNotificationManager.Default.Register()`. For an unpackaged process that writes, per user under HKCU, the
+  notification id (the process's AppUserModelID, which `VelopackApp.Run` sets to `velopack.GranaryApp`, the Start menu
+  shortcut's, for the installed and the portable copy alike; a build Velopack did not lay out, such as a developer's, gets
+  a GUID kept for its exe's path), its display name and icon (from that shortcut, else "Granary" and the exe's icon) and a
+  COM activator whose `LocalServer32` is the exe with `----AppNotificationActivated:`. Velopack keeps the exe at the same
+  path (`current\Granary.exe`) across updates; an installed and a portable copy share the id, and the one started last is
+  the one a click starts. A click while Granary is closed starts the exe that way: after `Register`, `AppInstance.GetActivatedEventArgs()`
+  is an `AppNotification` activation with the click's arguments, and `App.StartShell` runs them through `Act` once the
+  shell has started and routed (to Home, the offline Downloads page or sign-in, where `Act` does nothing). A click while
+  Granary runs comes on a COM thread and is posted to the UI thread, which restores a minimized window, brings it to the
+  front and runs `Act`. `TryShow` builds the notification with `AppNotificationBuilder` (the text, Play with the
+  download's id when something finished, Open Downloads; the body opens Downloads too) and shows it only while
+  `AppNotificationManager.Setting` is `Enabled`; a notification Windows took has an id. As the window closes, `Unregister`
+  lets go of the activator, so a later click starts Granary again. Uninstalling runs Velopack's
+  `OnBeforeUninstallFastCallback`, which calls `UnregisterAll` (the registry entries and the cached icon). There is no
+  single-instance handling: a click goes to the running Granary through the activator it serves. Windows' side has no
+  unit tests (`DownloadAnnouncementsTests`, `DownloadNoticesTests` hold what is said, where, and what a click does).
 
 ### Signing out
 

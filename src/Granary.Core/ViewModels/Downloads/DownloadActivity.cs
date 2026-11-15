@@ -9,9 +9,10 @@ namespace Granary.Core.ViewModels.Downloads;
 /// <summary>
 /// The active profile's downloads as the shell shows them outside their page (docs/architecture.md, "Downloads in the shell"):
 /// the sidebar's count of the downloads coming or waiting (<see cref="DownloadTally.IsPending"/>), whether one comes now, and
-/// the taskbar button's progress. It follows the downloads and the session for the app's whole run, from <see cref="Start"/>:
-/// changes come on any thread and are shown on the UI thread, one refresh per burst, as the Downloads page's follower shows
-/// them. A transfer that only went further updates its bytes without reading every download again.
+/// the taskbar button's progress; and, when downloads finished or failed, what to say of them (<see cref="Announced"/>). It
+/// follows the downloads and the session for the app's whole run, from <see cref="Start"/>: changes come on any thread and are
+/// shown on the UI thread, one refresh per burst, as the Downloads page's follower shows them. A transfer that only went further
+/// updates its bytes without reading every download again.
 /// </summary>
 public sealed partial class DownloadActivity : ObservableObject, IDisposable
 {
@@ -30,7 +31,8 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     private bool _posted;
     private bool _changed;
 
-    // On the UI thread: the downloads as last read.
+    // On the UI thread: the downloads as last read, and what finished or failed since the look before.
+    private readonly DownloadAnnouncements _announcements = new();
     private IReadOnlyList<DownloadItem> _items = [];
 
     public DownloadActivity(DownloadManager downloads, ISessionManager session, IUiDispatcher dispatcher)
@@ -57,6 +59,12 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
     /// <summary>The downloads' overall progress, as the taskbar button shows it.</summary>
     [ObservableProperty]
     public partial DownloadProgress Progress { get; private set; } = DownloadProgress.None;
+
+    /// <summary>
+    /// Downloads finished or failed since the last refresh, one announcement for a film and one for a season or a series that
+    /// finishes together; raised on the UI thread, never for what was done at the start or for another profile's.
+    /// </summary>
+    public event EventHandler<DownloadAnnouncement>? Announced;
 
     /// <summary>
     /// The entry as a screen reader names it: "Downloads", or "Downloads, 3 downloads in progress" in the Apple app's words for
@@ -144,15 +152,24 @@ public sealed partial class DownloadActivity : ObservableObject, IDisposable
             progressed = new HashSet<string>(_progressed, StringComparer.Ordinal);
             _progressed.Clear();
         }
-        if (changed)
+        if (!changed)
         {
-            _items = _downloads.Items;
+            if (progressed.Count > 0)
+            {
+                _items = [.. _items.Select(i => progressed.Contains(i.DownloadId) ? i with { BytesDone = _downloads.BytesDone(i.DownloadId) } : i)];
+                Show(DownloadTally.Of(_items));
+            }
+            return;
         }
-        else if (progressed.Count > 0)
-        {
-            _items = [.. _items.Select(i => progressed.Contains(i.DownloadId) ? i with { BytesDone = _downloads.BytesDone(i.DownloadId) } : i)];
-        }
+        // The downloads before the scope: a profile switched to between the two reads then as a new scope, whose look starts
+        // afresh; the other way round, the profile before could seem to have lost the downloads it still has coming.
+        _items = _downloads.Items;
+        var scope = _downloads.ActiveScope;
         Show(DownloadTally.Of(_items));
+        foreach (var announcement in _announcements.Look(scope, _items))
+        {
+            Announced?.Invoke(this, announcement);
+        }
     }
 
     private void Show(DownloadTally tally)
