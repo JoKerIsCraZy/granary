@@ -53,6 +53,15 @@ public sealed record PlayRequest
     /// <summary>The file and tracks picked on the detail page; null lets playback choose (every other way in).</summary>
     public PrePlayChoice? Choice { get; private init; }
 
+    /// <summary>
+    /// The saved server, by its entry id, the title may play from (<see cref="OnlyFor"/>): a title Silo's phone app started
+    /// was checked against the PC's sign-in, and plays only while that still holds. Null for every other way in.
+    /// </summary>
+    public string? OnlyForServer { get; private init; }
+
+    /// <summary>The profile the title may play for, with <see cref="OnlyForServer"/>; null for every other way in.</summary>
+    public string? OnlyForProfile { get; private init; }
+
     /// <summary>Plays <paramref name="contentId"/> from where the profile left off, or from the start.</summary>
     public static PlayRequest Resume(string contentId, PrePlayChoice? choice = null)
     {
@@ -107,6 +116,17 @@ public sealed record PlayRequest
             PinnedFileId = string.IsNullOrWhiteSpace(fileId) ? null : fileId,
             SelectionRevision = selectionRevision,
         };
+    }
+
+    /// <summary>
+    /// This request, played only while <paramref name="serverEntryId"/> is the active server and <paramref name="profileId"/>
+    /// its profile: a phone's launch was checked against that sign-in, and a profile switched since must not play it.
+    /// </summary>
+    public PlayRequest OnlyFor(string serverEntryId, string profileId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serverEntryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        return this with { OnlyForServer = serverEntryId, OnlyForProfile = profileId };
     }
 
     public static PlayRequest Direct(string pathOrUrl)

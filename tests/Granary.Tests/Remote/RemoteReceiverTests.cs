@@ -797,6 +797,8 @@ public sealed class RemoteReceiverTests : IAsyncDisposable
     [Fact]
     public async Task AnOfferFromAnotherServer_NamesTheServerThisPcPlaysFrom()
     {
+        // The receiver runs only while the PC is signed in to the server it says.
+        _harness.SignIn();
         string otherServer = SiloCastServerId.From(new Uri("https://other.example"));
         var (phone, _) = await _harness.HelloAsync(otherServer);
 

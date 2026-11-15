@@ -85,7 +85,7 @@ public sealed partial class RemoteReceiver
         {
             refusal = (SiloCastCancelReasons.VersionUnsupported, RemoteTexts.VersionUnsupported, NoHello);
         }
-        else if (identity is null)
+        else if (identity is null || !RunsForTheActiveServer(identity))
         {
             refusal = (SiloCastCancelReasons.HandoffFailed, RemoteTexts.PlayerNotReady, NotRunning);
         }
@@ -166,11 +166,11 @@ public sealed partial class RemoteReceiver
     private byte[]? StartTitle(Session session, SiloCastMessage.Launch launch)
     {
         int number = session.Controller.Number;
-        if (!HasReadyOffer(session))
+        if (ReadyFor(session) is not var (serverEntryId, profileId))
         {
             return Refused(number, NoReadyOffer, SiloCastErrors.HandoffRequired, RemoteTexts.HandoffRequired);
         }
-        if (Identity() is not { } identity)
+        if (Identity() is not { } identity || !RunsForTheActiveServer(identity))
         {
             return Refused(number, NotRunning, SiloCastErrors.PlayerNotReady, RemoteTexts.PlayerNotReady);
         }
@@ -192,8 +192,9 @@ public sealed partial class RemoteReceiver
         {
             return Refused(number, StillOpening, SiloCastErrors.LaunchPending, RemoteTexts.LaunchPending);
         }
+        // Bound to the sign-in the offer was ready for: should the profile switch before the title starts, it plays nothing.
         return RemoteReceiverPolicy.RequestFor(launch.Playback) is { ContentId: { } contentId } request
-            ? OpenPlayer(session, request, contentId)
+            ? OpenPlayer(session, request.OnlyFor(serverEntryId, profileId), contentId)
             : Refused(number, NoTitle, SiloCastErrors.LaunchFailed, RemoteTexts.NoSuchTitle);
     }
 
@@ -235,18 +236,26 @@ public sealed partial class RemoteReceiver
         return SiloCastMessages.Error(code, message);
     }
 
-    // A ready offer on this connection, made under the sign-in that is still the PC's.
-    private bool HasReadyOffer(Session session)
+    // The server entry and the profile of a ready offer on this connection, made under the sign-in that is still the PC's;
+    // null without one.
+    private (string ServerEntryId, string ProfileId)? ReadyFor(Session session)
     {
         var now = SignedInAs();
         lock (_gate)
         {
             NoteSignInLocked(now);
             return session.Ready is { } ready && ready.SignInNumber == _signIns
-                && _offersMadeFor is { State: SessionState.Ready, ProfileId: { } signedIn }
-                && string.Equals(signedIn, ready.ProfileId, StringComparison.Ordinal);
+                && _offersMadeFor is { State: SessionState.Ready, ServerEntryId: { } serverEntryId, ProfileId: { } signedIn }
+                && string.Equals(signedIn, ready.ProfileId, StringComparison.Ordinal)
+                    ? (serverEntryId, signedIn)
+                    : null;
         }
     }
+
+    // What the receiver says of itself is the session's active server: after a change of server it runs for the one
+    // before until its lifetime has caught up, and that one's phones must not be readied for the new one.
+    private bool RunsForTheActiveServer(ReceiverIdentity identity) =>
+        _session.ActiveServer is { } active && string.Equals(SiloCastServerId.From(active.BaseUri), identity.ServerId, StringComparison.Ordinal);
 
     // On the UI thread: a room this profile is in. The Watch Party's own state, as the room page and the player read it.
     private bool InWatchParty => _watchParty?.IsInRoom == true;

@@ -3163,6 +3163,7 @@ is checked afresh, in this order:
 | When | Granary sends | `message` |
 |---|---|---|
 | Before the phone's `hello` | `handoff_cancel version_unsupported` | "Update Silo on both devices to continue." |
+| The receiver does not run, or still runs for the server before the PC's active one (just after a change of server) | `handoff_cancel handoff_failed` | "The PC player is not ready yet." |
 | The phone's `hello` or the offer names another server | `handoff_cancel handoff_failed` | "This PC plays from {server name}." |
 | This profile is in a Watch Party's room | `handoff_cancel watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
 | Another profile than the one signed in on the PC, or none | `handoff_cancel handoff_failed` | "Granary is signed in with another profile. Switch profiles on the PC to play from this phone." (*new*) |
@@ -3186,6 +3187,7 @@ is checked afresh, in this order:
 |---|---|---|
 | From a phone on another server, or before its `hello` | `error unauthorized` | "Connect with a matching Silo account first." |
 | No ready offer on this connection, or one made before the profile or the server changed | `error handoff_required` | "Prepare the phone profile before playing." |
+| The receiver still runs for the server before the PC's active one | `error player_not_ready` | "The PC player is not ready yet." |
 | `serverId` names another server (by id, or by the identity the phone's `hello` named) | `error server_mismatch` | "This PC is connected to a different Silo server." |
 | Windows is locked | `error player_not_ready` | "The PC player is not ready yet." |
 | This profile is in a Watch Party's room | `error watch_party_active` | "Leave the Watch Party on the PC first." (*new*) |
@@ -3200,6 +3202,10 @@ is checked afresh, in this order:
   `subtitleTrackIndex` as the combined ordinal the start takes, any negative one off; both phones send this receiver
   type that ordinal. Picks without a `fileId` are dropped, and `libraryId` is not read. The server decides, under the
   PC's profile, whether the title may play.
+- **Only for that sign-in.** The request is bound to the server entry and the profile the offer was ready for
+  (`PlayRequest.OnlyFor`); the playback checks them again as it starts, and should the PC have switched profile or
+  server in between, it starts nothing and the player says "This title was started for a profile that is no longer
+  signed in." (*new*).
 - **The status at once.** The phone gives up 30 seconds after the launch without its `contentId` in the status. From
   the launch on, the status shows the title loading (`title: "Loading"`, `isLoading: true`, its `contentId`), also while
   the title before still plays, until a player that opened after the launch shows it.

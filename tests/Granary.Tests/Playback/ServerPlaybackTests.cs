@@ -378,6 +378,27 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task ATitleForTheSignInThatPlays_Starts()
+    {
+        await _fixture.StartAsync(PlayRequest.At(MovieId, 4747.284).OnlyFor(ScriptedSilo.Server.Id, "7"));
+
+        Assert.Equal(4747.284, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Theory]
+    [InlineData("srv1", "8")]
+    [InlineData("srv2", "7")]
+    public async Task ATitleForASignInThatIsGone_DoesNotStart(string serverEntryId, string profileId)
+    {
+        // A phone's launch was checked against server srv1 and profile 7; the PC is signed in otherwise by now.
+        var playback = await _fixture.StartAsync(PlayRequest.At(MovieId, 4747.284).OnlyFor(serverEntryId, profileId));
+
+        Assert.Equal(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "This title was started for a profile that is no longer signed in.",
+            CanRetry: false), playback.Status);
+        Assert.Empty(_fixture.Silo.Sent);
+    }
+
+    [Fact]
     public async Task EveryOtherRequest_StartsAsBefore()
     {
         _fixture.DevicePreferences.ResumeRewindSeconds = 7;

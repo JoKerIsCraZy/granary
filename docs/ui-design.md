@@ -1530,7 +1530,9 @@ While Silo's phone app controls this PC (Settings → Playback → This PC → C
   window is not brought to the front. The player's notice card (under Player, Notices) then says "Starting Example
   Movie" and, under it, "From Elena's phone" (Silo's own `cast_standby_starting` and `cast_standby_from`, which its TV
   apps show when a phone started a title), for four seconds, once the title's name is known; a series' title is its
-  name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then.
+  name, as the player's title line has it. Nothing shows while Windows is locked: a phone starts nothing then. Should the
+  PC switch profile or server between the phone's Play and the start, the player's failed screen says "This title was
+  started for a profile that is no longer signed in." (*new*), without Try again.
 
 ## Full screen
 

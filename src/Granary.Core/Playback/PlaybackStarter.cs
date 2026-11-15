@@ -10,6 +10,9 @@ namespace Granary.Core.Playback;
 /// <summary>Why a title cannot be played, worded for the viewer.</summary>
 public sealed class PlaybackUnavailableException(string message, bool canRetry) : Exception(message)
 {
+    /// <summary>A title a phone started for a sign-in the PC no longer has (<see cref="PlayRequest.OnlyFor"/>). New.</summary>
+    public const string StartedForAnotherProfile = "This title was started for a profile that is no longer signed in.";
+
     public bool CanRetry { get; } = canRetry;
 }
 
@@ -77,6 +80,12 @@ public sealed class PlaybackStarter(
         var choice = request.IsWatchParty ? null : request.Choice;
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
         string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
+        // A title a phone started plays only for the sign-in its launch was checked against, whatever came since.
+        if ((request.OnlyForServer is { } onlyServer && !string.Equals(onlyServer, server.Id, StringComparison.Ordinal))
+            || (request.OnlyForProfile is { } onlyProfile && !string.Equals(onlyProfile, profileId, StringComparison.Ordinal)))
+        {
+            throw new PlaybackUnavailableException(PlaybackUnavailableException.StartedForAnotherProfile, canRetry: false);
+        }
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
         // Read alongside the watch detail; when that fails first, nobody waits for the settings any more.
         _ = settings.ContinueWith(static read => _ = read.Exception, CancellationToken.None,

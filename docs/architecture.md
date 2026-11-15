@@ -479,7 +479,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
   position; a position handed over from outside, `PlayRequest.At`, which only a title a paired phone starts gives (see
   "Phone remote"), is taken as it is, unrewound, while it lies before the file's end, and past it the resume point
-  decides), the profile's
+  decides; such a title is bound to the sign-in it was started for, `PlayRequest.OnlyFor`, and starts nothing for
+  another), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -1577,8 +1578,16 @@ receiver only). docs/api-contract.md 15.6 has every answer and its text.
   the room page's and the player's own source), and a launch still opening. Then `RemoteReceiverPolicy.RequestFor` makes
   the `PlayRequest` (silo-roku's `launchIntent`: start over, `PlayRequest.At` the phone's position above 0, or resume; a
   version with its picks as a `PrePlayChoice`; picks without a version dropped; a content id that is not one Silo
-  Server makes, 1 to 256 printable ASCII characters without the space and not `.` or `..`, refused), `Launched` is raised with the phone's cleaned name and that request, and the player route opens it as a
-  page's Play does, replacing what plays without asking. The server decides, under the PC's profile, what may play.
+  Server makes, 1 to 256 printable ASCII characters without the space and not `.` or `..`, refused), bound to the
+  server entry and profile of the ready offer (`PlayRequest.OnlyFor`). `Launched` is raised with the phone's cleaned
+  name and that request, and the player route opens it as a page's Play does, replacing what plays without asking. The
+  server decides, under the PC's profile, what may play.
+- **The sign-in, twice.** The receiver reads the session outside its gate and the playback reads it again as it starts,
+  so a profile switched between the launch's checks and the start would otherwise play the phone's title for the new
+  profile: `PlaybackStarter.PrepareAsync` refuses a bound request whose server or profile is no longer the session's,
+  before it asks the server anything. After a change of server the receiver still says the server before until its
+  lifetime has caught up; an offer or a launch then is refused as "not ready", so no phone of that server is readied
+  for the new one.
 - **The status at once.** A phone gives up 30 seconds after its launch without its title in the status, and the player
   page takes a moment to open. So from the launch on the receiver's status shows the title loading (silo-roku's
   `state.loading`) until a player that attached after the launch shows it, and only such a player counts: the one

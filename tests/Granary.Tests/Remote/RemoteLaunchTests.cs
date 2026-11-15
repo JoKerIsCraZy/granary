@@ -157,13 +157,13 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         await phone.SendAsync(Launch(AtThePhonesPosition));
 
         await LoadingAsync(phone);
-        Assert.Equal((AppRoute.Player, (object?)PlayRequest.At("movie-1", 4747.284)), Assert.Single(Navigations));
+        Assert.Equal((AppRoute.Player, (object?)Signed(PlayRequest.At("movie-1", 4747.284))), Assert.Single(Navigations));
     }
 
     [Fact]
     public async Task StartFromBeginning_StartsOver()
     {
-        Assert.Equal(PlayRequest.FromStart("movie-1"),
+        Assert.Equal(Signed(PlayRequest.FromStart("movie-1")),
             await LaunchedAsync("""{"contentId":"movie-1","startFromBeginning":true,"resumePosition":4747.284}"""));
     }
 
@@ -173,7 +173,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
     [InlineData("""{"contentId":"movie-1","startFromBeginning":false,"resumePosition":-3}""")]
     public async Task NeitherAPositionNorFromTheBeginning_Resumes(string playback)
     {
-        Assert.Equal(PlayRequest.Resume("movie-1"), await LaunchedAsync(playback));
+        Assert.Equal(Signed(PlayRequest.Resume("movie-1")), await LaunchedAsync(playback));
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         var request = await LaunchedAsync(
             """{"contentId":"movie-1","fileId":42,"pinsVersion":true,"audioTrackIndex":1,"subtitleTrackIndex":3,"libraryId":5,"startFromBeginning":false,"resumePosition":4747.284}""");
 
-        Assert.Equal(PlayRequest.At("movie-1", 4747.284, new PrePlayChoice("42", IsVersionPicked: true, AudioTrack: 1, SubtitleTrack: 3)), request);
+        Assert.Equal(Signed(PlayRequest.At("movie-1", 4747.284, new PrePlayChoice("42", IsVersionPicked: true, AudioTrack: 1, SubtitleTrack: 3))), request);
     }
 
     [Fact]
@@ -326,6 +326,28 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
 
         Assert.Contains("handoff_required", await phone.NextAsync("error"), StringComparison.Ordinal);
         Assert.Empty(Navigations);
+    }
+
+    [Fact]
+    public async Task ALaunch_PlaysOnlyForTheSignInItsOfferWasReadyFor()
+    {
+        // The playback checks it again as it starts: a profile switched since then plays nothing of the phone's.
+        var request = await LaunchedAsync(AtThePhonesPosition);
+
+        Assert.Equal(("entry-1", "7"), (request.OnlyForServer, request.OnlyForProfile));
+    }
+
+    [Fact]
+    public async Task AnOfferWhileTheReceiverStillRunsForTheServerBefore_IsRefused()
+    {
+        var phone = await PhoneAsync();
+
+        // The PC moved to another server with the same profile id; the receiver still says the server before for a moment.
+        _harness.SignIn(RemoteHarness.Server("https://other.example", "entry-2"));
+        await phone.SendAsync(Offer());
+
+        Assert.Equal("""{"type":"handoff_cancel","v":2,"handoffCancel":{"requestId":"request-1","reason":"handoff_failed","message":"The PC player is not ready yet."}}""",
+            await phone.NextAsync("handoff_cancel"));
     }
 
     [Fact]
@@ -525,7 +547,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
 
         // Nobody is asked: the player opens the phone's title, and the phone sees it at once, not the title before.
         await LoadingAsync(phone);
-        Assert.Equal((AppRoute.Player, (object?)PlayRequest.At("movie-1", 4747.284)), Assert.Single(Navigations));
+        Assert.Equal((AppRoute.Player, (object?)Signed(PlayRequest.At("movie-1", 4747.284))), Assert.Single(Navigations));
         // The page that played it goes, the new one comes.
         await _harness.DetachAsync(playing);
         await _harness.AttachAsync(new FakeRemotePlayer(_harness.Dispatcher));
@@ -585,7 +607,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         await LoadingAsync(phone);
 
         // The player opens the title on the PC's own sign-in: its request names the title and the position, nothing else.
-        Assert.Equal((AppRoute.Player, (object?)PlayRequest.At("movie-1", 4747.284)), Assert.Single(Navigations));
+        Assert.Equal((AppRoute.Player, (object?)Signed(PlayRequest.At("movie-1", 4747.284))), Assert.Single(Navigations));
         Assert.Empty(_harness.Session.Calls);
         Assert.DoesNotContain(phone.Received, message => message.Contains("evil", StringComparison.OrdinalIgnoreCase)
             || message.Contains("phone-token", StringComparison.Ordinal));
@@ -632,7 +654,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         Assert.Contains("request-1", await phone.NextAsync("handoff_ready"), StringComparison.Ordinal);
         await phone.SendAsync(Launch(AtThePhonesPosition));
         await LoadingAsync(phone);
-        Assert.Equal((AppRoute.Player, (object?)PlayRequest.At("movie-1", 4747.284)), Assert.Single(Navigations));
+        Assert.Equal((AppRoute.Player, (object?)Signed(PlayRequest.At("movie-1", 4747.284))), Assert.Single(Navigations));
 
         // The page that played the episode goes; the new one plays the phone's title, which the phone then controls.
         await _harness.DetachAsync(player);
@@ -654,6 +676,9 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
         Assert.Equal(SiloCastControls.Seek, Assert.Single(player.Applied).Name);
         Assert.Equal(0, phone.OpenFailures);
     }
+
+    // The request as a launch makes it: for the server entry and the profile its offer was made ready under.
+    private static PlayRequest Signed(PlayRequest request) => request.OnlyFor("entry-1", "7");
 
     private static string Offer(string requestId = "request-1", string? serverId = null, string profileId = "7", string extra = "") =>
         $$"""{"type":"handoff_offer","handoffOffer":{"requestId":"{{requestId}}","serverId":"{{serverId ?? RemoteHarness.ServerId}}","serverURL":"https://silo.example","profileId":"{{profileId}}","profileName":"Elena"{{extra.Trim()}}},"v":2}""";
