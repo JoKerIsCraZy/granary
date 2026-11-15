@@ -1691,7 +1691,9 @@ connection, and the main window's `Closed` waits `RemoteReceiver.StopBudget` (2 
   or visible but unfocused), no presenter is set or left on its way, since that would restore or raise it. The player
   before leaves without leaving the mini view, a trailer's own full screen becomes the title's, `PlayerPage.Start` does
   not set full screen, and the page goes full screen at the window's next `Activated` instead (`WindowCameToFront`),
-  unless it became the bar or the mini view; a player left before that saves no full screen choice. `Expand` only lays
+  unless it became the bar or the mini view; a player left before that saves no full screen choice. An `Activated` that
+  came while the player before unloaded, with no player to hear of it, is passed on as the new page starts: the window
+  is in front by then. `Expand` only lays
   the player out inside the window. The player shows "Starting {title}" and "From {phone}" in its
   notice card for four seconds once the title's name is known, and only for that request.
 

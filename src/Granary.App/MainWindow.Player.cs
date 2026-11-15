@@ -101,6 +101,12 @@ public sealed partial class MainWindow : IPlayerOverlay
         Expand();
         string? phone = TakeLaunch(play);
         page.Start(play, mayChangeWindow: !keepsWindow);
+        // The viewer brought the window to the front while the player before unloaded, when no player was there to hear of
+        // it: this one hears of it now, or its full screen would wait for the next time.
+        if (keepsWindow && _isInFront)
+        {
+            page.WindowCameToFront();
+        }
         if (phone is not null)
         {
             page.ViewModel.NoteStartedFromPhone(play, phone);
