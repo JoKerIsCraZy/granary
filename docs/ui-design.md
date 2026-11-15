@@ -213,7 +213,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
-  controls that show optional parts set them in code when their item changes (`MediaCardView`).
+  controls that show optional parts set them in code when their item changes (`MediaCardView`, and `MediaRow`'s Explore
+  all and title link when its command changes).
 - Artwork goes through `Artwork.Load`, which fills the bitmap from the app's artwork cache
   (docs/architecture.md, Artwork). `MediaRow` and `MediaGrid` prefetch their cards' artwork; a grid asks
   for the next page four rows ahead of its last realized card.
@@ -1700,8 +1701,8 @@ stream's commands on Activity.
   account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
   Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Started 5m ago ·
   5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
-  route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
-  when nothing shows.
+  route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
+  the web's. "No active streams" or "No streams match your filters" when nothing shows.
 
 ### Activity indicator
 

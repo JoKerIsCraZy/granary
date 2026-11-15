@@ -73,6 +73,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- A row without Explore all, on Home, For You, a library or Requests, no longer shows EXPLORE ALL or a title that turns
+  the accent under the mouse after scrolling: a row reused for another one kept the link of the one before, though it
+  opened nothing.
+- Admin → Activity: a stream's Look up opens IP Lookup and scrolls to it with the accounts seen at that address, as on
+  Silo's web, where before it looked the address up in the closed lookup. The address sits in the middle of its field.
 - The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
   or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.
 - A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and
