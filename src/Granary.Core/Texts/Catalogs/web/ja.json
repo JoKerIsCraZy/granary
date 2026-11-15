@@ -707,6 +707,24 @@
       "value": "推奨年齢を表示"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "ダウンロードの画質"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "視聴し終えたダウンロードの削除による空き容量の確保を提案しません。"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "視聴済みのダウンロードを保持"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,

@@ -707,6 +707,24 @@
       "value": "عرض العمر الموصى به"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "جودة التنزيل"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "عدم اقتراح استعادة المساحة من التنزيلات التي أنهيت مشاهدتها."
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "الاحتفاظ بالتنزيلات المشاهَدة"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,

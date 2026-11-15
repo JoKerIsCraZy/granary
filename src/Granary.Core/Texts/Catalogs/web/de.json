@@ -715,6 +715,24 @@
       "value": "Empfohlenes Alter anzeigen"
     }
   ],
+  "settingsManifest.downloads.default_quality.label": [
+    {
+      "type": 0,
+      "value": "Download-Qualität"
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.description": [
+    {
+      "type": 0,
+      "value": "Schlägt nicht vor, Speicherplatz von fertig geschauten Downloads freizugeben."
+    }
+  ],
+  "settingsManifest.downloads.keep_watched.label": [
+    {
+      "type": 0,
+      "value": "Gesehene Downloads behalten"
+    }
+  ],
   "settingsManifest.playback.audio_language.unsetLabel": [
     {
       "type": 0,

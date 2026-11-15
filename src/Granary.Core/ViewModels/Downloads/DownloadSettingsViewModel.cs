@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Detail;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ internal sealed record DownloadDrive(string Root, long? FreeBytes);
 /// </summary>
 public sealed partial class DownloadSettingsViewModel : ObservableObject
 {
-    public const string FolderRefused = "Granary can't save downloads in that folder. Choose another one.";
+    public static string FolderRefused => AppText.Get("granary.settings.downloads.folderRefused");
 
     /// <summary>The file Change writes and deletes in a chosen folder to know downloads can go there.</summary>
     public const string WriteCheckName = ".granary-write-check";
@@ -101,11 +102,11 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         ShowStorage();
     }
 
-    /// <summary>Remove All Downloads' question, the Apple app's (<c>downloads.settings.removeAllTitle</c>).</summary>
-    public const string RemoveAllTitle = "Remove all downloaded files?";
+    /// <summary>Remove all downloads' question, the Apple app's (<c>downloads.settings.removeAllTitle</c>).</summary>
+    public static string RemoveAllTitle => AppText.Get("granary.settings.downloads.removeAllTitle");
 
     /// <summary>Its yes, the Apple app's (<c>downloads.settings.removeAllConfirm</c>).</summary>
-    public const string RemoveAllAction = "Remove All";
+    public static string RemoveAllAction => AppText.Get("granary.settings.downloads.removeAllConfirm");
 
     /// <summary>Where new downloads go; the ones on this PC stay where they are.</summary>
     [ObservableProperty]
@@ -131,8 +132,10 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(StorageLimitText))]
     public partial double StorageLimitGb { get; set; }
 
-    /// <summary>"No limit", or "250 GB".</summary>
-    public string StorageLimitText => LimitGb(StorageLimitGb) is var gb and > 0 ? gb.ToString(CultureInfo.InvariantCulture) + " GB" : "No limit";
+    /// <summary>"No limit", or "250 GB" in the web's size format.</summary>
+    public string StorageLimitText => LimitGb(StorageLimitGb) is var gb and > 0
+        ? AppText.Get("web.common.format.size.gb", ("size", gb))
+        : AppText.Get("granary.settings.downloads.noLimit");
 
     /// <summary>The highest limit the slider offers, in GB.</summary>
     public double StorageLimitMaxGb => DownloadPreferenceLimits.MaxStorageLimitGb;
@@ -148,8 +151,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
 
     /// <summary>The Apple app's words: "Storage limit: 25 GB", "Storage limit: Unlimited".</summary>
     public string DefaultMonitorLimitText => MonitorLimitGb(DefaultMonitorLimitGb) is var gb and > 0
-        ? $"Storage limit: {gb.ToString(CultureInfo.InvariantCulture)} GB"
-        : "Storage limit: Unlimited";
+        ? AppText.Get("granary.settings.downloads.monitorLimit", ("limit", gb))
+        : AppText.Get("granary.settings.downloads.monitorLimitUnlimited");
 
     /// <summary>The highest limit the stepper offers, in GB.</summary>
     public double DefaultMonitorLimitMaxGb => DownloadPreferenceLimits.MaxMonitorLimitGb;
@@ -157,9 +160,9 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     /// <summary>The stepper's step, in GB.</summary>
     public double DefaultMonitorLimitStepGb => DownloadPreferenceLimits.MonitorLimitStepGb;
 
-    /// <summary>The Apple app's Simultaneous Downloads: 1 to 4.</summary>
+    /// <summary>The Apple app's Simultaneous Downloads: 1 to 4, in the language's digits.</summary>
     public IReadOnlyList<SettingChoice> SimultaneousChoices { get; } =
-        [.. Enumerable.Range(DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous - DownloadPreferenceLimits.MinSimultaneous + 1).Select(n => new SettingChoice(Count(n), Count(n)))];
+        [.. Enumerable.Range(DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous - DownloadPreferenceLimits.MinSimultaneous + 1).Select(n => new SettingChoice(Count(n), NumberText.Digits(n)))];
 
     /// <summary>How many downloads come at once.</summary>
     [ObservableProperty]
@@ -323,7 +326,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
         await _dispatcher.ResumeOnUi();
         if (!made || !_launcher.OpenFolder(folder))
         {
-            Status = $"Couldn't open {folder}.";
+            Status = AppText.Get("granary.settings.downloads.openFailed", ("folder", folder));
         }
     }
 
@@ -471,7 +474,9 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     private static string DriveLabel(DownloadDrive drive)
     {
         string name = drive.Root.TrimEnd('\\', '/');
-        return drive.FreeBytes is long free and > 0 ? $"{name} · {PrePlayText.FileSize(free)} free" : name;
+        return drive.FreeBytes is long free and > 0
+            ? AppText.Get("granary.settings.downloads.driveFree", ("drive", name), ("free", PrePlayText.FileSize(free)))
+            : name;
     }
 
     // Whether the folder lies on the drive of that root (letters in any case); a share's folder lies on no drive.
@@ -533,8 +538,8 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             return;
         }
         string[] asked = [.. _downloads.Items.Select(i => i.DownloadId)];
-        if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle,
-            "This removes the downloaded copies from this PC. Nothing is deleted from your Silo server.", RemoveAllAction))
+        if (asked.Length > 0 && await _confirmation.AskAsync(RemoveAllTitle, AppText.Get("granary.settings.downloads.removeAllMessage"),
+            RemoveAllAction))
         {
             await _downloads.DeleteAllAsync(scope, asked, CancellationToken.None);
         }
@@ -592,7 +597,7 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
             return;
         }
         long used = _downloads.BytesUsed();
-        UsedText = used > 0 ? PrePlayText.FileSize(used) : "0 B";
+        UsedText = used > 0 ? PrePlayText.FileSize(used) : AppText.Get("web.common.format.size.bytes", ("size", 0));
         CanRemoveAll = _downloads.Items.Count > 0;
     }
 
@@ -603,12 +608,13 @@ public sealed partial class DownloadSettingsViewModel : ObservableObject
     {
         bool resolution = capability is null || capability.QualityOptions.Count == 0 || capability.QualityOptions.Any(o => o.MaxHeight is > 0);
         string presets = resolution
-            ? "Bitrate presets are prepared on the server when the original is larger, at up to the resolution shown."
-            : "Bitrate presets are prepared on the server when the original is larger.";
+            ? AppText.Get("granary.settings.downloads.qualityPresetsResolution")
+            : AppText.Get("granary.settings.downloads.qualityPresets");
         string scope = capability?.MonitorQuality == true
-            ? "This is the default for every download and monitor; the download dialog can change it."
-            : "This is the default for every download; the download dialog can change it. Monitored series download in original quality.";
-        return $"Original prefers source quality and may prepare a compatibility file if this device needs one. {presets} {scope}";
+            ? AppText.Get("granary.settings.downloads.qualityScopeMonitors")
+            : AppText.Get("granary.settings.downloads.qualityScopeDownloads");
+        return AppText.Get("granary.settings.downloads.qualityDescription",
+            ("original", AppText.Get("granary.settings.downloads.qualityOriginal")), ("presets", presets), ("scope", scope));
     }
 
     // Each preset as the server offers it, else as the server's guide lists it. A new list clears the select first and then

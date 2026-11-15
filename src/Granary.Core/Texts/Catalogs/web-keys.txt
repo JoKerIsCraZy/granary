@@ -190,6 +190,16 @@ settingsManifest.catalog.hide_unwatched_episode_images.label
 settingsManifest.catalog.hide_unwatched_episode_overviews.description
 settingsManifest.catalog.hide_unwatched_episode_overviews.label
 settingsManifest.catalog.show_advisory_age.label
+
+# Settings → Downloads' Download quality and Keep watched downloads, as the settings manifest words these two settings
+# for every client; the web keeps no downloads and its pages do not show them:
+# src/Granary.App/Views/Settings/DownloadsSettingsView.xaml.
+settingsManifest.downloads.default_quality.label
+settingsManifest.downloads.keep_watched.description
+settingsManifest.downloads.keep_watched.label
+
+# More of the settings manifest's words, as above under
+# settingsManifest.catalog.hide_unwatched_episode_images.description.
 settingsManifest.playback.audio_language.unsetLabel
 settingsManifest.playback.auto_play_next.label
 settingsManifest.playback.auto_skip_credits.description
