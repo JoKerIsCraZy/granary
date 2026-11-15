@@ -1,5 +1,8 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
+using Granary.Core.Playback;
 using Granary.Core.Servers;
+using Granary.Core.ViewModels;
 
 namespace Granary.Core.Remote;
 
@@ -7,7 +10,7 @@ namespace Granary.Core.Remote;
 /// The texts Granary sends to a phone, which the phone shows as they are. They follow Silo's Roku app's, with "Roku" as
 /// "PC" (docs/api-contract.md 15.5 lists them). Silo's receivers write them in English.
 /// </summary>
-public static class RemoteTexts
+public static partial class RemoteTexts
 {
     /// <summary>The longest name of a phone Granary shows.</summary>
     public const int MaxNameLength = 64;
@@ -64,10 +67,40 @@ public static class RemoteTexts
     public const string NoSuchTitle = "This title is no longer available.";
 
     /// <summary>
-    /// The player's failure as a phone is told it, in the status and with <c>launch_failed</c>, when the player's own words
-    /// would name an address: a server's or an administrator's message comes as they wrote it. New.
+    /// The player's failure as a phone is told it, in the status and with <c>launch_failed</c>, when the player's text is
+    /// not one of Granary's own: a server's or an administrator's message comes as they wrote it. New.
     /// </summary>
     public const string CouldNotPlay = "This title could not be played on this PC.";
+
+    // The player's own failure texts, which name nothing (ServerPlayback, ServerPlayback.Recovery, PlaybackStarter,
+    // MediaAuthorization, PlayerViewModel). A text added there later and not here goes to a phone as CouldNotPlay.
+    private static readonly HashSet<string> PlayerFailures = new(StringComparer.Ordinal)
+    {
+        "Sign in to play from this server.",
+        "Choose a profile to play from this server.",
+        "Choose a server to play from.",
+        "The server ended the session. Sign in again to play.",
+        "The server could not renew the sign-in. Try again in a moment.",
+        "The server keeps rejecting the sign-in. Try again in a moment.",
+        "The server rejected the credentials.",
+        "This title has no file to play.",
+        "The room's file is not available here.",
+        "This server does not offer playback to this app.",
+        "This title is no longer available.",
+        "This title cannot be played right now.",
+        "This title could not be played. Try again later.",
+        "The server answered with a playback protocol this app does not support.",
+        "The server sent a stream address this app does not trust.",
+        "The connection to the server was lost.",
+        "Playback stopped because of an unexpected problem.",
+        "The server ended this playback session.",
+        ServerPlayback.AdminEndedText,
+        ServerPlayback.AdminStoppedText,
+        PlaybackUnavailableException.StartedForAnotherProfile,
+        ApiFailureText.Busy,
+        ApiFailureText.Unreachable,
+        ApiFailureText.Unexpected,
+    };
 
     /// <summary>A phone that gave no usable name. New.</summary>
     public const string UnnamedPhone = "A phone";
@@ -76,14 +109,21 @@ public static class RemoteTexts
     public static string PlaysFrom(string serverName) => string.Format(CultureInfo.InvariantCulture, "This PC plays from {0}.", serverName);
 
     /// <summary>
-    /// The player's failure as a phone may read it: the player's message, unless it names an address (a scheme's
-    /// <c>://</c> or <c>www.</c>), which <see cref="CouldNotPlay"/> stands in for. Granary's own failure texts name none;
-    /// a terminal decision's message and an administrator's stop message are the server's words, and could.
+    /// The player's failure as a phone may read it: the player's text only when it is one of Granary's own, which name
+    /// nothing, else <see cref="CouldNotPlay"/>. A terminal decision's message and an administrator's stop message are the
+    /// server's words and could name a host or an address, as could any text that came from elsewhere.
     /// </summary>
     public static string? PlayerError(string? message) =>
-        message is not null && (message.Contains("://", StringComparison.Ordinal) || message.Contains("www.", StringComparison.OrdinalIgnoreCase))
-            ? CouldNotPlay
-            : message;
+        message is null ? null : PlayerFailures.Contains(message) || GranarysWordedFailure().IsMatch(message) ? message : CouldNotPlay;
+
+    // The player's own texts with a number or a fixed detail in them: the server's error status, a wait, and the player's
+    // end, whose detail is mpv's error text (lower-case words) or one of Granary's.
+    [GeneratedRegex(@"^(?:The server could not start playback \(error \d{3}\)\."
+        + @"|The server is receiving too many requests\. Try again in (?:a few minutes|1 minute|\d{1,6} minutes)\."
+        + @"|Playback failed: (?:[a-z ]{1,64}|Granary could not open the title|Granary could not start the player without your mpv\.conf"
+        + @"|Granary stopped using your mpv\.conf|No picture within the start timeout\.|No data within the stall timeout\.))\z",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex GranarysWordedFailure();
 
     /// <summary>
     /// A name a phone sent, as Granary shows it: cleaned as a discovered server's name is (no control, format or separator

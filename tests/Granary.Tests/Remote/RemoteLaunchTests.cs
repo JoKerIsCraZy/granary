@@ -472,6 +472,8 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
     [InlineData("Transcoding is off. See https://silo.example/help?ticket=abc123 for more.")]
     [InlineData("Ask your administrator at www.silo.example/admin.")]
     [InlineData("Playback failed: rtsp://192.168.1.66/stream")]
+    [InlineData("No such host is known (silo.home:443)")]
+    [InlineData("Stopped by the administrator of 192.168.1.66.")]
     public async Task APlayersMessageThatNamesAnAddress_GoesOutWithoutIt(string message)
     {
         // The player's own texts name nothing, but a server's or an administrator's words come as they wrote them.
@@ -494,7 +496,7 @@ public sealed class RemoteLaunchTests : IAsyncDisposable
             shown |= FakePhone.TypeOf(received) == "state" && received.Contains(Shown, StringComparison.Ordinal);
         }
         Assert.DoesNotContain(phone.Received, received => received.Contains("silo.example/", StringComparison.Ordinal)
-            || received.Contains("192.168.1.66", StringComparison.Ordinal));
+            || received.Contains("192.168.1.66", StringComparison.Ordinal) || received.Contains("silo.home", StringComparison.Ordinal));
     }
 
     [Fact]

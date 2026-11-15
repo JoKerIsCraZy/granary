@@ -3210,9 +3210,10 @@ is checked afresh, in this order:
   the launch on, the status shows the title loading (`title: "Loading"`, `isLoading: true`, its `contentId`), also while
   the title before still plays, until a player that opened after the launch shows it.
 - **Opening** lasts until that player shows the title no longer loading, or shows it failed: the phone that launched
-  it then gets `error launch_failed` with the player's message. Granary's own failure texts name no address; a server's
-  terminal message or an administrator's stop message comes as they wrote it, so a message with `://` or `www.` in it
-  goes out, here and as the status's `error`, as "This title could not be played on this PC." (*new*) instead. A player that showed it and closed before it loaded,
+  it then gets `error launch_failed` with the player's message, here and as the status's `error`, only when it is one of
+  Granary's own failure texts, which name nothing (`RemoteTexts.PlayerError`: a fixed set, and the server's error
+  status, a wait or mpv's error text in Granary's own wording). Any other text, such as a server's terminal message or
+  an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
   and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
 
 ## Appendix: where docs and code disagree
