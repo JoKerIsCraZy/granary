@@ -911,6 +911,12 @@
       "value": "Voltar ao retomar"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "Idioma dos menus, botões e mensagens do app. Independente dos idiomas de áudio, legendas e metadados."
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1575,6 +1581,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "Vale após uma reinicialização."
     }
   ],
   "web.admin.common.accounts.role": [
@@ -15366,6 +15378,36 @@
     {
       "type": 0,
       "value": "Títulos"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "Idioma do app"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "Não foi possível salvar o idioma do app"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "Idioma"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "Seguir o dispositivo"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "Acessibilidade"
     }
   ],
   "web.settings.account.password.current": [

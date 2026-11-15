@@ -27,6 +27,7 @@ public sealed partial class GranaryCatalogFilesTests
         ["granary.changePassword.noPassword"] = "a Silo password: the server's own sign-in",
         ["granary.requests.statusFailed"] = "Silo or the download automation: the server",
         ["granary.settings.about.lead"] = "a client for Silo; not an official Silo app",
+        ["granary.settings.accessibility.unsupportedDescription"] = "a newer version of Silo: the server software",
         ["granary.settings.spoilers.unsupportedDescription"] = "a newer version of Silo: the server software",
     };
 

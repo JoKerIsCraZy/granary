@@ -911,6 +911,12 @@
       "value": "Retour en arrière à la reprise"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "Langue des menus, boutons et messages de l’application. Distincte des langues de l’audio, des sous-titres et des métadonnées."
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1575,6 +1581,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "S’applique après un redémarrage."
     }
   ],
   "web.admin.common.accounts.role": [
@@ -15440,6 +15452,36 @@
     {
       "type": 0,
       "value": "Titres"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "Langue de l’application"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "Impossible d’enregistrer la langue de l’application"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "Langue"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "Suivre l’appareil"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "Accessibilité"
     }
   ],
   "web.settings.account.password.current": [

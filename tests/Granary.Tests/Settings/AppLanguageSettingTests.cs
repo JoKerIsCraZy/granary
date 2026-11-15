@@ -15,6 +15,7 @@ namespace Granary.Tests.Settings;
 public sealed class AppLanguageSettingTests : IDisposable
 {
     private const string EffectivePath = "api/v2/settings/values/effective";
+    private const string ValuePath = "api/v2/settings/values/ui.app_language";
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly LibraryHarness _harness = new();
@@ -22,6 +23,8 @@ public sealed class AppLanguageSettingTests : IDisposable
     public AppLanguageSettingTests()
     {
         _harness.Answer(EffectivePath, Answer("de"));
+        _harness.Silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.NoContent());
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.NoContent());
     }
 
     private string FilePath => Path.Combine(_directory, "app-language.json");
@@ -45,8 +48,19 @@ public sealed class AppLanguageSettingTests : IDisposable
     private AppLanguageSetting Create(AppLanguageFile? file = null)
     {
         var api = new SettingsApi(_harness.Silo.Http);
-        return new(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), file ?? KeptFile(),
+        return new(_harness.Session, new ProfileSettings(api, _harness.Session, _harness.Logs.For<ProfileSettings>()), api, file ?? KeptFile(),
             new ImmediateDispatcher(), _harness.Logs.For<AppLanguageSetting>());
+    }
+
+    private List<string> Writes() =>
+        [.. _harness.Silo.Sent.Where(r => r.Uri.AbsolutePath.EndsWith("/ui.app_language", StringComparison.Ordinal))
+            .Select(r => $"{r.Method} {r.Uri.Query} {r.Body}".TrimEnd())];
+
+    private async Task<AppLanguageSetting> ReadyAsync()
+    {
+        var setting = Create();
+        await setting.StartAsync();
+        return setting;
     }
 
     [Fact]
@@ -161,6 +175,152 @@ public sealed class AppLanguageSettingTests : IDisposable
         var second = setting.Working;
         release.SetResult();
         await Task.WhenAll(first, second);
+
+        Assert.Equal("ja", setting.Stored);
+        Assert.Equal("ja", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task AChoice_IsSavedForTheProfile_AndKeptForTheNextStart()
+    {
+        // As the web's AccessibilitySettings and the apps write it: the profile's value, which follows the person to every device.
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Equal("fr", setting.Stored);
+        Assert.Equal(["PUT ?scope=profile {\"value\":\"fr\"}"], Writes());
+        Assert.Equal(AppLanguageFailure.None, setting.Failure);
+        Assert.Equal("fr", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task MatchDevice_SavesNull()
+    {
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync(null);
+
+        Assert.Null(setting.Stored);
+        Assert.Equal(["PUT ?scope=profile {\"value\":null}"], Writes());
+        Assert.Null(KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task AChoiceOverThisPCsOwnValue_ClearsIt_SoTheChoiceAppliesHereToo()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("es");
+
+        Assert.Equal(["PUT ?scope=profile {\"value\":\"es\"}", "DELETE ?scope=profile_device"], Writes());
+        Assert.False(setting.StoredForThisDevice);
+        Assert.Equal("es", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task ThisPCsValue_ThatIsAlreadyGone_IsNoFailure()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(404, "not_found"));
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("es");
+
+        Assert.Equal(AppLanguageFailure.None, setting.Failure);
+        Assert.Equal("es", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task ARefusedSave_GoesBack_AndSaysSo()
+    {
+        var setting = await ReadyAsync();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.Problem(503, "unavailable"));
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Equal("de", setting.Stored);
+        Assert.Equal(AppLanguageFailure.NotSaved, setting.Failure);
+        Assert.False(setting.IsSaving);
+        Assert.Equal("de", KeptFile().AtStart);
+    }
+
+    [Fact]
+    public async Task AFailedClear_SaysThisPCKeepsItsOwn_AndCanBeTriedAgain()
+    {
+        _harness.Answer(EffectivePath, Answer("ja", source: SettingScopes.ProfileDevice));
+        _harness.Silo.On(HttpMethod.Delete, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("es");
+
+        Assert.Equal(AppLanguageFailure.DeviceNotCleared, setting.Failure);
+        Assert.Equal("es", setting.Stored);
+        Assert.Equal("ja", KeptFile().AtStart);
+
+        await setting.RetryDeviceClearAsync();
+
+        Assert.Equal(AppLanguageFailure.None, setting.Failure);
+        Assert.Equal("es", KeptFile().AtStart);
+        Assert.Equal(["PUT ?scope=profile {\"value\":\"es\"}", "DELETE ?scope=profile_device", "DELETE ?scope=profile_device"], Writes());
+    }
+
+    [Fact]
+    public async Task OneChoiceAtATime_ASecondWhileTheFirstSaves_IsRefused()
+    {
+        // As the web: two saves in flight could land in either order and leave the earlier choice stored.
+        var setting = await ReadyAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+
+        var first = setting.ChooseAsync("fr");
+        Assert.True(setting.IsSaving);
+        await setting.ChooseAsync("es");
+        release.SetResult();
+        await first;
+
+        Assert.Equal("fr", setting.Stored);
+        Assert.Single(Writes());
+    }
+
+    [Fact]
+    public async Task TheSameChoiceAgain_IsNotSaved()
+    {
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("de");
+
+        Assert.Empty(Writes());
+    }
+
+    [Fact]
+    public async Task BeforeTheProfilesLanguageIsKnown_NothingIsSaved()
+    {
+        _harness.Answer(EffectivePath, ScriptedSilo.Problem(503, "unavailable"));
+        var setting = await ReadyAsync();
+
+        await setting.ChooseAsync("fr");
+
+        Assert.Empty(Writes());
+        Assert.Null(setting.Stored);
+    }
+
+    [Fact]
+    public async Task AChoiceMadeForOneProfile_IsNotSavedForTheNext()
+    {
+        _harness.Silo.ActingProfile = () => _harness.Session.ProfileId;
+        var setting = await ReadyAsync();
+        _harness.Answer(EffectivePath, Answer("ja"));
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+
+        var saving = setting.ChooseAsync("fr");
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        release.SetResult();
+        await saving;
+        await setting.Working;
 
         Assert.Equal("ja", setting.Stored);
         Assert.Equal("ja", KeptFile().AtStart);

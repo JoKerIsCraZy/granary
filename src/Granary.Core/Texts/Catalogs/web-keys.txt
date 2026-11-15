@@ -217,6 +217,7 @@ settingsManifest.player.audio_sync_ms.label
 settingsManifest.player.passout_threshold.label
 settingsManifest.player.resume_rewind_seconds.description
 settingsManifest.player.resume_rewind_seconds.label
+settingsManifest.ui.app_language.description
 settingsManifest.ui.theme_music_enabled.description
 settingsManifest.ui.theme_music_enabled.label
 settingsManifest.ui.theme_music_loop.description
@@ -307,6 +308,11 @@ web.admin.activity.transcodeMode.pending
 web.admin.activity.transcodeMode.software
 web.admin.activity.transcodeMode.unknown
 web.admin.activity.userFallback
+
+# Settings → Accessibility → Language's note that a chosen language shows from the next start, in the words of the
+# web's backup restore for a setting that applies after a restart (pages/admin-backups/restoreModel.ts):
+# src/Granary.Core/ViewModels/Settings/AccessibilitySettingsViewModel.cs.
+web.admin.backups.restore.caveat.restart
 
 # An administrator's role on Admin → Dashboard's Users, as the web's accountRoleLabel (lib/accountOwner.ts): Role in
 # src/Granary.Core/ViewModels/Admin/AdminText.cs.
@@ -2146,6 +2152,15 @@ web.search.placeholderProminent
 # More of Search's words, as above under web.catalog.mediaType.movies.
 web.search.searching
 web.search.titles
+
+# Settings → Accessibility, in the words of the web's AccessibilitySettings.tsx, its Language group and the sidebar's
+# entry for it: src/Granary.App/Views/Settings/AccessibilitySettingsView.xaml, src/Granary.App/Views/SettingsPage.xaml
+# and src/Granary.Core/ViewModels/Settings/AccessibilitySettingsViewModel.cs.
+web.settings.accessibility.appLanguage
+web.settings.accessibility.appLanguageSaveFailed
+web.settings.accessibility.languageTitle
+web.settings.accessibility.matchDevice
+web.settings.accessibility.title
 
 # More of the password change's words, as above under web.auth.choosePassword.description.
 web.settings.account.password.current

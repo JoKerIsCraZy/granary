@@ -911,6 +911,12 @@
       "value": "Rewind on resume"
     }
   ],
+  "settingsManifest.ui.app_language.description": [
+    {
+      "type": 0,
+      "value": "Language of the app's menus, buttons and messages. Separate from the audio, subtitle and metadata languages."
+    }
+  ],
   "settingsManifest.ui.theme_music_enabled.description": [
     {
       "type": 0,
@@ -1527,6 +1533,12 @@
     {
       "type": 1,
       "value": "id"
+    }
+  ],
+  "web.admin.backups.restore.caveat.restart": [
+    {
+      "type": 0,
+      "value": "Applies after a restart."
     }
   ],
   "web.admin.common.accounts.role": [
@@ -14439,6 +14451,36 @@
     {
       "type": 0,
       "value": "Titles"
+    }
+  ],
+  "web.settings.accessibility.appLanguage": [
+    {
+      "type": 0,
+      "value": "App language"
+    }
+  ],
+  "web.settings.accessibility.appLanguageSaveFailed": [
+    {
+      "type": 0,
+      "value": "Couldn’t save the app language"
+    }
+  ],
+  "web.settings.accessibility.languageTitle": [
+    {
+      "type": 0,
+      "value": "Language"
+    }
+  ],
+  "web.settings.accessibility.matchDevice": [
+    {
+      "type": 0,
+      "value": "Match device"
+    }
+  ],
+  "web.settings.accessibility.title": [
+    {
+      "type": 0,
+      "value": "Accessibility"
     }
   ],
   "web.settings.account.password.current": [

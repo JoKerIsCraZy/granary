@@ -404,11 +404,23 @@ text only Granary has keeps its English under a key of its own. All of it is in 
   Windows' list ends the search. Each shipped language has its name in itself ("Español", "Português (Brasil)", "简体中文";
   `AppLanguage.Endonym`), from the web's fixed table rather than .NET's culture names, so every PC names them alike.
 - **The profile's language** (`AppLanguageSetting`): `ui.app_language` is read for every profile, as the web's
-  `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in and with every
-  server or profile. A server from before settings contract revision 28 has no such setting: its
+  `LocaleProvider` reads it (the effective value, so this PC's own `profile_device` row wins), at sign-in, with every
+  server or profile, and when Settings → Accessibility opens. A server from before settings contract revision 28 has no such setting: its
   profiles follow the device. What was read is kept on this PC (`app-language.json` in the data directory,
   `AppLanguageFile`), the last profile's language, as Silo's apps keep the language they last applied for the screens
   before sign-in; a failed read keeps what was kept, a profile that follows the device clears it. Signing out keeps it.
+- **The picker** (Settings → Accessibility → Language, `AccessibilitySettingsViewModel`, as the web's
+  `AccessibilitySettings.tsx`): Match device, then the enabled languages by their own names, and a stored tag Granary
+  does not offer under its name, so a save never clears another app's choice. A choice writes the profile's value (Match
+  device writes `null`), then clears this PC's own value when the read came from it, as the web and the apps write it; one
+  choice at a time, each bound to the server and profile it was made for. It is kept for the next start at once.
+- **How a change applies**: at the next start. Silo's web and apps switch at once; Granary does not, because the texts
+  are read when each element is made (x:Bind functions run once, view models word their rows as they load) and live
+  elements would keep the old language: the shell, the sidebar, cached pages and their back stack, the player (also
+  minimized, with its title playing), the taskbar buttons and Windows' media controls. Switching live would mean rebuilding
+  all of them while a title may play. So the picker says "Applies after a restart." while the next start would show
+  another language or other formats than this run (`AppLanguage.ForStart` of the stored value against that of the value
+  the run started with).
 - **At start-up** the app resolves the language from that kept value and Windows' list (`IDeviceLanguages`, read once:
   `GlobalizationPreferences.Languages`) and applies it before its first window (`App.ApplyLanguage`,
   `AppLanguage.ForStart`), with Windows' regional format (`CultureInfo.CurrentCulture`) for dates and numbers; the log says
