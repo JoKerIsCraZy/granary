@@ -1992,7 +1992,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   They stay while paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle
   panel is open, the markers are edited, a control in them has keyboard focus, or the mouse is over the mini view
   (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
-  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
+  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (5 px or more within 300 ms, so a mouse lying still that reports a knock or its sensor's noise of a few pixels does not wake it,
   measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
   still pointer as the window goes full screen or changes scale), a press of a mouse button or a pen (a click that pauses
   brings the controls up, and they need the cursor), any move of a finger or a pen, and when the player closes, never
