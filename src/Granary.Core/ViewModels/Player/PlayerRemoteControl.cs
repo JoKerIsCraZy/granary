@@ -15,9 +15,9 @@ namespace Granary.Core.ViewModels.Player;
 /// <remarks>
 /// The status leaves out the session id, the picture and the overview, as Silo's Roku app does: no signed address belongs
 /// on this channel, and the phones look artwork up themselves from the content id. A file played with <c>--play</c> shows
-/// as idle and takes no command: its name is nobody's business. A track is named by its place in the list last sent,
-/// which is kept, so a number goes back to the track it was sent for; one whose track has gone since, or has another in
-/// its place, is ignored.
+/// as idle and takes no command: its name is nobody's business. A track is named by a number of its own, kept for as long
+/// as the player lives, so a number goes back to the track it was sent for, also after a newer status went out; one whose
+/// track has gone since is ignored.
 /// </remarks>
 public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
 {
@@ -41,8 +41,11 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
     private readonly PlayerViewModel _player;
     private readonly RemoteReceiver _receiver;
     private readonly IUiDispatcher _dispatcher;
-    // The audio tracks of the status built last, by their ordinal, without their check: an audio track has no id of its own.
-    private IReadOnlyList<AudioTrackOption> _sentAudio = [];
+    // Each audio track keeps the number it was first sent with for as long as the player lives, and no number goes to
+    // another track, as with subtitles below: a number from a status the phone saw before a newer one never picks the track
+    // now in that place. An audio track has no id of its own: its row without its check stands for it.
+    private readonly Dictionary<AudioTrackOption, int> _audioNumbers = [];
+    private readonly List<AudioTrackOption> _audioByNumber = [];
 
     // Each subtitle track keeps the number it was first sent with for as long as the player lives, and no number goes to
     // another track: a number from a status the phone saw before a newer one still names its track, or none. silo-roku
@@ -78,7 +81,6 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         {
             if (_disposed || _player.HasLeft || _player.ContentId is null)
             {
-                _sentAudio = [];
                 return SiloCastState.Idle;
             }
             return Read();
@@ -169,7 +171,6 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         var audio = player.AudioTracks;
         // Off is no track: the phone sends no number for it.
         var subtitles = player.SubtitleTracks.Where(row => row.TrackId is not null).ToList();
-        _sentAudio = [.. audio.Select(Unchecked)];
         var shownSubtitle = subtitles.FirstOrDefault(row => row.IsSelected);
         var info = player.MediaInfo;
         bool hasNext = HasNext;
@@ -185,9 +186,9 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
             IsBuffering = player.IsBuffering,
             CurrentTime = Seconds(player.PositionSeconds),
             Duration = Seconds(player.DurationSeconds),
-            AudioTracks = [.. audio.Select(track => new SiloCastTrack(AudioKind, track.Ordinal, track.Title, OrNull(track.Meta)))],
+            AudioTracks = [.. audio.Select(track => new SiloCastTrack(AudioKind, AudioNumber(track), track.Title, OrNull(track.Meta)))],
             SubtitleTracks = [.. subtitles.Select(row => new SiloCastTrack(SubtitleKind, SubtitleNumber(row.TrackId!), row.Title, SubtitleDetail(row)))],
-            SelectedAudioTrackId = audio.FirstOrDefault(track => track.IsSelected)?.Ordinal,
+            SelectedAudioTrackId = audio.FirstOrDefault(track => track.IsSelected) is { } playing ? AudioNumber(playing) : null,
             SelectedSubtitleTrackId = shownSubtitle is { TrackId: { } shown } ? SubtitleNumber(shown) : null,
             QualityOptions = [.. player.QualityOptions.Select(option => new SiloCastQuality(option.Preference, option.Label, OrNull(option.Bitrate)))],
             ActiveQualityId = player.QualityOptions.FirstOrDefault(option => option.IsSelected)?.Preference ?? QualityOption.Auto,
@@ -273,23 +274,33 @@ public sealed class PlayerRemoteControl : IRemotePlayer, IDisposable
         return RemoteCommandResult.Done;
     }
 
-    // An audio track's number is its ordinal, the one the player's menu passes on. It names the track it was sent for: when
-    // another track is in that place now (another version's list), the number is ignored.
+    private int AudioNumber(AudioTrackOption track)
+    {
+        var own = Unchecked(track);
+        if (!_audioNumbers.TryGetValue(own, out int number))
+        {
+            number = _audioByNumber.Count;
+            _audioByNumber.Add(own);
+            _audioNumbers.Add(own, number);
+        }
+        return number;
+    }
+
+    // A number goes back to the track it was given to, while the player still lists it; the player's menu then passes on
+    // that track's ordinal. Another track in its place now (another version's list) is not it.
     private RemoteCommandResult SelectAudio(long? trackId)
     {
-        var sent = _sentAudio;
-        var tracks = _player.AudioTracks;
-        if (trackId is not { } id || id < 0 || id >= sent.Count || id >= tracks.Count)
+        if (trackId is not { } id || id < 0 || id >= _audioByNumber.Count)
         {
             return RemoteCommandResult.Ignored;
         }
-        int ordinal = (int)id;
-        var track = tracks[ordinal];
-        if (Unchecked(track) != sent[ordinal] || track.IsSelected)
+        var sent = _audioByNumber[(int)id];
+        var track = _player.AudioTracks.FirstOrDefault(row => Unchecked(row) == sent);
+        if (track is null || track.IsSelected)
         {
             return RemoteCommandResult.Ignored;
         }
-        _player.SelectAudio(ordinal);
+        _player.SelectAudio(track.Ordinal);
         return RemoteCommandResult.Done;
     }
 

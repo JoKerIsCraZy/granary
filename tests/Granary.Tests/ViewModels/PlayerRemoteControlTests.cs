@@ -32,6 +32,13 @@ public sealed class PlayerRemoteControlTests
         new() { Title = "Commentary", Language = "en", Codec = "aac", Channels = 2 },
     ];
 
+    // Another version's tracks: as many, but other ones.
+    private static readonly WatchAudioTrack[] OtherVersionAudio =
+    [
+        new() { Title = "Deutsch", Language = "de", Codec = "ac3", Channels = 6, Default = true },
+        new() { Title = "Audio Description", Language = "en", Codec = "aac", Channels = 2 },
+    ];
+
     private static readonly SubtitleInventoryItem[] Subtitles =
     [
         new() { TrackId = "file:f1:subtitle:0", CombinedIndex = 0, Source = SubtitleSources.Embedded, Codec = "subrip", Language = "en" },
@@ -167,7 +174,7 @@ public sealed class PlayerRemoteControlTests
     }
 
     [Fact]
-    public async Task AudioTracks_CarryTheirOrdinal_AndSubtitlesANumberOfTheirOwn()
+    public async Task AudioTracksAndSubtitles_CarryNumbersOfTheirOwn()
     {
         var (player, remote) = await PlayingAsync(subtitle: Subtitles[1].TrackId);
 
@@ -380,18 +387,26 @@ public sealed class PlayerRemoteControlTests
         var (_, remote) = await PlayingAsync();
         _ = remote.State;
         // Another version of the title lists as many tracks, but other ones, before the phone was shown them.
-        Playback.RaiseTracks(
-        [
-            new() { Title = "Deutsch", Language = "de", Codec = "ac3", Channels = 6, Default = true },
-            new() { Title = "Audio Description", Language = "en", Codec = "aac", Channels = 2 },
-        ], 0);
+        Playback.RaiseTracks(OtherVersionAudio, 0);
 
         Assert.Equal(RemoteCommandResult.Ignored, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
         Assert.Empty(Playback.AudioPicks);
+    }
 
-        // Once the phone was shown the new list, its numbers name the new tracks.
+    [Fact]
+    public async Task AnAudioNumber_KeepsNamingItsTrack_AfterANewerListWasSent()
+    {
+        var (_, remote) = await PlayingAsync();
         _ = remote.State;
-        Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
+        // Another version lists as many tracks, but other ones, and a status with them went out before the phone's command
+        // for the old list came.
+        Playback.RaiseTracks(OtherVersionAudio, 0);
+        var newer = remote.State;
+
+        Assert.Equal([2L, 3L], newer.AudioTracks.Select(t => t.TrackId));
+        Assert.Equal(RemoteCommandResult.Ignored, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 1)));
+        Assert.Empty(Playback.AudioPicks);
+        Assert.Equal(RemoteCommandResult.Done, remote.Apply(Command(SiloCastControls.SelectAudioTrack, trackId: 3)));
         Assert.Equal([1], Playback.AudioPicks);
     }
 

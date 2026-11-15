@@ -1539,15 +1539,13 @@ takes).
   the rest gets `player_not_ready`. In a Watch Party, play, pause and seek go to the room as the player's own buttons'
   requests do; a guest the room does not let gets `command_failed`, and so does a speed change, as the room plays at its
   own. `play_next` without a next episode gets `command_failed` too.
-- **Track numbers.** The wire's `trackId` is an integer the phone only sends back. An audio track's is its ordinal, the
-  number the player's menu passes on. A subtitle's is a number of its own, given in the order the control first lists
-  it and kept for as long as the player lives, never given to another track (as silo-roku names a subtitle by its plan's
-  combined index), Off left out (no number turns subtitles off): it maps back to the track's own id also after a newer
-  status went out. The control keeps the audio rows it built last: an audio number maps to the row it was sent for (an
-  audio track has no id of its own, so its title,
-  details, codec, channels and default stand for it). A track no longer in the player's list, or another track in its
-  place (another version's list of the same length), is ignored, so a number from an older list never picks another
-  track.
+- **Track numbers.** The wire's `trackId` is an integer the phone only sends back. Every track's is a number of its own,
+  given in the order the control first lists it and kept for as long as the player lives, never given to another track
+  (as silo-roku names a subtitle by its plan's combined index), so it maps back to the track it was sent for also after
+  a newer status went out. A subtitle's maps back to the track's own id, Off left out (no number turns subtitles off).
+  An audio track has no id of its own, so its row stands for it (its place in the list, title, details, codec, channels
+  and default), and the player's menu is then passed that track's ordinal. A track no longer in the player's list,
+  another version's track in its place included, is ignored, so a number from an older list never picks another track.
 - **What the status leaves out.** The session id, the poster and the overview, as Silo's Roku app leaves them out: no
   signed address belongs on this channel, and the phones look artwork up themselves from the content id. A movie's
   year is not sent as the episode line. A file played with `--play` shows as idle and takes no command: its name is
