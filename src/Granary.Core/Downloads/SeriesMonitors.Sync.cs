@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Downloads;
 
-/// <summary>A run: the monitor list, each active monitor's sync, and the episodes it registered.</summary>
+/// <summary>A run: the monitor list, each active monitor's sync, the episodes it registered, and Delete after watching.</summary>
 public sealed partial class SeriesMonitors
 {
     /// <summary>The waits before a sync page that got no answer is sent again, once each (the Apple app's one and two seconds).</summary>
@@ -61,6 +61,7 @@ public sealed partial class SeriesMonitors
         if (_book.In(scope).Count > 0 && IsStill(scope))
         {
             await TakeRegisteredAsync(scope, server, cancellationToken).ConfigureAwait(false);
+            await DeleteWatchedAsync(scope, cancellationToken).ConfigureAwait(false);
         }
     }
 

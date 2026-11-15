@@ -1615,6 +1615,13 @@ titles of their series as a download dialog or a download named them.
   read again, as the Apple app does; one that got no answer waits for the next run, and the list does not bring the monitor
   back meanwhile. Waiting stops are kept for the run, not on disk: one that never reached the server before Granary closed
   shows its monitor again at the next start.
+- **Delete after watching.** A monitor's `delete_watched` is the client's to carry out, as the Apple app does it
+  (`retentionDeletions`): at the end of each run, once the server heard what was watched on this PC and its progress was
+  read back (`OfflineProgressSync.FlushAsync`), the whole episodes of such a series that the profile watched for sure
+  (`DownloadRecord.IsWatched`: the server says so, or a play here went to the end) are deleted as Delete deletes one
+  (`DownloadManager.DeleteWatchedAsync`: looked at right before each, not one that plays now, and the server hears it). The
+  server's sync, for its part, registers no episode the profile finished and none this PC deleted while the monitor was
+  there, so a deleted episode does not come back. Nothing else deletes for a monitor.
 - **Storage limits.** A monitor's `max_storage_bytes` is the client's to keep (the server only roughly holds registration
   back), as the Apple app keeps it (`exceedsStorageCap`), and Settings → Downloads has Granary's own limit for every
   download on this PC (`IDownloadPreferences.StorageLimitGb`, in GiB, none by default). The queue starts no episode of a

@@ -148,6 +148,25 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task DeleteAfterWatching_DeletesTheSeriesFinishedEpisodes_AtTheEndOfARun()
+    {
+        ListMonitors(MonitorPayloads.Monitor("sub_1", "sr_1", deleteWatched: true), MonitorPayloads.Monitor("sub_2", "sr_2", etag: "\"m2\""));
+        _h.Silo.On(HttpMethod.Post, SyncPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Sync("sub_1")),
+            ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Sync("sub_2")));
+        await _h.AddPlayableAsync("dl_1", "ep_1", 1, change: r => r with { IsWatched = true });
+        await _h.AddPlayableAsync("dl_2", "ep_2", 2);
+        await _h.AddPlayableAsync("dl_3", "ep_3", 3, change: r => r with { SeriesId = "sr_2", IsWatched = true });
+        await _h.AddPlayableAsync("dl_4", "ep_4", 4, change: r => r with { IsWatched = true });
+        using var playing = _h.Playing.Enter(Scope7, "dl_4");
+
+        await Monitors.SyncAsync(Token);
+
+        // Watched and of a series that deletes them; not one that plays now, nor another series'.
+        Assert.Equal(["dl_2", "dl_3", "dl_4"], _h.Store.In(Scope7).Select(d => d.Record.DownloadId).Order());
+        Assert.Contains(_h.Store.PendingDeletes(Scope7), d => d.DownloadId == "dl_1");
+    }
+
+    [Fact]
     public async Task WhileTheServerDoesNotMonitorSeries_NothingIsSynced()
     {
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Capability(monitoring: false)));
