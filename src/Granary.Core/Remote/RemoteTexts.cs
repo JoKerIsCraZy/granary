@@ -108,22 +108,59 @@ public static partial class RemoteTexts
     /// <summary><c>handoff_cancel handoff_failed</c> for an offer from another server: <c>AppSceneControl.bs</c> <c>controlOffer</c>.</summary>
     public static string PlaysFrom(string serverName) => string.Format(CultureInfo.InvariantCulture, "This PC plays from {0}.", serverName);
 
+    // What follows "Playback failed: " when the engine ends a title by itself: mpv's own error texts, as mpv_error_string
+    // gives them for an end-file error (LibMpv.Error; checked against the pinned libmpv-2.dll), and Granary's details
+    // (MpvPlaybackEngine, ServerPlayback). Nothing else follows it, so no server's words can.
+    private static readonly HashSet<string> PlaybackEndDetails = new(StringComparer.Ordinal)
+    {
+        "event queue full",
+        "memory allocation failed",
+        "core not initialized",
+        "invalid parameter",
+        "option not found",
+        "unsupported format for accessing option",
+        "error setting option",
+        "property not found",
+        "unsupported format for accessing property",
+        "property unavailable",
+        "error accessing property",
+        "error running command",
+        "loading failed",
+        "audio output initialization failed",
+        "video output initialization failed",
+        "no audio or video data played",
+        "unrecognized file format",
+        "not supported",
+        "operation not implemented",
+        "something happened",
+        "unknown error",
+        "Granary could not open the title",
+        "Granary could not start the player without your mpv.conf",
+        "Granary stopped using your mpv.conf",
+        "No picture within the start timeout.",
+        "No data within the stall timeout.",
+    };
+
+    private const string PlaybackFailed = "Playback failed: ";
+
     /// <summary>
     /// The player's failure as a phone may read it: the player's text only when it is one of Granary's own, which name
     /// nothing, else <see cref="CouldNotPlay"/>. A terminal decision's message and an administrator's stop message are the
     /// server's words and could name a host or an address, as could any text that came from elsewhere.
     /// </summary>
     public static string? PlayerError(string? message) =>
-        message is null ? null : PlayerFailures.Contains(message) || GranarysWordedFailure().IsMatch(message) ? message : CouldNotPlay;
+        message is null ? null : IsGranarysOwnFailure(message) ? message : CouldNotPlay;
 
-    // The player's own texts with a number or a fixed detail in them: the server's error status, a wait, and the player's
-    // end, whose detail is mpv's error text (lower-case words) or one of Granary's.
+    private static bool IsGranarysOwnFailure(string message) =>
+        PlayerFailures.Contains(message)
+        || (message.StartsWith(PlaybackFailed, StringComparison.Ordinal) && PlaybackEndDetails.Contains(message[PlaybackFailed.Length..]))
+        || GranarysNumberedFailure().IsMatch(message);
+
+    // The player's own texts with a number in them: the server's error status, and how long to wait.
     [GeneratedRegex(@"^(?:The server could not start playback \(error \d{3}\)\."
-        + @"|The server is receiving too many requests\. Try again in (?:a few minutes|1 minute|\d{1,6} minutes)\."
-        + @"|Playback failed: (?:[a-z ]{1,64}|Granary could not open the title|Granary could not start the player without your mpv\.conf"
-        + @"|Granary stopped using your mpv\.conf|No picture within the start timeout\.|No data within the stall timeout\.))\z",
+        + @"|The server is receiving too many requests\. Try again in (?:a few minutes|1 minute|\d{1,6} minutes)\.)\z",
         RegexOptions.CultureInvariant)]
-    private static partial Regex GranarysWordedFailure();
+    private static partial Regex GranarysNumberedFailure();
 
     /// <summary>
     /// A name a phone sent, as Granary shows it: cleaned as a discovered server's name is (no control, format or separator
