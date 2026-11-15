@@ -79,7 +79,7 @@ public sealed class PlayerCursorTests
 
         Assert.False(_cursor.Moves(360, 100, Scale));
         Assert.True(_cursor.IsHidden);
-        Assert.True(_cursor.Moves(363, 100, Scale));
+        Assert.True(_cursor.Moves(366, 100, Scale));
     }
 
     [Fact]
@@ -103,9 +103,9 @@ public sealed class PlayerCursorTests
         _cursor.ControlsHidden(isOverPicture: true);
         _time.Advance(TimeSpan.FromSeconds(42));
 
-        Assert.True(_cursor.Moves(103, 104, Scale));
+        Assert.True(_cursor.Moves(106, 108, Scale));
 
-        Assert.Equal((5.0, TimeSpan.FromSeconds(42)), (_cursor.LastMove.Distance, _cursor.LastMove.SinceSeen));
+        Assert.Equal((10.0, TimeSpan.FromSeconds(42)), (_cursor.LastMove.Distance, _cursor.LastMove.SinceSeen));
     }
 
     // A hand's move comes as several events: the time the mouse lay still is the time before the first of them, not the
@@ -117,9 +117,9 @@ public sealed class PlayerCursorTests
         _cursor.ControlsHidden(isOverPicture: true);
         _time.Advance(TimeSpan.FromSeconds(42));
 
-        Assert.False(_cursor.Moves(101, 100, Scale));
+        Assert.False(_cursor.Moves(103, 100, Scale));
         _time.Advance(TimeSpan.FromMilliseconds(8));
-        Assert.True(_cursor.Moves(102, 100, Scale));
+        Assert.True(_cursor.Moves(106, 100, Scale));
 
         Assert.Equal(TimeSpan.FromSeconds(42), _cursor.LastMove.SinceSeen);
     }
@@ -133,14 +133,14 @@ public sealed class PlayerCursorTests
         _cursor.ControlsHidden(isOverPicture: true, restsAt: (400, 100));
         _time.Advance(TimeSpan.FromSeconds(10));
 
-        Assert.True(_cursor.Moves(403, 100, Scale));
-        Assert.Equal(3, _cursor.Travelled);
+        Assert.True(_cursor.Moves(406, 100, Scale));
+        Assert.Equal(6, _cursor.Travelled);
         _time.Advance(TimeSpan.FromMilliseconds(8));
-        _cursor.Moves(403, 140, Scale);
+        _cursor.Moves(406, 140, Scale);
         _time.Advance(TimeSpan.FromMilliseconds(8));
-        _cursor.Moves(433, 140, Scale);
+        _cursor.Moves(436, 140, Scale);
 
-        Assert.Equal(73, _cursor.Travelled);
+        Assert.Equal(76, _cursor.Travelled);
     }
 
     [Fact]
@@ -174,14 +174,31 @@ public sealed class PlayerCursorTests
         Assert.True(_cursor.IsHidden);
     }
 
+    // A tester's mouse woke the cursor by itself with moves of 2, 2.2 and 2.8 px (2 across and 2 down), a few seconds
+    // apart: a knock on the desk or its sensor's noise, never a hand.
+    [Theory]
+    [InlineData(2, 0)]
+    [InlineData(2, 1)]
+    [InlineData(2, 2)]
+    [InlineData(3, 3)]
+    public void TheNoiseOfAMouseLyingStill_LeavesTheCursorHidden(double across, double down)
+    {
+        _cursor.Moves(100, 100, Scale);
+        _cursor.ControlsHidden(isOverPicture: true);
+        _time.Advance(TimeSpan.FromSeconds(6));
+
+        Assert.False(_cursor.Moves(100 + across, 100 + down, Scale));
+        Assert.True(_cursor.IsHidden);
+    }
+
     [Fact]
     public void ADiagonalMove_CountsByItsLength()
     {
-        // 1.5 px across and 1.5 px down is over 2 px of travel.
+        // 4 px across and 4 px down is over 5 px of travel.
         _cursor.Moves(100, 100, Scale);
         _cursor.ControlsHidden(isOverPicture: true);
 
-        Assert.True(_cursor.Moves(101.5, 101.5, Scale));
+        Assert.True(_cursor.Moves(104, 104, Scale));
         Assert.False(_cursor.IsHidden);
     }
 
@@ -191,7 +208,7 @@ public sealed class PlayerCursorTests
         _cursor.Moves(100, 100, Scale);
         _cursor.ControlsHidden(isOverPicture: true);
         _time.Advance(TimeSpan.FromMilliseconds(16));
-        _cursor.Moves(101, 100, Scale);
+        Assert.False(_cursor.Moves(103, 100, Scale));
         _time.Advance(TimeSpan.FromMilliseconds(16));
 
         Assert.True(_cursor.Moves(100 + PlayerCursor.MoveThreshold, 100, Scale));
@@ -232,21 +249,21 @@ public sealed class PlayerCursorTests
         _cursor.ControlsHidden(isOverPicture: true);
         _time.Advance(TimeSpan.FromMinutes(5));
 
-        Assert.False(_cursor.Moves(101, 100, Scale));
+        Assert.False(_cursor.Moves(103, 100, Scale));
         _time.Advance(TimeSpan.FromMilliseconds(16));
-        Assert.True(_cursor.Moves(102, 100, Scale));
+        Assert.True(_cursor.Moves(105, 100, Scale));
         Assert.False(_cursor.IsHidden);
     }
 
     [Fact]
     public void AtAHigherScale_AMoveNeedsMorePixels()
     {
-        // Positions are the screen's pixels, the threshold the page's: at 150 % a move needs 3 of them.
+        // Positions are the screen's pixels, the threshold the page's: at 150 % a move needs 7.5 of them.
         _cursor.Moves(100, 100, 1.5);
         _cursor.ControlsHidden(isOverPicture: true);
 
-        Assert.False(_cursor.Moves(102, 100, 1.5));
-        Assert.True(_cursor.Moves(103, 100, 1.5));
+        Assert.False(_cursor.Moves(107, 100, 1.5));
+        Assert.True(_cursor.Moves(107.5, 100, 1.5));
     }
 
     [Fact]

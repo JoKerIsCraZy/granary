@@ -26,6 +26,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- The player's mouse cursor no longer comes back by itself while a title plays: a mouse lying still that reports a knock
+  or its sensor's noise of a few pixels leaves it hidden; a move of 5 pixels or more brings it back.
 - A movie's, series' or episode's page shows its IMDb and TMDB scores again, under its facts as on Silo's web, and
   every other score your Silo server shows for it.
 - The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
