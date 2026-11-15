@@ -3441,9 +3441,8 @@ A monitor keeps a series downloaded on this PC (`silo-server/docs/downloads-api.
 account, the profile and the PC (`X-Silo-Device-Id`). The server has no worker of its own: the client syncs each monitor,
 which registers the episodes it takes, and then takes those new entries from the registry (14.3). Every call goes through
 `Api/Downloads/DownloadSubscriptionsApi`, bound to its profile, as Silo's Apple app calls them
-(`APIv2Client+DownloadSubscriptions.swift`), and a run's list, syncs and reads to its account as well
-(`SiloRequestOptions.Account`: profile ids need not differ between accounts); a create, change and stop take that binding
-once their caller passes the account.
+(`APIv2Client+DownloadSubscriptions.swift`), and to its account as well (`SiloRequestOptions.Account`: profile ids need not
+differ between accounts): every list, sync, read, create, change and stop.
 Only the Apple app monitors series; the Android app has unused plumbing, the web none.
 
 - Capability (14.1): `series_monitoring` (monitors can be made), `monitoring_modes` (the modes a new monitor may take:

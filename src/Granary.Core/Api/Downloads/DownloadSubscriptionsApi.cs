@@ -73,14 +73,6 @@ public sealed class DownloadSubscriptionsApi(SiloHttp http)
         return Checked(monitor, subscriptionId, null);
     }
 
-    /// <summary>As the other <c>GetAsync</c>, bound to the profile alone; it goes once every caller passes the account.</summary>
-    public async Task<DownloadSubscription> GetAsync(Uri server, string profileId, string subscriptionId, CancellationToken cancellationToken)
-    {
-        var monitor = await http.GetAsProfileAsync(server, Entry(subscriptionId), profileId, DownloadsJsonContext.Default.DownloadSubscription,
-            cancellationToken).ConfigureAwait(false);
-        return Checked(monitor, subscriptionId, null);
-    }
-
     /// <summary>
     /// Starts monitoring a series, sent exactly once: the server answers with the new monitor, or the one this PC has for the
     /// series already, unchanged. After an answer that did not come, read the list instead of sending again.
@@ -90,15 +82,6 @@ public sealed class DownloadSubscriptionsApi(SiloHttp http)
     {
         ArgumentNullException.ThrowIfNull(body);
         var monitor = await http.SendAsAccountProfileAsync(HttpMethod.Post, server, Subscriptions, accountId, profileId, body,
-            DownloadsJsonContext.Default.CreateSubscriptionBody, DownloadsJsonContext.Default.DownloadSubscription, cancellationToken).ConfigureAwait(false);
-        return Checked(monitor, null, body.SeriesId);
-    }
-
-    /// <summary>As the other <c>CreateAsync</c>, bound to the profile alone; it goes once every caller passes the account.</summary>
-    public async Task<DownloadSubscription> CreateAsync(Uri server, string profileId, CreateSubscriptionBody body, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(body);
-        var monitor = await http.SendAsProfileAsync(HttpMethod.Post, server, Subscriptions, profileId, body,
             DownloadsJsonContext.Default.CreateSubscriptionBody, DownloadsJsonContext.Default.DownloadSubscription, cancellationToken).ConfigureAwait(false);
         return Checked(monitor, null, body.SeriesId);
     }
@@ -116,29 +99,12 @@ public sealed class DownloadSubscriptionsApi(SiloHttp http)
         return Checked(monitor, subscriptionId, null);
     }
 
-    /// <summary>As the other <c>UpdateAsync</c>, bound to the profile alone; it goes once every caller passes the account.</summary>
-    public async Task<DownloadSubscription> UpdateAsync(Uri server, string profileId, string subscriptionId, string etag, UpdateSubscriptionBody body,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(body);
-        var monitor = await http.SendIfMatchAsProfileAsync(HttpMethod.Patch, server, Entry(subscriptionId), profileId, etag, body,
-            DownloadsJsonContext.Default.UpdateSubscriptionBody, DownloadsJsonContext.Default.DownloadSubscription, cancellationToken).ConfigureAwait(false);
-        return Checked(monitor, subscriptionId, null);
-    }
-
     /// <summary>Stops a monitor under its validator; the downloads it registered stay. One the server no longer has (404) is gone already.</summary>
     public async Task DeleteAsync(Uri server, string accountId, string profileId, string subscriptionId, string etag, CancellationToken cancellationToken)
     {
         string path = Entry(subscriptionId);
         await GoneIsDoneAsync(http.SendIfMatchAsAccountProfileAsync(HttpMethod.Delete, server, path, accountId, profileId, etag, cancellationToken))
             .ConfigureAwait(false);
-    }
-
-    /// <summary>As the other <c>DeleteAsync</c>, bound to the profile alone; it goes once every caller passes the account.</summary>
-    public async Task DeleteAsync(Uri server, string profileId, string subscriptionId, string etag, CancellationToken cancellationToken)
-    {
-        string path = Entry(subscriptionId);
-        await GoneIsDoneAsync(http.SendIfMatchAsProfileAsync(HttpMethod.Delete, server, path, profileId, etag, cancellationToken)).ConfigureAwait(false);
     }
 
     /// <summary>

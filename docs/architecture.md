@@ -1735,8 +1735,8 @@ titles of their series as a download dialog or a download named them.
   applies nothing more. For a sign-in between that look and the send, the run's list, syncs and reads again are bound to
   the account as well as the profile (`SiloRequestOptions.Account`; profile ids need not differ between accounts): the
   authentication handler sends none for another account (`ProfileChangedException`), and the run ends as when the server
-  cannot be reached. `DownloadSubscriptionsApi` binds a create, a change and a stop the same way once `SeriesMonitors.Writes`
-  passes the account; until then they are bound to the profile alone. The log names no series, title or profile.
+  cannot be reached. A create, a change and a stop, and a stop's read of the monitor after a conflict, are bound the same
+  way. The log names no series, title or profile.
 
 ### Downloads in the shell
 

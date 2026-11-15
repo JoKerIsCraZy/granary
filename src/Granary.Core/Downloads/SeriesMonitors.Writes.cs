@@ -31,7 +31,7 @@ public sealed partial class SeriesMonitors
             DownloadSubscription monitor;
             try
             {
-                monitor = await _api.CreateAsync(server, scope.ProfileId, body, token).ConfigureAwait(false);
+                monitor = await _api.CreateAsync(server, scope.AccountId, scope.ProfileId, body, token).ConfigureAwait(false);
             }
             catch (Exception ex) when (IsUncertain(ex, token))
             {
@@ -231,7 +231,7 @@ public sealed partial class SeriesMonitors
         DownloadSubscription changed;
         try
         {
-            changed = await _api.UpdateAsync(server, scope.ProfileId, monitor.Id, monitor.Etag, body, cancellationToken).ConfigureAwait(false);
+            changed = await _api.UpdateAsync(server, scope.AccountId, scope.ProfileId, monitor.Id, monitor.Etag, body, cancellationToken).ConfigureAwait(false);
         }
         catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
         {
@@ -292,12 +292,12 @@ public sealed partial class SeriesMonitors
             {
                 try
                 {
-                    await _api.DeleteAsync(server, scope.ProfileId, id, etag, cancellationToken).ConfigureAwait(false);
+                    await _api.DeleteAsync(server, scope.AccountId, scope.ProfileId, id, etag, cancellationToken).ConfigureAwait(false);
                 }
                 catch (SiloApiException ex) when (ex.Status is (int)HttpStatusCode.PreconditionFailed or (int)HttpStatusCode.Conflict)
                 {
-                    latest = (await _api.GetAsync(server, scope.ProfileId, id, cancellationToken).ConfigureAwait(false)).Etag;
-                    await _api.DeleteAsync(server, scope.ProfileId, id, latest, cancellationToken).ConfigureAwait(false);
+                    latest = (await _api.GetAsync(server, scope.AccountId, scope.ProfileId, id, cancellationToken).ConfigureAwait(false)).Etag;
+                    await _api.DeleteAsync(server, scope.AccountId, scope.ProfileId, id, latest, cancellationToken).ConfigureAwait(false);
                 }
                 ForgetStop(scope, id);
             }

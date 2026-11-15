@@ -97,7 +97,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(quality: "10mbps")));
 
-        var created = await Api.CreateAsync(ScriptedSilo.Base, Profile, new CreateSubscriptionBody
+        var created = await Api.CreateAsync(ScriptedSilo.Base, Account, Profile, new CreateSubscriptionBody
         {
             SeriesId = "sr_1",
             Mode = SubscriptionModes.Future,
@@ -118,7 +118,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(seriesId: "sr_9")));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => Api.CreateAsync(ScriptedSilo.Base, Profile,
+        await Assert.ThrowsAsync<HttpRequestException>(() => Api.CreateAsync(ScriptedSilo.Base, Account, Profile,
             new CreateSubscriptionBody { SeriesId = "sr_1", Mode = SubscriptionModes.All }, Token));
     }
 
@@ -127,7 +127,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Patch, EntryPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m2\"", deleteWatched: true)));
 
-        var updated = await Api.UpdateAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"", new UpdateSubscriptionBody { DeleteWatched = true, Active = true }, Token);
+        var updated = await Api.UpdateAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", new UpdateSubscriptionBody { DeleteWatched = true, Active = true }, Token);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal("\"m1\"", sent.IfMatch);
@@ -141,7 +141,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Patch, EntryPath, ScriptedSilo.Problem(412, "precondition_failed"));
 
-        var failure = await Assert.ThrowsAsync<SiloApiException>(() => Api.UpdateAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"",
+        var failure = await Assert.ThrowsAsync<SiloApiException>(() => Api.UpdateAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"",
             new UpdateSubscriptionBody { Active = false }, Token));
 
         Assert.Equal(412, failure.Status);
@@ -152,8 +152,8 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Delete, EntryPath, ScriptedSilo.NoContent(), ScriptedSilo.Problem(404, "not_found"));
 
-        await Api.DeleteAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"", Token);
-        await Api.DeleteAsync(ScriptedSilo.Base, Profile, "sub_1", "\"m1\"", Token);
+        await Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", Token);
+        await Api.DeleteAsync(ScriptedSilo.Base, Account, Profile, "sub_1", "\"m1\"", Token);
 
         Assert.All(_silo.Sent, sent => Assert.Equal("\"m1\"", sent.IfMatch));
         Assert.Equal(2, _silo.Sent.Count);
@@ -164,7 +164,7 @@ public sealed class DownloadSubscriptionsApiTests
     {
         _silo.On(HttpMethod.Get, EntryPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor(etag: "\"m3\"")));
 
-        var monitor = await Api.GetAsync(ScriptedSilo.Base, Profile, "sub_1", Token);
+        var monitor = await Api.GetAsync(ScriptedSilo.Base, Account, Profile, "sub_1", Token);
 
         Assert.Equal("\"m3\"", monitor.Etag);
         Assert.Equal(Profile, Assert.Single(_silo.Sent).AsProfile);

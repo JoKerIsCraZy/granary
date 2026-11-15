@@ -157,6 +157,36 @@ public sealed class SeriesMonitorsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task MonitorWrites_GoAsTheAccountAndProfileTheyWereMadeFor()
+    {
+        ListMonitors(MonitorPayloads.Monitor());
+        SyncAnswers(MonitorPayloads.Sync(registered: 0));
+        await Monitors.SyncAsync(Token);
+        _h.Silo.On(HttpMethod.Delete, Monitor1Path, ScriptedSilo.NoContent());
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor()));
+
+        await Monitors.StopAsync("sub_1", Token);
+        await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+
+        var stop = Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, Monitor1Path));
+        var create = Assert.Single(_h.Silo.SentTo(HttpMethod.Post, MonitorsPath));
+        Assert.Equal([("1", "7"), ("1", "7")], new[] { (stop.AsAccount, stop.AsProfile), (create.AsAccount, create.AsProfile) });
+    }
+
+    [Fact]
+    public async Task AMonitorMadeAsAnotherAccountSignsIn_IsNotSent()
+    {
+        _h.Silo.On(HttpMethod.Post, MonitorsPath, ScriptedSilo.Json(HttpStatusCode.OK, MonitorPayloads.Monitor()));
+        // Another account signs in on the server; its profile is 7 too.
+        _h.Silo.ActingAccount = () => "2";
+
+        var result = await Monitors.CreateAsync("sr_1", "Example Series", new MonitorChoice(SubscriptionModes.Future, false, 0, null), Token);
+
+        Assert.NotEqual(MonitorResult.Saved, result);
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, MonitorsPath));
+    }
+
+    [Fact]
     public async Task EpisodesThePcKeepsOrIsDeleting_AreNotTakenAgain()
     {
         ListMonitors(MonitorPayloads.Monitor());
