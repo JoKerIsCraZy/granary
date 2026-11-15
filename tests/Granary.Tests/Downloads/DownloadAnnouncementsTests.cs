@@ -1,4 +1,5 @@
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using static Granary.Tests.Downloads.DownloadHarness;
 
 namespace Granary.Tests.Downloads;
@@ -65,6 +66,25 @@ public sealed class DownloadAnnouncementsTests
 
         Assert.Equal("Example Series (S2E8) is ready to watch offline", announced.Text);
         Assert.Equal("dl_5", announced.PlayDownloadId);
+    }
+
+    [Fact]
+    public void InGerman_TheMessagesAreTheApps()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        Look(Episode("dl_1", 2, 8, DownloadState.Downloading), Episode("dl_2", 2, 9, DownloadState.Downloading),
+            Episode("dl_3", 2, 10, DownloadState.Downloading), Film("dl_4", DownloadState.Downloading));
+
+        var announced = Look(Episode("dl_1", 2, 8, DownloadState.Completed), Episode("dl_2", 2, 9, DownloadState.Completed),
+            Episode("dl_3", 2, 10, DownloadState.Failed, failure: DownloadFailure.Server),
+            Film("dl_4", DownloadState.Failed, failure: DownloadFailure.NotEnoughSpace));
+
+        Assert.Equal(["2 Folgen von Example Series können jetzt offline angesehen werden; 1 wurde nicht heruntergeladen",
+            "Example Movie wurde nicht heruntergeladen: Nicht genügend Speicherplatz auf diesem PC"], announced.Select(a => a.Text));
+
+        Look(Episode("dl_5", 2, 8, DownloadState.Downloading));
+        Assert.Equal("Example Series (S2F8) kann jetzt offline angesehen werden",
+            Assert.Single(Look(Episode("dl_5", 2, 8, DownloadState.Completed))).Text);
     }
 
     [Fact]

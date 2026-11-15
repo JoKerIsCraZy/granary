@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -23,7 +24,7 @@ public sealed partial class DownloadNotices : ObservableObject, IDisposable
     public static string PlayLabel => DownloadCardActions.PlayLabel;
 
     /// <summary>A notification's button, and what its click does, that opens the Downloads page.</summary>
-    public const string OpenDownloadsLabel = "Open Downloads";
+    public static string OpenDownloadsLabel => AppText.Get("granary.downloads.notice.openDownloads");
 
     /// <summary>What a notification's click asks for (<see cref="Act"/>): play a download, or open the Downloads page.</summary>
     public const string PlayAction = "play";
