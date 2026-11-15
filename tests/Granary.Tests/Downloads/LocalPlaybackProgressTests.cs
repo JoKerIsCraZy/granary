@@ -436,6 +436,41 @@ public sealed class LocalPlaybackProgressTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheStop_DoesNotWaitForSettingsSavesLongerThanItsBudget_SentOneAfterAnotherToAServerThatDoesNotAnswer()
+    {
+        // The server takes each save and never answers; each would wait its own ten seconds, one after another.
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        string[] keys = ["playback.auto_play_next", "player.subtitle_sync_ms", "player.playback_speed"];
+        foreach (string key in keys)
+        {
+            _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + key, () => answer.Task);
+        }
+        var playback = await _fixture.PlayingAsync(PlayRequest.FromStart("ep_5"));
+        Frame(120);
+        playback.SetAutoPlayNext(false);
+        playback.SetSubtitleDelay(300);
+        playback.SetSpeed(1.5);
+        try
+        {
+            var stop = playback.StopAsync();
+            _fixture.Harness.Time.Advance(LocalPlayback.StopSendBudget);
+            await stop.WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+            // Let go right after its stop, as the player does: no second wait.
+            await playback.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), LocalPlaybackFixture.Token);
+
+            // The position went to the server all the same.
+            var sent = Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, LocalPlaybackFixture.SyncPath));
+            Assert.Contains("\"position_ms\":120000", sent.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            // The saves go on by themselves: they fail once the connection does, and are through before the test ends.
+            answer.SetException(new HttpRequestException(HttpRequestError.ConnectionError, "connection refused"));
+            await Until(() => keys.All(key => _fixture.Silo.SentTo(HttpMethod.Put, "api/v2/settings/values/" + key).Count == 1), "every save was sent");
+        }
+    }
+
+    [Fact]
     public async Task APlayStillOpenWhenItsAccountIsSignedOutWithItsDownloads_RecordsNothingMore()
     {
         _fixture.GoOffline();

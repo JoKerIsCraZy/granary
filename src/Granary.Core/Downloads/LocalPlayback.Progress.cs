@@ -38,7 +38,8 @@ public sealed partial class LocalPlayback
     // The record's writes, in the order the positions were recorded.
     private Task _records = Task.CompletedTask;
 
-    // The end's wait for the writes, once begun: the stop and the let-go after it share it.
+    // The end's wait for the writes, once begun: the stop and the let-go after it share it. Both come on the UI thread, one
+    // after the other (see the class's remarks), so they never race for it.
     private Task? _writesWaited;
 
     // The store's clears as the play began: a sign-out that takes the account's downloads along since then ends the recording.
@@ -112,20 +113,22 @@ public sealed partial class LocalPlayback
     // within StopWriteBudget, once for the stop and the let-go after it. The record goes to the download's folder, which can lie
     // on a drive or share that stops answering in the middle of a write: that holds no stop up, the position is in the queue
     // already and is sent all the same, and the writes go on and log their own failure.
-    private Task WaitForWritesAsync() => _writesWaited ??= WaitWithinAsync(Task.WhenAll(_records, _progress?.LatestSave ?? Task.CompletedTask));
+    private Task WaitForWritesAsync() => _writesWaited ??=
+        WaitWithinAsync(Task.WhenAll(_records, _progress?.LatestSave ?? Task.CompletedTask), StopWriteBudget, "its last position written on this PC");
 
-    private async Task WaitWithinAsync(Task writes)
+    // What the end waits for, within its budget; past it, the work goes on by itself and logs its own failure.
+    private async Task WaitWithinAsync(Task work, TimeSpan budget, string what)
     {
         try
         {
-            await writes.WaitAsync(StopWriteBudget, _time).ConfigureAwait(false);
+            await work.WaitAsync(budget, _time).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
-            _logger.LogWarning("The last position of download {DownloadId} was not written on this PC within {Seconds} s; it is written once the drive answers",
-                _download.Record.DownloadId, StopWriteBudget.TotalSeconds);
-            // Not waited for any longer: a failure of theirs is looked at here, so it is never one nobody observed.
-            _ = writes.ContinueWith(static task => _ = task.Exception, CancellationToken.None,
+            _logger.LogWarning("Download {DownloadId} did not have {What} within {Seconds} s; that goes on by itself", _download.Record.DownloadId,
+                what, budget.TotalSeconds);
+            // Not waited for any longer: a failure of its own is looked at here, so it is never one nobody observed.
+            _ = work.ContinueWith(static task => _ = task.Exception, CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }

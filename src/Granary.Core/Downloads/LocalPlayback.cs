@@ -347,24 +347,26 @@ public sealed partial class LocalPlayback : IServerPlayback
     // the drive did not answer within StopWriteBudget. While the server answers, it has the position by then too, as after a
     // stream's stop: the pages that reload when a playback stops (ViewerStateChanges) read where the viewer left off, not where
     // they were before. Without the server the send fails at once and the position waits; a send slower than the budget goes
-    // on by itself, and tells the pages when it is through (OfflineProgressSync).
+    // on by itself, and tells the pages when it is through (OfflineProgressSync). The settings' saves go beside it, within
+    // StopSendBudget too, and never hold the position's send back.
     private async Task EndStopAsync()
     {
-        await Task.WhenAll(_saves, WaitForWritesAsync()).ConfigureAwait(false);
-        if (_sync is not { } sync || !_played)
+        var saves = WaitForSavesAsync();
+        await WaitForWritesAsync().ConfigureAwait(false);
+        if (_sync is { } sync && _played)
         {
-            return;
+            using var budget = new CancellationTokenSource(StopSendBudget, _time);
+            try
+            {
+                await sync.FlushAsync(readBack: true, budget.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("The last position of download {DownloadId} was not sent within {Seconds} s; the send goes on by itself",
+                    _download.Record.DownloadId, StopSendBudget.TotalSeconds);
+            }
         }
-        using var budget = new CancellationTokenSource(StopSendBudget, _time);
-        try
-        {
-            await sync.FlushAsync(readBack: true, budget.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation("The last position of download {DownloadId} was not sent within {Seconds} s; the send goes on by itself",
-                _download.Record.DownloadId, StopSendBudget.TotalSeconds);
-        }
+        await saves.ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync()
@@ -378,8 +380,7 @@ public sealed partial class LocalPlayback : IServerPlayback
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
         _playingMark?.Dispose();
-        await _saves.ConfigureAwait(false);
-        await WaitForWritesAsync().ConfigureAwait(false);
+        await Task.WhenAll(WaitForSavesAsync(), WaitForWritesAsync()).ConfigureAwait(false);
     }
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));

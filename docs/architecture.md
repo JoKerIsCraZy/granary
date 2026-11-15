@@ -1993,7 +1993,10 @@ while the server answers.
   (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when the download's own
   server was the active one as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
   signed in on that server by the time one goes out, and its profile may carry the same id: such a save is refused
-  unsent. A save that does not arrive is logged and the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
+  unsent. A save that does not arrive is logged and the change holds for that title. The stop sends what was just changed
+  and waits for the saves within `StopSendBudget` (3 s), beside the last position's send and never ahead of it: one after
+  another behind a server that takes them and does not answer, they would hold the stop 10 s each. Past the budget they go
+  on by themselves. The audio delay is the device's shared `AudioDelay`, read with the settings and
   followed while the title plays, as a stream follows it.
 - **The next episode.** `DownloadUpNext` is the player's `IUpNextSource`, over the server's `UpNextSource`. The server's
   answer comes first, so a series goes on in its order; the episode it names starts through `PlayAsync` as any title, so
