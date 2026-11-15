@@ -150,6 +150,28 @@ public sealed class ItemDetailMoreEpisodesPlacesTests
     }
 
     [Fact]
+    public async Task AStoppedPlayback_WhileAPlaceIsOnItsWay_ShowsInTheRowThePlaceMakes()
+    {
+        // One listed episode: the row waits for a place to join it, and the episode is watched meanwhile.
+        _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(OneEpisode(played: false)));
+        _calendar.Airs(2, "Chapter 2", "2026-10-08");
+        _calendar.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var detail = _fixture.Create();
+        await detail.LoadCommand.ExecuteAsync(EpisodeId);
+        detail.Activate();
+        _fixture.Get(SeriesEpisodesPath(SeriesId, 3), Ok(OneEpisode(played: true)));
+
+        _fixture.Stops.Track(Task.CompletedTask);
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        _calendar.Gate.SetResult();
+        await detail.Placing;
+
+        Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2"], Titles(detail));
+        Assert.True(Assert.IsType<MediaCard>(detail.MoreEpisodesRow[0]).IsWatched);
+    }
+
+    [Fact]
     public async Task AnotherTitleLoadedMeanwhile_GetsNoneOfTheEpisodesPlaces()
     {
         _fixture.Episode().Get(SeriesEpisodesPath(SeriesId, 3), Ok(Listing));
@@ -214,6 +236,13 @@ public sealed class ItemDetailMoreEpisodesPlacesTests
 
     private void AssertQuiet() =>
         Assert.DoesNotContain(_fixture.Logs.Lines, line => line.StartsWith("Warning ItemDetailViewModel:", StringComparison.Ordinal));
+
+    // A season of one listed episode, this page's own.
+    private static string OneEpisode(bool played) => $$"""
+        { "items": [{ "content_id": "episode-tmdb-96677-3-1", "season_number": 3, "episode_number": 1, "title": "Chapter 1", "air_date": "2026-09-24",
+          "user_data": { "played": {{(played ? "true" : "false")}}, "watched_count": {{(played ? 1 : 0)}}, "unplayed_count": {{(played ? 0 : 1)}},
+            "in_progress_count": 0 } }] }
+        """;
 
     // What the row shows on each card: an episode's card title, a place's line.
     private static List<string> Titles(ItemDetailViewModel detail) =>

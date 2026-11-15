@@ -346,7 +346,8 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // The list the page shows, or null when it shows none.
+    // The list the page shows or keeps, or null when it has none. An episode's season is kept even while More Episodes is
+    // hidden: a place that comes later shows the row with its cards.
     private Task<EpisodeCollection?>? ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
     {
         if (_listsEpisodes && _episodesSeasonId is { } seasonId)
@@ -354,7 +355,7 @@ public sealed partial class ItemDetailViewModel
             return TryLoadAsync("episodes", () => _catalog.ListSeasonEpisodesAsync(server, seasonId, images: images, cancellationToken: cancellationToken),
                 cancellationToken);
         }
-        if (HasMoreEpisodes && !string.IsNullOrWhiteSpace(item.SeriesId) && item.SeasonNumber is { } number)
+        if (_siblings.Count > 0 && !string.IsNullOrWhiteSpace(item.SeriesId) && item.SeasonNumber is { } number)
         {
             string seriesId = item.SeriesId;
             return TryLoadAsync("episodes", () => _catalog.ListEpisodesAsync(server, seriesId, number, images: images, cancellationToken: cancellationToken),
