@@ -53,6 +53,7 @@ public sealed partial class MediaCardView
         }
         if (picture is null)
         {
+            // A blur made again at another size that failed leaves the one before in place: still blurred, never empty.
             _artworkFailed = true;
             return;
         }
