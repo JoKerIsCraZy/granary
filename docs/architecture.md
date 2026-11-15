@@ -1943,7 +1943,11 @@ while the server answers.
   (`PlaybackPreferencesReader`) and the title's watch detail side by side, within `LocalPlayback.PreferencesBudget`
   (3 s); what does not come in time is done without. Android reads the watch detail for a local play the same way. From
   the watch detail come the profile's subtitle preference, the tracks the title page's picks name, and where the profile
-  left the title.
+  left the title. Since the subtitle preference is kept in the download and the resume point is where it starts, the
+  watch detail is read as the download's account and profile only (`WatchApi.GetWatchAsAccountProfileAsync`, bound as the
+  settings saves are): once another profile, or another account whose profile has the same id, acts on the server, the
+  read is refused unsent and the download starts with what this PC knows. A server that is not the download's own (another
+  saved one became active meanwhile) is asked nothing, since its ids may be the same.
 - **Without the server.** The profile's own settings still hold, as this PC last read them. Every answer
   `PlaybackPreferencesReader` gets, for a stream or a download, is kept by `KeptPlaybackSettings` in
   `playback-settings.json` in the data folder, for the server's entry, the account and the profile, one batch of keys
@@ -1986,8 +1990,8 @@ while the server answers.
   shows none. A pick in the player is not saved for the series (Android saves none either; the Apple app queues them).
 - **Settings changed while it plays.** The speed, the subtitle delay, auto-play and the sleep timer's duration hold in
   the player at once and are saved to the server under a stream's keys, as the download's account and profile only
-  (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when a server was signed
-  in as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
+  (`SetValueAsAccountProfileAsync`, bound as the progress is: see "Offline progress", Sending), when the download's own
+  server was the active one as the title started. A save waits behind the one before it, each for up to 10 s, so another account can be
   signed in on that server by the time one goes out, and its profile may carry the same id: such a save is refused
   unsent. A save that does not arrive is logged and the change holds for that title. The audio delay is the device's shared `AudioDelay`, read with the settings and
   followed while the title plays, as a stream follows it.

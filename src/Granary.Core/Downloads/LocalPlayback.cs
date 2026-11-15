@@ -1,5 +1,6 @@
 using System.Globalization;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
@@ -202,7 +203,8 @@ public sealed partial class LocalPlayback : IServerPlayback
     {
         // Before the settings are read: a save of the audio delay done while they are is newer than what they say.
         long audioDelayRead = _audioDelay?.StartRead() ?? 0;
-        _server = _session.ActiveServer?.BaseUri;
+        // The download's own server only: account and profile ids are each server's, so another one's may carry the same.
+        _server = _session.ActiveServer is { } active && active.Id == _download.Record.Scope.ServerEntryId ? active.BaseUri : null;
         var (preferences, detail) = await ReadFromServerAsync();
         if (_stopping)
         {
@@ -261,11 +263,19 @@ public sealed partial class LocalPlayback : IServerPlayback
         }
     }
 
+    // As the download's account and profile only, as its settings are saved: the resume point and the subtitle preference that
+    // come back go into this download, so another profile's, or another account's whose profile has the same id, never do.
     private async Task<WatchDetail?> ReadDetailAsync(Uri server, CancellationToken cancellationToken)
     {
+        var owner = _download.Record.Scope;
         try
         {
-            return await _watch.GetWatchAsync(server, _download.Record.MediaItemId, cancellationToken: cancellationToken);
+            return await _watch.GetWatchAsAccountProfileAsync(server, owner.AccountId, owner.ProfileId, _download.Record.MediaItemId, cancellationToken);
+        }
+        catch (ProfileChangedException)
+        {
+            _logger.LogInformation("The title's state was not read: the server acts for another profile now; the download plays with what this PC knows");
+            return null;
         }
         catch (Exception ex) when (ex is OperationCanceledException or ArgumentException || ApiFailureText.IsRequestFailure(ex))
         {
