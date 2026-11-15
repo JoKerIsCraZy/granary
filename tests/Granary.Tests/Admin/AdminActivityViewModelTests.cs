@@ -324,6 +324,25 @@ public sealed class AdminActivityViewModelTests
     }
 
     [Fact]
+    public async Task LookUpFromAnotherStream_WhileTheFirstStillLoads_ShowsTheSecondAddressesAccounts()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map("api/v2/admin/ips", (request, _) => BrowseRequestQuery(request, "ip") == "203.0.113.50"
+            ? first.Task
+            : Task.FromResult(BrowseFakeSilo.Json("""{ "items": [ { "user_id": "2", "username": "marco", "first_seen": "2026-10-01T08:00:00.000Z", "last_seen": "2026-10-27T12:00:00.000Z", "request_count": 9 } ], "page": { "has_more": false } }""")));
+        var activity = await ShownAsync();
+
+        var pending = activity.LookUpAddressAsync("203.0.113.50");
+        await activity.LookUpAddressAsync("198.51.100.7");
+        first.SetResult(BrowseFakeSilo.Json("""{ "items": [ { "user_id": "1", "username": "elena", "first_seen": "2026-10-01T08:00:00.000Z", "last_seen": "2026-10-27T12:00:00.000Z", "request_count": 4 } ], "page": { "has_more": false } }"""));
+        await pending;
+
+        Assert.Equal(["203.0.113.50", "198.51.100.7"], _silo.To("api/v2/admin/ips").Select(sent => sent.Query("ip")));
+        Assert.Equal("198.51.100.7", activity.IpQuery);
+        Assert.Equal("marco", Assert.Single(activity.IpUsers).Username);
+    }
+
+    [Fact]
     public async Task LookUpFromAStream_WithoutAnAddress_LeavesTheIpLookupAsItWas()
     {
         var activity = await ShownAsync();
