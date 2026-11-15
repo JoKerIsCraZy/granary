@@ -309,6 +309,32 @@ public sealed class AdminActivityViewModelTests
     }
 
     [Fact]
+    public async Task LookUpFromAStream_OpensTheIpLookup_WithTheAddressLookedUp()
+    {
+        _silo.Map("api/v2/admin/ips", """{ "items": [ { "user_id": "1", "username": "elena", "first_seen": "2026-10-01T08:00:00.000Z", "last_seen": "2026-10-27T12:00:00.000Z", "request_count": 4 } ], "page": { "has_more": false } }""");
+        var activity = await ShownAsync();
+        Assert.False(activity.IsIpLookupOpen);
+
+        await activity.LookUpAddressAsync(" 203.0.113.50 ");
+
+        Assert.True(activity.IsIpLookupOpen);
+        Assert.Equal("203.0.113.50", activity.IpQuery);
+        Assert.Equal("203.0.113.50", Assert.Single(_silo.To("api/v2/admin/ips")).Query("ip"));
+        Assert.Equal("elena", Assert.Single(activity.IpUsers).Username);
+    }
+
+    [Fact]
+    public async Task LookUpFromAStream_WithoutAnAddress_LeavesTheIpLookupAsItWas()
+    {
+        var activity = await ShownAsync();
+
+        await activity.LookUpAddressAsync("  ");
+
+        Assert.False(activity.IsIpLookupOpen);
+        Assert.Empty(_silo.To("api/v2/admin/ips"));
+    }
+
+    [Fact]
     public async Task IpLookup_WithoutAccounts_OrFailing_SaysSo()
     {
         _silo.Map("api/v2/admin/ips", """{ "items": [], "page": { "has_more": false } }""");

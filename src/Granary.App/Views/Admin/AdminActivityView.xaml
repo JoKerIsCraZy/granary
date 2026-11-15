@@ -100,8 +100,9 @@
                    FontSize="13" HorizontalAlignment="Center" Margin="0,48" TextWrapping="Wrap" />
 
         <!-- Which accounts used an address over the last 30 days. -->
-        <Border Style="{StaticResource ActivityCardStyle}" Padding="0">
-            <Expander Header="IP Lookup" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0">
+        <Border x:Name="IpLookupCard" Style="{StaticResource ActivityCardStyle}" Padding="0">
+            <Expander Header="IP Lookup" IsExpanded="{x:Bind ViewModel.IsIpLookupOpen, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0">
                 <StackPanel Spacing="12">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
