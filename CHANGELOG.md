@@ -8,6 +8,52 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Downloads:** download a film, an episode, a whole season or a whole series from its ⋯ menu, in the original quality
+  or a smaller one your Silo server offers, and manage them on the new Downloads page: your films and series as cards, as in a library,
+  each with its size and where it stands, and while it downloads a bar, its speed and the time left; a series' card
+  opens its episodes by season. Each card's menu pauses, resumes, retries and deletes, and the top says the space they
+  take; a download you delete while it still comes leaves this PC at once. The sidebar's Downloads shows how many are
+  coming, with a small dot that pulses slowly while one downloads, and Granary's taskbar button shows how far they are
+  (yellow while they are all paused, and not while a title plays). When downloads finish or fail, Granary says so
+  ("Example Movie is ready to watch offline"): in its window while it is in front, else as a Windows notification with
+  Play and Open Downloads; a season or a series that finishes together is one message. Settings → Downloads → Notify
+  when downloads finish turns these messages off, and Download settings on the Downloads page leads there. Downloads
+  wait on a metered connection unless Settings → Downloads allows them, and say so ("Paused · metered connection"), also
+  one that was downloading when Granary closed; they come two at a time unless Settings → Downloads →
+  Simultaneous Downloads says from one to four, and carry on where they stopped when Granary starts again. X on a controller plays a
+  downloaded card, and a series' card its next episode on this PC, as its play button does; the bumpers go between Films
+  and Series, and between a series' seasons. Settings → Downloads → Drive puts new downloads on another drive, also with a
+  controller, which Windows' folder picker behind Change does not take. Signing out of a server or
+  removing it deletes its downloads after asking. Your Silo server has to allow downloads.
+- **Monitored series:** a series' Download, from its page or its ⋯ menu, has One Time and Monitor: Monitor keeps new
+  episodes coming to this PC as they air, from all episodes, future ones or the last season on, in the quality you pick
+  when your Silo server allows it, with Delete after watching and a storage limit; for a monitored series it saves what
+  you change or stops monitoring, after asking. The Downloads page lists your monitored series with what each takes and
+  what comes next ("Episode 6 on Thursday"). A monitored series brings its new episodes by itself: Granary asks the
+  server for them when it starts, when you switch profiles, when a notification comes and every four hours, and downloads
+  what the server registered like any other download, in episode order. A monitor with Delete after watching deletes
+  the episodes you finished at the end of each of these runs, never the one that plays. A monitor's storage limit holds
+  back the episodes that would pass it, and so does Settings → Downloads → Storage limit for downloads, a slider, which
+  the download dialog keeps to as well; nothing is deleted to make room. Settings → Downloads → Monitoring Defaults says
+  what a new monitor starts with: Delete after watching, and a storage limit. Settings → Downloads also explains the
+  default quality as Silo's iPhone and iPad app does, and its new Storage says what your downloads use, with Remove All
+  Downloads, after asking. Signing out leaves your monitors on the server.
+- **Watch your downloads without your Silo server:** a downloaded film or episode plays from this PC, with its audio
+  tracks, subtitles, chapters and Skip Intro, with your subtitle look, speed and other playback settings as Granary last
+  read them, and the next episode plays when it is downloaded too. What you watch offline goes back to your Silo server
+  as soon as Granary reaches it again, also after Retry or when the server comes back on; signing out of a server or
+  removing it sends what it still can first, and its question says how much progress is lost. On the Downloads page a
+  downloaded card plays at a click and shows how much of it you watched as Continue Watching does ("18 min left", or
+  Watched), also without your Silo server; it says Missing file for one whose file was deleted outside Granary, and
+  Reclaim Watched deletes the downloads you have finished to free up space, after asking, unless Settings → Downloads →
+  Keep watched downloads is on.
+- **Offline start:** when Granary starts and can't reach your Silo server, also when a proxy or a network's sign-in page
+  answers in its place, it opens your downloads instead of an error, with Retry.
+- **Download from any card:** the ⋯ menu of a film's, an episode's, a season's or a series' card has Download wherever the
+  card shows, on Home, in a library, in search, in a collection and on a title's page. Download series takes every
+  season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need
+  before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
+  its download stands there instead, which opens the Downloads page, with Delete download beside it.
 - **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for
@@ -39,6 +85,8 @@ release's section is what its update says it changes (docs/release.md).
   every other score your Silo server shows for it.
 - The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
   screen draws it, as Silo's web does, where it came at a card's size and was stretched.
+- The Settings sidebar scrolls in a short window, as on Silo's web, so its last pages, such as About, can be reached with
+  the mouse, the keyboard and a controller.
 
 ## [0.4.0] - 2026-11-14
 

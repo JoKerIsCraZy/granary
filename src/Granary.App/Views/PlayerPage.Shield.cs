@@ -156,6 +156,7 @@ public sealed partial class PlayerPage : ICursorShieldOwner
     void ICursorShieldOwner.Pressed(ShieldPointer pointer) => OnShield("a press", page =>
     {
         page._shieldPressTarget = page.ElementAtPointer();
+        page.DiagnoseShieldPress(page._shieldPressTarget);
         page.PressedOnPage(DeviceOf(pointer));
         page._cursorWindow?.NotePointerPress();
     });

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using Granary.Core.Downloads;
 using Granary.Core.Overlays;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -13,6 +14,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 
 namespace Granary.App.Controls;
@@ -52,6 +54,7 @@ public sealed partial class MediaCardView : UserControl
     private static readonly Dictionary<string, object> SharedResources = new(StringComparer.Ordinal);
 
     private readonly MediaCardActions _actions = App.Services.GetRequiredService<MediaCardActions>();
+    private readonly CardDownloads _downloads = App.Services.GetRequiredService<CardDownloads>();
     private readonly CardOverlaySettings _overlays = App.Services.GetRequiredService<CardOverlaySettings>();
 
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
@@ -61,15 +64,21 @@ public sealed partial class MediaCardView : UserControl
     private double _artWidth;
     // Done at the card's first size, which a card just made waits for before it decodes its artwork.
     private TaskCompletionSource? _sized;
-    // The shown card's artwork, and the width it was decoded for (0 before it was), to decode it again at another width.
+    // The shown card's artwork, from the server or a file on this PC, and the width it was decoded for (0 before it was), to
+    // decode it again at another width.
     private Uri? _artworkUrl;
+    private string? _artworkPath;
     private double _decodedWidth;
+    // The card shown, the card the artwork is for, and whether the artwork could not be shown.
+    private MediaCard? _shown;
+    private MediaCard? _pictured;
+    private bool _artworkFailed;
     // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
     private OverlayPreset? _badgedPreset;
     // What the subtitle's style and the caption's colour are set for: null before the first card.
-    private bool? _subtitleLandscape;
+    private bool? _subtitleAsCaption;
     private bool _captionAttention;
     // The shown card's shape and whether its progress bar shows, which size the artwork and place the badges; and what
     // they were last done for.
@@ -99,10 +108,12 @@ public sealed partial class MediaCardView : UserControl
     // The entries the card's list adds to its menu, and the menu items made for them.
     private IReadOnlyList<CardMenuEntry> _entries = [];
     private readonly List<MenuFlyoutItemBase> _entryItems = [];
+    // The menu items made for the card's Download entries (CardDownloads).
+    private readonly List<MenuFlyoutItemBase> _downloadItems = [];
     private bool _hasOwnEntries;
-    // The grid the card sits in, found once: a card stays in its grid while it is reused.
-    private MediaGrid? _grid;
-    private bool _gridFound;
+    // The grid or page whose list adds entries to the card's menu, found once: a card stays where it is while it is reused.
+    private ICardMenuHost? _menuHost;
+    private bool _menuHostFound;
 
     public MediaCardView()
     {
@@ -168,28 +179,22 @@ public sealed partial class MediaCardView : UserControl
     // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
     private void Show(MediaCard? card)
     {
-        // A container given another card under a resting pointer starts unarmed: its Request takes no click until the
-        // pointer comes in again and it has shown long enough.
-        _pointerMayRequest = false;
-        Disarm();
-        _landscape = card?.Shape == MediaCardShape.Landscape;
-        // The thumbhash's blur shows at once; the title stands in only without one.
-        var blur = Thumbhashes.Get(card?.ImageThumbhash);
-        BlurImage.Source = blur;
-        Placeholder.Text = card?.Title ?? "";
-        Placeholder.Visibility = Visible(blur is null);
-        _artwork?.Cancel();
-        _artwork = null;
-        _artworkUrl = card?.ImageUrl;
-        _decodedWidth = 0;
-        ArtImage.OpacityTransition = null;
-        ArtImage.Opacity = 0;
-        ArtImage.Source = null;
-        ShowSpoiler(card);
-        if (_artworkUrl is { } url)
+        // The same title's next look (a live card: a download's progress) keeps what the pointer did on it, its play disc and
+        // buttons too, which would otherwise go each time its bar moves.
+        bool sameTitle = card is not null && _shown is { } before && before.Id == card.Id;
+        _shown = card;
+        if (!sameTitle)
         {
-            _artwork = new CancellationTokenSource();
-            _ = ShowArtworkAsync(url, _artwork.Token);
+            // A container given another card under a resting pointer starts unarmed: its Request takes no click until the
+            // pointer comes in again and it has shown long enough.
+            _pointerMayRequest = false;
+            Disarm();
+        }
+        _landscape = card?.Shape == MediaCardShape.Landscape;
+        Placeholder.Text = card?.Title ?? "";
+        if (!KeepsPicture(card))
+        {
+            ShowPicture(card);
         }
 
         ShowBadges(card);
@@ -198,10 +203,12 @@ public sealed partial class MediaCardView : UserControl
 
         TitleText.Text = card?.Title ?? "";
         // A recycled card mostly shows the same shape and colours: each is set only when it changes.
-        if (_subtitleLandscape != _landscape)
+        // A wide card's subtitle is a caption line, and so is a poster's that says more than an overline holds (a download's).
+        bool asCaption = _landscape || card?.PlainSubtitle == true;
+        if (_subtitleAsCaption != asCaption)
         {
-            _subtitleLandscape = _landscape;
-            SubtitleText.Style = Resource<Style>(_landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle");
+            _subtitleAsCaption = asCaption;
+            SubtitleText.Style = Resource<Style>(asCaption ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle");
         }
         ShowCaption(card);
         bool attention = card?.IsCaptionAttention == true;
@@ -219,10 +226,46 @@ public sealed partial class MediaCardView : UserControl
             }
         }
 
-        SetHovered(false);
-        FollowPressesUnderPointer();
+        // A live card's next look of the same title keeps its hover; another title under a pointer that stays where it is
+        // notes the presses of its lines all the same.
+        if (!sameTitle)
+        {
+            SetHovered(false);
+            FollowPressesUnderPointer();
+        }
         ShowState();
         UpdateSize(ActualWidth);
+    }
+
+    // The same title with the same picture, as a live card's next look (LiveCard: a download's progress), keeps its artwork
+    // rather than blinking through its blur twice a second. A picture that failed is tried again.
+    private bool KeepsPicture(MediaCard? card) =>
+        !_artworkFailed && _pictured is { } shown && card is not null && shown.Id == card.Id && shown.Shape == card.Shape
+        && Equals(shown.ImageUrl, card.ImageUrl) && shown.LocalImagePath == card.LocalImagePath
+        && shown.ImageThumbhash == card.ImageThumbhash && shown.BlursImage == card.BlursImage;
+
+    private void ShowPicture(MediaCard? card)
+    {
+        _pictured = card;
+        _artworkFailed = false;
+        // The thumbhash's blur shows at once; the title stands in only without one.
+        var blur = Thumbhashes.Get(card?.ImageThumbhash);
+        BlurImage.Source = blur;
+        Placeholder.Visibility = Visible(blur is null);
+        _artwork?.Cancel();
+        _artwork = null;
+        _artworkUrl = card?.ImageUrl;
+        _artworkPath = card?.LocalImagePath is { Length: > 0 } path ? path : null;
+        _decodedWidth = 0;
+        ArtImage.OpacityTransition = null;
+        ArtImage.Opacity = 0;
+        ArtImage.Source = null;
+        ShowSpoiler(card);
+        if (_artworkUrl is not null || _artworkPath is not null)
+        {
+            _artwork = new CancellationTokenSource();
+            _ = ShowArtworkAsync(_artwork.Token);
+        }
     }
 
     // What the viewer can change on the card, as the server or this session last left it.
@@ -240,9 +283,10 @@ public sealed partial class MediaCardView : UserControl
         }
         if (Progress is { } bar)
         {
-            bar.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
+            // In percent, as screen readers say a bar's value.
+            bar.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) * 100 : 0;
             bar.Visibility = Visible(hasProgress);
-            bar.Foreground = Brush(state.IsWatched || bar.Value >= 1 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
+            bar.Foreground = Brush(state.IsWatched || bar.Value >= 100 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
         }
         // A TMDB title's request state can change on the card: its watchlist add requested it.
         SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));
@@ -501,19 +545,23 @@ public sealed partial class MediaCardView : UserControl
         MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
         MenuNotInterested.Visibility = Visible(notInterested);
         var row = card is null ? null : RowOf(this);
-        if (!_gridFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
+        if (!_menuHostFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
         {
-            _grid = GridOf(this);
-            _gridFound = true;
+            // Only a host found is kept: a card asked before it reached its place looks again next time.
+            _menuHost = MenuHostOf(this);
+            _menuHostFound = _menuHost is not null;
         }
-        var grid = row is null ? _grid : null;
+        var host = row is null ? _menuHost : null;
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
+        // Download comes only to a film's, an episode's, a season's or a series' card, which has Mark Watched: the ⋮ and its
+        // lines stand without it, so its entries are asked for only as the menu opens (ShowDownloadEntries), not with every card
+        // shown.
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
-        // Only a grid with entries of its own asks for them; every other card skips this.
-        _entries = card is not null && grid?.CardMenu is { } source ? source.EntriesFor(card) : [];
+        // Only a grid or page with entries of its own asks for them; every other card skips this.
+        _entries = card is not null && host?.CardMenu is { } source ? source.EntriesFor(card) : [];
         _hasOwnEntries = others || canRemove;
         MoreButton.Visibility = Visible(others || canRemove || _entries.Count > 0);
     }
@@ -531,22 +579,26 @@ public sealed partial class MediaCardView : UserControl
         return null;
     }
 
-    // The grid a card sits in adds its list's own entries (a collection's Edit and Delete).
-    private static MediaGrid? GridOf(DependencyObject element)
+    // The nearest grid or page above a card with entries of its own adds them: a collection's Edit and Delete, a season's
+    // episodes' Download (ItemDetailPage). A grid without any does not hide the page's.
+    private static ICardMenuHost? MenuHostOf(DependencyObject element)
     {
         for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
         {
-            if (parent is MediaGrid grid)
+            if (parent is ICardMenuHost { CardMenu: not null } host)
             {
-                return grid;
+                return host;
             }
         }
         return null;
     }
 
-    // The list's entries at the menu's foot, after a line when the card's own are there too.
+    // The card's Download entries where the title page's ⋯ has Download among the web's items: after the watchlist (and Add
+    // to Collection, which the card's menu does not have) and before Not Interested. The list's entries at the menu's foot,
+    // after a line when the card's own are there too.
     private void ShowEntries()
     {
+        ShowDownloadEntries();
         foreach (var item in _entryItems)
         {
             MoreMenu.Items.Remove(item);
@@ -569,6 +621,35 @@ public sealed partial class MediaCardView : UserControl
         foreach (var item in _entryItems)
         {
             MoreMenu.Items.Add(item);
+        }
+    }
+
+    // Download, or the download's status and Delete download, as the menu opens: from what this PC knows, so the menu asks the
+    // server nothing. The commands are the app's (CardDownloads lives as long as it), so an item runs its entry's command
+    // when clicked rather than holding it: a Command would tie every item a menu ever made to the command's CanExecuteChanged.
+    private void ShowDownloadEntries()
+    {
+        foreach (var item in _downloadItems)
+        {
+            MoreMenu.Items.Remove(item);
+        }
+        _downloadItems.Clear();
+        IReadOnlyList<CardMenuEntry> entries = Card is { } card ? _downloads.EntriesFor(card) : [];
+        int at = MoreMenu.Items.IndexOf(MenuNotInterested);
+        foreach (var entry in entries)
+        {
+            var item = new MenuFlyoutItem { Text = entry.Label, Tag = entry };
+            item.Click += OnDownloadEntryClick;
+            _downloadItems.Add(item);
+            MoreMenu.Items.Insert(at++, item);
+        }
+    }
+
+    private void OnDownloadEntryClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem { Tag: CardMenuEntry entry } && Card is { } card && entry.Command.CanExecute(card))
+        {
+            entry.Command.Execute(card);
         }
     }
 
@@ -1078,7 +1159,7 @@ public sealed partial class MediaCardView : UserControl
     // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing. A
     // card just made also waits for its first measure, so its artwork is decoded at the size it shows, not a guess: a grid's
     // new cards were decoded half again as large.
-    private async Task ShowArtworkAsync(Uri url, CancellationToken cancellationToken)
+    private async Task ShowArtworkAsync(CancellationToken cancellationToken)
     {
         _artworkShownAt = Stopwatch.GetTimestamp();
         await ScrollMotion.WhenSlowAsync();
@@ -1098,18 +1179,34 @@ public sealed partial class MediaCardView : UserControl
         }
         if (!cancellationToken.IsCancellationRequested)
         {
-            LoadArtwork(url, cancellationToken);
+            LoadArtwork(cancellationToken);
         }
     }
 
     // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
-    // blurred, never sharp.
-    private void LoadArtwork(Uri url, CancellationToken cancellationToken)
+    // blurred, never sharp. A download's artwork comes from its file, as wide as the card: a poster for a poster, a still for
+    // a wide card, blurred as well when it is hidden.
+    private void LoadArtwork(CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
+        if (_artworkPath is { } path)
+        {
+            if (_blurs)
+            {
+                _ = LoadSpoilerAsync(SpoilerArtwork.LoadFileAsync(path, _artWidth, cancellationToken), cancellationToken);
+                return;
+            }
+            ArtImage.Source = LocalArtwork.Load(path, DecodeSize(_artWidth, _landscape ? LandscapeWidth : PosterHeight * 2 / 3),
+                OnLocalArtworkFailed);
+            return;
+        }
+        if (_artworkUrl is not { } url)
+        {
+            return;
+        }
         if (_blurs)
         {
-            _ = LoadSpoilerAsync(url, cancellationToken);
+            _ = LoadSpoilerAsync(SpoilerArtwork.LoadAsync(url, _artWidth, cancellationToken), cancellationToken);
             return;
         }
         ArtImage.Source = _landscape
@@ -1122,14 +1219,14 @@ public sealed partial class MediaCardView : UserControl
     // show it blurred, larger would hold memory for nothing. A smaller change, as a window resized by a few pixels, keeps it.
     private void RedecodeIfResized()
     {
-        if (_decodedWidth <= 0 || _artworkUrl is not { } url || Math.Abs(_artWidth - _decodedWidth) <= _decodedWidth * RedecodeChange)
+        if (_decodedWidth <= 0 || (_artworkUrl is null && _artworkPath is null) || Math.Abs(_artWidth - _decodedWidth) <= _decodedWidth * RedecodeChange)
         {
             return;
         }
         _artwork?.Cancel();
         _artwork = new CancellationTokenSource();
         _artworkShownAt = Stopwatch.GetTimestamp();
-        LoadArtwork(url, _artwork.Token);
+        LoadArtwork(_artwork.Token);
     }
 
     private static int DecodeSize(double shown, double fallback) => (int)Math.Ceiling(shown > 0 ? shown : fallback);
@@ -1143,6 +1240,26 @@ public sealed partial class MediaCardView : UserControl
         ArtImage.Opacity = 1;
     }
 
-    // A missing or expired artwork URL leaves the blur, or without one the title, in place.
-    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ArtImage.Source = null;
+    // A missing or expired artwork URL leaves the blur, or without one the title, in place; the card's next look tries again.
+    private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ShowArtworkFailed();
+
+    // A download's picture that could not be read (a virus scan holding the new file a moment, a file deleted by hand) fails
+    // the same way: a live card's next look, as a download's progress, reads it again. Only the picture shown now; one the
+    // card moved on from says nothing.
+    private void OnLocalArtworkFailed(BitmapImage bitmap)
+    {
+        if (ReferenceEquals(ArtImage.Source, bitmap))
+        {
+            ShowArtworkFailed();
+        }
+    }
+
+    // Also after a reread at another size, whose first picture had put the title away: without the thumbhash's blur, the
+    // title stands in again rather than an empty box.
+    private void ShowArtworkFailed()
+    {
+        ArtImage.Source = null;
+        _artworkFailed = true;
+        Placeholder.Visibility = Visible(BlurImage.Source is null);
+    }
 }

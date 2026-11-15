@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.WindowsRuntime;
 using Granary.App.Controls;
 using Granary.Core.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -143,12 +144,14 @@ internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMed
         display.Update();
     }
 
-    // The picture from the app's artwork cache, as bytes: its presigned address never goes to Windows.
+    // The picture from the app's artwork cache, as bytes: its presigned address never goes to Windows. A download played
+    // from this PC names the picture kept in its folder instead.
     private async Task ShowArtworkAsync(SystemMediaTransportControls controls, Uri url, CancellationToken cancellationToken)
     {
         try
         {
-            var stream = await Artwork.StreamAsync(url, cancellationToken);
+            // Not cancelled but checked afterwards, as the cache's read is: another title meanwhile is no failure.
+            var stream = url.IsFile ? await FileStreamAsync(url.LocalPath) : await Artwork.StreamAsync(url, cancellationToken);
             if (stream is null)
             {
                 return;
@@ -165,6 +168,25 @@ internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMed
         catch (Exception ex)
         {
             logger.LogWarning("The picture for Windows' media controls could not be shown: {Failure}", ex.GetType().Name);
+        }
+    }
+
+    // Read on the thread pool: a downloads folder can be on a drive that is slow to answer. A file that is gone or cannot be
+    // read shows no picture, which the caller logs by its kind (the message would name the folder, with the Windows user's name).
+    private static async Task<InMemoryRandomAccessStream> FileStreamAsync(string path)
+    {
+        byte[] bytes = await Task.Run(() => File.ReadAllBytesAsync(path));
+        var stream = new InMemoryRandomAccessStream();
+        try
+        {
+            await stream.WriteAsync(bytes.AsBuffer());
+            stream.Seek(0);
+            return stream;
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
         }
     }
 

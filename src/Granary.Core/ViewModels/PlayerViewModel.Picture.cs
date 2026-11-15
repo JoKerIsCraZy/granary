@@ -67,7 +67,7 @@ public sealed partial class PlayerViewModel
         {
             return;
         }
-        var sections = PlaybackInfo.Sections(_playback?.StreamInfo, stats, _pictureSize.Width, _pictureSize.Height);
+        var sections = PlaybackInfo.Sections(_playback?.StreamInfo, stats, _pictureSize.Width, _pictureSize.Height, _playback?.LocalFile);
         // The same values keep their rows, so a scrolled panel stays where it is.
         if (sections.Count != PlaybackInfoSections.Count
             || sections.Zip(PlaybackInfoSections).Any(pair => pair.First.Title != pair.Second.Title || !pair.First.Rows.SequenceEqual(pair.Second.Rows)))

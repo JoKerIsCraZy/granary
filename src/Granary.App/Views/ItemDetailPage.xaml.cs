@@ -11,7 +11,11 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
 
-/// <summary>Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>).</summary>
+/// <summary>
+/// Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>). Its Download
+/// items follow the app's downloads only while it shows: from <see cref="OnNavigatedTo"/> until it is left or unloads, so the
+/// downloads, which live as long as the app, never hold it (<c>ItemDetailDownloadsTests</c>).
+/// </summary>
 public sealed partial class ItemDetailPage : Page, IArrivalFocus
 {
     public ItemDetailPage()
@@ -19,6 +23,8 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         // Transient and not disposable: the root provider does not keep it alive.
         ViewModel = App.Services.GetRequiredService<ItemDetailViewModel>();
         InitializeComponent();
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     public ItemDetailViewModel ViewModel { get; }
@@ -50,6 +56,7 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         ViewModel.LoadCommand.Execute(e.Parameter as string);
         // The spoiler switches and the viewer's state from elsewhere, while the page shows.
         ViewModel.Activate();
+        ViewModel.FollowDownloads();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -57,6 +64,19 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         base.OnNavigatedFrom(e);
         ViewModel.LoadCommand.Cancel();
         ViewModel.Deactivate();
+        ViewModel.StopFollowingDownloads();
+    }
+
+    // Also when the page goes without being navigated from, its frame taken out of the window for a while: it follows
+    // again once it is back and still the frame's page (following twice is harmless).
+    private void OnUnloaded(object sender, RoutedEventArgs e) => ViewModel.StopFollowingDownloads();
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(Frame?.Content, this))
+        {
+            ViewModel.FollowDownloads();
+        }
     }
 
     private void OnBackdropOpened(object sender, RoutedEventArgs e) => Backdrop.Opacity = 1;

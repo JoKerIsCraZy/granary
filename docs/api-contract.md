@@ -38,6 +38,7 @@ to the root of the named repository.
 11. [Markers, intro skip, chapters, and trickplay](#11-markers-intro-skip-chapters-and-trickplay)
 12. [Realtime events](#12-realtime-events)
 13. [Consequences for the Windows client](#13-consequences-for-the-windows-client)
+14. [Downloads and offline sync](#14-downloads-and-offline-sync)
 15. [Control from Silo's phone apps (SiloCast)](#15-control-from-silos-phone-apps-silocast)
 - [Appendix: where docs and code disagree](#appendix-where-docs-and-code-disagree)
 
@@ -1130,6 +1131,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
   page's load does not wait for any of it. A failed calendar request leaves the season, or More Episodes, as listed,
   with a warning in the log.
+- The monitored series' schedule (`MonitorSchedule`, as Apple's `AutoDownloadSchedule`) asks the next 30 days with
+  `filter=everything` and the viewer's zone, and each monitored series' item (7.6) for its title and poster, bound to the
+  account and profile the read began for (`SiloRequestOptions.Account`, `.Profile`): once another acts, neither goes out
+  (`ProfileChangedException`), and the next refresh for that profile asks again.
 
 ### 7.14 Notifications
 
@@ -2321,8 +2326,9 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
-- `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are
-  for offline sync and out of MVP scope.
+- `POST /api/v2/sync/progress` (batch, **milliseconds**) carries the progress of a download played
+  from this PC (14.7); streamed playback reports through its session. The progress bootstrap
+  snapshots are not used.
 - **Multi-part items** (a version with `presentation_part_total > 1`, grouped in watch detail's
   `playback_variants[{ variant_id, parts[{ part_index, versions[], default_file_id }], part_count, total_duration_seconds }]`):
   session progress persists nothing for them (10.1). Resume must then be reported item-absolute
@@ -2888,8 +2894,8 @@ HDR with libplacebo. An honest, conservative first report:
 ### 13.3 Not in the MVP
 
 Control socket and `plan_invalidated_v1`, `buffering_quality_v1`, the realtime events socket,
-the LAN local route, trickplay, `/sync/progress` and progress bootstrap, external (OIDC) sign-in,
-signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together, admin.
+the LAN local route, trickplay, progress bootstrap (`/sync/progress` came with downloads, 14.7), external (OIDC) sign-in,
+signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 
 ### 13.4 Open questions for the Phase 1 spike
 
@@ -2929,6 +2935,211 @@ signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together
   ignored while a text field or menu has focus.
 - Enable the SMTC "Next" button only when a next episode has been resolved (10.7).
 
+## 14. Downloads and offline sync
+
+Granary keeps films and episodes on the PC as the server's **managed downloads**: every request carries
+`X-Silo-Device-Id` and `X-Profile-Id` (6.4), so each entry belongs to one account, profile and PC. Every call goes through
+`Api/Downloads/DownloadsApi`, bound to the profile its download belongs to (`SiloRequestOptions.Profile`): while the server
+acts as another profile, the request is not sent (`ProfileChangedException`). Problems follow 2.2; the downloads ones Granary
+branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCodes`). Sources:
+`silo-server/docs/downloads-api.md` (sections 3 to 6, 9 and 12), `silo-server/internal/apiv2/download_*.go`.
+
+### 14.1 Capability
+
+- `GET /api/v2/capabilities/downloads` (profile) → `enabled`, `allowed` (`download_allowed` and no demo-mode refusal),
+  `quality_presets` (always an array, best first; empty without downloads), `quality_options` (`[{ preset, bitrate_kbps?,
+  max_height? }]`, one per preset, both numbers absent for `original`), `proxy_delivery`, `preparation_progress`,
+  `prepare_again`, `revoked_removes_local`, and for series monitors `series_monitoring`, `monitoring_modes` and
+  `monitor_quality` (14.8). Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
+  downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`. The download
+  queue reads it again whenever a profile's downloads become the active ones: `revoked_removes_local` lets a revoked
+  download's files go (14.6); a read that fails leaves it off. `proxy_delivery` is not used: see `/file-proxy` in 14.4.
+  A start of a profile that has downloads on this PC also asks it first, within 5 s, to find out whether the server is
+  there at all (`OfflineStart`, docs/architecture.md "Offline start"): no connection, no answer in time, an answer that
+  is not a Silo server's (a success that is no JSON, or an error status whose body is no problem with a `type` under
+  `https://siloserver.org/docs/api/v2/problems/`, which every problem the server writes has:
+  `SiloApiException.HasProblem`), and 502, 503, 504, 520 to 527 or 530 open the Downloads page instead of Home; any
+  other problem, also a refusal, is a server that is there. The answer itself is not used.
+
+### 14.2 Create
+
+- `POST /api/v2/downloads` → `202 { items: [DownloadEntry], skipped: [{ episode_id, reason }], page }`. Granary sends one
+  film or episode per request: `content_id` (the film, or the episode's series), `episode_id`, `media_file_id` (the version
+  the viewer chose, as a decimal string), `quality` (one of `quality_presets`), `caps` and `expected_revision: 0` (a new
+  entry; required on a single-item create with the device header).
+- `caps` is Granary's playback report (13.2, `DownloadCaps.For`): `codecs_video`, `codecs_audio` and `containers` as the
+  report lists them, `max_resolution: "2160p"` (mpv decodes 4K and scales it itself) and `hdr: false` (SDR output). With
+  `original`, the server sends the file as it is when the PC plays it, or else a remux or a compatible copy.
+- Not repeatable: after an uncertain answer, read the registry (14.3) instead. 403 `permission_denied`, 501
+  `capability_unsupported` (a preset the server cannot prepare), 409 `conflict` (the revision guard lost), 429 `rate_limited`.
+- What Granary does: one press creates at most one entry. No answer, a 409 or a 5xx reads the whole registry and takes the
+  newest entry with the same `content_id` and `episode_id` that is not `revoked`, `failed` or `cancelled`, not kept on the
+  PC and not waiting for its `DELETE` from the PC; none means the download failed (after a delete, it works once that
+  `DELETE` went). After a 409, when the registry's newest entry for the title is `revoked`, `failed` or `cancelled` (and
+  neither kept nor being deleted), Granary sends one explicit second create with `expected_revision` set to that entry's
+  `revision` from the registry and `expected_download_id` to its `id`, which reuses, revives or replaces it; a second 409,
+  or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
+  episode in `skipped`, means the profile cannot download it.
+  A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
+  PC does not have, and so is a whole series, season after season (the specials last), its episodes read through 7.7
+  (`/series/{id}/seasons`, then each season's `/episodes`). Silo's apps send a series as the server's batch (`series:
+  true` with a `batch_id`, followed by `page.next_cursor`); Granary does not send `series`, `season_number`, `batch_id` or
+  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429
+  (`rate_limited`: the account's limit of downloads at once or in a period, `silo-server/internal/downloads/limiter.go`),
+  to a create or its revival, stops a season or a series there: the creates after it would be refused alike. A 403, 404
+  or 501 for one episode does not: the server's batch skips such an episode and goes on.
+
+### 14.3 Registry and status events
+
+- `GET /api/v2/downloads?limit=100[&cursor=]` → `{ items: [DownloadEntry], page: { has_more, next_cursor? } }`, newest
+  first; the cursor goes back as `cursor` until `has_more` is false. An entry's members Granary reads: `id`, `content_id`,
+  `episode_id`, `media_file_id`, `file_size` (int64; an estimate while preparing), `status` (`preparing`, `ready`,
+  `downloading`, `completed`, `failed`, `revoked`, `cancelled`; `DownloadStatuses`), `quality`, `delivery_format`,
+  `revision`, and on listed preparing entries `preparation { state, queue_position?, progress? (0 to 1),
+  remaining_seconds? }`.
+- Granary reads the whole registry (every page) when a profile's downloads become the active ones, every 10 s while one of
+  them is preparing, and after the file route or a status report refused a download. It judges only the downloads it kept
+  before it started reading, and an entry missing only after every page was read. What it does with each status:
+  `preparing` → the download waits as Preparing, with `preparation.progress`; `ready`, `downloading`, `completed` → a
+  preparing download is queued, with `file_size` as its exact length; a larger `revision` → the media, the part and the
+  manifest are deleted and fetched again, unless that revision is `revoked`, `failed` or `cancelled`; `revoked` → 14.6;
+  `cancelled` → kept if complete, else failed, both no longer available; `failed` → a download under way fails. Missing from
+  the whole registry: a download still to fetch is no longer available, a completed one stays. A registry that cannot be
+  read changes nothing (a read after a refusal is tried again after 1, 2, 4 ... 60 s); a cursor that comes back ends the
+  read as not whole.
+- `PATCH /api/v2/downloads/{id}` `{ status: "downloading"|"completed", updated_at, revision }` → `200` `DownloadEntry`. The
+  time is taken when the PC's state changes and a retry sends the same event; an older or equal event leaves the entry as
+  it is. A time more than 2 minutes ahead of the server's is 400, another revision 409, `downloading` for a preparing entry
+  404. Granary sends `downloading` before a transfer asks for the file and `completed` once the file is whole and named. A
+  401, 408, 429, 5xx or no answer keeps the event, sent again as it was after the retry delays; any other client error drops
+  it, and a 409 also reads the registry again.
+
+### 14.4 Media file
+
+- `GET /api/v2/downloads/{id}/file` with `Accept: */*` and `Cache-Control: no-store`; a resume adds `Range: bytes=<offset>-`
+  and `If-Range` with the validator the bytes on disk came with: one strong `ETag`, or `Last-Modified` as an HTTP date
+  (`ByteRange.IsValidator`; a weak or wildcard tag is never sent, and a range with one is refused unsent). Answers: `206` with
+  `Content-Range: bytes <from>-<to>/<total>`; `200` with the whole file (no range, or the file changed: the validator did not
+  match); `416`; `409 prepared_file_expired` (call 14.6's `/prepare`); `409 conflict` (revoked or not servable); `404`
+  (missing, or outside the profile's access). A failure after the body started ends the stream without JSON. Offsets and
+  sizes are int64 end to end (`ByteRange`), for files over 4 GB.
+- What the queue does with an answer: `200`/`206` write the part; `409 prepared_file_expired` → `/prepare` (14.6); another
+  `409` or `404` → the download fails and the registry is read again (14.3); `429`/`503` → asked again after `Retry-After`
+  (1 s to 5 minutes; without one, or below a second, after 1, 2, 4 ... 60 s, longer with each busy answer in a row); `401`
+  or `403 profile_verification_required` → the profile's downloads wait for the sign-in; `5xx`, no answer or a body that
+  broke off → asked again after 1, 2, 4 ... 60 s with `Range` from the bytes kept.
+- Not used: `GET /api/v2/downloads/{id}/file-proxy`, which can answer `307` to a proxy node when the capability has
+  `proxy_delivery`. Silo's apps take the file from `/file` only (Android `DownloadWorker.kt`, Apple
+  `APIv2Client+Downloads.swift`), and so does Granary: on the local network that request takes the local route (9.7)
+  straight to the server, where a proxy node's address would not.
+
+### 14.5 Manifest and assets
+
+- `GET /api/v2/downloads/{id}/manifest` → the `OfflineManifest`, at most 1 MiB (413 above; Granary refuses a longer answer
+  the same way) and kept as sent. One that brings no byte for 60 s is given up (`DownloadsApi.ManifestStallTimeout`). Members
+  Granary reads: `download_id`, `content_id`, `episode_id`, `type`, `revision`,
+  `media_file_id` (a string), `file_size`, `title` (the episode's own for an episode), `year`, `overview`, `series_id`,
+  `series_title`, `season_number`, `episode_number`, `poster_thumbhash`, `backdrop_thumbhash`, `series_poster_thumbhash`,
+  `artwork_urls { poster, backdrop, logo, series_poster }`, `container`, `duration_seconds`, `selected_audio_track_index`,
+  `audio_tracks [{ index, title, language, codec, layout, channels, default }]`, `chapters [{ index, title, start_seconds,
+  end_seconds }]`, `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
+  hearing_impaired, external, fetch_url, file_size, revision }]`, `integrity { expected_bytes, media_file_hash }` and
+  `manifest_version` (3).
+- `GET /api/v2/downloads/{id}/artwork/{kind}` (`poster`, `backdrop`, `logo`, `series_poster`) and
+  `GET /api/v2/downloads/{id}/subtitles/{ref}` (`external:N`, `embedded:N`, `downloaded:ID`): whole objects, no ranges. A
+  subtitle has a strong `ETag`; sent back as `If-None-Match`, an unchanged one answers 304. Artwork answers
+  `503 dependency_unavailable` with `Retry-After: 5` when its store fails.
+- Granary asks for an asset only when its URL is this download's artwork or subtitle (`DownloadsApi.AssetPath`): the path
+  from `api/v2/downloads/{id}/` on, rebuilt under the saved address, so a reverse proxy's prefix stays; absolute URLs, dot
+  segments, encoded slashes and queries are refused, since these requests carry the profile's credentials.
+- When: the manifest before a download's first transfer (its `integrity.expected_bytes` is the file's exact length, its
+  `container` names the finished file), then the `poster`, `backdrop` and `series_poster` artwork and every subtitle. A
+  manifest that does not come ends the attempt as the file route's answer would (14.4); artwork or a subtitle that does not
+  come (404, 503, a stall of 60 s, over 512 MiB) is left out. A completed download's manifest is read again at the first
+  activation a day after the last read, with the artwork the PC lacks and the subtitles whose `revision` changed. Granary
+  does not send `If-None-Match` for subtitles: the manifest's `revision` tells it which changed.
+
+### 14.6 Prepare again, revoked, delete
+
+- `POST /api/v2/downloads/{id}/prepare` (no body; capability `prepare_again`) → `200` `DownloadEntry`: `preparing` again with
+  the same revision when its prepared file had expired, else unchanged. 409 `conflict` for a revoked, failed or cancelled
+  entry, 429 at the account's cap, 501 when transcoding is now off. Granary asks once for each `prepared_file_expired`
+  answer and waits as Preparing until the registry says ready; 429 or 503 asks the file again after `Retry-After`, 409
+  fails the download and reads the registry, another client error fails it.
+- A `revoked` entry was revoked by an administrator: with `revoked_removes_local`, the PC deletes its copy, then the entry.
+  Without that flag, or when the capability could not be read, the copy stays playable, is shown as no longer available
+  and is never fetched again.
+- `DELETE /api/v2/downloads/{id}` → `204`; `404` when the entry is missing or not this profile's and PC's, which
+  `DownloadsApi.DeleteAsync` takes as done. The server deletes nothing on the PC: the client removes its own files. A delete
+  that cannot be sent is kept (`pending_deletes`) and sent while its profile is the active one; a client error drops it.
+  Signing out of a server or removing it sends the active profile's deletes there first, for at most 10 s, and keeps none
+  after: the files go all the same, and other profiles' entries stay on the server.
+
+### 14.7 Offline progress
+
+A download played from this PC opens no playback session (docs/architecture.md, "Playing a download"), so its progress
+goes through the two operations the server has for it (`silo-server/docs/downloads-api.md`, section 7;
+`silo-server/internal/apiv2/progress.go`, `internal/api/handlers/progress.go`). `Api/Downloads/ProgressSyncApi`; both
+are sent as the account and the profile the progress belongs to, and not at all once another account or profile is
+signed in on that server (`SiloRequestOptions.Account`, `.Profile`). Silo's Apple app uses them the same way; the Android app sends no
+progress of a download.
+
+- `POST /api/v2/sync/progress` (profile) with `{ "items": [{ "media_item_id", "position_ms", "duration_ms", "updated_at" }] }`,
+  1 to 100 items, no `media_item_id` twice → `200 { "items": [{ "index", "media_item_id", "status" }], "summary" }`, one
+  result for each item by its `index`; `status` is `success` or `failure`, with a `failure` problem object
+  (`{ "type", "title", "status", "detail" }`): status `404` for a title the profile cannot see or that is gone, `500` for
+  a write the server's store failed on.
+  - `media_item_id` is the film's or the episode's own id. Positions and lengths are whole milliseconds; `duration_ms` is
+    0 when unknown. `updated_at` is when the PC recorded the position (RFC 3339; Granary sends whole milliseconds with the
+    offset, `2026-10-01T12:00:00+00:00`). The server replaces one more than 2 minutes ahead of its clock with its own
+    time, and answers `422` for one it cannot read.
+  - The server keeps the later of an item's `updated_at` and what it has (last write wins), so a position recorded
+    offline never moves a newer one from another device. An older or equal one is a `success` that changes nothing
+    (`SetProgressIfNewer`: the row is written only `WHERE EXCLUDED.event_at > user_watch_progress.event_at`, and no
+    watch-history row is made on this path). So sending the same item twice is harmless, and Granary sends again
+    whenever it is not sure the first send was taken. The server lists the operation as not retry-safe because an item
+    without `updated_at` is merged by position; Granary never sends one.
+  - A server on SQLite compares whole seconds: `userdb/progress.go` formats the time as RFC 3339 without a fraction and
+    compares that text, so a position of the second the row already has is "equal" and changes nothing. A server on
+    Postgres compares the full time. Granary therefore stamps a title's next position in a later whole second than the
+    last time it knows for the title (architecture.md, "Offline progress").
+  - The comparison is between clocks: this PC's for what it recorded, the other device's or the server's for theirs. A
+    PC whose clock is ahead (by up to the 2 minutes the server allows) can beat a position another device made a little
+    later, and one whose clock is behind can lose to an older one. Granary does not correct for it; Silo's Apple app and
+    the server do not either.
+  - The server decides completion with its own threshold (`playback.watched_threshold`, 90 by default): a position past
+    it marks the title watched and stores its position as 0. Watched is a latch: a later, lower position does not unwatch.
+    A position below `playback.min_resume_threshold` of the length is not stored (also a `success`).
+  - Granary does not send `force_overwrite` or `client_ref`.
+- `GET /api/v2/progress?limit=200[&cursor=]` (profile) → `{ "items": [{ "media_item_id", "position_seconds",
+  "duration_seconds", "completed", "updated_at" }], "page": { "has_more", "next_cursor" } }`, newest change first; `limit`
+  is at most 200. There is no "changed since": the whole listing is read, `cursor` only continues it, and a cursor is not
+  kept for another read. The listing is live, so a row missing from one read is no proof that it was deleted; Granary
+  takes nothing from a missing row. It does not use the `status` and `library_id` filters or the progress bootstrap
+  snapshots.
+- What Granary sends and when is in docs/architecture.md, "Offline progress". How each answer of the send is taken:
+
+  | Answer | The entries |
+  |---|---|
+  | `200` with a result for each item: `success` | leave the queue |
+  | `200`: `failure` with status `404` | leave the queue, with a line in the log: the profile cannot see the title any more |
+  | `200`: any other `failure` (`500`) | wait, and go with the next send; the others of the batch leave |
+  | `200` that cannot be read, names another number of items, or other items | wait, and go with the next send |
+  | `400`, `422` for a request with one entry | is dropped, with a line in the log: the entry itself is wrong |
+  | `400`, `422` for a request with several | are sent again in halves, and those in halves, until an entry is refused by itself; the others arrive |
+  | every other status (`401`, `403`, `404`, `405`, `408`, `409`, `412`, `429`, every `5xx`) | wait, and go with the next send |
+  | no answer: no connection, a connection that broke off, a timeout; a profile switched to meanwhile | wait, and go with the next send |
+
+  The server validates a request as a whole (`validateBulkIdentity` and the body's schema): one item it cannot read
+  fails all hundred. So a refused batch says nothing about each entry, and only halving tells which is wrong; a run
+  spends at most 32 requests on it (`OfflineProgressSync.MaxSplitSends`) and leaves the rest for the next. Nothing is
+  dropped because its fate is unknown: a position whose request may or may not have arrived is sent again,
+  which changes nothing on a server that has it. A read of the server's progress also settles it: a waiting position
+  whose title the server lists with an `updated_at` at or after the position's own is known to be there and leaves
+  unsent. A `404` or `405` for the whole request is an older server without the route, a proxy or a maintenance page,
+  not a verdict on the positions. The Apple app holds an entry whose send got no answer and lets it go after its next
+  read of the server's progress, whether the server has it or not, and drops the entries on every status outside its
+  wait list; Granary keeps them, since the server's write allows the second send.
 ## 15. Control from Silo's phone apps (SiloCast)
 
 **This is not a server endpoint.** It is a protocol on the local network between Silo's own clients, which the Android
@@ -3224,6 +3435,59 @@ is checked afresh, in this order:
   status, a wait or mpv's error text in Granary's own wording). Any other text, such as a server's terminal message or
   an administrator's stop message as they wrote them, goes out as "This title could not be played on this PC." (*new*). A player that showed it and closed before it loaded,
   and 30 seconds without it, end it too (silo-roku's `CONTROL_LAUNCH_WAIT_MS`).
+
+### 14.8 Series monitoring
+
+A monitor keeps a series downloaded on this PC (`silo-server/docs/downloads-api.md`, 8, 9.2 and 11.8); it belongs to the
+account, the profile and the PC (`X-Silo-Device-Id`). The server has no worker of its own: the client syncs each monitor,
+which registers the episodes it takes, and then takes those new entries from the registry (14.3). Every call goes through
+`Api/Downloads/DownloadSubscriptionsApi`, bound to its profile, as Silo's Apple app calls them
+(`APIv2Client+DownloadSubscriptions.swift`), and to its account as well (`SiloRequestOptions.Account`: profile ids need not
+differ between accounts): every list, sync, read, create, change and stop.
+Only the Apple app monitors series; the Android app has unused plumbing, the web none.
+
+- Capability (14.1): `series_monitoring` (monitors can be made), `monitoring_modes` (the modes a new monitor may take:
+  `all`, `future`, `latest_season`, `specific_seasons`) and `monitor_quality` (a monitor keeps a `quality`; without it,
+  monitors download originals and the member is absent). Granary offers Monitor only when downloads are usable and
+  `series_monitoring` is set (`DownloadCapability.CanMonitorSeries`); a monitor that exists stays shown, so it can be stopped.
+- `GET /api/v2/downloads/subscriptions?limit=100[&cursor=]` → `{ items: [DownloadSubscription], page }`, newest first, paused
+  ones included. Every page is read before a monitor counts as gone; a cursor or a monitor that comes back, a page a cursor asked for
+  that says nothing of its paging, a page over the
+  limit, a monitor without `id`, `series_id` or `etag`, or more than 1000 pages makes the list not whole, and nothing is
+  taken from it. `GET .../subscriptions/{id}` → one, with its current `etag`.
+- `DownloadSubscription`: `id`, `series_id`, `mode`, `season_numbers` (int array), `target_season?` (`latest_season`'s
+  first season), `delete_watched`, `max_storage_bytes` (int64, 0 for no limit), `quality?`, `active` (false while paused),
+  `created_at`, `updated_at`, `etag` (the validator, quotes and all).
+- `POST /api/v2/downloads/subscriptions` with `{ series_id, mode, season_numbers? (only for specific_seasons), delete_watched,
+  max_storage_bytes, quality? (only with monitor_quality) }` → `200` monitor. When this PC already monitors the series, the
+  server answers with that monitor unchanged, so Granary then sends what differs as a `PATCH`. Never sent twice: after no
+  answer, a 409 or a 5xx, the list (above) tells whether it was made. A 422 (`validation_failed`) is a choice the server does
+  not take.
+- `PATCH /api/v2/downloads/subscriptions/{id}` with `If-Match: <etag>` and only what changes (a member left out stays; null
+  is refused) → `200` monitor with its new `etag`. A quality is sent only when it changes (the server checks the account's
+  transcode permission for any quality it gets), and so is the mode. `412` (the validator is stale) or `409` (the monitor
+  changed while the server applied the write): Granary reads the monitor again and says it changed, in the Apple app's words,
+  and sends nothing more; the viewer saves again over what they now see. The Apple app sends the same fields once more under
+  the new validator; Granary does not, as for every other write with a version (`AGENTS.md`). `404`: the monitor is gone.
+  `428` (no `If-Match`) cannot happen: every write sends one.
+- `DELETE /api/v2/downloads/subscriptions/{id}` with `If-Match` → `204`; `404` is gone already. The downloads it registered
+  stay, on the server and the PC. A `412` or `409` reads the validator again and deletes once more, as the Apple app does:
+  stopping does not depend on what changed.
+- `POST /api/v2/downloads/subscriptions/sync?limit=100[&cursor=]` with `{ subscription_id, etag }` (the `etag` read before the
+  first page, on every page) → `{ subscription_id, registered, examined, page: { has_more, next_cursor? } }`. Pages follow
+  `next_cursor` while `has_more`, also when `registered` is 0. A page that got no answer is sent again with the same body and
+  cursor, twice at most, a second and two seconds later; a repeated page skips what it registered already. `409`: the monitor
+  changed, so it is read again and the sync starts over under its new `etag`, twice at most. `404`: the monitor is gone, or
+  its series is no longer the profile's; a read of the monitor tells which. An answer that names another monitor is no
+  answer. Paused monitors register nothing and are not synced. A `delete_watched` monitor's sync passes over the episodes the
+  profile finished, and no sync registers an episode this PC deleted while the monitor existed (14.6's `DELETE`).
+- Monitor rows: the sync's entries are the registry's own (14.3): `content_id` the series, `episode_id` the episode, `status`
+  `ready`, or `preparing` for a bitrate `quality`. Granary takes every entry of a monitored series (`content_id` is one of the
+  profile's monitors' `series_id`) that it does not keep and has no `DELETE` waiting for, whose status is `preparing`, `ready`,
+  `downloading` or `completed`, with its manifest (14.5) for its title and numbers; it downloads as any other. The Apple app
+  takes every unknown entry; Granary only a monitored series', so an entry from elsewhere never starts downloading.
+- `max_storage_bytes` is the client's to keep (the server only roughly holds registration back): Granary starts no
+  episode of the series that would take its downloads past it, and deletes nothing for it.
 
 ## Appendix: where docs and code disagree
 

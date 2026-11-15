@@ -79,6 +79,7 @@ public sealed partial class PlayerPage : Page
         InitializeDock();
         InitializeNotices();
         InitializePartyPanel();
+        InitializeDiagnosis();
         ArrangeBarButtons();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {

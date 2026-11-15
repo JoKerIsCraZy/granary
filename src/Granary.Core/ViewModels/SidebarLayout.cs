@@ -40,6 +40,8 @@ public sealed partial class SidebarLayout : ObservableObject
         new("WatchParty", "Watch Party", SidebarSection.YourStuff, "WatchParty"),
         new("Collections", "Collections", SidebarSection.YourStuff, "Collections"),
         new("List:history", "History", SidebarSection.YourStuff, "List:history"),
+        // The active profile's downloads on this PC (AppRoute.Downloads); a profile that arranged its entries before it came has it last.
+        new("Downloads", "Downloads", SidebarSection.YourStuff, "Downloads"),
     ];
 
     private readonly string _filePath;

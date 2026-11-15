@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
+using Granary.Core.Downloads;
 using Granary.Core.Servers;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,8 @@ namespace Granary.Core.ViewModels.Settings;
 public sealed partial class DevicesViewModel
 {
     private const string SignOutNote = "A video already playing may continue until its next request. Saved device settings are kept.";
+
+    private const string SignOutFailed = "Couldn't sign out the session. Try again.";
 
     [RelayCommand]
     private async Task LoadMoreSessionsAsync()
@@ -40,23 +43,42 @@ public sealed partial class DevicesViewModel
 
     /// <summary>
     /// Signs a sign-in out after asking. Another one loses access on its next request; Granary's own signs Granary out
-    /// of the server, back to the sign-in screen, as the web's own does for its browser.
+    /// of the server, back to the sign-in screen, as the web's own does for its browser, and takes the account's downloads
+    /// on this PC along, which the question names. Whatever fails on the way, the server's refusal or this PC's own (the
+    /// question, its sign-in data, the downloads), the page says so and stays usable.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SignOutSessionAsync(SignedInSessionRow? row)
     {
-        if (row is null || row.IsBusy || await TargetAsync() is null || !Listed(row))
+        try
+        {
+            await AskAndSignOutAsync(row);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("A sign-in could not be signed out: {Failure}", ApiFailureText.Describe(ex));
+            Status = SignOutFailed;
+        }
+    }
+
+    // The question, then the sign-out; a failure other than a sign-in that is gone already is the command's to show.
+    private async Task AskAndSignOutAsync(SignedInSessionRow? row)
+    {
+        if (row is null || row.IsBusy || await TargetAsync() is not { } target || !Listed(row))
         {
             return;
         }
+        var (accountId, downloads) = row.IsCurrent ? await DownloadsOfAsync(target) : (null, "");
         bool asked = row.IsCurrent
             ? await _confirmation.AskAsync("Sign out this device?",
-                "You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n" + SignOutNote, "Sign out")
+                "You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n" + SignOutNote + downloads,
+                "Sign out")
             : await _confirmation.AskAsync($"Sign out {row.Name}?",
                 "This client will lose access on its next authenticated request. Its other sessions and password stay unchanged.\n\n" + SignOutNote,
                 "Sign out");
-        // The server or profile may have changed while the question was open.
-        if (!asked || await TargetAsync() is not { } server || !Listed(row))
+        // The server, profile or account may have changed while the question was open: its downloads were the ones asked about.
+        if (!asked || await TargetAsync() is not { } server || !Listed(row)
+            || (row.IsCurrent && _downloads is not null && await _downloads.AccountOfAsync(server.Id, CancellationToken.None) != accountId))
         {
             return;
         }
@@ -66,6 +88,16 @@ public sealed partial class DevicesViewModel
         {
             if (row.IsCurrent)
             {
+                // An account that is not known takes no downloads along: the question said they stay. The clear holds until
+                // the sign-out was tried; after one that failed, the account's new downloads run.
+                using var clear = _downloads is not null && accountId is not null
+                    ? await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None)
+                    : null;
+                // The downloads can take a while to go: an account signed in there meanwhile is not the one to sign out.
+                if (clear is not null && await _downloads!.AccountOfAsync(server.Id, CancellationToken.None) != accountId)
+                {
+                    return;
+                }
                 await _session.SignOutAsync(server.Id);
                 return;
             }
@@ -78,11 +110,6 @@ public sealed partial class DevicesViewModel
             // Already gone: signed out elsewhere, or expired.
             OtherSessions.Remove(row);
             Status = "Session signed out";
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning("A sign-in could not be signed out: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't sign out the session. Try again.";
         }
         finally
         {
@@ -221,6 +248,19 @@ public sealed partial class DevicesViewModel
         await ReloadForNowAsync();
         Status = "The server or profile changed. The lists were read again.";
         return null;
+    }
+
+    // The account signed in on this PC and what the question adds of its downloads here ("\n\n1 download (1.5 GB) on this PC
+    // is deleted with it.", or that they are kept when the account is not known); nothing without any.
+    private async Task<(string? AccountId, string Note)> DownloadsOfAsync(ServerEntry server)
+    {
+        if (_downloads is null)
+        {
+            return (null, "");
+        }
+        string? accountId = await _downloads.AccountOfAsync(server.Id, CancellationToken.None);
+        string? note = await _downloads.SignOutNoteAsync(server.Id, accountId, CancellationToken.None);
+        return (accountId, note is null ? "" : "\n\n" + note);
     }
 
     // A row from the lists as they are now, not one an earlier read left behind.

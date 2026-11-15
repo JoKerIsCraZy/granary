@@ -23,6 +23,17 @@ public sealed class WatchApi(SiloHttp http)
     }
 
     /// <summary>
+    /// As <see cref="GetWatchAsync"/>, for a title kept for account <paramref name="accountId"/>'s profile
+    /// <paramref name="profileId"/>, as a download is: it goes out only while the server still acts as that profile of that
+    /// account, else it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="contentId"/> is not an id.</exception>
+    public Task<WatchDetail> GetWatchAsAccountProfileAsync(Uri server, string accountId, string profileId, string contentId,
+        CancellationToken cancellationToken = default) =>
+        http.GetAsAccountProfileAsync(server, "api/v2/watch/" + SiloHttp.PathSegment(contentId, nameof(contentId)), accountId, profileId,
+            PlaybackJsonContext.Default.WatchDetail, cancellationToken);
+
+    /// <summary>
     /// The seek-bar previews of <paramref name="fileId"/> (docs/api-contract.md, 11.4), for a file whose
     /// <see cref="WatchFileVersion.TrickplayAvailable"/> is true; 404 <c>not_found</c> when it has none.
     /// </summary>

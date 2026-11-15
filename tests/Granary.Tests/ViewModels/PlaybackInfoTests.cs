@@ -214,4 +214,51 @@ public sealed class PlaybackInfoTests
     [InlineData("vp9", "VP9")]
     [InlineData(" ", "—")]
     public void Codecs_AreNamedAsOnTheWeb(string codec, string expected) => Assert.Equal(expected, PlaybackInfo.CodecLabel(codec));
+
+    [Fact]
+    public void ADownloadPlayedFromThisPC_SaysItIsALocalFile_AndShowsTheFileAsItsManifestDescribesIt()
+    {
+        var file = new PlaybackLocalFile("mkv", 8L << 30, "hevc", Hdr: true, "eac3", 6);
+
+        var sections = PlaybackInfo.Sections(null, new PlaybackStats(3840, 2160, 0, 0, "d3d11va"), 2560, 1440, file);
+
+        Assert.Equal(new Dictionary<string, string> { ["Player"] = "mpv", ["Play method"] = "Local file", ["Protocol"] = "file" }, Rows(sections, "Player"));
+        Assert.Equal("3840x2160", Rows(sections, "Video Info")["Video resolution"]);
+        // No server stream: nothing was planned, remuxed or transcoded.
+        Assert.DoesNotContain(sections, s => s.Title == "Playback Stream Info");
+        Assert.Equal(new Dictionary<string, string>
+        {
+            ["Container"] = "mkv",
+            ["Size"] = "8.0 GiB",
+            ["Video codec"] = "HEVC",
+            ["Video range type"] = "HDR",
+            ["Audio codec"] = "EAC3",
+            ["Audio channels"] = "6",
+        }, Rows(sections, "Current Source File"));
+    }
+
+    [Fact]
+    public void WhatADownloadsManifestDoesNotSay_ReadsAsNotKnown()
+    {
+        var sections = PlaybackInfo.Sections(null, PlaybackStats.None, 0, 0, new PlaybackLocalFile(null, 0, null, Hdr: false, null, 0));
+
+        Assert.Equal(new Dictionary<string, string>
+        {
+            ["Container"] = "—",
+            ["Size"] = "—",
+            ["Video codec"] = "—",
+            ["Video range type"] = "SDR",
+            ["Audio codec"] = "—",
+            ["Audio channels"] = "—",
+        }, Rows(sections, "Current Source File"));
+    }
+
+    [Fact]
+    public void AFilePlayedDirectly_HasNeitherAPlayMethodNorASourceFile()
+    {
+        var sections = PlaybackInfo.Sections(null, PlaybackStats.None, 0, 0);
+
+        Assert.Equal(new Dictionary<string, string> { ["Player"] = "mpv" }, Rows(sections, "Player"));
+        Assert.DoesNotContain(sections, s => s.Title == "Current Source File");
+    }
 }

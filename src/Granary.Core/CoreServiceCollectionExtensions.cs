@@ -6,6 +6,7 @@ using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Events;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
@@ -20,6 +21,7 @@ using Granary.Core.Api.Theme;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
@@ -117,6 +119,7 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
         AddPlayback(services);
+        AddDownloads(services);
         AddRealtimeEvents(services);
 
         if (OperatingSystem.IsWindows())
@@ -258,6 +261,8 @@ public static class CoreServiceCollectionExtensions
     // exits, as transient disposables resolved from the root provider would be.
     private static void AddPlayback(IServiceCollection services)
     {
+        services.AddSingleton(sp => new KeptPlaybackSettings(KeptPlaybackSettings.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<KeptPlaybackSettings>>(), sp.GetRequiredService<DownloadStore>()));
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
@@ -287,7 +292,9 @@ public static class CoreServiceCollectionExtensions
         // This device's audio delay, one for the app: Settings changes it, and the title that plays follows.
         services.AddSingleton<AudioDelay>();
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
-        services.AddTransient<IUpNextSource, UpNextSource>();
+        // The next episode: the server's, and without it the next one downloaded to this PC.
+        services.AddTransient<UpNextSource>();
+        services.AddTransient<IUpNextSource, DownloadUpNext>();
         // The Discord status's TMDB page and poster of each title, kept as long as the app runs.
         services.AddSingleton<TmdbTitleLookup>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
@@ -311,6 +318,9 @@ public static class CoreServiceCollectionExtensions
         // title preview's is. The stream and the indicator both follow it.
         services.AddSingleton(sp => new ActivityIndicatorSetting(ActivityIndicatorSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<ActivityIndicatorSetting>>()));
+        // The server answering again after it could not be reached: the stream, Retry and the downloads' capability say
+        // so, and the positions recorded offline go at once.
+        services.AddSingleton<ServerRecovery>();
         services.AddSingleton<RealtimeEvents>();
     }
 
@@ -326,6 +336,66 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ConnectionSpeedTest>();
         // The app puts the system's view of the network in first.
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
+    }
+
+    // Offline downloads (docs/api-contract.md, 14). Their files come from the server itself through SiloHttp, as Silo's apps
+    // take them: over the local route on the local network, never through a proxy node.
+    private static void AddDownloads(IServiceCollection services)
+    {
+        services.AddTransient<DownloadsApi>();
+        services.AddTransient<DownloadSubscriptionsApi>();
+        // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
+        services.AddSingleton<IDownloadPreferences>(sp =>
+            new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));
+        services.AddSingleton(sp => new DownloadStore(DownloadStore.DefaultIndexPath, sp.GetRequiredService<IDownloadPreferences>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<DownloadStore>>()));
+        // The app puts Windows' own count of free space in first, which also measures network shares.
+        services.TryAddSingleton<IDiskSpace, DriveInfoDiskSpace>();
+        services.AddTransient<DownloadTransfer>();
+        services.AddTransient<DownloadAssets>();
+        // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
+        services.AddSingleton<DownloadQueue>();
+        services.AddSingleton<DownloadsFeature>();
+        services.AddSingleton<PlayingDownloads>();
+        services.AddSingleton<DownloadManager>();
+        // Series monitors: their list for the queue's storage limits and the pages, and the runs that sync them with the server.
+        services.AddSingleton<MonitorBook>();
+        // The monitor writes the server has not taken yet (stops, and a create's choice), kept across starts.
+        services.AddSingleton(sp => new MonitorPendingFile(MonitorPendingFile.DefaultPath, sp.GetRequiredService<ILogger<MonitorPendingFile>>()));
+        services.AddSingleton<SeriesMonitors>();
+        // The airing calendar and the monitored series' titles and posters, for the Monitored list and the download dialog.
+        services.AddSingleton<ViewModels.Downloads.MonitorSchedule>();
+        // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
+        // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
+        services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();
+        services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
+            () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
+        services.AddSingleton<DownloadActions>();
+        // Every film's, episode's and season's card has Download in its menu; its dialog reads the title's files as it opens.
+        services.AddSingleton<DownloadOfferReader>();
+        services.AddSingleton<CardDownloads>();
+        // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
+        services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
+        // The downloads outside their page, for the app's whole run: the sidebar's count and the taskbar's bar; the app starts
+        // it. What finished or failed is said in the window, or as a Windows notification once the app registers its own
+        // (IAppNotifications; until then everything shows in the window).
+        services.AddSingleton<ViewModels.Downloads.DownloadActivity>();
+        services.TryAddSingleton<IAppNotifications, NoAppNotifications>();
+        services.AddSingleton<ViewModels.Downloads.DownloadNotices>();
+        // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
+        services.AddSingleton<DownloadSignOut>();
+        // What a download played from this PC recorded, kept in the data directory until the server took it, and the sync
+        // that sends it and reads the server's progress back; the app starts it.
+        services.AddTransient<ProgressSyncApi>();
+        services.AddSingleton(sp => new OfflineProgressQueue(OfflineProgressQueue.DefaultPath, sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<OfflineProgressQueue>>()));
+        services.AddSingleton<OfflineProgressSync>();
+        // A title whose download is on this PC plays from it: the player asks before it streams.
+        services.AddSingleton<Func<LocalMedia, LocalPlayback>>(sp => media => ActivatorUtilities.CreateInstance<LocalPlayback>(sp, media));
+        services.AddSingleton<DownloadPlaybacks>();
+        // A start that cannot reach the server opens the downloads: the shell asks it once, and the Downloads page shows
+        // its note and Retry.
+        services.AddSingleton<OfflineStart>();
     }
 
     // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,

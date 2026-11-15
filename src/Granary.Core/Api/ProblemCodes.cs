@@ -34,4 +34,10 @@ public static class ProblemCodes
     public const string IdempotencyConflict = "idempotency_conflict";
     public const string DeviceLoginExpired = "device_login_expired";
     public const string ClientUpgradeRequired = "client_upgrade_required";
+
+    /// <summary>409 on a download's file: the server cleaned up its prepared copy. Ask <c>/prepare</c> once, then wait for <c>ready</c>.</summary>
+    public const string PreparedFileExpired = "prepared_file_expired";
+
+    /// <summary>501: the server cannot deliver what was asked, such as a download quality it cannot prepare.</summary>
+    public const string CapabilityUnsupported = "capability_unsupported";
 }

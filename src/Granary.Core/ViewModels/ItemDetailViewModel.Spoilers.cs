@@ -319,6 +319,8 @@ public sealed partial class ItemDetailViewModel
             }
             ShowPlayAction();
             ShowOverview();
+            // The episodes read again are the ones the Download items offer and follow.
+            ShowDownloads();
             StartNextAiring(server, generation, CancellationToken.None);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

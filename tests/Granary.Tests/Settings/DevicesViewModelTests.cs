@@ -3,9 +3,12 @@ using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
+using Granary.Tests.Downloads;
 using Granary.Tests.Fakes;
 using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
@@ -36,8 +39,8 @@ public sealed class DevicesViewModelTests
         Account = new Account("1", "elena", "", "user", [], true, false, null),
     };
 
-    private DevicesViewModel Page() => new(_session, new DevicesApi(_silo.Http), new SettingsApi(_silo.Http), new ProfilesApi(_silo.Http),
-        Identity, _confirm, new ImmediateDispatcher(), _time, new LogSink().For<DevicesViewModel>());
+    private DevicesViewModel Page(DownloadSignOut? downloads = null) => new(_session, new DevicesApi(_silo.Http), new SettingsApi(_silo.Http),
+        new ProfilesApi(_silo.Http), Identity, _confirm, new ImmediateDispatcher(), _time, new LogSink().For<DevicesViewModel>(), downloads);
 
     private static readonly Uri OtherBase = new("https://other.example/silo");
 
@@ -208,6 +211,35 @@ public sealed class DevicesViewModelTests
     }
 
     [Fact]
+    public async Task ASignOutThatFailsOnThisPC_SaysSo_AndThePageStaysUsable()
+    {
+        Everything();
+        var page = Page();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        var current = page.CurrentSession!;
+        _session.FailWith = new InvalidOperationException("secret detail");
+
+        await page.SignOutSessionCommand.ExecuteAsync(current);
+
+        Assert.Equal("Couldn't sign out the session. Try again.", page.Status);
+        Assert.False(current.IsBusy);
+    }
+
+    [Fact]
+    public async Task AQuestionThatCannotBeShown_SaysSo_AndSignsNothingOut()
+    {
+        Everything();
+        var page = Page();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        _confirm.WhileAsking = () => throw new InvalidOperationException("secret detail");
+
+        await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+
+        Assert.Equal("Couldn't sign out the session. Try again.", page.Status);
+        Assert.Empty(_session.Calls);
+    }
+
+    [Fact]
     public async Task SigningOutThisDevice_SignsGranaryOutOfTheServer()
     {
         Everything();
@@ -219,6 +251,64 @@ public sealed class DevicesViewModelTests
         Assert.Equal("Sign out this device?", Assert.Single(_confirm.Asked).Title);
         Assert.Contains("sign-out:srv1", _session.Calls);
         Assert.Empty(_silo.SentTo(HttpMethod.Delete, "api/v2/auth/sessions/s1"));
+    }
+
+    [Fact]
+    public async Task SigningOutThisDevice_NamesItsDownloads_AndTheServerHearsTheirDeletesFirst()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Everything();
+        await using var downloads = new DownloadHarness();
+        var kept = await downloads.AddAsync("dl_1", DownloadState.Completed);
+        await File.WriteAllBytesAsync(kept.PartPath, new byte[1536 * 1024], ct);
+        int callsAtDelete = -1;
+        _silo.On(HttpMethod.Delete, "api/v2/downloads/dl_1", () =>
+        {
+            callsAtDelete = _session.Calls.Count;
+            return ScriptedSilo.NoContent()();
+        });
+        var credentials = new CredentialStore(new InMemorySecretStore(), downloads.Logs.For<CredentialStore>());
+        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, _time), _session,
+            credentials, _confirm, _time, downloads.Logs.For<DownloadSignOut>());
+        var page = Page(signOut);
+        await page.LoadAsync(ct);
+
+        await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+        await downloads.Store.FolderWork;
+
+        Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
+            + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"
+            + "1 download (1.5 MB) on this PC is deleted with it.", Assert.Single(_confirm.Asked).Message);
+        Assert.Equal(0, callsAtDelete);
+        Assert.False(Directory.Exists(kept.Folder));
+        Assert.Equal(["sign-out:srv1"], _session.Calls);
+    }
+
+    [Fact]
+    public async Task SigningOutThisDevice_ForAnAccountNotKnown_KeepsTheDownloads_AndSaysSo()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Everything();
+        await using var downloads = new DownloadHarness();
+        // Account 1's, kept from a sign-in that expired; this sign-in's account the server never named.
+        var kept = await downloads.AddAsync("dl_1", DownloadState.Completed);
+        _session.Account = null;
+        var credentials = new CredentialStore(new InMemorySecretStore(), downloads.Logs.For<CredentialStore>());
+        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, _time), _session,
+            credentials, _confirm, _time, downloads.Logs.For<DownloadSignOut>());
+        var page = Page(signOut);
+        await page.LoadAsync(ct);
+
+        await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+        await downloads.Store.FolderWork;
+
+        Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
+            + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"
+            + "Downloads on this PC are kept.", Assert.Single(_confirm.Asked).Message);
+        Assert.Single(downloads.Store.All);
+        Assert.True(Directory.Exists(kept.Folder));
+        Assert.Empty(_silo.SentTo(HttpMethod.Delete, "api/v2/downloads/dl_1"));
+        Assert.Equal(["sign-out:srv1"], _session.Calls);
     }
 
     [Fact]

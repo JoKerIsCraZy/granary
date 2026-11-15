@@ -5,13 +5,15 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Servers;
 
 namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// The saved servers (docs/api-contract.md, 6.5): switch, sign out, remove, add. The shell navigates
-/// when the session changes, so the commands here only ask the session manager and the registry.
+/// when the session changes, so the commands here only ask the session manager and the registry. With
+/// <see cref="DownloadSignOut"/>, signing out and removing take the server's downloads along.
 /// </summary>
 public sealed partial class ServersViewModel : ObservableObject, IDisposable
 {
@@ -19,14 +21,17 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
     private readonly ISessionManager _session;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
+    private readonly DownloadSignOut? _downloads;
     private bool _disposed;
 
-    public ServersViewModel(IServerRegistry registry, ISessionManager session, INavigationService navigation, IUiDispatcher dispatcher)
+    public ServersViewModel(IServerRegistry registry, ISessionManager session, INavigationService navigation, IUiDispatcher dispatcher,
+        DownloadSignOut? downloads = null)
     {
         _registry = registry;
         _session = session;
         _navigation = navigation;
         _dispatcher = dispatcher;
+        _downloads = downloads;
         _registry.Changed += OnChanged;
         _session.Changed += OnChanged;
         Refresh();
@@ -51,21 +56,35 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
         return "";
     });
 
+    /// <summary>Signs out of a server; when its account has downloads on this PC, after asking, and they go first.</summary>
     [RelayCommand]
     private Task SignOutAsync(ServerItemViewModel? server) => RunAsync(server, async s =>
     {
-        await _session.SignOutAsync(s.Id);
+        if (_downloads is not null && _registry.Find(s.Id) is { } entry)
+        {
+            if (!await _downloads.SignOutAsync(entry, CancellationToken.None))
+            {
+                return "";
+            }
+        }
+        else
+        {
+            await _session.SignOutAsync(s.Id);
+        }
         return $"Signed out of {s.Name}.";
     });
 
     /// <summary>
     /// Signs out, then forgets the server. A server that cannot be reached is still removed, otherwise a
     /// server that is gone for good could never be removed. When the active server is removed, the
-    /// registry picks the most recently used remaining one, and the session follows it.
+    /// registry picks the most recently used remaining one, and the session follows it. Every account's
+    /// downloads there go first; the app asks before it runs this.
     /// </summary>
     [RelayCommand]
     private Task RemoveAsync(ServerItemViewModel? server) => RunAsync(server, async s =>
     {
+        // Until the server is gone, nothing is kept or started for its accounts.
+        using var clear = _downloads is null ? null : await _downloads.ClearAsync(s.Id, null, CancellationToken.None);
         bool signedOut = true;
         try
         {

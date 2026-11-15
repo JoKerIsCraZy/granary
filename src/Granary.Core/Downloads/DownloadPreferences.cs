@@ -1,0 +1,353 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Granary.Core.Api.Downloads;
+using Granary.Core.IO;
+using Microsoft.Extensions.Logging;
+
+namespace Granary.Core.Downloads;
+
+/// <summary>This PC's download settings (Settings → Downloads): about its drives and connections, so they stay with the PC.</summary>
+public interface IDownloadPreferences
+{
+    /// <summary>Where new downloads go; downloads already there stay where they are.</summary>
+    string Folder { get; }
+
+    /// <summary>Downloads run on a metered connection, such as a phone's hotspot; off by default.</summary>
+    bool DownloadsOnMetered { get; }
+
+    /// <summary>The preset the download dialog starts on, when the server offers it; <c>original</c> by default.</summary>
+    string DefaultQuality { get; }
+
+    /// <summary>
+    /// Keep watched downloads: the Downloads page does not suggest deleting them to free up space. Off by default, as in both of
+    /// Silo's apps; the server's settings contract has it as <c>downloads.keep_watched</c>, kept on the client.
+    /// </summary>
+    bool KeepWatched { get; }
+
+    /// <summary>
+    /// Granary says when downloads finish or fail: a notice in its window while it is in front, a Windows notification while
+    /// it is not. On by default.
+    /// </summary>
+    bool NotifyWhenFinished { get; }
+
+    /// <summary>
+    /// How many downloads come at once, 1 to 4: two by default, as Silo's Apple app has it (its Simultaneous Downloads), which
+    /// keeps a connection busy while each file, and a season's first episode, still finishes soon.
+    /// </summary>
+    int SimultaneousDownloads { get; }
+
+    /// <summary>
+    /// Granary's own limit for what downloads take on this PC, in GB (GiB); 0 for none, the default. The download dialog does
+    /// not start what would pass it, and a monitored series' episodes wait at it; nothing is deleted for it.
+    /// </summary>
+    int StorageLimitGb { get; }
+
+    /// <summary>
+    /// Monitoring Defaults, as Silo's Apple app has them: whether a new monitor starts with Delete after watching (off by
+    /// default). They only fill in the download dialog's Monitor; each monitor keeps its own.
+    /// </summary>
+    bool DefaultDeleteWatched { get; }
+
+    /// <summary>Monitoring Defaults: the storage limit a new monitor starts with, in GB (GiB), 0 to 1000 in steps of 5; 0, the default, is none.</summary>
+    int DefaultMonitorLimitGb { get; }
+
+    /// <summary>Raised on the caller's thread after any of them changed.</summary>
+    event EventHandler? Changed;
+
+    /// <summary>The latest save: done once it is on disk, or failed and logged.</summary>
+    Task LatestSave { get; }
+
+    Task SetFolderAsync(string folder);
+
+    Task SetDownloadsOnMeteredAsync(bool allowed);
+
+    Task SetDefaultQualityAsync(string quality);
+
+    Task SetKeepWatchedAsync(bool keep);
+
+    Task SetNotifyWhenFinishedAsync(bool notify);
+
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is outside 1 to 4.</exception>
+    Task SetSimultaneousDownloadsAsync(int count);
+
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="gigabytes"/> is outside 0 to <see cref="DownloadPreferenceLimits.MaxStorageLimitGb"/>.</exception>
+    Task SetStorageLimitGbAsync(int gigabytes);
+
+    Task SetDefaultDeleteWatchedAsync(bool delete);
+
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="gigabytes"/> is outside 0 to <see cref="DownloadPreferenceLimits.MaxMonitorLimitGb"/>.</exception>
+    Task SetDefaultMonitorLimitGbAsync(int gigabytes);
+}
+
+/// <summary>The ranges of this PC's download settings, as Silo's Apple app has them (<c>DownloadSettings.swift</c>).</summary>
+public static class DownloadPreferenceLimits
+{
+    public const int MinSimultaneous = 1;
+
+    public const int MaxSimultaneous = 4;
+
+    public const int DefaultSimultaneous = 2;
+
+    /// <summary>The highest storage limit for downloads the slider offers, in GB.</summary>
+    public const int MaxStorageLimitGb = 4000;
+
+    /// <summary>The highest storage limit a new monitor can start with, in GB, as the Apple app's stepper.</summary>
+    public const int MaxMonitorLimitGb = 1000;
+
+    /// <summary>The Apple app's stepper for that limit goes in fives.</summary>
+    public const int MonitorLimitStepGb = 5;
+
+    /// <summary>A gigabyte as the limits count it, and as the apps' storage limits do: 2^30 bytes.</summary>
+    public const long BytesPerGb = 1L << 30;
+}
+
+/// <summary>
+/// <see cref="IDownloadPreferences"/> in <c>download-settings.json</c> in the data directory
+/// (<c>{ "folder": "D:\\Granary", "downloads_on_metered": true, "default_quality": "10mbps", "keep_watched": true,
+/// "notify_when_finished": false, "simultaneous_downloads": 3, "storage_limit_gb": 500,
+/// "default_delete_watched": true, "default_monitor_limit_gb": 25 }</c>). Without the file, or with one that cannot be read,
+/// downloads go to <see cref="DownloadPaths.DefaultRoot"/>, wait on metered connections, start on Original, are suggested
+/// for deletion once watched, are said when they finish, come two at a time and have no storage limit, and a new monitor keeps
+/// watched episodes and has no storage limit; a value it does not know, or one a file from
+/// before its setting lacks, is the default, and a number outside its range is held to it. One that cannot be written is logged, and the choice still holds for this run. Files are written off the caller's
+/// thread, which is the UI's.
+/// </summary>
+public sealed class JsonDownloadPreferences : IDownloadPreferences
+{
+    private readonly string _filePath;
+    private readonly ILogger<JsonDownloadPreferences> _logger;
+
+    // Each save runs after the one before it on the thread pool, writing the choices as they are when its turn comes, so
+    // the last one written is the latest and the latest save ends after every earlier one.
+    private readonly Lock _saves = new();
+    private volatile string _folder;
+    private volatile bool _downloadsOnMetered;
+    private volatile string _defaultQuality;
+    private volatile bool _keepWatched;
+    private volatile bool _notifyWhenFinished;
+    private volatile int _simultaneousDownloads;
+    private volatile int _storageLimitGb;
+    private volatile bool _defaultDeleteWatched;
+    private volatile int _defaultMonitorLimitGb;
+    private Task _latestSave = Task.CompletedTask;
+
+    public JsonDownloadPreferences(string filePath, ILogger<JsonDownloadPreferences> logger)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        _filePath = Path.GetFullPath(filePath);
+        _logger = logger;
+        var file = Load();
+        _folder = FolderOf(file?.Folder);
+        _downloadsOnMetered = file?.DownloadsOnMetered == true;
+        _defaultQuality = file?.DefaultQuality is { } quality && DownloadQualities.Ladder.Contains(quality, StringComparer.Ordinal)
+            ? quality
+            : DownloadQualities.Original;
+        _keepWatched = file?.KeepWatched == true;
+        // Absent from a file written before the setting: on.
+        _notifyWhenFinished = file?.NotifyWhenFinished != false;
+        _simultaneousDownloads = Math.Clamp(file?.SimultaneousDownloads ?? DownloadPreferenceLimits.DefaultSimultaneous,
+            DownloadPreferenceLimits.MinSimultaneous, DownloadPreferenceLimits.MaxSimultaneous);
+        _storageLimitGb = Math.Clamp(file?.StorageLimitGb ?? 0, 0, DownloadPreferenceLimits.MaxStorageLimitGb);
+        _defaultDeleteWatched = file?.DefaultDeleteWatched == true;
+        _defaultMonitorLimitGb = Math.Clamp(file?.DefaultMonitorLimitGb ?? 0, 0, DownloadPreferenceLimits.MaxMonitorLimitGb);
+    }
+
+    public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "download-settings.json");
+
+    public string Folder => _folder;
+
+    public bool DownloadsOnMetered => _downloadsOnMetered;
+
+    public string DefaultQuality => _defaultQuality;
+
+    public bool KeepWatched => _keepWatched;
+
+    public bool NotifyWhenFinished => _notifyWhenFinished;
+
+    public int SimultaneousDownloads => _simultaneousDownloads;
+
+    public int StorageLimitGb => _storageLimitGb;
+
+    public bool DefaultDeleteWatched => _defaultDeleteWatched;
+
+    public int DefaultMonitorLimitGb => _defaultMonitorLimitGb;
+
+    public event EventHandler? Changed;
+
+    public Task LatestSave
+    {
+        get
+        {
+            lock (_saves)
+            {
+                return _latestSave;
+            }
+        }
+    }
+
+    /// <exception cref="ArgumentException">
+    /// <paramref name="folder"/> is not a full path to a folder: a relative path, a drive or a share's root (Granary's folders
+    /// and the look for them belong in a folder of their own), or a path Windows cannot have, such as <c>C:\a:b</c>.
+    /// </exception>
+    public Task SetFolderAsync(string folder)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+        _folder = FullFolder(folder) ?? throw new ArgumentException("The downloads folder must be a full path to a folder below a drive's root.",
+            nameof(folder));
+        return SaveAndRaise();
+    }
+
+    // The full path of a folder downloads may go to, or null: not a relative path, a drive or share root, or a path with a
+    // colon past its drive (another stream of a file). Settings → Downloads asks it before it writes to a folder.
+    internal static string? FullFolder(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder))
+        {
+            return null;
+        }
+        try
+        {
+            string full = Path.GetFullPath(folder);
+            string root = Path.GetPathRoot(full) ?? "";
+            bool isRoot = string.Equals(full.TrimEnd('\\', '/'), root.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
+            return isRoot || full[root.Length..].Contains(':', StringComparison.Ordinal) ? null : full;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
+
+    public Task SetDownloadsOnMeteredAsync(bool allowed)
+    {
+        _downloadsOnMetered = allowed;
+        return SaveAndRaise();
+    }
+
+    /// <exception cref="ArgumentException"><paramref name="quality"/> is not one of <see cref="DownloadQualities.Ladder"/>.</exception>
+    public Task SetDefaultQualityAsync(string quality)
+    {
+        if (!DownloadQualities.Ladder.Contains(quality, StringComparer.Ordinal))
+        {
+            throw new ArgumentException($"'{quality}' is not a download quality.", nameof(quality));
+        }
+        _defaultQuality = quality;
+        return SaveAndRaise();
+    }
+
+    public Task SetKeepWatchedAsync(bool keep)
+    {
+        _keepWatched = keep;
+        return SaveAndRaise();
+    }
+
+    public Task SetNotifyWhenFinishedAsync(bool notify)
+    {
+        _notifyWhenFinished = notify;
+        return SaveAndRaise();
+    }
+
+    public Task SetSimultaneousDownloadsAsync(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, DownloadPreferenceLimits.MinSimultaneous);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, DownloadPreferenceLimits.MaxSimultaneous);
+        _simultaneousDownloads = count;
+        return SaveAndRaise();
+    }
+
+    public Task SetStorageLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxStorageLimitGb);
+        _storageLimitGb = gigabytes;
+        return SaveAndRaise();
+    }
+
+    public Task SetDefaultDeleteWatchedAsync(bool delete)
+    {
+        _defaultDeleteWatched = delete;
+        return SaveAndRaise();
+    }
+
+    public Task SetDefaultMonitorLimitGbAsync(int gigabytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(gigabytes);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(gigabytes, DownloadPreferenceLimits.MaxMonitorLimitGb);
+        _defaultMonitorLimitGb = gigabytes;
+        return SaveAndRaise();
+    }
+
+    private Task SaveAndRaise()
+    {
+        var save = QueueSave();
+        Changed?.Invoke(this, EventArgs.Empty);
+        return save;
+    }
+
+    // Save never throws, so the chain never breaks.
+    private Task QueueSave()
+    {
+        lock (_saves)
+        {
+            return _latestSave = _latestSave.ContinueWith(_ => Save(), CancellationToken.None,
+                TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+    }
+
+    private DownloadSettingsFile? Load()
+    {
+        try
+        {
+            return File.Exists(_filePath)
+                ? JsonSerializer.Deserialize(File.ReadAllText(_filePath), DownloadSettingsJsonContext.Default.DownloadSettingsFile)
+                : null;
+        }
+        catch (Exception ex)
+        {
+            // Whatever the file or the disk does, the app starts with the defaults.
+            _logger.LogWarning("This PC's download settings could not be read ({Failure}); the defaults apply", DownloadLog.Failure(ex));
+            return null;
+        }
+    }
+
+    // The file's folder when it is a full path that can be one; anything else is the default.
+    private string FolderOf(string? folder)
+    {
+        if (folder is null)
+        {
+            return DownloadPaths.DefaultRoot;
+        }
+        if (FullFolder(folder) is { } full)
+        {
+            return full;
+        }
+        _logger.LogWarning("The downloads folder in this PC's settings is no folder downloads may go to; the default applies");
+        return DownloadPaths.DefaultRoot;
+    }
+
+    private void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
+            var file = new DownloadSettingsFile(_folder, _downloadsOnMetered, _defaultQuality, _keepWatched, _notifyWhenFinished, _simultaneousDownloads,
+                _storageLimitGb, _defaultDeleteWatched, _defaultMonitorLimitGb);
+            byte[] json = JsonSerializer.SerializeToUtf8Bytes(file, DownloadSettingsJsonContext.Default.DownloadSettingsFile);
+            SafeFile.WriteWhole(_filePath, temp => File.WriteAllBytes(temp, json));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Never the setting's to fail: the choice holds for this run.
+            _logger.LogWarning("This PC's download settings could not be saved ({Failure})", DownloadLog.Failure(ex));
+        }
+    }
+}
+
+/// <summary><c>download-settings.json</c>.</summary>
+internal sealed record DownloadSettingsFile(string? Folder, bool? DownloadsOnMetered, string? DefaultQuality, bool? KeepWatched = null,
+    bool? NotifyWhenFinished = null, int? SimultaneousDownloads = null, int? StorageLimitGb = null,
+    bool? DefaultDeleteWatched = null, int? DefaultMonitorLimitGb = null);
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
+[JsonSerializable(typeof(DownloadSettingsFile))]
+internal sealed partial class DownloadSettingsJsonContext : JsonSerializerContext;

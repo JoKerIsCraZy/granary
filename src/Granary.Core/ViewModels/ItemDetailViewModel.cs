@@ -7,6 +7,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Servers;
@@ -68,6 +69,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly EpisodeSpans? _spans;
     private readonly BoxSetsApi? _boxSets;
     private readonly BoxSetLibraries? _boxSetLibraries;
+    private readonly DownloadActions? _downloads;
+    private readonly DownloadOfferReader? _downloadOffers;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -107,7 +110,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         SeriesAirings? airings = null,
         EpisodeSpans? spans = null,
         BoxSetsApi? boxSets = null,
-        BoxSetLibraries? boxSetLibraries = null)
+        BoxSetLibraries? boxSetLibraries = null,
+        DownloadActions? downloads = null,
+        DownloadOfferReader? downloadOffers = null)
     {
         _session = session;
         _catalog = catalog;
@@ -128,6 +133,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _spans = spans;
         _boxSets = boxSets;
         _boxSetLibraries = boxSetLibraries;
+        _downloads = downloads;
+        _downloadOffers = downloadOffers;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -272,6 +279,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     /// <summary>Movies and series have a favourite heart and a watchlist entry, as on the web.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsMoreMenu))]
     public partial bool CanFavorite { get; private set; }
 
     [ObservableProperty]
@@ -523,6 +531,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Credits = [];
         Similar = [];
         ResetBoxSet();
+        ShowDownloads();
     }
 
     private void Show(CatalogItemDetail item, Uri server, string? profileId, long ratingMark)
@@ -561,6 +570,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowRating(item, server, profileId, ratingMark);
         ShowPlayAction();
         ShowOverview();
+        ShowDownloads();
     }
 
     private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, string? profileId, ImageParameters images, int generation,
@@ -711,6 +721,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowEpisodeCards();
         EpisodesTotalText = $"{total ?? episodes.Count} total";
         ShowsNoEpisodes = episodes.Count == 0;
+        ShowDownloads();
     }
 
     // An unwatched episode's still blurred and its overview left out as the profile chose (ItemDetailViewModel.Spoilers.cs).

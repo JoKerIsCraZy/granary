@@ -181,6 +181,12 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     PlaybackStreamInfo? StreamInfo { get; }
 
+    /// <summary>
+    /// The file on this PC that plays in the stream's place, for the playback info; null for a stream. A download has no
+    /// <see cref="StreamInfo"/>: the server planned nothing for it.
+    /// </summary>
+    PlaybackLocalFile? LocalFile => null;
+
     /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>
     IReadOnlyList<AvailableQuality> Qualities { get; }
 
