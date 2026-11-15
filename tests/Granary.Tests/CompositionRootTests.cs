@@ -3,6 +3,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Controller;
 using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
@@ -63,6 +64,9 @@ public sealed class CompositionRootTests
         // The activity indicator's switch: one for its settings group, the events stream and the indicator.
         using var indicatorSwitch = ActivatorUtilities.CreateInstance<ActivityIndicatorSettingsViewModel>(provider);
         Assert.Same(provider.GetRequiredService<ActivityIndicatorSetting>(), provider.GetRequiredService<ActivityIndicatorSetting>());
+        // The Game controller switch: one for its settings group and the window that reads the pads.
+        using var controllerSwitch = ActivatorUtilities.CreateInstance<ControllerSettingsViewModel>(provider);
+        Assert.Same(provider.GetRequiredService<ControllerSetting>(), provider.GetRequiredService<ControllerSetting>());
         Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
         // One queue runs every transfer, and the pages and the title pages share one manager.
         Assert.Same(provider.GetRequiredService<DownloadQueue>(), provider.GetRequiredService<DownloadQueue>());

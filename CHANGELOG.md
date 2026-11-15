@@ -71,6 +71,12 @@ release's section is what its update says it changes (docs/release.md).
   still to air among More Episodes, as the season's page does.
 - **Next episode:** a series' page, and its seasons' and episodes', say when its next episode airs, such as "Episode 6
   on Thursday" or "Season 4 starts tomorrow".
+- **Game controller switch:** Settings → Navigation & Cards → Controller → Game controller turns controller input on
+  and off for this PC. Off, Granary reads no controller at all, so a pad or a wheel attached for other programs does
+  nothing in it; switching it on or off takes effect at once, without a restart.
+- **Close Granary with a controller or a remote:** Back on Home's entry in the sidebar, B on a controller or a remote's
+  Back, asks "Close Granary?". Close closes it as the title bar's Close does; Cancel has the focus, so a stray A or
+  Enter keeps it open, and B, Esc or the remote's Back do too.
 
 ### Changed
 
@@ -80,6 +86,9 @@ release's section is what its update says it changes (docs/release.md).
   next episode's "November 5, 2026", and a sign-in in Settings → Devices "11/5/2026, 8:00 AM". Sizes, rates and speeds
   follow the same format ("1,5 GB", "1,25×" on a German Windows), and a title's Info lists its size and bitrate as the
   web's media info does ("700.0 MB", "8,000 kbps").
+- The server's name or logo at the top of the sidebar opens Home, as on Silo's web.
+- A game controller now has to be switched on first, under Settings → Navigation & Cards → Controller → Game controller;
+  0.4.0 read it from the start.
 - A row's title on Home and in the libraries opens the same page as its Explore all, as on Silo's web: click "Recently
   Added Movies" itself.
 - A TMDB score shows TMDB's logo beside it, as on Silo's web; IMDb's and every other source's stay their names.

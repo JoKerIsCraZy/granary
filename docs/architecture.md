@@ -2461,9 +2461,18 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   for it, so the window hands it over also when the pad lay idle before, and a button found down when readings come
   back is no press.
   No PlayStation pad was at hand: `SonyPadTests` cover both orders, a real pad has not been tried.
+- **Off by default.** Settings → Navigation & Cards → Game controller (`ControllerSetting`, Core, in `controller.json`
+  in the data directory; missing or unreadable, it is off) decides whether any pad is read. Off, the timer below never
+  runs and `GamepadReader` is not asked for a reading; it still follows which pads Windows lists, which reads nothing of
+  them, so turning the switch on reads at once. A change goes through `FollowPads` with `forget`, as a pad that comes or
+  goes does: `PadInterpreter.Reset` and `CancelPadSeek`, so nothing held or repeating outlives it and a button held when
+  it comes back on is no press. A switch turned off by the pad's own A ends that reading's actions there. The window
+  still marks a pad's virtual keys handled (`OnPadKeyDown`) either way. The debug remote's pad (`--remote`,
+  `HoldDebugPad`) is no controller and works with the switch off, which a fresh data folder has; a real pad is merged
+  into its readings only while the switch is on.
 - **Reading costs nothing without a pad, and a tick with one at rest.** Windows tells of pads that come and go; a timer
-  runs only while there is one and the window is active (`MainWindow.Controller.cs`, `FollowPads`), every 16 ms while
-  the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached
+  runs only while the switch is on, there is a pad and the window is active (`MainWindow.Controller.cs`, `FollowPads`),
+  every 16 ms while the pad is in use and every 33 ms while it rests, which still catches the shortest press. So a pad that is attached
   and lies idle, with the window in front, does cost something: a tick on the UI thread every 33 ms, thirty a second,
   that asks Windows for each pad's reading, finds it at rest with nothing held or waiting (`PadInterpreter.IsAtRest`,
   `IsIdle`) and hands nothing over. `Update` is not called and nothing of the window is looked at, but the thread
@@ -2477,7 +2486,9 @@ What a pad does is in docs/ui-design.md ("Game controller"). How it gets there:
   MainWindow.Remote.cs). A presses through the control's automation peer, as a screen reader does (`PadControls.Press`:
   Invoke, Toggle, SelectionItem, ExpandCollapse; a list's row through its list's peer; a link in a text has no peer and
   its Click cannot be raised, so its page says what A does on it, `PadControls.PressesWith`), B runs the remote's back ladder
-  (`Back`, the player's `StepBack`), and the player's actions call the commands its keys call
+  (`Back`, the player's `StepBack`; at the root, Home's entry in the sidebar, `BackStep.AskToClose` asks whether Granary
+  closes, and Close posts the title bar's `SC_CLOSE`, so `OnClosing` runs as for Windows' own Close: `Window.Close` would
+  destroy the window without `AppWindow.Closing`), and the player's actions call the commands its keys call
   (`Views/PlayerPage.Controller.cs`). The bumpers pick the next radio button of a row of tabs or pills; a page whose
   sections are something else (Settings' and Admin's lists, Search's `SelectorBar`) steps them itself
   (`Views/IPadSections.cs`), through the selection a click makes. The Downloads page and a series' downloads have no tabs

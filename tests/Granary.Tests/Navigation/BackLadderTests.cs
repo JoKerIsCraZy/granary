@@ -2,7 +2,10 @@ using Granary.Core.Navigation;
 
 namespace Granary.Tests.Navigation;
 
-/// <summary>Back from a remote, as Silo's TV app: a section's content, then its sidebar entry, then Home, then nothing.</summary>
+/// <summary>
+/// Back from a remote, as Silo's TV app: a section's content, then its sidebar entry, then Home, then the question whether
+/// Granary closes.
+/// </summary>
 public sealed class BackLadderTests
 {
     [Fact]
@@ -33,12 +36,19 @@ public sealed class BackLadderTests
         Assert.Equal(BackStep.GoHomeInSidebar, step);
     }
 
-    [Theory]
-    [InlineData(FocusArea.Sidebar)]
-    [InlineData(FocusArea.None)]
-    public void Home_FromTheSidebar_DoesNothing_TheAppDoesNotQuit(FocusArea focus)
+    [Fact]
+    public void Home_FromTheSidebar_AsksWhetherGranaryCloses()
     {
-        var step = BackLadder.Decide(new BackContext(focus, IsAtSection: true, IsHome: true, CanGoBack: false));
+        var step = BackLadder.Decide(new BackContext(FocusArea.Sidebar, IsAtSection: true, IsHome: true, CanGoBack: false));
+
+        Assert.Equal(BackStep.AskToClose, step);
+    }
+
+    [Fact]
+    public void Home_WithFocusOutsideThePageAndTheSidebar_DoesNothing()
+    {
+        // The title bar's buttons, the activity indicator: Back there asks nothing.
+        var step = BackLadder.Decide(new BackContext(FocusArea.None, IsAtSection: true, IsHome: true, CanGoBack: false));
 
         Assert.Equal(BackStep.Nothing, step);
     }
