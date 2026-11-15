@@ -1442,7 +1442,9 @@ then on; `StopAsync` ends it for good when Granary closes.
   - Whether a title plays (TXT `playing`): registered anew once the change has held for 2 seconds, so quick changes
     register once, and the status tick never does.
   - The listener fails by itself (its start's `onFailed`): stop, and the status says `Failed`. Nothing starts again
-    until the switch, the session, the address or the key changes; a title that plays is no reason to. Each listener
+    until the switch, the session, the address or the key changes; a title that plays is no reason to. The changes are
+    counted, and the stop is noted under the count it was decided at, so a change that comes as the loop decides or
+    while it stops still starts the receiver again. Each listener
     bound has a number, and only the one running counts: one stopped or replaced meanwhile (the switch off, a new
     address) that tells of its failure late, even after the next one runs or is about to start, changes nothing. The
     failure is kept by number in one step that only moves on to a later listener, so such news never hides the

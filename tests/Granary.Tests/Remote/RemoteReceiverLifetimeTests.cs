@@ -260,6 +260,25 @@ public sealed class RemoteReceiverLifetimeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AChangeWhileAFailedListenerIsStopped_StartsItAgain()
+    {
+        await _harness.StartListeningAsync();
+        var unregistering = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Advertiser.UnregisterWaitsFor = unregistering.Task;
+
+        _harness.Listener.Fail();
+        await Time.WaitUntilAsync(() => _harness.Advertiser.UnregisterStarted, Token);
+        // The PC's address is told again while the receiver takes the failed listener down.
+        _harness.Addresses.Set(RemoteHarness.Lan);
+        unregistering.SetResult();
+        await SettledAsync();
+
+        Assert.Equal(2, _harness.Listener.Starts);
+        Assert.True(_harness.Listener.IsListening);
+        Assert.Equal(RemoteReceiverState.Listening, Receiver.Status.State);
+    }
+
+    [Fact]
     public async Task AFailureOfAListenerThatWasStopped_DoesNotKeepTheNextStartFromListening()
     {
         await _harness.StartListeningAsync();

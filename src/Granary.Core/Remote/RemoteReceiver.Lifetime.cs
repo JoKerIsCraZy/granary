@@ -45,9 +45,11 @@ public sealed partial class RemoteReceiver
     private int _listenerNumbers;
     private int _runningListener;
     private int _failedListener;
-    // The receiver stopped because its listener failed by itself: nothing starts again until the switch, the session, the
-    // address or the key changes.
-    private bool _listenerFailed;
+    // The changes of the switch, the session, the address and the key, counted, and the count under which the receiver
+    // decided to stop because its listener failed by itself: nothing starts again until the next change. Kept as a count,
+    // a change that comes while the loop decides, before or after it writes this down, still counts as the next one.
+    private int _lifetimeChanges;
+    private int _listenerFailedAt = -1;
     private RemoteReceiverStatus _status = RemoteReceiverStatus.Off;
     // The key the published status was made under; the lifetime loop's only.
     private PairingMaterial? _publishedMaterial;
@@ -187,7 +189,7 @@ public sealed partial class RemoteReceiver
     private void OnLifetimeChanged(object? sender, EventArgs e)
     {
         Volatile.Write(ref _failedListener, 0);
-        Volatile.Write(ref _listenerFailed, false);
+        Interlocked.Increment(ref _lifetimeChanges);
         LookAgain();
     }
 
@@ -280,6 +282,7 @@ public sealed partial class RemoteReceiver
                     return;
                 }
             }
+            int changes = Volatile.Read(ref _lifetimeChanges);
             var want = Wanted();
             var running = Volatile.Read(ref _running);
             if (running is not null)
@@ -287,7 +290,7 @@ public sealed partial class RemoteReceiver
                 string? why = WhyStop(running, want);
                 if (why == RemoteLogReasons.ListenerFailed)
                 {
-                    Volatile.Write(ref _listenerFailed, true);
+                    Volatile.Write(ref _listenerFailedAt, changes);
                 }
                 running = why is not null
                     ? await StopRunningAsync(running, why).ConfigureAwait(false)
@@ -295,7 +298,7 @@ public sealed partial class RemoteReceiver
             }
             if (running is null && want.State == RemoteReceiverState.Listening)
             {
-                if (Volatile.Read(ref _listenerFailed))
+                if (Volatile.Read(ref _listenerFailedAt) == Volatile.Read(ref _lifetimeChanges))
                 {
                     _failure = RemoteReceiverState.Failed;
                 }
