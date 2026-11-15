@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
@@ -32,6 +33,7 @@ public sealed class PlayerViewModelNextUpTests
     private readonly PlaybackStops _stops = new();
     private EpisodeSpoilerSettings? _spoilers;
     private double _position;
+    private double _stillWidth;
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
@@ -48,6 +50,7 @@ public sealed class PlayerViewModelNextUpTests
             _playbacks.Add(playback);
             return playback;
         }, _stops, _time, _source, _streak, spoilers: _spoilers);
+        viewModel.NextUpStillWidth = _stillWidth;
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
         await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
@@ -64,6 +67,26 @@ public sealed class PlayerViewModelNextUpTests
             _time.Advance(TimeSpan.FromSeconds(0.25));
             _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(_position), TimeSpan.FromSeconds(Length), null, HasStarted: true));
         }
+    }
+
+    [Fact]
+    public async Task TheEpisodesAround_AreAskedForWithStillsAsWideAsThePlayingNextScreenDrawsThem()
+    {
+        _stillWidth = 1066.7;
+
+        await PlayingAsync(Ted);
+
+        Assert.Equal(new ImageSizes(Still: 1067), _source.NextImages);
+        Assert.Equal(new ImageSizes(Still: 1067), _source.PreviousImages);
+    }
+
+    [Fact]
+    public async Task BeforeThePageSaysHowWide_TheEpisodesAroundComeAtTheServersSizes()
+    {
+        await PlayingAsync(Ted);
+
+        Assert.Null(_source.NextImages);
+        Assert.Null(_source.PreviousImages);
     }
 
     [Fact]
@@ -355,13 +378,23 @@ public sealed class PlayerViewModelNextUpTests
 
         public NextEpisode NextOne { get; set; } = Next;
 
-        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
-            Task.FromResult<NextEpisode?>(current == Ted ? NextOne : null);
+        public ImageSizes? NextImages { get; private set; }
+
+        public ImageSizes? PreviousImages { get; private set; }
+
+        public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+        {
+            NextImages = images;
+            return Task.FromResult<NextEpisode?>(current == Ted ? NextOne : null);
+        }
 
         public NextEpisode? Previous { get; set; }
 
-        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
-            Task.FromResult(Previous);
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, ImageSizes? images, CancellationToken cancellationToken)
+        {
+            PreviousImages = images;
+            return Task.FromResult(Previous);
+        }
 
         public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken)
         {

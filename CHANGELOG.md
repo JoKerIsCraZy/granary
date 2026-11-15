@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- The next episode's picture on the Playing Next screen is sharp: Granary asks your Silo server for it as wide as the
+  screen draws it, as Silo's web does, where it came at a card's size and was stretched.
+
 ## [0.4.0] - 2026-11-14
 
 ### Added

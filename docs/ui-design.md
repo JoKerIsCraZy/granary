@@ -1890,7 +1890,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
     playback left, as the apps do.
   - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
-    "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
+    "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high, 400 px at most; asked of the server as wide as it can be drawn, as the web's `upNext` widths), the
     series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview (left out for an episode not
     started while the profile hides descriptions, and its still blurred while it hides images, as on cards), the Play Now pill in
     the accent, and
