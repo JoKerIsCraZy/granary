@@ -96,11 +96,11 @@ public sealed class DownloadActions
         return _dialog.ShowAsync(options);
     }
 
-    /// <summary>The download dialog for a season's episodes.</summary>
-    public Task OfferSeasonAsync(SeasonDownloadRequest request, string seasonTitle, long knownBytes)
+    /// <summary>The download dialog for a season's episodes, with Only unwatched when one of them is watched.</summary>
+    public Task OfferSeasonAsync(SeasonDownloadOffer offer)
     {
         var options = _options();
-        options.ForSeason(request, seasonTitle, knownBytes);
+        options.ForSeason(offer);
         return _dialog.ShowAsync(options);
     }
 

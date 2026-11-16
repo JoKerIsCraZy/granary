@@ -26,6 +26,8 @@ public sealed partial class DownloadOptionsPanel : UserControl
 
     public string StopMessage => DownloadOptionsViewModel.StopMessage;
 
+    public string OnlyUnwatchedLabel => DownloadOptionsViewModel.OnlyUnwatchedLabel;
+
     /// <summary>The small heading over the files, in capitals as the language writes them.</summary>
     public string VersionEyebrow => AppText.Upper(AppText.Get("granary.downloadOptions.version"));
 

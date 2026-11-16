@@ -198,6 +198,7 @@
   "granary.downloadOptions.quality": "Qualité",
   "granary.downloadOptions.aboutSize": "Environ {size}",
   "granary.downloadOptions.episodes": "{count, plural, one {# épisode} many {# d’épisodes} other {# épisodes}}",
+  "granary.downloadOptions.onlyUnwatched": "Uniquement les épisodes non vus",
   "granary.downloadOptions.freeSpace": "{free} libres sur ce PC.",
   "granary.downloadOptions.notEnoughSpace": "Espace libre insuffisant sur ce PC : {needed} nécessaires, {free} libres.",
   "granary.downloadOptions.overLimit": "Au-delà de votre limite de stockage des téléchargements : {needed} nécessaires, {left} restants sur {limit}.",

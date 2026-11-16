@@ -860,7 +860,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     Try Again; a title without a file (or a season none of whose episodes has one) says the web's "No media files for this
     item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
     episode of this series is on this PC."), and Download stays
-    off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    off. Cancel stops the read. A season's or a series' episodes, one of those left watched to its end, have Granary's
+    "Only unwatched episodes" under the description, a switch as Monitor's Delete after watching, on as the dialog opens:
+    it leaves out the episodes watched (`user_data.played`) and keeps one in progress, so the viewer half-way through
+    the seventh gets the seventh to the end, and the episodes and size below follow it. With every episode left watched it
+    leaves "0 episodes" and Download off until it is turned off. Without a watched episode there is no switch. It is One
+    time's only: Monitor keeps its rules. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Download quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
     more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,

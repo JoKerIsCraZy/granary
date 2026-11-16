@@ -198,6 +198,7 @@
   "granary.downloadOptions.quality": "画質",
   "granary.downloadOptions.aboutSize": "約{size}",
   "granary.downloadOptions.episodes": "{count, plural, other {#話}}",
+  "granary.downloadOptions.onlyUnwatched": "未視聴エピソードのみ",
   "granary.downloadOptions.freeSpace": "このPCの空き容量：{free}",
   "granary.downloadOptions.notEnoughSpace": "このPCの空き容量が足りません：必要{needed}、空き{free}。",
   "granary.downloadOptions.overLimit": "ダウンロードのストレージ上限を超えています：必要{needed}、残り{left}（上限{limit}）。",

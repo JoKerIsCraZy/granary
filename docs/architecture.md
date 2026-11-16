@@ -1700,7 +1700,10 @@ client guide.
   none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
   from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
-  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
+  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC, and
+  of those the ones watched to their end with each one's size, `EpisodeFacts`). The offers stay whole: whether a season's
+  Download season shows, and the "on this PC" words, go by every episode left; the dialog's "Only unwatched episodes"
+  takes the watched ones out of what it counts and starts (`Unwatched()`), and starts nothing when none is left. A
   series' page lists one season's episodes at most, so its Download series reads them as a card does
   (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
 - **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,

@@ -397,6 +397,8 @@
   "@granary.downloadOptions.aboutSize": { "description": "The download dialog: the size a quality other than Original will about take, worked out from its bitrate. {size}: a size, such as 2.1 GB." },
   "granary.downloadOptions.episodes": "{count, plural, one {# episode} other {# episodes}}",
   "@granary.downloadOptions.episodes": { "description": "The download dialog of a season or a series: how many episodes it downloads; their size may follow after a ·, as in 10 episodes · 21.4 GB. Silo apps: downloads.seriesRow.episodes." },
+  "granary.downloadOptions.onlyUnwatched": "Only unwatched episodes",
+  "@granary.downloadOptions.onlyUnwatched": { "description": "The download dialog of a season or a series, One time: the switch that leaves out the episodes the viewer watched to the end; one in progress stays in. It shows only while one of the episodes left is watched, and then starts on." },
   "granary.downloadOptions.freeSpace": "{free} free on this PC.",
   "@granary.downloadOptions.freeSpace": { "description": "The download dialog: under the size, the free space on the drive downloads go to. {free}: a size, such as 200.0 GB." },
   "granary.downloadOptions.notEnoughSpace": "Not enough free space on this PC: {needed} needed, {free} free.",

@@ -76,6 +76,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private readonly SeriesMonitors? _monitors;
     private readonly MonitorSchedule? _schedule;
 
+    // What the dialog offers, as given or read; the choices the viewer makes in it pick from it what Download starts.
+    private DownloadOffer? _offer;
+
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
     private SeriesDownloadRequest? _series;
@@ -191,10 +194,18 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public partial bool IsStarting { get; private set; }
 
     /// <summary>
+    /// What is chosen starts something: a film or an episode, or at least one episode of a season or a series. "Only unwatched
+    /// episodes" can leave none.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanStart))]
+    public partial bool HasSelection { get; private set; }
+
+    /// <summary>
     /// Download can be pressed: there is something to download, nothing is starting and the selection fits, as far as the free
     /// space is known yet.
     /// </summary>
-    public bool CanStart => IsMonitorChosen ? CanSaveMonitor : HasOffer && !IsStarting && !IsShortOfSpace;
+    public bool CanStart => IsMonitorChosen ? CanSaveMonitor : HasOffer && HasSelection && !IsStarting && !IsShortOfSpace;
 
     /// <summary>Why the last press of Download did not start it; empty when it did, or before.</summary>
     [ObservableProperty]
@@ -221,7 +232,14 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public void ForSeason(SeasonDownloadRequest request, string seasonTitle, long knownBytes)
     {
         ArgumentNullException.ThrowIfNull(request);
-        Open(Take(new SeasonDownloadOffer(request, seasonTitle, knownBytes)));
+        ForSeason(new SeasonDownloadOffer(request, seasonTitle, knownBytes));
+    }
+
+    /// <summary>A season's episodes as its page offers them, one download each, with Only unwatched when one of them is watched.</summary>
+    public void ForSeason(SeasonDownloadOffer offer)
+    {
+        ArgumentNullException.ThrowIfNull(offer);
+        Open(Take(offer));
     }
 
     /// <summary>
@@ -234,6 +252,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(read);
         _read = read;
+        _offer = null;
         _title = null;
         _season = null;
         _series = null;
@@ -242,6 +261,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         Title = PlainTitle;
         Versions = [];
         HasOffer = false;
+        HasSelection = false;
         Open(null);
         SetUpMonitor(monitor, startsOnMonitor);
         Reading = ReadOfferAsync();
@@ -285,7 +305,9 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                 _stopping = null;
             }
         }
-        if (IsStarting || (_title is null && _season is null && _series is null))
+        // Nothing chosen starts nothing: a season with every episode left watched and Only unwatched on would otherwise count
+        // as started with no create sent.
+        if (IsStarting || !HasSelection || (_title is null && _season is null && _series is null))
         {
             return false;
         }
@@ -359,9 +381,26 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         ShowSize();
     }
 
-    // What the offer downloads, its title and files; answers the version to choose first, none for a season or a series.
+    // What the offer downloads as the viewer's choices take it, its title and files; answers the version to choose first, none
+    // for a season or a series.
     private DownloadVersionRow? Take(DownloadOffer offer)
     {
+        _offer = offer;
+        return Choose();
+    }
+
+    // The offer as the choices take it (DownloadOptionsViewModel.Episodes.cs), shown: its title, files and whether it starts
+    // anything. Answers the version to choose first, none for a season or a series.
+    private DownloadVersionRow? Choose()
+    {
+        var offer = Chosen();
+        HasSelection = offer switch
+        {
+            TitleDownloadOffer => true,
+            SeasonDownloadOffer season => season.Request.Episodes.Count > 0,
+            SeriesDownloadOffer series => series.Request.EpisodeCount > 0,
+            _ => false,
+        };
         _title = (offer as TitleDownloadOffer)?.Request;
         _season = (offer as SeasonDownloadOffer)?.Request;
         _series = (offer as SeriesDownloadOffer)?.Request;
@@ -466,6 +505,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         var version = Take(offer);
         if (offer is SeriesDownloadOffer series)
         {
+            // Every season left, whatever Only unwatched leaves out of a one-time download.
             NoteSeasons(series.Request);
         }
         DescriptionText = Description;
