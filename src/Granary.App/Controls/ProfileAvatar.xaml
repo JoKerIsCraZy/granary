@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A profile's avatar, as the web's Avatar in its sidebar (components/AppSidebar.tsx): the picture in a circle, filling it
+    (object-cover); without one, while it loads and after it failed, the profile's letter in bold on the accent
+    (bg-primary text-primary-foreground). The size and the letter's size come from the control's Width, Height and FontSize.
+    Only a picture, for the eye: the entry or menu around it says whose it is.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.ProfileAvatar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="False"
+    AutomationProperties.AccessibilityView="Raw">
+
+    <Grid>
+        <Grid x:Name="Fallback">
+            <Ellipse Fill="{StaticResource SiloPrimaryBrush}" />
+            <TextBlock x:Name="InitialText" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontBold}"
+                       FontWeight="Bold" Foreground="{StaticResource SiloOnPrimaryBrush}" AutomationProperties.AccessibilityView="Raw" />
+        </Grid>
+        <!-- Shown once its picture opened; the letter goes then, so a picture with see-through parts does not show it. -->
+        <Ellipse x:Name="Picture" Visibility="Collapsed">
+            <Ellipse.Fill>
+                <ImageBrush x:Name="PictureBrush" Stretch="UniformToFill" />
+            </Ellipse.Fill>
+        </Ellipse>
+    </Grid>
+</UserControl>

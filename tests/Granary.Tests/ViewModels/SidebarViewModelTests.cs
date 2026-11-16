@@ -497,4 +497,121 @@ public sealed class SidebarViewModelTests
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
         Assert.False(sidebar.IsAdmin);
     }
+
+    // Profile 7 alone, with this name and picture.
+    private static Func<HttpResponseMessage> OneProfile(string name, string? avatarUrl)
+    {
+        string avatar = avatarUrl is null ? "" : ",\"avatar_url\":\"" + avatarUrl + "\"";
+        string json = "{\"items\":[{\"id\":\"7\",\"name\":\"" + name + "\",\"is_primary\":true,\"has_pin\":false,\"is_child\":false"
+            + avatar + "}],\"avatar_upload_enabled\":true}";
+        return () => FakeSiloServer.Json(200, json);
+    }
+
+    // As the web's AvatarFallback: the first letter of the profile's name, else of the account's, upper-case, else "?".
+    [Fact]
+    public async Task TheEntrysLetter_IsTheFirstOfTheName_AsTheWebsFallback()
+    {
+        _profiles = OneProfile("émile", null);
+        using var sidebar = Create();
+        Assert.Equal("?", sidebar.ProfileInitial);
+
+        Ready();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("É", sidebar.ProfileInitial);
+
+        _profiles = () => FakeSiloServer.Problem(503, ProblemCodes.DependencyUnavailable);
+        _session.ProfileId = "8";
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("E", sidebar.ProfileInitial);
+    }
+
+    [Fact]
+    public async Task ThePicture_IsTheActingProfiles_AndNoneWithoutOne()
+    {
+        Ready();
+        using var sidebar = Create();
+        Assert.Null(sidebar.AvatarUrl);
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(new Uri("https://silo.test/api/v2/artwork/a.webp?sig=x"), sidebar.AvatarUrl);
+
+        _profiles = OneProfile("Elena Moreau", null);
+        _clock.Advance(SidebarViewModel.StaleAfter);
+        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl is null);
+        Assert.Equal("Elena Moreau", sidebar.ProfileName);
+    }
+
+    // The sidebar reads the profile again once it is stale: a picture changed elsewhere, or its address signed anew, shows.
+    [Fact]
+    public async Task APictureChangedOnTheServer_ShowsAtTheNextRead()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        var changed = new List<string?>();
+        sidebar.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _profiles = OneProfile("Elena Moreau", "/avatars/presets/fox.svg");
+        _clock.Advance(SidebarViewModel.StaleAfter);
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl == new Uri("https://silo.test/avatars/presets/fox.svg"));
+        Assert.Contains(nameof(SidebarViewModel.AvatarUrl), changed);
+    }
+
+    // Another profile drops the last one's picture at once, before its own is read: no picture shows under another name.
+    [Fact]
+    public async Task AnotherProfile_DropsThePictureAtOnce()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        var shown = new List<Uri?>();
+        sidebar.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SidebarViewModel.AvatarUrl))
+            {
+                shown.Add(sidebar.AvatarUrl);
+            }
+        };
+
+        _profiles = () => FakeSiloServer.Json(200,
+            """{"items":[{"id":"8","name":"Kim","is_primary":false,"has_pin":false,"is_child":false,"avatar_url":"/api/v2/artwork/k.webp?sig=y"}],"avatar_upload_enabled":true}""");
+        _session.ProfileId = "8";
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal([null, new Uri("https://silo.test/api/v2/artwork/k.webp?sig=y")], shown);
+        Assert.Equal("K", sidebar.ProfileInitial);
+    }
+
+    [Fact]
+    public async Task SigningOut_DropsThePicture()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        _session.State = SessionState.SignedOut;
+        _session.ActiveServer = null;
+        _session.ProfileId = null;
+        _session.RaiseChanged();
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.AvatarUrl is null);
+    }
+
+    // As the web's profile menu: the account's name under the profile's, only when it is another.
+    [Fact]
+    public async Task TheMenu_NamesTheAccount_OnlyWhenItIsNotTheProfilesName()
+    {
+        Ready();
+        using var sidebar = Create();
+        Assert.Equal("", sidebar.AccountName);
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("elena", sidebar.AccountName);
+
+        _profiles = OneProfile("elena", null);
+        _clock.Advance(SidebarViewModel.StaleAfter);
+        await Auth.AuthPipeline.Eventually(() => sidebar.ProfileName == "elena");
+        Assert.Equal("", sidebar.AccountName);
+    }
 }

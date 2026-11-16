@@ -526,6 +526,10 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   decoder (`AsRandomAccessStream`) made a managed buffer as large as each of its reads, and every WinRT object .NET
   holds adds 1,000 bytes of memory pressure (CsWinRT's `IObjectReference`), enough of which starts blocking full
   collections: the remaining gen2 collections while scrolling are those.
+- Avatars: the sidebar's profile avatar (`ProfileAvatar`) takes a picture once it is decoded (`Artwork.PictureAsync`, null
+  when it cannot be had), never a bitmap still filling: an avatar's address is signed anew every 15 minutes and read
+  again every 5, and the picture shown stays until the new one is ready, with only the newest load counting
+  (`AvatarPicture`). It shows its letter at once when there is no picture.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.

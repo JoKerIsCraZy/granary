@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 
@@ -33,6 +34,46 @@ internal static class Artwork
         url is { IsAbsoluteUri: true }
             ? Filled(new BitmapImage { DecodePixelHeight = decodeHeight, DecodePixelType = DecodePixelType.Logical }, url, cancellationToken)
             : null;
+
+    /// <summary>
+    /// A picture of <paramref name="url"/> from the cache, decoded as wide as the view shows it, once it is decoded: for a view
+    /// that keeps what it shows until the next one is ready (a profile's avatar). Null when the cache cannot get the image,
+    /// it does not decode, or the wait was cancelled.
+    /// </summary>
+    public static async Task<ImageSource?> PictureAsync(Uri url, int decodeWidth, CancellationToken cancellationToken)
+    {
+        InMemoryRandomAccessStream? stream;
+        try
+        {
+            stream = await CopyAsync(url, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Loader.Invalidate(url);
+            Logger.LogWarning("Artwork {Path} could not be copied for decoding: {Failure}", url.AbsolutePath, ex.Message);
+            return null;
+        }
+        if (stream is null || cancellationToken.IsCancellationRequested)
+        {
+            stream?.Dispose();
+            return null;
+        }
+        using (stream)
+        {
+            var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
+            try
+            {
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
+            }
+            catch (Exception ex)
+            {
+                Loader.Invalidate(url);
+                Logger.LogWarning("Artwork {Path} could not be decoded: {Failure}", url.AbsolutePath, ex.Message);
+                return null;
+            }
+        }
+    }
 
     /// <summary>
     /// The bytes of <paramref name="url"/> from the cache, as a stream for Windows to read itself (Windows' media controls):

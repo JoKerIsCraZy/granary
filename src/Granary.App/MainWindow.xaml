@@ -233,31 +233,69 @@
                     meanwhile the entry reads "Signing out…" with a ring and takes no clicks, as Granary's busy buttons do
                     ("Signing in…"), also while the question about this PC's downloads is open over it. One that failed says so
                     under the name until the next Sign out or another profile. The web's menu has neither.
+                    In the icon's place the profile's 28 px avatar, as the web's (components/AppSidebar.tsx). An icon is drawn
+                    in a 16 px box, so the avatar is the content's, with no icon: 6 px into the slot an icon leaves, its middle on
+                    the other icons' line and the name 10 px after it, on the other labels' line. The rail shows the same place,
+                    once its content keeps the open pane's margin (NavigationViewCompactItemContentPresenterMargin, otherwise 0).
                 -->
                 <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
                                     IsEnabled="{x:Bind IsIdle(Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
                                     ToolTipService.ToolTip="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
                                     AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning, Sidebar.SignOutError), Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE77B;" />
-                    </NavigationViewItem.Icon>
-                    <Grid ColumnSpacing="8">
+                    <NavigationViewItem.Resources>
+                        <Thickness x:Key="NavigationViewCompactItemContentPresenterMargin">4,-1,8,-1</Thickness>
+                    </NavigationViewItem.Resources>
+                    <Grid Margin="-6,0,0,0" ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="28" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
+                        <controls:ProfileAvatar Width="28" Height="28" FontSize="12" VerticalAlignment="Center"
+                                                Url="{x:Bind Sidebar.AvatarUrl, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{x:Bind Sidebar.SignOutError, Mode=OneWay}" Visibility="{x:Bind HasText(Sidebar.SignOutError), Mode=OneWay}"
                                        FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloDestructiveBrush}"
                                        AutomationProperties.LiveSetting="Assertive" />
                         </StackPanel>
-                        <ProgressRing Grid.Column="1" Width="16" Height="16" Margin="0,0,8,0" IsActive="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}"
+                        <ProgressRing Grid.Column="2" Width="16" Height="16" Margin="0,0,8,0" IsActive="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}"
                                       Visibility="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
                     </Grid>
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout Placement="TopEdgeAlignedLeft">
+                            <!--
+                                The web's label on top: the 40 px avatar, the name, and the account's name under it when it is
+                                another. A menu holds only its items, so this is one drawn as its content (Tag), disabled so the
+                                keys, a controller and clicks pass it; it is no item for a screen reader, the entry says whose
+                                menu it is.
+                            -->
+                            <MenuFlyoutItem IsEnabled="False" AutomationProperties.AccessibilityView="Raw">
+                                <MenuFlyoutItem.Template>
+                                    <ControlTemplate TargetType="MenuFlyoutItem">
+                                        <ContentPresenter Content="{TemplateBinding Tag}" Padding="{TemplateBinding Padding}" />
+                                    </ControlTemplate>
+                                </MenuFlyoutItem.Template>
+                                <MenuFlyoutItem.Tag>
+                                    <Grid MaxWidth="288" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <controls:ProfileAvatar Width="40" Height="40" FontSize="14"
+                                                                Url="{x:Bind Sidebar.AvatarUrl, Mode=OneWay}" Initial="{x:Bind Sidebar.ProfileInitial, Mode=OneWay}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Sidebar.ProfileName, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}"
+                                                       FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind Sidebar.AccountName, Mode=OneWay}" Visibility="{x:Bind HasText(Sidebar.AccountName), Mode=OneWay}"
+                                                       FontSize="11" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Grid>
+                                </MenuFlyoutItem.Tag>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
                             <MenuFlyoutItem Text="{x:Bind t:AppText.Get('web.shell.sidebar.switchProfile')}" Command="{x:Bind Sidebar.SwitchProfileCommand}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE748;" />

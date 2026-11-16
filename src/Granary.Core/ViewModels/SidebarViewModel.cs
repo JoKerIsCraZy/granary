@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -88,13 +89,30 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 
     /// <summary>The acting profile; null until it is loaded, or when the list could not be read.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials))]
+    [NotifyPropertyChangedFor(nameof(ProfileName), nameof(ProfileInitials), nameof(ProfileInitial), nameof(AvatarUrl), nameof(AccountName))]
     public partial ProfileItemViewModel? Profile { get; private set; }
 
     /// <summary>The profile's name, or the account's while the profile is unknown.</summary>
     public string ProfileName => Profile?.Name ?? _session.Account?.Username ?? "";
 
     public string ProfileInitials => Profile?.Initials ?? ProfileItemViewModel.InitialsOf(ProfileName);
+
+    /// <summary>
+    /// The letter the profile's entry and menu show without a picture, as the web's sidebar avatar: the first of the
+    /// profile's name, else of the account's, upper-case, else "?".
+    /// </summary>
+    public string ProfileInitial => string.IsNullOrEmpty(ProfileName) ? "?" : StringInfo.GetNextTextElement(ProfileName).ToUpperInvariant();
+
+    /// <summary>
+    /// The profile's picture (<c>avatar_url</c>, absolute and presigned); null without one, and at once while another profile
+    /// or none acts. Read again with the profile, so a picture changed elsewhere shows within <see cref="StaleAfter"/>.
+    /// </summary>
+    public Uri? AvatarUrl => Profile?.AvatarUrl;
+
+    /// <summary>The account's name under the profile's in the profile menu, as the web's; empty when it is the same name.</summary>
+    public string AccountName => Profile is { } profile && _session.Account?.Username is { Length: > 0 } username && username != profile.Name
+        ? username
+        : "";
 
     /// <summary>The libraries the profile browses: its hidden ones left out, in its order or else the server's.</summary>
     public ObservableCollection<SidebarLibrary> Libraries { get; } = [];
@@ -129,6 +147,8 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
             AreLibrariesLoaded = false;
             OnPropertyChanged(nameof(ProfileName));
             OnPropertyChanged(nameof(ProfileInitials));
+            OnPropertyChanged(nameof(ProfileInitial));
+            OnPropertyChanged(nameof(AccountName));
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
