@@ -865,7 +865,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     it leaves out the episodes watched (`user_data.played`) and keeps one in progress, so the viewer half-way through
     the seventh gets the seventh to the end, and the episodes and size below follow it. With every episode left watched it
     leaves "0 episodes" and Download off until it is turned off. Without a watched episode there is no switch. It is One
-    time's only: Monitor keeps its rules. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    time's only: Monitor keeps its rules. A series' One time has Silo's Apple app's rows (its series sheet) above the switch,
+    in the version rows' style, a title and its line: the episode the series' page plays next (`play_content_id`; without
+    one, the episode in progress, else the first unwatched, else the first, the specials last), "S01E07 · Pilot" with "This
+    episode only", or "On this PC" or "Downloading" when it is here already, then dimmed and not to be chosen; its season
+    (`play_season_number`, else that episode's), "Season 2" with its episodes not on this PC ("3 episodes"; "On this PC",
+    dimmed, when none); and "All episodes" with "Every season", which the dialog opens on, as the item that opened it says
+    Download series. The title, the size and the switch follow the row ("Download: Example Series · S1 · E7", "… · Season
+    2"); the switch applies to the season and to every episode, not to the one episode, which downloads its first file as a
+    season's episodes do. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Download quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
     more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,

@@ -1704,6 +1704,9 @@ client guide.
   of those the ones watched to their end with each one's size, `EpisodeFacts`). The offers stay whole: whether a season's
   Download season shows, and the "on this PC" words, go by every episode left; the dialog's "Only unwatched episodes"
   takes the watched ones out of what it counts and starts (`Unwatched()`), and starts nothing when none is left. A
+  series' offer also carries the Apple app's This Episode and Season N (`SeriesDownloadOffer.Episode` and `Season`, from
+  the series' `play_content_id` and `play_season_number`, else the Apple app's next episode), so its page, its card and
+  the Downloads page give the same rows; whether This Episode is on this PC is the dialog's to word. A
   series' page lists one season's episodes at most, so its Download series reads them as a card does
   (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
 - **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,

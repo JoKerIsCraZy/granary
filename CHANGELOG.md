@@ -64,6 +64,9 @@ release's section is what its update says it changes (docs/release.md).
   the download dialog has Only unwatched episodes, already on: it leaves out the episodes you watched to the end and keeps
   the one you are in the middle of, so at episode 7 you get 7 to the end. The episodes and the space the dialog shows
   follow the switch; turn it off to download the watched ones too. Monitoring keeps its own rules.
+- **One episode or one season from a series:** a series' download dialog offers, as Silo's iPhone and iPad app does, the
+  episode you would watch next ("S01E07 · Pilot", "This episode only", or "On this PC" when it is here already), the
+  season it is in and All episodes, which it opens on. Only unwatched episodes works for the season and for all episodes.
 - **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for

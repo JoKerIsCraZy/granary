@@ -43,10 +43,28 @@ public sealed record SeasonDownloadOffer(SeasonDownloadRequest Request, string S
     }
 }
 
-/// <summary>A series' episodes that are not on this PC yet, season by season, one download each, and what their files take on the server.</summary>
+/// <summary>
+/// A series' season as its download dialog offers it on its own: its number, its name as the server gives it, and its episodes
+/// not on this PC yet, none when they all are.
+/// </summary>
+public sealed record SeriesSeasonChoice(int SeasonNumber, string Title, SeasonDownloadOffer Offer);
+
+/// <summary>
+/// A series' episodes that are not on this PC yet, season by season, one download each, and what their files take on the server.
+/// As the Apple app's series sheet, its dialog also offers one episode (<see cref="Episode"/>) and one season (<see cref="Season"/>).
+/// </summary>
 public sealed record SeriesDownloadOffer(SeriesDownloadRequest Request, long KnownBytes) : DownloadOffer
 {
     public EpisodeFacts Facts { get; init; } = EpisodeFacts.None;
+
+    /// <summary>
+    /// "This Episode": the one the series' page plays next, in its first file; it may be on this PC already. Null when no
+    /// episode has a file.
+    /// </summary>
+    public TitleDownloadOffer? Episode { get; init; }
+
+    /// <summary>"Season N": the season the series' page plays next in, else <see cref="Episode"/>'s; null when it has no file.</summary>
+    public SeriesSeasonChoice? Season { get; init; }
 
     /// <summary>One of the episodes is watched: "Only unwatched episodes" has something to leave out.</summary>
     public bool HasWatched => Request.Seasons.Any(s => s.Episodes.Any(Facts.IsWatched));
@@ -139,17 +157,9 @@ public static class DownloadOffers
         {
             return null;
         }
-        // By number, whatever order the server lists them in: the queue takes the oldest first, so the first comes first.
-        var left = episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0 && !isOnThisPc(e.ContentId))
-            .OrderBy(e => e.EpisodeNumber).ToList();
-        if (left.Count == 0)
-        {
-            return null;
-        }
         string seriesTitle = !string.IsNullOrWhiteSpace(season.SeriesTitle) ? season.SeriesTitle : season.Title;
-        var request = new SeasonDownloadRequest(seriesId, seriesTitle, number,
-            [.. left.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))], DownloadQualities.Original);
-        return new SeasonDownloadOffer(request, season.Title, left.Sum(FirstFileBytes)) { Facts = FactsOf(left) };
+        var offer = SeasonOffer(seriesId, seriesTitle, number, season.Title, episodes, isOnThisPc);
+        return offer.Request.Episodes.Count > 0 ? offer : null;
     }
 
     /// <summary>
@@ -164,10 +174,9 @@ public static class DownloadOffers
         ArgumentException.ThrowIfNullOrEmpty(seriesId);
         ArgumentNullException.ThrowIfNull(seasons);
         ArgumentNullException.ThrowIfNull(isOnThisPc);
-        var left = seasons
-            .OrderBy(s => DetailFacts.IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber)
-            .Select(s => (s.Season.SeasonNumber, Episodes: s.Episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0
-                && !isOnThisPc(e.ContentId)).OrderBy(e => e.EpisodeNumber).ToList()))
+        var ordered = seasons.OrderBy(s => DetailFacts.IsSpecials(s.Season) ? 1 : 0).ThenBy(s => s.Season.SeasonNumber).ToList();
+        var left = ordered
+            .Select(s => (s.Season.SeasonNumber, Episodes: s.Episodes.Where(e => HasFile(e) && !isOnThisPc(e.ContentId)).OrderBy(e => e.EpisodeNumber).ToList()))
             .Where(s => s.Episodes.Count > 0)
             .ToList();
         if (left.Count == 0)
@@ -178,7 +187,13 @@ public static class DownloadOffers
             [.. s.Episodes.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))]))],
             DownloadQualities.Original);
         var episodes = left.SelectMany(s => s.Episodes).ToList();
-        return new SeriesDownloadOffer(request, episodes.Sum(FirstFileBytes)) { Facts = FactsOf(episodes) };
+        var next = NextUp(series, ordered);
+        return new SeriesDownloadOffer(request, episodes.Sum(FirstFileBytes))
+        {
+            Facts = FactsOf(episodes),
+            Episode = next is { } up ? EpisodeOffer(seriesId, series.Title, up.Season, up.Episode) : null,
+            Season = SeasonChoice(series, seriesId, ordered, next?.Season, isOnThisPc),
+        };
     }
 
     /// <summary>An episode's files the server can read, as the player steps over the others (<c>NextEpisode</c>).</summary>
@@ -197,6 +212,62 @@ public static class DownloadOffers
         ArgumentNullException.ThrowIfNull(episode);
         return episode.UserData?.Played == true;
     }
+
+    // A season's episodes that have a file the server can read and are not on this PC yet, by number whatever order the server
+    // lists them in: the queue takes the oldest first, so the first comes first. Each asks for its first file, the one its size
+    // counts. None when every one is on this PC.
+    private static SeasonDownloadOffer SeasonOffer(string seriesId, string seriesTitle, int number, string seasonTitle, IEnumerable<Episode> episodes,
+        Func<string, bool> isOnThisPc)
+    {
+        var left = episodes.Where(e => HasFile(e) && !isOnThisPc(e.ContentId)).OrderBy(e => e.EpisodeNumber).ToList();
+        var request = new SeasonDownloadRequest(seriesId, seriesTitle, number,
+            [.. left.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))], DownloadQualities.Original);
+        return new SeasonDownloadOffer(request, seasonTitle, left.Sum(FirstFileBytes)) { Facts = FactsOf(left) };
+    }
+
+    // The episode the series' page plays next when it has a file, else as the Apple app picks one for its series sheet
+    // (preferredResumeEpisode): the one in progress, else the first unwatched, else the first; the seasons in their order, the
+    // specials last. Null when no episode has a file.
+    private static (int Season, Episode Episode)? NextUp(CatalogItemDetail series, IReadOnlyList<(Season Season, IReadOnlyList<Episode> Episodes)> ordered)
+    {
+        var all = ordered.SelectMany(s => s.Episodes.Where(HasFile).OrderBy(e => e.EpisodeNumber).Select(e => (s.Season.SeasonNumber, Episode: e))).ToList();
+        int found = series.PlayContentId is { Length: > 0 } play ? all.FindIndex(e => e.Episode.ContentId == play) : -1;
+        if (found < 0)
+        {
+            found = all.FindIndex(e => e.Episode.UserData?.IsInProgress == true);
+        }
+        if (found < 0)
+        {
+            found = all.FindIndex(e => !IsWatched(e.Episode));
+        }
+        return found >= 0 ? all[found] : all.Count > 0 ? all[0] : null;
+    }
+
+    // This Episode in its first file, the one a season's download of it would ask for.
+    private static TitleDownloadOffer EpisodeOffer(string seriesId, string seriesTitle, int season, Episode episode)
+    {
+        var file = UsableFiles(episode)[0];
+        var request = new DownloadRequest(episode.ContentId, seriesId, file.FileId, DownloadQualities.Original, episode.Title, seriesTitle, season,
+            episode.EpisodeNumber);
+        return new TitleDownloadOffer(request, [new DownloadVersionRow(file.FileId, file.Resolution ?? "", file.FileSize)], Math.Max(0, episode.Runtime) * 60);
+    }
+
+    // The season the series' page plays next in, else This Episode's, with its episodes not on this PC; none without a file.
+    private static SeriesSeasonChoice? SeasonChoice(CatalogItemDetail series, string seriesId,
+        IReadOnlyList<(Season Season, IReadOnlyList<Episode> Episodes)> ordered, int? nextUpSeason, Func<string, bool> isOnThisPc)
+    {
+        int? number = series.PlaySeasonNumber is { } play && ordered.Any(s => s.Season.SeasonNumber == play) ? play : nextUpSeason;
+        if (number is not { } chosen)
+        {
+            return null;
+        }
+        var (season, episodes) = ordered.First(s => s.Season.SeasonNumber == chosen);
+        return episodes.Any(HasFile)
+            ? new SeriesSeasonChoice(chosen, season.Title, SeasonOffer(seriesId, series.Title, chosen, season.Title, episodes, isOnThisPc))
+            : null;
+    }
+
+    private static bool HasFile(Episode episode) => episode.ContentId.Length > 0 && UsableFiles(episode).Count > 0;
 
     // Each episode's first file, the one it asks for: what the dialog's size counts.
     private static long FirstFileBytes(Episode episode) => Math.Max(0, UsableFiles(episode)[0].FileSize);

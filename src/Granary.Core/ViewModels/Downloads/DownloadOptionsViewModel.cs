@@ -386,6 +386,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private DownloadVersionRow? Take(DownloadOffer offer)
     {
         _offer = offer;
+        ShowRows(offer);
         return Choose();
     }
 
@@ -396,7 +397,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         var offer = Chosen();
         HasSelection = offer switch
         {
-            TitleDownloadOffer => true,
+            TitleDownloadOffer => ChosenRowIsAvailable(),
             SeasonDownloadOffer season => season.Request.Episodes.Count > 0,
             SeriesDownloadOffer series => series.Request.EpisodeCount > 0,
             _ => false,
@@ -419,10 +420,7 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
                 HasOffer = true;
                 return title.Versions.FirstOrDefault(v => v.FileId == title.Request.MediaFileId) ?? title.Versions.FirstOrDefault();
             case SeasonDownloadOffer season:
-                string name = string.IsNullOrWhiteSpace(season.SeasonTitle)
-                    ? AppText.Get("web.detail.seasons.numbered", ("season", season.Request.SeasonNumber))
-                    : season.SeasonTitle.Trim();
-                Title = TitleWithName($"{season.Request.SeriesTitle} · {name}");
+                Title = TitleWithName($"{season.Request.SeriesTitle} · {SeasonName(season.Request.SeasonNumber, season.SeasonTitle)}");
                 Versions = [];
                 HasOffer = true;
                 return null;

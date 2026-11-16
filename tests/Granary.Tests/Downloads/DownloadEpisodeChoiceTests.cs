@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Downloads;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -11,7 +12,8 @@ namespace Granary.Tests.Downloads;
 
 /// <summary>
 /// Which episodes a season's or a series' download dialog starts: "Only unwatched episodes" leaves out the ones the viewer
-/// watched, and keeps the one in progress.
+/// watched, and keeps the one in progress; a series' One time chooses, as the Apple app's series sheet, between the episode
+/// its page plays next, that episode's season and every episode.
 /// </summary>
 public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
 {
@@ -57,9 +59,21 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
         return options;
     }
 
-    private async Task<DownloadOptionsViewModel> SeriesDialogAsync(IReadOnlyList<(Season, IReadOnlyList<Episode>)> seasons)
+    // The specials, then two seasons: the first watched, the second half-way; the series' page plays the second's third next.
+    private static IReadOnlyList<(Season, IReadOnlyList<Episode>)> HalfWatched =>
+    [
+        (new Season { SeasonNumber = 0, Title = "Specials", IsSpecials = true }, [Episode(0, 1)]),
+        (new Season { SeasonNumber = 1, Title = "Season 1" }, [Episode(1, 1, Watched), Episode(1, 2, Watched)]),
+        (new Season { SeasonNumber = 2, Title = "Season 2" }, [Episode(2, 1, Watched), Episode(2, 2, InProgress), Episode(2, 3, size: 2 * GB)]),
+    ];
+
+    private static readonly CatalogItemDetail PlaysThird = new() { Title = "Example Series", PlayContentId = "ep_2_3", PlaySeasonNumber = 2 };
+
+    // The series' dialog as a card or its page opens it, over what this PC has.
+    private async Task<DownloadOptionsViewModel> SeriesDialogAsync(IReadOnlyList<(Season, IReadOnlyList<Episode>)> seasons, CatalogItemDetail? series = null)
     {
-        var offer = DownloadOffers.ForSeries(new CatalogItemDetail { Title = "Example Series" }, "sr_1", seasons, _ => false)!;
+        var offer = DownloadOffers.ForSeries(series ?? new CatalogItemDetail { Title = "Example Series" }, "sr_1", seasons,
+            id => _h.Store.FindByItem(Scope7, id) is not null)!;
         var options = await OptionsAsync();
         options.ForReading(_ => Task.FromResult<DownloadOffer>(offer));
         await options.Reading;
@@ -152,5 +166,136 @@ public sealed class DownloadEpisodeChoiceTests : IAsyncDisposable
         Assert.Equal("2 episodes · 2.0 GB", options.SizeText);
         Assert.True(await options.StartAsync());
         Assert.Equal(["ep_2_1", "ep_2_2"], CreatedEpisodes());
+    }
+
+    private static OneTimeRow Row(DownloadOptionsViewModel options, OneTimeChoice choice) => options.OneTimeRows.Single(r => r.Choice == choice);
+
+    // The Apple app's series sheet: This Episode, Season N and All Episodes, each with its line.
+    [Fact]
+    public async Task ASeriesDialog_OffersThisEpisode_ItsSeason_AndAllEpisodes_OpeningOnAllEpisodes()
+    {
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        Assert.True(options.ShowsOneTimeRows);
+        Assert.Equal([("S02E03 · Chapter 3", "This episode only", true), ("Season 2", "3 episodes", true), ("All episodes", "Every season", true)],
+            options.OneTimeRows.Select(r => (r.Title, r.Detail, r.IsAvailable)));
+        Assert.Equal(OneTimeChoice.AllEpisodes, options.SelectedOneTimeRow?.Choice);
+        Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 4.0 GB"), (options.Title, options.SizeText));
+    }
+
+    [Fact]
+    public async Task ThisEpisode_DownloadsThatEpisodeAlone_WithoutTheSwitch()
+    {
+        Creates("ep_2_3");
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Episode);
+
+        Assert.Equal(("Download: Example Series · S2 · E3", "2.0 GB", false), (options.Title, options.SizeText, options.ShowsOnlyUnwatched));
+        Assert.True(await options.StartAsync());
+        Assert.Equal(["ep_2_3"], CreatedEpisodes());
+        Assert.Equal("f_2_3", JsonDocument.Parse(_h.Silo.SentTo(HttpMethod.Post, CreatePath).Single().Body!).RootElement.GetProperty("media_file_id").GetString());
+    }
+
+    // The tester's case: the season they are in, from the episode in progress to its end.
+    [Fact]
+    public async Task TheSeasonRow_DownloadsThatSeason_WithoutItsWatchedEpisodes()
+    {
+        Creates("ep_2_2", "ep_2_3");
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Season);
+
+        Assert.Equal(("Download: Example Series · Season 2", "2 episodes · 3.0 GB", true), (options.Title, options.SizeText, options.ShowsOnlyUnwatched));
+        Assert.True(await options.StartAsync());
+        Assert.Equal(["ep_2_2", "ep_2_3"], CreatedEpisodes());
+    }
+
+    [Fact]
+    public async Task BackOnAllEpisodes_TheDialogCountsTheWholeSeriesAgain()
+    {
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Episode);
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.AllEpisodes);
+
+        Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 4.0 GB", true), (options.Title, options.SizeText, options.ShowsOnlyUnwatched));
+        Assert.Empty(options.Versions);
+    }
+
+    // A list's choice written back as nothing, as a list does while its rows change, leaves the choice as it was.
+    [Fact]
+    public async Task NoRowWrittenBack_KeepsTheChoice()
+    {
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+        options.SelectedOneTimeRow = Row(options, OneTimeChoice.Season);
+
+        options.SelectedOneTimeRow = null;
+
+        Assert.Equal("Download: Example Series · Season 2", options.Title);
+    }
+
+    [Fact]
+    public async Task ThisEpisodeOnThisPc_SaysSo_AndCannotBeStarted()
+    {
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_2_3");
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        var episode = Row(options, OneTimeChoice.Episode);
+        Assert.Equal(("On this PC", false), (episode.Detail, episode.IsAvailable));
+
+        options.SelectedOneTimeRow = episode;
+
+        Assert.False(options.CanStart);
+        Assert.False(await options.StartAsync());
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, CreatePath));
+    }
+
+    [Fact]
+    public async Task ThisEpisodeStillComing_SaysDownloading()
+    {
+        await _h.AddAsync("dl_9", DownloadState.Downloading, mediaItemId: "ep_2_3");
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        var episode = Row(options, OneTimeChoice.Episode);
+        Assert.Equal(("Downloading", false), (episode.Detail, episode.IsAvailable));
+    }
+
+    [Fact]
+    public async Task ASeasonAllOnThisPc_SaysSo_AndCannotBeStarted()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_2_1");
+        await _h.AddAsync("dl_2", DownloadState.Completed, mediaItemId: "ep_2_2");
+        await _h.AddAsync("dl_3", DownloadState.Completed, mediaItemId: "ep_2_3");
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        var season = Row(options, OneTimeChoice.Season);
+        Assert.Equal(("On this PC", false), (season.Detail, season.IsAvailable));
+
+        options.SelectedOneTimeRow = season;
+
+        Assert.False(options.CanStart);
+    }
+
+    [Fact]
+    public async Task InGerman_TheRowsSpeakTheAppleAppsWords()
+    {
+        using var german = AppText.Use(TextLanguage.Load("de"));
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_2_3");
+
+        var options = await SeriesDialogAsync(HalfWatched, PlaysThird);
+
+        Assert.Equal([("S02F03 · Chapter 3", "Auf diesem PC"), ("Season 2", "2 Folgen"), ("Alle Folgen", "Alle Staffeln")],
+            options.OneTimeRows.Select(r => (r.Title, r.Detail)));
+        Assert.Equal("Nur ungesehene Folgen", DownloadOptionsViewModel.OnlyUnwatchedLabel);
+    }
+
+    // A season's dialog has no rows: it is that season.
+    [Fact]
+    public async Task ASeasonsDialog_HasNoRows()
+    {
+        var options = await SeasonDialogAsync(Episode(1, 1), Episode(1, 2));
+
+        Assert.False(options.ShowsOneTimeRows);
     }
 }

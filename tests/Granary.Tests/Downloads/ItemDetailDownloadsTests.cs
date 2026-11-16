@@ -323,6 +323,44 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Assert.True(page.ShowsDownload);
     }
 
+    // The tester's case from the series' page: its first episode watched, the page plays the fifth next. The dialog offers that
+    // episode, its season and every episode, and its season without the watched first.
+    [Fact]
+    public async Task ASeries_OffersTheEpisodeItsPagePlaysNext_ItsSeason_AndAllEpisodes()
+    {
+        _detail.Get(ItemDetailFixture.ItemPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.Series.Replace("\"year\": 2026,",
+                "\"year\": 2026, \"play_content_id\": \"ep_5\", \"play_season_number\": 1,", StringComparison.Ordinal)))
+            .Get(ItemDetailFixture.SimilarPath("sr_1"), ItemDetailFixture.Ok("""{ "items": [] }"""))
+            .Get(ItemDetailFixture.SeasonsPath("sr_1"), ItemDetailFixture.Ok(TitlePayloads.SeriesSeasons))
+            .Get(ItemDetailFixture.SeriesEpisodesPath("sr_1", 0), ItemDetailFixture.Ok(TitlePayloads.SpecialsEpisodes))
+            .Get(ItemDetailFixture.SeriesEpisodesPath("sr_1", 1), ItemDetailFixture.Ok(TitlePayloads.SeasonEpisodes.Replace(
+                "\"title\": \"Chapter One\", \"runtime\": 50,", "\"title\": \"Chapter One\", \"runtime\": 50, \"user_data\": { \"played\": true },",
+                StringComparison.Ordinal)))
+            .Get(ItemDetailFixture.SeriesEpisodesPath("sr_1", 2), ItemDetailFixture.Ok(TitlePayloads.SecondSeasonEpisodes))
+            .Get(ItemDetailFixture.SeasonItemEpisodesPath("se_0"), ItemDetailFixture.Ok(TitlePayloads.SpecialsEpisodes))
+            .Get(ItemDetailFixture.SeasonItemEpisodesPath("se_2"), ItemDetailFixture.Ok(TitlePayloads.SecondSeasonEpisodes));
+        Creates(Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: EpisodeId)));
+        (string Title, string Size, IReadOnlyList<(string, string)> Rows, bool Switch) all = default;
+        string seasonTitle = "", seasonSize = "";
+        _dialog.WhileShown = async options =>
+        {
+            await options.Reading;
+            all = (options.Title, options.SizeText, [.. options.OneTimeRows.Select(r => (r.Title, r.Detail))], options.ShowsOnlyUnwatched);
+            options.SelectedOneTimeRow = options.OneTimeRows.Single(r => r.Choice == OneTimeChoice.Season);
+            (seasonTitle, seasonSize) = (options.Title, options.SizeText);
+            await options.StartAsync();
+        };
+        var page = await FollowedAsync("sr_1");
+        await Until(() => page.ShowsDownload, "Download series showed");
+
+        await page.OpenDownloadCommand.ExecuteAsync(null);
+
+        Assert.Equal([("S01E05 · Chapter Five", "This episode only"), ("Season 1", "2 episodes"), ("All episodes", "Every season")], all.Rows);
+        Assert.Equal(("Download: Example Series · All episodes", "3 episodes · 6.0 GB", true), (all.Title, all.Size, all.Switch));
+        Assert.Equal(("Download: Example Series · Season 1", "1 episode · 2.0 GB"), (seasonTitle, seasonSize));
+        Assert.Equal([EpisodeId], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+    }
+
     [Fact]
     public async Task ASeries_OffersNoDownload_WhenTheServerDoesNotAllowIt()
     {
