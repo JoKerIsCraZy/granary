@@ -107,12 +107,6 @@
       "value": "Try again"
     }
   ],
-  "error.rate_limited": [
-    {
-      "type": 0,
-      "value": "Too many requests. Wait a moment and try again."
-    }
-  ],
   "home.section.becauseYouEnjoy": [
     {
       "type": 0,

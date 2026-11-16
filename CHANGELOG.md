@@ -64,6 +64,24 @@ release's section is what its update says it changes (docs/release.md).
   season's episodes that are not on this PC yet, the specials last, and says how many they are and the space they need
   before it starts; Cancel stops a long season or series after the episode under way. A title on this PC shows how
   its download stands there instead, which opens the Downloads page, with Delete download beside it.
+- **Only unwatched episodes:** when you download a season or a whole series and you have watched some of its episodes,
+  the download dialog has Only unwatched episodes, on unless you watched every one of them: it leaves out the episodes
+  you watched to the end and keeps the one you are in the middle of, so at episode 7 you get 7 to the end. The episodes
+  and the space the dialog shows follow the switch; turn it off to download the watched ones too. Monitoring keeps its
+  own rules.
+- **One episode or one season from a series:** a series' download dialog offers, as Silo's iPhone and iPad app does, the
+  episode you would watch next ("S01E07 · Pilot", "This episode only", or "On this PC" when it is here already), the
+  season it is in and All episodes. It opens on that episode, or on the first of the others when it is here already.
+  Only unwatched episodes works for the season and for all episodes.
+- **Your Silo server's download limit:** when the limit your Silo server sets for an account stops a season or a whole
+  series part-way, the rest of its episodes wait on this PC, also across restarts, and start in order once the server
+  allows more: when one of your downloads is ready on the server, or your Silo server has heard that you deleted one, or
+  after a wait that grows while the server still says no (half an hour at most). An episode the server keeps refusing no
+  longer holds the others back. The download dialog says how many of the series' episodes wait, in words that name the
+  limit, with Done; Cancel while it starts keeps nothing waiting. The Downloads page says so too, with Cancel to drop
+  them, and a waiting episode's own Download says Queued. Deleting a series' downloads, or Remove all downloads in
+  Settings → Downloads (offered also while episodes only wait), drops the waiting episodes as well, and the one that was
+  just being asked for goes with them.
 - **Phone remote:** Silo's phone app can control what plays in Granary: play and pause, seek, volume, audio and
   subtitles, speed, quality and the next episode. Switch it on under Settings → Playback → This PC, open Connect a Phone
   and scan the code with the phone's camera once. It works on your local network only, while Granary runs, and only for

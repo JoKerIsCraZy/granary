@@ -70,7 +70,7 @@ public sealed partial class ItemDetailViewModel
         {
             if (downloads.CanDownload && SeasonOffer(downloads, item) is { } season)
             {
-                await downloads.OfferSeasonAsync(season.Request, season.SeasonTitle, season.KnownBytes);
+                await downloads.OfferSeasonAsync(season);
             }
         }
         else if (item.Type == CatalogItemTypes.Series)

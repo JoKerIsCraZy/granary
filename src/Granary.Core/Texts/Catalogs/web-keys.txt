@@ -65,13 +65,6 @@ common.save
 common.signOut
 common.tryAgain
 
-# The download dialog, in the words of the web's DownloadVersionPicker.tsx, the loading and failure of its card menu's
-# dialogs (components/MediaItemMenu.tsx, MetadataActionStatusDialog), the web's words for a request refused for the
-# account's limit (error.rate_limited) and its title page's Download: src/Granary.Core/ViewModels/Downloads/
-# DownloadOptionsViewModel*.cs, src/Granary.App/Controls/DownloadOptionsPanel.xaml(.cs) and
-# src/Granary.App/Services/DownloadOptionsDialog.cs.
-error.rate_limited
-
 # The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
 # Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs. For You's rows and Requests'
 # Discover rows (discover…) carry them too: RecommendationRow in RecommendationModels.cs and DiscoverSection in
@@ -1307,7 +1300,10 @@ web.detail.actions.browseSeries
 # A title's Download item, as the web's ActionBar.tsx names it: the title page's and the cards' (src/Granary.Core/Downloads/
 # DownloadActions.cs and CardDownloads.cs), and the reason the download dialog gives for a title without a file
 # (DownloadOffers.cs), as the web's MediaInfoDialog.tsx says it.
-# More of the download dialog's words, as above under error.rate_limited.
+# The download dialog, in the words of the web's DownloadVersionPicker.tsx, the loading and failure of its card menu's
+# dialogs (components/MediaItemMenu.tsx, MetadataActionStatusDialog) and its title page's Download: src/Granary.Core/
+# ViewModels/Downloads/DownloadOptionsViewModel*.cs, src/Granary.App/Controls/DownloadOptionsPanel.xaml(.cs) and
+# src/Granary.App/Services/DownloadOptionsDialog.cs.
 web.detail.actions.download
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere.
@@ -1497,7 +1493,7 @@ web.detail.versions.fileIdFallback
 web.detail.versions.numbered
 web.detail.versions.versionButton
 
-# More of the download dialog's words, as above under error.rate_limited.
+# More of the download dialog's words, as above under web.detail.actions.download.
 web.downloads.versionPicker.description
 web.downloads.versionPicker.sizeNote
 web.downloads.versionPicker.startFailed
@@ -1590,7 +1586,7 @@ web.item.images.wrongType
 web.item.menu.addToFavorites
 web.item.menu.addToWatchlist
 
-# More of the download dialog's words, as above under error.rate_limited.
+# More of the download dialog's words, as above under web.detail.actions.download.
 web.item.menu.detailsFailed
 web.item.menu.loading
 web.item.menu.loadingDetails
@@ -1600,7 +1596,7 @@ web.item.menu.moreActions
 web.item.menu.notInterested
 web.item.menu.playFromBeginning
 
-# More of the download dialog's words, as above under error.rate_limited.
+# More of the download dialog's words, as above under web.detail.actions.download.
 web.item.menu.pleaseTryAgain
 
 # More of a card's words, as above under web.calendar.event.badge.seasonPremiere; Remove from Continue Watching and
@@ -1611,7 +1607,7 @@ web.item.menu.removeFromNextUp
 web.item.menu.removeFromWatchlist
 web.item.menu.showInRecommendations
 
-# More of the download dialog's words, as above under error.rate_limited.
+# More of the download dialog's words, as above under web.detail.actions.download.
 web.item.menu.tryAgain
 
 # More of a title's page's words, as above under web.common.toast.subtitles.resetPreferenceFailed.

@@ -2997,7 +2997,9 @@ signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 Granary keeps films and episodes on the PC as the server's **managed downloads**: every request carries
 `X-Silo-Device-Id` and `X-Profile-Id` (6.4), so each entry belongs to one account, profile and PC. Every call goes through
 `Api/Downloads/DownloadsApi`, bound to the profile its download belongs to (`SiloRequestOptions.Profile`): while the server
-acts as another profile, the request is not sent (`ProfileChangedException`). Problems follow 2.2; the downloads ones Granary
+acts as another profile, the request is not sent (`ProfileChangedException`). A create is bound to its account as well
+(`SiloRequestOptions.Account`, `SendAsAccountProfileAsync`), so one made for an account never goes out under another
+signed in on the same server, also with a profile of the same id. Problems follow 2.2; the downloads ones Granary
 branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCodes`). Sources:
 `silo-server/docs/downloads-api.md` (sections 3 to 6, 9 and 12), `silo-server/internal/apiv2/download_*.go`.
 
@@ -3037,14 +3039,23 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `revision` from the registry and `expected_download_id` to its `id`, which reuses, revives or replaces it; a second 409,
   or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
   episode in `skipped`, means the profile cannot download it.
-  A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
-  PC does not have, and so is a whole series, season after season (the specials last), its episodes read through 7.7
+  A 429 or another client error fails it (for a film or an episode alone; a season's 429 `rate_limited`, below). A season
+  is one single-item request per episode, in order, for the episodes the PC does not have or keep waiting, and so is a whole series, season after season (the specials last), its episodes read through 7.7
   (`/series/{id}/seasons`, then each season's `/episodes`). Silo's apps send a series as the server's batch (`series:
   true` with a `batch_id`, followed by `page.next_cursor`); Granary does not send `series`, `season_number`, `batch_id` or
-  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429
-  (`rate_limited`: the account's limit of downloads at once or in a period, `silo-server/internal/downloads/limiter.go`),
-  to a create or its revival, stops a season or a series there: the creates after it would be refused alike. A 403, 404
-  or 501 for one episode does not: the server's batch skips such an episode and goes on.
+  `expected_entries`, so every episode asks for the file the dialog counted and gets the guards above. A 429 with the
+  problem code `rate_limited` (the account's limit of downloads at once or in a period, `QuantityLimiter` in
+  `silo-server/internal/downloads/limiter.go`), to a create or its revival, stops a season or a series there: the creates
+  after it would be refused alike, so that episode and the ones after it wait on this PC and are created later, one at a
+  time (docs/architecture.md, "Waiting episodes"). The problem says neither which limit nor when (its `detail` differs,
+  but is not branched on), carries no `Retry-After` and no extension, and the capability lists no limits. Of a device's
+  entries only a `preparing` one holds a place of the limit at once (`concurrentSlotPredicate` in `downloads/repo.go`): an
+  original, or a preset whose file is ready, registers `ready` and counts toward the period alone, which only time frees
+  (`CountByUserSince` leaves out `cancelled` and `failed` entries). A device's `DELETE` drops its entry
+  (`deleteManagedSQL`), which then counts toward neither limit. A 429 with another code (a proxy's) fails the create. A
+  waiting episode's create refused with a 4xx the server would give again (all but 401, 408, 409, 425 and 429; 403, 404 and
+  501 as above) leaves the line; a `Retry-After` is kept to 30 minutes.
+  A 403, 404 or 501 for one episode does not stop a season: the server's batch skips such an episode and goes on.
 
 ### 14.3 Registry and status events
 

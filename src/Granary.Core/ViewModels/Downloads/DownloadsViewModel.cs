@@ -24,7 +24,8 @@ namespace Granary.Core.ViewModels.Downloads;
 /// the cards it offers to delete the watched downloads to free up space, as both apps do, in the Android app's words
 /// throughout (its Reclaim watched button, the dialog of that name, its question and its Reclaim), unless Settings →
 /// Downloads keeps watched downloads; nothing is deleted without the question. After a start that could not reach the server
-/// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>). Beside Reclaim
+/// it says so above the cards, with a Retry that opens Home once the server answers (<see cref="OfflineStart"/>); while episodes
+/// wait for your Silo server's limit of downloads, how many, with Cancel (<see cref="ShowsWaitingNote"/>). Beside Reclaim
 /// Watched, Download settings opens Settings → Downloads. Above the films, the Apple app's Monitored: each monitored series as a
 /// card (<see cref="MonitorCards"/>), running ones first, then by title, with what it takes and does next from the airing
 /// calendar (<see cref="MonitorSchedule"/>, read as the page shows), which opens its download dialog on Monitor.
@@ -164,6 +165,17 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial bool ShowsOfflineNote { get; private set; }
 
+    /// <summary>
+    /// Episodes of a season or a series wait for your Silo server's limit of downloads (<see cref="DownloadManager.WaitingCount"/>):
+    /// the page says how many above the cards (<see cref="WaitingNote"/>), with Cancel (<see cref="CancelWaitingCommand"/>).
+    /// </summary>
+    [ObservableProperty]
+    public partial bool ShowsWaitingNote { get; private set; }
+
+    /// <summary>"Your Silo server's download limit is reached. 6 episodes wait on this PC and start once the server allows more."</summary>
+    [ObservableProperty]
+    public partial string WaitingNote { get; private set; } = "";
+
     /// <summary>A Retry is asking the server.</summary>
     [ObservableProperty]
     public partial bool IsRetrying { get; private set; }
@@ -209,6 +221,19 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     /// </summary>
     [RelayCommand]
     private void OpenSettings() => _navigation.NavigateTo(AppRoute.Settings, "downloads");
+
+    /// <summary>
+    /// The waiting note's Cancel: the active profile's waiting episodes leave the line, and none of them is asked for. Nothing on
+    /// this PC goes, so nothing is asked first.
+    /// </summary>
+    [RelayCommand]
+    private async Task CancelWaitingAsync()
+    {
+        if (_downloads.ActiveScope is { } scope)
+        {
+            await _downloads.DropWaitingAsync(scope, null, CancellationToken.None);
+        }
+    }
 
     /// <summary>A card's click: a whole download plays, any other opens its page, a series' card opens its downloads.</summary>
     [RelayCommand]
@@ -426,7 +451,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         HasFilms = _films.Count > 0;
         HasSeries = _series.Count > 0;
         HasMonitored = _monitored.Count > 0;
-        IsEmpty = !HasFilms && !HasSeries && !HasMonitored;
+        int waiting = _downloads.WaitingCount();
+        ShowsWaitingNote = waiting > 0;
+        WaitingNote = waiting > 0 ? DownloadOptionsViewModel.WaitingText(waiting) : "";
+        // Episodes on their way are no empty page, also before the first of them is here.
+        IsEmpty = !HasFilms && !HasSeries && !HasMonitored && waiting == 0;
     }
 
     // Each monitored series as the Apple app's Monitored list has it: running ones first, then by title.

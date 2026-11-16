@@ -188,7 +188,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (Home's rows, Continue Watching and Next Up, the libraries, search, collections, a title page's rows and episodes),
   with the title page's entries and rules (Detail pages, below): "Download" while your Silo server lets the profile
   download, or the download's status in the Downloads page's words, which opens the Downloads page, and "Delete download"
-  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`). They come from what this PC
+  under it; a season's card "Download season"; a series' card "Download series" (`CardDownloads`), whose dialog offers the
+  episode the series plays next, its season and All episodes, as a series' page does (Detail pages, below); an episode
+  waiting for your Silo server's download limit says "Queued", which opens the Downloads page. They come from what this PC
   knows, so opening the menu asks the server nothing. Below a line come the entries of the list a card is in, from the
   nearest grid above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a collection's own.
   Right-click, Shift+F10, the menu key and a controller's Menu open the same menu. The web's admin entries (play
@@ -360,7 +362,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   (as the download stands when the menu opens), More Info (the title's page, as the web's hero names it) and Delete
   download, which asks first as the title page does. A series' card has More Info and the Apple app's Delete all
   episodes, which asks "Delete downloaded files?", "This removes the downloaded copies from this PC. Nothing is deleted
-  from your Silo server." with "Delete 3 downloads" ("Delete download" for one). Cards change in place as their
+  from your Silo server." with "Delete 3 downloads" ("Delete download" for one); the series' episodes waiting for your
+  Silo server's download limit go with them, at once: one that was just being asked for is not kept, and your Silo server
+  hears its delete. Cards change in place as their
   downloads change, so the focus stays on a card while its download pauses, resumes or finishes; a card whose download
   was deleted goes, and the focus moves to the card now in its place (or the last one), so a keyboard, a controller or a
   remote carries on through the grid; after the last film the first series takes it, after the last series the last
@@ -376,6 +380,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   goes to the server a moment later (docs/architecture.md, "Offline progress"); while it still can't be
   reached, the note stays. The note also goes with a sign-out and with another profile. Every other page keeps its own
   "Couldn't reach the server" error and Retry, and losing the server while Granary runs moves nobody.
+  While episodes of a season or a series wait for your Silo server's download limit (docs/architecture.md, "Waiting
+  episodes"), a second informational `InfoBar` under that one says "Your Silo server's download limit is reached. 6
+  episodes wait on this PC and start once the server allows more." with Cancel, which takes them out of line without
+  asking (nothing on this PC goes); the note follows the line as episodes start, and goes with the last of them. Such
+  episodes keep the page from saying "No downloads yet". A waiting episode's own Download, on its card or its season's
+  page, says "Queued" and opens this page, and its season's Download season leaves it out.
 - A series' downloads (`DownloadedSeriesPage`, `AppRoute.DownloadedSeries`, opened from its card on the Downloads page, as
   the Apple app opens a series' downloads on a screen of their own): the page's padding, the series' name in the display
   style and under it, muted, "3 episodes · 12.0 GB"; then each season under its row title ("Season 1", by number;
@@ -870,7 +880,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     Try Again; a title without a file (or a season none of whose episodes has one) says the web's "No media files for this
     item.", a season whose episodes are all on this PC "Every episode of this season is on this PC." (a series' "Every
     episode of this series is on this PC."), and Download stays
-    off. Cancel stops the read. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    off. Cancel stops the read. A season's or a series' episodes, one of those left watched to its end, have Granary's
+    "Only unwatched episodes" under the description, a switch as Monitor's Delete after watching: it leaves out the
+    episodes watched (`user_data.played`) and keeps one in progress, so the viewer half-way through the seventh gets the
+    seventh to the end, and the episodes and size below follow it. It starts on, unless every episode left is watched:
+    then it starts off, so the dialog never opens on "0 episodes" with Download off (turned on then, it does leave that).
+    Each row a series' dialog moves to starts it so, until the viewer sets it; from then on it stays as they set it.
+    Without a watched episode there is no switch. It is One time's only: Monitor keeps its rules. A series' One time has Silo's Apple app's rows (its series sheet) above the switch,
+    in the version rows' style, a title and its line: the episode the series' page plays next (`play_content_id`; without
+    one, the episode in progress, else the first unwatched, else the first, the specials last), "S01E07 · Pilot" with "This
+    episode only", or "On this PC" or "Downloading" when it is here already, then dimmed and not to be chosen; its season
+    (`play_season_number`, else that episode's), "Season 2" with its episodes not on this PC ("3 episodes"; "On this PC",
+    dimmed, when none); and "All episodes" with "Every season". The dialog opens on This Episode, as the Apple app's sheet
+    does, else on the first row that can be chosen (its season, else All episodes). The title, the size and the switch
+    follow the row ("Download: Example Series · S1 · E7", "… · Season
+    2"); the switch applies to the season and to every episode, not to the one episode, which downloads its first file as a
+    season's episodes do. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
     Original, labelled as Settings → Downloads labels them, its Download quality chosen when offered, else Original; the
     size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
     more, never above the file; "10 episodes · 21.4 GB" for a season or a series in Original, each episode's first file,
@@ -884,8 +909,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     pressed again sends only the episodes not started yet. A series starts season by season, the specials last, so the
     first episode comes first; neither app caps or asks about a long series, and neither does Granary beyond this dialog,
     whose size and free space hold back one that does not fit. Once your Silo server refuses one for the account's limit of
-    downloads (429), the episodes after it are not asked for, and the error bar has the web's words for that refusal, "Too
-    many requests. Wait a moment and try again." (also for a film or an episode), until Download is pressed again. Cancel
+    downloads (429 `rate_limited`), that episode and the ones after it wait on this PC and start once the server allows
+    more, and the dialog stays to say so as information, not as an error: "Your Silo server's download limit is reached. 6
+    episodes wait on this PC and start once the server allows more." (Granary's own words; the server does not say when;
+    the count is the series' whole line, episodes that waited from before included),
+    with Done in place of Cancel; Done closes it and they wait all the same, and Download pressed again sends nothing for
+    them. A film or an episode the limit refuses says "Your Silo server's download limit is reached. Try again later." in the
+    error bar. Cancel
     closes it; while a start runs, Cancel and Esc stop a season's or a series' episodes after the one under way, whose
     download is kept, and close the dialog once that one ended (a film's or an episode's start ends first), so a download
     never starts after the dialog was closed on it.
@@ -1739,7 +1769,8 @@ entry is chosen, and a controller's bumpers, which go from the chosen entry, do 
   take on this PC ("3.0 GB", as the queue counts them), and, while it has some, Remove all downloads ("Deletes this
   profile's downloads from this PC. Nothing is deleted from your Silo server.", Granary's words) with an outline Remove
   all in red, which asks the Apple app's "Remove all downloaded files?" with Remove all and Cancel, then deletes each as
-  Delete does.
+  Delete does; the episodes waiting for your Silo server's download limit go first, so none of them starts again. It is
+  offered also while only such episodes are there (the first of a season refused), and removes them.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

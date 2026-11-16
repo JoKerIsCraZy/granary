@@ -19,11 +19,12 @@ public sealed partial class DownloadStore
     // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
     // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
     // Null, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
-    // is made; while it is made, it goes again. The row kept carries the clears seen as it was added.
-    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration)
+    // is made; while it is made, it goes again. The same with onlyWhileWaiting once its episode no longer waits in line. The row
+    // kept carries the clears seen as it was added, and its episode no longer waits for the server's limit of downloads.
+    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration, bool onlyWhileWaiting)
     {
         var record = download.Record;
-        if (IsClearedSince(record.Scope, clearGeneration))
+        if (IsClearedSince(record.Scope, clearGeneration) || (onlyWhileWaiting && !IsWaiting(record.Scope, record.MediaItemId)))
         {
             return null;
         }
@@ -52,12 +53,17 @@ public sealed partial class DownloadStore
         StoredDownload? kept = null;
         Change(state =>
         {
-            if (IsClearedSinceLocked(record.Scope, clearGeneration))
+            if (IsClearedSinceLocked(record.Scope, clearGeneration)
+                || (onlyWhileWaiting && !state.Waiting.Any(w => w.Scope == record.Scope && w.EpisodeId == record.MediaItemId)))
             {
                 return state;
             }
             kept = download with { ClearsSeen = _clearGeneration };
-            return state with { Downloads = [.. state.Downloads, kept] };
+            return state with
+            {
+                Downloads = [.. state.Downloads, kept],
+                Waiting = [.. state.Waiting.Where(w => w.Scope != record.Scope || w.EpisodeId != record.MediaItemId)],
+            };
         });
         if (kept is null)
         {
@@ -146,6 +152,7 @@ public sealed partial class DownloadStore
             Downloads = [.. state.Downloads.Select(DownloadIndexEntry.Of)],
             PendingDeletes = state.PendingDeletes,
             FolderDeletes = state.FolderDeletes,
+            WaitingEpisodes = state.Waiting,
         };
         try
         {
@@ -282,6 +289,7 @@ public sealed partial class DownloadStore
         var downloads = new List<StoredDownload>();
         var pending = new List<PendingDelete>();
         var folderDeletes = new List<FolderDelete>();
+        var waiting = new List<WaitingEpisode>();
         if (index is not null)
         {
             foreach (var entry in index.Downloads)
@@ -293,7 +301,9 @@ public sealed partial class DownloadStore
             }
             pending = [.. index.PendingDeletes.Where(DownloadRecords.IsUsable).Distinct()];
             folderDeletes = [.. index.FolderDeletes.Where(d => d is not null && d.IsUsable)];
-            write |= pending.Count != index.PendingDeletes.Count || folderDeletes.Count != index.FolderDeletes.Count;
+            waiting = [.. index.WaitingEpisodes.Where(DownloadRecords.IsUsable).DistinctBy(w => (w.Scope, w.EpisodeId))];
+            write |= pending.Count != index.PendingDeletes.Count || folderDeletes.Count != index.FolderDeletes.Count
+                || waiting.Count != index.WaitingEpisodes.Count;
         }
         // Folders the index loaded, and removed downloads' folders still to delete, are not read again.
         var known = new HashSet<string>([.. downloads.Select(d => d.Folder), .. folderDeletes.Select(d => d.Folder)], StringComparer.OrdinalIgnoreCase);
@@ -312,7 +322,11 @@ public sealed partial class DownloadStore
         int unsent = pending.Count;
         pending = [.. pending.Where(p => !downloads.Any(d => d.Record.Scope == p.Scope && d.Record.DownloadId == p.DownloadId))];
         write |= pending.Count != unsent;
-        return (new Snapshot(downloads, pending, folderDeletes), write);
+        // An episode kept here waits no more: its download came while the index was not written.
+        int inLine = waiting.Count;
+        waiting = [.. waiting.Where(w => !downloads.Any(d => d.Record.Scope == w.Scope && d.Record.MediaItemId == w.EpisodeId))];
+        write |= waiting.Count != inLine;
+        return (new Snapshot(downloads, pending, folderDeletes, waiting), write);
     }
 
     // One index entry as a row, unless it is damaged or there twice; null for one left out.

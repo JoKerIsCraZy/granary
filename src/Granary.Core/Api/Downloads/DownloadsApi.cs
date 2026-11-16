@@ -28,10 +28,14 @@ public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
     public Task<DownloadCapability> GetCapabilityAsync(Uri server, string profileId, CancellationToken cancellationToken) =>
         http.GetAsProfileAsync(server, "api/v2/capabilities/downloads", profileId, DownloadsJsonContext.Default.DownloadCapability, cancellationToken);
 
-    /// <summary>Registers one film or episode (202). Never sent twice: after an uncertain answer, read the registry instead.</summary>
-    public Task<DownloadCreated> CreateAsync(Uri server, string profileId, CreateDownloadBody body, CancellationToken cancellationToken) =>
-        http.SendAsProfileAsync(HttpMethod.Post, server, "api/v2/downloads", profileId, body, DownloadsJsonContext.Default.CreateDownloadBody,
-            DownloadsJsonContext.Default.DownloadCreated, cancellationToken);
+    /// <summary>
+    /// Registers one film or episode (202). Never sent twice: after an uncertain answer, read the registry instead. It goes out
+    /// only as account <paramref name="accountId"/>'s profile <paramref name="profileId"/>: a create made for one account never
+    /// reaches another signed in on the same server, also with a profile of the same id.
+    /// </summary>
+    public Task<DownloadCreated> CreateAsync(Uri server, string accountId, string profileId, CreateDownloadBody body, CancellationToken cancellationToken) =>
+        http.SendAsAccountProfileAsync(HttpMethod.Post, server, "api/v2/downloads", accountId, profileId, body,
+            DownloadsJsonContext.Default.CreateDownloadBody, DownloadsJsonContext.Default.DownloadCreated, cancellationToken);
 
     /// <summary>One page of this profile's and PC's entries, newest first; <paramref name="cursor"/> continues a listing.</summary>
     public Task<DownloadEntryPage> ListAsync(Uri server, string profileId, string? cursor, CancellationToken cancellationToken)

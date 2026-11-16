@@ -1418,8 +1418,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
   the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
 - **Index.** `downloads.json` in the data folder lists each download's scope, id and folder, with its row's description
-  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`) and the
-  removed downloads' folders still to be deleted (`folder_deletes`). At every start the `download.json` files four folders
+  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`), the
+  removed downloads' folders still to be deleted (`folder_deletes`) and the episodes waiting for the server's limit of
+  downloads (`waiting_episodes`, below under "Waiting episodes"). At every start the `download.json` files four folders
   under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
   not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
   The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
@@ -1704,13 +1705,59 @@ client guide.
   so the queue, which takes the oldest first, brings the first episode first. Both stop, with those counts, when they are
   cancelled (between two episodes: a create under way is not cut off, since one the server made is kept), the profile
   they started for is no longer the active one, or the server refused a create, or its revival, for the account's limit
-  of downloads (429, `DownloadStartResult.Limited`, counted as failed, `SeasonStartResult.ReachedLimit`): every create
-  after it would be refused alike. An episode the server will not let the profile have (403, 404, 501: a preset it
+  of downloads (429 `rate_limited`, `DownloadStartResult.Limited`, `SeasonStartResult.ReachedLimit`): every create after it
+  would be refused alike, so that episode and the ones after it wait (`SeasonStartResult.Waiting`, below). An episode
+  waiting already counts as there, so Download pressed again sends nothing for it. An episode the server will not let the
+  profile have (403, 404, 501: a preset it
   cannot prepare from that episode's source) does not stop them, as the server's own batch skips such episodes and goes
   on. Silo's apps send a series as the server's batch (`series: true`, a page of 50 episodes at a time); Granary asks per
   episode, as for a season, so each episode gets the file the dialog's size counted (its first) and the create's guards
   above. Neither app caps a series or asks about it; Granary's dialog says how many episodes and how much space, and its
   free space check holds back one that does not fit. However many there are, the queue runs them as many at a time as Simultaneous Downloads says.
+- **Waiting episodes.** The episodes a season's or a series' run could not register past the server's limit
+  (`WaitingEpisode`: the profile, the series, the numbers and title, the file and quality the dialog chose) wait in line in
+  the store, `waiting_episodes` in `downloads.json`, so they hold across starts. A sign-out takes its account's along, as
+  it takes its downloads (`RemoveWhereAsync`, by the clear generation the run began at), and an episode that gets
+  downloaded, however, leaves the line in the change that keeps its download. `DownloadManager.Waiting.cs` asks the active
+  profile's line again, the first first, one create each through `StartAsync` and its guards, bound to the profile the line
+  is for (and the create to its account and profile, as every create is; a season's run binds its creates to the profile
+  it started for the same way): a switch to another profile leaves it waiting for its own, and the head is looked at again right before its
+  create, so one the viewer took out of line is not asked for. The server's 429 says neither which limit it is nor when to
+  come back, so one rule serves both: the line is asked again once one of the profile's downloads leaves Preparing while it
+  is kept here (its file is ready on the server: an entry the server prepares holds a place of the limit at once), or its
+  delete reached the server (the queue sent the pending delete: the server drops a device's deleted entry, which then
+  counts toward neither limit; a download deleted here holds its place until then), or after a wait of 1, 2, 5, 10, then
+  every 30 minutes while the server still refuses, or the server's `Retry-After` when it names a longer one, kept to 30
+  minutes (a date years ahead included), as the sign-in's and the token refresh's are. A place freed while the head's
+  create is under way is not lost to that create's refusal: a free count is taken before the create and compared after
+  (`_freeGeneration`). A timer that fires before the wait is over (the clock stepped back) is set again for the rest of it.
+  Then it goes on as far as the server takes them. Its outcomes:
+  - taken, or the download is here already (found in the store): the episode leaves the line;
+  - another start of it under way (the viewer's own Download, `AlreadyDownloading` from the create guard): it stays until
+    that download is here, since that start can still fail or meet the limit, and the line waits;
+  - an episode the server no longer offers the profile (403, 404, 501, skipped), or a refusal it would give again (another
+    4xx but 401, 408, 409, 425 and 429; an answer for another title): it leaves the line, logged without its title or id;
+  - no clear answer (none, a 5xx, a conflict the registry does not explain, an answer that is no Silo answer, which
+    `SiloHttp` reports as unreachable): the line waits as after a refusal, and after 3 such tries in a row the head goes to
+    the back of the line, since it may have reached the server but must not hold the others back;
+  - a run that fails unexpectedly waits as a refusal does, so it is not tried again at every store change.
+  At a start, and at a switch to the profile, the line is asked once, then waits. One run at a time: a store change only
+  notes what it freed and starts one (and with nothing waiting, compares nothing); a timer starts one when the wait is over.
+  Its state sits under the manager's lock, which is never held while the store writes, a create runs or a timer fires; the
+  store's handlers take only the store's own lock for their reads, as the queue's do (the queue's lock before the store's,
+  never the other way round). The creates take no token of their own: `SiloHttp`'s client bounds each at 100 s. A season's
+  or a series' run that the viewer cancels while its create is under way keeps nothing waiting when that create meets the
+  limit. A waiting episode counts as on its way wherever a download does: a season's or a series' offer leaves it out
+  (`DownloadOfferReader`, the season page's `DownloadActions.StateOf`, which says "Queued" and opens the Downloads page),
+  and the series dialog's This Episode cannot be chosen. The dialog's count is the series' whole line. The Downloads page
+  says how many wait (`DownloadManager.WaitingCount`) with Cancel (`DropWaitingAsync` for the profile), and a series'
+  Delete all episodes drops that series' line too, as Settings → Downloads → Remove all downloads drops the profile's:
+  before the deletes, since a delete that reaches the server frees a place and would start one of them again.
+  `DropWaitingAsync` never waits for a create of the line under way, which may hang on the network: such a create keeps
+  its download only while its episode is still in line, asked in the store change that keeps it (`AddUnlessClearedAsync`
+  with `onlyWhileWaiting`), so the download is either kept before the line went, and the deletes, which read the series'
+  (or the profile's) downloads after it, take it along, or never kept, the server hearing the delete of the entry it
+  made (`QueueServerDeleteAsync`). The head is looked at again right before its create, too.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
   its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
   it, and has one that waited out a retry delay tried at once.
@@ -1740,7 +1787,13 @@ client guide.
   none, so one under way is kept), and `StartAsync` then answers true, which closes the dialog. `ItemDetailPage` follows
   from `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
   (`ItemDetailDownloadsTests`). The page and the cards offer a title the same way (`DownloadOffers`: the request, the
-  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC). A
+  version rows with their sizes, the runtime, a season's or a series' episodes with a file that are not on this PC, and
+  of those the ones watched to their end with each one's size, `EpisodeFacts`). The offers stay whole: whether a season's
+  Download season shows, and the "on this PC" words, go by every episode left; the dialog's "Only unwatched episodes"
+  takes the watched ones out of what it counts and starts (`Unwatched()`), and starts nothing when none is left. A
+  series' offer also carries the Apple app's This Episode and Season N (`SeriesDownloadOffer.Episode` and `Season`, from
+  the series' `play_content_id` and `play_season_number`, else the Apple app's next episode), so its page, its card and
+  the Downloads page give the same rows; whether This Episode is on this PC is the dialog's to word. A
   series' page lists one season's episodes at most, so its Download series reads them as a card does
   (`DownloadOfferReader`, through `DownloadActions.OfferReadAsync`) and stays whatever is on this PC.
 - **The cards.** `CardDownloads` (one for the app) gives every film's, episode's, season's and series' card its entries,

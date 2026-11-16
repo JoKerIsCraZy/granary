@@ -444,17 +444,37 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal("", options.ErrorText);
     }
 
+    // Issue #166: the episodes past the server's limit wait on this PC, and the dialog says so as information, with Done.
     [Fact]
-    public async Task TheServersDownloadLimit_SaysSoInTheWebsWords()
+    public async Task TheServersDownloadLimit_KeepsTheRestWaiting_AndSaysSo()
     {
         Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")), ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
         var options = await OptionsAsync();
         options.ForSeason(Season, "Season 1", 6 * GB);
+        Assert.Equal("Cancel", options.CloseText);
 
         Assert.False(await options.StartAsync());
 
-        Assert.Equal("Too many requests. Wait a moment and try again.", options.ErrorText);
+        Assert.Equal(("", "Your Silo server's download limit is reached. 2 episodes wait on this PC and start once the server allows more.", "Done"),
+            (options.ErrorText, options.NoticeText, options.CloseText));
         Assert.Equal(["ep_1", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        Assert.Equal(["ep_2", "ep_3"], _h.Store.WaitingIn(Scope7).Select(w => w.EpisodeId));
+
+        // Pressed again, it sends nothing: every episode is here or waits.
+        Assert.True(await options.StartAsync());
+        Assert.Equal(2, CreateBodies().Count);
+    }
+
+    [Fact]
+    public async Task AFilmPastTheServersDownloadLimit_SaysSoInWordsThatNameIt()
+    {
+        Creates(ScriptedSilo.Problem(429, ProblemCodes.RateLimited));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        Assert.False(await options.StartAsync());
+
+        Assert.Equal(("Your Silo server's download limit is reached. Try again later.", ""), (options.ErrorText, options.NoticeText));
+        Assert.Equal(DownloadOptionsViewModel.LimitReached, options.ErrorText);
     }
 
     // A long season or series takes a while: Cancel stops it after the episode under way, whose download is kept, and the
