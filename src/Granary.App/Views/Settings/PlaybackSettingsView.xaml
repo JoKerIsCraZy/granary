@@ -264,7 +264,8 @@
         <controls:SettingsGroup Title="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.title')}" Description="{x:Bind t:AppText.Get('web.settings.deviceGroups.sound.description')}"
                                 Visibility="{x:Bind AudioDelay.IsSupported, Mode=OneWay}">
             <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.label')}"
-                                  Description="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}">
+                                  Description="{x:Bind t:AppText.Get('settingsManifest.player.audio_sync_ms.description')}"
+                                  controls:SearchKeywords.Terms="lip sync, sound delay, audio delay">
                 <Grid>
                     <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.HasLoadMessage, Mode=OneWay}">
                         <TextBlock Text="{x:Bind AudioDelay.LoadMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"

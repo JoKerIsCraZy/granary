@@ -1354,8 +1354,8 @@ off the mark stands still.
 ## Settings
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
-darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
+darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), the
+search box (below), then the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages, Accessibility), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
 mark in the accent. As on the web, the head stays and the groups scroll below it in a window too short for them all, so
 Downloads and About stay reachable; an arrow key or a controller's D-pad or bumper moves the focus from page to page
 across the groups and scrolls the one it reaches into view. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
@@ -1365,6 +1365,24 @@ description 13 px muted, the control on the right, hairlines between rows). Sele
 page background with a faint outline, in the accent when focused; switches are only their 40 px track, in the accent when on
 (Themes/SiloSettings.xaml). Every value is the profile's and saves at once; a refused save puts the control back and
 says why above the sections.
+
+**Search** (`SettingsSearchViewModel`, `SettingsPage.Search.cs`), as the web's settings sidebar (SettingsSearchInput.tsx,
+settingsSearch.ts): a 44 px box rounded 12 px, a 16 px muted magnifier at its start and "Search settings" as its hint and
+its name; while something is typed a ✕ at its end, "Clear settings search", empties it, as Escape in the box does (on
+an empty box Escape goes back, as anywhere). Ctrl+F puts focus in it with its text chosen. For the keyboard, a remote
+and a controller the box is one stop between Back to App and the pages. Typing narrows the sidebar to the pages that
+match under their groups' headings (a group with none goes; the first one left sits close under the box), and the page
+open stays chosen while it is listed. Under the box, in 12 px muted, "1 match" or "3 matches" counts the pages, or "No
+matching settings", which also stands where the pages were; nothing while the box is empty. A screen reader hears the
+line each time its words change. A page matches when every word typed starts a word of its name, of the text under its
+title, of its group's name, of the English keywords kept next to it, or of any of its settings (a section's title, a
+row's label and description, a heading, a control's name), or sits inside one from four letters on; case, accents and
+punctuation do not count, letters of any script do, and a group whose name matches keeps all its pages. The texts are
+those on screen, read from the pages' markup; in another language their English wording matches too. A page opened from
+the narrowed sidebar comes up at the first of its settings that matched on its own, 32 px under the top (one this
+profile or PC does not show is passed over); a click, Enter or a remote's OK on its entry also puts focus on that
+setting, and Right from the entry goes there. A page that matches only as a whole, by its name or its group's, opens at
+its top.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without

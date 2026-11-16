@@ -1,5 +1,7 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Granary.Core.Settings.Search;
+using Granary.Core.Texts;
 
 namespace Granary.Tests.Settings;
 
@@ -8,7 +10,7 @@ namespace Granary.Tests.Settings;
 /// a section's title, a row's label, a heading and a control named for screen readers, each by the text key the page shows,
 /// with the description beside it and the keywords kept next to it.
 /// </summary>
-public sealed class SettingsMarkupTests
+public sealed partial class SettingsMarkupTests
 {
     private const string Open = """
         <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -155,6 +157,44 @@ public sealed class SettingsMarkupTests
             lists.Select(list => (list.Key, string.Join(' ', list.Value.Select(page => page.Tag)))));
     }
 
+    /// <summary>
+    /// SettingsPage names each sidebar list's group by a key in its table of groups, which the search also reads: each list
+    /// has one, and each key is in the English catalog, as TextKeysTests checks the keys given to AppText.Get.
+    /// </summary>
+    [Fact]
+    public void EverySidebarList_HasAGroupNameInTheCatalog()
+    {
+        var english = TextCatalog.Embedded(AppLanguage.English);
+        var groups = GroupName().Matches(File.ReadAllText(AppFile("Views/SettingsPage.xaml.cs")))
+            .ToDictionary(match => match.Groups["list"].Value, match => match.Groups["key"].Value);
+        var lists = SettingsMarkup.ReadSidebar(File.ReadAllText(AppFile("Views/SettingsPage.xaml"))).Keys;
+
+        Assert.Equal(lists.Order(StringComparer.Ordinal), groups.Keys.Order(StringComparer.Ordinal));
+        Assert.All(groups.Values, key => Assert.True(english.Contains(key), $"{key} is not in the English catalog"));
+    }
+
+    /// <summary>
+    /// Every sidebar entry opens a view whose markup the app embeds (Views/Settings/*SettingsView.xaml), by SettingsPage's
+    /// table of views, so the search reads the page that opens.
+    /// </summary>
+    [Fact]
+    public void EverySidebarPage_HasAViewWhoseMarkupSearchReads()
+    {
+        string code = File.ReadAllText(AppFile("Views/SettingsPage.xaml.cs"));
+        var views = PageView().Matches(code).ToDictionary(
+            match => match.Groups["tag"].Value is "PlaybackPage" ? "playback" : match.Groups["tag"].Value.Trim('"'),
+            match => match.Groups["view"].Value);
+        var tags = SettingsMarkup.ReadSidebar(File.ReadAllText(AppFile("Views/SettingsPage.xaml"))).Values.SelectMany(pages => pages)
+            .Select(page => page.Tag);
+
+        Assert.All(tags, tag =>
+        {
+            Assert.True(views.TryGetValue(tag, out var view), $"{tag} has no view");
+            Assert.EndsWith("SettingsView", view, StringComparison.Ordinal);
+            Assert.True(File.Exists(AppFile($"Views/Settings/{view}.xaml")), $"{view}.xaml is missing");
+        });
+    }
+
     [Fact]
     public void EverySettingsPage_ShowsSomethingSearchFinds()
     {
@@ -216,4 +256,12 @@ public sealed class SettingsMarkupTests
         RepositoryFiles.Under("src/Granary.App/Views/Settings", "*SettingsView.xaml");
 
     private static string AppFile(string path) => Path.Combine(RepositoryFiles.Root, "src", "Granary.App", path);
+
+    // An entry of SettingsPage's table: ["tag"] = (nameof(SomeSettingsView), …).
+    [GeneratedRegex("""\[(?<tag>PlaybackPage|"[a-z-]+")\]\s*=\s*\(nameof\((?<view>\w+)\)""")]
+    private static partial Regex PageView();
+
+    // A group of SettingsPage's table: (SomeGroup, SomeList, "the.name.key").
+    [GeneratedRegex("""\(\s*\w+Group\s*,\s*(?<list>\w+)\s*,\s*"(?<key>[a-z][\w.]+)"\s*\)""")]
+    private static partial Regex GroupName();
 }
