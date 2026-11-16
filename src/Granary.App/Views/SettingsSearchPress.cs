@@ -2,9 +2,10 @@ namespace Granary.App.Views;
 
 /// <summary>
 /// A press (a click, Enter, a remote's OK) on a sidebar entry while the settings' search narrows the pages: focus goes to the
-/// page's match, at once on the page that shows, else once the choice the press makes has opened it. A press waits only when
-/// a choice will follow; one that would wait for nothing (its entry already chosen, the mpv.conf editor in its page's place)
-/// is let go, so none is left over to pull focus into a page the arrows open later. No XAML here, so it is tested alone.
+/// page's match, at once on the page that shows, else once its page opens. A press on the open page never waits, so one made
+/// while the mpv.conf editor stands in its place is not left over to pull focus into a page the arrows open later. A press
+/// on another entry waits for the opening its choice brings, also while the mpv.conf question holds it back; a declined
+/// question forgets it, as a new query does. No XAML here, so it is tested alone.
 /// </summary>
 internal sealed class SettingsSearchPress
 {
@@ -12,11 +13,10 @@ internal sealed class SettingsSearchPress
 
     /// <param name="openPage">The page that shows, or that the mpv.conf editor stands in for.</param>
     /// <param name="showsOpenPage">The open page's view shows, not the editor.</param>
-    /// <param name="isChosen">The entry is chosen already, so the press makes no choice.</param>
     /// <returns>True when the pressed page shows: its match takes focus now.</returns>
-    public bool Press(string page, string openPage, bool showsOpenPage, bool isChosen, bool byKeyboard)
+    public bool Press(string page, string openPage, bool showsOpenPage, bool byKeyboard)
     {
-        _waiting = page != openPage && !isChosen ? (page, byKeyboard) : null;
+        _waiting = page != openPage ? (page, byKeyboard) : null;
         return page == openPage && showsOpenPage;
     }
 

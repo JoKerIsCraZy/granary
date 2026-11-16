@@ -118,13 +118,19 @@ public sealed class SettingsSearchTests
         Assert.Empty(SettingsSearch.FilterGroups(pages, "言語"));
     }
 
-    /// <summary>A half of an emoji, as an input method leaves it while it composes, is no letter and breaks nothing.</summary>
+    /// <summary>
+    /// A half of an emoji, as an input method leaves it while it composes, is no letter and breaks nothing. The half is made
+    /// here, not given in the attribute, which keeps its strings in UTF-8 and so cannot carry a lone half.
+    /// </summary>
     [Theory]
-    [InlineData("redis\uD83D", "database")]
-    [InlineData("\uDE00redis", "database")]
-    public void ALoneHalfOfACharacter_IsNoLetter(string query, string page)
+    [InlineData(0xD83D, false)]
+    [InlineData(0xDE00, true)]
+    public void ALoneHalfOfACharacter_IsNoLetter(int half, bool isFirst)
     {
-        Assert.Equal([page], Tags(SettingsSearch.FilterGroups(Groups, query)));
+        string query = isFirst ? $"{(char)half}redis" : $"redis{(char)half}";
+        Assert.True(char.IsSurrogate(query, isFirst ? 0 : query.Length - 1));
+
+        Assert.Equal(["database"], Tags(SettingsSearch.FilterGroups(Groups, query)));
     }
 
     [Fact]

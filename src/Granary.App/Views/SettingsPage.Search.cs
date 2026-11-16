@@ -34,6 +34,11 @@ public sealed partial class SettingsPage
     // A press on an entry while searching, waiting for its page to open so focus goes to the page's setting.
     private readonly SettingsSearchPress _press = new();
 
+    // Counted up by each reveal asked for and by each query: a reveal that waited for its page to be laid out goes when a later
+    // one was asked meanwhile, and gives no focus once the query has changed, so an old press cannot take the focus.
+    private int _reveals;
+    private int _queries;
+
     /// <summary>The search box at the top of the sidebar.</summary>
     public SettingsSearchViewModel Search { get; }
 
@@ -94,6 +99,7 @@ public sealed partial class SettingsPage
             // A new query has its own matches, shown once a page opens; a press made for the last one goes.
             LeadInto(null, null);
             _press.Forget();
+            _queries++;
         }
         finally
         {
@@ -137,7 +143,7 @@ public sealed partial class SettingsPage
             return;
         }
         bool showsOpenPage = _editor is null && _views.TryGetValue(_shownPage, out var view) && ReferenceEquals(PageHost.Content, view);
-        if (_press.Press(page, _shownPage, showsOpenPage, entry.IsSelected, byKeyboard))
+        if (_press.Press(page, _shownPage, showsOpenPage, byKeyboard))
         {
             RevealWhenShown(page, StateOf(byKeyboard));
         }
@@ -159,16 +165,24 @@ public sealed partial class SettingsPage
     // The page's matches are looked for once it is laid out: a view shown for the first time has no texts before it loads.
     private void RevealWhenShown(string page, FocusState? focus)
     {
+        // Every page opened and every press supersedes a reveal still waiting, also where this one has nothing to show.
+        int reveal = ++_reveals;
+        int query = _queries;
         if (Search.MatchesOn(page).Count == 0 || !_views.TryGetValue(page, out var view) || view is not FrameworkElement shown)
         {
             return;
         }
         void Reveal()
         {
-            // Read again: the query may have changed while the page was laid out.
-            if (ReferenceEquals(PageHost.Content, shown) && Search.MatchesOn(page) is { Count: > 0 } matches)
+            // A later reveal took over, or the page left before it was laid out and has come back since.
+            if (reveal != _reveals || !ReferenceEquals(PageHost.Content, shown))
             {
-                RevealMatch(shown, page, matches, focus);
+                return;
+            }
+            // Read again, as the query may have changed while the page was laid out; then the press was for the old one.
+            if (Search.MatchesOn(page) is { Count: > 0 } matches)
+            {
+                RevealMatch(shown, page, matches, query == _queries ? focus : null);
             }
         }
         void OnLoaded(object sender, RoutedEventArgs e)

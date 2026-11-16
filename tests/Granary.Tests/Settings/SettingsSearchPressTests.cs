@@ -14,7 +14,7 @@ public sealed class SettingsSearchPressTests
     {
         var press = new SettingsSearchPress();
 
-        Assert.True(press.Press("playback", openPage: "playback", showsOpenPage: true, isChosen: true, byKeyboard: true));
+        Assert.True(press.Press("playback", openPage: "playback", showsOpenPage: true, byKeyboard: true));
         Assert.False(press.TryTake("playback", out _));
     }
 
@@ -23,8 +23,8 @@ public sealed class SettingsSearchPressTests
     {
         var press = new SettingsSearchPress();
 
-        // The mpv.conf editor shows in Playback's place, and Playback stays chosen: no choice follows the press.
-        Assert.False(press.Press("playback", openPage: "playback", showsOpenPage: false, isChosen: true, byKeyboard: false));
+        // The mpv.conf editor shows in Playback's place, and Playback stays chosen: nothing opens after the press.
+        Assert.False(press.Press("playback", openPage: "playback", showsOpenPage: false, byKeyboard: false));
 
         Assert.False(press.TryTake("playback", out _));
     }
@@ -34,7 +34,7 @@ public sealed class SettingsSearchPressTests
     {
         var press = new SettingsSearchPress();
 
-        Assert.False(press.Press("subtitles", openPage: "playback", showsOpenPage: true, isChosen: false, byKeyboard: true));
+        Assert.False(press.Press("subtitles", openPage: "playback", showsOpenPage: true, byKeyboard: true));
 
         Assert.True(press.TryTake("subtitles", out bool byKeyboard));
         Assert.True(byKeyboard);
@@ -45,29 +45,31 @@ public sealed class SettingsSearchPressTests
     public void AWaitingPress_GoesWhenAnotherPageOpens()
     {
         var press = new SettingsSearchPress();
-        press.Press("subtitles", openPage: "playback", showsOpenPage: true, isChosen: false, byKeyboard: false);
+        press.Press("subtitles", openPage: "playback", showsOpenPage: true, byKeyboard: false);
 
         Assert.False(press.TryTake("about", out _));
         Assert.False(press.TryTake("subtitles", out _));
     }
 
+    /// <summary>
+    /// A click chooses its entry before its press comes; while the mpv.conf question holds the page back, the press waits with
+    /// it: kept, the page opens and takes the focus; declined, the choice goes back and the press is forgotten.
+    /// </summary>
     [Fact]
-    public void APress_OnAnEntryChosenButNotOpenYet_IsLetGo()
+    public void APress_WhileItsPageWaitsOnTheEditorsQuestion_WaitsWithIt()
     {
         var press = new SettingsSearchPress();
-        press.Press("subtitles", openPage: "playback", showsOpenPage: true, isChosen: false, byKeyboard: false);
 
-        // The entry was chosen and its page waits on the mpv.conf question: a press now has no choice to follow.
-        Assert.False(press.Press("subtitles", openPage: "playback", showsOpenPage: false, isChosen: true, byKeyboard: false));
+        Assert.False(press.Press("subtitles", openPage: "playback", showsOpenPage: false, byKeyboard: false));
 
-        Assert.False(press.TryTake("subtitles", out _));
+        Assert.True(press.TryTake("subtitles", out _));
     }
 
     [Fact]
     public void Forget_DropsAWaitingPress()
     {
         var press = new SettingsSearchPress();
-        press.Press("subtitles", openPage: "playback", showsOpenPage: true, isChosen: false, byKeyboard: false);
+        press.Press("subtitles", openPage: "playback", showsOpenPage: true, byKeyboard: false);
 
         press.Forget();
 
