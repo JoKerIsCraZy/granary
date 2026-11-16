@@ -612,6 +612,61 @@ public sealed class SidebarViewModelTests
         await Auth.AuthPipeline.Eventually(() => sidebar.Avatar is null);
     }
 
+    // An account renamed elsewhere comes back with the same server and profile (SessionManager.RefreshAccountAsync): the
+    // menu's account line follows at once, though nothing is read again.
+    [Fact]
+    public async Task ARenamedAccount_ShowsInTheMenu_ThoughServerAndProfileStay()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        int asked = _requests.Count;
+        var changed = new List<string?>();
+        sidebar.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _session.Account = new Account("1", "elena.moreau", "", "admin", [], true, false, null);
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("elena.moreau", sidebar.AccountName);
+        Assert.Contains(nameof(SidebarViewModel.AccountName), changed);
+        Assert.Equal(asked, _requests.Count);
+    }
+
+    // While the profile is unknown the account's name stands in for it, in the entry and its letter.
+    [Fact]
+    public async Task ARenamedAccount_NamesTheEntry_WhileTheProfileIsUnknown()
+    {
+        Ready();
+        _profiles = () => FakeSiloServer.Problem(503, ProblemCodes.DependencyUnavailable);
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        var changed = new List<string?>();
+        sidebar.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _session.Account = new Account("1", "kim", "", "admin", [], true, false, null);
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("kim", sidebar.ProfileName);
+        Assert.Contains(nameof(SidebarViewModel.ProfileName), changed);
+        Assert.Contains(nameof(SidebarViewModel.ProfileInitial), changed);
+    }
+
+    // Nothing changed: nothing is announced again.
+    [Fact]
+    public async Task TheSameAccount_AnnouncesNoNames()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        var changed = new List<string?>();
+        sidebar.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(nameof(SidebarViewModel.AccountName), changed);
+        Assert.DoesNotContain(nameof(SidebarViewModel.ProfileName), changed);
+    }
+
     // As the web's profile menu: the account's name under the profile's, only when it is another.
     [Fact]
     public async Task TheMenu_NamesTheAccount_OnlyWhenItIsNotTheProfilesName()

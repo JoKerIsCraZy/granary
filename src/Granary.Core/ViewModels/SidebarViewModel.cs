@@ -51,6 +51,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     private readonly DownloadSignOut? _downloads;
     private (string? ServerId, string? ProfileId)? _loaded;
     private (string? ServerId, string? ProfileId)? _shown;
+    private string? _accountShown;
     private int _generation;
     private ITimer? _readAgain;
 
@@ -129,6 +130,13 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         IsAdmin = _session is { State: SessionState.Ready, Account.IsAdmin: true };
+        if (_session.Account?.Username != _accountShown)
+        {
+            // The account renamed elsewhere, its server and profile the same (SessionManager.RefreshAccountAsync): its name
+            // stands in for a profile not loaded, and shows in the menu.
+            _accountShown = _session.Account?.Username;
+            AnnounceNames();
+        }
         var key = (_session.ActiveServer?.Id, _session.ProfileId);
         if (_loaded == key)
         {
@@ -145,10 +153,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
             Profile = null;
             Libraries.Clear();
             AreLibrariesLoaded = false;
-            OnPropertyChanged(nameof(ProfileName));
-            OnPropertyChanged(nameof(ProfileInitials));
-            OnPropertyChanged(nameof(ProfileInitial));
-            OnPropertyChanged(nameof(AccountName));
+            AnnounceNames();
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
@@ -174,6 +179,15 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
                 ReadAgainIn(complete ? StaleAfter : RetryAfter);
             }
         }
+    }
+
+    // The names that read the account while the profile is unknown, and the menu's account line.
+    private void AnnounceNames()
+    {
+        OnPropertyChanged(nameof(ProfileName));
+        OnPropertyChanged(nameof(ProfileInitials));
+        OnPropertyChanged(nameof(ProfileInitial));
+        OnPropertyChanged(nameof(AccountName));
     }
 
     private async Task<bool> LoadProfileAsync(Uri server, string profileId, int generation, CancellationToken cancellationToken)
