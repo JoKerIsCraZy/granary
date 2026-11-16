@@ -456,7 +456,9 @@ profiles share one account; `is_primary` marks the household parent, which is no
 `GET /api/v2/profiles` (`listProfiles`): bearer required, profile headers optional (the picker runs
 before a profile is chosen). Envelope `{ items[], avatar_upload_enabled, ... }`. Item fields the
 picker needs: `id` (string), `name`, `is_primary`, `has_pin`, `is_child`, `avatar`,
-`avatar_source` (`none` | `preset` | `upload`), `avatar_url?`. Further fields carry preferences
+`avatar_source` (`none` | `preset` | `upload`), `avatar_url?`. A `preset` is an SVG (`image/svg+xml`), the only picture Granary draws
+as SVG: the server's own (`/profile-avatars/<id>.svg`, on its origin) or DiceBear's (`dicebear:<style>:<seed>`, at
+`https://api.dicebear.com/9.x/<style>/svg?…`), as the web and the Apple app draw them. Artwork requests carry no credentials. Further fields carry preferences
 (`language`, `subtitle_language`, `subtitle_mode`, `quality_preference`, `max_playback_quality`,
 `auto_skip_intro`, …) and restrictions (`max_content_rating`, `allowed_library_ids[]`, …).
 
@@ -1303,7 +1305,10 @@ else of the admin API is used.
   `profile_name`), what (`media_title`, `media_type`, `content_id`, `series_name`, `season_number`, `episode_number`,
   `episode_name`, `poster_url`, `media_file_id`), how (`play_method`; `effective_play_method` is `direct`, `remux`,
   `direct_stream` or `transcode` when the server knows, else read `video_decision`, `audio_decision` and
-  `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, `stream_bitrate_kbps`,
+  `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, the bitrates
+  (`stream_bitrate_kbps`, the rate the server plans to send: a transcode's target, else the audio's target, else the
+  file's, and when it knows none of them `target_bitrate_kbps`, then `source_bitrate_kbps`; `target_bitrate_kbps`, the
+  ceiling a transcode encodes to, null without one; `source_bitrate_kbps`, the file's; each null when unknown),
   `transcode_hw_accel`, where (`position_seconds`, `file_duration`, `is_paused`, `started_at`), the client
   (`client_label`, `client_label_full`, `client_name`, `client_version`, `client_ip`), the route (`routing_execution`,
   `routing_egress` and their node names and ids; older servers only `reporting_node` and `node_display_name`),

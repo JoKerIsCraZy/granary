@@ -261,7 +261,7 @@
                             <!-- Only while the events stream is not live. -->
                             <TextBlock Text="{x:Bind ViewModel.ConnectionText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasConnectionText, Mode=OneWay}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
-                                       FontWeight="Medium" FontSize="10" Foreground="#FFE9B44C" AutomationProperties.LiveSetting="Polite" />
+                                       FontWeight="Medium" FontSize="10" Foreground="{StaticResource SiloWarningBrush}" AutomationProperties.LiveSetting="Polite" />
                         </Grid>
                         <ScrollViewer Grid.Row="1" MaxHeight="400" HorizontalScrollMode="Disabled"
                                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">

@@ -233,11 +233,21 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   has downloads on this PC, with the count of its downloads coming or waiting in the accent as Notifications' count, and
   while one comes a 6 px dot in the accent before the count that slowly fades to a third and back every three seconds, and
   stands still while Windows' animation effects are off; the icon-only rail shows the count on the icon, without the
-  dot); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (Switch Profile and Logout,
-  in the web's words; the servers are in Settings → Servers). While a sign-out runs, which can take about 20 s when a drive
-  or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its right and takes no
-  clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under
-  the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
+  dot); Admin (an administrator's only, a shield), Settings and the profile at the bottom. In the icon's place the
+  profile's 28 px avatar, as the web's (`components/AppSidebar.tsx`), in the rail too: its picture (`avatar_url`,
+  through the artwork cache; an upload, or a preset the server offers: its own SVG drawings or DiceBear's, as the web shows them; DiceBear's initials
+  style shows the letter) in a circle,
+  filling it; without one, while it loads and after it failed, the first letter of the profile's name (else of the
+  account's, else "?") in bold 12 px on the accent, in the colour labels have on it. The avatar's middle is on the other
+  icons' line and the name on the other labels'. Its menu starts with the web's label: the 40 px avatar (a 14 px
+  letter), the name in 14 px semibold and, when the account's name is another, that in 11 px muted under it; then Switch
+  Profile and Logout, in the web's words (the servers are in Settings → Servers). The label takes no focus or click and
+  is no menu item for a screen reader; the entry stays "Elena menu". Another profile shows its letter at once, then its
+  picture; a picture changed elsewhere shows when the sidebar reads the profile again, five minutes at most; a picture
+  whose address the server signed anew stays until the new one is decoded. While a sign-out runs, which can take about
+  20 s when a drive or the server does not answer, the profile's entry reads "Signing out…" with a 16 px ring at its
+  right and takes no clicks, as Granary's busy buttons do ("Signing in…"); one that failed says "Couldn't sign out. Try
+  again." in red under the name until the next Logout or another profile shows. The web's menu has neither. Favorites, Watchlist and History
   are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
@@ -1796,11 +1806,22 @@ stream's commands on Activity.
   Load more. PLAYBACK METHOD: one bar of the methods' shares and their legend, each a toggle that filters (the others
   dim); BY ROUTING NODE with more than one node. The filter box ("Filter by user, media, client, or node..."), Movies,
   Series, Clear filters, "Showing 1 of 2 streams". A card a stream, newest first: poster, title, "S1E3 · Dark", the
-  account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
-  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Session active
-  5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
+  account, profile, method tag and client; then the web's two conversion lines (12 px), the video's behind lucide's Film
+  and the audio's behind AudioLines: an untouched stream's source alone, muted ("HEVC 2160p", "TrueHD 7.1"), a converted
+  one's "HEVC 2160p → H.264 1080p" in the text colour, and after a video transcode its encoder in a small outlined chip
+  ("HW QSV", "SW"); a line too long for the column is cut with an ellipsis, the chip staying beside it. As on the web,
+  the row no longer names the container or "Audio Transcode" (the audio line shows the
+  conversion; the container is in Details). Beside them, in a column 140 px wide, the web's bitrate cell: the rate the
+  viewer gets ("8.0 Mbps", 12 px), a muted line of what it is measured against ("limit 4.0 Mbps · source 20.0 Mbps", or
+  either alone; 11 px, wrapping), and a bar 4 px high on a 128 px track of the delivered share of the source, shown while
+  both rates are known: amber (the web's warning) while a transcode encodes to a limit, green (success) otherwise. On the
+  right Terminate (which asks first) beside a menu of Pause or Resume and Message… (a player that takes live commands)
+  and Stop, "Session active 5:00" as the web's row says it, the position and its bar. Details (an expander that stays open across reads): container,
+  video, audio, Bitrate (the delivered rate, with the web's outlined "limit 4.0 Mbps" tag while a transcode has one),
   route, client with its build, and the address with Look up, which opens IP Lookup on that address and scrolls to it, as
-  the web's. "No active streams" or "No streams match your filters" when nothing shows.
+  the web's. "No active streams" or "No streams match your filters" when nothing shows. The page's subtitle stays
+  "2 active streams across 1 node": the web's summary line after it (video transcodes, the bandwidth out, remote and
+  paused streams) is not taken yet.
 
 ### Activity indicator
 

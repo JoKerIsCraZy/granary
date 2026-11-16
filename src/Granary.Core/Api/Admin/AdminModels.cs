@@ -143,6 +143,7 @@ public sealed record AdminPlaybackSession
     /// <summary>The source audio track's own title, as the file tags it.</summary>
     public string? SourceAudioTitle { get; init; }
 
+    /// <summary>The source file's bitrate, which Activity measures the stream against.</summary>
     public int? SourceBitrateKbps { get; init; }
 
     /// <summary>fmp4, mpegts, or the source container for direct play.</summary>
@@ -159,7 +160,14 @@ public sealed record AdminPlaybackSession
 
     public int? TargetAudioChannels { get; init; }
 
+    /// <summary>
+    /// The rate the server plans to send: a transcode's target, else the audio's target, else the file's. A server that
+    /// knows none of them falls back to <see cref="TargetBitrateKbps"/>, then <see cref="SourceBitrateKbps"/>.
+    /// </summary>
     public int? StreamBitrateKbps { get; init; }
+
+    /// <summary>The ceiling a transcode encodes to; null without one.</summary>
+    public int? TargetBitrateKbps { get; init; }
 
     public string? VideoDecision { get; init; }
 
